@@ -1,0 +1,158 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchPlayersDirectly } from "../../utils/players";
+
+export async function getStaticPaths() {
+    const allPlayers = await fetchPlayersDirectly();
+
+    return allPlayers.map((player) => ({
+        params: { slug: player.slug },
+        props: { player },
+    }));
+}
+
+const { player } = Astro.props;
+
+const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString.split("T")[0]);
+        if (isNaN(date.getTime())) return "-";
+
+        return date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        });
+    } catch {
+        return "-";
+    }
+};
+
+const fechaNacimiento = formatDate(player.fecha_nacimiento);
+const alturaDisplay = player.altura ? `${player.altura} cm` : "-";
+const pesoDisplay = player.peso ? `${player.peso} kg` : "-";
+---
+
+<Layout
+    title={`${player.nombre} - Perfil | Madrid Femenino Xtra`}
+    description={`Perfil completo de ${player.nombre}, jugadora del Real Madrid Femenino. Consulta sus estadísticas, posición, nacionalidad y datos biográficos.`}
+>
+    <main
+        class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 player-profile-page"
+    >
+        <a
+            href="/jugadoras"
+            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
+        >
+            <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
+            >
+            Volver al listado
+        </a>
+
+        <header
+            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
+        >
+            <div class="relative">
+                <img
+                    src={player.imageUrl}
+                    alt={`Foto de ${player.nombre}`}
+                    class="profile-photo w-48 h-48 object-cover rounded-full border-4 border-gray-100 shadow-lg"
+                    onerror="this.onerror=null; this.src='/images/placeholder_jugadora.png';"
+                />
+                <div
+                    class="absolute bottom-2 right-2 bg-[#ffd700] text-black text-xs font-bold px-2 py-1 rounded-full shadow-sm"
+                >
+                    {player.dorsal || "#"}
+                </div>
+            </div>
+
+            <div class="header-info text-center md:text-left">
+                <h1
+                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
+                    style="font-family: 'Archivo Black', sans-serif;"
+                >
+                    {player.nombre}
+                </h1>
+                <p
+                    class="position-badge text-2xl text-[#ffd700] font-bold mt-2 uppercase tracking-widest"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                >
+                    {player.posicion}
+                </p>
+
+                <div
+                    class="player-origin flex items-center justify-center md:justify-start mt-4 bg-gray-50 px-4 py-2 rounded-full inline-flex"
+                >
+                    <img
+                        class="flag-svg w-6 h-6 mr-3 shadow-sm rounded-sm"
+                        src={`/images/banderas/${player.cleanCountryName}.svg`}
+                        alt={`Bandera de ${player.pais_origin}`}
+                        onerror="this.style.display='none';"
+                    />
+                    <span
+                        class="text-gray-700 font-semibold uppercase text-sm tracking-wide"
+                        >{player.pais_origin}</span
+                    >
+                </div>
+            </div>
+        </header>
+
+        <section
+            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Nacimiento
+                </p>
+                <strong
+                    class="text-2xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{fechaNacimiento}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Altura
+                </p>
+                <strong
+                    class="text-3xl font-bold text-gray-900 block"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                    >{alturaDisplay}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Peso
+                </p>
+                <strong
+                    class="text-3xl font-bold text-gray-900 block"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                    >{pesoDisplay}</strong
+                >
+            </div>
+        </section>
+    </main>
+</Layout>

@@ -1,0 +1,223 @@
+---
+import realMadridEscudo from "../assets/escudos/real_madrid.png";
+import realSociedadEscudo from "../assets/escudos/real_sociedad.png";
+import vsImagen from "../assets/vs.png";
+import ligaFLogo from "../assets/competiciones/liga_f.png";
+---
+
+<aside class="card-proximo-partido">
+    <h1>PRÓXIMO PARTIDO</h1>
+
+    <div class="escudos">
+        <img src={realMadridEscudo.src} alt="Real Madrid" class="escudo" />
+        <img src={vsImagen.src} alt="Versus" class="vs-imagen" />
+        <img src={realSociedadEscudo.src} alt="Real Sociedad" class="escudo" />
+    </div>
+
+    <div class="cuenta-atras" id="cuenta-atras">Cargando...</div>
+
+    <div class="competicion-line">
+        <img src={ligaFLogo.src} alt="Liga F" class="competicion-logo" />
+        <span id="competicion-jornada">| Jornada 13</span>
+    </div>
+
+    <div class="info-line">
+        <span class="emoji" role="img" aria-label="Reloj de alarma">⏰</span>
+        <span id="fecha-hora">06/12/2025 19:00 CEST</span>
+    </div>
+
+    <div class="info-line">
+        <span class="emoji" role="img" aria-label="Estadio">🏟</span>
+        <span id="estadio">Estadio Alfredo Di Stefano</span>
+    </div>
+
+    <div class="info-line">
+        <span class="emoji" role="img" aria-label="Televisión">📺</span>
+        <span class="TV" id="TV">DAZN</span>
+    </div>
+</aside>
+
+<script is:inline>
+    // Fecha del próximo partido
+    const fechaPartido = new Date("2025-12-06T19:00:00+01:00");
+
+    function actualizarCuentaAtras() {
+        const ahora = new Date();
+        const diferencia = fechaPartido.getTime() - ahora.getTime();
+
+        if (diferencia <= 0) {
+            const elemento = document.getElementById("cuenta-atras");
+            if (elemento) {
+                elemento.innerHTML = "¡EL PARTIDO HA COMENZADO!";
+            }
+            return;
+        }
+
+        // Calcular días, horas, minutos y segundos
+        const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+        const horas = Math.floor(
+            (diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        );
+        const minutos = Math.floor(
+            (diferencia % (1000 * 60 * 60)) / (1000 * 60),
+        );
+        const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+
+        // Formatear con ceros a la izquierda
+        const formatearNumero = (num) => num.toString().padStart(2, "0");
+
+        // Crear el HTML de la cuenta atrás
+        const cuentaAtrasHTML = `
+            <div class="time-group">
+                <span class="time-value">${formatearNumero(dias)}</span>
+                <span class="time-label">DÍAS</span>
+            </div>
+            <div class="time-group">
+                <span class="time-value">${formatearNumero(horas)}</span>
+                <span class="time-label">HORAS</span>
+            </div>
+            <div class="time-group">
+                <span class="time-value">${formatearNumero(minutos)}</span>
+                <span class="time-label">MINUTOS</span>
+            </div>
+            <div class="time-group">
+                <span class="time-value">${formatearNumero(segundos)}</span>
+                <span class="time-label">SEGUNDOS</span>
+            </div>
+        `;
+
+        const elemento = document.getElementById("cuenta-atras");
+        if (elemento) {
+            elemento.innerHTML = cuentaAtrasHTML;
+        }
+    }
+
+    // Actualizar inmediatamente
+    actualizarCuentaAtras();
+
+    // Actualizar cada segundo
+    setInterval(actualizarCuentaAtras, 1000);
+</script>
+
+<style is:global>
+    .card-proximo-partido {
+        position: relative;
+        width: fit-content;
+        padding: 30px 20px;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 3px solid transparent;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        text-align: center;
+        transition:
+            box-shadow 0.3s ease,
+            border-color 0.3s ease;
+        margin: 50px 10px 30px auto;
+    }
+
+    .card-proximo-partido > h1:first-of-type {
+        position: relative;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--negro);
+        margin-bottom: 2rem;
+    }
+
+    .card-proximo-partido > h1:first-of-type::after {
+        content: "";
+        position: absolute;
+        height: 3px;
+        background-color: var(--amarillo, #ffde59);
+        width: 70%;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .competicion-line {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 0 0 1.5rem 0;
+        font-size: 1.25rem;
+        color: var(--gris-titulo);
+        font-weight: 600;
+    }
+
+    .competicion-line .competicion-logo {
+        height: 2rem;
+        width: auto;
+        object-fit: contain;
+    }
+
+    .escudos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+        margin-top: 10px;
+    }
+
+    .escudo {
+        max-width: 90px;
+        height: 90px;
+        object-fit: contain;
+    }
+
+    .vs-imagen {
+        width: 90px;
+        height: 90px;
+        object-fit: contain;
+        opacity: 1;
+    }
+
+    .cuenta-atras {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 0 auto 10px auto;
+        padding: 0;
+        background-color: transparent;
+        border-radius: 8px;
+    }
+
+    .time-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .time-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #333;
+        line-height: 1;
+        display: block;
+    }
+
+    .time-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #777;
+        text-transform: uppercase;
+        display: block;
+        line-height: 1;
+    }
+
+    @media (max-width: 900px) {
+        .card-proximo-partido {
+            margin: 30px auto;
+            width: 90%;
+        }
+
+        .card-proximo-partido > h1:first-of-type {
+            font-size: 1.8rem;
+            display: inline-block;
+            width: auto;
+        }
+    }
+</style>

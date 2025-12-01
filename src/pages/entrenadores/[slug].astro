@@ -1,0 +1,131 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchCoachesDirectly } from "../../utils/entrenadores";
+
+export async function getStaticPaths() {
+    const allCoaches = await fetchCoachesDirectly();
+
+    return allCoaches.map((coach) => ({
+        params: { slug: coach.slug },
+        props: { coach },
+    }));
+}
+
+const { coach } = Astro.props;
+
+const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString.split("T")[0]);
+        if (isNaN(date.getTime())) return "-";
+
+        return date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        });
+    } catch {
+        return "-";
+    }
+};
+
+const fechaNacimiento = formatDate(coach.fecha_nacimiento);
+---
+
+<Layout
+    title={`${coach.nombre} - Entrenador | Madrid Femenino Xtra`}
+    description={`Perfil de ${coach.nombre}, entrenador del Real Madrid Femenino. Consulta su trayectoria, estadísticas y datos biográficos.`}
+>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <a
+            href="/entrenadores"
+            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
+        >
+            <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
+            >
+            Volver al listado
+        </a>
+
+        <header
+            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
+        >
+            <img
+                src={coach.imageUrl}
+                alt={`Foto de ${coach.nombre}`}
+                class="profile-photo w-40 h-40 object-cover rounded-full border-4 border-gray-100 shadow-lg"
+                onerror="this.onerror=null; this.src='/images/placeholder.png';"
+            />
+            <div class="header-info text-center md:text-left">
+                <h1
+                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
+                    style="font-family: 'Archivo Black', sans-serif;"
+                >
+                    {coach.nombre}
+                </h1>
+                <p
+                    class="text-2xl text-[#ffd700] font-bold mt-2 uppercase tracking-widest"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                >
+                    Entrenador
+                </p>
+            </div>
+        </header>
+
+        <section
+            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Nacimiento
+                </p>
+                <strong
+                    class="text-2xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{fechaNacimiento}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Ciudad
+                </p>
+                <strong
+                    class="text-2xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{coach.ciudad || "-"}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    País
+                </p>
+                <strong
+                    class="text-2xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{coach.pais || "-"}</strong
+                >
+            </div>
+        </section>
+    </main>
+</Layout>

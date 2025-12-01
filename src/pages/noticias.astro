@@ -1,0 +1,338 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+import "../styles/noticias.css";
+
+interface Noticia {
+    id: number;
+    title: string;
+    excerpt: string;
+    content: string;
+    slug: string;
+    date: string;
+    link: string;
+    featuredImage?: string;
+    featuredImageAlt?: string;
+    categories: string[];
+}
+
+interface Pagination {
+    currentPage: number;
+    perPage: number;
+    totalPosts: number;
+    totalPages: number;
+}
+
+let noticias: Noticia[] = [];
+let error: string | null = null;
+let pagination: Pagination | null = null;
+
+try {
+    const response = await fetch(
+        `${Astro.url.origin}/api/wp-noticias?per_page=12`,
+    );
+    if (response.ok) {
+        const data = await response.json();
+        noticias = data.posts || [];
+        pagination = data.pagination;
+    } else {
+        error = "No se pudieron cargar las noticias";
+    }
+} catch (e) {
+    error = "Error de conexión con el servidor";
+    console.error("Error fetching noticias:", e);
+}
+
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    }).format(date);
+}
+---
+
+<Layout
+    title="Noticias del Real Madrid Femenino | Madrid Femenino Xtra"
+    description="Última hora del Real Madrid femenino en directo: actualidad, próximos partidos y fichajes en Liga F, UWCL, Copa de la Reina y Supercopa de España."
+>
+    <main class="noticias-page">
+        <div class="container">
+            <header>
+                <h1 class="page-title">NOTICIAS</h1>
+                <h2 class="content-h2">
+                    Última hora del Real Madrid femenino en directo: actualidad,
+                    próximos partidos y fichajes en Liga F, UWCL, Copa de la
+                    Reina y Supercopa de España.
+                </h2>
+            </header>
+
+            {/* PREVIAS */}
+            <>
+                <h2 class="section-title">PREVIAS</h2>
+                {
+                    error ? (
+                        <p class="no-category-news">
+                            Error al conectar con el servidor.
+                        </p>
+                    ) : noticias.filter((n) =>
+                          n.categories.some((cat) =>
+                              cat.toLowerCase().includes("previa"),
+                          ),
+                      ).length > 0 ? (
+                        <div class="noticias-grid">
+                            {noticias
+                                .filter((n) =>
+                                    n.categories.some((cat) =>
+                                        cat.toLowerCase().includes("previa"),
+                                    ),
+                                )
+                                .map((noticia) => (
+                                    <article class="noticia-card">
+                                        {noticia.featuredImage && (
+                                            <div class="noticia-image">
+                                                <img
+                                                    src={noticia.featuredImage}
+                                                    alt={
+                                                        noticia.featuredImageAlt ||
+                                                        noticia.title
+                                                    }
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
+                                        <div class="noticia-content">
+                                            <div class="noticia-meta">
+                                                <time datetime={noticia.date}>
+                                                    {formatDate(noticia.date)}
+                                                </time>
+                                                {noticia.categories.length >
+                                                    0 && (
+                                                    <span class="category">
+                                                        {noticia.categories[0]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h2 class="noticia-title">
+                                                {noticia.title}
+                                            </h2>
+                                            <div
+                                                class="noticia-excerpt"
+                                                set:html={noticia.excerpt}
+                                            />
+                                            <a
+                                                href={noticia.link}
+                                                class="read-more"
+                                            >
+                                                Leer más
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </article>
+                                ))}
+                        </div>
+                    ) : (
+                        <p class="no-category-news">
+                            No hay previas disponibles.
+                        </p>
+                    )
+                }
+            </>
+
+            {/* CRÓNICAS */}
+            <>
+                <h2 class="section-title">CRÓNICAS</h2>
+                {
+                    error ? (
+                        <p class="no-category-news">
+                            Error al conectar con el servidor.
+                        </p>
+                    ) : noticias.filter((n) =>
+                          n.categories.some((cat) =>
+                              cat.toLowerCase().includes("crónica"),
+                          ),
+                      ).length > 0 ? (
+                        <div class="noticias-grid">
+                            {noticias
+                                .filter((n) =>
+                                    n.categories.some((cat) =>
+                                        cat.toLowerCase().includes("crónica"),
+                                    ),
+                                )
+                                .map((noticia) => (
+                                    <article class="noticia-card">
+                                        {noticia.featuredImage && (
+                                            <div class="noticia-image">
+                                                <img
+                                                    src={noticia.featuredImage}
+                                                    alt={
+                                                        noticia.featuredImageAlt ||
+                                                        noticia.title
+                                                    }
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
+                                        <div class="noticia-content">
+                                            <div class="noticia-meta">
+                                                <time datetime={noticia.date}>
+                                                    {formatDate(noticia.date)}
+                                                </time>
+                                                {noticia.categories.length >
+                                                    0 && (
+                                                    <span class="category">
+                                                        {noticia.categories[0]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h2 class="noticia-title">
+                                                {noticia.title}
+                                            </h2>
+                                            <div
+                                                class="noticia-excerpt"
+                                                set:html={noticia.excerpt}
+                                            />
+                                            <a
+                                                href={noticia.link}
+                                                class="read-more"
+                                            >
+                                                Leer más
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </article>
+                                ))}
+                        </div>
+                    ) : (
+                        <p class="no-category-news">
+                            No hay crónicas disponibles.
+                        </p>
+                    )
+                }
+            </>
+
+            {/* GALERÍA DE FOTOS */}
+            <>
+                <h2 class="section-title">GALERÍA DE FOTOS</h2>
+                {
+                    error ? (
+                        <p class="no-category-news">
+                            Error al conectar con el servidor.
+                        </p>
+                    ) : noticias.filter((n) =>
+                          n.categories.some(
+                              (cat) =>
+                                  cat.toLowerCase().includes("galería") ||
+                                  cat.toLowerCase().includes("galeria"),
+                          ),
+                      ).length > 0 ? (
+                        <div class="noticias-grid">
+                            {noticias
+                                .filter((n) =>
+                                    n.categories.some(
+                                        (cat) =>
+                                            cat
+                                                .toLowerCase()
+                                                .includes("galería") ||
+                                            cat
+                                                .toLowerCase()
+                                                .includes("galeria"),
+                                    ),
+                                )
+                                .map((noticia) => (
+                                    <article class="noticia-card">
+                                        {noticia.featuredImage && (
+                                            <div class="noticia-image">
+                                                <img
+                                                    src={noticia.featuredImage}
+                                                    alt={
+                                                        noticia.featuredImageAlt ||
+                                                        noticia.title
+                                                    }
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
+                                        <div class="noticia-content">
+                                            <div class="noticia-meta">
+                                                <time datetime={noticia.date}>
+                                                    {formatDate(noticia.date)}
+                                                </time>
+                                                {noticia.categories.length >
+                                                    0 && (
+                                                    <span class="category">
+                                                        {noticia.categories[0]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h2 class="noticia-title">
+                                                {noticia.title}
+                                            </h2>
+                                            <div
+                                                class="noticia-excerpt"
+                                                set:html={noticia.excerpt}
+                                            />
+                                            <a
+                                                href={noticia.link}
+                                                class="read-more"
+                                            >
+                                                Leer más
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </article>
+                                ))}
+                        </div>
+                    ) : (
+                        <p class="no-category-news">
+                            No hay galerías disponibles.
+                        </p>
+                    )
+                }
+            </>
+
+            {
+                pagination && pagination.totalPages > 1 && (
+                    <div class="pagination">
+                        <p class="pagination-info">
+                            Mostrando {noticias.length} de{" "}
+                            {pagination.totalPosts} noticias
+                        </p>
+                    </div>
+                )
+            }
+        </div>
+        ) }
+    </main>
+</Layout>

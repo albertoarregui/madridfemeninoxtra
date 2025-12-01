@@ -1,11 +1,119 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+import "../styles/home.css";
+import ProximoPartido from "../components/ProximoPartido.astro";
+import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
+import Searcher from "../components/Searcher.astro";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+interface Noticia {
+	id: number;
+	title: string;
+	excerpt: string;
+	slug: string;
+	date: string;
+	link: string;
+	featuredImage?: string;
+	categories: string[];
+}
+
+let noticias: Noticia[] = [];
+try {
+	const response = await fetch(
+		`${Astro.url.origin}/api/wp-noticias?per_page=5`,
+	);
+	if (response.ok) {
+		const data = await response.json();
+		noticias = data.posts || [];
+	}
+} catch (error) {
+	console.error("Error fetching news:", error);
+}
+
+function formatDate(dateString: string) {
+	const date = new Date(dateString);
+	return new Intl.DateTimeFormat("es-ES", {
+		month: "short",
+		day: "numeric",
+	}).format(date);
+}
 ---
 
-<Layout>
-	<Welcome />
+<Layout
+	title="Madrid Femenino Xtra | Noticias, Actualidad y Estadísticas"
+	description="Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!"
+>
+	<section class="hero">
+		<div class="hero-text">
+			<h1>MADRID FEMENINO XTRA</h1>
+			<p>
+				¡Toda la actualidad, noticias y estadísticas del Real Madrid
+				femenino en un solo sitio!
+			</p>
+
+			<Searcher />
+
+			<ResumenEstadisticas />
+		</div>
+	</section>
+
+	<div class="content-layout">
+		<main class="welcome-area">
+			<section class="news-content">
+				<h2 class="section-title">ÚLTIMAS NOTICIAS</h2>
+				<p class="content-h2">
+					Última hora del Real Madrid femenino en directo: actualidad,
+					próximos partidos y fichajes en Liga F, UWCL, Copa de la
+					Reina y Supercopa de España.
+				</p>
+				{
+					noticias.length > 0 ? (
+						<div class="news-grid">
+							{noticias.map((noticia) => (
+								<article class="news-card">
+									{noticia.featuredImage && (
+										<div class="news-image">
+											<img
+												src={noticia.featuredImage}
+												alt={noticia.title}
+												loading="lazy"
+											/>
+										</div>
+									)}
+									<div class="news-content-inner">
+										<time class="news-date">
+											{formatDate(noticia.date)}
+										</time>
+										<h3 class="news-title">
+											{noticia.title}
+										</h3>
+										<div
+											class="news-excerpt"
+											set:html={noticia.excerpt}
+										/>
+										<a
+											href={noticia.link}
+											class="news-link"
+										>
+											Leer más →
+										</a>
+									</div>
+								</article>
+							))}
+						</div>
+					) : (
+						<p class="no-news">
+							No hay noticias disponibles en este momento.
+						</p>
+					)
+				}
+
+				<a href="/noticias" class="view-all-news"> Más noticias → </a>
+			</section>
+		</main>
+
+		<aside class="proximo-partido sidebar-right">
+			<ProximoPartido />
+		</aside>
+	</div>
 </Layout>

@@ -1,0 +1,206 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../../utils/partidos";
+
+export async function getStaticPaths() {
+    const allGames = await fetchGamesDirectly();
+
+    return allGames.map((game) => ({
+        params: { slug: game.slug },
+        props: { game },
+    }));
+}
+
+const { game } = Astro.props;
+
+const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "-";
+
+        return date.toLocaleDateString("es-ES", {
+            weekday: "long",
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        });
+    } catch {
+        return "-";
+    }
+};
+
+const resultadoClass =
+    game.resultado === "V"
+        ? "victoria"
+        : game.resultado === "D"
+          ? "derrota"
+          : "empate";
+const resultadoTexto =
+    game.resultado === "V"
+        ? "Victoria"
+        : game.resultado === "D"
+          ? "Derrota"
+          : "Empate";
+---
+
+<Layout
+    title={`${game.club_local} vs ${game.club_visitante} - Partido | Madrid Femenino Xtra`}
+    description={`Resultado y estadísticas del partido ${game.club_local} vs ${game.club_visitante} (${game.temporada_nombre}). Consulta los goles, alineaciones y detalles del encuentro.`}
+>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <a
+            href="/partidos"
+            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
+        >
+            <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
+            >
+            Volver al listado
+        </a>
+
+        <header
+            class="game-header bg-white shadow-xl rounded-2xl p-8 border-t-4 border-[#ffd700]"
+        >
+            <div class="text-center mb-8">
+                <h2
+                    class="text-sm text-[#ffd700] font-black uppercase tracking-widest mb-1"
+                >
+                    {game.competicion_nombre}
+                </h2>
+                <p
+                    class="text-sm text-gray-500 font-bold uppercase tracking-wide"
+                >
+                    Jornada {game.jornada} • {game.temporada_nombre}
+                </p>
+                <p
+                    class="text-lg font-bold text-gray-800 mt-3 font-mono bg-gray-100 inline-block px-4 py-1 rounded-lg"
+                >
+                    {formatDate(game.fecha)} • {game.hora || "--:--"}
+                </p>
+            </div>
+
+            <div
+                class="match-result flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12"
+            >
+                <div class="team text-center flex-1">
+                    <h3
+                        class="text-3xl font-black text-gray-900 uppercase leading-tight"
+                        style="font-family: 'Archivo Black', sans-serif;"
+                    >
+                        {game.club_local}
+                    </h3>
+                </div>
+                <div class="score text-center">
+                    <div
+                        class={`text-6xl font-black ${resultadoClass} tracking-tighter`}
+                        style="font-family: 'Archivo Black', sans-serif;"
+                    >
+                        {game.goles_rm} - {game.goles_rival}
+                    </div>
+                    <p
+                        class={`text-lg mt-2 font-bold uppercase tracking-widest ${resultadoClass}`}
+                    >
+                        {resultadoTexto}
+                    </p>
+                </div>
+                <div class="team text-center flex-1">
+                    <h3
+                        class="text-3xl font-black text-gray-900 uppercase leading-tight"
+                        style="font-family: 'Archivo Black', sans-serif;"
+                    >
+                        {game.club_visitante}
+                    </h3>
+                </div>
+            </div>
+        </header>
+
+        <section
+            class="game-details mt-12 grid grid-cols-1 md:grid-cols-2 gap-8"
+        >
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Estadio
+                </p>
+                <strong
+                    class="text-xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{game.estadio || game.estadio_texto || "-"}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Asistencia
+                </p>
+                <strong
+                    class="text-xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{
+                        game.asistencia
+                            ? `${game.asistencia.toLocaleString("es-ES")} espectadores`
+                            : "-"
+                    }</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Árbitro/a
+                </p>
+                <strong
+                    class="text-xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{game.arbitra_nombre || game.arbitro_texto || "-"}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Entrenador/a
+                </p>
+                <strong
+                    class="text-xl font-bold text-gray-900 block"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{
+                        game.entrenador_nombre || game.entrenador_texto || "-"
+                    }</strong
+                >
+            </div>
+        </section>
+    </main>
+</Layout>
+
+<style>
+    .victoria {
+        color: #16a34a;
+    }
+    .derrota {
+        color: #dc2626;
+    }
+    .empate {
+        color: #ca8a04;
+    }
+</style>

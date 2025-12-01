@@ -1,0 +1,124 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchRivalsDirectly } from "../../utils/rivales";
+
+export async function getStaticPaths() {
+    const allRivals = await fetchRivalsDirectly();
+
+    return allRivals.map((rival) => ({
+        params: { slug: rival.slug },
+        props: { rival },
+    }));
+}
+
+const { rival } = Astro.props;
+---
+
+<Layout
+    title={`${rival.nombre} - Rival | Madrid Femenino Xtra`}
+    description={`Historial y estadísticas del Real Madrid Femenino contra ${rival.nombre}. Consulta los resultados, estadio y datos del club rival.`}
+>
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <a
+            href="/rivales"
+            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
+        >
+            <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
+            >
+            Volver al listado
+        </a>
+
+        <header
+            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
+        >
+            <img
+                src={rival.shieldUrl}
+                alt={`Escudo de ${rival.nombre}`}
+                class="shield-image w-40 h-40 object-contain filter drop-shadow-md"
+                onerror="this.onerror=null; this.src='/images/escudos/placeholder.png';"
+            />
+            <div class="header-info text-center md:text-left">
+                <h1
+                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
+                    style="font-family: 'Archivo Black', sans-serif;"
+                >
+                    {rival.nombre}
+                </h1>
+                <p
+                    class="text-xl text-[#ffd700] font-bold mt-2 uppercase tracking-wide flex items-center justify-center md:justify-start gap-2"
+                >
+                    <span class="text-gray-400">📍</span>
+                    {rival.ciudad}, {rival.pais}
+                </p>
+            </div>
+        </header>
+
+        <section
+            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Fundación
+                </p>
+                <strong
+                    class="text-3xl font-bold text-gray-900 block"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                    >{rival.fundacion || "-"}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Estadio
+                </p>
+                <strong
+                    class="text-xl font-bold text-gray-900 block leading-tight"
+                    style="font-family: 'Poppins', sans-serif;"
+                    >{rival.estadio_nombre || "-"}</strong
+                >
+            </div>
+            <div
+                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
+            >
+                <p
+                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
+                >
+                    Capacidad
+                </p>
+                <strong
+                    class="text-2xl font-bold text-gray-900 block"
+                    style="font-family: 'Bebas Neue', sans-serif;"
+                    >{
+                        rival.estadio_capacidad
+                            ? `${rival.estadio_capacidad.toLocaleString("es-ES")}`
+                            : "-"
+                    }</strong
+                >
+                {
+                    rival.estadio_capacidad && (
+                        <span class="text-xs text-gray-400 uppercase font-bold">
+                            Espectadores
+                        </span>
+                    )
+                }
+            </div>
+        </section>
+    </main>
+</Layout>

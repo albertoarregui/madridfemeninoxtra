@@ -1,0 +1,770 @@
+---
+import { TEAMS as RIVALS } from "../../public/consts/rivals";
+import { COUNTRIES } from "../../public/consts/countries";
+import type { ImageMetadata } from "astro";
+import { fetchGamesDirectly, calculateRivalStats } from "../utils/partidos";
+import "../styles/global.css";
+
+// Fetch all matches
+const allMatches = await fetchGamesDirectly();
+
+const listofRivals = RIVALS.map((rival) => {
+    const { country } = rival;
+    const countryName = country
+        ? COUNTRIES[country as keyof typeof COUNTRIES]?.name || ""
+        : "";
+
+    // Calculate stats for this rival
+    const stats = calculateRivalStats(allMatches, rival.name);
+
+    return { ...rival, countryName, stats };
+});
+
+const rivalLogos = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.png",
+    { eager: true },
+);
+
+function getRivalLogoSrc(rivalId: string) {
+    const imageId = rivalId.replace(/-/g, "_");
+    const imagePath = `/src/assets/escudos/${imageId}.png`;
+    return rivalLogos[imagePath]?.default;
+}
+---
+
+<section class="rival-selector">
+    <div class="rival-container">
+        <div class="main-rival-display">
+            <div class="rival-info-top">
+                <span class="rival-city" id="rival-city">
+                    {listofRivals[0].city}
+                </span>
+                <div class="rival-country">
+                    <img
+                        id="rival-flag"
+                        src={`https://flagcdn.com/w40/${listofRivals[0].country}.png`}
+                        alt={listofRivals[0].countryName}
+                        class="country-flag"
+                    />
+                    <span id="rival-country-name">
+                        {listofRivals[0].countryName}
+                    </span>
+                </div>
+            </div>
+
+            <div class="rival-main-logo-container">
+                <img
+                    id="rival-main-logo"
+                    src={getRivalLogoSrc(listofRivals[0].id)?.src}
+                    alt={listofRivals[0].name}
+                    class="rival-main-logo"
+                />
+            </div>
+
+            <h2 class="rival-name" id="rival-name">
+                {listofRivals[0].name}
+            </h2>
+
+            <div class="rival-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Victorias</span>
+                    <span class="stat-value" id="rival-wins"
+                        >{listofRivals[0].stats.wins}</span
+                    >
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Empates</span>
+                    <span class="stat-value" id="rival-draws"
+                        >{listofRivals[0].stats.draws}</span
+                    >
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Derrotas</span>
+                    <span class="stat-value" id="rival-losses"
+                        >{listofRivals[0].stats.losses}</span
+                    >
+                </div>
+            </div>
+
+            <div class="rival-actions">
+                <a
+                    href={`/rivales/${listofRivals[0].id}`}
+                    id="rival-profile-link"
+                    class="btn-profile"
+                >
+                    Ver historial de enfrentamientos
+                </a>
+            </div>
+        </div>
+
+        <div class="vertical-carousel-container">
+            <button
+                class="carousel-arrow top"
+                id="carousel-prev"
+                aria-label="Previous rivals"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="m18 15-6-6-6 6"></path></svg
+                >
+            </button>
+
+            <div class="rival-thumbnails-wrapper">
+                <div class="rival-thumbnails" id="rival-thumbnails-track">
+                    {
+                        listofRivals.map((rival, index) => {
+                            const rivalLogoSrc = getRivalLogoSrc(rival.id)?.src;
+                            return (
+                                <button
+                                    class={`rival-thumbnail ${index === 0 ? "active" : ""}`}
+                                    data-rival-id={rival.id}
+                                    data-rival-index={index}
+                                    data-rival-logo={rivalLogoSrc}
+                                    aria-label={`Select ${rival.name}`}
+                                >
+                                    <div class="thumbnail-logo-wrapper">
+                                        <img
+                                            src={rivalLogoSrc}
+                                            alt={rival.name}
+                                            class="thumbnail-logo"
+                                        />
+                                    </div>
+                                </button>
+                            );
+                        })
+                    }
+                </div>
+            </div>
+
+            <button
+                class="carousel-arrow bottom"
+                id="carousel-next"
+                aria-label="Next rivals"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg
+                >
+            </button>
+        </div>
+    </div>
+
+    <script define:vars={{ rivals: listofRivals }}>
+        let selectedIndex = 0;
+        let currentScrollPosition = 0;
+        const ITEMS_PER_VIEW = 3;
+
+        function updateRivalDisplay(index, isSelection = false) {
+            const rival = rivals[index];
+            if (!rival) return;
+
+            if (isSelection) {
+                selectedIndex = index;
+            }
+
+            const setContent = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+
+            setContent("rival-city", rival.city);
+            setContent("rival-country-name", rival.countryName);
+            setContent("rival-name", rival.name);
+            setContent("rival-wins", rival.stats.wins);
+            setContent("rival-draws", rival.stats.draws);
+            setContent("rival-losses", rival.stats.losses);
+
+            const flag = document.getElementById("rival-flag");
+            if (flag) {
+                flag.src = `https://flagcdn.com/w40/${rival.country}.png`;
+                flag.alt = rival.countryName;
+            }
+
+            const logoElement = document.getElementById("rival-main-logo");
+            if (logoElement) {
+                const thumbButton = document.querySelector(
+                    `button[data-rival-id="${rival.id}"]`,
+                );
+                if (thumbButton && thumbButton.dataset.rivalLogo) {
+                    logoElement.src = thumbButton.dataset.rivalLogo;
+                }
+                logoElement.alt = rival.name;
+            }
+
+            const link = document.getElementById("rival-profile-link");
+            if (link) {
+                link.href = `/rivales/${rival.id}`;
+            }
+
+            document.querySelectorAll(".rival-thumbnail").forEach((thumb) => {
+                const thumbIndex = parseInt(thumb.dataset.rivalIndex || "-1");
+                thumb.classList.toggle("active", thumbIndex === selectedIndex);
+            });
+        }
+
+        // Vertical Carousel Logic
+        const track = document.getElementById("rival-thumbnails-track");
+        const prevBtn = document.getElementById("carousel-prev");
+        const nextBtn = document.getElementById("carousel-next");
+
+        function updateCarousel() {
+            if (!track) return;
+            const itemHeight = 120 + 16; // height + gap
+            track.style.transform = `translateY(-${currentScrollPosition * itemHeight}px)`;
+
+            // Update button states
+            if (prevBtn) prevBtn.disabled = currentScrollPosition === 0;
+            if (nextBtn)
+                nextBtn.disabled =
+                    currentScrollPosition >= rivals.length - ITEMS_PER_VIEW;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener("click", () => {
+                if (currentScrollPosition > 0) {
+                    currentScrollPosition = Math.max(
+                        0,
+                        currentScrollPosition - ITEMS_PER_VIEW,
+                    );
+                    updateCarousel();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener("click", () => {
+                if (currentScrollPosition < rivals.length - ITEMS_PER_VIEW) {
+                    currentScrollPosition = Math.min(
+                        rivals.length - ITEMS_PER_VIEW,
+                        currentScrollPosition + ITEMS_PER_VIEW,
+                    );
+                    updateCarousel();
+                }
+            });
+        }
+
+        // Initialize carousel
+        updateCarousel();
+
+        const thumbnailsContainer = document.querySelector(
+            ".rival-thumbnails-wrapper",
+        );
+
+        document.querySelectorAll(".rival-thumbnail").forEach((thumb) => {
+            thumb.addEventListener("mouseenter", (e) => {
+                const target = e.currentTarget;
+                if (target && target.dataset.rivalIndex) {
+                    const index = parseInt(target.dataset.rivalIndex);
+                    updateRivalDisplay(index, false);
+                }
+            });
+
+            thumb.addEventListener("click", (e) => {
+                const target = e.currentTarget;
+                if (target && target.dataset.rivalIndex) {
+                    const index = parseInt(target.dataset.rivalIndex);
+                    updateRivalDisplay(index, true);
+
+                    // Auto-scroll carousel if clicking on edge items
+                    const visibleStart = currentScrollPosition;
+                    const visibleEnd = currentScrollPosition + 4; // 5 items visible (0-4)
+
+                    // If clicked item is in the first position of visible area, scroll up
+                    if (index > 0 && index <= visibleStart + 1) {
+                        currentScrollPosition = Math.max(
+                            0,
+                            currentScrollPosition - ITEMS_PER_VIEW,
+                        );
+                        updateCarousel();
+                    }
+                    // If clicked item is in the last position of visible area, scroll down
+                    else if (
+                        index < rivals.length - 1 &&
+                        index >= visibleEnd - 1
+                    ) {
+                        currentScrollPosition = Math.min(
+                            rivals.length - 5,
+                            currentScrollPosition + ITEMS_PER_VIEW,
+                        );
+                        updateCarousel();
+                    }
+                }
+            });
+        });
+
+        if (thumbnailsContainer) {
+            thumbnailsContainer.addEventListener("mouseleave", () => {
+                updateRivalDisplay(selectedIndex, false);
+            });
+
+            // Mouse wheel scrolling
+            thumbnailsContainer.addEventListener("wheel", (e) => {
+                e.preventDefault();
+                const delta = Math.sign(e.deltaY);
+
+                if (delta > 0 && currentScrollPosition < rivals.length - 5) {
+                    // Scroll down
+                    currentScrollPosition = Math.min(
+                        rivals.length - 5,
+                        currentScrollPosition + 1,
+                    );
+                    updateCarousel();
+                } else if (delta < 0 && currentScrollPosition > 0) {
+                    // Scroll up
+                    currentScrollPosition = Math.max(
+                        0,
+                        currentScrollPosition - 1,
+                    );
+                    updateCarousel();
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .rival-selector {
+            padding: 3rem 2rem;
+            max-width: 98vw;
+            margin: 0 auto;
+        }
+
+        .rival-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .main-rival-display {
+            position: relative;
+            padding: 2rem 1rem;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .rival-info-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            min-height: 60px;
+        }
+
+        .rival-city {
+            font-size: 1.5rem;
+            font-family: "Archivo Black", sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2b2b2b;
+            font-weight: 800;
+        }
+
+        .rival-country {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .country-flag {
+            width: 48px;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #rival-country-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: "Archivo Black", sans-serif;
+            text-transform: uppercase;
+        }
+
+        .rival-main-logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+
+        .rival-main-logo {
+            max-height: 100%;
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .rival-name {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 900;
+            font-family: "Permanent Marker", cursive;
+            margin: 0 0 2rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1;
+        }
+
+        .rival-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            font-family: "Permanent Marker", cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2b2b2b;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: "Poppins", sans-serif;
+            color: #ffd700;
+        }
+
+        .rival-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-profile {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(
+                135deg,
+                #ffd700 0%,
+                #ffed4e 50%,
+                #ffd700 100%
+            );
+            color: #000;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-profile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: #000;
+        }
+
+        .vertical-carousel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            height: 680px;
+        }
+
+        .carousel-arrow {
+            color: #2b2b2b;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            border: none;
+            background: transparent;
+        }
+
+        .carousel-arrow:hover:not(:disabled) {
+            color: #ffde59;
+            transform: scale(1.1);
+        }
+
+        .carousel-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            color: #ccc;
+        }
+
+        .rival-thumbnails-wrapper {
+            overflow: hidden;
+            height: 100%;
+            max-height: 560px;
+            padding: 15px 0;
+            position: relative;
+            width: 180px;
+        }
+
+        .rival-thumbnails-wrapper::before,
+        .rival-thumbnails-wrapper::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 30px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .rival-thumbnails-wrapper::before {
+            top: 0;
+            background: linear-gradient(
+                to bottom,
+                #ffffff 0%,
+                rgba(255, 255, 255, 0) 100%
+            );
+        }
+
+        .rival-thumbnails-wrapper::after {
+            bottom: 0;
+            background: linear-gradient(
+                to top,
+                #ffffff 0%,
+                rgba(255, 255, 255, 0) 100%
+            );
+        }
+
+        .rival-thumbnails {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            height: max-content;
+        }
+
+        .rival-thumbnail {
+            width: 150px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: visible;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .rival-thumbnail::before,
+        .rival-thumbnail::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .rival-thumbnail::before {
+            top: -3px;
+            left: -3px;
+            border-top-color: #ffd700;
+            border-left-color: #ffd700;
+        }
+
+        .rival-thumbnail::after {
+            bottom: -3px;
+            right: -3px;
+            border-bottom-color: #ffd700;
+            border-right-color: #ffd700;
+        }
+
+        .rival-thumbnail:hover::before,
+        .rival-thumbnail:hover::after {
+            opacity: 1;
+        }
+
+        .rival-thumbnail.active::before,
+        .rival-thumbnail.active::after {
+            opacity: 1;
+            border-width: 5px;
+        }
+
+        .rival-thumbnail:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        .rival-thumbnail.active {
+            background: rgba(255, 215, 0, 0.1);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            z-index: 5;
+        }
+
+        .thumbnail-logo-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .thumbnail-logo {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: grayscale(50%);
+            transition: filter 0.3s ease;
+            pointer-events: none;
+        }
+
+        .rival-thumbnail.active .thumbnail-logo,
+        .rival-thumbnail:hover .thumbnail-logo {
+            filter: grayscale(0%);
+        }
+
+        @media (max-width: 1024px) {
+            .rival-container {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .vertical-carousel-container {
+                flex-direction: row;
+                height: auto;
+                width: 100%;
+                max-width: 800px;
+            }
+
+            .carousel-arrow.top,
+            .carousel-arrow.bottom {
+                width: 36px;
+                height: 36px;
+            }
+
+            .rival-thumbnails-wrapper {
+                width: 100%;
+                max-width: 600px;
+                height: 140px;
+                max-height: none;
+                padding: 0 50px;
+            }
+
+            .rival-thumbnails-wrapper::before,
+            .rival-thumbnails-wrapper::after {
+                width: 80px;
+                height: 100%;
+            }
+
+            .rival-thumbnails-wrapper::before {
+                left: 0;
+                top: 0;
+                background: linear-gradient(
+                    to right,
+                    #ffffff 0%,
+                    rgba(255, 255, 255, 0) 100%
+                );
+            }
+
+            .rival-thumbnails-wrapper::after {
+                right: 0;
+                top: 0;
+                background: linear-gradient(
+                    to left,
+                    #ffffff 0%,
+                    rgba(255, 255, 255, 0) 100%
+                );
+            }
+
+            .rival-thumbnails {
+                flex-direction: row;
+            }
+
+            .rival-thumbnail {
+                width: 120px;
+                height: 100px;
+            }
+
+            .rival-thumbnail:hover {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .rival-name {
+                font-size: 2rem;
+                min-height: 60px;
+            }
+
+            .rival-main-logo-container {
+                height: 200px;
+            }
+
+            .rival-stats {
+                gap: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.8rem;
+            }
+
+            .stat-label {
+                font-size: 0.85rem;
+            }
+
+            .rival-thumbnails-wrapper {
+                padding: 0 30px;
+            }
+
+            .rival-thumbnail {
+                width: 100px;
+                height: 80px;
+            }
+        }
+    </style>
+</section>

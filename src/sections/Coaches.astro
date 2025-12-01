@@ -1,0 +1,500 @@
+---
+import { COACHES } from "../../public/consts/coaches";
+import { COUNTRIES } from "../../public/consts/countries";
+import type { ImageMetadata } from "astro";
+import "../styles/global.css";
+
+const listofCoaches = COACHES.map((coach) => {
+    const { country } = coach;
+    // @ts-ignore
+    const countryName = COUNTRIES[country]?.name || "";
+    return { ...coach, countryName };
+});
+
+const coachImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/entrenadores/*.png",
+    { eager: true },
+);
+
+function getCoachImageSrc(coachId: string) {
+    const imageId = coachId.replace(/-/g, "_");
+    const imagePath = `/src/assets/entrenadores/${imageId}.png`;
+    return coachImages[imagePath]?.default;
+}
+
+function calculateAge(birthDateString: string): number {
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+    return age;
+}
+---
+
+<section class="coach-selector">
+    <div class="coach-container">
+        <div class="main-coach-display">
+            <div class="coach-main-image-container">
+                <img
+                    id="coach-main-image"
+                    src={getCoachImageSrc(listofCoaches[0].id)?.src}
+                    alt={listofCoaches[0].name}
+                    class="coach-main-image"
+                />
+            </div>
+
+            <h2 class="coach-name" id="coach-name">
+                {listofCoaches[0].name}
+            </h2>
+
+            <div class="coach-country">
+                <img
+                    id="coach-flag"
+                    src={`https://flagcdn.com/w40/${listofCoaches[0].country}.png`}
+                    alt={listofCoaches[0].countryName}
+                    class="country-flag"
+                />
+            </div>
+
+            <div class="coach-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Edad</span>
+                    <span class="stat-value" id="coach-age"
+                        >{calculateAge(listofCoaches[0].date_birth)}</span
+                    >
+                </div>
+            </div>
+
+            <div class="coach-actions">
+                <a
+                    href={`/entrenadores/${listofCoaches[0].id}`}
+                    id="coach-profile-link"
+                    class="btn-profile"
+                >
+                    Ver perfil
+                </a>
+            </div>
+        </div>
+
+        <div class="coach-thumbnails-container">
+            <div class="coach-thumbnails">
+                {
+                    listofCoaches.map((coach, index) => {
+                        const coachImgSrc = getCoachImageSrc(coach.id)?.src;
+                        return (
+                            <button
+                                class={`coach-thumbnail ${index === 0 ? "active" : ""}`}
+                                data-coach-id={coach.id}
+                                data-coach-index={index}
+                                data-coach-image={coachImgSrc}
+                                aria-label={`Select ${coach.name}`}
+                            >
+                                <div class="thumbnail-image-wrapper">
+                                    <img
+                                        src={coachImgSrc}
+                                        alt={coach.name}
+                                        class="thumbnail-image"
+                                    />
+                                </div>
+                            </button>
+                        );
+                    })
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<script define:vars={{ coaches: listofCoaches }}>
+    function calculateAge(birthDateString) {
+        const birthDate = new Date(birthDateString);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+        return age;
+    }
+
+    let selectedIndex = 0;
+
+    function updateCoachDisplay(index, isSelection = false) {
+        const coach = coaches[index];
+        if (!coach) return;
+
+        if (isSelection) {
+            selectedIndex = index;
+        }
+
+        const setContent = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        setContent("coach-name", coach.name);
+        setContent("coach-city", coach.city);
+        setContent("coach-age", calculateAge(coach.date_birth));
+
+        const flag = document.getElementById("coach-flag");
+        if (flag) {
+            flag.src = `https://flagcdn.com/w40/${coach.country}.png`;
+            flag.alt = coach.countryName;
+        }
+
+        const imgElement = document.getElementById("coach-main-image");
+        if (imgElement) {
+            const thumbButton = document.querySelector(
+                `button[data-coach-id="${coach.id}"]`,
+            );
+            if (thumbButton && thumbButton.dataset.coachImage) {
+                imgElement.src = thumbButton.dataset.coachImage;
+            }
+            imgElement.alt = coach.name;
+        }
+
+        const link = document.getElementById("coach-profile-link");
+        if (link) {
+            link.href = `/entrenadores/${coach.id}`;
+        }
+
+        document.querySelectorAll(".coach-thumbnail").forEach((thumb) => {
+            const thumbIndex = parseInt(thumb.dataset.coachIndex || "-1");
+            thumb.classList.toggle("active", thumbIndex === selectedIndex);
+        });
+    }
+
+    const thumbnailsContainer = document.querySelector(
+        ".coach-thumbnails-container",
+    );
+
+    document.querySelectorAll(".coach-thumbnail").forEach((thumb) => {
+        thumb.addEventListener("mouseenter", (e) => {
+            const target = e.currentTarget;
+            if (target && target.dataset.coachIndex) {
+                const index = parseInt(target.dataset.coachIndex);
+                updateCoachDisplay(index, false);
+            }
+        });
+
+        thumb.addEventListener("click", (e) => {
+            const target = e.currentTarget;
+            if (target && target.dataset.coachIndex) {
+                const index = parseInt(target.dataset.coachIndex);
+                updateCoachDisplay(index, true);
+            }
+        });
+    });
+
+    if (thumbnailsContainer) {
+        thumbnailsContainer.addEventListener("mouseleave", () => {
+            updateCoachDisplay(selectedIndex, false);
+        });
+    }
+</script>
+
+<style>
+    .coach-selector {
+        padding: 3rem 2rem;
+        max-width: 98vw;
+        margin: 0 auto;
+    }
+
+    .coach-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    .main-coach-display {
+        position: relative;
+        padding: 2rem 1rem;
+        max-width: 600px;
+        width: 100%;
+    }
+
+    .coach-country {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .country-flag {
+        width: 64px;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .coach-main-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 400px;
+        margin: 0 auto 2rem;
+        position: relative;
+    }
+
+    .coach-main-image-container::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        background: linear-gradient(
+            to top,
+            #ffffff 0%,
+            rgba(255, 255, 255, 0.8) 30%,
+            transparent 100%
+        );
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .coach-main-image {
+        max-height: 100%;
+        height: 400px;
+        width: 300px;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+        position: relative;
+        z-index: 0;
+    }
+
+    .coach-name {
+        text-align: center;
+        font-size: 4rem;
+        font-weight: 900;
+        font-family: "Permanent Marker", cursive;
+        margin: 0 0 0.5rem;
+        text-transform: uppercase;
+        background: linear-gradient(135deg, #ffd700, #ffa500);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 2px;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.1;
+    }
+
+    .coach-stats {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 120px;
+    }
+
+    .stat-label {
+        font-size: 1.2rem;
+        font-family: "Permanent Marker", cursive;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #2b2b2b;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2.9rem;
+        font-weight: bold;
+        font-family: "Poppins", sans-serif;
+        color: #ffd700;
+        text-align: center;
+        width: 100%;
+    }
+
+    .coach-actions {
+        display: flex;
+        justify-content: center;
+    }
+
+    .btn-profile {
+        padding: 0.75rem 2rem;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        color: #000;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-profile:hover {
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #000;
+    }
+
+    .coach-thumbnails-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .coach-thumbnails {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 1200px;
+    }
+
+    .coach-thumbnail {
+        width: 150px;
+        height: 180px;
+        background: rgba(255, 255, 255, 0.05);
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        overflow: visible;
+        padding: 0;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .coach-thumbnail::before,
+    .coach-thumbnail::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+        opacity: 0;
+    }
+
+    .coach-thumbnail::before {
+        top: -3px;
+        left: -3px;
+        border-top-color: #ffd700;
+        border-left-color: #ffd700;
+    }
+
+    .coach-thumbnail::after {
+        bottom: -3px;
+        right: -3px;
+        border-bottom-color: #ffd700;
+        border-right-color: #ffd700;
+    }
+    .coach-thumbnail:hover::before,
+    .coach-thumbnail:hover::after {
+        opacity: 1;
+    }
+
+    .coach-thumbnail.active::before,
+    .coach-thumbnail.active::after {
+        opacity: 1;
+        border-width: 5px;
+    }
+
+    .coach-thumbnail:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.1);
+        z-index: 10;
+    }
+
+    .coach-thumbnail.active {
+        background: rgba(255, 215, 0, 0.1);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        z-index: 5;
+    }
+
+    .thumbnail-image-wrapper {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .thumbnail-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        filter: grayscale(50%);
+        transition: filter 0.3s ease;
+        pointer-events: none;
+    }
+
+    .coach-thumbnail.active .thumbnail-image,
+    .coach-thumbnail:hover .thumbnail-image {
+        filter: grayscale(0%);
+    }
+
+    @media (max-width: 768px) {
+        .coach-name {
+            font-size: 2.5rem;
+            min-height: 80px;
+        }
+
+        .coach-main-image-container {
+            height: 300px;
+        }
+
+        .coach-main-image {
+            height: 300px;
+            width: 225px;
+        }
+
+        .coach-stats {
+            gap: 1.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+        }
+
+        .coach-thumbnails {
+            gap: 1rem;
+        }
+
+        .coach-thumbnail {
+            width: 120px;
+            height: 140px;
+        }
+    }
+</style>

@@ -1,0 +1,33 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+import { fetchPlayersDirectly } from "../utils/players";
+import Players from "../sections/Players.astro";
+
+const playersData = await fetchPlayersDirectly();
+const uniqueCountries = [
+    ...new Set(playersData.map((p) => p.pais_origin).filter((c) => c)),
+].sort();
+const uniquePositions = [
+    ...new Set(playersData.map((p) => p.posicion).filter((p) => p)),
+].sort();
+---
+
+<Layout
+    title="Jugadoras del Real Madrid Femenino | Madrid Femenino Xtra"
+    description="Ficha, estadísticas y perfiles de cada una de las jugadoras del Real Madrid Femenino."
+>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <section class="content-container">
+            <h1 class="page-title">JUGADORAS</h1>
+
+            <h2 class="content-h2">
+                Ficha, estadísticas y perfiles de cada una de las jugadoras del
+                Real Madrid Femenino. Sigue toda la actualidad del Real Madrid
+                en Madrid Femenino Xtra.
+            </h2>
+        </section>
+
+        <Players />
+    </main>
+</Layout>
