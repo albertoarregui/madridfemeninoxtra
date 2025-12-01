@@ -2,7 +2,6 @@ import { createClient } from '@libsql/client';
 
 const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
 
-// Encabezados estándar para respuesta JSON.
 const JSON_HEADERS = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -33,7 +32,8 @@ export const GET = async () => {
                 cv.nombre AS club_visitante,
                 e.nombre AS estadio,
                 IFNULL(p.goles_rm, 0) AS goles_rm,
-                IFNULL(p.goles_rival, 0) AS goles_rival, 
+                IFNULL(p.goles_rival, 0) AS goles_rival,
+                IFNULL(p.penaltis, 0) AS penaltis, 
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
                 
