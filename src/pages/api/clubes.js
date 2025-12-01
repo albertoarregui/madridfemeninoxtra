@@ -29,6 +29,7 @@ export const GET = async () => {
                 ciudad,
                 pais
             FROM clubes
+            WHERE id_club != 1 
             ORDER BY nombre ASC
         `;
 
