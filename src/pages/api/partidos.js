@@ -34,7 +34,6 @@ export const GET = async () => {
                 e.nombre AS estadio,
                 IFNULL(p.goles_rm, 0) AS goles_rm,
                 IFNULL(p.goles_rival, 0) AS goles_rival, 
-                p.arbitro_texto, p.entrenador_texto, p.estadio_texto, p.temporada_texto,
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
                 
