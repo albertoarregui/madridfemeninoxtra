@@ -20,7 +20,7 @@ export function getCoachImageUrl(coach: any): string {
         fileName += '.png';
     }
 
-    return `/images/entrenadores/${encodeURI(fileName || 'placeholder.png')}`;
+    return `/assets/entrenadores/${encodeURI(fileName || 'placeholder.png')}`;
 }
 
 export const cleanApiValue = (value: any): any => {

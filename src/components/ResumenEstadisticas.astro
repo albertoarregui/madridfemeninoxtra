@@ -17,6 +17,7 @@
             return await response.json();
         } catch (error) {
             console.error(`Error fetching ${url}:`, error);
+            // Devuelve un array vacío para evitar errores de tipo si la API falla
             return [];
         }
     }
@@ -74,7 +75,8 @@
             '<p class="col-span-full text-center py-8 text-gray-500">Cargando estadísticas...</p>';
 
         try {
-            const [partidos, jugadoras, clubes, golesData] = await Promise.all([
+            // ⭐ CORRECCIÓN CLAVE: Cambiado de 'const' a 'let' en la desestructuración
+            let [partidos, jugadoras, clubes, golesData] = await Promise.all([
                 fetchData(API_URLS.partidos),
                 fetchData(API_URLS.jugadoras),
                 fetchData(API_URLS.clubes),
@@ -88,8 +90,12 @@
                 golesData,
             });
 
+            // ⭐ Esta línea ahora funciona porque 'partidos' es 'let'
             if (!Array.isArray(partidos)) {
-                console.error("Error: 'partidos' no es un array", partidos);
+                console.error(
+                    "Error: 'partidos' no es un array Object, reestableciendo a array vacío:",
+                    partidos,
+                );
                 partidos = [];
             }
 
@@ -173,9 +179,7 @@
         });
     }
 
-    // Initialize on load
     document.addEventListener("DOMContentLoaded", cargarResumenEstadistico);
-    // Also try immediately in case DOMContentLoaded already fired
     if (
         document.readyState === "complete" ||
         document.readyState === "interactive"

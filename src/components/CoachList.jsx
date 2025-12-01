@@ -18,7 +18,7 @@ const CoachCard = ({ coach }) => {
     const fechaNacimiento = formatDate(coach.fecha_nacimiento);
 
     return (
-        <a href={`/entrenadores/${coach.slug}`} className="coach-card-link">
+        <a href={`/assets/entrenadores/${coach.slug}`} className="coach-card-link">
             <div className="coach-card">
                 <div className="coach-image-container">
                     <img
@@ -34,7 +34,7 @@ const CoachCard = ({ coach }) => {
 
                 <div className="coach-info">
                     <div className="coach-name">{coach.nombre}</div>
-                    <div className="coach-title">Entrenador</div>
+                    <div className="coach-title">2025-Actualidad</div>
                 </div>
 
                 <div className="coach-details">
@@ -51,7 +51,7 @@ const CoachCard = ({ coach }) => {
                 <div className="coach-origin">
                     <img
                         className="flag-svg"
-                        src={`/images/banderas/${coach.pais?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ /g, '_')}.svg`}
+                        src={`/assets/banderas/${coach.pais?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ /g, '_')}.svg`}
                         alt={`Bandera de ${coach.pais}`}
                         onError={(e) => { e.target.style.display = 'none'; }}
                     />
