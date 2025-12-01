@@ -2,6 +2,7 @@
 </div>
 
 <script is:inline>
+    const ID_REAL_MADRID = 1;
     const API_URLS = {
         partidos: "/api/partidos",
         jugadoras: "/api/players",
@@ -17,7 +18,6 @@
             return await response.json();
         } catch (error) {
             console.error(`Error fetching ${url}:`, error);
-            // Devuelve un array vacío para evitar errores de tipo si la API falla
             return [];
         }
     }
@@ -75,7 +75,6 @@
             '<p class="col-span-full text-center py-8 text-gray-500">Cargando estadísticas...</p>';
 
         try {
-            // ⭐ CORRECCIÓN CLAVE: Cambiado de 'const' a 'let' en la desestructuración
             let [partidos, jugadoras, clubes, golesData] = await Promise.all([
                 fetchData(API_URLS.partidos),
                 fetchData(API_URLS.jugadoras),
@@ -90,7 +89,6 @@
                 golesData,
             });
 
-            // ⭐ Esta línea ahora funciona porque 'partidos' es 'let'
             if (!Array.isArray(partidos)) {
                 console.error(
                     "Error: 'partidos' no es un array Object, reestableciendo a array vacío:",
@@ -98,6 +96,10 @@
                 );
                 partidos = [];
             }
+
+            const clubesRivales = clubes.filter((club) => {
+                return club.id_club !== ID_REAL_MADRID;
+            });
 
             const statsPartidos = calcularEstadisticasPartidos(partidos);
 
