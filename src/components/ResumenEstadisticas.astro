@@ -37,17 +37,34 @@
             const rmGoles = Number(p.goles_rm) || 0;
             const rivalGoles = Number(p.goles_rival) || 0;
 
-            const penaltisResultado = Number(p.penaltis);
+            const penaltisResultado =
+                p.penaltis !== null && p.penaltis !== undefined
+                    ? Number(p.penaltis)
+                    : NaN;
 
             stats.golesA += rmGoles;
             stats.golesC += rivalGoles;
 
             if (rmGoles > rivalGoles) {
+                // Caso 1: Victoria en el tiempo reglamentario
                 stats.victorias++;
             } else if (rmGoles < rivalGoles) {
+                // Caso 2: Derrota en el tiempo reglamentario
                 stats.derrotas++;
             } else {
-                stats.empates++;
+                // Caso 3: Empate en el tiempo reglamentario. ¡Revisamos los penaltis!
+
+                if (isNaN(penaltisResultado)) {
+                    // Si el campo 'penaltis' es NULL/undefined (es un partido de liga/empate normal)
+                    stats.empates++;
+                } else if (penaltisResultado === 1) {
+                    // Se ganó en penaltis (1 = Ganado) -> Se cuenta como Victoria
+                    stats.victorias++;
+                } else {
+                    // penaltisResultado === 0
+                    // Se perdió en penaltis (0 = Perdido) -> Se cuenta como Derrota
+                    stats.derrotas++;
+                }
             }
 
             if (p.id_temporada)
