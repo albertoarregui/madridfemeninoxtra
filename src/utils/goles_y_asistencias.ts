@@ -58,18 +58,22 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
         const query = `
             SELECT 
                 g.id_gol, 
-                g.goleadora, 
-                g.asistente, 
+                jg.nombre AS goleadora, 
+                ja.nombre AS asistente, 
                 g.id_partido, 
                 g.goles_a_favor, 
                 g.goles_en_contra, 
                 g.minuto, 
                 g.parte_cuerpo, 
                 g.tipo,
-                c.competicion AS competicion_nombre,
-                t.temporada AS temporada_nombre
+                c.competicion AS competicion,
+                t.temporada AS temporada
             FROM 
                 goles_y_asistencias g
+            LEFT JOIN 
+                jugadoras jg ON g.goleadora = jg.id_jugadora
+            LEFT JOIN 
+                jugadoras ja ON g.asistente = ja.id_jugadora
             JOIN 
                 partidos p ON g.id_partido = p.id_partido
             JOIN 
@@ -95,8 +99,8 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
             minuto: cleanApiValue(row.minuto),
             parte_cuerpo: cleanApiValue(row.parte_cuerpo),
             tipo: cleanApiValue(row.tipo),
-            competicion: row.competicion_nombre,
-            temporada: row.temporada_nombre
+            competicion: row.competicion,
+            temporada: row.temporada
         }));
     } catch (error) {
         console.error("Error al obtener goles y asistencias directamente de la DB:", error);
@@ -137,7 +141,8 @@ export async function fetchGoalsAssists(filters?: GoalAssistFilters): Promise<Go
             minuto: cleanApiValue(item.minuto),
             parte_cuerpo: cleanApiValue(item.parte_cuerpo),
             tipo: cleanApiValue(item.tipo),
-
+            competicion: item.competicion,
+            temporada: item.temporada
         }));
     } catch (error) {
         console.error("Fallo al obtener goles y asistencias de la API:", error);
