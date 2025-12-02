@@ -2,15 +2,19 @@
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
-import StatsRankings from "../components/StatsRankings.jsx";
+import StatsRankings from "../components/StatsRankings.astro";
 
 const goalsData = await fetchGoalsAssistsDirectly();
 
 const uniqueSeasons = [
-    ...new Set(goalsData.map((g) => g.temporada).filter((s) => s)),
+    ...new Set(
+        goalsData.map((g) => g.temporada).filter((s): s is string => !!s),
+    ),
 ].sort();
 const uniqueCompetitions = [
-    ...new Set(goalsData.map((g) => g.competicion).filter((c) => c)),
+    ...new Set(
+        goalsData.map((g) => g.competicion).filter((c): c is string => !!c),
+    ),
 ].sort();
 ---
 
@@ -33,7 +37,6 @@ const uniqueCompetitions = [
                     goalsData={goalsData}
                     seasons={uniqueSeasons}
                     competitions={uniqueCompetitions}
-                    client:visible
                 />
             ) : (
                 <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">

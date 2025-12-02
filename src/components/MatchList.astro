@@ -1,0 +1,175 @@
+---
+interface Match {
+    id_partido?: number;
+    slug: string;
+    fecha: string;
+    competicion_nombre: string;
+    club_local: string;
+    club_visitante: string;
+    goles_rm: number;
+    goles_rival: number;
+    resultado: string;
+    temporada_nombre: string;
+}
+
+interface Props {
+    matches: Match[];
+    seasons?: string[];
+    competitions?: string[];
+}
+
+const { matches, seasons = [], competitions = [] } = Astro.props;
+---
+
+<div class="match-list-ui">
+    <!-- Controles de Filtro -->
+    <div class="filters-container">
+        {
+            seasons.length > 0 && (
+                <select id="filtro-temporada">
+                    <option value="todos">Todas las Temporadas</option>
+                    {seasons.map((season) => (
+                        <option value={season}>{season}</option>
+                    ))}
+                </select>
+            )
+        }
+
+        {
+            competitions.length > 0 && (
+                <select id="filtro-competicion">
+                    <option value="todos">Todas las Competiciones</option>
+                    {competitions.map((comp) => (
+                        <option value={comp}>{comp}</option>
+                    ))}
+                </select>
+            )
+        }
+    </div>
+
+    <!-- Contenedor de Partidos -->
+    <div id="matches-container" class="matches-grid">
+        {
+            matches.map((match) => {
+                const resultado = match.resultado || "-";
+                const resultClass =
+                    resultado === "V"
+                        ? "victoria"
+                        : resultado === "D"
+                          ? "derrota"
+                          : "empate";
+                const resultText =
+                    resultado === "V"
+                        ? "Victoria"
+                        : resultado === "D"
+                          ? "Derrota"
+                          : "Empate";
+
+                const formatDate = (dateString: string) => {
+                    if (!dateString) return "-";
+                    try {
+                        const date = new Date(dateString);
+                        return date.toLocaleDateString("es-ES", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                        });
+                    } catch {
+                        return "-";
+                    }
+                };
+
+                return (
+                    <a
+                        href={`/partidos/${match.slug}`}
+                        class="match-card-link"
+                        data-season={match.temporada_nombre}
+                        data-competition={match.competicion_nombre}
+                    >
+                        <div class="match-card">
+                            <div class="match-header">
+                                <p class="competition-name">
+                                    {match.competicion_nombre || "-"}
+                                </p>
+                                <p class="match-date">
+                                    {formatDate(match.fecha)}
+                                </p>
+                            </div>
+
+                            <div class="match-teams">
+                                <p class="team-name">{match.club_local}</p>
+                                <div class="match-score">
+                                    <span class={`score ${resultClass}`}>
+                                        {match.goles_rm} - {match.goles_rival}
+                                    </span>
+                                </div>
+                                <p class="team-name">{match.club_visitante}</p>
+                            </div>
+
+                            <div class="match-result">
+                                <span class={`result-badge ${resultClass}`}>
+                                    {resultText}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                );
+            })
+        }
+    </div>
+</div>
+
+<script>
+    const seasonSelect = document.getElementById(
+        "filtro-temporada",
+    ) as HTMLSelectElement;
+    const competitionSelect = document.getElementById(
+        "filtro-competicion",
+    ) as HTMLSelectElement;
+    const matchesContainer = document.getElementById("matches-container");
+
+    function filterMatches() {
+        const selectedSeason = seasonSelect?.value || "todos";
+        const selectedCompetition = competitionSelect?.value || "todos";
+        const matchCards =
+            matchesContainer?.querySelectorAll(".match-card-link");
+
+        let visibleCount = 0;
+
+        matchCards?.forEach((card) => {
+            const cardElement = card as HTMLElement;
+            const season = cardElement.dataset.season || "";
+            const competition = cardElement.dataset.competition || "";
+
+            const matchesSeason =
+                selectedSeason === "todos" || season === selectedSeason;
+            const matchesCompetition =
+                selectedCompetition === "todos" ||
+                competition === selectedCompetition;
+
+            if (matchesSeason && matchesCompetition) {
+                cardElement.style.display = "";
+                visibleCount++;
+            } else {
+                cardElement.style.display = "none";
+            }
+        });
+
+        // Show/hide no results message
+        const existingMessage = matchesContainer?.querySelector(
+            ".no-results-message",
+        );
+        if (visibleCount === 0 && !existingMessage) {
+            const noResultsMsg = document.createElement("p");
+            noResultsMsg.className = "no-results-message";
+            noResultsMsg.textContent =
+                "No se encontraron partidos con los filtros seleccionados.";
+            matchesContainer?.appendChild(noResultsMsg);
+        } else if (visibleCount > 0 && existingMessage) {
+            existingMessage.remove();
+        }
+    }
+
+    seasonSelect?.addEventListener("change", filterMatches);
+    competitionSelect?.addEventListener("change", filterMatches);
+</script>

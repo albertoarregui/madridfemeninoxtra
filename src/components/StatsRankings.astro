@@ -1,0 +1,248 @@
+---
+interface GoalData {
+    id_gol: number;
+    goleadora: string | null;
+    asistente: string | null;
+    id_partido: number;
+    goles_a_favor: number;
+    goles_en_contra: number;
+    minuto: number | null;
+    parte_cuerpo: string | null;
+    tipo: string | null;
+    competicion?: string;
+    temporada?: string;
+}
+
+interface Props {
+    goalsData: GoalData[];
+    seasons: string[];
+    competitions: string[];
+}
+
+const { goalsData, seasons, competitions } = Astro.props;
+---
+
+<div class="stats-rankings-ui">
+    <!-- Filtros -->
+    <div
+        class="filters-container mb-8 bg-gray-50 p-4 rounded-lg shadow-sm flex flex-wrap gap-4"
+    >
+        <div class="filter-group flex-1 min-w-[200px]">
+            <label
+                for="filtro-temporada"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Temporada</label
+            >
+            <select
+                id="filtro-temporada"
+                class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+                <option value="todos">Todas las Temporadas</option>
+                {
+                    seasons.map((season) => (
+                        <option value={season}>{season}</option>
+                    ))
+                }
+            </select>
+        </div>
+
+        <div class="filter-group flex-1 min-w-[200px]">
+            <label
+                for="filtro-competicion"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Competición</label
+            >
+            <select
+                id="filtro-competicion"
+                class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            >
+                <option value="todos">Todas las Competiciones</option>
+                {
+                    competitions.map((comp) => (
+                        <option value={comp}>{comp}</option>
+                    ))
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Grid de Rankings -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Máximas Goleadoras -->
+        <div
+            class="bg-white rounded-xl shadow-md overflow-hidden"
+            id="scorers-table"
+        >
+            <h3 class="text-xl font-bold text-gray-800 p-4 border-b bg-gray-50">
+                Máximas Goleadoras
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                                >Pos</th
+                            >
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >Jugadora</th
+                            >
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >Goles</th
+                            >
+                        </tr>
+                    </thead>
+                    <tbody
+                        class="bg-white divide-y divide-gray-200"
+                        id="scorers-body"
+                    >
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Máximas Asistentes -->
+        <div
+            class="bg-white rounded-xl shadow-md overflow-hidden"
+            id="assisters-table"
+        >
+            <h3 class="text-xl font-bold text-gray-800 p-4 border-b bg-gray-50">
+                Máximas Asistentes
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                                >Pos</th
+                            >
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >Jugadora</th
+                            >
+                            <th
+                                scope="col"
+                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >Asistencias</th
+                            >
+                        </tr>
+                    </thead>
+                    <tbody
+                        class="bg-white divide-y divide-gray-200"
+                        id="assisters-body"
+                    >
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script define:vars={{ goalsData }}>
+    const seasonSelect = document.getElementById("filtro-temporada");
+    const competitionSelect = document.getElementById("filtro-competicion");
+    const scorersBody = document.getElementById("scorers-body");
+    const assistersBody = document.getElementById("assisters-body");
+
+    function calculateRankings() {
+        const selectedSeason = seasonSelect.value;
+        const selectedCompetition = competitionSelect.value;
+
+        // Filter data
+        const filteredData = goalsData.filter((item) => {
+            const matchesSeason =
+                selectedSeason === "todos" || item.temporada === selectedSeason;
+            const matchesCompetition =
+                selectedCompetition === "todos" ||
+                item.competicion === selectedCompetition;
+            return matchesSeason && matchesCompetition;
+        });
+
+        // Calculate scorers
+        const scorersMap = {};
+        filteredData.forEach((item) => {
+            if (item.goleadora) {
+                scorersMap[item.goleadora] =
+                    (scorersMap[item.goleadora] || 0) + 1;
+            }
+        });
+
+        const sortedScorers = Object.entries(scorersMap)
+            .map(([jugadora, goles]) => ({ jugadora, goles }))
+            .sort((a, b) => b.goles - a.goles);
+
+        // Calculate assisters
+        const assistersMap = {};
+        filteredData.forEach((item) => {
+            if (item.asistente) {
+                assistersMap[item.asistente] =
+                    (assistersMap[item.asistente] || 0) + 1;
+            }
+        });
+
+        const sortedAssisters = Object.entries(assistersMap)
+            .map(([jugadora, asistencias]) => ({ jugadora, asistencias }))
+            .sort((a, b) => b.asistencias - a.asistencias);
+
+        // Update scorers table
+        if (sortedScorers.length === 0) {
+            scorersBody.innerHTML =
+                '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay datos registrados para máximas goleadoras con los filtros actuales.</td></tr>';
+        } else {
+            scorersBody.innerHTML = sortedScorers
+                .map(
+                    (item, index) => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">${index + 1}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="text-sm font-medium text-gray-900">${item.jugadora}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-blue-600">${item.goles}</td>
+                </tr>
+            `,
+                )
+                .join("");
+        }
+
+        // Update assisters table
+        if (sortedAssisters.length === 0) {
+            assistersBody.innerHTML =
+                '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay datos registrados para máximas asistentes con los filtros actuales.</td></tr>';
+        } else {
+            assistersBody.innerHTML = sortedAssisters
+                .map(
+                    (item, index) => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">${index + 1}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="text-sm font-medium text-gray-900">${item.jugadora}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-blue-600">${item.asistencias}</td>
+                </tr>
+            `,
+                )
+                .join("");
+        }
+    }
+
+    // Initial calculation
+    calculateRankings();
+
+    // Event listeners
+    seasonSelect?.addEventListener("change", calculateRankings);
+    competitionSelect?.addEventListener("change", calculateRankings);
+</script>
