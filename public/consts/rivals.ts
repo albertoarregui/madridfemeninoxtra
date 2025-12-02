@@ -97,7 +97,7 @@ export const TEAMS = [
     },
     {
         id: "dux-logrono",
-        name: "DUX-Logroño",
+        name: "DUX Logroño",
         city: "Logroño",
         country: "es",
     },
