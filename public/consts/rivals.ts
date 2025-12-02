@@ -67,7 +67,7 @@ export const TEAMS = [
     },
     {
         id: "atletico-de-madrid",
-        name: "Atletico de Madrid",
+        name: "Atlético de Madrid",
         city: "Madrid",
         country: "es",
     },
@@ -283,7 +283,7 @@ export const TEAMS = [
     },
     {
         id: "bayern-munich",
-        name: "Bayern de Múnich",
+        name: "Bayern Múnich",
         city: "Múnich",
         country: "de",
     },
