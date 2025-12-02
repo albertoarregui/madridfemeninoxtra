@@ -79,7 +79,7 @@ export const TEAMS = [
     },
     {
         id: "madrid-cff",
-        name: "Madrid CF",
+        name: "Madrid CFF",
         city: "Madrid",
         country: "es",
     },
