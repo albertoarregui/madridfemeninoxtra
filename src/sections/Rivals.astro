@@ -166,8 +166,6 @@ function getRivalLogoSrc(rivalId: string) {
 
     <script define:vars={{ rivals: listofRivals }}>
         let selectedIndex = 0;
-        let currentScrollPosition = 0;
-        const ITEMS_PER_VIEW = 3;
 
         function updateRivalDisplay(index, isSelection = false) {
             const rival = rivals[index];
@@ -217,60 +215,44 @@ function getRivalLogoSrc(rivalId: string) {
             });
         }
 
-        // Vertical Carousel Logic
+        // Carousel Logic
         const track = document.getElementById("rival-thumbnails-track");
+        const wrapper = document.querySelector(".rival-thumbnails-wrapper");
         const prevBtn = document.getElementById("carousel-prev");
         const nextBtn = document.getElementById("carousel-next");
 
-        function updateCarousel() {
-            if (!track) return;
-            const itemHeight = 120 + 16; // height + gap
-            track.style.transform = `translateY(-${currentScrollPosition * itemHeight}px)`;
+        function scrollCarousel(direction) {
+            if (!wrapper) return;
 
-            // Update button states
-            if (prevBtn) prevBtn.disabled = currentScrollPosition === 0;
-            if (nextBtn)
-                nextBtn.disabled =
-                    currentScrollPosition >= rivals.length - ITEMS_PER_VIEW;
+            const isMobile = window.innerWidth <= 1024;
+            const itemSize = isMobile ? 120 + 16 : 120 + 16; // width/height + gap
+
+            const scrollAmount = direction * itemSize;
+
+            if (isMobile) {
+                wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
+            } else {
+                wrapper.scrollBy({ top: scrollAmount, behavior: "smooth" });
+            }
         }
 
         if (prevBtn) {
-            prevBtn.addEventListener("click", () => {
-                if (currentScrollPosition > 0) {
-                    currentScrollPosition = Math.max(
-                        0,
-                        currentScrollPosition - ITEMS_PER_VIEW,
-                    );
-                    updateCarousel();
-                }
-            });
+            prevBtn.addEventListener("click", () => scrollCarousel(-1));
         }
 
         if (nextBtn) {
-            nextBtn.addEventListener("click", () => {
-                if (currentScrollPosition < rivals.length - ITEMS_PER_VIEW) {
-                    currentScrollPosition = Math.min(
-                        rivals.length - ITEMS_PER_VIEW,
-                        currentScrollPosition + ITEMS_PER_VIEW,
-                    );
-                    updateCarousel();
-                }
-            });
+            nextBtn.addEventListener("click", () => scrollCarousel(1));
         }
-
-        // Initialize carousel
-        updateCarousel();
-
-        const thumbnailsContainer = document.querySelector(
-            ".rival-thumbnails-wrapper",
-        );
 
         document.querySelectorAll(".rival-thumbnail").forEach((thumb) => {
             thumb.addEventListener("mouseenter", (e) => {
-                const target = e.currentTarget;
-                if (target && target.dataset.rivalIndex) {
-                    const index = parseInt(target.dataset.rivalIndex);
-                    updateRivalDisplay(index, false);
+                // Only on desktop
+                if (window.innerWidth > 1024) {
+                    const target = e.currentTarget;
+                    if (target && target.dataset.rivalIndex) {
+                        const index = parseInt(target.dataset.rivalIndex);
+                        updateRivalDisplay(index, false);
+                    }
                 }
             });
 
@@ -279,58 +261,15 @@ function getRivalLogoSrc(rivalId: string) {
                 if (target && target.dataset.rivalIndex) {
                     const index = parseInt(target.dataset.rivalIndex);
                     updateRivalDisplay(index, true);
-
-                    // Auto-scroll carousel if clicking on edge items
-                    const visibleStart = currentScrollPosition;
-                    const visibleEnd = currentScrollPosition + 4; // 5 items visible (0-4)
-
-                    // If clicked item is in the first position of visible area, scroll up
-                    if (index > 0 && index <= visibleStart + 1) {
-                        currentScrollPosition = Math.max(
-                            0,
-                            currentScrollPosition - ITEMS_PER_VIEW,
-                        );
-                        updateCarousel();
-                    }
-                    // If clicked item is in the last position of visible area, scroll down
-                    else if (
-                        index < rivals.length - 1 &&
-                        index >= visibleEnd - 1
-                    ) {
-                        currentScrollPosition = Math.min(
-                            rivals.length - 5,
-                            currentScrollPosition + ITEMS_PER_VIEW,
-                        );
-                        updateCarousel();
-                    }
                 }
             });
         });
 
-        if (thumbnailsContainer) {
-            thumbnailsContainer.addEventListener("mouseleave", () => {
-                updateRivalDisplay(selectedIndex, false);
-            });
-
-            // Mouse wheel scrolling
-            thumbnailsContainer.addEventListener("wheel", (e) => {
-                e.preventDefault();
-                const delta = Math.sign(e.deltaY);
-
-                if (delta > 0 && currentScrollPosition < rivals.length - 5) {
-                    // Scroll down
-                    currentScrollPosition = Math.min(
-                        rivals.length - 5,
-                        currentScrollPosition + 1,
-                    );
-                    updateCarousel();
-                } else if (delta < 0 && currentScrollPosition > 0) {
-                    // Scroll up
-                    currentScrollPosition = Math.max(
-                        0,
-                        currentScrollPosition - 1,
-                    );
-                    updateCarousel();
+        if (wrapper) {
+            wrapper.addEventListener("mouseleave", () => {
+                // Only on desktop
+                if (window.innerWidth > 1024) {
+                    updateRivalDisplay(selectedIndex, false);
                 }
             });
         }
@@ -540,6 +479,13 @@ function getRivalLogoSrc(rivalId: string) {
             padding: 15px 0;
             position: relative;
             width: 180px;
+            /* Hide scrollbar for desktop but allow scroll logic */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .rival-thumbnails-wrapper::-webkit-scrollbar {
+            display: none;
         }
 
         .rival-thumbnails-wrapper::before,
@@ -575,7 +521,6 @@ function getRivalLogoSrc(rivalId: string) {
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             height: max-content;
         }
 
@@ -678,13 +623,17 @@ function getRivalLogoSrc(rivalId: string) {
                 flex-direction: row;
                 height: auto;
                 width: 100%;
-                max-width: 800px;
+                max-width: 100%;
+                justify-content: center;
             }
 
             .carousel-arrow.top,
             .carousel-arrow.bottom {
                 width: 36px;
                 height: 36px;
+                transform: rotate(
+                    -90deg
+                ); /* Rotate arrows for horizontal layout */
             }
 
             .rival-thumbnails-wrapper {
@@ -692,37 +641,25 @@ function getRivalLogoSrc(rivalId: string) {
                 max-width: 600px;
                 height: 140px;
                 max-height: none;
-                padding: 0 50px;
+                padding: 0;
+                overflow-x: auto; /* Enable native horizontal scroll */
+                overflow-y: hidden;
+                display: flex;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
             }
 
             .rival-thumbnails-wrapper::before,
             .rival-thumbnails-wrapper::after {
-                width: 80px;
-                height: 100%;
-            }
-
-            .rival-thumbnails-wrapper::before {
-                left: 0;
-                top: 0;
-                background: linear-gradient(
-                    to right,
-                    #ffffff 0%,
-                    rgba(255, 255, 255, 0) 100%
-                );
-            }
-
-            .rival-thumbnails-wrapper::after {
-                right: 0;
-                top: 0;
-                background: linear-gradient(
-                    to left,
-                    #ffffff 0%,
-                    rgba(255, 255, 255, 0) 100%
-                );
+                display: none; /* Remove gradients on mobile for cleaner look */
             }
 
             .rival-thumbnails {
                 flex-direction: row;
+                gap: 1rem;
+                height: 100%;
+                width: max-content;
+                padding: 0 1rem;
             }
 
             .rival-thumbnail {
@@ -758,7 +695,7 @@ function getRivalLogoSrc(rivalId: string) {
             }
 
             .rival-thumbnails-wrapper {
-                padding: 0 30px;
+                max-width: 80vw;
             }
 
             .rival-thumbnail {

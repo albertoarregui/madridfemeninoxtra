@@ -118,6 +118,80 @@ function calculateAge(birthDateString: string): number {
             </div>
         </div>
 
+        <!-- Mobile Carousel Container -->
+        <div class="mobile-player-carousel">
+            <button
+                class="carousel-arrow left"
+                id="carousel-prev"
+                aria-label="Previous player"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="m15 18-6-6 6-6"></path></svg
+                >
+            </button>
+
+            <div class="mobile-thumbnails-wrapper">
+                <div class="mobile-thumbnails-track">
+                    {
+                        listofPlayers.map((player, index) => {
+                            const profileImgSrc = getProfileImageSrc(
+                                player.id,
+                            )?.src;
+                            return (
+                                <button
+                                    class={`player-thumbnail mobile-thumb ${index === 0 ? "active" : ""}`}
+                                    data-player-id={player.id}
+                                    data-player-index={index}
+                                    data-profile-image={profileImgSrc}
+                                    aria-label={`Select ${player.name}`}
+                                >
+                                    <span class="thumbnail-number">
+                                        {player.number}
+                                    </span>
+                                    <div class="thumbnail-image-wrapper">
+                                        <img
+                                            src={
+                                                getThumbnailSrc(player.id)?.src
+                                            }
+                                            alt={player.name}
+                                            class="thumbnail-image"
+                                        />
+                                    </div>
+                                </button>
+                            );
+                        })
+                    }
+                </div>
+            </div>
+
+            <button
+                class="carousel-arrow right"
+                id="carousel-next"
+                aria-label="Next player"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg
+                >
+            </button>
+        </div>
+
         <div class="player-rows-container">
             {
                 rows.map((row) => (
@@ -133,7 +207,7 @@ function calculateAge(birthDateString: string): number {
                                 )?.src;
                                 return (
                                     <button
-                                        class={`player-thumbnail ${globalIndex === 0 ? "active" : ""}`}
+                                        class={`player-thumbnail desktop-thumb ${globalIndex === 0 ? "active" : ""}`}
                                         data-player-id={player.id}
                                         data-player-index={globalIndex}
                                         data-profile-image={profileImgSrc}
@@ -208,9 +282,17 @@ function calculateAge(birthDateString: string): number {
 
             const imgElement = document.getElementById("player-main-image");
             if (imgElement) {
-                const thumbButton = document.querySelector(
-                    `button[data-player-id="${player.id}"]`,
+                // Try to find any button with the correct ID to get the profile image
+                // Prefer desktop button if available, otherwise mobile
+                let thumbButton = document.querySelector(
+                    `.desktop-thumb[data-player-id="${player.id}"]`,
                 );
+                if (!thumbButton) {
+                    thumbButton = document.querySelector(
+                        `.mobile-thumb[data-player-id="${player.id}"]`,
+                    );
+                }
+
                 if (thumbButton && thumbButton.dataset.profileImage) {
                     imgElement.src = thumbButton.dataset.profileImage;
                 }
@@ -230,12 +312,35 @@ function calculateAge(birthDateString: string): number {
 
         const rowsContainer = document.querySelector(".player-rows-container");
 
+        // Carousel Logic
+        const wrapper = document.querySelector(".mobile-thumbnails-wrapper");
+        const prevBtn = document.getElementById("carousel-prev");
+        const nextBtn = document.getElementById("carousel-next");
+
+        function scrollCarousel(direction) {
+            if (!wrapper) return;
+            const itemSize = 80 + 16; // width + gap (approx for mobile)
+            const scrollAmount = direction * itemSize;
+            wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener("click", () => scrollCarousel(-1));
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener("click", () => scrollCarousel(1));
+        }
+
         document.querySelectorAll(".player-thumbnail").forEach((thumb) => {
             thumb.addEventListener("mouseenter", (e) => {
-                const target = e.currentTarget;
-                if (target && target.dataset.playerIndex) {
-                    const index = parseInt(target.dataset.playerIndex);
-                    updatePlayerDisplay(index, false);
+                // Only on desktop
+                if (window.innerWidth > 768) {
+                    const target = e.currentTarget;
+                    if (target && target.dataset.playerIndex) {
+                        const index = parseInt(target.dataset.playerIndex);
+                        updatePlayerDisplay(index, false);
+                    }
                 }
             });
 
@@ -250,7 +355,10 @@ function calculateAge(birthDateString: string): number {
 
         if (rowsContainer) {
             rowsContainer.addEventListener("mouseleave", () => {
-                updatePlayerDisplay(selectedIndex, false);
+                // Only on desktop
+                if (window.innerWidth > 768) {
+                    updatePlayerDisplay(selectedIndex, false);
+                }
             });
         }
     </script>
@@ -263,11 +371,83 @@ function calculateAge(birthDateString: string): number {
             margin: 0 auto;
         }
 
+        .mobile-player-carousel {
+            display: none; /* Hidden by default */
+        }
+
         @media (max-width: 768px) {
             .player-selector {
                 padding: 2rem 1rem;
                 max-width: 100%;
                 overflow-x: hidden;
+            }
+
+            .player-rows-container {
+                display: none !important; /* Hide grid on mobile */
+            }
+
+            .mobile-player-carousel {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                width: 100%;
+                margin-top: 2rem;
+            }
+
+            .mobile-thumbnails-wrapper {
+                overflow-x: auto;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+                padding: 1rem 0;
+                width: 100%;
+                max-width: 80vw;
+            }
+
+            .mobile-thumbnails-wrapper::-webkit-scrollbar {
+                display: none;
+            }
+
+            .mobile-thumbnails-track {
+                display: flex;
+                gap: 1rem;
+                width: max-content;
+                padding: 0 1rem;
+            }
+
+            .carousel-arrow {
+                color: #2b2b2b;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                flex-shrink: 0;
+                border: none;
+                background: transparent;
+            }
+
+            .carousel-arrow:hover {
+                color: #ffde59;
+                transform: scale(1.1);
+            }
+
+            .player-thumbnail {
+                width: 80px;
+                height: 80px;
+                flex-shrink: 0;
+            }
+
+            .player-thumbnail:hover {
+                transform: none;
+            }
+
+            .thumbnail-image {
+                width: 96px;
+                height: 112px;
             }
         }
 
@@ -653,24 +833,7 @@ function calculateAge(birthDateString: string): number {
                 font-size: 1.2rem;
             }
 
-            .player-rows-container {
-                gap: 3rem;
-            }
-
-            .player-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
-            }
-
-            .player-thumbnail {
-                width: 80px;
-                height: 80px;
-            }
-
-            .thumbnail-image {
-                width: 96px;
-                height: 112px;
-            }
+            /* Removed old CSS for grid layout on mobile since we are hiding it */
         }
     </style>
 </section>

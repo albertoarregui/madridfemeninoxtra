@@ -83,30 +83,69 @@ function calculateAge(birthDateString: string): number {
         </div>
 
         <div class="coach-thumbnails-container">
-            <div class="coach-thumbnails">
-                {
-                    listofCoaches.map((coach, index) => {
-                        const coachImgSrc = getCoachImageSrc(coach.id)?.src;
-                        return (
-                            <button
-                                class={`coach-thumbnail ${index === 0 ? "active" : ""}`}
-                                data-coach-id={coach.id}
-                                data-coach-index={index}
-                                data-coach-image={coachImgSrc}
-                                aria-label={`Select ${coach.name}`}
-                            >
-                                <div class="thumbnail-image-wrapper">
-                                    <img
-                                        src={coachImgSrc}
-                                        alt={coach.name}
-                                        class="thumbnail-image"
-                                    />
-                                </div>
-                            </button>
-                        );
-                    })
-                }
+            <button
+                class="carousel-arrow left"
+                id="carousel-prev"
+                aria-label="Previous coach"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="m15 18-6-6 6-6"></path></svg
+                >
+            </button>
+
+            <div class="coach-thumbnails-wrapper">
+                <div class="coach-thumbnails" id="coach-thumbnails-track">
+                    {
+                        listofCoaches.map((coach, index) => {
+                            const coachImgSrc = getCoachImageSrc(coach.id)?.src;
+                            return (
+                                <button
+                                    class={`coach-thumbnail ${index === 0 ? "active" : ""}`}
+                                    data-coach-id={coach.id}
+                                    data-coach-index={index}
+                                    data-coach-image={coachImgSrc}
+                                    aria-label={`Select ${coach.name}`}
+                                >
+                                    <div class="thumbnail-image-wrapper">
+                                        <img
+                                            src={coachImgSrc}
+                                            alt={coach.name}
+                                            class="thumbnail-image"
+                                        />
+                                    </div>
+                                </button>
+                            );
+                        })
+                    }
+                </div>
             </div>
+
+            <button
+                class="carousel-arrow right"
+                id="carousel-next"
+                aria-label="Next coach"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg
+                >
+            </button>
         </div>
     </div>
 </section>
@@ -173,16 +212,39 @@ function calculateAge(birthDateString: string): number {
         });
     }
 
-    const thumbnailsContainer = document.querySelector(
-        ".coach-thumbnails-container",
-    );
+    // Carousel Logic
+    const wrapper = document.querySelector(".coach-thumbnails-wrapper");
+    const prevBtn = document.getElementById("carousel-prev");
+    const nextBtn = document.getElementById("carousel-next");
+
+    function scrollCarousel(direction) {
+        if (!wrapper) return;
+
+        // On mobile, scroll by item width + gap
+        // On desktop, this function isn't used as arrows are hidden, but good to have logic
+        const itemSize = 120 + 16; // approx width + gap
+        const scrollAmount = direction * itemSize;
+
+        wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => scrollCarousel(-1));
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => scrollCarousel(1));
+    }
 
     document.querySelectorAll(".coach-thumbnail").forEach((thumb) => {
         thumb.addEventListener("mouseenter", (e) => {
-            const target = e.currentTarget;
-            if (target && target.dataset.coachIndex) {
-                const index = parseInt(target.dataset.coachIndex);
-                updateCoachDisplay(index, false);
+            // Only on desktop
+            if (window.innerWidth > 768) {
+                const target = e.currentTarget;
+                if (target && target.dataset.coachIndex) {
+                    const index = parseInt(target.dataset.coachIndex);
+                    updateCoachDisplay(index, false);
+                }
             }
         });
 
@@ -195,9 +257,12 @@ function calculateAge(birthDateString: string): number {
         });
     });
 
-    if (thumbnailsContainer) {
-        thumbnailsContainer.addEventListener("mouseleave", () => {
-            updateCoachDisplay(selectedIndex, false);
+    if (wrapper) {
+        wrapper.addEventListener("mouseleave", () => {
+            // Only on desktop
+            if (window.innerWidth > 768) {
+                updateCoachDisplay(selectedIndex, false);
+            }
         });
     }
 </script>
@@ -374,7 +439,14 @@ function calculateAge(birthDateString: string): number {
         width: 100%;
         display: flex;
         justify-content: center;
+        align-items: center;
         padding: 1rem;
+        gap: 1rem;
+    }
+
+    .coach-thumbnails-wrapper {
+        width: 100%;
+        max-width: 1200px;
     }
 
     .coach-thumbnails {
@@ -382,7 +454,27 @@ function calculateAge(birthDateString: string): number {
         gap: 2rem;
         justify-content: center;
         flex-wrap: wrap;
-        max-width: 1200px;
+        width: 100%;
+    }
+
+    .carousel-arrow {
+        display: none; /* Hidden by default (desktop) */
+        color: #2b2b2b;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        border: none;
+        background: transparent;
+    }
+
+    .carousel-arrow:hover {
+        color: #ffde59;
+        transform: scale(1.1);
     }
 
     .coach-thumbnail {
@@ -496,13 +588,43 @@ function calculateAge(birthDateString: string): number {
             font-size: 1.8rem;
         }
 
+        .coach-thumbnails-container {
+            padding: 0;
+            gap: 0.5rem;
+        }
+
+        .coach-thumbnails-wrapper {
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding: 1rem 0;
+            width: 100%;
+            max-width: 80vw;
+        }
+
+        .coach-thumbnails-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
         .coach-thumbnails {
+            flex-wrap: nowrap;
+            justify-content: flex-start;
             gap: 1rem;
+            width: max-content;
+            padding: 0 1rem;
+        }
+
+        .carousel-arrow {
+            display: flex; /* Show arrows on mobile */
         }
 
         .coach-thumbnail {
             width: 120px;
             height: 140px;
+        }
+
+        .coach-thumbnail:hover {
+            transform: none; /* Disable hover effect on mobile */
         }
     }
 </style>
