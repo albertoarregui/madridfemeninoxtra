@@ -187,8 +187,6 @@ function formatDate(dateString: string): string {
 
     <script define:vars={{ players: listofPlayers }}>
         let selectedIndex = 0;
-        let currentScrollPosition = 0;
-        const ITEMS_PER_VIEW = 3;
 
         function formatDate(dateString) {
             if (!dateString || dateString === "-") return "-";
@@ -244,48 +242,25 @@ function formatDate(dateString: string): string {
         }
 
         // Carousel Logic
-        const track = document.getElementById("player-thumbnails-track");
+        const wrapper = document.querySelector(".player-thumbnails-wrapper");
         const prevBtn = document.getElementById("carousel-prev");
         const nextBtn = document.getElementById("carousel-next");
 
-        function updateCarousel() {
-            if (!track) return;
-            const itemWidth = 150 + 32; // width + gap
-            track.style.transform = `translateX(-${currentScrollPosition * itemWidth}px)`;
-
-            // Update button states
-            if (prevBtn) prevBtn.disabled = currentScrollPosition === 0;
-            if (nextBtn)
-                nextBtn.disabled =
-                    currentScrollPosition >= players.length - ITEMS_PER_VIEW;
+        function scrollCarousel(direction) {
+            if (!wrapper) return;
+            // 150px (width) + 32px (gap) = 182px per item
+            const itemSize = 182;
+            const scrollAmount = direction * itemSize;
+            wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
         }
 
         if (prevBtn) {
-            prevBtn.addEventListener("click", () => {
-                if (currentScrollPosition > 0) {
-                    currentScrollPosition = Math.max(
-                        0,
-                        currentScrollPosition - ITEMS_PER_VIEW,
-                    );
-                    updateCarousel();
-                }
-            });
+            prevBtn.addEventListener("click", () => scrollCarousel(-1));
         }
 
         if (nextBtn) {
-            nextBtn.addEventListener("click", () => {
-                if (currentScrollPosition < players.length - ITEMS_PER_VIEW) {
-                    currentScrollPosition = Math.min(
-                        players.length - ITEMS_PER_VIEW,
-                        currentScrollPosition + ITEMS_PER_VIEW,
-                    );
-                    updateCarousel();
-                }
-            });
+            nextBtn.addEventListener("click", () => scrollCarousel(1));
         }
-
-        // Initialize carousel
-        updateCarousel();
 
         const thumbnailsContainer = document.querySelector(
             ".player-thumbnails-wrapper",
@@ -305,30 +280,6 @@ function formatDate(dateString: string): string {
                 if (target && target.dataset.playerIndex) {
                     const index = parseInt(target.dataset.playerIndex);
                     updatePlayerDisplay(index, true);
-
-                    // Auto-scroll carousel if clicking on edge items
-                    const visibleStart = currentScrollPosition;
-                    const visibleEnd = currentScrollPosition + 6; // 7 items visible (0-6)
-
-                    // If clicked item is in the first 2 positions of visible area, scroll left
-                    if (index > 0 && index <= visibleStart + 1) {
-                        currentScrollPosition = Math.max(
-                            0,
-                            currentScrollPosition - ITEMS_PER_VIEW,
-                        );
-                        updateCarousel();
-                    }
-                    // If clicked item is in the last 2 positions of visible area, scroll right
-                    else if (
-                        index < players.length - 1 &&
-                        index >= visibleEnd - 1
-                    ) {
-                        currentScrollPosition = Math.min(
-                            players.length - 7,
-                            currentScrollPosition + ITEMS_PER_VIEW,
-                        );
-                        updateCarousel();
-                    }
                 }
             });
         });
@@ -336,28 +287,6 @@ function formatDate(dateString: string): string {
         if (thumbnailsContainer) {
             thumbnailsContainer.addEventListener("mouseleave", () => {
                 updatePlayerDisplay(selectedIndex, false);
-            });
-
-            // Mouse wheel scrolling
-            thumbnailsContainer.addEventListener("wheel", (e) => {
-                e.preventDefault();
-                const delta = Math.sign(e.deltaY);
-                
-                if (delta > 0 && currentScrollPosition < players.length - 7) {
-                    // Scroll right
-                    currentScrollPosition = Math.min(
-                        players.length - 7,
-                        currentScrollPosition + 1
-                    );
-                    updateCarousel();
-                } else if (delta < 0 && currentScrollPosition > 0) {
-                    // Scroll left
-                    currentScrollPosition = Math.max(
-                        0,
-                        currentScrollPosition - 1
-                    );
-                    updateCarousel();
-                }
             });
         }
     </script>
@@ -590,11 +519,21 @@ function formatDate(dateString: string): string {
         }
 
         .player-thumbnails-wrapper {
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
             width: 100%;
             max-width: 1150px;
             padding: 1rem 75px;
             position: relative;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .player-thumbnails-wrapper::-webkit-scrollbar {
+            display: none;
         }
 
         .player-thumbnails-wrapper::before,
@@ -629,7 +568,6 @@ function formatDate(dateString: string): string {
         .player-thumbnails {
             display: flex;
             gap: 2rem;
-            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             width: max-content;
         }
 
@@ -649,6 +587,7 @@ function formatDate(dateString: string): string {
             align-items: flex-end;
             justify-content: center;
             flex-shrink: 0;
+            scroll-snap-align: center;
         }
 
         .player-thumbnail::before,
@@ -759,8 +698,6 @@ function formatDate(dateString: string): string {
             .carousel-arrow {
                 width: 36px;
                 height: 36px;
-                transform: rotate(
-                    -90deg
             }
 
             .carousel-container {
