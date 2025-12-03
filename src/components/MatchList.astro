@@ -1,4 +1,6 @@
 ---
+import type { ImageMetadata } from "astro";
+
 interface Match {
     id_partido?: number;
     slug: string;
@@ -19,6 +21,60 @@ interface Props {
 }
 
 const { matches, seasons = [], competitions = [] } = Astro.props;
+
+// Importar todos los escudos
+const teamLogos = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.png",
+    { eager: true },
+);
+
+// Función para obtener el escudo de un equipo
+function getTeamLogo(teamName: string) {
+    // Normalizar nombre del equipo para buscar el archivo
+    const normalizedName = teamName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+        .replace(/\s+/g, "_") // Espacios a guiones bajos
+        .replace(/\./g, "") // Eliminar puntos
+        .replace(/w$/i, "") // Eliminar W al final
+        .trim();
+
+    // Casos especiales
+    const teamNameMap: Record<string, string> = {
+        real_madrid_: "real_madrid",
+        fc_barcelona: "fc_barcelona",
+        athletic_bilbao: "athletic_club",
+        atletico_madrid: "atletico_de_madrid",
+        deportivo_la_coruna: "deportivo_abanca",
+        levante: "levante_ud",
+        costa_adeje: "costa_adeje_tenerife",
+        eibar: "sd_eibar",
+        alaves: "alaves",
+        alhama: "alhama",
+        arsenal: "arsenal",
+        as_roma: "as_roma",
+        cacereno: "cacereno",
+        espanyol: "espanyol",
+        granada: "granada_cf",
+        madrid_cff: "madrid_cff",
+        paris_fc: "paris_fc",
+        psg: "psg",
+        rayo_vallecano: "rayo_vallecano",
+        sevilla: "sevilla_fc",
+        valencia: "valencia_cf",
+        villarreal: "villarreal_cf",
+        betis: "real_betis",
+        real_sociedad: "real_sociedad",
+        sporting_huelva: "sporting_de_huelva",
+        fundacion_albacete: "fundacion_albacete",
+    };
+
+    const mappedName = teamNameMap[normalizedName] || normalizedName;
+    const logoPath = `/src/assets/escudos/${mappedName}.png`;
+
+    return teamLogos[logoPath]?.default;
+}
 ---
 
 <div class="match-list-ui">
@@ -80,6 +136,9 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
                           ? "loss"
                           : "draw";
 
+                const localLogo = getTeamLogo(match.club_local);
+                const visitanteLogo = getTeamLogo(match.club_visitante);
+
                 return (
                     <div
                         class="match-item"
@@ -105,7 +164,15 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
 
                             <div class="match-teams-score">
                                 <div class="team">
-                                    <div class="team-shield" />
+                                    {localLogo ? (
+                                        <img
+                                            src={localLogo.src}
+                                            alt={match.club_local}
+                                            class="team-shield"
+                                        />
+                                    ) : (
+                                        <div class="team-shield-placeholder" />
+                                    )}
                                     <span class="team-name">
                                         {match.club_local === "Real Madrid W"
                                             ? "Real Madrid W"
@@ -115,7 +182,15 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
                                 <div class="score">{match.goles_rm}</div>
 
                                 <div class="team">
-                                    <div class="team-shield" />
+                                    {visitanteLogo ? (
+                                        <img
+                                            src={visitanteLogo.src}
+                                            alt={match.club_visitante}
+                                            class="team-shield"
+                                        />
+                                    ) : (
+                                        <div class="team-shield-placeholder" />
+                                    )}
                                     <span class="team-name">
                                         {match.club_visitante ===
                                         "Real Madrid W"
@@ -203,33 +278,53 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
         gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
+        justify-content: center;
     }
 
     .filters-container select {
-        padding: 0.75rem 1rem;
-        background: #0a2a43;
-        color: #ffffff;
-        border: 1px solid #1a4565;
-        border-radius: 8px;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem;
+        background: #ffffff;
+        color: #2b2b2b;
+        border: 2px solid #ffde59;
+        border-radius: 25px;
+        font-size: 0.95rem;
+        font-weight: 600;
         cursor: pointer;
-        min-width: 200px;
+        min-width: 220px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
+    }
+
+    .filters-container select:hover {
+        background: #fffef8;
+        border-color: #ffd700;
+        box-shadow: 0 4px 12px rgba(255, 222, 89, 0.3);
+        transform: translateY(-2px);
     }
 
     .filters-container select:focus {
         outline: none;
         border-color: #ffd700;
+        box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
     .matches-container {
         display: flex;
         flex-direction: column;
         gap: 0;
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .match-item {
-        background: #0a2538;
-        border-bottom: 1px solid #163b54;
+        background: #ffffff;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .match-item:last-child {
+        border-bottom: none;
     }
 
     .match-competition {
@@ -237,14 +332,14 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem 1rem;
-        background: #0d3047;
-        border-bottom: 1px solid #163b54;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
     }
 
     .competition-name {
-        color: #8ba6ba;
+        color: #6c757d;
         font-size: 0.85rem;
-        font-weight: 500;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -257,7 +352,7 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     }
 
     .standings-link:hover {
-        color: #7db3d9;
+        color: #4a8bb7;
     }
 
     .match-detail {
@@ -271,13 +366,13 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     }
 
     .match-detail:hover {
-        background: #0d3248;
+        background: #f8f9fa;
     }
 
     .match-date-time {
-        color: #8ba6ba;
+        color: #6c757d;
         font-size: 0.9rem;
-        font-weight: 400;
+        font-weight: 500;
     }
 
     .match-teams-score {
@@ -294,26 +389,33 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     }
 
     .team-shield {
-        width: 24px;
-        height: 24px;
-        background: #1a4565;
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .team-shield-placeholder {
+        width: 28px;
+        height: 28px;
+        background: #e9ecef;
         border-radius: 50%;
         flex-shrink: 0;
     }
 
     .team-name {
-        color: #ffffff;
+        color: #2b2b2b;
         font-size: 0.95rem;
-        font-weight: 500;
+        font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     .score {
-        color: #ffffff;
-        font-size: 1.1rem;
-        font-weight: 600;
+        color: #2b2b2b;
+        font-size: 1.2rem;
+        font-weight: 700;
         min-width: 20px;
         text-align: center;
     }
@@ -346,7 +448,7 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     }
 
     .no-results-message {
-        color: #8ba6ba;
+        color: #6c757d;
         text-align: center;
         padding: 3rem 1rem;
         font-size: 1rem;
@@ -365,6 +467,12 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
 
         .team-name {
             font-size: 0.85rem;
+        }
+
+        .team-shield,
+        .team-shield-placeholder {
+            width: 24px;
+            height: 24px;
         }
 
         .score {
