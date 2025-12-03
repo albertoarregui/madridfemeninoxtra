@@ -5,6 +5,7 @@ interface Match {
     id_partido?: number;
     slug: string;
     fecha: string;
+    hora?: string;
     competicion_nombre: string;
     club_local: string;
     club_visitante: string;
@@ -176,7 +177,10 @@ function getTeamLogo(teamName: string) {
     <div id="matches-container" class="matches-container">
         {
             matches.map((match) => {
-                const formatDate = (dateString: string) => {
+                const formatDate = (
+                    dateString: string,
+                    timeString?: string,
+                ) => {
                     if (!dateString) return "-";
                     try {
                         const date = new Date(dateString);
@@ -184,15 +188,23 @@ function getTeamLogo(teamName: string) {
                         const month = (date.getMonth() + 1)
                             .toString()
                             .padStart(2, "0");
-                        const hours = date
-                            .getUTCHours()
-                            .toString()
-                            .padStart(2, "0");
-                        const minutes = date
-                            .getUTCMinutes()
-                            .toString()
-                            .padStart(2, "0");
-                        return `${day}.${month}. ${hours}:${minutes}`;
+
+                        let timeDisplay = "00:00";
+                        if (timeString && timeString !== "00:00") {
+                            timeDisplay = timeString.substring(0, 5);
+                        } else {
+                            const hours = date
+                                .getUTCHours()
+                                .toString()
+                                .padStart(2, "0");
+                            const minutes = date
+                                .getUTCMinutes()
+                                .toString()
+                                .padStart(2, "0");
+                            timeDisplay = `${hours}:${minutes}`;
+                        }
+
+                        return `${day}.${month}. ${timeDisplay}`;
                     } catch {
                         return "-";
                     }
@@ -240,7 +252,7 @@ function getTeamLogo(teamName: string) {
                             class="match-detail"
                         >
                             <div class="match-date-time">
-                                {formatDate(match.fecha)}
+                                {formatDate(match.fecha, match.hora)}
                             </div>
 
                             <div class="match-teams-score">
@@ -261,7 +273,7 @@ function getTeamLogo(teamName: string) {
 
                                 <div class="score-wrapper">
                                     <span class="score">{match.goles_rm}</span>
-                                    <span class="vs">vs</span>
+                                    <span class="vs">-</span>
                                     <span class="score">
                                         {match.goles_rival}
                                     </span>
@@ -329,6 +341,7 @@ function getTeamLogo(teamName: string) {
             }
         });
 
+        // Show/hide no results message
         const existingMessage = matchesContainer?.querySelector(
             ".no-results-message",
         );
