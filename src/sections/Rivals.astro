@@ -225,7 +225,8 @@ function getRivalLogoSrc(rivalId: string) {
             if (!wrapper) return;
 
             const isMobile = window.innerWidth <= 1024;
-            const itemSize = isMobile ? 120 + 16 : 120 + 16; // width/height + gap
+            // On mobile, scroll by one item width + gap
+            const itemSize = isMobile ? 120 + 16 : 120 + 16;
 
             const scrollAmount = direction * itemSize;
 
@@ -614,9 +615,20 @@ function getRivalLogoSrc(rivalId: string) {
         }
 
         @media (max-width: 1024px) {
+            .rival-selector {
+                padding: 1rem;
+                max-width: 100%;
+                overflow-x: hidden; /* Fix header overflow */
+            }
+
             .rival-container {
                 flex-direction: column;
-                gap: 2rem;
+                gap: 1rem; /* Reduced gap for better framing */
+            }
+
+            .main-rival-display {
+                padding: 0; /* Remove padding to save space */
+                max-width: 100%;
             }
 
             .vertical-carousel-container {
@@ -647,6 +659,7 @@ function getRivalLogoSrc(rivalId: string) {
                 display: flex;
                 scroll-behavior: smooth;
                 -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+                scroll-snap-type: x mandatory; /* Snap to items */
             }
 
             .rival-thumbnails-wrapper::before,
@@ -665,6 +678,7 @@ function getRivalLogoSrc(rivalId: string) {
             .rival-thumbnail {
                 width: 120px;
                 height: 100px;
+                scroll-snap-align: center; /* Snap each item to center */
             }
 
             .rival-thumbnail:hover {
