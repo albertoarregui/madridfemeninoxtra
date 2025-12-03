@@ -188,6 +188,7 @@ function getTeamLogo(teamName: string) {
                         const month = (date.getMonth() + 1)
                             .toString()
                             .padStart(2, "0");
+                        const year = date.getFullYear().toString().slice(-2);
 
                         let timeDisplay = "00:00";
                         if (timeString && timeString !== "00:00") {
@@ -204,7 +205,7 @@ function getTeamLogo(teamName: string) {
                             timeDisplay = `${hours}:${minutes}`;
                         }
 
-                        return `${day}.${month}. ${timeDisplay}`;
+                        return `${day}.${month}.${year} ${timeDisplay}`;
                     } catch {
                         return "-";
                     }
@@ -242,9 +243,6 @@ function getTeamLogo(teamName: string) {
                                     {match.competicion_nombre}
                                 </span>
                             </div>
-                            <a href="#" class="standings-link">
-                                Standings
-                            </a>
                         </div>
 
                         <a
@@ -256,7 +254,10 @@ function getTeamLogo(teamName: string) {
                             </div>
 
                             <div class="match-teams-score">
-                                <div class="team">
+                                <div class="team team-local">
+                                    <span class="team-name">
+                                        {match.club_local}
+                                    </span>
                                     {localLogo ? (
                                         <img
                                             src={localLogo.src}
@@ -266,9 +267,6 @@ function getTeamLogo(teamName: string) {
                                     ) : (
                                         <div class="team-shield-placeholder" />
                                     )}
-                                    <span class="team-name">
-                                        {match.club_local}
-                                    </span>
                                 </div>
 
                                 <div class="score-wrapper">
@@ -279,7 +277,7 @@ function getTeamLogo(teamName: string) {
                                     </span>
                                 </div>
 
-                                <div class="team">
+                                <div class="team team-visitor">
                                     {visitanteLogo ? (
                                         <img
                                             src={visitanteLogo.src}
@@ -341,7 +339,6 @@ function getTeamLogo(teamName: string) {
             }
         });
 
-        // Show/hide no results message
         const existingMessage = matchesContainer?.querySelector(
             ".no-results-message",
         );
@@ -363,7 +360,7 @@ function getTeamLogo(teamName: string) {
 <style>
     .match-list-ui {
         width: 100%;
-        max-width: 680px;
+        max-width: 800px; /* Increased max-width for better desktop view */
         margin: 0 auto;
     }
 
@@ -470,23 +467,12 @@ function getTeamLogo(teamName: string) {
         letter-spacing: 0.5px;
     }
 
-    .standings-link {
-        color: #5a9bc7;
-        font-size: 0.85rem;
-        text-decoration: underline;
-        transition: color 0.2s;
-    }
-
-    .standings-link:hover {
-        color: #4a8bb7;
-    }
-
     .match-detail {
         display: grid;
-        grid-template-columns: 100px 1fr 50px;
+        grid-template-columns: 80px 1fr 40px; /* Adjusted grid */
         align-items: center;
         padding: 1rem;
-        gap: 1.5rem;
+        gap: 1rem;
         text-decoration: none;
         transition: background 0.3s ease;
     }
@@ -499,19 +485,32 @@ function getTeamLogo(teamName: string) {
         color: #6c757d;
         font-size: 0.9rem;
         font-weight: 500;
+        text-align: center; /* Center date */
     }
 
     .match-teams-score {
         display: grid;
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        gap: 1.5rem;
+        gap: 1rem;
     }
 
     .team {
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        flex: 1;
+        min-width: 0; /* Allow text truncation */
+    }
+
+    .team-local {
+        justify-content: flex-end; /* Align local team to right */
+        text-align: right;
+    }
+
+    .team-visitor {
+        justify-content: flex-start; /* Align visitor team to left */
+        text-align: left;
     }
 
     .team-shield {
@@ -543,6 +542,7 @@ function getTeamLogo(teamName: string) {
         align-items: center;
         gap: 0.5rem;
         justify-content: center;
+        min-width: 60px; /* Ensure space for score */
     }
 
     .score {
@@ -592,19 +592,28 @@ function getTeamLogo(teamName: string) {
         font-size: 1rem;
     }
 
-    @media (max-width: 768px) {
+    /* Mobile Responsive Styles */
+    @media (max-width: 640px) {
         .match-detail {
-            grid-template-columns: 80px 1fr 40px;
-            gap: 1rem;
+            grid-template-columns: 1fr; /* Stack vertically on mobile */
+            grid-template-rows: auto auto auto;
+            gap: 0.5rem;
             padding: 0.75rem;
+            text-align: center;
         }
 
         .match-date-time {
             font-size: 0.8rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .match-teams-score {
+            width: 100%;
+            justify-content: center;
         }
 
         .team-name {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
         .team-shield,
@@ -613,32 +622,26 @@ function getTeamLogo(teamName: string) {
             height: 24px;
         }
 
-        .competition-logo {
-            width: 20px;
-            height: 20px;
-        }
-
         .score {
-            font-size: 1rem;
-        }
-
-        .vs {
-            font-size: 0.65rem;
-        }
-
-        .filters-container select {
-            min-width: 150px;
-            font-size: 0.85rem;
+            font-size: 1.1rem;
         }
 
         .result-indicator {
+            margin: 0 auto; /* Center indicator */
             width: 28px;
             height: 28px;
             font-size: 0.75rem;
         }
 
-        .match-teams-score {
-            gap: 1rem;
+        /* Hide result indicator on very small screens if needed, or position absolutely */
+        .result-indicator {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+
+        .match-item {
+            position: relative; /* For absolute positioning of indicator */
         }
     }
 </style>
