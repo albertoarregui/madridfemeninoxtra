@@ -22,25 +22,56 @@ interface Props {
 
 const { matches, seasons = [], competitions = [] } = Astro.props;
 
-// Importar todos los escudos
+// Importar todos los escudos de equipos
 const teamLogos = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/escudos/*.png",
     { eager: true },
 );
 
+// Importar todos los logos de competiciones
+const competitionLogos = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/competiciones/*.png",
+    { eager: true },
+);
+
+// Función para obtener el logo de una competición
+function getCompetitionLogo(competitionName: string) {
+    const normalizedName = competitionName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/:/g, "")
+        .replace(/-/g, "_")
+        .trim();
+
+    const competitionMap: Record<string, string> = {
+        spain_liga_f_women: "liga_f",
+        liga_f: "liga_f",
+        europe_champions_league_women_league_phase: "uwcl",
+        champions_league_women: "uwcl",
+        uwcl: "uwcl",
+        copa_de_la_reina: "copa_de_la_reina",
+        supercopa_de_espana: "supercopa_de_espana",
+    };
+
+    const mappedName = competitionMap[normalizedName] || normalizedName;
+    const logoPath = `/src/assets/competiciones/${mappedName}.png`;
+
+    return competitionLogos[logoPath]?.default;
+}
+
 // Función para obtener el escudo de un equipo
 function getTeamLogo(teamName: string) {
-    // Normalizar nombre del equipo para buscar el archivo
     const normalizedName = teamName
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-        .replace(/\s+/g, "_") // Espacios a guiones bajos
-        .replace(/\./g, "") // Eliminar puntos
-        .replace(/w$/i, "") // Eliminar W al final
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/\./g, "")
+        .replace(/w$/i, "")
         .trim();
 
-    // Casos especiales
     const teamNameMap: Record<string, string> = {
         real_madrid_: "real_madrid",
         fc_barcelona: "fc_barcelona",
@@ -116,11 +147,11 @@ function getTeamLogo(teamName: string) {
                             .toString()
                             .padStart(2, "0");
                         const hours = date
-                            .getHours()
+                            .getUTCHours()
                             .toString()
                             .padStart(2, "0");
                         const minutes = date
-                            .getMinutes()
+                            .getUTCMinutes()
                             .toString()
                             .padStart(2, "0");
                         return `${day}.${month}. ${hours}:${minutes}`;
@@ -138,6 +169,9 @@ function getTeamLogo(teamName: string) {
 
                 const localLogo = getTeamLogo(match.club_local);
                 const visitanteLogo = getTeamLogo(match.club_visitante);
+                const competitionLogo = getCompetitionLogo(
+                    match.competicion_nombre,
+                );
 
                 return (
                     <div
@@ -146,9 +180,18 @@ function getTeamLogo(teamName: string) {
                         data-competition={match.competicion_nombre}
                     >
                         <div class="match-competition">
-                            <span class="competition-name">
-                                {match.competicion_nombre}
-                            </span>
+                            <div class="competition-info">
+                                {competitionLogo && (
+                                    <img
+                                        src={competitionLogo.src}
+                                        alt={match.competicion_nombre}
+                                        class="competition-logo"
+                                    />
+                                )}
+                                <span class="competition-name">
+                                    {match.competicion_nombre}
+                                </span>
+                            </div>
                             <a href="#" class="standings-link">
                                 Standings
                             </a>
@@ -174,12 +217,17 @@ function getTeamLogo(teamName: string) {
                                         <div class="team-shield-placeholder" />
                                     )}
                                     <span class="team-name">
-                                        {match.club_local === "Real Madrid W"
-                                            ? "Real Madrid W"
-                                            : match.club_local}
+                                        {match.club_local}
                                     </span>
                                 </div>
-                                <div class="score">{match.goles_rm}</div>
+
+                                <div class="score-wrapper">
+                                    <span class="score">{match.goles_rm}</span>
+                                    <span class="vs">vs</span>
+                                    <span class="score">
+                                        {match.goles_rival}
+                                    </span>
+                                </div>
 
                                 <div class="team">
                                     {visitanteLogo ? (
@@ -192,13 +240,9 @@ function getTeamLogo(teamName: string) {
                                         <div class="team-shield-placeholder" />
                                     )}
                                     <span class="team-name">
-                                        {match.club_visitante ===
-                                        "Real Madrid W"
-                                            ? "Real Madrid W"
-                                            : match.club_visitante}
+                                        {match.club_visitante}
                                     </span>
                                 </div>
-                                <div class="score">{match.goles_rival}</div>
                             </div>
 
                             <div class={`result-indicator ${resultClass}`}>
@@ -247,7 +291,6 @@ function getTeamLogo(teamName: string) {
             }
         });
 
-        // Show/hide no results message
         const existingMessage = matchesContainer?.querySelector(
             ".no-results-message",
         );
@@ -293,6 +336,10 @@ function getTeamLogo(teamName: string) {
         min-width: 220px;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
     }
 
     .filters-container select:hover {
@@ -336,6 +383,18 @@ function getTeamLogo(teamName: string) {
         border-bottom: 1px solid #e9ecef;
     }
 
+    .competition-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .competition-logo {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
     .competition-name {
         color: #6c757d;
         font-size: 0.85rem;
@@ -362,11 +421,11 @@ function getTeamLogo(teamName: string) {
         padding: 1rem;
         gap: 1.5rem;
         text-decoration: none;
-        transition: background 0.2s;
+        transition: background 0.3s ease;
     }
 
     .match-detail:hover {
-        background: #f8f9fa;
+        background: rgba(255, 222, 89, 0.15);
     }
 
     .match-date-time {
@@ -377,9 +436,9 @@ function getTeamLogo(teamName: string) {
 
     .match-teams-score {
         display: grid;
-        grid-template-columns: 1fr auto 1fr auto;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        gap: 1rem;
+        gap: 1.5rem;
     }
 
     .team {
@@ -412,12 +471,24 @@ function getTeamLogo(teamName: string) {
         text-overflow: ellipsis;
     }
 
+    .score-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
     .score {
         color: #2b2b2b;
         font-size: 1.2rem;
         font-weight: 700;
-        min-width: 20px;
-        text-align: center;
+    }
+
+    .vs {
+        color: #9ca3af;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
     }
 
     .result-indicator {
@@ -475,8 +546,17 @@ function getTeamLogo(teamName: string) {
             height: 24px;
         }
 
+        .competition-logo {
+            width: 20px;
+            height: 20px;
+        }
+
         .score {
             font-size: 1rem;
+        }
+
+        .vs {
+            font-size: 0.65rem;
         }
 
         .filters-container select {
@@ -488,6 +568,10 @@ function getTeamLogo(teamName: string) {
             width: 28px;
             height: 28px;
             font-size: 0.75rem;
+        }
+
+        .match-teams-score {
+            gap: 1rem;
         }
     }
 </style>
