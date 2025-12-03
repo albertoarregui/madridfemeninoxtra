@@ -48,71 +48,89 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     </div>
 
     <!-- Contenedor de Partidos -->
-    <div id="matches-container" class="matches-grid">
+    <div id="matches-container" class="matches-container">
         {
             matches.map((match) => {
-                const resultado = match.resultado || "-";
-                const resultClass =
-                    resultado === "V"
-                        ? "victoria"
-                        : resultado === "D"
-                          ? "derrota"
-                          : "empate";
-                const resultText =
-                    resultado === "V"
-                        ? "Victoria"
-                        : resultado === "D"
-                          ? "Derrota"
-                          : "Empate";
-
                 const formatDate = (dateString: string) => {
                     if (!dateString) return "-";
                     try {
                         const date = new Date(dateString);
-                        return date.toLocaleDateString("es-ES", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                        });
+                        const day = date.getDate().toString().padStart(2, "0");
+                        const month = (date.getMonth() + 1)
+                            .toString()
+                            .padStart(2, "0");
+                        const hours = date
+                            .getHours()
+                            .toString()
+                            .padStart(2, "0");
+                        const minutes = date
+                            .getMinutes()
+                            .toString()
+                            .padStart(2, "0");
+                        return `${day}.${month}. ${hours}:${minutes}`;
                     } catch {
                         return "-";
                     }
                 };
 
+                const resultClass =
+                    match.resultado === "V"
+                        ? "win"
+                        : match.resultado === "D"
+                          ? "loss"
+                          : "draw";
+
                 return (
-                    <a
-                        href={`/partidos/${match.slug}`}
-                        class="match-card-link"
+                    <div
+                        class="match-item"
                         data-season={match.temporada_nombre}
                         data-competition={match.competicion_nombre}
                     >
-                        <div class="match-card">
-                            <div class="match-header">
-                                <p class="competition-name">
-                                    {match.competicion_nombre || "-"}
-                                </p>
-                                <p class="match-date">
-                                    {formatDate(match.fecha)}
-                                </p>
+                        <div class="match-competition">
+                            <span class="competition-name">
+                                {match.competicion_nombre}
+                            </span>
+                            <a href="#" class="standings-link">
+                                Standings
+                            </a>
+                        </div>
+
+                        <a
+                            href={`/partidos/${match.slug}`}
+                            class="match-detail"
+                        >
+                            <div class="match-date-time">
+                                {formatDate(match.fecha)}
                             </div>
 
-                            <div class="match-teams">
-                                <p class="team-name">{match.club_local}</p>
-                                <div class="match-score">
-                                    <span class={`score ${resultClass}`}>
-                                        {match.goles_rm} - {match.goles_rival}
+                            <div class="match-teams-score">
+                                <div class="team">
+                                    <div class="team-shield" />
+                                    <span class="team-name">
+                                        {match.club_local === "Real Madrid W"
+                                            ? "Real Madrid W"
+                                            : match.club_local}
                                     </span>
                                 </div>
-                                <p class="team-name">{match.club_visitante}</p>
+                                <div class="score">{match.goles_rm}</div>
+
+                                <div class="team">
+                                    <div class="team-shield" />
+                                    <span class="team-name">
+                                        {match.club_visitante ===
+                                        "Real Madrid W"
+                                            ? "Real Madrid W"
+                                            : match.club_visitante}
+                                    </span>
+                                </div>
+                                <div class="score">{match.goles_rival}</div>
                             </div>
 
-                            <div class="match-result">
-                                <span class={`result-badge ${resultClass}`}>
-                                    {resultText}
-                                </span>
+                            <div class={`result-indicator ${resultClass}`}>
+                                {match.resultado}
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
                 );
             })
         }
@@ -131,15 +149,14 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     function filterMatches() {
         const selectedSeason = seasonSelect?.value || "todos";
         const selectedCompetition = competitionSelect?.value || "todos";
-        const matchCards =
-            matchesContainer?.querySelectorAll(".match-card-link");
+        const matchItems = matchesContainer?.querySelectorAll(".match-item");
 
         let visibleCount = 0;
 
-        matchCards?.forEach((card) => {
-            const cardElement = card as HTMLElement;
-            const season = cardElement.dataset.season || "";
-            const competition = cardElement.dataset.competition || "";
+        matchItems?.forEach((item) => {
+            const itemElement = item as HTMLElement;
+            const season = itemElement.dataset.season || "";
+            const competition = itemElement.dataset.competition || "";
 
             const matchesSeason =
                 selectedSeason === "todos" || season === selectedSeason;
@@ -148,10 +165,10 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
                 competition === selectedCompetition;
 
             if (matchesSeason && matchesCompetition) {
-                cardElement.style.display = "";
+                itemElement.style.display = "";
                 visibleCount++;
             } else {
-                cardElement.style.display = "none";
+                itemElement.style.display = "none";
             }
         });
 
@@ -173,3 +190,196 @@ const { matches, seasons = [], competitions = [] } = Astro.props;
     seasonSelect?.addEventListener("change", filterMatches);
     competitionSelect?.addEventListener("change", filterMatches);
 </script>
+
+<style>
+    .match-list-ui {
+        width: 100%;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    .filters-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .filters-container select {
+        padding: 0.75rem 1rem;
+        background: #0a2a43;
+        color: #ffffff;
+        border: 1px solid #1a4565;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        min-width: 200px;
+    }
+
+    .filters-container select:focus {
+        outline: none;
+        border-color: #ffd700;
+    }
+
+    .matches-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .match-item {
+        background: #0a2538;
+        border-bottom: 1px solid #163b54;
+    }
+
+    .match-competition {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #0d3047;
+        border-bottom: 1px solid #163b54;
+    }
+
+    .competition-name {
+        color: #8ba6ba;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .standings-link {
+        color: #5a9bc7;
+        font-size: 0.85rem;
+        text-decoration: underline;
+        transition: color 0.2s;
+    }
+
+    .standings-link:hover {
+        color: #7db3d9;
+    }
+
+    .match-detail {
+        display: grid;
+        grid-template-columns: 100px 1fr 50px;
+        align-items: center;
+        padding: 1rem;
+        gap: 1.5rem;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .match-detail:hover {
+        background: #0d3248;
+    }
+
+    .match-date-time {
+        color: #8ba6ba;
+        font-size: 0.9rem;
+        font-weight: 400;
+    }
+
+    .match-teams-score {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .team {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .team-shield {
+        width: 24px;
+        height: 24px;
+        background: #1a4565;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .team-name {
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .score {
+        color: #ffffff;
+        font-size: 1.1rem;
+        font-weight: 600;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .result-indicator {
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .result-indicator.win {
+        background: #2ecc71;
+        color: #ffffff;
+    }
+
+    .result-indicator.loss {
+        background: #e74c3c;
+        color: #ffffff;
+    }
+
+    .result-indicator.draw {
+        background: #f39c12;
+        color: #ffffff;
+    }
+
+    .no-results-message {
+        color: #8ba6ba;
+        text-align: center;
+        padding: 3rem 1rem;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .match-detail {
+            grid-template-columns: 80px 1fr 40px;
+            gap: 1rem;
+            padding: 0.75rem;
+        }
+
+        .match-date-time {
+            font-size: 0.8rem;
+        }
+
+        .team-name {
+            font-size: 0.85rem;
+        }
+
+        .score {
+            font-size: 1rem;
+        }
+
+        .filters-container select {
+            min-width: 150px;
+            font-size: 0.85rem;
+        }
+
+        .result-indicator {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
