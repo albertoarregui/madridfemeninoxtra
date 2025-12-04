@@ -51,6 +51,7 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.nombre,
                 c.ciudad,
                 c.pais,
+                c.slug,
                 c.id_estadio,
                 e.nombre AS estadio_nombre,
                 e.ciudad AS estadio_ciudad,
@@ -73,11 +74,11 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 nombre: cleanApiValue(rival.nombre) || '',
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
+                slug: rival.slug || slugify(rival.nombre),
                 id_estadio: rival.id_estadio,
                 estadio_nombre: cleanApiValue(rival.estadio_nombre) || '',
                 estadio_ciudad: cleanApiValue(rival.estadio_ciudad) || '',
                 estadio_capacidad: rival.estadio_capacidad || null,
-                slug: slugify(rival.nombre),
                 shieldUrl: getRivalShieldUrl(rival),
             };
         });
