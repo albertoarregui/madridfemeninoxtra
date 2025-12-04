@@ -170,9 +170,23 @@ import "../styles/global.css";
                     document.querySelector(".article-title").innerHTML =
                         post.title.rendered;
 
-                    // Update Subtitle (Excerpt)
-                    document.querySelector(".article-subtitle").innerHTML =
-                        post.excerpt.rendered;
+                    // Update Subtitle
+                    // Try to get from custom fields (meta), ACF, or fallback to excerpt
+                    let subtitle = "";
+                    if (post.meta && post.meta.subtitulo) {
+                        subtitle = post.meta.subtitulo;
+                    } else if (post.meta && post.meta._subtitulo) {
+                        subtitle = post.meta._subtitulo;
+                    } else if (post.acf && post.acf.subtitulo) {
+                        subtitle = post.acf.subtitulo;
+                    } else if (post.excerpt && post.excerpt.rendered) {
+                        subtitle = post.excerpt.rendered;
+                    }
+
+                    if (subtitle) {
+                        document.querySelector(".article-subtitle").innerHTML =
+                            subtitle;
+                    }
 
                     // Update Date
                     document.querySelector(".article-date").textContent =
