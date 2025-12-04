@@ -47,23 +47,17 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
 
         const query = `
             SELECT 
-                c.id_club,
-                c.nombre,
-                c.ciudad,
-                c.pais,
-                c.slug,
-                c.id_estadio,
-                e.nombre AS estadio_nombre,
-                e.ciudad AS estadio_ciudad,
-                e.capacidad AS estadio_capacidad
+                id_club,
+                nombre,
+                ciudad,
+                pais,
+                slug
             FROM 
-                clubes c
-            LEFT JOIN
-                estadios e ON c.id_estadio = e.id_estadio
+                clubes
             WHERE
-                c.nombre != 'Real Madrid Femenino'
+                nombre != 'Real Madrid Femenino'
             ORDER BY 
-                c.nombre ASC
+                nombre ASC
         `;
 
         const result = await client.execute(query);
@@ -75,10 +69,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
                 slug: rival.slug || slugify(rival.nombre),
-                id_estadio: rival.id_estadio,
-                estadio_nombre: cleanApiValue(rival.estadio_nombre) || '',
-                estadio_ciudad: cleanApiValue(rival.estadio_ciudad) || '',
-                estadio_capacidad: rival.estadio_capacidad || null,
                 shieldUrl: getRivalShieldUrl(rival),
             };
         });
