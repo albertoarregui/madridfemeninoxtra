@@ -59,7 +59,7 @@ export const GET: APIRoute = async () => {
                 posts.forEach((post: any) => {
                     const lastmod = new Date(post.modified).toISOString().split('T')[0];
                     urls.push({
-                        loc: `${SITE_URL}/noticia/${post.slug}`,
+                        loc: `${SITE_URL}/noticias/${post.slug}`,
                         lastmod,
                         changefreq: 'weekly',
                         priority: 0.8,

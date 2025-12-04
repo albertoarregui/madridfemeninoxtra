@@ -5,6 +5,15 @@ import { fetchPlayersDirectly } from "../../utils/players";
 export async function getStaticPaths() {
     const allPlayers = await fetchPlayersDirectly();
 
+    console.log(`[DEBUG] Found ${allPlayers.length} players from DB`);
+    allPlayers.forEach((p) => {
+        if (p.slug.includes("misa")) {
+            console.log(
+                `[DEBUG] Misa found: Name="${p.nombre}", Slug="${p.slug}"`,
+            );
+        }
+    });
+
     return allPlayers.map((player) => ({
         params: { slug: player.slug },
         props: { player },
