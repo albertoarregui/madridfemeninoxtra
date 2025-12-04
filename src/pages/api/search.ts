@@ -32,7 +32,7 @@ export const GET: APIRoute = async ({ url }) => {
                     type: 'player',
                     title: player.name,
                     subtitle: player.position || '',
-                    url: `/jugadoras/${player.id}`,
+                    url: `/jugadoras/${player.id.replace(/_/g, "-")}`,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
