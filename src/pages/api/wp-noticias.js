@@ -1,7 +1,7 @@
-const WORDPRESS_URL = import.meta.env.WORDPRESS_API_URL || 'https://cms.madridfemeninoxtra.com';
+const WORDPRESS_URL = import.meta.env.WORDPRESS_API_URL || 'http://cms.madridfemeninoxtra.com';
 const WP_API_ENDPOINT = `${WORDPRESS_URL}/wp-json/wp/v2/posts`;
 
-const WP_API_ENDPOINT_HTTP = WP_API_ENDPOINT.replace('https://', 'http://');
+const WP_API_ENDPOINT_HTTPS = WP_API_ENDPOINT.replace('http://', 'https://');
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -27,23 +27,19 @@ export const GET = async ({ url }) => {
         wpUrl.searchParams.set('per_page', perPage);
         wpUrl.searchParams.set('_embed', 'true');
 
-        // Create an agent that ignores SSL errors
-        const https = await import('https');
-        const agent = new https.Agent({
-            rejectUnauthorized: false
-        });
+        console.log('Fetching from:', wpUrl.toString());
 
+        let response;
         try {
-            response = await fetch(wpUrl.toString(), { agent });
+            response = await fetch(wpUrl.toString());
         } catch (error) {
-            console.warn('Fetch failed, trying fallback:', error.message);
-            // If it fails, try HTTP as last resort (though likely redirects to HTTPS)
-            const wpUrlHttp = new URL(WP_API_ENDPOINT_HTTP);
-            wpUrlHttp.searchParams.set('page', page);
-            wpUrlHttp.searchParams.set('per_page', perPage);
-            wpUrlHttp.searchParams.set('_embed', 'true');
-            response = await fetch(wpUrlHttp.toString(), { agent });
-            usedHttpFallback = true;
+            console.warn('HTTP fetch failed, trying HTTPS:', error.message);
+            // Try HTTPS fallback (though certificate is invalid)
+            const wpUrlHttps = new URL(WP_API_ENDPOINT_HTTPS);
+            wpUrlHttps.searchParams.set('page', page);
+            wpUrlHttps.searchParams.set('per_page', perPage);
+            wpUrlHttps.searchParams.set('_embed', 'true');
+            response = await fetch(wpUrlHttps.toString());
         }
 
         if (!response.ok) {
@@ -78,8 +74,7 @@ export const GET = async ({ url }) => {
                     perPage: parseInt(perPage),
                     totalPosts: totalPosts ? parseInt(totalPosts) : null,
                     totalPages: totalPages ? parseInt(totalPages) : null
-                },
-                usedHttpFallback
+                }
             }),
             { status: 200, headers: CORS_HEADERS }
         );
