@@ -1,7 +1,7 @@
-const WORDPRESS_URL = import.meta.env.WORDPRESS_API_URL || 'http://cms.madridfemeninoxtra.com';
+const WORDPRESS_URL = import.meta.env.WORDPRESS_API_URL || 'https://cms.madridfemeninoxtra.com';
 const WP_API_ENDPOINT = `${WORDPRESS_URL}/wp-json/wp/v2/posts`;
 
-const WP_API_ENDPOINT_HTTPS = WP_API_ENDPOINT.replace('http://', 'https://');
+const WP_API_ENDPOINT_HTTP = WP_API_ENDPOINT.replace('https://', 'http://');
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -33,13 +33,13 @@ export const GET = async ({ url }) => {
         try {
             response = await fetch(wpUrl.toString());
         } catch (error) {
-            console.warn('HTTP fetch failed, trying HTTPS:', error.message);
-            // Try HTTPS fallback (though certificate is invalid)
-            const wpUrlHttps = new URL(WP_API_ENDPOINT_HTTPS);
-            wpUrlHttps.searchParams.set('page', page);
-            wpUrlHttps.searchParams.set('per_page', perPage);
-            wpUrlHttps.searchParams.set('_embed', 'true');
-            response = await fetch(wpUrlHttps.toString());
+            console.warn('HTTPS fetch failed, trying HTTP:', error.message);
+            // Try HTTP fallback
+            const wpUrlHttp = new URL(WP_API_ENDPOINT_HTTP);
+            wpUrlHttp.searchParams.set('page', page);
+            wpUrlHttp.searchParams.set('per_page', perPage);
+            wpUrlHttp.searchParams.set('_embed', 'true');
+            response = await fetch(wpUrlHttp.toString());
         }
 
         if (!response.ok) {
