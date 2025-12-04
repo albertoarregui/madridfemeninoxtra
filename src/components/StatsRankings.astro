@@ -244,11 +244,12 @@ const { goalsData, seasons, competitions } = Astro.props;
                 <tr>
                     <td class="pos-cell text-center">${index + 1}</td>
                     <td class="player-cell">
-                        <div class="flex items-center gap-3">
-                            <div class="player-img-container">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
                                 <img 
                                     src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
                                 />
                             </div>
                             <div class="player-name">${item.jugadora}</div>
@@ -272,11 +273,12 @@ const { goalsData, seasons, competitions } = Astro.props;
                 <tr>
                     <td class="pos-cell text-center">${index + 1}</td>
                     <td class="player-cell">
-                        <div class="flex items-center gap-3">
-                            <div class="player-img-container">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
                                 <img 
                                     src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
                                 />
                             </div>
                             <div class="player-name">${item.jugadora}</div>
@@ -300,11 +302,208 @@ const { goalsData, seasons, competitions } = Astro.props;
                 <tr>
                     <td class="pos-cell text-center">${index + 1}</td>
                     <td class="player-cell">
-                        <div class="flex items-center gap-3">
-                            <div class="player-img-container">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
                                 <img 
                                     src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                />
+                            </div>
+                            <div class="player-name">${item.jugadora}</div>
+                        </div>
+                    </td>
+                    <td class="stat-cell text-center">${item.total}</td>
+                </tr>
+            `,
+                )
+                .join("");
+        }
+    }
+
+    // Initial calculation
+    calculateRankings();
+
+```
+                            <th scope="col" class="w-16 text-center">Pos</th>
+                            <th scope="col">Jugadora</th>
+                            <th scope="col" class="text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contributors-body">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script define:vars={{ goalsData }}>
+    const seasonSelect = document.getElementById("filtro-temporada");
+    const competitionSelect = document.getElementById("filtro-competicion");
+    const scorersBody = document.getElementById("scorers-body");
+    const assistersBody = document.getElementById("assisters-body");
+    const contributorsBody = document.getElementById("contributors-body");
+
+    // Helper function to get player image URL
+    function getPlayerImage(playerName) {
+        if (!playerName) return "";
+        const slug = playerName
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, "_");
+        return `/assets/jugadoras/${slug}.png`;
+    }
+
+    function calculateRankings() {
+        const selectedSeason = seasonSelect.value;
+        const selectedCompetition = competitionSelect.value;
+
+        // Filter data
+        const filteredData = goalsData.filter((item) => {
+            const matchesSeason =
+                selectedSeason === "todos" || item.temporada === selectedSeason;
+            const matchesCompetition =
+                selectedCompetition === "todos" ||
+                item.competicion === selectedCompetition;
+            return matchesSeason && matchesCompetition;
+        });
+
+        console.log("Datos filtrados:", filteredData.length, "registros");
+        console.log("Primeros 3 registros:", filteredData.slice(0, 3));
+
+        // Calculate scorers
+        const scorersMap = {};
+        filteredData.forEach((item) => {
+            if (item.goleadora) {
+                scorersMap[item.goleadora] =
+                    (scorersMap[item.goleadora] || 0) + 1;
+            }
+        });
+
+        const sortedScorers = Object.entries(scorersMap)
+            .map(([jugadora, goles]) => ({ jugadora, goles }))
+            .sort((a, b) => b.goles - a.goles);
+
+        console.log("Goleadoras calculadas:", sortedScorers.length);
+        console.log("Top 3 goleadoras:", sortedScorers.slice(0, 3));
+
+        // Calculate assisters
+        const assistersMap = {};
+        filteredData.forEach((item) => {
+            if (item.asistente) {
+                assistersMap[item.asistente] =
+                    (assistersMap[item.asistente] || 0) + 1;
+            }
+        });
+
+        const sortedAssisters = Object.entries(assistersMap)
+            .map(([jugadora, asistencias]) => ({ jugadora, asistencias }))
+            .sort((a, b) => b.asistencias - a.asistencias);
+
+        // Calculate contributors (goals + assists)
+        const contributorsMap = {};
+        filteredData.forEach((item) => {
+            if (item.goleadora) {
+                contributorsMap[item.goleadora] = contributorsMap[
+                    item.goleadora
+                ] || { goles: 0, asistencias: 0 };
+                contributorsMap[item.goleadora].goles += 1;
+            }
+            if (item.asistente) {
+                contributorsMap[item.asistente] = contributorsMap[
+                    item.asistente
+                ] || { goles: 0, asistencias: 0 };
+                contributorsMap[item.asistente].asistencias += 1;
+            }
+        });
+
+        const sortedContributors = Object.entries(contributorsMap)
+            .map(([jugadora, stats]) => ({
+                jugadora,
+                total: stats.goles + stats.asistencias,
+                goles: stats.goles,
+                asistencias: stats.asistencias,
+            }))
+            .sort((a, b) => b.total - a.total);
+
+        // Update scorers table
+        if (sortedScorers.length === 0) {
+            scorersBody.innerHTML =
+                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
+        } else {
+            scorersBody.innerHTML = sortedScorers
+                .map(
+                    (item, index) => `
+                <tr>
+                    <td class="pos-cell text-center">${index + 1}</td>
+                    <td class="player-cell">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
+                                <img 
+                                    src="${getPlayerImage(item.jugadora)}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                />
+                            </div>
+                            <div class="player-name">${item.jugadora}</div>
+                        </div>
+                    </td>
+                    <td class="stat-cell text-center">${item.goles}</td>
+                </tr>
+            `,
+                )
+                .join("");
+        }
+
+        // Update assisters table
+        if (sortedAssisters.length === 0) {
+            assistersBody.innerHTML =
+                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
+        } else {
+            assistersBody.innerHTML = sortedAssisters
+                .map(
+                    (item, index) => `
+                <tr>
+                    <td class="pos-cell text-center">${index + 1}</td>
+                    <td class="player-cell">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
+                                <img 
+                                    src="${getPlayerImage(item.jugadora)}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                />
+                            </div>
+                            <div class="player-name">${item.jugadora}</div>
+                        </div>
+                    </td>
+                    <td class="stat-cell text-center">${item.asistencias}</td>
+                </tr>
+            `,
+                )
+                .join("");
+        }
+
+        // Update contributors table
+        if (sortedContributors.length === 0) {
+            contributorsBody.innerHTML =
+                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
+        } else {
+            contributorsBody.innerHTML = sortedContributors
+                .map(
+                    (item, index) => `
+                <tr>
+                    <td class="pos-cell text-center">${index + 1}</td>
+                    <td class="player-cell">
+                        <div class="flex items-center gap-2">
+                            <div style="width: 1.2rem; height: 1.2rem; min-width: 1.2rem; min-height: 1.2rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block;">
+                                <img 
+                                    src="${getPlayerImage(item.jugadora)}" 
+                                    alt="${item.jugadora}"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
                                 />
                             </div>
                             <div class="player-name">${item.jugadora}</div>
@@ -332,13 +531,13 @@ const { goalsData, seasons, competitions } = Astro.props;
         margin: 0 auto;
     }
 
-    /* Filters Styles - Matched with MatchList */
+    /* Filters Styles */
     .filters-container {
         display: flex;
         gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
-        justify-content: center; /* Centered like MatchList */
+        justify-content: center;
     }
 
     .filter-wrapper {
@@ -366,7 +565,7 @@ const { goalsData, seasons, competitions } = Astro.props;
         background: #ffffff;
         color: #2b2b2b;
         border: 2px solid #ffde59;
-        border-radius: 25px; /* Keeping rounded selects as per MatchList style */
+        border-radius: 25px;
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
@@ -392,12 +591,9 @@ const { goalsData, seasons, competitions } = Astro.props;
     /* Ranking Cards */
     .ranking-card {
         background: #ffffff;
-        /* Restored shadow but kept square (no rounded-xl) */
-        box-shadow:
-            0 4px 6px -1px rgba(0, 0, 0, 0.1),
-            0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Tailwind shadow-md */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         border: 1px solid #f0f0f0;
-        border-radius: 0; /* Explicitly square */
+        border-radius: 0;
         overflow: hidden;
     }
 
@@ -407,10 +603,10 @@ const { goalsData, seasons, competitions } = Astro.props;
         color: #2b2b2b;
         padding: 1rem;
         border-bottom: 1px solid #e9ecef;
-        background: #f8f9fa; /* MatchList header bg */
+        background: #f8f9fa;
         margin: 0;
-        text-align: center; /* Centered title */
-        text-transform: uppercase; /* Uppercase title */
+        text-align: center;
+        text-transform: uppercase;
     }
 
     /* Table Styles */
@@ -437,10 +633,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         text-align: center;
     }
 
-    th.text-right {
-        text-align: right;
-    }
-
     tbody tr {
         border-bottom: 1px solid #f0f0f0;
         transition: background 0.3s ease;
@@ -451,7 +643,7 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     tbody tr:hover {
-        background: rgba(255, 222, 89, 0.15); /* MatchList hover effect */
+        background: rgba(255, 222, 89, 0.15);
     }
 
     td {
@@ -469,28 +661,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         vertical-align: middle;
     }
 
-    .player-cell .player-img-container {
-        width: 1.2rem !important;
-        height: 1.2rem !important;
-        min-width: 1.2rem !important;
-        min-height: 1.2rem !important;
-        max-width: 1.2rem !important;
-        max-height: 1.2rem !important;
-        flex-shrink: 0;
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-        display: inline-block;
-    }
-
-    .player-cell .player-img-container img {
-        width: 100% !important;
-        height: 100% !important;
-        max-width: 100% !important;
-        max-height: 100% !important;
-        object-fit: cover;
-        display: block;
-    }
-
     .player-name {
         font-size: 0.875rem;
         font-weight: 600;
@@ -498,10 +668,9 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     .stat-cell {
-        /* text-align: right; - Removed to allow class override */
         font-size: 0.875rem;
         font-weight: 700;
-        color: #2b2b2b; /* Changed from blue-600 to match MatchList text color */
+        color: #2b2b2b;
     }
 
     .text-center {
@@ -515,3 +684,4 @@ const { goalsData, seasons, competitions } = Astro.props;
         font-size: 0.9rem;
     }
 </style>
+```
