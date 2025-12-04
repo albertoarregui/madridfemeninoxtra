@@ -17,18 +17,8 @@ interface Noticia {
 	categories: string[];
 }
 
+// Las noticias se cargarán en el cliente
 let noticias: Noticia[] = [];
-try {
-	const response = await fetch(
-		`${Astro.url.origin}/api/wp-noticias?per_page=5`,
-	);
-	if (response.ok) {
-		const data = await response.json();
-		noticias = data.posts || [];
-	}
-} catch (error) {
-	console.error("Error fetching news:", error);
-}
 
 function formatDate(dateString: string) {
 	const date = new Date(dateString);
@@ -116,4 +106,81 @@ function formatDate(dateString: string) {
 			<ProximoPartido />
 		</aside>
 	</div>
+
+	<script is:inline>
+		const WP_URL =
+			"http://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=5&_embed=true";
+
+		async function loadNews() {
+			const newsGrid = document.querySelector(".news-grid");
+			const noNewsMessage = document.querySelector(".no-news");
+
+			try {
+				const response = await fetch(WP_URL);
+				if (!response.ok) throw new Error("Failed to fetch");
+
+				const posts = await response.json();
+
+				if (posts.length === 0) {
+					if (newsGrid) newsGrid.style.display = "none";
+					if (noNewsMessage) noNewsMessage.style.display = "block";
+					return;
+				}
+
+				if (noNewsMessage) noNewsMessage.style.display = "none";
+				if (!newsGrid) return;
+
+				newsGrid.innerHTML = posts
+					.map((post) => {
+						const title = post.title.rendered;
+						const excerpt = post.excerpt.rendered;
+						const date = new Date(post.date);
+						const formattedDate = new Intl.DateTimeFormat("es-ES", {
+							month: "short",
+							day: "numeric",
+						}).format(date);
+						const featuredImage =
+							post._embedded?.["wp:featuredmedia"]?.[0]
+								?.source_url;
+						const link = post.link;
+
+						return `
+						<article class="news-card">
+							${
+								featuredImage
+									? `
+								<div class="news-image">
+									<img src="${featuredImage}" alt="${title}" loading="lazy" />
+								</div>
+							`
+									: ""
+							}
+							<div class="news-content-inner">
+								<time class="news-date">${formattedDate}</time>
+								<h3 class="news-title">${title}</h3>
+								<div class="news-excerpt">${excerpt}</div>
+								<a href="${link}" class="news-link">Leer más →</a>
+							</div>
+						</article>
+					`;
+					})
+					.join("");
+			} catch (error) {
+				console.error("Error loading news:", error);
+				if (newsGrid) newsGrid.style.display = "none";
+				if (noNewsMessage) {
+					noNewsMessage.textContent =
+						"Error al cargar las noticias. Por favor, intenta de nuevo más tarde.";
+					noNewsMessage.style.display = "block";
+				}
+			}
+		}
+
+		// Load news when page is ready
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", loadNews);
+		} else {
+			loadNews();
+		}
+	</script>
 </Layout>
