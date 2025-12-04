@@ -51,7 +51,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.nombre,
                 c.ciudad,
                 c.pais,
-                c.fundacion,
                 c.id_estadio,
                 e.nombre AS estadio_nombre,
                 e.ciudad AS estadio_ciudad,
@@ -74,7 +73,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 nombre: cleanApiValue(rival.nombre) || '',
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
-                fundacion: cleanApiValue(rival.fundacion) || null,
                 id_estadio: rival.id_estadio,
                 estadio_nombre: cleanApiValue(rival.estadio_nombre) || '',
                 estadio_ciudad: cleanApiValue(rival.estadio_ciudad) || '',
@@ -111,7 +109,6 @@ export async function fetchRivals(): Promise<any[]> {
                 shieldUrl: getRivalShieldUrl(rival),
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
-                fundacion: cleanApiValue(rival.fundacion) || null,
             };
         });
     } catch (error) {
