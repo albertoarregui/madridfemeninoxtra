@@ -81,9 +81,10 @@ export async function fetchGamesDirectly(): Promise<any[]> {
         const result = await client.execute(query);
 
         return result.rows.map((game: any) => {
+            const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
             return {
                 ...game,
-                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${game.id_partido}`,
+                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
             };
         });
@@ -109,9 +110,10 @@ export async function fetchGames(): Promise<any[]> {
         if (!Array.isArray(games)) return [];
 
         return games.map(game => {
+            const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
             return {
                 ...game,
-                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${game.id_partido}`,
+                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
             };
         });
