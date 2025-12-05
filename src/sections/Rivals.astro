@@ -5,7 +5,6 @@ import type { ImageMetadata } from "astro";
 import { fetchGamesDirectly, calculateRivalStats } from "../utils/partidos";
 import "../styles/global.css";
 
-// Fetch all matches
 const allMatches = await fetchGamesDirectly();
 
 const listofRivals = RIVALS.map((rival) => {
@@ -13,21 +12,19 @@ const listofRivals = RIVALS.map((rival) => {
     const countryName = country
         ? COUNTRIES[country as keyof typeof COUNTRIES]?.name || ""
         : "";
-
-    // Calculate stats for this rival
     const stats = calculateRivalStats(allMatches, rival.name);
 
     return { ...rival, countryName, stats };
 });
 
 const rivalLogos = import.meta.glob<{ default: ImageMetadata }>(
-    "/assets/escudos/*.png",
+    "../assets/escudos/*.png",
     { eager: true },
 );
 
 function getRivalLogoSrc(rivalId: string) {
     const imageId = rivalId.replace(/-/g, "_");
-    const imagePath = `/assets/escudos/${imageId}.png`;
+    const imagePath = `../assets/escudos/${imageId}.png`;
     return rivalLogos[imagePath]?.default;
 }
 ---
