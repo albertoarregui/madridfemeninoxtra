@@ -1,11 +1,11 @@
 import { defineConfig } from 'astro/config';
-
 import tailwindcss from '@tailwindcss/vite';
-
 import react from '@astrojs/react';
+import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
-  output: 'hybrid', // Habilita SSR para rutas API dinámicas
+  output: 'server',
+  adapter: vercel(),
 
   vite: {
     plugins: [tailwindcss()]
