@@ -342,80 +342,176 @@ const playerPosition = positionCoords[player.posicion] || {
             <!-- ESTADÍSTICAS -->
             <section class="stats-section">
                 <h2 class="section-header">Estadísticas con el Real Madrid</h2>
-                <div class="stats-controls">
-                    <div class="control-group">
-                        <label for="competition">Competición:</label>
-                        <select id="competition" class="stats-select">
-                            <option value="all">25 seleccionadas</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label for="player">Cambiar jugador:</label>
-                        <select id="player" class="stats-select">
-                            <option value={player.nombre}
-                                >{player.nombre}</option
-                            >
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label for="compare">Comparar con:</label>
-                        <select id="compare" class="stats-select">
-                            <option value={player.nombre}
-                                >{player.nombre}</option
-                            >
-                        </select>
-                    </div>
+                <div id="stats-loading" class="stats-loading">
+                    <p>Cargando estadísticas...</p>
                 </div>
-                <div class="stats-table-container">
-                    <table class="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Temporada</th>
-                                <th>Min</th>
-                                <th>PJ</th>
-                                <th>Tit</th>
-                                <th>Sup</th>
-                                <th>Gam</th>
-                                <th>FG</th>
-                                <th>FP</th>
-                                <th>FP</th>
-                                <th class="highlight">TD</th>
-                                <th class="highlight">TR</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>2025-2026</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                            <tr class="total-row">
-                                <td><strong>Total</strong></td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div
+                    id="stats-error"
+                    class="stats-error"
+                    style="display: none;"
+                >
+                    <p>Error al cargar las estadísticas.</p>
+                </div>
+                <div
+                    id="stats-content"
+                    class="stats-table-container"
+                    style="display: none;"
+                >
+                    <!-- Table will be populated by JavaScript -->
                 </div>
             </section>
         </div>
     </main>
+
+    <script
+        is:inline
+        define:vars={{
+            playerSlug: player.slug,
+            isGoalkeeper: player.posicion === "Portera",
+        }}
+    >
+        async function loadPlayerStats() {
+            const statsLoading = document.getElementById("stats-loading");
+            const statsError = document.getElementById("stats-error");
+            const statsContent = document.getElementById("stats-content");
+
+            try {
+                const response = await fetch(
+                    `/api/players/${playerSlug}/stats`,
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading, show content
+                statsLoading.style.display = "none";
+                statsContent.style.display = "block";
+
+                // Build the table
+                buildStatsTable(data, statsContent);
+            } catch (error) {
+                console.error("Error loading stats:", error);
+                statsLoading.style.display = "none";
+                statsError.style.display = "block";
+            }
+        }
+
+        function buildStatsTable(data, container) {
+            if (!data.estadisticas || data.estadisticas.length === 0) {
+                container.innerHTML =
+                    '<p class="no-data">No hay estadísticas disponibles para esta jugadora.</p>';
+                return;
+            }
+
+            let tableHTML = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Temporada / Competición</th>
+                            <th title="Convocatorias">Conv</th>
+                            <th title="Partidos">PJ</th>
+                            <th title="Titularidades">Tit</th>
+                            <th title="Suplencias">Sup</th>
+                            <th title="Cambio Entrada">C.Ent</th>
+                            <th title="Cambio Salida">C.Sal</th>
+                            <th title="Goles">G</th>
+                            <th title="Asistencias">A</th>
+                            <th class="highlight" title="Goles + Asistencias">G+A</th>
+                            ${isGoalkeeper ? '<th title="Porterías a Cero">PC</th>' : ""}
+                            <th title="Tarjetas Amarillas">TA</th>
+                            <th title="Tarjetas Rojas">TR</th>
+                            <th title="Capitanías">Cap</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Add rows for each season
+            data.estadisticas.forEach((season) => {
+                // Add competition rows
+                season.competiciones.forEach((comp, index) => {
+                    const isFirstCompetition = index === 0;
+                    tableHTML += `
+                        <tr class="competition-row">
+                            <td class="competition-name">
+                                ${isFirstCompetition ? `<strong>${season.temporada}</strong> - ` : ""}
+                                ${comp.competicion}
+                            </td>
+                            <td>${comp.convocatorias}</td>
+                            <td>${comp.partidos}</td>
+                            <td>${comp.titularidades}</td>
+                            <td>${comp.suplencias}</td>
+                            <td>${comp.cambio_entrada}</td>
+                            <td>${comp.cambio_salida}</td>
+                            <td>${comp.goles}</td>
+                            <td>${comp.asistencias}</td>
+                            <td class="highlight">${comp.goles_asistencias}</td>
+                            ${isGoalkeeper ? `<td>${comp.porterias_cero}</td>` : ""}
+                            <td>${comp.tarjetas_amarillas}</td>
+                            <td>${comp.tarjetas_rojas}</td>
+                            <td>${comp.capitanias}</td>
+                        </tr>
+                    `;
+                });
+
+                // Add season total row
+                const total = season.total;
+                tableHTML += `
+                    <tr class="season-total-row">
+                        <td><strong>Total ${season.temporada}</strong></td>
+                        <td><strong>${total.convocatorias}</strong></td>
+                        <td><strong>${total.partidos}</strong></td>
+                        <td><strong>${total.titularidades}</strong></td>
+                        <td><strong>${total.suplencias}</strong></td>
+                        <td><strong>${total.cambio_entrada}</strong></td>
+                        <td><strong>${total.cambio_salida}</strong></td>
+                        <td><strong>${total.goles}</strong></td>
+                        <td><strong>${total.asistencias}</strong></td>
+                        <td class="highlight"><strong>${total.goles_asistencias}</strong></td>
+                        ${isGoalkeeper ? `<td><strong>${total.porterias_cero}</strong></td>` : ""}
+                        <td><strong>${total.tarjetas_amarillas}</strong></td>
+                        <td><strong>${total.tarjetas_rojas}</strong></td>
+                        <td><strong>${total.capitanias}</strong></td>
+                    </tr>
+                `;
+            });
+
+            // Add career total row
+            const careerTotal = data.total_carrera;
+            tableHTML += `
+                    <tr class="career-total-row">
+                        <td><strong>TOTAL CARRERA</strong></td>
+                        <td><strong>${careerTotal.convocatorias}</strong></td>
+                        <td><strong>${careerTotal.partidos}</strong></td>
+                        <td><strong>${careerTotal.titularidades}</strong></td>
+                        <td><strong>${careerTotal.suplencias}</strong></td>
+                        <td><strong>${careerTotal.cambio_entrada}</strong></td>
+                        <td><strong>${careerTotal.cambio_salida}</strong></td>
+                        <td><strong>${careerTotal.goles}</strong></td>
+                        <td><strong>${careerTotal.asistencias}</strong></td>
+                        <td class="highlight"><strong>${careerTotal.goles_asistencias}</strong></td>
+                        ${isGoalkeeper ? `<td><strong>${careerTotal.porterias_cero}</strong></td>` : ""}
+                        <td><strong>${careerTotal.tarjetas_amarillas}</strong></td>
+                        <td><strong>${careerTotal.tarjetas_rojas}</strong></td>
+                        <td><strong>${careerTotal.capitanias}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        // Load stats when DOM is ready
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", loadPlayerStats);
+        } else {
+            loadPlayerStats();
+        }
+    </script>
 
     <style>
         .player-profile-page {
@@ -623,32 +719,15 @@ const playerPosition = positionCoords[player.posicion] || {
             overflow: hidden;
         }
 
-        .stats-controls {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f5f5f5;
-            border-bottom: 1px solid #ddd;
-            flex-wrap: wrap;
+        .stats-loading,
+        .stats-error {
+            padding: 2rem;
+            text-align: center;
+            color: #666;
         }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .control-group label {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #333;
-        }
-
-        .stats-select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
+        .stats-error {
+            color: #d32f2f;
         }
 
         .stats-table-container {
@@ -659,6 +738,7 @@ const playerPosition = positionCoords[player.posicion] || {
         .stats-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px;
         }
 
         .stats-table th,
@@ -674,6 +754,23 @@ const playerPosition = positionCoords[player.posicion] || {
             font-weight: 600;
             font-size: 0.85rem;
             text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+
+        .stats-table th:first-child {
+            background: #333;
+            z-index: 15;
         }
 
         .stats-table th.highlight {
@@ -681,13 +778,40 @@ const playerPosition = positionCoords[player.posicion] || {
             color: #333;
         }
 
-        .stats-table tbody tr:hover {
+        .stats-table .competition-row {
+            background: white;
+        }
+
+        .stats-table .competition-row:hover {
             background: #f9f9f9;
         }
 
-        .stats-table .total-row {
+        .stats-table .competition-name {
+            padding-left: 1rem;
+        }
+
+        .stats-table .season-total-row {
             background: #f0f0f0;
             font-weight: bold;
+            border-top: 2px solid #333;
+        }
+
+        .stats-table .season-total-row:hover {
+            background: #e8e8e8;
+        }
+
+        .stats-table .career-total-row {
+            background: #ffde59;
+            font-weight: bold;
+            border-top: 3px solid #333;
+        }
+
+        .stats-table .career-total-row:hover {
+            background: #ffd940;
+        }
+
+        .stats-table td.highlight {
+            background: #fff8dc;
         }
 
         .no-data {
