@@ -18,7 +18,7 @@ export function getRivalShieldUrl(rival: any): string {
         fileName += '.png';
     }
 
-    return `/images/escudos/${encodeURI(fileName || 'placeholder.png')}`;
+    return `/assets/escudos/${encodeURI(fileName || 'placeholder.png')}`;
 }
 
 export const cleanApiValue = (value: any): any => {
