@@ -27,7 +27,7 @@ export function getPlayerImageUrl(player: any): string {
         fileName += '.png';
     }
 
-    return `/images/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
+    return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
 }
 
 export function getCleanCountryName(country: string | null | undefined): string {
