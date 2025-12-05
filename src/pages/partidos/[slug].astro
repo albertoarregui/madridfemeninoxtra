@@ -18,11 +18,9 @@ const formatDate = (dateString: string | null | undefined): string => {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return "-";
-
         return date.toLocaleDateString("es-ES", {
-            weekday: "long",
             day: "2-digit",
-            month: "long",
+            month: "2-digit",
             year: "numeric",
         });
     } catch {
@@ -30,177 +28,722 @@ const formatDate = (dateString: string | null | undefined): string => {
     }
 };
 
-const resultadoClass =
-    game.resultado === "V"
-        ? "victoria"
-        : game.resultado === "D"
-          ? "derrota"
-          : "empate";
-const resultadoTexto =
-    game.resultado === "V"
-        ? "Victoria"
-        : game.resultado === "D"
-          ? "Derrota"
-          : "Empate";
+const formatTime = (timeString: string | null | undefined): string => {
+    if (!timeString) return "-";
+    return timeString.substring(0, 5); // Extract HH:MM
+};
+
+// Mock lineup data structure (will be replaced with real data)
+const mockLineup = [
+    { pos: 1, name: "Batalla", number: 25 },
+    { pos: 2, name: "Ratiu", number: 14 },
+    { pos: 3, name: "Mendy", number: 3 },
+    { pos: 4, name: "Lejeune", number: 5 },
+    { pos: 5, name: "Chavarria", number: 12 },
+    { pos: 6, name: "Gumbau", number: 8 },
+    { pos: 7, name: "Oscar Valentin", number: 10 },
+    { pos: 8, name: "Fran Pérez", number: 18 },
+    { pos: 9, name: "Unai López", number: 11 },
+    { pos: 10, name: "Álvaro García", number: 9 },
+    { pos: 11, name: "De Frutos", number: 16 },
+];
+
+const mockSubs = [
+    { pos: 12, name: "Pacha Espino", number: 7 },
+    { pos: 13, name: "Alemao", number: 15 },
+    { pos: 14, name: "Balliu", number: 23 },
+    { pos: 15, name: "Luiz Felipe", number: 22 },
+    { pos: 16, name: "Camello", number: 19 },
+];
+
+// Mock timeline events
+const mockTimeline = [
+    { minute: 0, type: "start", text: "Inicio de partido" },
+    { minute: 12, type: "goal", team: "local", text: "Gol de Mendy" },
+    { minute: 45, type: "halftime", text: "Descanso" },
+    {
+        minute: 57,
+        type: "substitution",
+        text: "Arnaut Danjuma entra por Javi Guerra",
+    },
+    { minute: 61, type: "goal", team: "visitante", text: "Gol de Diego López" },
+    { minute: 77, type: "yellow", text: "Tarjeta amarilla a Alemao" },
+    { minute: 81, type: "substitution", text: "Unai López sale" },
+    { minute: 90, type: "end", text: "Fin del partido" },
+];
 ---
 
 <Layout
     title={`${game.club_local} vs ${game.club_visitante} - Partido | Madrid Femenino Xtra`}
-    description={`Resultado y estadísticas del partido ${game.club_local} vs ${game.club_visitante} (${game.temporada_nombre}). Consulta los goles, alineaciones y detalles del encuentro.`}
+    description={`Resultado y estadísticas del partido ${game.club_local} vs ${game.club_visitante}. Alineaciones, goles y crónica completa.`}
 >
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <a
-            href="/partidos"
-            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
-        >
+    <main class="match-details-page">
+        <a href="/partidos" class="back-link">
             <svg
-                class="w-4 h-4 mr-1"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                ><path
+            >
+                <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
-            >
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             Volver al listado
         </a>
 
-        <header
-            class="game-header bg-white shadow-xl rounded-2xl p-8 border-t-4 border-[#ffd700]"
-        >
-            <div class="text-center mb-8">
-                <h2
-                    class="text-sm text-[#ffd700] font-black uppercase tracking-widest mb-1"
-                >
-                    {game.competicion_nombre}
-                </h2>
-                <p
-                    class="text-sm text-gray-500 font-bold uppercase tracking-wide"
-                >
-                    Jornada {game.jornada} • {game.temporada_nombre}
-                </p>
-                <p
-                    class="text-lg font-bold text-gray-800 mt-3 font-mono bg-gray-100 inline-block px-4 py-1 rounded-lg"
-                >
-                    {formatDate(game.fecha)} • {game.hora || "--:--"}
-                </p>
-            </div>
-
-            <div
-                class="match-result flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12"
-            >
-                <div class="team text-center flex-1">
-                    <h3
-                        class="text-3xl font-black text-gray-900 uppercase leading-tight"
-                        style="font-family: 'Archivo Black', sans-serif;"
-                    >
-                        {game.club_local}
-                    </h3>
-                </div>
-                <div class="score text-center">
-                    <div
-                        class={`text-6xl font-black ${resultadoClass} tracking-tighter`}
-                        style="font-family: 'Archivo Black', sans-serif;"
-                    >
-                        {game.goles_rm} - {game.goles_rival}
+        <div class="match-grid">
+            <!-- LEFT COLUMN -->
+            <div class="left-column">
+                <!-- FICHA DE PARTIDO -->
+                <section class="match-card">
+                    <h2 class="section-header">Ficha de partido</h2>
+                    <div class="match-result">
+                        <div class="team-info">
+                            <div class="team-badge">
+                                <div class="badge-placeholder"></div>
+                            </div>
+                            <span class="team-name">{game.club_local}</span>
+                        </div>
+                        <div class="score">
+                            <span class="score-number">{game.goles_rm}</span>
+                            <span class="score-separator">-</span>
+                            <span class="score-number">{game.goles_rival}</span>
+                        </div>
+                        <div class="team-info">
+                            <span class="team-name">{game.club_visitante}</span>
+                            <div class="team-badge">
+                                <div class="badge-placeholder"></div>
+                            </div>
+                        </div>
                     </div>
-                    <p
-                        class={`text-lg mt-2 font-bold uppercase tracking-widest ${resultadoClass}`}
-                    >
-                        {resultadoTexto}
-                    </p>
-                </div>
-                <div class="team text-center flex-1">
-                    <h3
-                        class="text-3xl font-black text-gray-900 uppercase leading-tight"
-                        style="font-family: 'Archivo Black', sans-serif;"
-                    >
-                        {game.club_visitante}
-                    </h3>
-                </div>
-            </div>
-        </header>
+                    <div class="match-info-grid">
+                        <div class="info-item">
+                            <span class="info-icon">🏆</span>
+                            <span class="info-text"
+                                >{game.competicion_nombre} (J{
+                                    game.jornada
+                                })</span
+                            >
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">📅</span>
+                            <span class="info-text"
+                                >{formatDate(game.fecha)} - {
+                                    formatTime(game.hora)
+                                }</span
+                            >
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🏟️</span>
+                            <span class="info-text"
+                                >{game.estadio || "Stadium"}</span
+                            >
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">👔</span>
+                            <span class="info-text"
+                                >{game.arbitra_nombre || "Árbitro"}</span
+                            >
+                        </div>
+                    </div>
+                </section>
 
-        <section
-            class="game-details mt-12 grid grid-cols-1 md:grid-cols-2 gap-8"
-        >
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Estadio
-                </p>
-                <strong
-                    class="text-xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{game.estadio || game.estadio_texto || "-"}</strong
-                >
+                <!-- EQUIPOS TITULARES -->
+                <section class="lineup-card">
+                    <h2 class="section-header">Equipos titulares</h2>
+                    <div class="lineup-list">
+                        {
+                            mockLineup.map((player) => (
+                                <div class="lineup-row">
+                                    <span class="player-pos">{player.pos}</span>
+                                    <div class="team-badge-small">
+                                        <div class="badge-placeholder-small" />
+                                    </div>
+                                    <span class="player-name">
+                                        {player.name}
+                                    </span>
+                                    <div class="player-photo-small">
+                                        <div class="photo-placeholder" />
+                                    </div>
+                                    <span class="player-number">
+                                        {player.number}
+                                    </span>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <!-- SUSTITUCIONES -->
+                <section class="subs-card">
+                    <h2 class="section-header">Sustituciones</h2>
+                    <div class="lineup-list">
+                        {
+                            mockSubs.map((player) => (
+                                <div class="lineup-row">
+                                    <span class="player-pos">{player.pos}</span>
+                                    <div class="team-badge-small">
+                                        <div class="badge-placeholder-small" />
+                                    </div>
+                                    <span class="player-name">
+                                        {player.name}
+                                    </span>
+                                    <div class="player-photo-small">
+                                        <div class="photo-placeholder" />
+                                    </div>
+                                    <span class="player-number">
+                                        {player.number}
+                                    </span>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <!-- TIMELINE -->
+                <section class="timeline-card">
+                    <h2 class="section-header">Timeline del partido</h2>
+                    <div class="timeline-container">
+                        <div class="timeline-left-badge">
+                            <div class="badge-placeholder-small"></div>
+                        </div>
+                        <div class="timeline-track">
+                            {
+                                mockTimeline.map((event, index) => (
+                                    <div class="timeline-event">
+                                        <div class="event-time">
+                                            <span class="minute-badge">
+                                                {event.minute}'
+                                            </span>
+                                        </div>
+                                        <div class="event-content">
+                                            <div
+                                                class={`event-icon ${event.type}`}
+                                            />
+                                            <span class="event-text">
+                                                {event.text}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                        <div class="timeline-right-badge">
+                            <div class="badge-placeholder-small"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Asistencia
-                </p>
-                <strong
-                    class="text-xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{
-                        game.asistencia
-                            ? `${game.asistencia.toLocaleString("es-ES")} espectadores`
-                            : "-"
-                    }</strong
-                >
+
+            <!-- RIGHT COLUMN -->
+            <div class="right-column">
+                <!-- ESTADIO -->
+                <section class="stadium-card">
+                    <h2 class="section-header">Estadio</h2>
+                    <div class="stadium-content">
+                        <div class="stadium-photo">
+                            <div class="photo-placeholder-large"></div>
+                        </div>
+                        <div class="stadium-info">
+                            <p>
+                                <strong>Nombre:</strong>
+                                {game.estadio || "Vallecas"}
+                            </p>
+                            <p><strong>Aforo:</strong> 14,708 espectadores</p>
+                            <p>
+                                <strong>Ubicación:</strong> Madrid (Madrid) 🇪🇸
+                            </p>
+                            <p><strong>Inauguración:</strong> 10/05/1976</p>
+                        </div>
+                        <div class="stadium-stats">
+                            <div class="stat-bar">
+                                <div class="bar-label">Ganados</div>
+                                <div
+                                    class="bar-fill"
+                                    style="width: 60%; background: #ffcccc;"
+                                >
+                                </div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="bar-label">Empatados</div>
+                                <div
+                                    class="bar-fill"
+                                    style="width: 30%; background: #cce5ff;"
+                                >
+                                </div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="bar-label">Perdidos</div>
+                                <div
+                                    class="bar-fill"
+                                    style="width: 10%; background: #ffffcc;"
+                                >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RIVAL -->
+                <section class="rival-card">
+                    <h2 class="section-header">Rival: {game.club_visitante}</h2>
+                    <div class="rival-chart">
+                        <svg viewBox="0 0 100 100" class="donut-chart">
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="none"
+                                stroke="#ffcccc"
+                                stroke-width="20"
+                                stroke-dasharray="66 132"
+                                transform="rotate(-90 50 50)"></circle>
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="none"
+                                stroke="#cce5ff"
+                                stroke-width="20"
+                                stroke-dasharray="33 165"
+                                stroke-dashoffset="-66"
+                                transform="rotate(-90 50 50)"></circle>
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="none"
+                                stroke="#ffffcc"
+                                stroke-width="20"
+                                stroke-dasharray="33 165"
+                                stroke-dashoffset="-99"
+                                transform="rotate(-90 50 50)"></circle>
+                        </svg>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span
+                                    class="legend-color"
+                                    style="background: #ffcccc;"></span>
+                                <span>Ganados</span>
+                            </div>
+                            <div class="legend-item">
+                                <span
+                                    class="legend-color"
+                                    style="background: #cce5ff;"></span>
+                                <span>Empatados</span>
+                            </div>
+                            <div class="legend-item">
+                                <span
+                                    class="legend-color"
+                                    style="background: #ffffcc;"></span>
+                                <span>Perdidos</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RECORDS -->
+                <section class="records-card">
+                    <h2 class="section-header">
+                        Records vs {game.club_visitante}
+                    </h2>
+                    <div class="records-list">
+                        <div class="record-row">
+                            <span class="record-label">Máximo goleador:</span>
+                            <span class="record-value"
+                                >Jonás Gonçalves (4 goles)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Goleador rival:</span>
+                            <span class="record-value">Ninguno</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más partidos:</span>
+                            <span class="record-value"
+                                >José Luis Gayá (11 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor victoria:</span>
+                            <span class="record-value">7 - 0 (5.04.1978)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor derrota:</span>
+                            <span class="record-value">3 (11.12.1977)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más repetido:</span>
+                            <span class="record-value">1-1 (9 veces)</span>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Árbitro/a
-                </p>
-                <strong
-                    class="text-xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{game.arbitra_nombre || game.arbitro_texto || "-"}</strong
-                >
-            </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg border-l-4 border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Entrenador/a
-                </p>
-                <strong
-                    class="text-xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{
-                        game.entrenador_nombre || game.entrenador_texto || "-"
-                    }</strong
-                >
-            </div>
-        </section>
+        </div>
     </main>
-</Layout>
 
-<style>
-    .victoria {
-        color: #16a34a;
-    }
-    .derrota {
-        color: #dc2626;
-    }
-    .empate {
-        color: #ca8a04;
-    }
-</style>
+    <style>
+        .match-details-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b00;
+        }
+
+        .match-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .left-column,
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-header {
+            background: linear-gradient(to right, #ff6b00, #ff8533);
+            color: white;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        /* MATCH CARD */
+        .match-card,
+        .lineup-card,
+        .subs-card,
+        .timeline-card,
+        .stadium-card,
+        .rival-card,
+        .records-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .match-result {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .team-badge {
+            width: 60px;
+            height: 60px;
+        }
+
+        .badge-placeholder,
+        .badge-placeholder-small,
+        .photo-placeholder,
+        .photo-placeholder-large {
+            width: 100%;
+            height: 100%;
+            background: #f0f0f0;
+            border-radius: 50%;
+        }
+
+        .badge-placeholder-small {
+            width: 30px;
+            height: 30px;
+        }
+
+        .photo-placeholder-large {
+            border-radius: 8px;
+            height: 200px;
+        }
+
+        .team-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .score {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .match-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: #f9f9f9;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .info-icon {
+            font-size: 1.2rem;
+        }
+
+        /* LINEUP */
+        .lineup-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lineup-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #fff5e6;
+            border-bottom: 1px solid #ffe6cc;
+        }
+
+        .lineup-row:nth-child(even) {
+            background: #ffebcc;
+        }
+
+        .player-pos {
+            font-weight: bold;
+            width: 30px;
+            text-align: center;
+        }
+
+        .team-badge-small {
+            width: 30px;
+            height: 30px;
+        }
+
+        .player-name {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .player-photo-small {
+            width: 40px;
+            height: 40px;
+        }
+
+        .player-number {
+            font-weight: bold;
+            width: 40px;
+            text-align: center;
+        }
+
+        /* TIMELINE */
+        .timeline-container {
+            position: relative;
+            display: flex;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+
+        .timeline-left-badge,
+        .timeline-right-badge {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .timeline-track {
+            flex: 1;
+            position: relative;
+            padding-left: 2rem;
+            border-left: 4px solid #ff6b00;
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .event-time {
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+        }
+
+        .minute-badge {
+            background: #ff6b00;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .event-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .event-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .event-icon.goal {
+            background: #16a34a;
+        }
+
+        .event-icon.yellow {
+            background: #eab308;
+        }
+
+        .event-text {
+            font-size: 0.9rem;
+        }
+
+        /* STADIUM */
+        .stadium-content {
+            padding: 1.5rem;
+        }
+
+        .stadium-photo {
+            margin-bottom: 1rem;
+        }
+
+        .stadium-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .stadium-info p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .stadium-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bar-label {
+            width: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .bar-fill {
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* RIVAL CHART */
+        .rival-chart {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .donut-chart {
+            width: 200px;
+            height: 200px;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        /* RECORDS */
+        .records-list {
+            padding: 1.5rem;
+        }
+
+        .record-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .record-label {
+            font-weight: 600;
+        }
+
+        .record-value {
+            color: #ff6b00;
+        }
+
+        @media (max-width: 1024px) {
+            .match-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .match-result {
+                flex-direction: column;
+            }
+
+            .score {
+                font-size: 2rem;
+            }
+
+            .match-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</Layout>

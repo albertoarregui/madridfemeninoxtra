@@ -38,130 +38,712 @@ const formatDate = (dateString: string | null | undefined): string => {
     }
 };
 
-const fechaNacimiento = formatDate(player.fecha_nacimiento);
-const alturaDisplay = player.altura ? `${player.altura} cm` : "-";
+const formatShortDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString.split("T")[0]);
+        if (isNaN(date.getTime())) return "-";
+        return date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+    } catch {
+        return "-";
+    }
+};
+
+const calculateAge = (dateString: string | null | undefined): number | null => {
+    if (!dateString) return null;
+    try {
+        const birthDate = new Date(dateString.split("T")[0]);
+        if (isNaN(birthDate.getTime())) return null;
+
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+
+        return age;
+    } catch {
+        return null;
+    }
+};
+
+const fechaNacimiento = formatShortDate(player.fecha_nacimiento);
+const edad = calculateAge(player.fecha_nacimiento);
+const alturaDisplay = player.altura ? `${player.altura} m.` : "-";
 const pesoDisplay = player.peso ? `${player.peso} kg` : "-";
+
+// Position coordinates for field diagram (% from left, % from top)
+const positionCoords: Record<string, { left: string; top: string }> = {
+    Portera: { left: "10%", top: "50%" },
+    Defensa: { left: "30%", top: "50%" },
+    Centrocampista: { left: "55%", top: "50%" },
+    Delantera: { left: "80%", top: "50%" },
+};
+
+const playerPosition = positionCoords[player.posicion] || {
+    left: "50%",
+    top: "50%",
+};
 ---
 
 <Layout
     title={`${player.nombre} - Perfil | Madrid Femenino Xtra`}
-    description={`Perfil completo de ${player.nombre}, jugadora del Real Madrid Femenino. Consulta sus estadísticas, posición, nacionalidad y datos biográficos.`}
+    description={`Ficha completa de ${player.nombre}, jugadora del Real Madrid Femenino. Consulta sus estadísticas, posición, biografía y récords.`}
 >
-    <main
-        class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 player-profile-page"
-    >
-        <a
-            href="/jugadoras"
-            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
-        >
+    <main class="player-profile-page">
+        <a href="/jugadoras" class="back-link">
             <svg
-                class="w-4 h-4 mr-1"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                ><path
+            >
+                <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
-            >
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             Volver al listado
         </a>
 
-        <header
-            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
-        >
-            <div class="relative">
-                <img
-                    src={player.imageUrl}
-                    alt={`Foto de ${player.nombre}`}
-                    class="profile-photo w-48 h-48 object-cover rounded-full border-4 border-gray-100 shadow-lg"
-                    onerror="this.onerror=null; this.src='/images/placeholder_jugadora.png';"
-                />
-                <div
-                    class="absolute bottom-2 right-2 bg-[#ffd700] text-black text-xs font-bold px-2 py-1 rounded-full shadow-sm"
-                >
-                    {player.dorsal || "#"}
+        <div class="profile-grid">
+            <!-- FICHA -->
+            <section class="ficha-section">
+                <h2 class="section-header">Ficha de {player.nombre}</h2>
+                <div class="ficha-content">
+                    <div class="player-photo-container">
+                        <img
+                            src={player.imageUrl}
+                            alt={`Foto de ${player.nombre}`}
+                            class="player-photo"
+                            onerror="this.onerror=null; this.src='/images/placeholder_jugadora.png';"
+                        />
+                    </div>
+                    <div class="player-info">
+                        <div class="info-row">
+                            <span class="info-label">Nombre completo:</span>
+                            <span class="info-value">{player.nombre}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Fecha de nacimiento:</span>
+                            <span class="info-value">{fechaNacimiento}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Lugar de nacimiento:</span>
+                            <span class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Nacionalidad:</span>
+                            <span class="info-value">
+                                {player.pais_origin}
+                                <img
+                                    class="flag-icon"
+                                    src={`/images/banderas/${player.cleanCountryName}.svg`}
+                                    alt={`Bandera de ${player.pais_origin}`}
+                                    onerror="this.style.display='none';"
+                                />
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Altura / Peso:</span>
+                            <span class="info-value"
+                                >{alturaDisplay} / {pesoDisplay}</span
+                            >
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Títulos:</span>
+                            <span class="info-value">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Debut:</span>
+                            <span class="info-value">-</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="header-info text-center md:text-left">
-                <h1
-                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
-                    style="font-family: 'Archivo Black', sans-serif;"
-                >
-                    {player.nombre}
-                </h1>
-                <p
-                    class="position-badge text-2xl text-[#ffd700] font-bold mt-2 uppercase tracking-widest"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                >
-                    {player.posicion}
-                </p>
+            <!-- POSICIÓN -->
+            <section class="position-section">
+                <h2 class="section-header">Posición</h2>
+                <div class="field-diagram">
+                    <svg viewBox="0 0 100 65" class="field-svg">
+                        <!-- Field -->
+                        <rect x="0" y="0" width="100" height="65" fill="#4a7c35"
+                        ></rect>
 
-                <div
-                    class="player-origin flex items-center justify-center md:justify-start mt-4 bg-gray-50 px-4 py-2 rounded-full inline-flex"
-                >
-                    <img
-                        class="flag-svg w-6 h-6 mr-3 shadow-sm rounded-sm"
-                        src={`/images/banderas/${player.cleanCountryName}.svg`}
-                        alt={`Bandera de ${player.pais_origin}`}
-                        onerror="this.style.display='none';"
-                    />
-                    <span
-                        class="text-gray-700 font-semibold uppercase text-sm tracking-wide"
-                        >{player.pais_origin}</span
+                        <!-- Stripes -->
+                        <rect
+                            x="0"
+                            y="0"
+                            width="10"
+                            height="65"
+                            fill="#3d6b2e"
+                            opacity="0.3"></rect>
+                        <rect
+                            x="20"
+                            y="0"
+                            width="10"
+                            height="65"
+                            fill="#3d6b2e"
+                            opacity="0.3"></rect>
+                        <rect
+                            x="40"
+                            y="0"
+                            width="10"
+                            height="65"
+                            fill="#3d6b2e"
+                            opacity="0.3"></rect>
+                        <rect
+                            x="60"
+                            y="0"
+                            width="10"
+                            height="65"
+                            fill="#3d6b2e"
+                            opacity="0.3"></rect>
+                        <rect
+                            x="80"
+                            y="0"
+                            width="10"
+                            height="65"
+                            fill="#3d6b2e"
+                            opacity="0.3"></rect>
+
+                        <!-- Lines -->
+                        <rect
+                            x="0"
+                            y="0"
+                            width="100"
+                            height="65"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></rect>
+                        <line
+                            x1="50"
+                            y1="0"
+                            x2="50"
+                            y2="65"
+                            stroke="white"
+                            stroke-width="0.3"></line>
+                        <circle
+                            cx="50"
+                            cy="32.5"
+                            r="8"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></circle>
+
+                        <!-- Left goal area -->
+                        <rect
+                            x="0"
+                            y="20"
+                            width="15"
+                            height="25"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></rect>
+                        <rect
+                            x="0"
+                            y="26"
+                            width="5"
+                            height="13"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></rect>
+
+                        <!-- Right goal area -->
+                        <rect
+                            x="85"
+                            y="20"
+                            width="15"
+                            height="25"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></rect>
+                        <rect
+                            x="95"
+                            y="26"
+                            width="5"
+                            height="13"
+                            fill="none"
+                            stroke="white"
+                            stroke-width="0.3"></rect>
+                    </svg>
+                    <div
+                        class="player-marker"
+                        style={`left: ${playerPosition.left}; top: ${playerPosition.top};`}
                     >
+                        <div class="marker-icon"></div>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </section>
 
-        <section
-            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Nacimiento
-                </p>
-                <strong
-                    class="text-2xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{fechaNacimiento}</strong
-                >
-            </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Altura
-                </p>
-                <strong
-                    class="text-3xl font-bold text-gray-900 block"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                    >{alturaDisplay}</strong
-                >
-            </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Peso
-                </p>
-                <strong
-                    class="text-3xl font-bold text-gray-900 block"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                    >{pesoDisplay}</strong
-                >
-            </div>
-        </section>
+            <!-- OTROS EQUIPOS -->
+            <section class="teams-section">
+                <h2 class="section-header">Otros equipos</h2>
+                <div class="teams-content">
+                    <p class="no-data">Sin datos disponibles</p>
+                </div>
+            </section>
+
+            <!-- BIOGRAFÍA -->
+            <section class="biography-section">
+                <h2 class="section-header">Biografía</h2>
+                <div class="biography-content">
+                    <p class="no-data">Biografía no disponible.</p>
+                </div>
+            </section>
+
+            <!-- RECORDS -->
+            <section class="records-section">
+                <h2 class="section-header">Records</h2>
+                <div class="records-grid">
+                    <div class="record-item">
+                        <span class="record-label">Mis goles:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Más partidos:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Más tarjetas:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Más expulsiones:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Edad debut:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Edad 1º gol:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                    <div class="record-item">
+                        <span class="record-label">Última part.:</span>
+                        <span class="record-value">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ESTADÍSTICAS -->
+            <section class="stats-section">
+                <h2 class="section-header">Estadísticas con el VCF</h2>
+                <div class="stats-controls">
+                    <div class="control-group">
+                        <label for="competition">Competición:</label>
+                        <select id="competition" class="stats-select">
+                            <option value="all">25 seleccionadas</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="player">Cambiar jugador:</label>
+                        <select id="player" class="stats-select">
+                            <option value={player.nombre}
+                                >{player.nombre}</option
+                            >
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="compare">Comparar con:</label>
+                        <select id="compare" class="stats-select">
+                            <option value={player.nombre}
+                                >{player.nombre}</option
+                            >
+                        </select>
+                    </div>
+                </div>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Temporada</th>
+                                <th>Min</th>
+                                <th>PJ</th>
+                                <th>Tit</th>
+                                <th>Sup</th>
+                                <th>Gam</th>
+                                <th>FG</th>
+                                <th>FP</th>
+                                <th>FP</th>
+                                <th class="highlight">TD</th>
+                                <th class="highlight">TR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2025-2026</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td><strong>Total</strong></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
+
+    <style>
+        .player-profile-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b00;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .section-header {
+            background: linear-gradient(to right, #ff6b00, #ff8533);
+            color: white;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* FICHA SECTION */
+        .ficha-section {
+            grid-column: 1;
+            grid-row: 1 / 3;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .ficha-content {
+            padding: 1.5rem;
+        }
+
+        .player-photo-container {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .player-photo {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-value {
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flag-icon {
+            width: 20px;
+            height: auto;
+        }
+
+        /* POSITION SECTION */
+        .position-section {
+            grid-column: 2;
+            grid-row: 1;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .field-diagram {
+            position: relative;
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+
+        .field-svg {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .player-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+
+        .marker-icon {
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 3px solid #ff6b00;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* TEAMS SECTION */
+        .teams-section {
+            grid-column: 2;
+            grid-row: 2;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .teams-content {
+            padding: 1.5rem;
+        }
+
+        /* BIOGRAPHY SECTION */
+        .biography-section {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .biography-content {
+            padding: 1.5rem;
+            line-height: 1.8;
+            color: #444;
+        }
+
+        /* RECORDS SECTION */
+        .records-section {
+            grid-column: 1 / -1;
+            grid-row: 4;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .record-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .record-value {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+
+        /* STATS SECTION */
+        .stats-section {
+            grid-column: 1 / -1;
+            grid-row: 5;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .stats-controls {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .stats-select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .stats-table-container {
+            overflow-x: auto;
+            padding: 1.5rem;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .stats-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .stats-table th.highlight {
+            background: #ffcc00;
+            color: #333;
+        }
+
+        .stats-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .stats-table .total-row {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ficha-section,
+            .position-section,
+            .teams-section,
+            .biography-section,
+            .records-section,
+            .stats-section {
+                grid-column: 1;
+            }
+
+            .ficha-section {
+                grid-row: 1;
+            }
+
+            .position-section {
+                grid-row: 2;
+            }
+
+            .teams-section {
+                grid-row: 3;
+            }
+
+            .biography-section {
+                grid-row: 4;
+            }
+
+            .records-section {
+                grid-row: 5;
+            }
+
+            .stats-section {
+                grid-row: 6;
+            }
+
+            .stats-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </Layout>

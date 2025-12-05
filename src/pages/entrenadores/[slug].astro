@@ -18,10 +18,9 @@ const formatDate = (dateString: string | null | undefined): string => {
     try {
         const date = new Date(dateString.split("T")[0]);
         if (isNaN(date.getTime())) return "-";
-
         return date.toLocaleDateString("es-ES", {
             day: "2-digit",
-            month: "long",
+            month: "2-digit",
             year: "numeric",
         });
     } catch {
@@ -30,102 +29,520 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const fechaNacimiento = formatDate(coach.fecha_nacimiento);
+
+// Mock streaks data
+const rachas = [
+    { label: "Ganando", value: 3, extra: "Sin marcar: 2" },
+    { label: "Empatando", value: 2, extra: "Marcando: 20" },
+    { label: "Perdiendo", value: 2, extra: "Encajando: 10" },
+    { label: "Sin perder", value: 7, extra: "Sin ganar: 4" },
+    { label: "Sin goles", value: 1, extra: "Sin encajar: 4" },
+];
 ---
 
 <Layout
     title={`${coach.nombre} - Entrenador | Madrid Femenino Xtra`}
-    description={`Perfil de ${coach.nombre}, entrenador del Real Madrid Femenino. Consulta su trayectoria, estadísticas y datos biográficos.`}
+    description={`Perfil completo de ${coach.nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`}
 >
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <a
-            href="/entrenadores"
-            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
-        >
+    <main class="coach-details-page">
+        <a href="/entrenadores" class="back-link">
             <svg
-                class="w-4 h-4 mr-1"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                ><path
+            >
+                <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
-            >
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             Volver al listado
         </a>
 
-        <header
-            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
-        >
-            <img
-                src={coach.imageUrl}
-                alt={`Foto de ${coach.nombre}`}
-                class="profile-photo w-40 h-40 object-cover rounded-full border-4 border-gray-100 shadow-lg"
-                onerror="this.onerror=null; this.src='/images/placeholder.png';"
-            />
-            <div class="header-info text-center md:text-left">
-                <h1
-                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
-                    style="font-family: 'Archivo Black', sans-serif;"
-                >
-                    {coach.nombre}
-                </h1>
-                <p
-                    class="text-2xl text-[#ffd700] font-bold mt-2 uppercase tracking-widest"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                >
-                    Entrenador
-                </p>
-            </div>
-        </header>
+        <div class="coach-grid">
+            <!-- LEFT COLUMN -->
+            <div class="left-column">
+                <!-- FICHA DE ENTRENADOR -->
+                <section class="coach-card">
+                    <h2 class="section-header">
+                        Ficha de entrenador: {coach.nombre}
+                    </h2>
+                    <div class="coach-info">
+                        <div class="coach-photo">
+                            <img
+                                src={coach.imageUrl}
+                                alt={`Foto de ${coach.nombre}`}
+                                onerror="this.onerror=null; this.src='/images/placeholder.png';"
+                            />
+                        </div>
+                        <div class="coach-details">
+                            <div class="info-row">
+                                <span class="label">Nombre completo:</span>
+                                <span class="value">{coach.nombre}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Fecha de nacimiento:</span>
+                                <span class="value">{fechaNacimiento}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Lugar de nacimiento:</span>
+                                <span class="value"
+                                    >{coach.ciudad || "Barcelona"} ({
+                                        coach.pais || "Barcelona"
+                                    })</span
+                                >
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Nacionalidad:</span>
+                                <span class="value"
+                                    >{coach.pais || "España"} 🇪🇸</span
+                                >
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Tiempo:</span>
+                                <span class="value">292 días (2019 - 2020)</span
+                                >
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Títulos:</span>
+                                <span class="value">Ninguno</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Debut:</span>
+                                <span class="value"
+                                    >14/09/2019 (FC Barcelona)</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-        <section
-            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Nacimiento
-                </p>
-                <strong
-                    class="text-2xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{fechaNacimiento}</strong
-                >
+                <!-- BIOGRAFÍA -->
+                <section class="bio-card">
+                    <h2 class="section-header">Biografía</h2>
+                    <div class="bio-content">
+                        <p class="no-data">Biografía no disponible.</p>
+                    </div>
+                </section>
+
+                <!-- ESTADÍSTICAS -->
+                <section class="stats-card">
+                    <h2 class="section-header">Estadísticas con el VCF</h2>
+                    <div class="stats-controls">
+                        <div class="control">
+                            <label>Competición:</label>
+                            <select>
+                                <option>25 seleccionadas</option>
+                            </select>
+                        </div>
+                        <button class="btn-ok">OK</button>
+                        <div class="control">
+                            <label>Entrenador:</label>
+                            <select>
+                                <option>{coach.nombre}</option>
+                            </select>
+                        </div>
+                        <div class="control">
+                            <label>Comparar con:</label>
+                            <select>
+                                <option>{coach.nombre}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Temporada</th>
+                                    <th>PJ</th>
+                                    <th>PG</th>
+                                    <th>%PG</th>
+                                    <th>PE</th>
+                                    <th>%PE</th>
+                                    <th>PP</th>
+                                    <th>%PP</th>
+                                    <th>GF</th>
+                                    <th>GC</th>
+                                    <th>Dif</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2019-2020</td>
+                                    <td>41</td>
+                                    <td>15</td>
+                                    <td>36.59%</td>
+                                    <td>12</td>
+                                    <td>29.27%</td>
+                                    <td>14</td>
+                                    <td>34.15%</td>
+                                    <td>54</td>
+                                    <td>64</td>
+                                    <td>-10</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Total</strong></td>
+                                    <td>41</td>
+                                    <td>15</td>
+                                    <td>36.59%</td>
+                                    <td>12</td>
+                                    <td>29.27%</td>
+                                    <td>14</td>
+                                    <td>34.15%</td>
+                                    <td>54</td>
+                                    <td>64</td>
+                                    <td>-10</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Ciudad
-                </p>
-                <strong
-                    class="text-2xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{coach.ciudad || "-"}</strong
-                >
+
+            <!-- RIGHT COLUMN -->
+            <div class="right-column">
+                <!-- OTROS EQUIPOS -->
+                <section class="teams-card">
+                    <h2 class="section-header">Otros equipos</h2>
+                    <div class="teams-content">
+                        <p class="no-data">Sin datos disponibles</p>
+                    </div>
+                </section>
+
+                <!-- RECORDS -->
+                <section class="records-card">
+                    <h2 class="section-header">Records</h2>
+                    <div class="records-list">
+                        <div class="record-row">
+                            <span class="record-label">Edad debut:</span>
+                            <span class="record-value"
+                                >0 años (FC Barcelona)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Edad ult. part.:</span>
+                            <span class="record-value"
+                                >50,52 años (Villarreal CF)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más partidos:</span>
+                            <span class="record-value"
+                                >Real Madrid (3 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más victorias:</span>
+                            <span class="record-value"
+                                >CA Osasuna (1 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más empates:</span>
+                            <span class="record-value"
+                                >Atlético de Madrid (2 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más derrotas:</span>
+                            <span class="record-value"
+                                >Atalanta BC (2 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor victoria:</span>
+                            <span class="record-value">4 - 1 (Lille OSC)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor derrota:</span>
+                            <span class="record-value"
+                                >2 - 5 (FC Barcelona)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más repetido:</span>
+                            <span class="record-value">1-1 (8 veces)</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RACHAS -->
+                <section class="streaks-card">
+                    <h2 class="section-header">Rachas con el VCF</h2>
+                    <div class="streaks-grid">
+                        {
+                            rachas.map((racha) => (
+                                <div class="streak-item">
+                                    <div class="streak-label">
+                                        {racha.label}:
+                                    </div>
+                                    <div class="streak-value">
+                                        {racha.value}
+                                    </div>
+                                    <div class="streak-extra">
+                                        {racha.extra}
+                                    </div>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    País
-                </p>
-                <strong
-                    class="text-2xl font-bold text-gray-900 block"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{coach.pais || "-"}</strong
-                >
-            </div>
-        </section>
+        </div>
     </main>
+
+    <style>
+        .coach-details-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b00;
+        }
+
+        .coach-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .left-column,
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-header {
+            background: linear-gradient(to right, #ff6b00, #ff8533);
+            color: white;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        /* CARDS */
+        .coach-card,
+        .bio-card,
+        .stats-card,
+        .teams-card,
+        .records-card,
+        .streaks-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* COACH INFO */
+        .coach-info {
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .coach-photo {
+            flex-shrink: 0;
+        }
+
+        .coach-photo img {
+            width: 150px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .coach-details {
+            flex: 1;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-row .label {
+            font-weight: 600;
+            width: 180px;
+        }
+
+        .info-row .value {
+            flex: 1;
+        }
+
+        /* BIOGRAPHY */
+        .bio-content,
+        .teams-content {
+            padding: 1.5rem;
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* STATS */
+        .stats-controls {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control label {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .control select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn-ok {
+            padding: 0.5rem 1rem;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .stats-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+        }
+
+        .stats-table tbody tr:nth-child(odd) {
+            background: #fff5e6;
+        }
+
+        .total-row {
+            background: #f0f0f0 !important;
+            font-weight: bold;
+        }
+
+        /* RECORDS */
+        .records-list {
+            padding: 1.5rem;
+        }
+
+        .record-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .record-label {
+            font-weight: 600;
+        }
+
+        .record-value {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+
+        /* STREAKS */
+        .streaks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .streak-item {
+            padding: 1rem;
+            background: #fff5e6;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .streak-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .streak-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b00;
+            margin-bottom: 0.5rem;
+        }
+
+        .streak-extra {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        @media (max-width: 1024px) {
+            .coach-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .coach-info {
+                flex-direction: column;
+            }
+
+            .coach-photo img {
+                width: 100%;
+                max-width: 200px;
+                margin: 0 auto;
+            }
+
+            .streaks-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </Layout>

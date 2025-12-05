@@ -12,113 +12,851 @@ export async function getStaticPaths() {
 }
 
 const { rival } = Astro.props;
+
+// Mock data for demonstration
+const mockPlayers = [
+    "Aritz Aduriz",
+    "Julen Agirrezabala",
+    "Asier Del Horno",
+    "Xabier Etxeita",
+    "Patxi Ferreira",
+    "Guillermo Gorostiza",
+    "Iago Herrerín",
+    "Víctor Marro",
+    "Juan Luis Meléndez",
+    "Eugenio Otxotorena",
+    "Carlos Peternac",
+    "Mundo Suárez",
+    "Fernando Trupu",
+    "Alberto Ventura",
+    "Nando Yosu",
+    "Andoni Zubiabarre",
+];
+
+const mockTopScorers = [
+    { name: "Esther González", goals: 8 },
+    { name: "Athenea del Castillo", goals: 6 },
+    { name: "Caroline Weir", goals: 5 },
+];
+
+const mockTopAssisters = [
+    { name: "Olga Carmona", assists: 7 },
+    { name: "Teresa Abelleira", assists: 5 },
+    { name: "Maite Oroz", assists: 4 },
+];
+
+const mockTopContributors = [
+    { name: "Esther González", total: 12, goals: 8, assists: 4 },
+    { name: "Athenea del Castillo", total: 10, goals: 6, assists: 4 },
+    { name: "Olga Carmona", total: 9, goals: 2, assists: 7 },
+];
+
+const mockMatches = [
+    {
+        date: "20.09.2025",
+        competition: "Primera División",
+        location: "Local",
+        result: "2 - 0",
+        referee: "Ortiz Arias",
+        stadium: "Mestalla",
+        attendance: "46,064",
+    },
+    {
+        date: "18.05.2025",
+        competition: "Primera División",
+        location: "Local",
+        result: "0 - 1",
+        referee: "Muñiz Ruiz",
+        stadium: "Mestalla",
+        attendance: "45,641",
+    },
+];
 ---
 
 <Layout
     title={`${rival.nombre} - Rival | Madrid Femenino Xtra`}
-    description={`Historial y estadísticas del Real Madrid Femenino contra ${rival.nombre}. Consulta los resultados, estadio y datos del club rival.`}
+    description={`Historial completo del Real Madrid Femenino contra ${rival.nombre}. Estadísticas, goleadoras, asistentes y todos los partidos disputados.`}
 >
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <a
-            href="/rivales"
-            class="back-link inline-flex items-center text-sm font-bold text-gray-600 hover:text-[#ffd700] transition-colors mb-8 uppercase tracking-wider"
-        >
+    <main class="rival-details-page">
+        <a href="/rivales" class="back-link">
             <svg
-                class="w-4 h-4 mr-1"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                ><path
+            >
+                <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg
-            >
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             Volver al listado
         </a>
 
-        <header
-            class="profile-header bg-white shadow-xl rounded-2xl p-8 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 border-t-4 border-[#ffd700]"
-        >
-            <img
-                src={rival.shieldUrl}
-                alt={`Escudo de ${rival.nombre}`}
-                class="shield-image w-40 h-40 object-contain filter drop-shadow-md"
-                onerror="this.onerror=null; this.src='/images/escudos/placeholder.png';"
-            />
-            <div class="header-info text-center md:text-left">
-                <h1
-                    class="text-5xl font-black text-gray-900 uppercase tracking-tight"
-                    style="font-family: 'Archivo Black', sans-serif;"
-                >
-                    {rival.nombre}
-                </h1>
-                <p
-                    class="text-xl text-[#ffd700] font-bold mt-2 uppercase tracking-wide flex items-center justify-center md:justify-start gap-2"
-                >
-                    <span class="text-gray-400">📍</span>
-                    {rival.ciudad}, {rival.pais}
-                </p>
-            </div>
-        </header>
+        <div class="rival-grid">
+            <!-- LEFT COLUMN -->
+            <div class="left-column">
+                <!-- FICHA DE RIVAL -->
+                <section class="rival-card">
+                    <h2 class="section-header">
+                        Ficha de rival: {rival.nombre}
+                    </h2>
+                    <div class="rival-info">
+                        <div class="rival-shield">
+                            <img
+                                src={rival.shieldUrl}
+                                alt={`Escudo de ${rival.nombre}`}
+                                onerror="this.onerror=null; this.src='/images/escudos/placeholder.png';"
+                            />
+                        </div>
+                        <div class="rival-details">
+                            <div class="info-row">
+                                <span class="label">Nombre:</span>
+                                <span class="value">{rival.nombre}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Fundación:</span>
+                                <span class="value">1898</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Dirección:</span>
+                                <span class="value">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">País:</span>
+                                <span class="value">{rival.pais} 🇪🇸</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Estadio:</span>
+                                <span class="value">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Capacidad:</span>
+                                <span class="value">39750 espectadores</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Sitio web:</span>
+                                <span class="value link"
+                                    >www.club-rival.net</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-        <section
-            class="profile-details mt-12 grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Fundación
-                </p>
-                <strong
-                    class="text-3xl font-bold text-gray-900 block"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                    >{rival.fundacion || "-"}</strong
-                >
+                <!-- JUGADORES VCF -->
+                <section class="players-card">
+                    <h2 class="section-header">
+                        Jugadores del VCF que jugaron en el {rival.nombre}
+                    </h2>
+                    <div class="players-list">
+                        <p>{mockPlayers.join(", ")}</p>
+                    </div>
+                </section>
+
+                <!-- GRÁFICAS -->
+                <section class="charts-card">
+                    <h2 class="section-header">Gráficas</h2>
+                    <div class="charts-content">
+                        <div class="chart-controls">
+                            <div class="control">
+                                <label>Competición:</label>
+                                <select>
+                                    <option>25 seleccionadas</option>
+                                </select>
+                            </div>
+                            <button class="btn-ok">OK</button>
+                            <div class="control">
+                                <label>Cambiar rival:</label>
+                                <select>
+                                    <option>{rival.nombre}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="charts-row">
+                            <div class="chart-item">
+                                <svg viewBox="0 0 100 100" class="pie-chart">
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#4CAF50"
+                                        stroke-width="20"
+                                        stroke-dasharray="69 132"
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#ff9800"
+                                        stroke-width="20"
+                                        stroke-dasharray="33 165"
+                                        stroke-dashoffset="-69"
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#f44336"
+                                        stroke-width="20"
+                                        stroke-dasharray="30 168"
+                                        stroke-dashoffset="-102"
+                                        transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <div class="chart-legend">
+                                    <div>
+                                        <span class="dot green"></span> Ganados (39.0%)
+                                    </div>
+                                    <div>
+                                        <span class="dot orange"></span> Empatados
+                                        (23.9%)
+                                    </div>
+                                    <div>
+                                        <span class="dot red"></span> Perdidos (36.8%)
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-item">
+                                <svg viewBox="0 0 100 100" class="pie-chart">
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#4CAF50"
+                                        stroke-width="20"
+                                        stroke-dasharray="126 72"
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#f44336"
+                                        stroke-width="20"
+                                        stroke-dasharray="72 126"
+                                        stroke-dashoffset="-126"
+                                        transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <div class="chart-legend">
+                                    <div>
+                                        <span class="dot green"></span> Goles a favor
+                                        (60.6%)
+                                    </div>
+                                    <div>
+                                        <span class="dot red"></span> Goles en contra
+                                        (39.4%)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ESTADÍSTICAS -->
+                <section class="stats-table-card">
+                    <h3 class="section-subheader">
+                        Estadísticas contra el {rival.nombre}
+                    </h3>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Jugados como</th>
+                                    <th>PJ</th>
+                                    <th>PG</th>
+                                    <th>%PG</th>
+                                    <th>PE</th>
+                                    <th>%PE</th>
+                                    <th>PP</th>
+                                    <th>%PP</th>
+                                    <th class="highlight-yellow">⚽</th>
+                                    <th class="highlight-red">⚽</th>
+                                    <th class="highlight-blue">📊</th>
+                                    <th>Avg.</th>
+                                    <th>Dif.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Local</td>
+                                    <td>101</td>
+                                    <td>60</td>
+                                    <td>59.41%</td>
+                                    <td>25</td>
+                                    <td>24.75%</td>
+                                    <td>16</td>
+                                    <td>15.84%</td>
+                                    <td>104</td>
+                                    <td>9</td>
+                                    <td>155</td>
+                                    <td>104</td>
+                                    <td>+92</td>
+                                </tr>
+                                <tr>
+                                    <td>Visitante</td>
+                                    <td>93</td>
+                                    <td>19</td>
+                                    <td>19.15%</td>
+                                    <td>21</td>
+                                    <td>22.62%</td>
+                                    <td>56</td>
+                                    <td>56.87%</td>
+                                    <td>128</td>
+                                    <td>7</td>
+                                    <td>119</td>
+                                    <td>201</td>
+                                    <td>-82</td>
+                                </tr>
+                                <tr>
+                                    <td>Neutral</td>
+                                    <td>5</td>
+                                    <td>2</td>
+                                    <td>40.3%</td>
+                                    <td>0</td>
+                                    <td>0%</td>
+                                    <td>3</td>
+                                    <td>60.5%</td>
+                                    <td>0</td>
+                                    <td>1</td>
+                                    <td>6</td>
+                                    <td>9</td>
+                                    <td>-3</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Total</strong></td>
+                                    <td>203</td>
+                                    <td>81</td>
+                                    <td>39.51%</td>
+                                    <td>49</td>
+                                    <td>23.0%</td>
+                                    <td>79</td>
+                                    <td>36.59%</td>
+                                    <td>222</td>
+                                    <td>11</td>
+                                    <td>311</td>
+                                    <td>314</td>
+                                    <td>-3</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PARTIDOS -->
+                <section class="matches-card">
+                    <h3 class="section-subheader">
+                        Todos los partidos disputados contra el {rival.nombre}
+                    </h3>
+                    <div class="table-wrapper">
+                        <div class="matches-controls">
+                            <button class="filter-btn">Filtrar:</button>
+                        </div>
+                        <table class="matches-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Competición</th>
+                                    <th>En</th>
+                                    <th>Res.</th>
+                                    <th>Árbitro</th>
+                                    <th>Estadio</th>
+                                    <th>Asist.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {
+                                    mockMatches.map((match) => (
+                                        <tr>
+                                            <td>{match.date}</td>
+                                            <td>{match.competition}</td>
+                                            <td>{match.location}</td>
+                                            <td>{match.result}</td>
+                                            <td>{match.referee}</td>
+                                            <td>{match.stadium}</td>
+                                            <td>{match.attendance}</td>
+                                        </tr>
+                                    ))
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Estadio
-                </p>
-                <strong
-                    class="text-xl font-bold text-gray-900 block leading-tight"
-                    style="font-family: 'Poppins', sans-serif;"
-                    >{rival.estadio_nombre || "-"}</strong
-                >
+
+            <!-- RIGHT COLUMN -->
+            <div class="right-column">
+                <!-- ESTADIO -->
+                <section class="stadium-card">
+                    <h2 class="section-header">Estadio</h2>
+                    <div class="stadium-content">
+                        <div class="stadium-photo">
+                            <div class="photo-placeholder"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- EQUIPACIÓN -->
+                <section class="kit-card">
+                    <h2 class="section-header">Equipación</h2>
+                    <div class="kit-content">
+                        <div class="kit-row">
+                            <div class="kit-item">
+                                <div class="kit-placeholder home"></div>
+                            </div>
+                            <div class="kit-item">
+                                <div class="kit-placeholder away"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- RECORDS -->
+                <section class="records-card">
+                    <h2 class="section-header">Records</h2>
+                    <div class="records-list">
+                        <div class="record-row">
+                            <span class="record-label">Máximo goleador:</span>
+                            <span class="record-value"
+                                >Mundo Suárez (19 goles)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Goleador rival:</span>
+                            <span class="record-value">Zarra (20 goles)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más partidos:</span>
+                            <span class="record-value"
+                                >Vicente Asensi (30 partidos)</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor victoria:</span>
+                            <span class="record-value">5 - 0 (5.04.1949)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Mayor derrota:</span>
+                            <span class="record-value">0 - 7 (10.10.1954)</span>
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Más repetido:</span>
+                            <span class="record-value">1-1 (23 veces)</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MÁXIMAS GOLEADORAS -->
+                <section class="top-scorers-card">
+                    <h2 class="section-header">Máximas Goleadoras</h2>
+                    <div class="top-list">
+                        {
+                            mockTopScorers.map((player, index) => (
+                                <div class="top-item">
+                                    <span class="position">{index + 1}.</span>
+                                    <span class="player-name">
+                                        {player.name}
+                                    </span>
+                                    <span class="stat-value">
+                                        {player.goals} goles
+                                    </span>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <!-- MÁXIMAS ASISTENTES -->
+                <section class="top-assisters-card">
+                    <h2 class="section-header">Máximas Asistentes</h2>
+                    <div class="top-list">
+                        {
+                            mockTopAssisters.map((player, index) => (
+                                <div class="top-item">
+                                    <span class="position">{index + 1}.</span>
+                                    <span class="player-name">
+                                        {player.name}
+                                    </span>
+                                    <span class="stat-value">
+                                        {player.assists} asistencias
+                                    </span>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <!-- MÁS GOLES GENERADOS -->
+                <section class="top-contributors-card">
+                    <h2 class="section-header">Más Goles Generados (G+A)</h2>
+                    <div class="top-list">
+                        {
+                            mockTopContributors.map((player, index) => (
+                                <div class="top-item">
+                                    <span class="position">{index + 1}.</span>
+                                    <span class="player-name">
+                                        {player.name}
+                                    </span>
+                                    <span class="stat-value">
+                                        {player.total} ({player.goals}G +{" "}
+                                        {player.assists}A)
+                                    </span>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </section>
             </div>
-            <div
-                class="detail-card bg-white p-8 rounded-2xl shadow-lg text-center hover:transform hover:-translate-y-1 transition-transform duration-300 border-b-4 border-transparent hover:border-[#ffd700]"
-            >
-                <p
-                    class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2"
-                >
-                    Capacidad
-                </p>
-                <strong
-                    class="text-2xl font-bold text-gray-900 block"
-                    style="font-family: 'Bebas Neue', sans-serif;"
-                    >{
-                        rival.estadio_capacidad
-                            ? `${rival.estadio_capacidad.toLocaleString("es-ES")}`
-                            : "-"
-                    }</strong
-                >
-                {
-                    rival.estadio_capacidad && (
-                        <span class="text-xs text-gray-400 uppercase font-bold">
-                            Espectadores
-                        </span>
-                    )
-                }
-            </div>
-        </section>
+        </div>
     </main>
+
+    <style>
+        .rival-details-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .back-link:hover {
+            color: #ff6b00;
+        }
+
+        .rival-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .left-column,
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-header {
+            background: linear-gradient(to right, #ff6b00, #ff8533);
+            color: white;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .section-subheader {
+            background: #333;
+            color: white;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        /* CARDS */
+        .rival-card,
+        .players-card,
+        .charts-card,
+        .stats-table-card,
+        .matches-card,
+        .stadium-card,
+        .kit-card,
+        .records-card,
+        .top-scorers-card,
+        .top-assisters-card,
+        .top-contributors-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* RIVAL INFO */
+        .rival-info {
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .rival-shield {
+            flex-shrink: 0;
+        }
+
+        .rival-shield img {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        .rival-details {
+            flex: 1;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-row .label {
+            font-weight: 600;
+            width: 150px;
+        }
+
+        .info-row .value {
+            flex: 1;
+        }
+
+        .info-row .link {
+            color: #0066cc;
+        }
+
+        /* PLAYERS */
+        .players-list {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        /* CHARTS */
+        .charts-content {
+            padding: 1.5rem;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control label {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .control select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn-ok {
+            padding: 0.5rem 1rem;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .chart-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .pie-chart {
+            width: 200px;
+            height: 200px;
+        }
+
+        .chart-legend {
+            font-size: 0.85rem;
+        }
+
+        .chart-legend .dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .dot.green {
+            background: #4caf50;
+        }
+        .dot.orange {
+            background: #ff9800;
+        }
+        .dot.red {
+            background: #f44336;
+        }
+
+        /* TABLES */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .stats-table,
+        .matches-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .stats-table th,
+        .stats-table td,
+        .matches-table th,
+        .matches-table td {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .stats-table th,
+        .matches-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+        }
+
+        .stats-table th.highlight-yellow {
+            background: #ffcc00;
+            color: #333;
+        }
+
+        .stats-table th.highlight-red {
+            background: #dc3545;
+        }
+
+        .stats-table th.highlight-blue {
+            background: #007bff;
+        }
+
+        .stats-table tbody tr:nth-child(even) {
+            background: #fff5e6;
+        }
+
+        .total-row {
+            background: #f0f0f0 !important;
+            font-weight: bold;
+        }
+
+        .matches-controls {
+            padding: 1rem;
+            background: #f9f9f9;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: #ff6b00;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* STADIUM & KIT */
+        .stadium-photo,
+        .kit-row {
+            padding: 1.5rem;
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .kit-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .kit-placeholder {
+            width: 120px;
+            height: 150px;
+            border-radius: 8px;
+        }
+
+        .kit-placeholder.home {
+            background: linear-gradient(to bottom, #ff0000, #cc0000);
+        }
+
+        .kit-placeholder.away {
+            background: linear-gradient(to bottom, #006600, #004400);
+        }
+
+        /* RECORDS & TOPS */
+        .records-list,
+        .top-list {
+            padding: 1.5rem;
+        }
+
+        .record-row,
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .record-label,
+        .player-name {
+            font-weight: 600;
+        }
+
+        .record-value,
+        .stat-value {
+            color: #ff6b00;
+            font-weight: bold;
+        }
+
+        .top-item {
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .position {
+            width: 30px;
+            font-weight: bold;
+            color: #ff6b00;
+        }
+
+        .player-name {
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .rival-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </Layout>
