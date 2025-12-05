@@ -305,141 +305,53 @@ const playerPosition = positionCoords[player.posicion] || {
                 <h2 class="section-header">Estadísticas con el Real Madrid</h2>
 
                 {
-                    playerStats &&
-                    playerStats.estadisticas &&
-                    playerStats.estadisticas.length > 0 ? (
+                    playerStats ? (
                         <div class="stats-table-container">
                             <table class="stats-table">
                                 <thead>
                                     <tr>
-                                        <th>Temporada / Competición</th>
-                                        <th title="Convocatorias">Conv</th>
-                                        <th title="Partidos">PJ</th>
-                                        <th title="Titularidades">Tit</th>
-                                        <th title="Suplencias">Sup</th>
-                                        <th title="Cambio Entrada">C.Ent</th>
-                                        <th title="Cambio Salida">C.Sal</th>
-                                        <th title="Goles">G</th>
-                                        <th title="Asistencias">A</th>
+                                        <th>Temporada</th>
+                                        <th title="Convocatorias">Conv.</th>
+                                        <th title="Partidos">Part.</th>
+                                        <th title="Titularidades">Tit.</th>
+                                        <th title="Minutos">Min.</th>
+                                        <th title="Cambio Entrada">Ent.</th>
+                                        <th title="Cambio Salida">Sal.</th>
+                                        <th title="Goles">Goles</th>
+                                        <th title="Asistencias">Asist.</th>
                                         <th
-                                            class="highlight"
                                             title="Goles + Asistencias"
+                                            class="highlight"
                                         >
                                             G+A
                                         </th>
                                         {playerStats.jugadora.es_portera && (
-                                            <th title="Porterías a Cero">PC</th>
+                                            <th title="Porterías a cero">
+                                                P.0
+                                            </th>
                                         )}
                                         <th title="Tarjetas Amarillas">TA</th>
                                         <th title="Tarjetas Rojas">TR</th>
-                                        <th title="Capitanías">Cap</th>
+                                        <th title="Capitanías">Cap.</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {playerStats.estadisticas.map(
                                         (season: any) => (
                                             <>
-                                                {/* Season header */}
-                                                <tr class="season-header">
-                                                    <td
-                                                        colspan={
-                                                            playerStats.jugadora
-                                                                .es_portera
-                                                                ? "14"
-                                                                : "13"
-                                                        }
-                                                    >
-                                                        <strong>
-                                                            {season.temporada}
-                                                        </strong>
-                                                    </td>
-                                                </tr>
-
-                                                {/* Competition rows */}
-                                                {season.competiciones.map(
-                                                    (comp: any) => (
-                                                        <tr class="competition-row">
-                                                            <td class="competition-name">
-                                                                {
-                                                                    comp.competicion
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.convocatorias
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.partidos}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.titularidades
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.suplencias
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.cambio_entrada
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.cambio_salida
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.goles}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.asistencias
-                                                                }
-                                                            </td>
-                                                            <td class="highlight">
-                                                                {
-                                                                    comp.goles_asistencias
-                                                                }
-                                                            </td>
-                                                            {playerStats
-                                                                .jugadora
-                                                                .es_portera && (
-                                                                <td>
-                                                                    {
-                                                                        comp.porterias_cero
-                                                                    }
-                                                                </td>
-                                                            )}
-                                                            <td>
-                                                                {
-                                                                    comp.tarjetas_amarillas
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.tarjetas_rojas
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.capitanias
-                                                                }
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-
-                                                {/* Season total */}
-                                                <tr class="season-total">
+                                                {/* Season total (Clickable) */}
+                                                <tr
+                                                    class="season-total-row"
+                                                    onclick={`toggleSeason('${season.temporada}')`}
+                                                    style="cursor: pointer;"
+                                                >
                                                     <td>
                                                         <strong>
-                                                            Total{" "}
                                                             {season.temporada}
-                                                        </strong>
+                                                        </strong>{" "}
+                                                        <span class="toggle-icon">
+                                                            ▼
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <strong>
@@ -469,7 +381,7 @@ const playerPosition = positionCoords[player.posicion] || {
                                                         <strong>
                                                             {
                                                                 season.total
-                                                                    .suplencias
+                                                                    .minutos
                                                             }
                                                         </strong>
                                                     </td>
@@ -546,14 +458,93 @@ const playerPosition = positionCoords[player.posicion] || {
                                                         </strong>
                                                     </td>
                                                 </tr>
+
+                                                {/* Competition rows (Hidden by default) */}
+                                                {season.competiciones.map(
+                                                    (comp: any) => (
+                                                        <tr
+                                                            class={`competition-row season-${season.temporada}`}
+                                                            style="display: none;"
+                                                        >
+                                                            <td class="competition-name">
+                                                                {
+                                                                    comp.competicion
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.convocatorias
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {comp.partidos}
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.titularidades
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {comp.minutos}
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.cambio_entrada
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.cambio_salida
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {comp.goles}
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.asistencias
+                                                                }
+                                                            </td>
+                                                            <td class="highlight">
+                                                                {
+                                                                    comp.goles_asistencias
+                                                                }
+                                                            </td>
+                                                            {playerStats
+                                                                .jugadora
+                                                                .es_portera && (
+                                                                <td>
+                                                                    {
+                                                                        comp.porterias_cero
+                                                                    }
+                                                                </td>
+                                                            )}
+                                                            <td>
+                                                                {
+                                                                    comp.tarjetas_amarillas
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.tarjetas_rojas
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.capitanias
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
                                             </>
                                         ),
                                     )}
 
                                     {/* Career total */}
-                                    <tr class="career-total">
+                                    <tr class="career-total-row">
                                         <td>
-                                            <strong>TOTAL CARRERA</strong>
+                                            <strong>TOTAL</strong>
                                         </td>
                                         <td>
                                             <strong>
@@ -583,7 +574,7 @@ const playerPosition = positionCoords[player.posicion] || {
                                             <strong>
                                                 {
                                                     playerStats.total_carrera
-                                                        .suplencias
+                                                        .minutos
                                                 }
                                             </strong>
                                         </td>
@@ -673,11 +664,56 @@ const playerPosition = positionCoords[player.posicion] || {
                     )
                 }
             </section>
+
+            <section class="teams-section">
+                <h2 class="section-header">Otros equipos</h2>
+                <div class="teams-content">
+                    <p class="no-data">Sin datos disponibles</p>
+                </div>
+            </section>
+
+            <section class="teams-section">
+                <h2 class="section-header">Otros equipos</h2>
+                <div class="teams-content">
+                    <p class="no-data">Sin datos disponibles</p>
+                </div>
+            </section>
+
+            <section class="teams-section">
+                <h2 class="section-header">Otros equipos</h2>
+                <div class="teams-content">
+                    <p class="no-data">Sin datos disponibles</p>
+                </div>
+            </section>
+
+            <section class="teams-section">
+                <h2 class="section-header">Otros equipos</h2>
+                <div class="teams-content">
+                    <p class="no-data">Sin datos disponibles</p>
+                </div>
+            </section>
         </div>
     </main>
 
     <script is:inline>
-        // No client-side JS needed for stats anymore
+        function toggleSeason(season) {
+            const rows = document.querySelectorAll(
+                `.competition-row.season-${season}`,
+            );
+            const icon = document.querySelector(
+                `.season-total-row[onclick*="${season}"] .toggle-icon`,
+            );
+
+            rows.forEach((row) => {
+                if (row.style.display === "none") {
+                    row.style.display = "table-row";
+                    if (icon) icon.textContent = "▲";
+                } else {
+                    row.style.display = "none";
+                    if (icon) icon.textContent = "▼";
+                }
+            });
+        }
     </script>
 
     <style>
@@ -732,18 +768,21 @@ const playerPosition = positionCoords[player.posicion] || {
             padding: 1.5rem;
             display: flex;
             gap: 1.5rem;
-            align-items: flex-start;
+            align-items: stretch;
         }
 
         .player-photo-container {
             margin-bottom: 0;
             text-align: center;
             flex-shrink: 0;
+            display: flex;
         }
 
         .player-photo {
             max-width: 250px;
-            height: auto;
+            height: 100%;
+            width: auto;
+            object-fit: cover;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
@@ -970,6 +1009,14 @@ const playerPosition = positionCoords[player.posicion] || {
 
         .stats-table .season-total-row:hover {
             background: #e8e8e8;
+        }
+
+        .toggle-icon {
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
+            font-size: 0.8em;
+            color: #666;
         }
 
         .stats-table .career-total-row {

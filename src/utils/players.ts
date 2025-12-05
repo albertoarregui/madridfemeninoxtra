@@ -183,7 +183,42 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 COUNT(DISTINCT CASE 
                     WHEN tj.tipo_tarjeta = 'Roja' THEN tj.id_tarjeta 
                 END) as tarjetas_rojas,
-                COUNT(DISTINCT cap.id_capitania) as capitanias
+                COUNT(DISTINCT cap.id_capitania) as capitanias,
+                SUM(
+                    CASE
+                        -- Titular que es sustituida
+                        WHEN a.id_alineacion IS NOT NULL 
+                             AND cm_out.id_cambio IS NOT NULL 
+                             AND NOT EXISTS (
+                                 SELECT 1 FROM cambios cb 
+                                 WHERE cb.id_partido = a.id_partido 
+                                 AND cb.id_jugadora_entra = a.id_jugadora
+                             )
+                        THEN cm_out.minuto
+
+                        -- Titular que juega todo el partido
+                        WHEN a.id_alineacion IS NOT NULL 
+                             AND cm_out.id_cambio IS NULL 
+                             AND NOT EXISTS (
+                                 SELECT 1 FROM cambios cb 
+                                 WHERE cb.id_partido = a.id_partido 
+                                 AND cb.id_jugadora_entra = a.id_jugadora
+                             )
+                        THEN 90
+
+                        -- Suplente que entra y es sustituida (raro)
+                        WHEN cm_in.id_cambio IS NOT NULL 
+                             AND cm_out.id_cambio IS NOT NULL 
+                        THEN (cm_out.minuto - cm_in.minuto)
+
+                        -- Suplente que entra y termina el partido
+                        WHEN cm_in.id_cambio IS NOT NULL 
+                             AND cm_out.id_cambio IS NULL 
+                        THEN (90 - cm_in.minuto)
+
+                        ELSE 0
+                    END
+                ) as minutos
             FROM alineaciones a
             INNER JOIN partidos p ON a.id_partido = p.id_partido
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
@@ -223,6 +258,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                         convocatorias: 0,
                         partidos: 0,
                         titularidades: 0,
+                        minutos: 0,
                         suplencias: 0,
                         cambio_entrada: 0,
                         cambio_salida: 0,
@@ -242,6 +278,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 convocatorias: Number(row.convocatorias) || 0,
                 partidos: Number(row.partidos) || 0,
                 titularidades: Number(row.titularidades) || 0,
+                minutos: Number(row.minutos) || 0,
                 suplencias: Number(row.suplencias) || 0,
                 cambio_entrada: Number(row.cambio_entrada) || 0,
                 cambio_salida: Number(row.cambio_salida) || 0,
@@ -262,6 +299,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             total.convocatorias += stats.convocatorias;
             total.partidos += stats.partidos;
             total.titularidades += stats.titularidades;
+            total.minutos += stats.minutos;
             total.suplencias += stats.suplencias;
             total.cambio_entrada += stats.cambio_entrada;
             total.cambio_salida += stats.cambio_salida;
@@ -281,6 +319,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             convocatorias: 0,
             partidos: 0,
             titularidades: 0,
+            minutos: 0,
             suplencias: 0,
             cambio_entrada: 0,
             cambio_salida: 0,
