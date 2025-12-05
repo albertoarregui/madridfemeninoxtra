@@ -62,12 +62,12 @@ export const GET = async ({ params }) => {
         const playerQuery = `
             SELECT id_jugadora, nombre, posicion
             FROM jugadoras 
-            WHERE nombre = ?
+            WHERE LOWER(nombre) LIKE LOWER(?)
         `;
 
         const playerResult = await client.execute({
             sql: playerQuery,
-            args: [nombreJugadora],
+            args: [`%${nombreJugadora}%`],
             parse: true
         });
 
