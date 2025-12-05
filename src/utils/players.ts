@@ -113,7 +113,6 @@ export async function fetchAndCleanPlayers(): Promise<any[]> {
 
             return {
                 ...player,
-
                 slug: slugify(player.nombre),
                 imageUrl: getPlayerImageUrl(player),
                 cleanCountryName: getCleanCountryName(cleanPaisOrigin),
