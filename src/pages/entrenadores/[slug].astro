@@ -29,9 +29,6 @@ const formatDate = (dateString: string | null | undefined): string => {
 };
 
 const fechaNacimiento = formatDate(coach.fecha_nacimiento);
-
-// Empty data  array - to be populated with real database data
-const rachas: any[] = [];
 ---
 
 <Layout
@@ -53,156 +50,56 @@ const rachas: any[] = [];
                     stroke-width="2"
                     d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
-            Volver al listado
+            Volver al resto de entrenadores
         </a>
 
-        <div class="coach-grid">
-            <!-- LEFT COLUMN -->
-            <div class="left-column">
-                <!-- FICHA DE ENTRENADOR -->
-                <section class="coach-card">
-                    <h2 class="section-header">
-                        Ficha de entrenador: {coach.nombre}
-                    </h2>
-                    <div class="coach-info">
-                        <div class="coach-photo">
-                            <img
-                                src={coach.imageUrl}
-                                alt={`Foto de ${coach.nombre}`}
-                                onerror="this.onerror=null; this.src='/images/placeholder.png';"
-                            />
+        <div class="coach-grid-layout">
+            <!-- TOP: FICHA DE ENTRENADOR (Full Width) -->
+            <section class="coach-card full-width">
+                <h2 class="section-header">
+                    Ficha de entrenador: {coach.nombre}
+                </h2>
+                <div class="coach-info">
+                    <div class="coach-photo">
+                        <img
+                            src={coach.imageUrl}
+                            alt={`Foto de ${coach.nombre}`}
+                            onerror="this.onerror=null; this.src='/images/placeholder.png';"
+                        />
+                    </div>
+                    <div class="coach-details">
+                        <div class="info-row">
+                            <span class="label">Nombre completo:</span>
+                            <span class="value">{coach.nombre}</span>
                         </div>
-                        <div class="coach-details">
-                            <div class="info-row">
-                                <span class="label">Nombre completo:</span>
-                                <span class="value">{coach.nombre}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Fecha de nacimiento:</span>
-                                <span class="value">{fechaNacimiento}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Lugar de nacimiento:</span>
-                                <span class="value"
-                                    >{coach.ciudad || "Barcelona"} ({
-                                        coach.pais || "Barcelona"
-                                    })</span
-                                >
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Nacionalidad:</span>
-                                <span class="value"
-                                    >{coach.pais || "España"} 🇪🇸</span
-                                >
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Tiempo:</span>
-                                <span class="value">292 días (2019 - 2020)</span
-                                >
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Títulos:</span>
-                                <span class="value">Ninguno</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Debut:</span>
-                                <span class="value"
-                                    >14/09/2019 (FC Barcelona)</span
-                                >
-                            </div>
+                        <div class="info-row">
+                            <span class="label">Fecha de nacimiento:</span>
+                            <span class="value">{fechaNacimiento}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Lugar de nacimiento:</span>
+                            <span class="value"
+                                >{coach.ciudad || "-"} ({
+                                    coach.pais || "-"
+                                })</span
+                            >
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Nacionalidad:</span>
+                            <span class="value"
+                                >{coach.pais || "-"}
+                                {coach.pais === "España" ? "🇪🇸" : ""}</span
+                            >
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- BIOGRAFÍA -->
-                <section class="bio-card">
-                    <h2 class="section-header">Biografía</h2>
-                    <div class="bio-content">
-                        <p class="no-data">Biografía no disponible.</p>
-                    </div>
-                </section>
-
-                <!-- ESTADÍSTICAS -->
-                <section class="stats-card">
-                    <h2 class="section-header">
-                        Estadísticas con el Real Madrid
-                    </h2>
-                    <div class="stats-controls">
-                        <div class="control">
-                            <label>Competición:</label>
-                            <select>
-                                <option>25 seleccionadas</option>
-                            </select>
-                        </div>
-                        <button class="btn-ok">OK</button>
-                        <div class="control">
-                            <label>Entrenador:</label>
-                            <select>
-                                <option>{coach.nombre}</option>
-                            </select>
-                        </div>
-                        <div class="control">
-                            <label>Comparar con:</label>
-                            <select>
-                                <option>{coach.nombre}</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Temporada</th>
-                                    <th>PJ</th>
-                                    <th>PG</th>
-                                    <th>%PG</th>
-                                    <th>PE</th>
-                                    <th>%PE</th>
-                                    <th>PP</th>
-                                    <th>%PP</th>
-                                    <th>GF</th>
-                                    <th>GC</th>
-                                    <th>Dif</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>2019-2020</td>
-                                    <td>41</td>
-                                    <td>15</td>
-                                    <td>36.59%</td>
-                                    <td>12</td>
-                                    <td>29.27%</td>
-                                    <td>14</td>
-                                    <td>34.15%</td>
-                                    <td>54</td>
-                                    <td>64</td>
-                                    <td>-10</td>
-                                </tr>
-                                <tr class="total-row">
-                                    <td><strong>Total</strong></td>
-                                    <td>41</td>
-                                    <td>15</td>
-                                    <td>36.59%</td>
-                                    <td>12</td>
-                                    <td>29.27%</td>
-                                    <td>14</td>
-                                    <td>34.15%</td>
-                                    <td>54</td>
-                                    <td>64</td>
-                                    <td>-10</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
-
-            <!-- RIGHT COLUMN -->
-            <div class="right-column">
-                <!-- OTROS EQUIPOS -->
+            <!-- MIDDLE: TRAYECTORIA (Left) & RECORDS (Right) -->
+            <div class="middle-section">
+                <!-- TRAYECTORIA -->
                 <section class="teams-card">
-                    <h2 class="section-header">Otros equipos</h2>
+                    <h2 class="section-header">TRAYECTORIA</h2>
                     <div class="teams-content">
                         <p class="no-data">Sin datos disponibles</p>
                     </div>
@@ -210,83 +107,43 @@ const rachas: any[] = [];
 
                 <!-- RECORDS -->
                 <section class="records-card">
-                    <h2 class="section-header">Records</h2>
+                    <h2 class="section-header">RÉCORDS</h2>
                     <div class="records-list">
-                        <div class="record-row">
-                            <span class="record-label">Edad debut:</span>
-                            <span class="record-value"
-                                >0 años (FC Barcelona)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Edad ult. part.:</span>
-                            <span class="record-value"
-                                >50,52 años (Villarreal CF)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Más partidos:</span>
-                            <span class="record-value"
-                                >Real Madrid (3 partidos)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Más victorias:</span>
-                            <span class="record-value"
-                                >CA Osasuna (1 partidos)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Más empates:</span>
-                            <span class="record-value"
-                                >Atlético de Madrid (2 partidos)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Más derrotas:</span>
-                            <span class="record-value"
-                                >Atalanta BC (2 partidos)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Mayor victoria:</span>
-                            <span class="record-value">4 - 1 (Lille OSC)</span>
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Mayor derrota:</span>
-                            <span class="record-value"
-                                >2 - 5 (FC Barcelona)</span
-                            >
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label">Más repetido:</span>
-                            <span class="record-value">1-1 (8 veces)</span>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- RACHAS -->
-                <section class="streaks-card">
-                    <h2 class="section-header">Rachas con el Real Madrid</h2>
-                    <div class="streaks-grid">
-                        {
-                            rachas.map((racha) => (
-                                <div class="streak-item">
-                                    <div class="streak-label">
-                                        {racha.label}:
-                                    </div>
-                                    <div class="streak-value">
-                                        {racha.value}
-                                    </div>
-                                    <div class="streak-extra">
-                                        {racha.extra}
-                                    </div>
-                                </div>
-                            ))
-                        }
+                        <p class="no-data">Sin datos disponibles</p>
                     </div>
                 </section>
             </div>
+
+            <!-- BOTTOM: ESTADÍSTICAS (Full Width) -->
+            <section class="stats-card full-width">
+                <h2 class="section-header">ESTADÍSTICAS</h2>
+                <div class="table-wrapper">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Temporada</th>
+                                <th>PJ</th>
+                                <th>PG</th>
+                                <th>%PG</th>
+                                <th>PE</th>
+                                <th>%PE</th>
+                                <th>PP</th>
+                                <th>%PP</th>
+                                <th>GF</th>
+                                <th>GC</th>
+                                <th>Dif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="11" class="no-data-cell"
+                                    >Sin datos disponibles</td
+                                >
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -312,16 +169,15 @@ const rachas: any[] = [];
             color: #ffde59;
         }
 
-        .coach-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
+        .coach-grid-layout {
+            display: flex;
+            flex-direction: column;
             gap: 1.5rem;
         }
 
-        .left-column,
-        .right-column {
-            display: flex;
-            flex-direction: column;
+        .middle-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
 
@@ -332,19 +188,22 @@ const rachas: any[] = [];
             margin: 0;
             font-size: 1rem;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
         /* CARDS */
         .coach-card,
-        .bio-card,
         .stats-card,
         .teams-card,
-        .records-card,
-        .streaks-card {
+        .records-card {
             background: white;
             border: 1px solid #ddd;
             border-radius: 8px;
             overflow: hidden;
+        }
+
+        .full-width {
+            width: 100%;
         }
 
         /* COACH INFO */
@@ -384,9 +243,9 @@ const rachas: any[] = [];
             flex: 1;
         }
 
-        /* BIOGRAPHY */
-        .bio-content,
-        .teams-content {
+        /* CONTENT PADDING */
+        .teams-content,
+        .records-list {
             padding: 1.5rem;
         }
 
@@ -395,44 +254,17 @@ const rachas: any[] = [];
             font-style: italic;
             text-align: center;
             padding: 2rem;
+            margin: 0;
         }
 
-        /* STATS */
-        .stats-controls {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f9f9f9;
-            align-items: center;
-            flex-wrap: wrap;
+        .no-data-cell {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-style: italic;
         }
 
-        .control {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .control label {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .control select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .btn-ok {
-            padding: 0.5rem 1rem;
-            background: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
+        /* STATS TABLE */
         .table-wrapper {
             overflow-x: auto;
         }
@@ -460,67 +292,8 @@ const rachas: any[] = [];
             background: #fff5e6;
         }
 
-        .total-row {
-            background: #f0f0f0 !important;
-            font-weight: bold;
-        }
-
-        /* RECORDS */
-        .records-list {
-            padding: 1.5rem;
-        }
-
-        .record-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .record-label {
-            font-weight: 600;
-        }
-
-        .record-value {
-            color: #ffde59;
-            font-weight: bold;
-        }
-
-        /* STREAKS */
-        .streaks-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            padding: 1.5rem;
-        }
-
-        .streak-item {
-            padding: 1rem;
-            background: #fff5e6;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .streak-label {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .streak-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #ffde59;
-            margin-bottom: 0.5rem;
-        }
-
-        .streak-extra {
-            font-size: 0.85rem;
-            color: #666;
-        }
-
         @media (max-width: 1024px) {
-            .coach-grid {
+            .middle-section {
                 grid-template-columns: 1fr;
             }
         }
@@ -536,8 +309,13 @@ const rachas: any[] = [];
                 margin: 0 auto;
             }
 
-            .streaks-grid {
-                grid-template-columns: 1fr;
+            .info-row {
+                flex-direction: column;
+            }
+
+            .info-row .label {
+                width: 100%;
+                margin-bottom: 0.25rem;
             }
         }
     </style>
