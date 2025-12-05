@@ -56,7 +56,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
                 slug: rival.slug || slugify(rival.nombre),
-                shieldUrl: getRivalShieldUrl(rival),
             };
         });
     } catch (error) {
@@ -84,7 +83,6 @@ export async function fetchRivals(): Promise<any[]> {
             return {
                 ...rival,
                 slug: slugify(rival.nombre),
-                shieldUrl: getRivalShieldUrl(rival),
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
             };
