@@ -244,7 +244,15 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             LEFT JOIN capitanias cap ON cap.id_partido = player_partidos.id_partido 
                 AND cap.id_jugadora = player_partidos.id_jugadora
             GROUP BY t.temporada, c.competicion
-            ORDER BY t.temporada DESC, c.competicion ASC
+            ORDER BY t.temporada DESC, 
+                CASE c.competicion
+                    WHEN 'Liga F' THEN 1
+                    WHEN 'UWCL' THEN 2
+                    WHEN 'Copa de la Reina' THEN 3
+                    WHEN 'Supercopa de España' THEN 4
+                    WHEN 'Amistoso' THEN 5
+                    ELSE 99
+                END ASC
         `;
 
         const statsResult = await client.execute({
