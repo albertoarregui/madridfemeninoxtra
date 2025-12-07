@@ -221,10 +221,16 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                     END
                 ), 0) as minutos
             FROM (
-                -- Get all partidos where player scored or assisted
+                -- Get all partidos where player scored, assisted, or was captain
                 SELECT DISTINCT ga.id_partido, ? as id_jugadora
                 FROM goles_y_asistencias ga
                 WHERE ga.goleadora = ? OR ga.asistente = ?
+                
+                UNION
+                
+                SELECT DISTINCT cap.id_partido, ? as id_jugadora
+                FROM capitanias cap
+                WHERE cap.id_jugadora = ?
             ) player_partidos
             INNER JOIN partidos p ON player_partidos.id_partido = p.id_partido
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
@@ -257,7 +263,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const statsResult = await client.execute({
             sql: statsQuery,
-            args: [playerId, playerId, playerId],
+            args: [playerId, playerId, playerId, playerId, playerId],
         });
 
         // Process results
