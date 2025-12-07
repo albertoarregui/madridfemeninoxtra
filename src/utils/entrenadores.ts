@@ -138,7 +138,8 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
                 SUM(CASE WHEN p.goles_rm = p.goles_rival THEN 1 ELSE 0 END) as empates,
                 SUM(CASE WHEN p.goles_rm < p.goles_rival THEN 1 ELSE 0 END) as derrotas,
                 SUM(p.goles_rm) as goles_favor,
-                SUM(p.goles_rival) as goles_contra
+                SUM(p.goles_rival) as goles_contra,
+                SUM(CASE WHEN p.goles_rival = 0 THEN 1 ELSE 0 END) as porterias_cero
             FROM partidos p
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
@@ -181,18 +182,28 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
                         derrotas: 0,
                         goles_favor: 0,
                         goles_contra: 0,
+                        porterias_cero: 0,
                     },
                 };
             }
 
+            const partidos = Number(row.partidos) || 0;
+            const victorias = Number(row.victorias) || 0;
+            const empates = Number(row.empates) || 0;
+            const derrotas = Number(row.derrotas) || 0;
+
             estadisticas[temporada].competiciones.push({
                 competicion: competicion,
-                partidos: Number(row.partidos) || 0,
-                victorias: Number(row.victorias) || 0,
-                empates: Number(row.empates) || 0,
-                derrotas: Number(row.derrotas) || 0,
+                partidos: partidos,
+                victorias: victorias,
+                empates: empates,
+                derrotas: derrotas,
                 goles_favor: Number(row.goles_favor) || 0,
                 goles_contra: Number(row.goles_contra) || 0,
+                porterias_cero: Number(row.porterias_cero) || 0,
+                porcentaje_victorias: partidos > 0 ? ((victorias / partidos) * 100).toFixed(1) : '0.0',
+                porcentaje_empates: partidos > 0 ? ((empates / partidos) * 100).toFixed(1) : '0.0',
+                porcentaje_derrotas: partidos > 0 ? ((derrotas / partidos) * 100).toFixed(1) : '0.0',
             });
 
             // Update season totals
@@ -202,10 +213,22 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             estadisticas[temporada].total.derrotas += Number(row.derrotas) || 0;
             estadisticas[temporada].total.goles_favor += Number(row.goles_favor) || 0;
             estadisticas[temporada].total.goles_contra += Number(row.goles_contra) || 0;
+            estadisticas[temporada].total.porterias_cero += Number(row.porterias_cero) || 0;
         });
 
-        // Convert to array
-        const estadisticasArray = Object.values(estadisticas);
+        // Convert to array and calculate season total percentages
+        const estadisticasArray = Object.values(estadisticas).map((season: any) => {
+            const partidos = season.total.partidos;
+            return {
+                ...season,
+                total: {
+                    ...season.total,
+                    porcentaje_victorias: partidos > 0 ? ((season.total.victorias / partidos) * 100).toFixed(1) : '0.0',
+                    porcentaje_empates: partidos > 0 ? ((season.total.empates / partidos) * 100).toFixed(1) : '0.0',
+                    porcentaje_derrotas: partidos > 0 ? ((season.total.derrotas / partidos) * 100).toFixed(1) : '0.0',
+                }
+            };
+        });
 
         // Calculate career totals
         const total_carrera = {
@@ -215,6 +238,7 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             derrotas: 0,
             goles_favor: 0,
             goles_contra: 0,
+            porterias_cero: 0,
         };
 
         estadisticasArray.forEach((season: any) => {
@@ -224,11 +248,20 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             total_carrera.derrotas += season.total.derrotas;
             total_carrera.goles_favor += season.total.goles_favor;
             total_carrera.goles_contra += season.total.goles_contra;
+            total_carrera.porterias_cero += season.total.porterias_cero;
         });
+
+        // Add percentages to career total
+        const total_carrera_con_porcentajes = {
+            ...total_carrera,
+            porcentaje_victorias: total_carrera.partidos > 0 ? ((total_carrera.victorias / total_carrera.partidos) * 100).toFixed(1) : '0.0',
+            porcentaje_empates: total_carrera.partidos > 0 ? ((total_carrera.empates / total_carrera.partidos) * 100).toFixed(1) : '0.0',
+            porcentaje_derrotas: total_carrera.partidos > 0 ? ((total_carrera.derrotas / total_carrera.partidos) * 100).toFixed(1) : '0.0',
+        };
 
         return {
             estadisticas: estadisticasArray,
-            total_carrera: total_carrera,
+            total_carrera: total_carrera_con_porcentajes,
         };
     } catch (error) {
         console.error("Error fetching coach stats:", error);
