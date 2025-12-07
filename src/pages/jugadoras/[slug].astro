@@ -6,6 +6,21 @@ import {
     fetchPlayerDebut,
 } from "../../utils/players";
 
+// Import competition logos
+import ligaFLogo from "../../assets/competiciones/liga_f.png";
+import uwclLogo from "../../assets/competiciones/uwcl.png";
+import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
+import supercopaLogo from "../../assets/competiciones/supercopa_de_espana.png";
+
+// Competition logo mapping
+const competitionLogos: Record<string, any> = {
+    "Liga F": ligaFLogo,
+    UWCL: uwclLogo,
+    "Copa de la Reina": copaLogo,
+    "Supercopa de España": supercopaLogo,
+    // Amistoso doesn't have a logo
+};
+
 export async function getStaticPaths() {
     const allPlayers = await fetchPlayersDirectly();
 
@@ -450,14 +465,22 @@ const playerPosition = positionCoords[player.posicion] || {
                                                     style="display: none;"
                                                 >
                                                     <td class="competition-name">
-                                                        <img
-                                                            src={`/src/assets/competiciones/${comp.competicion.toLowerCase().replace(/ /g, "_").replace(/ñ/g, "n")}.png`}
-                                                            alt={
-                                                                comp.competicion
-                                                            }
-                                                            class="competition-logo"
-                                                            onerror="this.style.display='none';"
-                                                        />
+                                                        {competitionLogos[
+                                                            comp.competicion
+                                                        ] && (
+                                                            <img
+                                                                src={
+                                                                    competitionLogos[
+                                                                        comp
+                                                                            .competicion
+                                                                    ].src
+                                                                }
+                                                                alt={
+                                                                    comp.competicion
+                                                                }
+                                                                class="competition-logo"
+                                                            />
+                                                        )}
                                                         {comp.competicion}
                                                     </td>
                                                     <td>
