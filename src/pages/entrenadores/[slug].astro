@@ -169,7 +169,10 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                                                 {/* Season total row */}
                                                 <tr
                                                     class="season-total-row clickable"
-                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}', this)`}
+                                                    data-season={season.temporada.replace(
+                                                        /\//g,
+                                                        "-",
+                                                    )}
                                                 >
                                                     <td>
                                                         <span class="toggle-icon">
@@ -393,25 +396,38 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
         </div>
     </main>
 
-    <script>
-        function toggleSeason(season, element) {
-            const rows = document.querySelectorAll(
-                `.competition-row.season-${season}`,
+    <script is:inline>
+        document.addEventListener("DOMContentLoaded", function () {
+            const seasonRows = document.querySelectorAll(
+                ".season-total-row.clickable",
             );
-            const icon = element.querySelector(".toggle-icon");
 
-            rows.forEach((row) => {
-                if (row.style.display === "none" || row.style.display === "") {
-                    row.style.display = "table-row";
-                } else {
-                    row.style.display = "none";
-                }
+            seasonRows.forEach((row) => {
+                row.addEventListener("click", function () {
+                    const season = this.getAttribute("data-season");
+                    const competitionRows = document.querySelectorAll(
+                        `.competition-row.season-${season}`,
+                    );
+                    const icon = this.querySelector(".toggle-icon");
+
+                    competitionRows.forEach((compRow) => {
+                        if (
+                            compRow.style.display === "none" ||
+                            compRow.style.display === ""
+                        ) {
+                            compRow.style.display = "table-row";
+                        } else {
+                            compRow.style.display = "none";
+                        }
+                    });
+
+                    if (icon) {
+                        icon.textContent =
+                            icon.textContent === "▶" ? "▼" : "▶";
+                    }
+                });
             });
-
-            if (icon) {
-                icon.textContent = icon.textContent === "▶" ? "▼" : "▶";
-            }
-        }
+        });
     </script>
 
     <style>
