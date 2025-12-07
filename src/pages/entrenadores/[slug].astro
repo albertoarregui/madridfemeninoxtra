@@ -1,6 +1,34 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { fetchCoachesDirectly } from "../../utils/entrenadores";
+import {
+    fetchCoachesDirectly,
+    fetchCoachStats,
+} from "../../utils/entrenadores";
+
+// Import coach photos
+import albertoTorilPhoto from "../../assets/entrenadores/alberto_toril.png";
+import davidAznarPhoto from "../../assets/entrenadores/david_aznar.png";
+import pauQuesadaPhoto from "../../assets/entrenadores/pau_quesada.png";
+
+// Coach photo mapping
+const coachPhotos: Record<string, any> = {
+    "Alberto Toril": albertoTorilPhoto,
+    "David Aznar": davidAznarPhoto,
+    "Pau Quesada": pauQuesadaPhoto,
+};
+
+// Import competition logos
+import ligaFLogo from "../../assets/competiciones/liga_f.png";
+import uwclLogo from "../../assets/competiciones/uwcl.png";
+import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
+import supercopaLogo from "../../assets/competiciones/supercopa_de_espana.png";
+
+const competitionLogos: Record<string, any> = {
+    "Liga F": ligaFLogo,
+    UWCL: uwclLogo,
+    "Copa de la Reina": copaLogo,
+    "Supercopa de España": supercopaLogo,
+};
 
 export async function getStaticPaths() {
     const allCoaches = await fetchCoachesDirectly();
@@ -12,6 +40,9 @@ export async function getStaticPaths() {
 }
 
 const { coach } = Astro.props;
+
+// Fetch coach stats
+const coachStats = await fetchCoachStats(coach.id_entrenador);
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -60,11 +91,19 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                 </h2>
                 <div class="coach-info">
                     <div class="coach-photo">
-                        <img
-                            src={coach.imageUrl}
-                            alt={`Foto de ${coach.nombre}`}
-                            onerror="this.onerror=null; this.src='/images/placeholder.png';"
-                        />
+                        {
+                            coachPhotos[coach.nombre] ? (
+                                <img
+                                    src={coachPhotos[coach.nombre].src}
+                                    alt={`Foto de ${coach.nombre}`}
+                                />
+                            ) : (
+                                <img
+                                    src="/images/placeholder.png"
+                                    alt={`Foto de ${coach.nombre}`}
+                                />
+                            )
+                        }
                     </div>
                     <div class="coach-details">
                         <div class="info-row">
@@ -113,34 +152,274 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
             <section class="stats-card full-width">
                 <h2 class="section-header">ESTADÍSTICAS</h2>
                 <div class="table-wrapper">
-                    <table class="stats-table">
-                        <thead>
-                            <tr>
-                                <th>Temporada</th>
-                                <th>PJ</th>
-                                <th>PG</th>
-                                <th>%PG</th>
-                                <th>PE</th>
-                                <th>%PE</th>
-                                <th>PP</th>
-                                <th>%PP</th>
-                                <th>GF</th>
-                                <th>GC</th>
-                                <th>Dif</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="11" class="no-data-cell"
-                                    >Sin datos disponibles</td
-                                >
-                            </tr>
-                        </tbody>
-                    </table>
+                    {
+                        coachStats &&
+                        coachStats.estadisticas &&
+                        coachStats.estadisticas.length > 0 ? (
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Temporada</th>
+                                        <th title="Partidos">PJ</th>
+                                        <th title="Victorias">V</th>
+                                        <th title="Empates">E</th>
+                                        <th title="Derrotas">D</th>
+                                        <th title="Goles a Favor">GF</th>
+                                        <th title="Goles en Contra">GC</th>
+                                        <th title="Diferencia">Dif</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {coachStats.estadisticas.map(
+                                        (season: any) => (
+                                            <>
+                                                {/* Season total row */}
+                                                <tr
+                                                    class="season-total-row clickable"
+                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                                >
+                                                    <td>
+                                                        <span class="toggle-icon">
+                                                            ▶
+                                                        </span>
+                                                        <strong>
+                                                            {season.temporada}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .partidos
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .victorias
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .empates
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .derrotas
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .goles_favor
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {
+                                                                season.total
+                                                                    .goles_contra
+                                                            }
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total
+                                                                .goles_favor -
+                                                                season.total
+                                                                    .goles_contra}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+
+                                                {/* Competition rows */}
+                                                {season.competiciones.map(
+                                                    (comp: any) => (
+                                                        <tr
+                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
+                                                            style="display: none;"
+                                                        >
+                                                            <td class="competition-name">
+                                                                {competitionLogos[
+                                                                    comp
+                                                                        .competicion
+                                                                ] && (
+                                                                    <img
+                                                                        src={
+                                                                            competitionLogos[
+                                                                                comp
+                                                                                    .competicion
+                                                                            ]
+                                                                                .src
+                                                                        }
+                                                                        alt={
+                                                                            comp.competicion
+                                                                        }
+                                                                        class="competition-logo"
+                                                                    />
+                                                                )}
+                                                                {
+                                                                    comp.competicion
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {comp.partidos}
+                                                            </td>
+                                                            <td>
+                                                                {comp.victorias}
+                                                            </td>
+                                                            <td>
+                                                                {comp.empates}
+                                                            </td>
+                                                            <td>
+                                                                {comp.derrotas}
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.goles_favor
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {
+                                                                    comp.goles_contra
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                {comp.goles_favor -
+                                                                    comp.goles_contra}
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                            </>
+                                        ),
+                                    )}
+
+                                    {/* Career total */}
+                                    <tr class="career-total-row">
+                                        <td>
+                                            <strong>TOTAL</strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .partidos
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .victorias
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .empates
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .derrotas
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .goles_favor
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {
+                                                    coachStats.total_carrera
+                                                        .goles_contra
+                                                }
+                                            </strong>
+                                        </td>
+                                        <td>
+                                            <strong>
+                                                {coachStats.total_carrera
+                                                    .goles_favor -
+                                                    coachStats.total_carrera
+                                                        .goles_contra}
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        ) : (
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Temporada</th>
+                                        <th>PJ</th>
+                                        <th>V</th>
+                                        <th>E</th>
+                                        <th>D</th>
+                                        <th>GF</th>
+                                        <th>GC</th>
+                                        <th>Dif</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="8" class="no-data-cell">
+                                            Sin datos disponibles
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        )
+                    }
                 </div>
             </section>
         </div>
     </main>
+
+    <script>
+        function toggleSeason(season) {
+            const rows = document.querySelectorAll(
+                `.competition-row.season-${season}`,
+            );
+            const icon = event.currentTarget.querySelector(".toggle-icon");
+
+            rows.forEach((row) => {
+                if (row.style.display === "none" || row.style.display === "") {
+                    row.style.display = "table-row";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            if (icon) {
+                icon.textContent = icon.textContent === "▶" ? "▼" : "▶";
+            }
+        }
+    </script>
 
     <style>
         .coach-details-page {
@@ -283,8 +562,60 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
             font-weight: 600;
         }
 
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            text-align: left;
+        }
+
         .stats-table tbody tr:nth-child(odd) {
             background: #fff5e6;
+        }
+
+        /* Season and competition rows */
+        .season-total-row {
+            background: #f0f0f0;
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+
+        .season-total-row:hover {
+            background: #e8e8e8;
+        }
+
+        .clickable {
+            cursor: pointer;
+        }
+
+        .toggle-icon {
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
+            font-size: 0.8em;
+            transition: transform 0.2s;
+        }
+
+        .career-total-row {
+            background: #ffde59;
+            font-weight: bold;
+            border-top: 3px solid #333;
+        }
+
+        .career-total-row:hover {
+            background: #ffd940;
+        }
+
+        /* Competition logos */
+        .competition-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .competition-name {
+            display: flex;
+            align-items: center;
         }
 
         @media (max-width: 1024px) {
