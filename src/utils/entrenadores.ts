@@ -134,11 +134,11 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
                 t.temporada,
                 c.competicion,
                 COUNT(DISTINCT p.id_partido) as partidos,
-                SUM(CASE WHEN p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) as victorias,
-                SUM(CASE WHEN p.goles_rm = p.goles_rival THEN 1 ELSE 0 END) as empates,
-                SUM(CASE WHEN p.goles_rm < p.goles_rival THEN 1 ELSE 0 END) as derrotas,
+                SUM(CASE WHEN p.goles_rm > p.goles_visitante THEN 1 ELSE 0 END) as victorias,
+                SUM(CASE WHEN p.goles_rm = p.goles_visitante THEN 1 ELSE 0 END) as empates,
+                SUM(CASE WHEN p.goles_rm < p.goles_visitante THEN 1 ELSE 0 END) as derrotas,
                 SUM(p.goles_rm) as goles_favor,
-                SUM(p.goles_rival) as goles_contra
+                SUM(p.goles_visitante) as goles_contra
             FROM partidos p
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
