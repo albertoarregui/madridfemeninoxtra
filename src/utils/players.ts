@@ -348,3 +348,57 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         return null;
     }
 }
+
+export async function fetchPlayerDebut(playerId: string | number): Promise<{ fecha_debut: string | null; rival: string | null } | null> {
+    try {
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas para debut');
+            return null;
+        }
+
+        const client = createClient({
+            url: url,
+            authToken: authToken,
+        });
+
+        const debutQuery = `
+            SELECT 
+                d.fecha_debut,
+                c.nombre as rival
+            FROM 
+                dorsales d
+            LEFT JOIN 
+                clubes c ON d.id_club = c.id_club
+            WHERE 
+                d.id_jugadora = ?
+                AND d.fecha_debut IS NOT NULL
+            ORDER BY 
+                d.fecha_debut ASC
+            LIMIT 1
+        `;
+
+        const result = await client.execute({
+            sql: debutQuery,
+            args: [playerId],
+        });
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const row = result.rows[0];
+        return {
+            fecha_debut: cleanApiValue(row.fecha_debut) || null,
+            rival: cleanApiValue(row.rival) || null,
+        };
+
+    } catch (error) {
+        console.error("Error fetching player debut:", error);
+        return null;
+    }
+}

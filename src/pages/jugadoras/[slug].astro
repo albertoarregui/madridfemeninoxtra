@@ -1,6 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { fetchPlayersDirectly, fetchPlayerStats } from "../../utils/players";
+import {
+    fetchPlayersDirectly,
+    fetchPlayerStats,
+    fetchPlayerDebut,
+} from "../../utils/players";
 
 export async function getStaticPaths() {
     const allPlayers = await fetchPlayersDirectly();
@@ -86,6 +90,13 @@ const edad = calculateAge(player.fecha_nacimiento);
 const alturaDisplay = player.altura ? `${player.altura} m.` : "-";
 const pesoDisplay = player.peso ? `${player.peso} kg` : "-";
 
+// Fetch debut information
+const debutInfo = await fetchPlayerDebut(player.id_jugadora);
+const debutDisplay =
+    debutInfo && debutInfo.fecha_debut
+        ? `${formatShortDate(debutInfo.fecha_debut)}${debutInfo.rival ? ` (${debutInfo.rival})` : ""}`
+        : "-";
+
 const positionCoords: Record<string, { left: string; top: string }> = {
     Portera: { left: "10%", top: "50%" },
     Defensa: { left: "30%", top: "50%" },
@@ -170,7 +181,7 @@ const playerPosition = positionCoords[player.posicion] || {
                         </div>
                         <div class="info-row">
                             <span class="info-label">Debut:</span>
-                            <span class="info-value">-</span>
+                            <span class="info-value">{debutDisplay}</span>
                         </div>
                     </div>
                 </div>
