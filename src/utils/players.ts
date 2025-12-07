@@ -147,43 +147,45 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             authToken: authToken,
         });
 
+        // Query that works even when alineaciones is empty
+        // Uses goles_y_asistencias as fallback source
         const statsQuery = `
             SELECT
                 t.temporada,
                 c.competicion,
-                COUNT(DISTINCT a.id_alineacion) as convocatorias,
-                COUNT(DISTINCT a.id_partido) as partidos,
-                COUNT(DISTINCT CASE 
+                COALESCE(COUNT(DISTINCT a.id_alineacion), 0) as convocatorias,
+                COALESCE(COUNT(DISTINCT a.id_partido), 0) as partidos,
+                COALESCE(COUNT(DISTINCT CASE 
                     WHEN NOT EXISTS (
                         SELECT 1 FROM cambios cb 
                         WHERE cb.id_partido = a.id_partido 
                         AND cb.id_jugadora_entra = a.id_jugadora
                     ) 
                     THEN a.id_alineacion 
-                END) as titularidades,
-                COUNT(DISTINCT CASE 
+                END), 0) as titularidades,
+                COALESCE(COUNT(DISTINCT CASE 
                     WHEN EXISTS (
                         SELECT 1 FROM cambios cb 
                         WHERE cb.id_partido = a.id_partido 
                         AND cb.id_jugadora_entra = a.id_jugadora
                     ) 
                     THEN a.id_alineacion 
-                END) as suplencias,
-                COUNT(DISTINCT cm_in.id_cambio) as cambio_entrada,
-                COUNT(DISTINCT cm_out.id_cambio) as cambio_salida,
+                END), 0) as suplencias,
+                COALESCE(COUNT(DISTINCT cm_in.id_cambio), 0) as cambio_entrada,
+                COALESCE(COUNT(DISTINCT cm_out.id_cambio), 0) as cambio_salida,
                 COUNT(DISTINCT g.id_gol) as goles,
                 COUNT(DISTINCT ast.id_gol) as asistencias,
-                COUNT(DISTINCT CASE 
+                COALESCE(COUNT(DISTINCT CASE 
                     WHEN p.goles_rival = 0 THEN p.id_partido 
-                END) as porterias_cero,
-                COUNT(DISTINCT CASE 
+                END), 0) as porterias_cero,
+                COALESCE(COUNT(DISTINCT CASE 
                     WHEN tj.tipo_tarjeta = 'Amarilla' THEN tj.id_tarjeta 
-                END) as tarjetas_amarillas,
-                COUNT(DISTINCT CASE 
+                END), 0) as tarjetas_amarillas,
+                COALESCE(COUNT(DISTINCT CASE 
                     WHEN tj.tipo_tarjeta = 'Roja' THEN tj.id_tarjeta 
-                END) as tarjetas_rojas,
-                COUNT(DISTINCT cap.id_capitania) as capitanias,
-                SUM(
+                END), 0) as tarjetas_rojas,
+                COALESCE(COUNT(DISTINCT cap.id_capitania), 0) as capitanias,
+                COALESCE(SUM(
                     CASE
                         -- Titular que es sustituida
                         WHEN a.id_alineacion IS NOT NULL 
@@ -217,31 +219,37 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
                         ELSE 0
                     END
-                ) as minutos
-            FROM alineaciones a
-            INNER JOIN partidos p ON a.id_partido = p.id_partido
+                ), 0) as minutos
+            FROM (
+                -- Get all partidos where player scored or assisted
+                SELECT DISTINCT ga.id_partido, ? as id_jugadora
+                FROM goles_y_asistencias ga
+                WHERE ga.goleadora = ? OR ga.asistente = ?
+            ) player_partidos
+            INNER JOIN partidos p ON player_partidos.id_partido = p.id_partido
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
-            LEFT JOIN cambios cm_in ON cm_in.id_partido = a.id_partido 
-                AND cm_in.id_jugadora_entra = a.id_jugadora
-            LEFT JOIN cambios cm_out ON cm_out.id_partido = a.id_partido 
-                AND cm_out.id_jugadora_sale = a.id_jugadora
-            LEFT JOIN goles_y_asistencias g ON g.id_partido = a.id_partido 
-                AND g.goleadora = a.id_jugadora
-            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = a.id_partido 
-                AND ast.asistente = a.id_jugadora
-            LEFT JOIN tarjetas tj ON tj.id_partido = a.id_partido 
-                AND tj.id_jugadora = a.id_jugadora
-            LEFT JOIN capitanias cap ON cap.id_partido = a.id_partido 
-                AND cap.id_jugadora = a.id_jugadora
-            WHERE a.id_jugadora = ?
+            LEFT JOIN alineaciones a ON a.id_partido = player_partidos.id_partido 
+                AND a.id_jugadora = player_partidos.id_jugadora
+            LEFT JOIN cambios cm_in ON cm_in.id_partido = player_partidos.id_partido 
+                AND cm_in.id_jugadora_entra = player_partidos.id_jugadora
+            LEFT JOIN cambios cm_out ON cm_out.id_partido = player_partidos.id_partido 
+                AND cm_out.id_jugadora_sale = player_partidos.id_jugadora
+            LEFT JOIN goles_y_asistencias g ON g.id_partido = player_partidos.id_partido 
+                AND g.goleadora = player_partidos.id_jugadora
+            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = player_partidos.id_partido 
+                AND ast.asistente = player_partidos.id_jugadora
+            LEFT JOIN tarjetas tj ON tj.id_partido = player_partidos.id_partido 
+                AND tj.id_jugadora = player_partidos.id_jugadora
+            LEFT JOIN capitanias cap ON cap.id_partido = player_partidos.id_partido 
+                AND cap.id_jugadora = player_partidos.id_jugadora
             GROUP BY t.temporada, c.competicion
             ORDER BY t.temporada DESC, c.competicion ASC
         `;
 
         const statsResult = await client.execute({
             sql: statsQuery,
-            args: [playerId],
+            args: [playerId, playerId, playerId],
         });
 
         // Process results
