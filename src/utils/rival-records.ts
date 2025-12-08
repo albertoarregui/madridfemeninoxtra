@@ -178,14 +178,13 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
         const topScorersResult = await db.execute({
             sql: `
                 SELECT 
-                    j.nombre,
+                    ga.goleadora as nombre,
                     COUNT(*) as goles
                 FROM goles_y_asistencias ga
                 INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                INNER JOIN jugadoras j ON ga.id_goleadora = j.id_jugadora
-                WHERE ga.id_goleadora IS NOT NULL
+                WHERE ga.goleadora IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                GROUP BY j.id_jugadora, j.nombre
+                GROUP BY ga.goleadora
                 ORDER BY goles DESC
                 LIMIT 10
             `,
@@ -196,14 +195,13 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
         const topAssistersResult = await db.execute({
             sql: `
                 SELECT 
-                    j.nombre,
+                    ga.asistente as nombre,
                     COUNT(*) as asistencias
                 FROM goles_y_asistencias ga
                 INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                INNER JOIN jugadoras j ON ga.id_asistente = j.id_jugadora
-                WHERE ga.id_asistente IS NOT NULL
+                WHERE ga.asistente IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                GROUP BY j.id_jugadora, j.nombre
+                GROUP BY ga.asistente
                 ORDER BY asistencias DESC
                 LIMIT 10
             `,
@@ -219,23 +217,21 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     SUM(asistencias) as asistencias,
                     SUM(goles) + SUM(asistencias) as total
                 FROM (
-                    SELECT j.id_jugadora, j.nombre, COUNT(*) as goles, 0 as asistencias
+                    SELECT ga.goleadora as nombre, COUNT(*) as goles, 0 as asistencias
                     FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                    INNER JOIN jugadoras j ON ga.id_goleadora = j.id_jugadora
-                    WHERE ga.id_goleadora IS NOT NULL
+                    WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                    GROUP BY j.id_jugadora, j.nombre
+                    GROUP BY ga.goleadora
                     
                     UNION ALL
                     
-                    SELECT j.id_jugadora, j.nombre, 0 as goles, COUNT(*) as asistencias
+                    SELECT ga.asistente as nombre, 0 as goles, COUNT(*) as asistencias
                     FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                    INNER JOIN jugadoras j ON ga.id_asistente = j.id_jugadora
-                    WHERE ga.id_asistente IS NOT NULL
+                    WHERE ga.asistente IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                    GROUP BY j.id_jugadora, j.nombre
+                    GROUP BY ga.asistente
                 )
                 GROUP BY nombre
                 ORDER BY total DESC
