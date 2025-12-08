@@ -15,6 +15,8 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             authToken: authToken,
         });
 
+        console.log('Fetching coach records for coach ID:', coachId);
+
         // Most faced opponent
         const mostFacedResult = await db.execute({
             sql: `
@@ -28,6 +30,7 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Most faced:', mostFacedResult.rows[0]);
 
         // Most wins against
         const mostWinsResult = await db.execute({
@@ -42,6 +45,7 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Most wins:', mostWinsResult.rows[0]);
 
         // Most draws against
         const mostDrawsResult = await db.execute({
@@ -56,6 +60,7 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Most draws:', mostDrawsResult.rows[0]);
 
         // Biggest win
         const biggestWinResult = await db.execute({
@@ -70,6 +75,7 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Biggest win:', biggestWinResult.rows[0]);
 
         // Biggest loss
         const biggestLossResult = await db.execute({
@@ -84,6 +90,7 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Biggest loss:', biggestLossResult.rows[0]);
 
         // Most repeated result
         const mostRepeatedResult = await db.execute({
@@ -97,8 +104,9 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             `,
             args: [coachId],
         });
+        console.log('Most repeated:', mostRepeatedResult.rows[0]);
 
-        return {
+        const records = {
             mas_partido: mostFacedResult.rows[0] || null,
             mas_victorias: mostWinsResult.rows[0] || null,
             mas_empates: mostDrawsResult.rows[0] || null,
@@ -106,6 +114,9 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             mayor_derrota: biggestLossResult.rows[0] || null,
             mas_repetido: mostRepeatedResult.rows[0] || null,
         };
+
+        console.log('Final records object:', records);
+        return records;
     } catch (error) {
         console.error("Error fetching coach records:", error);
         return null;
