@@ -55,8 +55,7 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 ciudad,
                 pais,
                 slug,
-                estadio,
-                capacidad
+                estadio
             FROM 
                 clubes
             WHERE
@@ -75,7 +74,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 pais: cleanApiValue(rival.pais) || '',
                 slug: rival.slug || slugify(rival.nombre),
                 estadio: cleanApiValue(rival.estadio) || '',
-                capacidad: rival.capacidad || null,
                 // ✅ CORRECCIÓN: Se añade la URL del escudo
                 shieldUrl: getRivalShieldUrl(rival),
             };
