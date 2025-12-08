@@ -320,25 +320,47 @@ const mockPlayers: string[] = [];
                             <tbody>
                                 {
                                     rivalMatches.length > 0 ? (
-                                        rivalMatches.map((match: any) => (
-                                            <tr>
-                                                <td>
-                                                    {new Date(
-                                                        match.fecha,
-                                                    ).toLocaleDateString(
-                                                        "es-ES",
-                                                    )}
-                                                </td>
-                                                <td>{match.competicion}</td>
-                                                <td>{match.ubicacion}</td>
-                                                <td>{match.resultado}</td>
-                                                <td>{match.arbitra}</td>
-                                                <td>{match.estadio}</td>
-                                                <td>
-                                                    {match.asistencia || "-"}
-                                                </td>
-                                            </tr>
-                                        ))
+                                        rivalMatches.map((match: any) => {
+                                            // Determinar tipo de resultado
+                                            const golesRM =
+                                                parseInt(match.golesRM) || 0;
+                                            const golesRival =
+                                                parseInt(match.golesRival) || 0;
+                                            let resultClass = "";
+                                            if (golesRM > golesRival) {
+                                                resultClass =
+                                                    "resultado-victoria";
+                                            } else if (golesRM === golesRival) {
+                                                resultClass =
+                                                    "resultado-empate";
+                                            } else {
+                                                resultClass =
+                                                    "resultado-derrota";
+                                            }
+
+                                            return (
+                                                <tr>
+                                                    <td>
+                                                        {new Date(
+                                                            match.fecha,
+                                                        ).toLocaleDateString(
+                                                            "es-ES",
+                                                        )}
+                                                    </td>
+                                                    <td>{match.competicion}</td>
+                                                    <td>{match.ubicacion}</td>
+                                                    <td class={resultClass}>
+                                                        {match.resultado}
+                                                    </td>
+                                                    <td>{match.arbitra}</td>
+                                                    <td>{match.estadio}</td>
+                                                    <td>
+                                                        {match.asistencia ||
+                                                            "-"}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
                                             <td
@@ -774,6 +796,25 @@ const mockPlayers: string[] = [];
 
         .stats-table tbody tr:nth-child(even) {
             background: #fff5e6;
+        }
+
+        /* Resultado colors - pastel */
+        .resultado-victoria {
+            background-color: #c8e6c9 !important; /* Verde pastel */
+            font-weight: 600;
+            color: #2e7d32;
+        }
+
+        .resultado-empate {
+            background-color: #fff9c4 !important; /* Amarillo pastel */
+            font-weight: 600;
+            color: #f57f17;
+        }
+
+        .resultado-derrota {
+            background-color: #ffcdd2 !important; /* Rojo pastel */
+            font-weight: 600;
+            color: #c62828;
         }
 
         .total-row {
