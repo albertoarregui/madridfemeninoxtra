@@ -22,13 +22,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT 
                     CASE 
-                        WHEN p.id_club_local = 1 THEN cv.nombre_club
-                        ELSE cl.nombre_club
+                        WHEN p.id_club_local = 1 THEN cv.nombre
+                        ELSE cl.nombre
                     END as rival,
                     COUNT(*) as partidos
                 FROM partidos p
-                LEFT JOIN rivales cl ON p.id_club_local = cl.id_rival
-                LEFT JOIN rivales cv ON p.id_club_visitante = cv.id_rival
+                LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ?
                 GROUP BY rival
                 ORDER BY partidos DESC
@@ -43,13 +43,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT 
                     CASE 
-                        WHEN p.id_club_local = 1 THEN cv.nombre_club
-                        ELSE cl.nombre_club
+                        WHEN p.id_club_local = 1 THEN cv.nombre
+                        ELSE cl.nombre
                     END as rival,
                     COUNT(*) as victorias
                 FROM partidos p
-                LEFT JOIN rivales cl ON p.id_club_local = cl.id_rival
-                LEFT JOIN rivales cv ON p.id_club_visitante = cv.id_rival
+                LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND p.goles_rm > p.goles_rival
                 GROUP BY rival
                 ORDER BY victorias DESC
@@ -64,13 +64,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT 
                     CASE 
-                        WHEN p.id_club_local = 1 THEN cv.nombre_club
-                        ELSE cl.nombre_club
+                        WHEN p.id_club_local = 1 THEN cv.nombre
+                        ELSE cl.nombre
                     END as rival,
                     COUNT(*) as empates
                 FROM partidos p
-                LEFT JOIN rivales cl ON p.id_club_local = cl.id_rival
-                LEFT JOIN rivales cv ON p.id_club_visitante = cv.id_rival
+                LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND p.goles_rm = p.goles_rival
                 GROUP BY rival
                 ORDER BY empates DESC
@@ -85,15 +85,15 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT 
                     CASE 
-                        WHEN p.id_club_local = 1 THEN cv.nombre_club
-                        ELSE cl.nombre_club
+                        WHEN p.id_club_local = 1 THEN cv.nombre
+                        ELSE cl.nombre
                     END as rival,
                     p.goles_rm, 
                     p.goles_rival,
                     (p.goles_rm - p.goles_rival) as diferencia
                 FROM partidos p
-                LEFT JOIN rivales cl ON p.id_club_local = cl.id_rival
-                LEFT JOIN rivales cv ON p.id_club_visitante = cv.id_rival
+                LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND p.goles_rm > p.goles_rival
                 ORDER BY diferencia DESC, p.goles_rm DESC
                 LIMIT 1
@@ -107,15 +107,15 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT 
                     CASE 
-                        WHEN p.id_club_local = 1 THEN cv.nombre_club
-                        ELSE cl.nombre_club
+                        WHEN p.id_club_local = 1 THEN cv.nombre
+                        ELSE cl.nombre
                     END as rival,
                     p.goles_rm, 
                     p.goles_rival,
                     (p.goles_rival - p.goles_rm) as diferencia
                 FROM partidos p
-                LEFT JOIN rivales cl ON p.id_club_local = cl.id_rival
-                LEFT JOIN rivales cv ON p.id_club_visitante = cv.id_rival
+                LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND p.goles_rm < p.goles_rival
                 ORDER BY diferencia DESC, p.goles_rival DESC
                 LIMIT 1
