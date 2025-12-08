@@ -135,24 +135,24 @@ function formatDate(dateString: string) {
                 }
             </>
 
-            {/* CRÓNICAS */}
+            {/* LIGA F */}
             <>
-                <h2 class="section-title">CRÓNICAS</h2>
+                <h2 class="section-title">LIGA F</h2>
                 {
                     error ? (
                         <p class="no-category-news">
                             Error al conectar con el servidor.
                         </p>
                     ) : noticias.filter((n) =>
-                          n.categories.some((cat) =>
-                              cat.toLowerCase().includes("crónicas"),
+                          n.categories.some(
+                              (cat) => cat.toLowerCase() === "liga f",
                           ),
                       ).length > 0 ? (
                         <div class="noticias-grid">
                             {noticias
                                 .filter((n) =>
-                                    n.categories.some((cat) =>
-                                        cat.toLowerCase().includes("crónicas"),
+                                    n.categories.some(
+                                        (cat) => cat.toLowerCase() === "liga f",
                                     ),
                                 )
                                 .map((noticia) => (
@@ -211,15 +211,97 @@ function formatDate(dateString: string) {
                         </div>
                     ) : (
                         <p class="no-category-news">
-                            No hay crónicas disponibles.
+                            No hay noticias de Liga F disponibles.
                         </p>
                     )
                 }
             </>
 
-            {/* GALERÍA DE FOTOS */}
+            {/* UWCL */}
             <>
-                <h2 class="section-title">GALERÍA DE FOTOS</h2>
+                <h2 class="section-title">UWCL</h2>
+                {
+                    error ? (
+                        <p class="no-category-news">
+                            Error al conectar con el servidor.
+                        </p>
+                    ) : noticias.filter((n) =>
+                          n.categories.some(
+                              (cat) => cat.toLowerCase() === "uwcl",
+                          ),
+                      ).length > 0 ? (
+                        <div class="noticias-grid">
+                            {noticias
+                                .filter((n) =>
+                                    n.categories.some(
+                                        (cat) => cat.toLowerCase() === "uwcl",
+                                    ),
+                                )
+                                .map((noticia) => (
+                                    <article class="noticia-card">
+                                        {noticia.featuredImage && (
+                                            <div class="noticia-image">
+                                                <img
+                                                    src={noticia.featuredImage}
+                                                    alt={
+                                                        noticia.featuredImageAlt ||
+                                                        noticia.title
+                                                    }
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        )}
+                                        <div class="noticia-content">
+                                            <div class="noticia-meta">
+                                                <time datetime={noticia.date}>
+                                                    {formatDate(noticia.date)}
+                                                </time>
+                                                {noticia.categories.length >
+                                                    0 && (
+                                                    <span class="category">
+                                                        {noticia.categories[0]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h2 class="noticia-title">
+                                                {noticia.title}
+                                            </h2>
+                                            <div
+                                                class="noticia-excerpt"
+                                                set:html={noticia.excerpt}
+                                            />
+                                            <a
+                                                href={noticia.link}
+                                                class="read-more"
+                                            >
+                                                Leer más
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </article>
+                                ))}
+                        </div>
+                    ) : (
+                        <p class="no-category-news">
+                            No hay noticias de UWCL disponibles.
+                        </p>
+                    )
+                }
+            </>
+
+            {/* UNCATEGORIZED */}
+            <>
+                <h2 class="section-title">OTRAS NOTICIAS</h2>
                 {
                     error ? (
                         <p class="no-category-news">
@@ -228,8 +310,8 @@ function formatDate(dateString: string) {
                     ) : noticias.filter((n) =>
                           n.categories.some(
                               (cat) =>
-                                  cat.toLowerCase().includes("galerías") ||
-                                  cat.toLowerCase().includes("galerias"),
+                                  cat.toLowerCase() === "uncategorized" ||
+                                  cat.toLowerCase() === "sin categoría",
                           ),
                       ).length > 0 ? (
                         <div class="noticias-grid">
@@ -237,12 +319,10 @@ function formatDate(dateString: string) {
                                 .filter((n) =>
                                     n.categories.some(
                                         (cat) =>
-                                            cat
-                                                .toLowerCase()
-                                                .includes("galería") ||
-                                            cat
-                                                .toLowerCase()
-                                                .includes("galeria"),
+                                            cat.toLowerCase() ===
+                                                "uncategorized" ||
+                                            cat.toLowerCase() ===
+                                                "sin categoría",
                                     ),
                                 )
                                 .map((noticia) => (
@@ -301,7 +381,7 @@ function formatDate(dateString: string) {
                         </div>
                     ) : (
                         <p class="no-category-news">
-                            No hay galerías disponibles.
+                            No hay otras noticias disponibles.
                         </p>
                     )
                 }
@@ -378,16 +458,18 @@ function formatDate(dateString: string) {
                         containerIndex: 0,
                     },
                     {
-                        filter: (cat) =>
-                            cat.toLowerCase().includes("crónica") ||
-                            cat.toLowerCase().includes("cronica"),
+                        filter: (cat) => cat.toLowerCase() === "liga f",
                         containerIndex: 1,
                     },
                     {
-                        filter: (cat) =>
-                            cat.toLowerCase().includes("galería") ||
-                            cat.toLowerCase().includes("galeria"),
+                        filter: (cat) => cat.toLowerCase() === "uwcl",
                         containerIndex: 2,
+                    },
+                    {
+                        filter: (cat) =>
+                            cat.toLowerCase() === "uncategorized" ||
+                            cat.toLowerCase() === "sin categoría",
+                        containerIndex: 3,
                     },
                 ];
 
