@@ -32,6 +32,40 @@ const rivalMatches = await fetchRivalMatches(rival.id_club);
 // Calculate statistics from matches
 const rivalStats = calculateRivalStats(rivalMatches);
 
+// Extract unique competitions
+const competitions = [
+    ...new Set(rivalMatches.map((m) => m.competicion)),
+].filter((c) => c && c !== "-");
+
+// Calculate pie chart values (circumference = 2 * PI * r = 2 * 3.14159 * 35 ≈ 220)
+const circumference = 220;
+const totalMatches = rivalStats.total.pj;
+
+// Wins/Draws/Losses percentages
+const winsArc =
+    totalMatches > 0
+        ? Math.round((rivalStats.total.pg / totalMatches) * circumference)
+        : 0;
+const drawsArc =
+    totalMatches > 0
+        ? Math.round((rivalStats.total.pe / totalMatches) * circumference)
+        : 0;
+const lossesArc =
+    totalMatches > 0
+        ? Math.round((rivalStats.total.pp / totalMatches) * circumference)
+        : 0;
+
+// Goals for/against percentages
+const totalGoals = rivalStats.total.gf + rivalStats.total.gc;
+const goalsForArc =
+    totalGoals > 0
+        ? Math.round((rivalStats.total.gf / totalGoals) * circumference)
+        : 0;
+const goalsAgainstArc =
+    totalGoals > 0
+        ? Math.round((rivalStats.total.gc / totalGoals) * circumference)
+        : 0;
+
 const mockPlayers: string[] = [];
 ---
 
@@ -109,21 +143,25 @@ const mockPlayers: string[] = [];
                         <div class="chart-controls">
                             <div class="control">
                                 <label>Competición:</label>
-                                <select>
-                                    <option>25 seleccionadas</option>
-                                </select>
-                            </div>
-                            <button class="btn-ok">OK</button>
-                            <div class="control">
-                                <label>Cambiar rival:</label>
-                                <select>
-                                    <option>{rival.nombre}</option>
+                                <select id="competition-filter">
+                                    <option value="all"
+                                        >Todas ({totalMatches})</option
+                                    >
+                                    {
+                                        competitions.map((comp) => (
+                                            <option value={comp}>{comp}</option>
+                                        ))
+                                    }
                                 </select>
                             </div>
                         </div>
                         <div class="charts-row">
                             <div class="chart-item">
-                                <svg viewBox="0 0 100 100" class="pie-chart">
+                                <svg
+                                    viewBox="0 0 100 100"
+                                    class="pie-chart"
+                                    id="results-chart"
+                                >
                                     <circle
                                         cx="50"
                                         cy="50"
@@ -131,7 +169,7 @@ const mockPlayers: string[] = [];
                                         fill="none"
                                         stroke="#4CAF50"
                                         stroke-width="20"
-                                        stroke-dasharray="69 132"
+                                        stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
                                         transform="rotate(-90 50 50)"></circle>
                                     <circle
                                         cx="50"
@@ -140,8 +178,8 @@ const mockPlayers: string[] = [];
                                         fill="none"
                                         stroke="#ff9800"
                                         stroke-width="20"
-                                        stroke-dasharray="33 165"
-                                        stroke-dashoffset="-69"
+                                        stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
+                                        stroke-dashoffset={-winsArc}
                                         transform="rotate(-90 50 50)"></circle>
                                     <circle
                                         cx="50"
@@ -150,25 +188,35 @@ const mockPlayers: string[] = [];
                                         fill="none"
                                         stroke="#f44336"
                                         stroke-width="20"
-                                        stroke-dasharray="30 168"
-                                        stroke-dashoffset="-102"
+                                        stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
+                                        stroke-dashoffset={-(
+                                            winsArc + drawsArc
+                                        )}
                                         transform="rotate(-90 50 50)"></circle>
                                 </svg>
-                                <div class="chart-legend">
+                                <div class="chart-legend" id="results-legend">
                                     <div>
-                                        <span class="dot green"></span> Ganados ()
+                                        <span class="dot green"></span> Ganados ({
+                                            rivalStats.total.pg
+                                        })
                                     </div>
                                     <div>
                                         <span class="dot orange"></span> Empatados
-                                        ()
+                                        ({rivalStats.total.pe})
                                     </div>
                                     <div>
-                                        <span class="dot red"></span> Perdidos ())
+                                        <span class="dot red"></span> Perdidos ({
+                                            rivalStats.total.pp
+                                        })
                                     </div>
                                 </div>
                             </div>
                             <div class="chart-item">
-                                <svg viewBox="0 0 100 100" class="pie-chart">
+                                <svg
+                                    viewBox="0 0 100 100"
+                                    class="pie-chart"
+                                    id="goals-chart"
+                                >
                                     <circle
                                         cx="50"
                                         cy="50"
@@ -176,7 +224,7 @@ const mockPlayers: string[] = [];
                                         fill="none"
                                         stroke="#4CAF50"
                                         stroke-width="20"
-                                        stroke-dasharray="126 72"
+                                        stroke-dasharray={`${goalsForArc} ${circumference - goalsForArc}`}
                                         transform="rotate(-90 50 50)"></circle>
                                     <circle
                                         cx="50"
@@ -185,18 +233,20 @@ const mockPlayers: string[] = [];
                                         fill="none"
                                         stroke="#f44336"
                                         stroke-width="20"
-                                        stroke-dasharray="72 126"
-                                        stroke-dashoffset="-126"
+                                        stroke-dasharray={`${goalsAgainstArc} ${circumference - goalsAgainstArc}`}
+                                        stroke-dashoffset={-goalsForArc}
                                         transform="rotate(-90 50 50)"></circle>
                                 </svg>
-                                <div class="chart-legend">
+                                <div class="chart-legend" id="goals-legend">
                                     <div>
-                                        <span class="dot green"></span> Goles a favor
-                                        ()
+                                        <span class="dot green"></span> A favor ({
+                                            rivalStats.total.gf
+                                        })
                                     </div>
                                     <div>
-                                        <span class="dot red"></span> Goles en contra
-                                        ()
+                                        <span class="dot red"></span> En contra ({
+                                            rivalStats.total.gc
+                                        })
                                     </div>
                                 </div>
                             </div>
