@@ -273,6 +273,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         });
 
         console.log('Fetching matches against rival ID:', rivalId);
+        console.log('Query args:', [rivalId, rivalId]);
 
         const matchesResult = await db.execute({
             sql: `
@@ -299,6 +300,10 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             `,
             args: [rivalId, rivalId],
         });
+
+        console.log('Matches found:', matchesResult.rows.length);
+        console.log('First match:', matchesResult.rows[0]);
+
 
         return matchesResult.rows.map((match: any) => {
             // Determinar si el Real Madrid jugó como local o visitante
