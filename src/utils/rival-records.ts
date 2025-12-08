@@ -272,9 +272,17 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             authToken: authToken,
         });
 
-        console.log('Fetching matches against rival ID:', rivalId);
-        console.log('Query args:', [rivalId, rivalId]);
+        console.log('========== DEBUG: Fetching matches ==========');
+        console.log('Rival ID:', rivalId, 'Type:', typeof rivalId);
 
+        // First, let's check if there are ANY matches in the database
+        const countResult = await db.execute({
+            sql: 'SELECT COUNT(*) as total FROM partidos',
+            args: []
+        });
+        console.log('Total matches in database:', countResult.rows[0]);
+
+        // Now check matches for this specific rival
         const matchesResult = await db.execute({
             sql: `
                 SELECT 
@@ -301,9 +309,11 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             args: [rivalId, rivalId],
         });
 
-        console.log('Matches found:', matchesResult.rows.length);
-        console.log('First match:', matchesResult.rows[0]);
-
+        console.log('Matches found for rival:', matchesResult.rows.length);
+        if (matchesResult.rows.length > 0) {
+            console.log('Sample match:', JSON.stringify(matchesResult.rows[0], null, 2));
+        }
+        console.log('========== END DEBUG ==========');
 
         return matchesResult.rows.map((match: any) => {
             // Determinar si el Real Madrid jugó como local o visitante
