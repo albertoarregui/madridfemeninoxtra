@@ -48,6 +48,27 @@ const coachStats = await fetchCoachStats(coach.id_entrenador);
 const coachRecords = await fetchCoachRecords(coach.id_entrenador);
 const coachStreaks = await fetchCoachStreaks(coach.id_entrenador);
 
+// Import country flag dynamically from src/assets/banderas
+let flagImage: ImageMetadata | undefined;
+try {
+    const flags = import.meta.glob<{ default: ImageMetadata }>(
+        "/src/assets/banderas/*.svg",
+    );
+    // Normalize country name to match filename format
+    const flagSlug = coach.pais
+        ?.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
+    const flagPath = `/src/assets/banderas/${flagSlug}.svg`;
+
+    if (flags[flagPath]) {
+        flagImage = (await flags[flagPath]()).default;
+    }
+} catch (error) {
+    console.error(`Error loading flag for ${coach.pais}:`, error);
+}
+
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
     try {
@@ -124,7 +145,18 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                         </div>
                         <div class="info-row">
                             <span class="info-label">Nacionalidad:</span>
-                            <span class="info-value">{coach.pais || "-"}</span>
+                            <span class="info-value">
+                                {coach.pais || "-"}
+                                {
+                                    flagImage && (
+                                        <img
+                                            src={flagImage.src}
+                                            alt={`Bandera de ${coach.pais}`}
+                                            class="country-flag"
+                                        />
+                                    )
+                                }
+                            </span>
                         </div>
                     </div>
                 </div>
