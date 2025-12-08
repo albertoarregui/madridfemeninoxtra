@@ -20,6 +20,20 @@ export async function getStaticPaths() {
 
 const { rival } = Astro.props;
 
+// Import shield dynamically from src/assets
+let shieldImage: ImageMetadata | undefined;
+try {
+    const images = import.meta.glob<{ default: ImageMetadata }>(
+        "/src/assets/escudos/*.png",
+    );
+    const imagePath = `/src/assets/escudos/${rival.slug}.png`;
+    if (images[imagePath]) {
+        shieldImage = (await images[imagePath]()).default;
+    }
+} catch (error) {
+    console.error(`Error loading shield for ${rival.nombre}:`, error);
+}
+
 // Fetch rival records from database
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
@@ -114,11 +128,20 @@ const mockPlayers: string[] = [];
                     </h2>
                     <div class="rival-info">
                         <div class="rival-shield">
-                            <img
-                                src={rival.shieldUrl}
-                                alt={`Escudo de ${rival.nombre}`}
-                                onerror="this.onerror=null; this.src='/assets/escudos/placeholder.png';"
-                            />
+                            {
+                                shieldImage ? (
+                                    <img
+                                        src={shieldImage.src}
+                                        alt={`Escudo de ${rival.nombre}`}
+                                    />
+                                ) : (
+                                    <img
+                                        src={rival.shieldUrl}
+                                        alt={`Escudo de ${rival.nombre}`}
+                                        onerror="this.onerror=null; this.src='/assets/escudos/placeholder.png';"
+                                    />
+                                )
+                            }
                         </div>
                         <div class="rival-details">
                             <div class="info-row">
