@@ -289,7 +289,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                     p.id_partido,
                     p.fecha,
                     p.id_competicion,
-                    c.nombre as competicion,
+                    c.competicion,
                     p.id_club_local,
                     p.id_club_visitante,
                     p.goles_rm,
@@ -298,7 +298,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                     a.nombre as arbitra,
                     p.id_estadio,
                     e.nombre as estadio,
-                    p.asistencia
+                    p.penaltis as asistencia
                 FROM partidos p
                 LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
