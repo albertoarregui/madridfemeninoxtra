@@ -4,6 +4,7 @@ import { fetchRivalsDirectly } from "../../utils/rivales";
 import {
     fetchRivalRecords,
     fetchRivalTopPlayers,
+    fetchRivalMatches,
 } from "../../utils/rival-records";
 import type { ImageMetadata } from "astro";
 
@@ -24,8 +25,10 @@ const rivalRecords = await fetchRivalRecords(rival.id_club);
 // Fetch top players statistics
 const topPlayersData = await fetchRivalTopPlayers(rival.id_club);
 
+// Fetch all matches against this rival
+const rivalMatches = await fetchRivalMatches(rival.id_club);
+
 const mockPlayers: string[] = [];
-const mockMatches: any[] = [];
 ---
 
 <Layout
@@ -316,17 +319,36 @@ const mockMatches: any[] = [];
                             </thead>
                             <tbody>
                                 {
-                                    mockMatches.map((match) => (
+                                    rivalMatches.length > 0 ? (
+                                        rivalMatches.map((match: any) => (
+                                            <tr>
+                                                <td>
+                                                    {new Date(
+                                                        match.fecha,
+                                                    ).toLocaleDateString(
+                                                        "es-ES",
+                                                    )}
+                                                </td>
+                                                <td>{match.competicion}</td>
+                                                <td>{match.ubicacion}</td>
+                                                <td>{match.resultado}</td>
+                                                <td>{match.arbitra}</td>
+                                                <td>{match.estadio}</td>
+                                                <td>
+                                                    {match.asistencia || "-"}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
                                         <tr>
-                                            <td>{match.date}</td>
-                                            <td>{match.competition}</td>
-                                            <td>{match.location}</td>
-                                            <td>{match.result}</td>
-                                            <td>{match.referee}</td>
-                                            <td>{match.stadium}</td>
-                                            <td>{match.attendance}</td>
+                                            <td
+                                                colspan="7"
+                                                style="text-align: center; padding: 2rem;"
+                                            >
+                                                No hay partidos registrados
+                                            </td>
                                         </tr>
-                                    ))
+                                    )
                                 }
                             </tbody>
                         </table>
