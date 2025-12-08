@@ -27,9 +27,10 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                     END as rival,
                     COUNT(*) as partidos
                 FROM partidos p
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                WHERE p.id_entrenador = ?
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso'
                 GROUP BY rival
                 ORDER BY partidos DESC
                 LIMIT 1
@@ -48,9 +49,10 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                     END as rival,
                     COUNT(*) as victorias
                 FROM partidos p
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                WHERE p.id_entrenador = ? AND p.goles_rm > p.goles_rival
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm > p.goles_rival
                 GROUP BY rival
                 ORDER BY victorias DESC
                 LIMIT 1
@@ -69,9 +71,10 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                     END as rival,
                     COUNT(*) as empates
                 FROM partidos p
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                WHERE p.id_entrenador = ? AND p.goles_rm = p.goles_rival
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm = p.goles_rival
                 GROUP BY rival
                 ORDER BY empates DESC
                 LIMIT 1
@@ -92,9 +95,10 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                     p.goles_rival,
                     (p.goles_rm - p.goles_rival) as diferencia
                 FROM partidos p
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                WHERE p.id_entrenador = ? AND p.goles_rm > p.goles_rival
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm > p.goles_rival
                 ORDER BY diferencia DESC, p.goles_rm DESC
                 LIMIT 1
             `,
@@ -114,9 +118,10 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                     p.goles_rival,
                     (p.goles_rival - p.goles_rm) as diferencia
                 FROM partidos p
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                WHERE p.id_entrenador = ? AND p.goles_rm < p.goles_rival
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm < p.goles_rival
                 ORDER BY diferencia DESC, p.goles_rival DESC
                 LIMIT 1
             `,
@@ -129,7 +134,8 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             sql: `
                 SELECT p.goles_rm || '-' || p.goles_rival as resultado, COUNT(*) as veces
                 FROM partidos p
-                WHERE p.id_entrenador = ?
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso'
                 GROUP BY resultado
                 ORDER BY veces DESC
                 LIMIT 1
