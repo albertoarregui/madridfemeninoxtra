@@ -31,10 +31,10 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                     SELECT 
                         j.nombre,
                         COUNT(*) as goles
-                    FROM goles_asistencias ga
+                    FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                    INNER JOIN jugadoras j ON ga.id_jugadora = j.id_jugadora
-                    WHERE ga.tipo = 'Gol' 
+                    INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
+                    WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
                     GROUP BY j.id_jugadora, j.nombre
                     ORDER BY goles DESC
