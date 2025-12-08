@@ -254,3 +254,72 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
         return { topScorers: [], topAssisters: [], topContributors: [] };
     }
 }
+
+export async function fetchRivalMatches(rivalId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas');
+            return [];
+        }
+
+        const db = createClient({
+            url: url,
+            authToken: authToken,
+        });
+
+        console.log('Fetching matches against rival ID:', rivalId);
+
+        const matchesResult = await db.execute({
+            sql: `
+                SELECT 
+                    p.id_partido,
+                    p.fecha,
+                    p.id_competicion,
+                    c.nombre as competicion,
+                    p.id_club_local,
+                    p.id_club_visitante,
+                    p.goles_rm,
+                    p.goles_rival,
+                    p.id_arbitra,
+                    a.nombre as arbitra,
+                    p.id_estadio,
+                    e.nombre as estadio,
+                    p.asistencia
+                FROM partidos p
+                LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+                LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
+                LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+                WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                ORDER BY p.fecha DESC
+            `,
+            args: [rivalId, rivalId],
+        });
+
+        return matchesResult.rows.map((match: any) => {
+            // Determinar si el Real Madrid jugó como local o visitante
+            const esLocal = match.id_club_local === Number(rivalId);
+
+            return {
+                id: match.id_partido,
+                fecha: match.fecha,
+                competicion: match.competicion || '-',
+                esLocal: esLocal,
+                ubicacion: esLocal ? 'Local' : 'Visitante',
+                resultado: `${match.goles_rm}-${match.goles_rival}`,
+                golesRM: match.goles_rm,
+                golesRival: match.goles_rival,
+                arbitra: match.arbitra || '-',
+                estadio: match.estadio || '-',
+                asistencia: match.asistencia || null,
+            };
+        });
+    } catch (error) {
+        console.error("Error fetching rival matches:", error);
+        return [];
+    }
+}
