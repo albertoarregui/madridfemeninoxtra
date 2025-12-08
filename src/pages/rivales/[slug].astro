@@ -1,7 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { fetchRivalsDirectly } from "../../utils/rivales";
-import { fetchRivalRecords } from "../../utils/rival-records";
+import {
+    fetchRivalRecords,
+    fetchRivalTopPlayers,
+} from "../../utils/rival-records";
 import type { ImageMetadata } from "astro";
 
 export async function getStaticPaths() {
@@ -18,10 +21,10 @@ const { rival } = Astro.props;
 // Fetch rival records from database
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
+// Fetch top players statistics
+const topPlayersData = await fetchRivalTopPlayers(rival.id_club);
+
 const mockPlayers: string[] = [];
-const mockTopScorers: any[] = [];
-const mockTopAssisters: any[] = [];
-const mockTopContributors: any[] = [];
 const mockMatches: any[] = [];
 ---
 
@@ -427,17 +430,28 @@ const mockMatches: any[] = [];
                     <h2 class="section-header">Máximas Goleadoras</h2>
                     <div class="top-list">
                         {
-                            mockTopScorers.map((player, index) => (
-                                <div class="top-item">
-                                    <span class="position">{index + 1}.</span>
-                                    <span class="player-name">
-                                        {player.name}
-                                    </span>
-                                    <span class="stat-value">
-                                        {player.goals} goles
-                                    </span>
-                                </div>
-                            ))
+                            topPlayersData.topScorers.length > 0 ? (
+                                topPlayersData.topScorers.map(
+                                    (player: any, index: number) => (
+                                        <div class="top-item">
+                                            <span class="position">
+                                                {index + 1}.
+                                            </span>
+                                            <span class="player-name">
+                                                {player.nombre}
+                                            </span>
+                                            <span class="stat-value">
+                                                {player.goles}{" "}
+                                                {player.goles === 1
+                                                    ? "gol"
+                                                    : "goles"}
+                                            </span>
+                                        </div>
+                                    ),
+                                )
+                            ) : (
+                                <p class="no-data">Sin datos disponibles</p>
+                            )
                         }
                     </div>
                 </section>
@@ -446,17 +460,28 @@ const mockMatches: any[] = [];
                     <h2 class="section-header">Máximas Asistentes</h2>
                     <div class="top-list">
                         {
-                            mockTopAssisters.map((player, index) => (
-                                <div class="top-item">
-                                    <span class="position">{index + 1}.</span>
-                                    <span class="player-name">
-                                        {player.name}
-                                    </span>
-                                    <span class="stat-value">
-                                        {player.assists} asistencias
-                                    </span>
-                                </div>
-                            ))
+                            topPlayersData.topAssisters.length > 0 ? (
+                                topPlayersData.topAssisters.map(
+                                    (player: any, index: number) => (
+                                        <div class="top-item">
+                                            <span class="position">
+                                                {index + 1}.
+                                            </span>
+                                            <span class="player-name">
+                                                {player.nombre}
+                                            </span>
+                                            <span class="stat-value">
+                                                {player.asistencias}{" "}
+                                                {player.asistencias === 1
+                                                    ? "asistencia"
+                                                    : "asistencias"}
+                                            </span>
+                                        </div>
+                                    ),
+                                )
+                            ) : (
+                                <p class="no-data">Sin datos disponibles</p>
+                            )
                         }
                     </div>
                 </section>
@@ -465,18 +490,26 @@ const mockMatches: any[] = [];
                     <h2 class="section-header">Más Goles Generados (G+A)</h2>
                     <div class="top-list">
                         {
-                            mockTopContributors.map((player, index) => (
-                                <div class="top-item">
-                                    <span class="position">{index + 1}.</span>
-                                    <span class="player-name">
-                                        {player.name}
-                                    </span>
-                                    <span class="stat-value">
-                                        {player.total} ({player.goals}G +{" "}
-                                        {player.assists}A)
-                                    </span>
-                                </div>
-                            ))
+                            topPlayersData.topContributors.length > 0 ? (
+                                topPlayersData.topContributors.map(
+                                    (player: any, index: number) => (
+                                        <div class="top-item">
+                                            <span class="position">
+                                                {index + 1}.
+                                            </span>
+                                            <span class="player-name">
+                                                {player.nombre}
+                                            </span>
+                                            <span class="stat-value">
+                                                {player.total} ({player.goles}G
+                                                + {player.asistencias}A)
+                                            </span>
+                                        </div>
+                                    ),
+                                )
+                            ) : (
+                                <p class="no-data">Sin datos disponibles</p>
+                            )
                         }
                     </div>
                 </section>
