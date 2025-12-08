@@ -340,3 +340,53 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         return [];
     }
 }
+
+export function calculateRivalStats(matches: any[]) {
+    const stats = {
+        home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
+        away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
+        total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 }
+    };
+
+    matches.forEach(match => {
+        const golesRM = parseInt(match.golesRM) || 0;
+        const golesRival = parseInt(match.golesRival) || 0;
+        const isHome = match.esLocal;
+
+        const location = isHome ? stats.home : stats.away;
+
+        location.pj++;
+        location.gf += golesRM;
+        location.gc += golesRival;
+
+        if (golesRM > golesRival) {
+            location.pg++;
+        } else if (golesRM === golesRival) {
+            location.pe++;
+        } else {
+            location.pp++;
+        }
+    });
+
+    stats.total.pj = stats.home.pj + stats.away.pj;
+    stats.total.pg = stats.home.pg + stats.away.pg;
+    stats.total.pe = stats.home.pe + stats.away.pe;
+    stats.total.pp = stats.home.pp + stats.away.pp;
+    stats.total.gf = stats.home.gf + stats.away.gf;
+    stats.total.gc = stats.home.gc + stats.away.gc;
+
+    const addCalculatedFields = (obj: any) => ({
+        ...obj,
+        percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : '0.0',
+        percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : '0.0',
+        percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : '0.0',
+        avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : '0.00',
+        dif: obj.gf - obj.gc,
+    });
+
+    return {
+        home: addCalculatedFields(stats.home),
+        away: addCalculatedFields(stats.away),
+        total: addCalculatedFields(stats.total),
+    };
+}
