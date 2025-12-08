@@ -32,10 +32,25 @@ const rivalMatches = await fetchRivalMatches(rival.id_club);
 // Calculate statistics from matches
 const rivalStats = calculateRivalStats(rivalMatches);
 
-// Extract unique competitions
-const competitions = [
+// Extract unique competitions and sort in specific order
+const competitionOrder = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+    "Amistosos",
+];
+const uniqueCompetitions = [
     ...new Set(rivalMatches.map((m) => m.competicion)),
 ].filter((c) => c && c !== "-");
+const competitions = uniqueCompetitions.sort((a, b) => {
+    const indexA = competitionOrder.indexOf(a);
+    const indexB = competitionOrder.indexOf(b);
+    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+});
 
 // Calculate pie chart values (circumference = 2 * PI * r = 2 * 3.14159 * 35 ≈ 220)
 const circumference = 220;
