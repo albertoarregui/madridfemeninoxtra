@@ -48,6 +48,32 @@ try {
     console.error(`Error loading shield for ${rival.nombre}:`, error);
 }
 
+// Import country flag dynamically from src/assets/banderas
+let flagImage: ImageMetadata | undefined;
+try {
+    const flags = import.meta.glob<{ default: ImageMetadata }>(
+        "/src/assets/banderas/*.svg",
+    );
+    // Normalize country name to match filename format
+    const flagSlug = rival.pais
+        ?.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
+    const flagPath = `/src/assets/banderas/${flagSlug}.svg`;
+
+    console.log("Trying to load flag:", flagPath);
+
+    if (flags[flagPath]) {
+        flagImage = (await flags[flagPath]()).default;
+        console.log("Flag loaded successfully for", rival.pais);
+    } else {
+        console.log("Flag not found for", rival.pais, "at path:", flagPath);
+    }
+} catch (error) {
+    console.error(`Error loading flag for ${rival.pais}:`, error);
+}
+
 // Fetch rival records from database
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
@@ -168,7 +194,18 @@ const mockPlayers: string[] = [];
                             </div>
                             <div class="info-row">
                                 <span class="label">País:</span>
-                                <span class="value">{rival.pais}</span>
+                                <span class="value">
+                                    {rival.pais}
+                                    {
+                                        flagImage && (
+                                            <img
+                                                src={flagImage.src}
+                                                alt={`Bandera de ${rival.pais}`}
+                                                class="country-flag"
+                                            />
+                                        )
+                                    }
+                                </span>
                             </div>
                             <div class="info-row">
                                 <span class="label">Estadio:</span>
@@ -771,6 +808,17 @@ const mockPlayers: string[] = [];
         .info-row .value {
             flex: 1;
             text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .country-flag {
+            width: 24px;
+            height: 16px;
+            object-fit: cover;
+            border: 1px solid #ddd;
         }
 
         .info-row .link {
