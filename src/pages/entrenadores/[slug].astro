@@ -4,6 +4,7 @@ import {
     fetchCoachesDirectly,
     fetchCoachStats,
 } from "../../utils/entrenadores";
+import { fetchCoachRecords } from "../../utils/coach-records";
 
 // Import coach photos
 import albertoTorilPhoto from "../../assets/entrenadores/alberto_toril.png";
@@ -43,6 +44,7 @@ const { coach } = Astro.props;
 
 // Fetch coach stats
 const coachStats = await fetchCoachStats(coach.id_entrenador);
+const coachRecords = await fetchCoachRecords(coach.id_entrenador);
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -137,7 +139,130 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                 <section class="records-card">
                     <h2 class="section-header">RÉCORDS</h2>
                     <div class="records-list">
-                        <p class="no-data">Sin datos disponibles</p>
+                        {
+                            coachRecords ? (
+                                <div class="records-grid">
+                                    {coachRecords.mas_partido && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Más partido
+                                            </span>
+                                            <span class="record-value">
+                                                {coachRecords.mas_partido.rival}{" "}
+                                                (
+                                                {
+                                                    coachRecords.mas_partido
+                                                        .partidos
+                                                }
+                                                )
+                                            </span>
+                                        </div>
+                                    )}
+                                    {coachRecords.mas_victorias && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Más victorias
+                                            </span>
+                                            <span class="record-value">
+                                                {
+                                                    coachRecords.mas_victorias
+                                                        .rival
+                                                }{" "}
+                                                (
+                                                {
+                                                    coachRecords.mas_victorias
+                                                        .victorias
+                                                }
+                                                )
+                                            </span>
+                                        </div>
+                                    )}
+                                    {coachRecords.mas_empates && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Más empates
+                                            </span>
+                                            <span class="record-value">
+                                                {coachRecords.mas_empates.rival}{" "}
+                                                (
+                                                {
+                                                    coachRecords.mas_empates
+                                                        .empates
+                                                }
+                                                )
+                                            </span>
+                                        </div>
+                                    )}
+                                    {coachRecords.mayor_victoria && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Mayor victoria
+                                            </span>
+                                            <span class="record-value">
+                                                {
+                                                    coachRecords.mayor_victoria
+                                                        .goles_rm
+                                                }
+                                                -
+                                                {
+                                                    coachRecords.mayor_victoria
+                                                        .goles_rival
+                                                }{" "}
+                                                vs{" "}
+                                                {
+                                                    coachRecords.mayor_victoria
+                                                        .rival
+                                                }
+                                            </span>
+                                        </div>
+                                    )}
+                                    {coachRecords.mayor_derrota && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Mayor derrota
+                                            </span>
+                                            <span class="record-value">
+                                                {
+                                                    coachRecords.mayor_derrota
+                                                        .goles_rm
+                                                }
+                                                -
+                                                {
+                                                    coachRecords.mayor_derrota
+                                                        .goles_rival
+                                                }{" "}
+                                                vs{" "}
+                                                {
+                                                    coachRecords.mayor_derrota
+                                                        .rival
+                                                }
+                                            </span>
+                                        </div>
+                                    )}
+                                    {coachRecords.mas_repetido && (
+                                        <div class="record-item">
+                                            <span class="record-label">
+                                                Más repetido
+                                            </span>
+                                            <span class="record-value">
+                                                {
+                                                    coachRecords.mas_repetido
+                                                        .resultado
+                                                }{" "}
+                                                (
+                                                {
+                                                    coachRecords.mas_repetido
+                                                        .veces
+                                                }{" "}
+                                                veces)
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p class="no-data">Sin datos disponibles</p>
+                            )
+                        }
                     </div>
                 </section>
             </div>
