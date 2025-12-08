@@ -302,7 +302,9 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
 
         return matchesResult.rows.map((match: any) => {
             // Determinar si el Real Madrid jugó como local o visitante
-            const esLocal = match.id_club_local === Number(rivalId);
+            // Si el rival fue visitante, entonces RM jugó en casa (Local)
+            // Si el rival fue local, entonces RM jugó fuera (Visitante)
+            const esLocal = match.id_club_visitante === Number(rivalId);
 
             return {
                 id: match.id_partido,
