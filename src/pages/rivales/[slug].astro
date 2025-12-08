@@ -26,9 +26,23 @@ try {
     const images = import.meta.glob<{ default: ImageMetadata }>(
         "/src/assets/escudos/*.png",
     );
-    const imagePath = `/src/assets/escudos/${rival.slug}.png`;
+    // Convert slug from guiones to guiones bajos to match filename format
+    const fileSlug = rival.slug.replace(/-/g, "_");
+    const imagePath = `/src/assets/escudos/${fileSlug}.png`;
+
+    console.log("Trying to load shield:", imagePath);
+    console.log("Available images:", Object.keys(images));
+
     if (images[imagePath]) {
         shieldImage = (await images[imagePath]()).default;
+        console.log("Shield loaded successfully for", rival.nombre);
+    } else {
+        console.log(
+            "Shield not found for",
+            rival.nombre,
+            "at path:",
+            imagePath,
+        );
     }
 } catch (error) {
     console.error(`Error loading shield for ${rival.nombre}:`, error);
