@@ -1,0 +1,61 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+import { fetchGamesDirectly } from "../utils/partidos";
+import MatchList from "../components/MatchList.astro";
+
+const gamesData = await fetchGamesDirectly();
+const uniqueSeasons = [
+    ...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
+].sort();
+const uniqueCompetitions = [
+    ...new Set(gamesData.map((g) => g.competicion_nombre).filter((c) => c)),
+].sort();
+---
+
+<Layout
+    title="Partidos del Real Madrid Femenino | Madrid Femenino Xtra"
+    description="Todos los partidos del Real Madrid a lo largo de su historia: resultados, calendario 2025/26, alineaciones, goles, estadios y árbitras."
+>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1
+            class="page-title text-4xl font-bold text-center text-gray-900 mb-2"
+        >
+            PARTIDOS
+        </h1>
+
+        <h2 class="content-h2">
+            Todos los partidos del Real Madrid a lo largo de su historia:
+            resultados, calendario 2025/26, alineaciones, goles, estadios y
+            árbitras. Sigue toda la actualidad del Real Madrid en Madrid
+            Femenino Xtra.
+        </h2>
+
+        {
+            gamesData.length > 0 ? (
+                <MatchList
+                    matches={gamesData}
+                    seasons={uniqueSeasons}
+                    competitions={uniqueCompetitions}
+                />
+            ) : (
+                <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">
+                    Error al cargar datos o no se encontraron partidos.
+                    Comprueba la conexión a Turso o tu API endpoint.
+                </p>
+            )
+        }
+    </main>
+</Layout>
+
+<style>
+    .victoria {
+        color: #16a34a;
+    }
+    .derrota {
+        color: #dc2626;
+    }
+    .empate {
+        color: #ca8a04;
+    }
+</style>

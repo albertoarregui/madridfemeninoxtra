@@ -1,0 +1,38 @@
+import { e as createComponent, k as renderComponent, r as renderTemplate, m as maybeRenderHead } from '../chunks/astro/server_Cpt8RX-b.mjs';
+import { $ as $$Layout } from '../chunks/Layout_CTgb0INN.mjs';
+/* empty css                                       */
+export { renderers } from '../renderers.mjs';
+
+const $$AvisoLegal = createComponent(($$result, $$props, $$slots) => {
+  return renderTemplate`${renderComponent($$result, "Layout", $$Layout, { "title": "Aviso Legal | Madrid Femenino Xtra", "description": "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificaci\xF3n, calendario y estad\xEDsticas en un solo lugar. \xA1Entra y no te pierdas nada de la actualidad del equipo!" }, { "default": ($$result2) => renderTemplate` ${maybeRenderHead()}<main class="main-content-wrapper"> <section class="content-container"> <h1 class="page-title">AVISO LEGAL</h1> <p class="content-p">
+La presente página web, <strong>Madrid Femenino Xtra</strong>,
+                es titularidad de Madrid Femenino Xtra y correo electrónico
+                contacto@madridfemeninoxtra.com.
+</p> <h2 class="section-title">Objeto</h2> <p class="content-p">
+El presente Aviso Legal regula el uso de la página web, sus
+                servicios, contenidos y la relación con los usuarios.
+</p> <h2 class="section-title">Propiedad Intelectual</h2> <p class="content-p">
+Todos los contenidos de esta web, incluyendo textos, imágenes,
+                logotipos y gráficos, son propiedad de Madrid Femenino Xtra o de
+                sus respectivos titulares y están protegidos por la normativa de
+                propiedad intelectual.
+</p> <h2 class="section-title">Responsabilidad</h2> <p class="content-p">
+Madrid Femenino Xtra no se responsabiliza de los posibles
+                errores u omisiones en los contenidos, ni de los daños que
+                puedan derivarse del acceso o uso de la web.
+</p> </section> </main> ` })}`;
+}, "C:/Users/PC/madridfemeninoxtra/src/pages/aviso-legal.astro", void 0);
+
+const $$file = "C:/Users/PC/madridfemeninoxtra/src/pages/aviso-legal.astro";
+const $$url = "/aviso-legal";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+    __proto__: null,
+    default: $$AvisoLegal,
+    file: $$file,
+    url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };

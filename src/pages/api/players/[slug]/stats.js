@@ -1,12 +1,6 @@
-import { createClient } from '@libsql/client';
-import { fetchPlayersDirectly } from "../../../../utils/players";
 
-export async function getStaticPaths() {
-    const players = await fetchPlayersDirectly();
-    return players.map((player) => ({
-        params: { slug: player.slug },
-    }));
-}
+
+import { createClient } from '@libsql/client';
 
 const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
 

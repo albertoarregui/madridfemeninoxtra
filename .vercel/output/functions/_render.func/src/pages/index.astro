@@ -1,0 +1,153 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+import "../styles/home.css";
+import ProximoPartido from "../components/ProximoPartido.astro";
+import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
+import Searcher from "../components/Searcher.astro";
+
+interface Noticia {
+	id: number;
+	title: string;
+	excerpt: string;
+	slug: string;
+	date: string;
+	link: string;
+	featuredImage?: string;
+	categories: string[];
+}
+
+// Las noticias se cargarán en el cliente
+let noticias: Noticia[] = [];
+
+function formatDate(dateString: string) {
+	const date = new Date(dateString);
+	return new Intl.DateTimeFormat("es-ES", {
+		month: "short",
+		day: "numeric",
+	}).format(date);
+}
+---
+
+<Layout
+	title="Madrid Femenino Xtra | Noticias, Actualidad y Estadísticas"
+	description="Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!"
+>
+	<section class="hero">
+		<div class="hero-text">
+			<h1>MADRID FEMENINO XTRA</h1>
+			<p>
+				¡Toda la actualidad, noticias y estadísticas del Real Madrid
+				femenino en un solo sitio!
+			</p>
+
+			<Searcher />
+
+			<ResumenEstadisticas />
+		</div>
+	</section>
+
+	<div class="content-layout">
+		<main class="welcome-area">
+			<section class="news-content">
+				<h2 class="section-title">ÚLTIMAS NOTICIAS</h2>
+				<p class="content-h2">
+					Última hora del Real Madrid femenino en directo: actualidad,
+					próximos partidos y fichajes en Liga F, UWCL, Copa de la
+					Reina y Supercopa de España.
+				</p>
+
+				<div class="news-grid">
+					<!-- Will be populated by JavaScript -->
+				</div>
+
+				<p class="no-news" style="display: none;">
+					No hay noticias disponibles en este momento.
+				</p>
+
+				<a href="/noticias" class="view-all-news"> Más noticias → </a>
+			</section>
+		</main>
+
+		<aside class="proximo-partido sidebar-right">
+			<ProximoPartido />
+		</aside>
+	</div>
+
+	<script is:inline>
+		const WP_URL =
+			"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=5&_embed=true";
+
+		async function loadNews() {
+			const newsGrid = document.querySelector(".news-grid");
+			const noNewsMessage = document.querySelector(".no-news");
+
+			try {
+				const response = await fetch(WP_URL);
+				if (!response.ok) throw new Error("Failed to fetch");
+
+				const posts = await response.json();
+
+				if (posts.length === 0) {
+					if (newsGrid) newsGrid.style.display = "none";
+					if (noNewsMessage) noNewsMessage.style.display = "block";
+					return;
+				}
+
+				if (noNewsMessage) noNewsMessage.style.display = "none";
+				if (!newsGrid) return;
+
+				newsGrid.innerHTML = posts
+					.map((post) => {
+						const title = post.title.rendered;
+						const excerpt = post.excerpt.rendered;
+						const date = new Date(post.date);
+						const formattedDate = new Intl.DateTimeFormat("es-ES", {
+							month: "short",
+							day: "numeric",
+						}).format(date);
+						const featuredImage =
+							post._embedded?.["wp:featuredmedia"]?.[0]
+								?.source_url;
+						const link = `/noticias/${post.slug}`;
+
+						return `
+						<article class="news-card" onclick="window.location.href='${link}'" style="cursor: pointer;">
+							${
+								featuredImage
+									? `
+								<div class="news-image">
+									<img src="${featuredImage}" alt="${title}" loading="lazy" />
+								</div>
+							`
+									: ""
+							}
+							<div class="news-content-inner">
+								<time class="news-date">${formattedDate}</time>
+								<h3 class="news-title">${title}</h3>
+								<div class="news-excerpt">${excerpt}</div>
+								<a href="${link}" class="news-link">Leer más →</a>
+							</div>
+						</article>
+					`;
+					})
+					.join("");
+			} catch (error) {
+				console.error("Error loading news:", error);
+				if (newsGrid) newsGrid.style.display = "none";
+				if (noNewsMessage) {
+					noNewsMessage.textContent =
+						"Error al cargar las noticias. Por favor, intenta de nuevo más tarde.";
+					noNewsMessage.style.display = "block";
+				}
+			}
+		}
+
+		// Load news when page is ready
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", loadNews);
+		} else {
+			loadNews();
+		}
+	</script>
+</Layout>
