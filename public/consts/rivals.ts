@@ -299,5 +299,11 @@ export const TEAMS = [
         city: "Roma",
         country: "ita",
     },
+    {
+        id: "wolfsburg",
+        name: "Wolfsburgo",
+        city: "Wolfsburgo",
+        country: "de",
+    },
 
 ]
