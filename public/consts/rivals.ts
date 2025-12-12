@@ -300,7 +300,7 @@ export const TEAMS = [
         country: "ita",
     },
     {
-        id: "wolfsburg",
+        id: "wolfsburgo",
         name: "Wolfsburgo",
         city: "Wolfsburgo",
         country: "de",

@@ -12,9 +12,34 @@ import type { ImageMetadata } from "astro";
 const { slug } = Astro.params;
 
 const allRivals = await fetchRivalsDirectly();
-const rival = allRivals.find((r) => r.slug === slug);
+let rival = allRivals.find((r) => r.slug === slug);
+
+// Fallback search for known mismatches
+if (!rival) {
+    if (slug === "cacereno") {
+        rival = allRivals.find(
+            (r) =>
+                r.slug.includes("cacereno") ||
+                r.nombre.toLowerCase().includes("cacereño"),
+        );
+    } else if (slug === "ffc-turbine-potsdam") {
+        rival = allRivals.find(
+            (r) =>
+                r.nombre.toLowerCase().includes("turbine") &&
+                r.nombre.toLowerCase().includes("potsdam"),
+        );
+    } else {
+        // Generic fallback: try to find partially matching slugs in case of minor differences
+        // e.g. 'valencia-cf' vs 'valencia'
+        rival = allRivals.find(
+            (r) => r.slug.includes(slug!) || (slug && slug.includes(r.slug)),
+        );
+    }
+}
 
 if (!rival) {
+    console.log(`Rival not found for slug: ${slug}`);
+    console.log(`Available slugs: ${allRivals.map((r) => r.slug).join(", ")}`);
     return Astro.redirect("/404");
 }
 
