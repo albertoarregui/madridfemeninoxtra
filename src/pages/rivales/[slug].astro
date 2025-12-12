@@ -47,11 +47,31 @@ if (!rival) {
 let shieldImage: ImageMetadata | undefined;
 try {
     const images = import.meta.glob<{ default: ImageMetadata }>(
-        "/src/assets/escudos/*.png",
+        "../../assets/escudos/*.png",
     );
     // Convert slug from guiones to guiones bajos to match filename format
-    const fileSlug = rival.slug.replace(/-/g, "_");
-    const imagePath = `/src/assets/escudos/${fileSlug}.png`;
+    let fileSlug = rival.slug.replace(/-/g, "_");
+
+    // Manual overrides for known mismatches between DB slug/Name and Filename
+    const normalizeName = (name: string) =>
+        name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    const nameNorm = normalizeName(rival.nombre);
+
+    if (nameNorm.includes("cacereno")) {
+        fileSlug = "cacereno";
+    } else if (nameNorm.includes("turbine") && nameNorm.includes("potsdam")) {
+        fileSlug = "ffc_turbine_potsdam";
+    } else if (
+        nameNorm.includes("wolfsburgo") ||
+        nameNorm.includes("wolfsburg")
+    ) {
+        fileSlug = "wolfsburgo";
+    }
+
+    const imagePath = `../../assets/escudos/${fileSlug}.png`;
 
     console.log("Trying to load shield:", imagePath);
     console.log("Available images:", Object.keys(images));
