@@ -14,7 +14,6 @@ const { slug } = Astro.params;
 const allRivals = await fetchRivalsDirectly();
 let rival = allRivals.find((r) => r.slug === slug);
 
-// Fallback search for known mismatches
 if (!rival) {
     if (slug === "cacereno") {
         rival = allRivals.find(
@@ -29,8 +28,6 @@ if (!rival) {
                 r.nombre.toLowerCase().includes("potsdam"),
         );
     } else {
-        // Generic fallback: try to find partially matching slugs in case of minor differences
-        // e.g. 'valencia-cf' vs 'valencia'
         rival = allRivals.find(
             (r) => r.slug.includes(slug!) || (slug && slug.includes(r.slug)),
         );
@@ -43,16 +40,13 @@ if (!rival) {
     return Astro.redirect("/404");
 }
 
-// Import shield dynamically from src/assets
 let shieldImage: ImageMetadata | undefined;
 try {
     const images = import.meta.glob<{ default: ImageMetadata }>(
         "../../assets/escudos/*.png",
     );
-    // Convert slug from guiones to guiones bajos to match filename format
     let fileSlug = rival.slug.replace(/-/g, "_");
 
-    // Manual overrides for known mismatches between DB slug/Name and Filename
     const normalizeName = (name: string) =>
         name
             .toLowerCase()
@@ -91,13 +85,11 @@ try {
     console.error(`Error loading shield for ${rival.nombre}:`, error);
 }
 
-// Import country flag dynamically from src/assets/banderas
 let flagImage: ImageMetadata | undefined;
 try {
     const flags = import.meta.glob<{ default: ImageMetadata }>(
         "/src/assets/banderas/*.svg",
     );
-    // Normalize country name to match filename format
     const flagSlug = rival.pais
         ?.toLowerCase()
         .normalize("NFD")
@@ -117,19 +109,14 @@ try {
     console.error(`Error loading flag for ${rival.pais}:`, error);
 }
 
-// Fetch rival records from database
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
-// Fetch top players statistics
 const topPlayersData = await fetchRivalTopPlayers(rival.id_club);
 
-// Fetch all matches against this rival
 const rivalMatches = await fetchRivalMatches(rival.id_club);
 
-// Calculate statistics from matches
 const rivalStats = calculateRivalStats(rivalMatches);
 
-// Extract unique competitions and sort in specific order
 const competitionOrder = [
     "Liga F",
     "UWCL",
@@ -149,11 +136,9 @@ const competitions = uniqueCompetitions.sort((a, b) => {
     return indexA - indexB;
 });
 
-// Calculate pie chart values (circumference = 2 * PI * r = 2 * 3.14159 * 35 ≈ 220)
 const circumference = 220;
 const totalMatches = rivalStats.total.pj;
 
-// Wins/Draws/Losses percentages
 const winsArc =
     totalMatches > 0
         ? Math.round((rivalStats.total.pg / totalMatches) * circumference)
@@ -167,7 +152,6 @@ const lossesArc =
         ? Math.round((rivalStats.total.pp / totalMatches) * circumference)
         : 0;
 
-// Goals for/against percentages
 const totalGoals = rivalStats.total.gf + rivalStats.total.gc;
 const goalsForArc =
     totalGoals > 0
@@ -506,7 +490,6 @@ const mockPlayers: string[] = [];
                                 {
                                     rivalMatches.length > 0 ? (
                                         rivalMatches.map((match: any) => {
-                                            // Determinar tipo de resultado
                                             const golesRM =
                                                 parseInt(match.golesRM) || 0;
                                             const golesRival =
@@ -1003,26 +986,24 @@ const mockPlayers: string[] = [];
             border-top: 2px solid #333;
         }
 
-        /* LOCAL and VISITANTE rows */
         .stats-table tbody tr:not(.total-row) {
             background: #f0f0f0;
         }
 
-        /* Resultado colors - pastel */
         .resultado-victoria {
-            background-color: #c8e6c9 !important; /* Verde pastel */
+            background-color: #c8e6c9 !important;
             font-weight: 600;
             color: #000;
         }
 
         .resultado-empate {
-            background-color: #fff9c4 !important; /* Amarillo pastel */
+            background-color: #fff9c4 !important;
             font-weight: 600;
             color: #000;
         }
 
         .resultado-derrota {
-            background-color: #ffcdd2 !important; /* Rojo pastel */
+            background-color: #ffcdd2 !important;
             font-weight: 600;
             color: #000;
         }
@@ -1146,18 +1127,15 @@ const mockPlayers: string[] = [];
         }
 
         @media (max-width: 768px) {
-            /* Reduce page padding on mobile */
             .rival-details-page {
                 padding: 1rem 0.5rem;
             }
 
-            /* Single column layout on mobile */
             .rival-grid {
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
 
-            /* All cards should have proper margin */
             .rival-card,
             .players-card,
             .charts-card,
@@ -1172,7 +1150,6 @@ const mockPlayers: string[] = [];
                 overflow-x: hidden;
             }
 
-            /* Vertical layout for rival info (shield top, details bottom) */
             .rival-info {
                 flex-direction: column;
                 align-items: center;
@@ -1198,7 +1175,6 @@ const mockPlayers: string[] = [];
                 width: 100%;
             }
 
-            /* Larger text on mobile */
             .info-row {
                 font-size: 0.95rem;
                 padding: 0.6rem 0;
@@ -1215,12 +1191,10 @@ const mockPlayers: string[] = [];
                 width: 55%;
             }
 
-            /* Hide empty players card on mobile */
             .players-card {
                 display: none;
             }
 
-            /* Reduce padding for all card content on mobile */
             .charts-content,
             .records-list,
             .top-list {
@@ -1228,7 +1202,6 @@ const mockPlayers: string[] = [];
                 overflow-x: hidden;
             }
 
-            /* Stack charts vertically on mobile */
             .charts-row {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
@@ -1236,7 +1209,6 @@ const mockPlayers: string[] = [];
                 overflow-x: hidden;
             }
 
-            /* Make chart items more compact */
             .chart-item {
                 width: 100%;
                 max-width: 100%;
@@ -1258,21 +1230,18 @@ const mockPlayers: string[] = [];
                 width: 100%;
             }
 
-            /* Ensure tables are scrollable horizontally */
             .table-wrapper {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 width: 100%;
             }
 
-            /* Set minimum width for tables to enable scrolling */
             .stats-table,
             .matches-table {
                 min-width: 700px;
                 width: 100%;
             }
 
-            /* Sticky first column in stats table */
             .stats-table th:first-child,
             .stats-table td:first-child {
                 position: sticky;
@@ -1295,7 +1264,6 @@ const mockPlayers: string[] = [];
                 background: #ffffff !important;
             }
 
-            /* Make font smaller in tables for better fit */
             .stats-table,
             .matches-table {
                 font-size: 0.7rem;
@@ -1309,7 +1277,6 @@ const mockPlayers: string[] = [];
                 white-space: nowrap;
             }
 
-            /* Reduce section header font size */
             .section-header {
                 font-size: 0.85rem;
                 padding: 0.5rem 0.75rem;
@@ -1324,7 +1291,6 @@ const mockPlayers: string[] = [];
                 word-wrap: break-word;
             }
 
-            /* Stadium and records cards */
             .stadium-content,
             .records-list,
             .top-list {

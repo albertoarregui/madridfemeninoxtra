@@ -24,7 +24,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         let biggestLoss = null;
         let mostRepeated = null;
 
-        // Top scorer from Real Madrid against this rival
         try {
             const topScorerResult = await db.execute({
                 sql: `
@@ -71,7 +70,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
             console.error('Error fetching biggest win:', error);
         }
 
-        // Biggest loss
         try {
             const biggestLossResult = await db.execute({
                 sql: `
@@ -94,7 +92,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
             console.error('Error fetching biggest loss:', error);
         }
 
-        // Most repeated result
         try {
             const mostRepeatedResult = await db.execute({
                 sql: `
@@ -115,7 +112,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
             console.error('Error fetching most repeated:', error);
         }
 
-        // Player with most appearances against this rival - usando goles_asistencias como alternativa
         try {
             const mostAppearancesResult = await db.execute({
                 sql: `
@@ -140,7 +136,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
 
         const records = {
             maximo_goleador: topScorer,
-            goleador_rival: null, // No disponible por ahora
+            goleador_rival: null,
             mas_partidos: mostAppearances,
             mayor_victoria: biggestWin,
             mayor_derrota: biggestLoss,
@@ -174,7 +170,6 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
 
         console.log('Fetching rival top players for rival ID:', rivalId);
 
-        // Top scorers against this rival
         const topScorersResult = await db.execute({
             sql: `
                 SELECT 
@@ -192,7 +187,6 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
             args: [rivalId, rivalId],
         });
 
-        // Top assisters against this rival
         const topAssistersResult = await db.execute({
             sql: `
                 SELECT 
@@ -210,7 +204,6 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
             args: [rivalId, rivalId],
         });
 
-        // Top contributors (goals + assists)
         const topContributorsResult = await db.execute({
             sql: `
                 SELECT 
@@ -275,14 +268,12 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         console.log('========== DEBUG: Fetching matches ==========');
         console.log('Rival ID:', rivalId, 'Type:', typeof rivalId);
 
-        // First, let's check if there are ANY matches in the database
         const countResult = await db.execute({
             sql: 'SELECT COUNT(*) as total FROM partidos',
             args: []
         });
         console.log('Total matches in database:', countResult.rows[0]);
 
-        // Now check matches for this specific rival
         const matchesResult = await db.execute({
             sql: `
                 SELECT 
@@ -316,9 +307,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         console.log('========== END DEBUG ==========');
 
         return matchesResult.rows.map((match: any) => {
-            // Determinar si el Real Madrid jugó como local o visitante
-            // Si el rival fue visitante, entonces RM jugó en casa (Local)
-            // Si el rival fue local, entonces RM jugó fuera (Visitante)
             const esLocal = match.id_club_visitante === Number(rivalId);
 
             return {

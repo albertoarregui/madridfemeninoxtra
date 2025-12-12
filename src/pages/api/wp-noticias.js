@@ -34,7 +34,6 @@ export const GET = async ({ url }) => {
             response = await fetch(wpUrl.toString());
         } catch (error) {
             console.warn('HTTPS fetch failed, trying HTTP:', error.message);
-            // Try HTTP fallback
             const wpUrlHttp = new URL(WP_API_ENDPOINT_HTTP);
             wpUrlHttp.searchParams.set('page', page);
             wpUrlHttp.searchParams.set('per_page', perPage);

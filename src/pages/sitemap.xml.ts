@@ -7,7 +7,6 @@ import { fetchGamesDirectly } from '../utils/partidos';
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 const WP_API_URL = "https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=100&_embed=true";
 
-// Static pages
 const staticPages = [
     { url: '', priority: 1.0, changefreq: 'daily' },
     { url: 'noticias', priority: 0.9, changefreq: 'daily' },
@@ -42,7 +41,6 @@ export const GET: APIRoute = async () => {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
 
-        // Add static pages
         staticPages.forEach(page => {
             urls.push({
                 loc: `${SITE_URL}/${page.url}`,
@@ -51,7 +49,6 @@ export const GET: APIRoute = async () => {
             });
         });
 
-        // Fetch and add news articles from WordPress
         try {
             const response = await fetch(WP_API_URL);
             if (response.ok) {
@@ -70,7 +67,6 @@ export const GET: APIRoute = async () => {
             console.error('Error fetching news:', error);
         }
 
-        // Fetch and add players
         try {
             const players = await fetchPlayersDirectly();
             players.forEach(player => {
@@ -84,7 +80,6 @@ export const GET: APIRoute = async () => {
             console.error('Error fetching players:', error);
         }
 
-        // Fetch and add coaches
         try {
             const coaches = await fetchCoachesDirectly();
             coaches.forEach((coach: any) => {
@@ -98,7 +93,6 @@ export const GET: APIRoute = async () => {
             console.error('Error fetching coaches:', error);
         }
 
-        // Fetch and add rivals
         try {
             const rivals = await fetchRivalsDirectly();
             rivals.forEach((rival: any) => {
@@ -112,7 +106,6 @@ export const GET: APIRoute = async () => {
             console.error('Error fetching rivals:', error);
         }
 
-        // Fetch and add matches
         try {
             const matches = await fetchGamesDirectly();
             matches.forEach((match: any) => {

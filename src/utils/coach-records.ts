@@ -17,7 +17,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
 
         console.log('Fetching coach records for coach ID:', coachId);
 
-        // Most faced opponent - need to determine if RM is local or visitante
         const mostFacedResult = await db.execute({
             sql: `
                 SELECT 
@@ -39,7 +38,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         });
         console.log('Most faced:', mostFacedResult.rows[0]);
 
-        // Most wins against
         const mostWinsResult = await db.execute({
             sql: `
                 SELECT 
@@ -61,7 +59,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         });
         console.log('Most wins:', mostWinsResult.rows[0]);
 
-        // Most draws against
         const mostDrawsResult = await db.execute({
             sql: `
                 SELECT 
@@ -83,7 +80,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         });
         console.log('Most draws:', mostDrawsResult.rows[0]);
 
-        // Biggest win
         const biggestWinResult = await db.execute({
             sql: `
                 SELECT 
@@ -106,7 +102,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         });
         console.log('Biggest win:', biggestWinResult.rows[0]);
 
-        // Biggest loss
         const biggestLossResult = await db.execute({
             sql: `
                 SELECT 
@@ -129,7 +124,6 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         });
         console.log('Biggest loss:', biggestLossResult.rows[0]);
 
-        // Most repeated result
         const mostRepeatedResult = await db.execute({
             sql: `
                 SELECT p.goles_rm || '-' || p.goles_rival as resultado, COUNT(*) as veces

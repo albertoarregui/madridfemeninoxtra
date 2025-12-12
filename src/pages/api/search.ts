@@ -84,7 +84,7 @@ export const GET: APIRoute = async ({ url }) => {
 
         results.sort((a, b) => b.relevance - a.relevance);
 
-        const limitedResults = results.slice(0, 20);
+        const limitedResults = results.slice(0, 100);
 
         return new Response(JSON.stringify({ results: limitedResults }), {
             status: 200,

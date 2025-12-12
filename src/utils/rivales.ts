@@ -11,13 +11,10 @@ export function slugify(text: string | null | undefined): string {
 export function getRivalShieldUrl(rival: any): string {
     let fileName = rival.escudo_url;
 
-    // Si no hay escudo_url, crea un nombre de archivo a partir del nombre del rival
     if (!fileName && rival.nombre) {
-        // Convierte el slug (con guiones) a guiones bajos, según su confirmación
         let nameSlug = slugify(rival.nombre).replace(/-/g, '_');
         fileName = `${nameSlug}.png`;
     } else if (fileName && !fileName.includes('.')) {
-        // Si solo es un nombre (sin extensión), le añade .png
         fileName += '.png';
     }
 
@@ -74,7 +71,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 pais: cleanApiValue(rival.pais) || '',
                 slug: rival.slug || slugify(rival.nombre),
                 estadio: cleanApiValue(rival.estadio) || '',
-                // ✅ CORRECCIÓN: Se añade la URL del escudo
                 shieldUrl: getRivalShieldUrl(rival),
             };
         });
@@ -103,7 +99,6 @@ export async function fetchRivals(): Promise<any[]> {
             return {
                 ...rival,
                 slug: slugify(rival.nombre),
-                // ✅ CORRECCIÓN: Se añade la URL del escudo
                 shieldUrl: getRivalShieldUrl(rival),
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',

@@ -12,7 +12,7 @@ const CORS_HEADERS = {
 
 export const OPTIONS = () => {
     return new Response(null, {
-        status: 204, // 204 No Content
+        status: 204,
         headers: CORS_HEADERS
     });
 };

@@ -147,8 +147,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             authToken: authToken,
         });
 
-        // Query that works even when alineaciones is empty
-        // Uses goles_y_asistencias as fallback source
         const statsQuery = `
             SELECT
                 t.temporada,
@@ -266,7 +264,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             args: [playerId, playerId, playerId, playerId, playerId],
         });
 
-        // Process results
         const estadisticas: any = {};
 
         statsResult.rows.forEach((row: any) => {
@@ -315,7 +312,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
             estadisticas[temporada].competiciones.push(stats);
 
-            // Add to season total
             const total = estadisticas[temporada].total;
             total.convocatorias += stats.convocatorias;
             total.partidos += stats.partidos;
@@ -335,7 +331,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const estadisticasArray = Object.values(estadisticas);
 
-        // Calculate career totals
         const careerTotal: any = {
             convocatorias: 0,
             partidos: 0,

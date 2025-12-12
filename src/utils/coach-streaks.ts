@@ -15,7 +15,6 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
             authToken: authToken,
         });
 
-        // Get all matches ordered by date DESC (most recent first), excluding friendlies
         const matchesResult = await db.execute({
             sql: `
                 SELECT p.goles_rm, p.goles_rival, p.fecha
@@ -37,7 +36,6 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
             return null;
         }
 
-        // Condition functions
         const isWin = (m: any) => m.goles_rm > m.goles_rival;
         const isDraw = (m: any) => m.goles_rm === m.goles_rival;
         const isLoss = (m: any) => m.goles_rm < m.goles_rival;
@@ -49,7 +47,6 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
         const isCleanSheet = (m: any) => m.goles_rival === 0;
         const isNoGoals = (m: any) => m.goles_rm === 0 && m.goles_rival === 0;
 
-        // Helper function to calculate current streak
         const calculateCurrentStreak = (condition: (m: any) => boolean): number => {
             let count = 0;
             for (const match of matches) {
@@ -62,12 +59,10 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
             return count;
         };
 
-        // Helper function to calculate best streak
         const calculateBestStreak = (condition: (m: any) => boolean): number => {
             let maxStreak = 0;
             let currentStreak = 0;
 
-            // Reverse to go chronologically (oldest first)
             const chronologicalMatches = [...matches].reverse();
 
             for (const match of chronologicalMatches) {

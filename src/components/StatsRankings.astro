@@ -23,7 +23,6 @@ const { goalsData, seasons, competitions } = Astro.props;
 ---
 
 <div class="stats-rankings-ui">
-    <!-- Filtros -->
     <div class="filters-container">
         <div class="filter-wrapper">
             <select id="filtro-temporada">
@@ -82,9 +81,7 @@ const { goalsData, seasons, competitions } = Astro.props;
         </div>
     </div>
 
-    <!-- Grid de Rankings -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <!-- Máximas Goleadoras -->
         <div class="ranking-card" id="scorers-table">
             <h3 class="ranking-title">Máximas Goleadoras</h3>
             <div class="overflow-x-auto">
@@ -96,14 +93,10 @@ const { goalsData, seasons, competitions } = Astro.props;
                             <th scope="col" class="text-center">Goles</th>
                         </tr>
                     </thead>
-                    <tbody id="scorers-body">
-                        <!-- Will be populated by JavaScript -->
-                    </tbody>
+                    <tbody id="scorers-body"> </tbody>
                 </table>
             </div>
         </div>
-
-        <!-- Máximas Asistentes -->
         <div class="ranking-card" id="assisters-table">
             <h3 class="ranking-title">Máximas Asistentes</h3>
             <div class="overflow-x-auto">
@@ -115,14 +108,10 @@ const { goalsData, seasons, competitions } = Astro.props;
                             <th scope="col" class="text-center">Asistencias</th>
                         </tr>
                     </thead>
-                    <tbody id="assisters-body">
-                        <!-- Will be populated by JavaScript -->
-                    </tbody>
+                    <tbody id="assisters-body"> </tbody>
                 </table>
             </div>
         </div>
-
-        <!-- Goles Generados -->
         <div class="ranking-card" id="contributors-table">
             <h3 class="ranking-title">Más Goles Generados</h3>
             <div class="overflow-x-auto">
@@ -134,9 +123,7 @@ const { goalsData, seasons, competitions } = Astro.props;
                             <th scope="col" class="text-center">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="contributors-body">
-                        <!-- Will be populated by JavaScript -->
-                    </tbody>
+                    <tbody id="contributors-body"> </tbody>
                 </table>
             </div>
         </div>
@@ -150,7 +137,6 @@ const { goalsData, seasons, competitions } = Astro.props;
     const assistersBody = document.getElementById("assisters-body");
     const contributorsBody = document.getElementById("contributors-body");
 
-    // Helper function to get player image URL
     function getPlayerImage(playerName) {
         if (!playerName) return "";
         const slug = playerName
@@ -165,7 +151,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         const selectedSeason = seasonSelect.value;
         const selectedCompetition = competitionSelect.value;
 
-        // Filter data
         const filteredData = goalsData.filter((item) => {
             const matchesSeason =
                 selectedSeason === "todos" || item.temporada === selectedSeason;
@@ -178,7 +163,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         console.log("Datos filtrados:", filteredData.length, "registros");
         console.log("Primeros 3 registros:", filteredData.slice(0, 3));
 
-        // Calculate scorers
         const scorersMap = {};
         filteredData.forEach((item) => {
             if (item.goleadora) {
@@ -194,7 +178,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         console.log("Goleadoras calculadas:", sortedScorers.length);
         console.log("Top 3 goleadoras:", sortedScorers.slice(0, 3));
 
-        // Calculate assisters
         const assistersMap = {};
         filteredData.forEach((item) => {
             if (item.asistente) {
@@ -207,7 +190,6 @@ const { goalsData, seasons, competitions } = Astro.props;
             .map(([jugadora, asistencias]) => ({ jugadora, asistencias }))
             .sort((a, b) => b.asistencias - a.asistencias);
 
-        // Calculate contributors (goals + assists)
         const contributorsMap = {};
         filteredData.forEach((item) => {
             if (item.goleadora) {
@@ -233,7 +215,6 @@ const { goalsData, seasons, competitions } = Astro.props;
             }))
             .sort((a, b) => b.total - a.total);
 
-        // Update scorers table
         if (sortedScorers.length === 0) {
             scorersBody.innerHTML =
                 '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
@@ -267,7 +248,6 @@ const { goalsData, seasons, competitions } = Astro.props;
                 .join("");
         }
 
-        // Update assisters table
         if (sortedAssisters.length === 0) {
             assistersBody.innerHTML =
                 '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
@@ -301,7 +281,6 @@ const { goalsData, seasons, competitions } = Astro.props;
                 .join("");
         }
 
-        // Update contributors table
         if (sortedContributors.length === 0) {
             contributorsBody.innerHTML =
                 '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
@@ -336,10 +315,8 @@ const { goalsData, seasons, competitions } = Astro.props;
         }
     }
 
-    // Initial calculation
     calculateRankings();
 
-    // Event listeners
     seasonSelect?.addEventListener("change", calculateRankings);
     competitionSelect?.addEventListener("change", calculateRankings);
 </script>
@@ -350,7 +327,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         margin: 0 auto;
     }
 
-    /* Filters Styles */
     .filters-container {
         display: flex;
         gap: 1rem;
@@ -407,7 +383,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
-    /* Ranking Cards */
     .ranking-card {
         background: #ffffff;
         box-shadow:
@@ -430,7 +405,6 @@ const { goalsData, seasons, competitions } = Astro.props;
         text-transform: uppercase;
     }
 
-    /* Table Styles */
     table {
         width: 100%;
         border-collapse: collapse;
@@ -441,7 +415,7 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     th {
-        padding: 0.75rem 1.5rem 1.25rem 1.5rem; /* Increased bottom padding */
+        padding: 0.75rem 1.5rem 1.25rem 1.5rem;
         text-align: left;
         font-size: 0.75rem;
         font-weight: 600;
@@ -455,11 +429,11 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     tbody tr:first-child td {
-        padding-top: 1.5rem !important; /* Extra space for first row */
+        padding-top: 1.5rem !important;
     }
 
     tbody tr:last-child td {
-        padding-bottom: 1.5rem !important; /* Extra space for last row */
+        padding-bottom: 1.5rem !important;
     }
 
     tbody tr {

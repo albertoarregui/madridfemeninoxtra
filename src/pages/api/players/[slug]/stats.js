@@ -60,7 +60,6 @@ export const GET = async ({ params }) => {
     });
 
     try {
-        // First get player ID and position
         const playerQuery = `
             SELECT id_jugadora, nombre, posicion
             FROM jugadoras 
@@ -84,7 +83,6 @@ export const GET = async ({ params }) => {
         const id_jugadora = jugadora.id_jugadora;
         const isGoalkeeper = jugadora.posicion === 'Portera';
 
-        // Main statistics query - aggregated by season and competition
         const statsQuery = `
             SELECT
                 t.temporada,
@@ -189,7 +187,6 @@ export const GET = async ({ params }) => {
             parse: true
         });
 
-        // Process and structure the results
         const estadisticas = {};
         const temporadasSet = new Set();
 
@@ -240,7 +237,6 @@ export const GET = async ({ params }) => {
 
             estadisticas[temporada].competiciones.push(stats);
 
-            // Add to season total
             const total = estadisticas[temporada].total;
             total.convocatorias += stats.convocatorias;
             total.partidos += stats.partidos;
@@ -257,10 +253,8 @@ export const GET = async ({ params }) => {
             total.capitanias += stats.capitanias;
         });
 
-        // Convert to array and sort by season
         const estadisticasArray = Object.values(estadisticas);
 
-        // Calculate career totals
         const careerTotal = {
             convocatorias: 0,
             partidos: 0,

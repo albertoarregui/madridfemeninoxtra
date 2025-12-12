@@ -138,14 +138,12 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
     if (!matches || !Array.isArray(matches)) return stats;
 
-    // Normalizar nombre del rival para comparación
     const normalizedRivalName = rivalName.toLowerCase().trim();
 
     matches.forEach((match) => {
         const clubLocal = (match.club_local || '').toLowerCase().trim();
         const clubVisitante = (match.club_visitante || '').toLowerCase().trim();
 
-        // Verificar si el partido es contra este rival
         const isRivalMatch = clubLocal === normalizedRivalName || clubVisitante === normalizedRivalName;
 
         if (!isRivalMatch) return;

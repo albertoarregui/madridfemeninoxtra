@@ -161,7 +161,6 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             args: [coachId],
         });
 
-        // Process and structure the results
         const estadisticas: any = {};
         const temporadasSet = new Set();
 
@@ -206,7 +205,6 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
                 porcentaje_derrotas: partidos > 0 ? ((derrotas / partidos) * 100).toFixed(1) : '0.0',
             });
 
-            // Update season totals
             estadisticas[temporada].total.partidos += Number(row.partidos) || 0;
             estadisticas[temporada].total.victorias += Number(row.victorias) || 0;
             estadisticas[temporada].total.empates += Number(row.empates) || 0;
@@ -216,7 +214,6 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             estadisticas[temporada].total.porterias_cero += Number(row.porterias_cero) || 0;
         });
 
-        // Convert to array and calculate season total percentages
         const estadisticasArray = Object.values(estadisticas).map((season: any) => {
             const partidos = season.total.partidos;
             return {
@@ -230,7 +227,6 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             };
         });
 
-        // Calculate career totals
         const total_carrera = {
             partidos: 0,
             victorias: 0,
@@ -251,7 +247,6 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             total_carrera.porterias_cero += season.total.porterias_cero;
         });
 
-        // Add percentages to career total
         const total_carrera_con_porcentajes = {
             ...total_carrera,
             porcentaje_victorias: total_carrera.partidos > 0 ? ((total_carrera.victorias / total_carrera.partidos) * 100).toFixed(1) : '0.0',
