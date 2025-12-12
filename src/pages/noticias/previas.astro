@@ -4,12 +4,55 @@ import "../../styles/global.css";
 import "../../styles/noticias.css";
 
 const PAGE_TITLE = "PREVIAS";
-const CATEGORY_FILTER = "previa"; // Matches 'previas' or 'previa'
+const CATEGORY_FILTER = "previas"; // Matches 'previas' or 'previa'
+const WP_URL =
+    "https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=30&_embed=true";
+
+interface WPPost {
+    id: number;
+    date: string;
+    slug: string;
+    title: { rendered: string };
+    excerpt: { rendered: string };
+    _embedded?: {
+        "wp:featuredmedia"?: Array<{ source_url: string; alt_text: string }>;
+        "wp:term"?: Array<Array<{ name: string }>>;
+    };
+}
+
+let filteredNews: WPPost[] = [];
+let error = false;
+
+try {
+    const response = await fetch(WP_URL);
+    if (!response.ok) throw new Error("Failed to fetch");
+    const posts: WPPost[] = await response.json();
+    filteredNews = posts.filter((p) =>
+        p._embedded?.["wp:term"]?.[0]?.some((cat) =>
+            cat.name.toLowerCase().includes(CATEGORY_FILTER),
+        ),
+    );
+} catch (e) {
+    console.error("Error fetching news:", e);
+    error = true;
+}
+
+function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    }).format(date);
+}
+
+const noIndex = filteredNews.length === 0;
 ---
 
 <Layout
     title={`${PAGE_TITLE} | Madrid Femenino Xtra`}
     description={`Últimas ${PAGE_TITLE} del Real Madrid Femenino.`}
+    noindex={noIndex}
 >
     <main class="noticias-page">
         <div class="container">
@@ -22,99 +65,96 @@ const CATEGORY_FILTER = "previa"; // Matches 'previas' or 'previa'
                 </h2>
             </header>
 
-            <div class="noticias-grid"></div>
-            <p class="no-category-news" style="display: none;">
-                No hay noticias disponibles en esta categoría.
-            </p>
+            {
+                filteredNews.length > 0 ? (
+                    <div class="noticias-grid">
+                        {filteredNews.map((noticia) => {
+                            const featuredImage =
+                                noticia._embedded?.["wp:featuredmedia"]?.[0]
+                                    ?.source_url;
+                            const featuredImageAlt =
+                                noticia._embedded?.["wp:featuredmedia"]?.[0]
+                                    ?.alt_text || noticia.title.rendered;
+                            const link = `/noticias/${noticia.slug}`;
+                            return (
+                                <article class="noticia-card">
+                                    <a
+                                        href={link}
+                                        class="card-link-wrapper"
+                                        aria-label={`Leer más sobre ${noticia.title.rendered}`}
+                                    />
+                                    {featuredImage && (
+                                        <div class="noticia-image">
+                                            <img
+                                                src={featuredImage}
+                                                alt={featuredImageAlt}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    )}
+                                    <div class="noticia-content">
+                                        <div class="noticia-meta">
+                                            <time datetime={noticia.date}>
+                                                {formatDate(noticia.date)}
+                                            </time>
+                                        </div>
+                                        <h2
+                                            class="noticia-title"
+                                            set:html={noticia.title.rendered}
+                                        />
+                                        <div
+                                            class="noticia-excerpt"
+                                            set:html={noticia.excerpt.rendered}
+                                        />
+                                        <div class="read-more">
+                                            Leer más
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                            >
+                                                <path d="M5 12h14M12 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <p class="no-category-news">
+                        {error
+                            ? "Error al cargar las noticias."
+                            : "No hay noticias disponibles en esta categoría."}
+                    </p>
+                )
+            }
         </div>
     </main>
 
-    <script is:inline define:vars={{ CATEGORY_FILTER }}>
-        const WP_URL =
-            "https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=30&_embed=true";
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return new Intl.DateTimeFormat("es-ES", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-            }).format(date);
+    <style>
+        .card-link-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
         }
-
-        function createNewsCard(noticia) {
-            const featuredImage =
-                noticia._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
-            const featuredImageAlt =
-                noticia._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
-                noticia.title.rendered;
-
-            const link = `/noticias/${noticia.slug}`;
-
-            return `
-                <article class="noticia-card" onclick="window.location.href='${link}'" style="cursor: pointer;">
-                    ${
-                        featuredImage
-                            ? `
-                        <div class="noticia-image">
-                            <img src="${featuredImage}" alt="${featuredImageAlt}" loading="lazy" />
-                        </div>
-                    `
-                            : ""
-                    }
-                    <div class="noticia-content">
-                        <div class="noticia-meta">
-                            <time datetime="${noticia.date}">${formatDate(noticia.date)}</time>
-                        </div>
-                        <h2 class="noticia-title">${noticia.title.rendered}</h2>
-                        <div class="noticia-excerpt">${noticia.excerpt.rendered}</div>
-                        <a href="${link}" class="read-more">
-                            Leer más
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-            `;
+        .noticia-card {
+            position: relative;
         }
-
-        async function loadNews() {
-            const grid = document.querySelector(".noticias-grid");
-            const noNews = document.querySelector(".no-category-news");
-
-            try {
-                const response = await fetch(WP_URL);
-                if (!response.ok) throw new Error("Failed to fetch");
-
-                const posts = await response.json();
-
-                const filtered = posts.filter((p) =>
-                    p._embedded?.["wp:term"]?.[0]?.some((cat) =>
-                        cat.name.toLowerCase().includes(CATEGORY_FILTER),
-                    ),
-                );
-
-                if (filtered.length > 0) {
-                    grid.innerHTML = filtered.map(createNewsCard).join("");
-                    if (noNews) noNews.style.display = "none";
-                } else {
-                    grid.style.display = "none";
-                    if (noNews) noNews.style.display = "block";
-                }
-            } catch (error) {
-                console.error("Error loading news:", error);
-                if (noNews) {
-                    noNews.textContent = "Error al cargar las noticias.";
-                    noNews.style.display = "block";
-                }
-            }
+        .read-more {
+            margin-top: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            font-weight: 600;
         }
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", loadNews);
-        } else {
-            loadNews();
-        }
-    </script>
+    </style>
 </Layout>
