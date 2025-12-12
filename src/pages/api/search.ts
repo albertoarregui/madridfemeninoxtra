@@ -1,5 +1,9 @@
 import type { APIRoute } from 'astro';
 
+import { fetchPlayersDirectly } from '../../utils/players';
+import { fetchRivalsDirectly } from '../../utils/rivales';
+import { fetchGamesDirectly } from '../../utils/partidos';
+
 export const GET: APIRoute = async ({ url }) => {
     const query = url.searchParams.get('q')?.toLowerCase().trim();
 
@@ -11,28 +15,22 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     try {
-        const baseUrl = url.origin;
-
-        const [playersRes, clubesRes, partidosRes] = await Promise.all([
-            fetch(`${baseUrl}/api/players`),
-            fetch(`${baseUrl}/api/clubes`),
-            fetch(`${baseUrl}/api/partidos`)
+        const [players, clubes, partidos] = await Promise.all([
+            fetchPlayersDirectly(),
+            fetchRivalsDirectly(),
+            fetchGamesDirectly()
         ]);
-
-        const players = playersRes.ok ? await playersRes.json() : [];
-        const clubes = clubesRes.ok ? await clubesRes.json() : [];
-        const partidos = partidosRes.ok ? await partidosRes.json() : [];
 
         const results: any[] = [];
 
         players.forEach((player: any) => {
-            const name = player.name?.toLowerCase() || '';
+            const name = player.nombre?.toLowerCase() || ''; // Changed from name to nombre as per utils
             if (name.includes(query)) {
                 results.push({
                     type: 'player',
-                    title: player.name,
-                    subtitle: player.position || '',
-                    url: `/jugadoras/${player.id.replace(/_/g, "-")}`,
+                    title: player.nombre,
+                    subtitle: player.posicion || '', // Changed from position to posicion
+                    url: `/jugadoras/${player.slug}`, // Use slug from utils
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -45,22 +43,25 @@ export const GET: APIRoute = async ({ url }) => {
                     type: 'rival',
                     title: club.nombre,
                     subtitle: 'Rival',
-                    url: `/rivales/${club.id}`,
+                    url: `/rivales/${club.slug}`, // Use slug from utils
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
         });
 
         partidos.forEach((partido: any) => {
-            const rival = partido.rival?.toLowerCase() || '';
-            const fecha = partido.fecha || '';
+            const rival = partido.club_visitante?.toLowerCase() === 'real madrid femenino'
+                ? partido.club_local?.toLowerCase()
+                : partido.club_visitante?.toLowerCase() || '';
+
+            const fecha = partido.fecha_formateada || '';
 
             if (rival.includes(query) || fecha.includes(query)) {
                 results.push({
                     type: 'match',
-                    title: `${partido.rival || 'Partido'}`,
-                    subtitle: `${partido.fecha || ''} - ${partido.competicion || ''}`,
-                    url: `/partidos/${partido.id}`,
+                    title: `${partido.club_local} vs ${partido.club_visitante}`,
+                    subtitle: `${partido.fecha_formateada} - ${partido.competicion_nombre}`,
+                    url: `/partidos/${partido.id_partido}`,
                     relevance: rival.startsWith(query) ? 8 : 3
                 });
             }
