@@ -6,7 +6,7 @@ const query = Astro.url.searchParams.get("q") || "";
 const searchUrl = `/api/search?q=${encodeURIComponent(query)}`;
 
 interface SearchResult {
-    type: "player" | "rival" | "match";
+    type: "player" | "rival" | "match" | "coach";
     title: string;
     subtitle: string;
     url: string;
@@ -36,6 +36,7 @@ if (query) {
 // Group results by type
 const playerResults = results.filter((r) => r.type === "player");
 const rivalResults = results.filter((r) => r.type === "rival");
+const coachResults = results.filter((r) => r.type === "coach");
 const matchResults = results.filter((r) => r.type === "match");
 ---
 
@@ -119,6 +120,29 @@ const matchResults = results.filter((r) => r.type === "match");
                                 </h2>
                                 <div class="results-grid">
                                     {rivalResults.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card"
+                                        >
+                                            <h3 class="result-title">
+                                                {result.title}
+                                            </h3>
+                                            <p class="result-subtitle">
+                                                {result.subtitle}
+                                            </p>
+                                        </a>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {coachResults.length > 0 && (
+                            <section class="results-section">
+                                <h2 class="section-title">
+                                    Entrenadores ({coachResults.length})
+                                </h2>
+                                <div class="results-grid">
+                                    {coachResults.map((result) => (
                                         <a
                                             href={result.url}
                                             class="result-card"

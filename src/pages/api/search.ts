@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { fetchPlayersDirectly } from '../../utils/players';
 import { fetchRivalsDirectly } from '../../utils/rivales';
 import { fetchGamesDirectly } from '../../utils/partidos';
+import { fetchCoachesDirectly } from '../../utils/entrenadores';
 
 export const GET: APIRoute = async ({ url }) => {
     const query = url.searchParams.get('q')?.toLowerCase().trim();
@@ -15,22 +16,23 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     try {
-        const [players, clubes, partidos] = await Promise.all([
+        const [players, clubes, partidos, entrenadores] = await Promise.all([
             fetchPlayersDirectly(),
             fetchRivalsDirectly(),
-            fetchGamesDirectly()
+            fetchGamesDirectly(),
+            fetchCoachesDirectly()
         ]);
 
         const results: any[] = [];
 
         players.forEach((player: any) => {
-            const name = player.nombre?.toLowerCase() || ''; // Changed from name to nombre as per utils
+            const name = player.nombre?.toLowerCase() || '';
             if (name.includes(query)) {
                 results.push({
                     type: 'player',
                     title: player.nombre,
-                    subtitle: player.posicion || '', // Changed from position to posicion
-                    url: `/jugadoras/${player.slug}`, // Use slug from utils
+                    subtitle: player.posicion || '',
+                    url: `/jugadoras/${player.slug}`,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -43,8 +45,21 @@ export const GET: APIRoute = async ({ url }) => {
                     type: 'rival',
                     title: club.nombre,
                     subtitle: 'Rival',
-                    url: `/rivales/${club.slug}`, // Use slug from utils
+                    url: `/rivales/${club.slug}`,
                     relevance: name.startsWith(query) ? 10 : 5
+                });
+            }
+        });
+
+        entrenadores.forEach((coach: any) => {
+            const name = coach.nombre?.toLowerCase() || '';
+            if (name.includes(query)) {
+                results.push({
+                    type: 'coach',
+                    title: coach.nombre,
+                    subtitle: 'Entrenador',
+                    url: `/entrenadores/${coach.slug}`,
+                    relevance: name.startsWith(query) ? 9 : 4
                 });
             }
         });
@@ -61,7 +76,7 @@ export const GET: APIRoute = async ({ url }) => {
                     type: 'match',
                     title: `${partido.club_local} vs ${partido.club_visitante}`,
                     subtitle: `${partido.fecha_formateada} - ${partido.competicion_nombre}`,
-                    url: `/partidos/${partido.id_partido}`,
+                    url: `/partidos/${partido.slug}`, // Fixed: Using slug instead of id_partido
                     relevance: rival.startsWith(query) ? 8 : 3
                 });
             }
