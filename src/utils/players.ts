@@ -151,102 +151,63 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             SELECT
                 t.temporada,
                 c.competicion,
-                COALESCE(COUNT(DISTINCT a.id_alineacion), 0) as convocatorias,
-                COALESCE(COUNT(DISTINCT a.id_partido), 0) as partidos,
-                COALESCE(COUNT(DISTINCT CASE 
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM cambios cb 
-                        WHERE cb.id_partido = a.id_partido 
-                        AND cb.id_jugadora_entra = a.id_jugadora
-                    ) 
-                    THEN a.id_alineacion 
-                END), 0) as titularidades,
-                COALESCE(COUNT(DISTINCT CASE 
-                    WHEN EXISTS (
-                        SELECT 1 FROM cambios cb 
-                        WHERE cb.id_partido = a.id_partido 
-                        AND cb.id_jugadora_entra = a.id_jugadora
-                    ) 
-                    THEN a.id_alineacion 
-                END), 0) as suplencias,
-                COALESCE(COUNT(DISTINCT cm_in.id_cambio), 0) as cambio_entrada,
-                COALESCE(COUNT(DISTINCT cm_out.id_cambio), 0) as cambio_salida,
+                -- Convocatorias: Suma de veces que aparece en la tabla alineaciones donde convocada = 1
+                CAST(COALESCE(SUM(CASE WHEN al.convocada = 1 THEN 1 ELSE 0 END), 0) AS INTEGER) as convocatorias,
+                
+                -- Partidos: Suma de veces que jugó (minutos > 0)
+                CAST(COALESCE(SUM(CASE WHEN al.minutos_jugados > 0 THEN 1 ELSE 0 END), 0) AS INTEGER) as partidos,
+                
+                -- Titularidades: Suma de veces que fue titular
+                CAST(COALESCE(SUM(CASE WHEN al.titular = 1 THEN 1 ELSE 0 END), 0) AS INTEGER) as titularidades,
+                
+                -- Suplencias: Partidos jugados donde no fue titular (implícito: minutos > 0 y titular = 0)
+                CAST(COALESCE(SUM(CASE WHEN al.minutos_jugados > 0 AND al.titular = 0 THEN 1 ELSE 0 END), 0) AS INTEGER) as suplencias,
+
+                -- Minutos jugados
+                CAST(COALESCE(SUM(al.minutos_jugados), 0) AS INTEGER) as minutos,
+                
+                -- Cambio entrada: Si tiene minuto de entrada
+                CAST(COALESCE(SUM(CASE WHEN al.minuto_entrada IS NOT NULL THEN 1 ELSE 0 END), 0) AS INTEGER) as cambio_entrada,
+                
+                -- Cambio salida: Si tiene minuto de salida
+                CAST(COALESCE(SUM(CASE WHEN al.minuto_salida IS NOT NULL THEN 1 ELSE 0 END), 0) AS INTEGER) as cambio_salida,
+
+                -- Goles, Asistencias, Tarjetas, etc. se obtienen de sus tablas respectivas
                 COUNT(DISTINCT g.id_gol) as goles,
                 COUNT(DISTINCT ast.id_gol) as asistencias,
+                
+                -- Porterías a cero (Logica existente o basada en resultado del partido si es portera titular/juega todo)
+                -- Simplificación actual: contamos partidos donde el equipo rival metió 0 goles y ella jugó
                 COALESCE(COUNT(DISTINCT CASE 
-                    WHEN p.goles_rival = 0 THEN p.id_partido 
+                    WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN p.id_partido 
                 END), 0) as porterias_cero,
+
                 COALESCE(COUNT(DISTINCT CASE 
                     WHEN tj.tipo_tarjeta = 'Amarilla' THEN tj.id_tarjeta 
                 END), 0) as tarjetas_amarillas,
                 COALESCE(COUNT(DISTINCT CASE 
                     WHEN tj.tipo_tarjeta = 'Roja' THEN tj.id_tarjeta 
                 END), 0) as tarjetas_rojas,
-                COALESCE(COUNT(DISTINCT cap.id_capitania), 0) as capitanias,
-                COALESCE(SUM(
-                    CASE
-                        -- Titular que es sustituida
-                        WHEN a.id_alineacion IS NOT NULL 
-                             AND cm_out.id_cambio IS NOT NULL 
-                             AND NOT EXISTS (
-                                 SELECT 1 FROM cambios cb 
-                                 WHERE cb.id_partido = a.id_partido 
-                                 AND cb.id_jugadora_entra = a.id_jugadora
-                             )
-                        THEN cm_out.minuto
+                COALESCE(COUNT(DISTINCT cap.id_capitania), 0) as capitanias
 
-                        -- Titular que juega todo el partido
-                        WHEN a.id_alineacion IS NOT NULL 
-                             AND cm_out.id_cambio IS NULL 
-                             AND NOT EXISTS (
-                                 SELECT 1 FROM cambios cb 
-                                 WHERE cb.id_partido = a.id_partido 
-                                 AND cb.id_jugadora_entra = a.id_jugadora
-                             )
-                        THEN 90
-
-                        -- Suplente que entra y es sustituida (raro)
-                        WHEN cm_in.id_cambio IS NOT NULL 
-                             AND cm_out.id_cambio IS NOT NULL 
-                        THEN (cm_out.minuto - cm_in.minuto)
-
-                        -- Suplente que entra y termina el partido
-                        WHEN cm_in.id_cambio IS NOT NULL 
-                             AND cm_out.id_cambio IS NULL 
-                        THEN (90 - cm_in.minuto)
-
-                        ELSE 0
-                    END
-                ), 0) as minutos
-            FROM (
-                -- Get all partidos where player scored, assisted, or was captain
-                SELECT DISTINCT ga.id_partido, ? as id_jugadora
-                FROM goles_y_asistencias ga
-                WHERE ga.goleadora = ? OR ga.asistente = ?
-                
-                UNION
-                
-                SELECT DISTINCT cap.id_partido, ? as id_jugadora
-                FROM capitanias cap
-                WHERE cap.id_jugadora = ?
-            ) player_partidos
-            INNER JOIN partidos p ON player_partidos.id_partido = p.id_partido
+            FROM alineaciones al
+            INNER JOIN partidos p ON al.id_partido = p.id_partido
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
-            LEFT JOIN alineaciones a ON a.id_partido = player_partidos.id_partido 
-                AND a.id_jugadora = player_partidos.id_jugadora
-            LEFT JOIN cambios cm_in ON cm_in.id_partido = player_partidos.id_partido 
-                AND cm_in.id_jugadora_entra = player_partidos.id_jugadora
-            LEFT JOIN cambios cm_out ON cm_out.id_partido = player_partidos.id_partido 
-                AND cm_out.id_jugadora_sale = player_partidos.id_jugadora
-            LEFT JOIN goles_y_asistencias g ON g.id_partido = player_partidos.id_partido 
-                AND g.goleadora = player_partidos.id_jugadora
-            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = player_partidos.id_partido 
-                AND ast.asistente = player_partidos.id_jugadora
-            LEFT JOIN tarjetas tj ON tj.id_partido = player_partidos.id_partido 
-                AND tj.id_jugadora = player_partidos.id_jugadora
-            LEFT JOIN capitanias cap ON cap.id_partido = player_partidos.id_partido 
-                AND cap.id_jugadora = player_partidos.id_jugadora
+            
+            -- Joins for supplementary stats (Goals, Cards, etc.)
+            -- These are LEFT JOINs because a player might play without scoring/getting cards
+            LEFT JOIN goles_y_asistencias g ON g.id_partido = p.id_partido 
+                AND g.goleadora = al.id_jugadora
+            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = p.id_partido 
+                AND ast.asistente = al.id_jugadora
+            LEFT JOIN tarjetas tj ON tj.id_partido = p.id_partido 
+                AND tj.id_jugadora = al.id_jugadora
+            LEFT JOIN capitanias cap ON cap.id_partido = p.id_partido 
+                AND cap.id_jugadora = al.id_jugadora
+
+            WHERE al.id_jugadora = ?
+            
             GROUP BY t.temporada, c.competicion
             ORDER BY t.temporada DESC, 
                 CASE c.competicion
@@ -261,7 +222,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const statsResult = await client.execute({
             sql: statsQuery,
-            args: [playerId, playerId, playerId, playerId, playerId],
+            args: [playerId],
         });
 
         const estadisticas: any = {};
