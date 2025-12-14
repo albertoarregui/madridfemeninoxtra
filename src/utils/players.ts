@@ -173,7 +173,8 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                     SUM(al.minutos_jugados) as minutes,
                     SUM(CASE WHEN al.minuto_entrada IS NOT NULL THEN 1 ELSE 0 END) as cambio_entrada,
                     SUM(CASE WHEN al.minuto_salida IS NOT NULL THEN 1 ELSE 0 END) as cambio_salida,
-                    SUM(CASE WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN 1 ELSE 0 END) as porterias_cero
+                    SUM(CASE WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN 1 ELSE 0 END) as porterias_cero,
+                    SUM(CASE WHEN al.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) as victorias
                 FROM alineaciones al
                 JOIN partidos p ON al.id_partido = p.id_partido
                 WHERE al.id_jugadora = ?
@@ -235,6 +236,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 COALESCE(l.suplencias, 0) as suplencias,
                 COALESCE(l.cambio_entrada, 0) as cambio_entrada,
                 COALESCE(l.cambio_salida, 0) as cambio_salida,
+                COALESCE(l.victorias, 0) as victorias,
                 COALESCE(g.goles, 0) as goles,
                 COALESCE(a.asistencias, 0) as asistencias,
                 COALESCE(l.porterias_cero, 0) as porterias_cero,
@@ -281,6 +283,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                         suplencias: 0,
                         cambio_entrada: 0,
                         cambio_salida: 0,
+                        victorias: 0,
                         goles: 0,
                         asistencias: 0,
                         goles_asistencias: 0,
@@ -301,6 +304,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 suplencias: Number(row.suplencias) || 0,
                 cambio_entrada: Number(row.cambio_entrada) || 0,
                 cambio_salida: Number(row.cambio_salida) || 0,
+                victorias: Number(row.victorias) || 0,
                 goles: Number(row.goles) || 0,
                 asistencias: Number(row.asistencias) || 0,
                 goles_asistencias:
@@ -321,6 +325,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             total.suplencias += stats.suplencias;
             total.cambio_entrada += stats.cambio_entrada;
             total.cambio_salida += stats.cambio_salida;
+            total.victorias += stats.victorias;
             total.goles += stats.goles;
             total.asistencias += stats.asistencias;
             total.goles_asistencias += stats.goles_asistencias;
@@ -340,6 +345,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             suplencias: 0,
             cambio_entrada: 0,
             cambio_salida: 0,
+            victorias: 0,
             goles: 0,
             asistencias: 0,
             goles_asistencias: 0,
