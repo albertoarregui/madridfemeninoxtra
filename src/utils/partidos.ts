@@ -162,3 +162,144 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
     return stats;
 }
+
+export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return [];
+
+        const client = createClient({ url, authToken });
+
+        // We try to select dorsal if it exists in alineaciones, otherwise just player info
+        const query = `
+            SELECT 
+                a.id_alineacion,
+                a.dorsal,
+                j.nombre,
+                j.posicion,
+                j.foto_url
+            FROM alineaciones a
+            INNER JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            WHERE a.id_partido = ?
+            ORDER BY 
+                CASE j.posicion 
+                    WHEN 'Portera' THEN 1
+                    WHEN 'Defensa' THEN 2
+                    WHEN 'Lateral' THEN 3
+                    WHEN 'Centrocampista' THEN 4
+                    WHEN 'Delantera' THEN 5
+                    WHEN 'Extremo' THEN 6
+                    ELSE 99
+                END ASC
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [matchId]
+        });
+
+        // Need to import getPlayerImageUrl from players utils or duplicate it. 
+        // To avoid circular dependency if players.ts imports partidos.ts, we'll duplicate or handle it.
+        // matches.ts doesn't import players.ts content currently. 
+        // Let's implement basic logic or import helper if moved to shared.
+        // For now, simple slugify/image logic here or just pass raw data and let component handle?
+        // Component expects imageUrl.
+        
+        return result.rows.map((row: any) => {
+             // Helper for image (duplicated from players.ts to avoid circular deps if any)
+             let fileName = row.foto_url;
+             if (!fileName && row.nombre) {
+                 const slug = slugify(row.nombre).replace(/-/g, '_');
+                 const parts = slug.split('_').filter((p: string) => p.length > 0);
+                 const nameForFile = parts.slice(0, 4).join('_');
+                 fileName = `${nameForFile}.png`;
+             } else if (fileName && !fileName.includes('.')) {
+                 fileName += '.png';
+             }
+             
+             return {
+                 id: row.id_alineacion,
+                 name: row.nombre,
+                 pos: row.posicion, // Shorten if needed in component
+                 number: row.dorsal || '-',
+                 imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
+                 slug: slugify(row.nombre)
+             };
+        });
+
+    } catch (error) {
+        console.error("Error fetching lineups:", error);
+        return [];
+    }
+}
+
+export async function fetchMatchSubstitutions(matchId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return [];
+
+        const client = createClient({ url, authToken });
+
+        const query = `
+            SELECT 
+                c.minuto,
+                jin.nombre as nombre_entra,
+                jin.posicion as pos_entra,
+                jin.foto_url as foto_entra,
+                jout.nombre as nombre_sale,
+                jout.posicion as pos_sale,
+                jout.foto_url as foto_sale
+            FROM cambios c
+            INNER JOIN jugadoras jin ON c.id_jugadora_entra = jin.id_jugadora
+            INNER JOIN jugadoras jout ON c.id_jugadora_sale = jout.id_jugadora
+            WHERE c.id_partido = ?
+            ORDER BY c.minuto ASC
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [matchId]
+        });
+
+        return result.rows.map((row: any) => {
+             const processImage = (name: string, foto: string) => {
+                 let fileName = foto;
+                 if (!fileName && name) {
+                     const slug = slugify(name).replace(/-/g, '_');
+                     const parts = slug.split('_').filter((p: string) => p.length > 0);
+                     const nameForFile = parts.slice(0, 4).join('_');
+                     fileName = `${nameForFile}.png`;
+                 } else if (fileName && !fileName.includes('.')) {
+                     fileName += '.png';
+                 }
+                 return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
+             };
+
+             return {
+                 minute: row.minuto,
+                 playerIn: {
+                     name: row.nombre_entra,
+                     pos: row.pos_entra,
+                     imageUrl: processImage(row.nombre_entra, row.foto_entra),
+                     slug: slugify(row.nombre_entra)
+                 },
+                 playerOut: {
+                     name: row.nombre_sale,
+                     pos: row.pos_sale,
+                     imageUrl: processImage(row.nombre_sale, row.foto_sale),
+                     slug: slugify(row.nombre_sale)
+                 }
+             };
+        });
+
+    } catch (error) {
+        console.error("Error fetching substitutions:", error);
+        return [];
+    }
+}

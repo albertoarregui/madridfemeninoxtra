@@ -1,6 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { fetchGamesDirectly } from "../../utils/partidos";
+import { fetchGamesDirectly, fetchMatchLineups, fetchMatchSubstitutions } from "../../utils/partidos";
 
 const { slug } = Astro.params;
 
@@ -32,8 +32,8 @@ const formatTime = (timeString: string | null | undefined): string => {
 };
 
 // Empty data arrays - to be populated with real database data
-const mockLineup: any[] = [];
-const mockSubs: any[] = [];
+const lineup = await fetchMatchLineups(game.id_partido);
+const subs = await fetchMatchSubstitutions(game.id_partido);
 const mockTimeline: any[] = [];
 ---
 
@@ -121,22 +121,23 @@ const mockTimeline: any[] = [];
                     <h2 class="section-header">Equipos titulares</h2>
                     <div class="lineup-list">
                         {
-                            mockLineup.map((player) => (
-                                <div class="lineup-row">
-                                    <span class="player-pos">{player.pos}</span>
+                            lineup.map((player: any) => (
+                                <a href={`/jugadoras/${player.slug}`} class="lineup-row">
+                                    <span class="player-pos" title={player.pos}>{player.pos.charAt(0)}</span>
                                     <div class="team-badge-small">
-                                        <div class="badge-placeholder-small" />
+                                         <!-- Reusing badge placeholder or fetching team logo if available, for now placeholder -->
+                                        <div class="badge-placeholder-small" style="background-color: #eee;" />
                                     </div>
                                     <span class="player-name">
                                         {player.name}
                                     </span>
                                     <div class="player-photo-small">
-                                        <div class="photo-placeholder" />
+                                        <img src={player.imageUrl} alt={player.name} class="player-img" onerror="this.src='/assets/escudos/placeholder.png'"/>
                                     </div>
                                     <span class="player-number">
                                         {player.number}
                                     </span>
-                                </div>
+                                </a>
                             ))
                         }
                     </div>
@@ -146,24 +147,27 @@ const mockTimeline: any[] = [];
                     <h2 class="section-header">Sustituciones</h2>
                     <div class="lineup-list">
                         {
-                            mockSubs.map((player) => (
-                                <div class="lineup-row">
-                                    <span class="player-pos">{player.pos}</span>
-                                    <div class="team-badge-small">
-                                        <div class="badge-placeholder-small" />
+                            subs.map((sub: any) => (
+                                <div class="sub-row">
+                                    <div class="sub-time">{sub.minute}'</div>
+                                    <div class="sub-movement in">
+                                        <span class="sub-arrow">⬆️</span>
+                                        <a href={`/jugadoras/${sub.playerIn.slug}`} class="sub-player-link">
+                                            <img src={sub.playerIn.imageUrl} class="sub-img" onerror="this.src='/assets/escudos/placeholder.png'" />
+                                            <span class="sub-name">{sub.playerIn.name}</span>
+                                        </a>
                                     </div>
-                                    <span class="player-name">
-                                        {player.name}
-                                    </span>
-                                    <div class="player-photo-small">
-                                        <div class="photo-placeholder" />
+                                    <div class="sub-movement out">
+                                        <span class="sub-arrow">⬇️</span>
+                                        <a href={`/jugadoras/${sub.playerOut.slug}`} class="sub-player-link">
+                                            <img src={sub.playerOut.imageUrl} class="sub-img" onerror="this.src='/assets/escudos/placeholder.png'" />
+                                            <span class="sub-name">{sub.playerOut.name}</span>
+                                        </a>
                                     </div>
-                                    <span class="player-number">
-                                        {player.number}
-                                    </span>
                                 </div>
                             ))
                         }
+                        {subs.length === 0 && <p class="no-data-msg">No hay registros de sustituciones</p>}
                     </div>
                 </section>
 
@@ -609,6 +613,85 @@ const mockTimeline: any[] = [];
             .match-info-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* LINEUP IMAGES & LINKS */
+        a.lineup-row {
+            text-decoration: none;
+            color: inherit;
+            transition: background-color 0.2s;
+        }
+
+        a.lineup-row:hover {
+            background-color: #ffe6cc; /* Slightly darker than even row */
+        }
+        
+        .player-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* SUBSTITUTIONS */
+        .sub-row {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #eee;
+            gap: 1rem;
+        }
+
+        .sub-row:last-child {
+            border-bottom: none;
+        }
+
+        .sub-time {
+            font-weight: bold;
+            background: #eee;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .sub-movement {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .sub-movement.in .sub-arrow { color: green; }
+        .sub-movement.out .sub-arrow { color: red; }
+
+        .sub-player-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .sub-player-link:hover .sub-name {
+            text-decoration: underline;
+        }
+
+        .sub-img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+        }
+
+        .no-data-msg {
+            padding: 1rem;
+            text-align: center;
+            color: #777;
+            font-style: italic;
         }
     </style>
 </Layout>
