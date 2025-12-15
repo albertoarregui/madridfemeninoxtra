@@ -391,12 +391,13 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
 
         const safeQuery = `
              SELECT 
-                SUM(CASE WHEN goles_rm > goles_rival THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN goles_rm = goles_rival THEN 1 ELSE 0 END) as draws,
-                SUM(CASE WHEN goles_rm < goles_rival THEN 1 ELSE 0 END) as losses,
+                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as draws,
+                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as losses,
                 COUNT(*) as total
-            FROM partidos 
-            WHERE estadio = ? AND goles_rm IS NOT NULL
+            FROM partidos p
+            LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+            WHERE e.nombre = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
         `;
 
         const result = await client.execute({
@@ -405,16 +406,13 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
         });
 
         const row = result.rows[0];
-        console.log(`🏟️ Stats for [${stadiumName}]:`, row);
 
-        // DEBUG: Force valid stats to check visibility
-        // return {
-        //     wins: Number(row.wins || 0),
-        //     draws: Number(row.draws || 0),
-        //     losses: Number(row.losses || 0),
-        //     total: Number(row.total || 0)
-        // };
-        return { wins: 5, draws: 2, losses: 3, total: 10 };
+        return {
+            wins: Number(row.wins || 0),
+            draws: Number(row.draws || 0),
+            losses: Number(row.losses || 0),
+            total: Number(row.total || 0)
+        };
 
     } catch (error) {
         console.error("Error fetching stadium stats:", error);
