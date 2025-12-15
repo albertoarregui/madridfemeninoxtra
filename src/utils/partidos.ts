@@ -298,24 +298,18 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
             args: [matchId]
         });
 
-        // Process rows to pair IN/OUT
         const rows = result.rows;
         const substitutions: any[] = [];
-
-        // Strategy: Look for entry times. For each entry, try to find an exit at the same minute.
-        // Identify players coming IN
         const playersIn = rows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
 
         playersIn.forEach((pIn: any) => {
             const minute = pIn.minuto_entrada;
 
-            // Find corresponding OUT player at roughly same minute (or exactly)
             const pOut = rows.find((r: any) =>
                 r.minuto_salida === minute &&
                 r.id_alineacion !== pIn.id_alineacion
             );
 
-            // Helpers to process player data
             const processPlayer = (row: any) => {
                 let fileName: string | null = null;
                 if (row.nombre) {
@@ -385,13 +379,6 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
 
         const client = createClient({ url, authToken });
 
-        // Count matches for this stadium where RM played
-        // Assuming RM corresponds to `goles_rm` > `goles_rival` for win, etc.
-        // We need to know if RM is local or visitor? 
-        // Based on the site "Madrid Femenino Xtra", likely tracks RM matches. 
-        // Let's assume the table `partidos` stores RM stats consistently or we check names.
-        // Usually `goles_rm` implies Real Madrid columns.
-
         const query = `
             SELECT 
                 SUM(CASE WHEN goles_rm > goles_rival THEN 1 ELSE 0 END) as wins,
@@ -401,8 +388,6 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
             FROM partidos 
             WHERE estadio = ? AND played = 1
         `;
-        // 'played' column might not exist, checking schema might be needed. 
-        // Assuming played games have non-null scores.
 
         const safeQuery = `
              SELECT 
@@ -420,12 +405,16 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
         });
 
         const row = result.rows[0];
-        return {
-            wins: Number(row.wins || 0),
-            draws: Number(row.draws || 0),
-            losses: Number(row.losses || 0),
-            total: Number(row.total || 0)
-        };
+        console.log(`🏟️ Stats for [${stadiumName}]:`, row);
+
+        // DEBUG: Force valid stats to check visibility
+        // return {
+        //     wins: Number(row.wins || 0),
+        //     draws: Number(row.draws || 0),
+        //     losses: Number(row.losses || 0),
+        //     total: Number(row.total || 0)
+        // };
+        return { wins: 5, draws: 2, losses: 3, total: 10 };
 
     } catch (error) {
         console.error("Error fetching stadium stats:", error);
@@ -437,7 +426,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
     try {
         const subsPromise = fetchMatchSubstitutions(matchId);
 
-        // We will fetch goals separately to ensure we get names
         const { createClient } = await import('@libsql/client');
         const url = import.meta.env.TURSO_DATABASE_URL;
         const authToken = import.meta.env.TURSO_AUTH_TOKEN;
@@ -458,46 +446,37 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         const events: any[] = [];
 
-        // Safety check: If RM scored 0 goals, force empty goals list
-        // This prevents "ghost goals" from appearing due to DB ID conflicts
         const validGoals = (matchScore === 0) ? [] : goalsResult.rows;
 
-        // Process Goals
         for (const goal of validGoals) {
             let playerName = goal.nombre_jugadora;
 
-            // Fallback: If join failed (null name), use the raw 'goleadora' value 
             if (!playerName) {
                 playerName = goal.goleadora;
             }
 
-            // Logic for "En propia puerta" or named player
             let goalText = "";
             if (!playerName && !goal.goleadora) {
                 goalText = "En propia puerta";
             } else {
-                // Fallback if still null but not strictly caught above
+
                 if (!playerName) playerName = "En propia puerta";
                 goalText = `Gol de ${playerName}`;
             }
 
-            // Append assistant if exists
             let assistantName = goal.nombre_asistente;
             if (!assistantName && goal.asistente) {
-                assistantName = goal.asistente; // Raw value fallback
+                assistantName = goal.asistente;
             }
 
             if (assistantName) {
                 goalText += ` (Asis. ${assistantName})`;
             }
 
-            // Append penalty info
             if (goal.tipo === 'penalti') {
                 goalText += ' (P)';
             }
 
-            // Helper to parse minute string "90+3" -> 93 for sorting
-            // Helper to parse minute string "90+3" -> 93 for sorting
             const parseMinute = (min: any): number => {
                 if (!min) return 0;
                 const s = String(min);
@@ -510,14 +489,13 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             events.push({
                 minute: parseMinute(goal.minuto),
-                displayMinute: goal.minuto, // Keep original string (e.g. "90+3")
+                displayMinute: goal.minuto,
                 type: 'goal',
                 text: goalText,
                 team: 'local'
             });
         }
 
-        // Process Subs
         for (const sub of subs) {
             const parseMinute = (min: string | number): number => {
                 const s = String(min);

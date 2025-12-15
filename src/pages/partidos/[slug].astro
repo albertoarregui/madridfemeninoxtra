@@ -34,30 +34,24 @@ const formatDate = (dateString: string | null | undefined): string => {
 
 const formatTime = (timeString: string | null | undefined): string => {
     if (!timeString) return "-";
-    return timeString.substring(0, 5); // Extract HH:MM
+    return timeString.substring(0, 5);
 };
 
-// Data Fetching
 const lineup = await fetchMatchLineups(game.id_partido);
 const subs = await fetchMatchSubstitutions(game.id_partido);
 const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm);
 const stadiumStats = await fetchStadiumStats(game.estadio);
 
-// Dynamic Stadium Images
 const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/estadios/*.{jpeg,jpg,png,webp}",
 );
 let stadiumImageSrc = null;
 
-// Normalize stadium name to match filename (approx)
-// e.g. "Alfredo Di Stéfano" -> "alfredo-di-stefano"
-// naive matching: check if any file contains the stadium name slugified or part of it
 if (game.estadio) {
     const slugName = game.estadio
         .toLowerCase()
         .replace(/ /g, "-")
         .replace(/[áéíóú]/g, (c: string) => "aeiou"["áéíóú".indexOf(c)]);
-    // Try to find a key that includes this slug
     const matchingKey = Object.keys(stadiumImages).find((key) =>
         key.includes(slugName),
     );
@@ -67,7 +61,6 @@ if (game.estadio) {
     }
 }
 
-// SHIELD LOADING LOGIC
 const shieldImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
 );
@@ -117,13 +110,10 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         </a>
 
         <div class="match-grid">
-            <!-- LEFT COLUMN -->
             <div class="left-column">
-                <!-- FICHA DE PARTIDO -->
                 <section class="match-card">
-                    <h2 class="section-header">Ficha de partido</h2>
+                    <h2 class="section-header">Ficha del partido</h2>
                     <div class="match-result-redesigned">
-                        <!-- LOCAL TEAM -->
                         <div class="team-block">
                             <div class="shield-container">
                                 {
@@ -143,14 +133,12 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                             >
                         </div>
 
-                        <!-- SCORE -->
                         <div class="score-block">
                             <span class="score-main">
                                 {game.goles_rm} - {game.goles_rival}
                             </span>
                         </div>
 
-                        <!-- VISITOR TEAM -->
                         <div class="team-block">
                             <div class="shield-container">
                                 {
@@ -202,9 +190,8 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                     </div>
                 </section>
 
-                <!-- EQUIPOS TITULARES -->
                 <section class="lineup-card">
-                    <h2 class="section-header">Equipos titulares</h2>
+                    <h2 class="section-header">XI titular</h2>
                     <div class="lineup-list">
                         {
                             lineup.map((player: any) => (
@@ -398,7 +385,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                 </section>
 
                 <section class="timeline-card">
-                    <h2 class="section-header">Timeline del partido</h2>
+                    <h2 class="section-header">Timeline</h2>
                     <div class="timeline-container">
                         <div class="timeline-track">
                             {
@@ -485,13 +472,12 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             text-transform: capitalize;
         }
 
-        /* MATCH CARD */
         .match-card {
             background: white;
             border: 1px solid #ddd;
             border-radius: 8px;
             overflow: hidden;
-            border-top: 4px solid #ffde59; /* Madrid accent */
+            border-top: 4px solid #ffde59;
         }
 
         .lineup-card,
@@ -523,7 +509,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         }
 
         .shield-container {
-            width: 100px; /* Larger size */
+            width: 100px;
             height: 100px;
             display: flex;
             align-items: center;
@@ -557,12 +543,11 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         }
 
         .score-main {
-            font-size: 3.5rem; /* Bigger score */
+            font-size: 3.5rem;
             font-weight: 800;
             letter-spacing: -1px;
         }
 
-        /* CENTERED INFO GRID */
         .match-info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -574,7 +559,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         .info-item {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center content in grid cell */
+            justify-content: center;
             gap: 0.5rem;
             font-size: 0.95rem;
             color: #555;
@@ -584,13 +569,11 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             font-size: 1.2rem;
         }
 
-        /* LINEUP */
         .lineup-list {
             display: flex;
             flex-direction: column;
         }
 
-        /* SUBSTITUTIONS STYLES */
         .sub-row {
             display: flex;
             align-items: center;
@@ -618,7 +601,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         .sub-movement {
             display: flex;
             align-items: center;
-            gap: 0.75rem; /* Space between arrow and player */
+            gap: 0.75rem;
             flex: 1;
             font-size: 0.9rem;
         }
@@ -649,7 +632,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             border-radius: 4px;
             object-fit: cover;
             background: #eee;
-            display: block; /* Ensure it's not inline */
+            display: block;
         }
 
         .no-data-msg {
@@ -767,7 +750,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             font-size: 0.9rem;
         }
 
-        /* STADIUM */
         .stadium-content {
             padding: 1.5rem;
         }
@@ -808,7 +790,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             border-radius: 4px;
         }
 
-        /* RIVAL CHART */
         .rival-chart {
             padding: 1.5rem;
             display: flex;
@@ -840,7 +821,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             border-radius: 3px;
         }
 
-        /* RECORDS */
         .records-list {
             padding: 1.5rem;
         }
@@ -880,8 +860,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             }
         }
 
-        /* LINEUP IMAGES & LINKS */
-        /* LINEUP IMAGES & LINKS */
         a.lineup-row {
             text-decoration: none;
             color: inherit;
@@ -900,7 +878,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
 
         .player-photo-rect {
             width: 50px;
-            height: 60px; /* Rectangular portrait aspect */
+            height: 60px;
             flex-shrink: 0;
             overflow: hidden;
             background: #eee;
@@ -911,7 +889,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: top center; /* Fix for cutting off heads */
+            object-position: top center;
         }
 
         .stadium-img-rect {
@@ -934,7 +912,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             color: #666;
         }
 
-        /* STADIUM STATS COLORS */
         .bar-fill {
             height: 24px;
             border-radius: 4px;
@@ -942,7 +919,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             align-items: center;
             justify-content: flex-end;
             padding-right: 8px;
-            min-width: 10%; /* Ensure text fits */
+            min-width: 10%;
             transition: width 0.5s ease-out;
         }
 
@@ -954,13 +931,13 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         }
 
         .bar-fill.won {
-            background: #bbf7d0; /* Pastel green */
+            background: #bbf7d0;
         }
         .bar-fill.drawn {
-            background: #fef08a; /* Pastel yellow */
+            background: #fef08a;
         }
         .bar-fill.lost {
-            background: #fecaca; /* Pastel red */
+            background: #fecaca;
         }
 
         .bar-text {
@@ -971,7 +948,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
 
         .player-number-bold {
             font-size: 1.25rem;
-            font-weight: 800; /* Bold dorsal */
+            font-weight: 800;
             color: #333;
             min-width: 30px;
             text-align: center;
@@ -995,14 +972,13 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             text-transform: uppercase;
         }
 
-        /* SUBSTITUTIONS */
         .sub-row {
             display: flex;
             align-items: center;
             padding: 0.75rem 1rem;
             border-bottom: 1px solid #f0f0f0;
             gap: 1rem;
-            background: #ffffff; /* Consistent white bg */
+            background: #ffffff;
         }
 
         .sub-row:last-child {
@@ -1028,7 +1004,6 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             font-size: 0.9rem;
         }
 
-        /* TIMELINE STYLES UPDATED */
         .timeline-container {
             padding: 1.5rem 1rem;
         }
@@ -1046,7 +1021,7 @@ const visitorShield = await getShieldSrc(game.club_visitante);
 
         .event-time {
             position: absolute;
-            left: -2.35rem; /* Adjust based on padding/border */
+            left: -2.35rem;
             top: 0;
         }
 
