@@ -433,7 +433,7 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
     }
 }
 
-export async function fetchMatchEvents(matchId: string | number): Promise<any[]> {
+export async function fetchMatchEvents(matchId: string | number, matchScore?: number): Promise<any[]> {
     try {
         const subsPromise = fetchMatchSubstitutions(matchId);
 
@@ -444,9 +444,10 @@ export async function fetchMatchEvents(matchId: string | number): Promise<any[]>
         const client = createClient({ url, authToken });
 
         const goalsQuery = `
-            SELECT g.*, j.nombre as nombre_jugadora 
+            SELECT g.*, j.nombre as nombre_jugadora, a.nombre as nombre_asistente
             FROM goles_y_asistencias g
             LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
+            LEFT JOIN jugadoras a ON g.asistente = a.id_jugadora
             WHERE g.id_partido = ?
         `;
 
@@ -457,31 +458,79 @@ export async function fetchMatchEvents(matchId: string | number): Promise<any[]>
 
         const events: any[] = [];
 
+        // Safety check: If RM scored 0 goals, force empty goals list
+        // This prevents "ghost goals" from appearing due to DB ID conflicts
+        const validGoals = (matchScore === 0) ? [] : goalsResult.rows;
+
         // Process Goals
-        for (const goal of goalsResult.rows) {
+        for (const goal of validGoals) {
             let playerName = goal.nombre_jugadora;
 
             // Fallback: If join failed (null name), use the raw 'goleadora' value 
-            // This handles cases where 'goleadora' is strictly a name string or if ID lookup failed.
             if (!playerName) {
                 playerName = goal.goleadora;
             }
 
-            // Final fallback if raw value is also missing/null (shouldn't happen for valid goals)
-            if (!playerName) playerName = "Jugadora";
+            // Logic for "En propia puerta" or named player
+            let goalText = "";
+            if (!playerName && !goal.goleadora) {
+                goalText = "En propia puerta";
+            } else {
+                // Fallback if still null but not strictly caught above
+                if (!playerName) playerName = "En propia puerta";
+                goalText = `Gol de ${playerName}`;
+            }
+
+            // Append assistant if exists
+            let assistantName = goal.nombre_asistente;
+            if (!assistantName && goal.asistente) {
+                assistantName = goal.asistente; // Raw value fallback
+            }
+
+            if (assistantName) {
+                goalText += ` (Asis. ${assistantName})`;
+            }
+
+            // Append penalty info
+            if (goal.tipo === 'penalti') {
+                goalText += ' (P)';
+            }
+
+            // Helper to parse minute string "90+3" -> 93 for sorting
+            // Helper to parse minute string "90+3" -> 93 for sorting
+            const parseMinute = (min: any): number => {
+                if (!min) return 0;
+                const s = String(min);
+                if (s.includes('+')) {
+                    const [base, extra] = s.split('+');
+                    return Number(base) + Number(extra);
+                }
+                return Number(min);
+            };
 
             events.push({
-                minute: Number(goal.minuto),
+                minute: parseMinute(goal.minuto),
+                displayMinute: goal.minuto, // Keep original string (e.g. "90+3")
                 type: 'goal',
-                text: `Gol de ${playerName}${goal.tipo === 'penalti' ? ' (P)' : ''}`,
-                team: 'local' // Context needed for team, assuming Local/RM for now
+                text: goalText,
+                team: 'local'
             });
         }
 
         // Process Subs
         for (const sub of subs) {
+            const parseMinute = (min: string | number): number => {
+                const s = String(min);
+                if (s.includes('+')) {
+                    const [base, extra] = s.split('+');
+                    return Number(base) + Number(extra);
+                }
+                return Number(min);
+            };
+
             events.push({
-                minute: sub.minute,
+                minute: parseMinute(sub.minute),
+                displayMinute: String(sub.minute),
                 type: 'sub',
                 text: `⬆️ ${sub.playerIn.name} | ⬇️ ${sub.playerOut.name}`,
                 team: 'local'
