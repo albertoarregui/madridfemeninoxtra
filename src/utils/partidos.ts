@@ -196,8 +196,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 a.id_alineacion,
                 a.id_jugadora,
                 j.nombre,
-                j.posicion,
-                j.foto_url
+                j.posicion
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             WHERE a.id_partido = ?
@@ -222,7 +221,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
 
         return result.rows.map((row: any) => {
             // Helper for image (duplicated from players.ts to avoid circular deps if any)
-            let fileName = row.foto_url;
+            let fileName = null; // Removed row.foto_url as it doesn't exist
             if (!fileName && row.nombre) {
                 const slug = slugify(row.nombre).replace(/-/g, '_');
                 const parts = slug.split('_').filter((p: string) => p.length > 0);
@@ -245,7 +244,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 slug: row.nombre ? slugify(row.nombre) : '#'
             };
         });
-
     } catch (error) {
         logDebug(`Error fetching lineups: ${error}`);
         console.error("Error fetching lineups:", error);
@@ -271,8 +269,7 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 a.minuto_entrada,
                 a.minuto_salida,
                 j.nombre,
-                j.posicion,
-                j.foto_url
+                j.posicion
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
