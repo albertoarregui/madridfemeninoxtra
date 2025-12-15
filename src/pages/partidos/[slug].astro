@@ -66,6 +66,32 @@ if (game.estadio) {
         stadiumImageSrc = imgModule.default.src;
     }
 }
+
+// SHIELD LOADING LOGIC
+const shieldImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+);
+
+const getShieldSrc = async (teamName: string) => {
+    if (!teamName) return null;
+    const slug = teamName
+        .toLowerCase()
+        .replace(/ /g, "_")
+        .replace(/\./g, "")
+        .replace(/[áéíóú]/g, (c) => "aeiou"["áéíóú".indexOf(c)]);
+
+    const key = Object.keys(shieldImages).find((k) => k.includes(slug));
+    if (key) {
+        const mod = await shieldImages[key]();
+        return mod.default.src;
+    }
+    return null;
+};
+
+const localShield =
+    (await getShieldSrc(game.club_local)) ||
+    (await getShieldSrc("Real Madrid"));
+const visitorShield = await getShieldSrc(game.club_visitante);
 ---
 
 <Layout
@@ -96,23 +122,52 @@ if (game.estadio) {
                 <!-- FICHA DE PARTIDO -->
                 <section class="match-card">
                     <h2 class="section-header">Ficha de partido</h2>
-                    <div class="match-result">
-                        <div class="team-info">
-                            <div class="team-badge">
-                                <div class="badge-placeholder"></div>
+                    <div class="match-result-redesigned">
+                        <!-- LOCAL TEAM -->
+                        <div class="team-block">
+                            <div class="shield-container">
+                                {
+                                    localShield ? (
+                                        <img
+                                            src={localShield}
+                                            alt={game.club_local}
+                                            class="team-shield-large"
+                                        />
+                                    ) : (
+                                        <div class="shield-placeholder" />
+                                    )
+                                }
                             </div>
-                            <span class="team-name">{game.club_local}</span>
+                            <span class="team-name-large"
+                                >{game.club_local}</span
+                            >
                         </div>
-                        <div class="score">
-                            <span class="score-number">{game.goles_rm}</span>
-                            <span class="score-separator">-</span>
-                            <span class="score-number">{game.goles_rival}</span>
+
+                        <!-- SCORE -->
+                        <div class="score-block">
+                            <span class="score-main">
+                                {game.goles_rm} - {game.goles_rival}
+                            </span>
                         </div>
-                        <div class="team-info">
-                            <span class="team-name">{game.club_visitante}</span>
-                            <div class="team-badge">
-                                <div class="badge-placeholder"></div>
+
+                        <!-- VISITOR TEAM -->
+                        <div class="team-block">
+                            <div class="shield-container">
+                                {
+                                    visitorShield ? (
+                                        <img
+                                            src={visitorShield}
+                                            alt={game.club_visitante}
+                                            class="team-shield-large"
+                                        />
+                                    ) : (
+                                        <div class="shield-placeholder" />
+                                    )
+                                }
                             </div>
+                            <span class="team-name-large"
+                                >{game.club_visitante}</span
+                            >
                         </div>
                     </div>
                     <div class="match-info-grid">
