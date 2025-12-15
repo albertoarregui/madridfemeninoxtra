@@ -195,9 +195,13 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             SELECT 
                 a.id_alineacion,
                 a.id_jugadora,
+                a.minutos_jugados,
+                a.minuto_salida,
                 j.nombre,
                 j.posicion,
-                d.dorsal
+                d.dorsal,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND g.goleadora = a.id_jugadora) as goles,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND g.asistente = a.id_jugadora) as asistencias
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
@@ -206,11 +210,19 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             ORDER BY 
                 CASE j.posicion 
                     WHEN 'Portera' THEN 1
-                    WHEN 'Defensa' THEN 2
-                    WHEN 'Lateral' THEN 3
-                    WHEN 'Centrocampista' THEN 4
-                    WHEN 'Delantera' THEN 5
+                    WHEN 'Lateral izquierda' THEN 2
+                    WHEN 'Lateral Izquierda' THEN 2
+                    WHEN 'Defensa' THEN 3
+                    WHEN 'Central' THEN 3
+                    WHEN 'Lateral derecha' THEN 4
+                    WHEN 'Lateral Derecha' THEN 4
+                    WHEN 'Centrocampista' THEN 5
+                    WHEN 'Pivote' THEN 5
+                    WHEN 'Interior' THEN 5
                     WHEN 'Extremo' THEN 6
+                    WHEN 'Extremo izquierdo' THEN 6
+                    WHEN 'Extremo derecho' THEN 6
+                    WHEN 'Delantera' THEN 7
                     ELSE 99
                 END ASC
         `;
@@ -244,7 +256,11 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 pos: displayPos,
                 number: row.dorsal || '-',
                 imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
-                slug: row.nombre ? slugify(row.nombre) : '#'
+                slug: row.nombre ? slugify(row.nombre) : '#',
+                minutes: row.minutos_jugados,
+                substituted: row.minuto_salida !== null,
+                goals: row.goles,
+                assists: row.asistencias
             };
         });
     } catch (error) {
