@@ -177,7 +177,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         const query = `
             SELECT 
                 a.id_alineacion,
-                a.dorsal,
                 j.nombre,
                 j.posicion,
                 j.foto_url
@@ -207,27 +206,27 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         // Let's implement basic logic or import helper if moved to shared.
         // For now, simple slugify/image logic here or just pass raw data and let component handle?
         // Component expects imageUrl.
-        
+
         return result.rows.map((row: any) => {
-             // Helper for image (duplicated from players.ts to avoid circular deps if any)
-             let fileName = row.foto_url;
-             if (!fileName && row.nombre) {
-                 const slug = slugify(row.nombre).replace(/-/g, '_');
-                 const parts = slug.split('_').filter((p: string) => p.length > 0);
-                 const nameForFile = parts.slice(0, 4).join('_');
-                 fileName = `${nameForFile}.png`;
-             } else if (fileName && !fileName.includes('.')) {
-                 fileName += '.png';
-             }
-             
-             return {
-                 id: row.id_alineacion,
-                 name: row.nombre,
-                 pos: row.posicion, // Shorten if needed in component
-                 number: row.dorsal || '-',
-                 imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
-                 slug: slugify(row.nombre)
-             };
+            // Helper for image (duplicated from players.ts to avoid circular deps if any)
+            let fileName = row.foto_url;
+            if (!fileName && row.nombre) {
+                const slug = slugify(row.nombre).replace(/-/g, '_');
+                const parts = slug.split('_').filter((p: string) => p.length > 0);
+                const nameForFile = parts.slice(0, 4).join('_');
+                fileName = `${nameForFile}.png`;
+            } else if (fileName && !fileName.includes('.')) {
+                fileName += '.png';
+            }
+
+            return {
+                id: row.id_alineacion,
+                name: row.nombre,
+                pos: row.posicion, // Shorten if needed in component
+                number: row.dorsal || '-',
+                imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
+                slug: slugify(row.nombre)
+            };
         });
 
     } catch (error) {
@@ -268,34 +267,34 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
         });
 
         return result.rows.map((row: any) => {
-             const processImage = (name: string, foto: string) => {
-                 let fileName = foto;
-                 if (!fileName && name) {
-                     const slug = slugify(name).replace(/-/g, '_');
-                     const parts = slug.split('_').filter((p: string) => p.length > 0);
-                     const nameForFile = parts.slice(0, 4).join('_');
-                     fileName = `${nameForFile}.png`;
-                 } else if (fileName && !fileName.includes('.')) {
-                     fileName += '.png';
-                 }
-                 return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
-             };
+            const processImage = (name: string, foto: string) => {
+                let fileName = foto;
+                if (!fileName && name) {
+                    const slug = slugify(name).replace(/-/g, '_');
+                    const parts = slug.split('_').filter((p: string) => p.length > 0);
+                    const nameForFile = parts.slice(0, 4).join('_');
+                    fileName = `${nameForFile}.png`;
+                } else if (fileName && !fileName.includes('.')) {
+                    fileName += '.png';
+                }
+                return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
+            };
 
-             return {
-                 minute: row.minuto,
-                 playerIn: {
-                     name: row.nombre_entra,
-                     pos: row.pos_entra,
-                     imageUrl: processImage(row.nombre_entra, row.foto_entra),
-                     slug: slugify(row.nombre_entra)
-                 },
-                 playerOut: {
-                     name: row.nombre_sale,
-                     pos: row.pos_sale,
-                     imageUrl: processImage(row.nombre_sale, row.foto_sale),
-                     slug: slugify(row.nombre_sale)
-                 }
-             };
+            return {
+                minute: row.minuto,
+                playerIn: {
+                    name: row.nombre_entra,
+                    pos: row.pos_entra,
+                    imageUrl: processImage(row.nombre_entra, row.foto_entra),
+                    slug: slugify(row.nombre_entra)
+                },
+                playerOut: {
+                    name: row.nombre_sale,
+                    pos: row.pos_sale,
+                    imageUrl: processImage(row.nombre_sale, row.foto_sale),
+                    slug: slugify(row.nombre_sale)
+                }
+            };
         });
 
     } catch (error) {
