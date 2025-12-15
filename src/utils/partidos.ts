@@ -460,7 +460,14 @@ export async function fetchMatchEvents(matchId: string | number): Promise<any[]>
         // Process Goals
         for (const goal of goalsResult.rows) {
             let playerName = goal.nombre_jugadora;
-            // Fallback to generic name if join fails
+
+            // Fallback: If join failed (null name), use the raw 'goleadora' value 
+            // This handles cases where 'goleadora' is strictly a name string or if ID lookup failed.
+            if (!playerName) {
+                playerName = goal.goleadora;
+            }
+
+            // Final fallback if raw value is also missing/null (shouldn't happen for valid goals)
             if (!playerName) playerName = "Jugadora";
 
             events.push({
