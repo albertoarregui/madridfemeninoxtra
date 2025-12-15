@@ -194,11 +194,12 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         const query = `
             SELECT 
                 a.id_alineacion,
+                a.id_jugadora,
                 j.nombre,
                 j.posicion,
                 j.foto_url
             FROM alineaciones a
-            INNER JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             WHERE a.id_partido = ?
             ORDER BY 
                 CASE j.posicion 
@@ -218,20 +219,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         });
 
         logDebug(`Lineups found: ${result.rows.length}`);
-        if (result.rows.length === 0) {
-            // Check if alineaciones has rows at all for this match
-            try {
-                const rawCheck = await client.execute({
-                    sql: "SELECT count(*) as c FROM alineaciones WHERE id_partido = ?",
-                    args: [matchId]
-                });
-                if (rawCheck.rows.length > 0) {
-                    logDebug(`Raw alineaciones count (without join): ${rawCheck.rows[0].c}`);
-                }
-            } catch (e) {
-                logDebug(`Error checking raw count: ${e}`);
-            }
-        }
 
         return result.rows.map((row: any) => {
             // Helper for image (duplicated from players.ts to avoid circular deps if any)
@@ -245,13 +232,17 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 fileName += '.png';
             }
 
+            // Fallback if player not found in join
+            const displayName = row.nombre || `Jugadora ID: ${row.id_jugadora}`;
+            const displayPos = row.posicion || '-';
+
             return {
                 id: row.id_alineacion,
-                name: row.nombre,
-                pos: row.posicion, // Shorten if needed in component
-                number: row.dorsal || '-',
+                name: displayName,
+                pos: displayPos,
+                number: '-',
                 imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
-                slug: slugify(row.nombre)
+                slug: row.nombre ? slugify(row.nombre) : '#'
             };
         });
 
@@ -272,20 +263,20 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
 
         const client = createClient({ url, authToken });
 
+        // Fetch players with entry or exit minutes from ALINEACIONES
         const query = `
             SELECT 
-                c.minuto,
-                jin.nombre as nombre_entra,
-                jin.posicion as pos_entra,
-                jin.foto_url as foto_entra,
-                jout.nombre as nombre_sale,
-                jout.posicion as pos_sale,
-                jout.foto_url as foto_sale
-            FROM cambios c
-            INNER JOIN jugadoras jin ON c.id_jugadora_entra = jin.id_jugadora
-            INNER JOIN jugadoras jout ON c.id_jugadora_sale = jout.id_jugadora
-            WHERE c.id_partido = ?
-            ORDER BY c.minuto ASC
+                a.id_alineacion,
+                a.id_jugadora,
+                a.minuto_entrada,
+                a.minuto_salida,
+                j.nombre,
+                j.posicion,
+                j.foto_url
+            FROM alineaciones a
+            LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
+            ORDER BY IFNULL(a.minuto_entrada, a.minuto_salida) ASC
         `;
 
         const result = await client.execute({
@@ -293,36 +284,50 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
             args: [matchId]
         });
 
-        return result.rows.map((row: any) => {
-            const processImage = (name: string, foto: string) => {
-                let fileName = foto;
-                if (!fileName && name) {
-                    const slug = slugify(name).replace(/-/g, '_');
+        // Process rows to pair IN/OUT
+        const rows = result.rows;
+        const substitutions: any[] = [];
+
+        // Strategy: Look for entry times. For each entry, try to find an exit at the same minute.
+        // Identify players coming IN
+        const playersIn = rows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
+
+        playersIn.forEach((pIn: any) => {
+            const minute = pIn.minuto_entrada;
+
+            // Find corresponding OUT player at roughly same minute (or exactly)
+            const pOut = rows.find((r: any) =>
+                r.minuto_salida === minute &&
+                r.id_alineacion !== pIn.id_alineacion
+            );
+
+            // Helpers to process player data
+            const processPlayer = (row: any) => {
+                let fileName = row.foto_url;
+                if (!fileName && row.nombre) {
+                    const slug = slugify(row.nombre).replace(/-/g, '_');
                     const parts = slug.split('_').filter((p: string) => p.length > 0);
                     const nameForFile = parts.slice(0, 4).join('_');
                     fileName = `${nameForFile}.png`;
                 } else if (fileName && !fileName.includes('.')) {
                     fileName += '.png';
                 }
-                return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
+                return {
+                    name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
+                    pos: row.posicion || '-',
+                    imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
+                    slug: row.nombre ? slugify(row.nombre) : '#'
+                };
             };
 
-            return {
-                minute: row.minuto,
-                playerIn: {
-                    name: row.nombre_entra,
-                    pos: row.pos_entra,
-                    imageUrl: processImage(row.nombre_entra, row.foto_entra),
-                    slug: slugify(row.nombre_entra)
-                },
-                playerOut: {
-                    name: row.nombre_sale,
-                    pos: row.pos_sale,
-                    imageUrl: processImage(row.nombre_sale, row.foto_sale),
-                    slug: slugify(row.nombre_sale)
-                }
-            };
+            substitutions.push({
+                minute: minute,
+                playerIn: processPlayer(pIn),
+                playerOut: pOut ? processPlayer(pOut) : { name: '?', pos: '', imageUrl: '', slug: '#' }
+            });
         });
+
+        return substitutions.sort((a, b) => a.minute - b.minute);
 
     } catch (error) {
         console.error("Error fetching substitutions:", error);

@@ -254,34 +254,7 @@ const mockTimeline: any[] = [];
             </div>
         </div>
         
-        <!-- DEBUG SECTION -->
-        <div style="background: #fee; border: 2px solid red; padding: 1rem; margin-top: 2rem; border-radius: 8px;">
-            <h3>Debug Info (Solo temporal)</h3>
-            <p><strong>Match ID:</strong> {game.id_partido}</p>
-            <p><strong>Lineups Fetch Count:</strong> {lineup.length}</p>
-            <p><strong>Subs Fetch Count:</strong> {subs.length}</p>
-            <p><strong>Raw Alineaciones Query:</strong></p>
-            {
-                lineup.length === 0 ? (
-                    async () => {
-                         try {
-                            const { createClient } = await import('@libsql/client');
-                            const client = createClient({
-                                url: import.meta.env.TURSO_DATABASE_URL,
-                                authToken: import.meta.env.TURSO_AUTH_TOKEN
-                            });
-                            const check = await client.execute({
-                                sql: "SELECT count(*) as c FROM alineaciones WHERE id_partido = ?",
-                                args: [game.id_partido]
-                            });
-                             return <p>Total items in table 'alineaciones' for this match: <strong>{check.rows[0].c}</strong></p>;
-                         } catch(e) {
-                             return <p>Error checking DB: {e.message}</p>
-                         }
-                    }
-                ) : <p>Data found OK.</p>
-            }
-        </div>
+
 
     </main>
 
