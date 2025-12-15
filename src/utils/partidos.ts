@@ -200,8 +200,14 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 j.nombre,
                 j.posicion,
                 d.dorsal,
-                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
-                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias
+                (SELECT COUNT(*) FROM goles_y_asistencias g 
+                 INNER JOIN partidos p2 ON g.id_partido = p2.id_partido 
+                 WHERE p2.id_temporada = p.id_temporada 
+                 AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
+                (SELECT COUNT(*) FROM goles_y_asistencias g 
+                 INNER JOIN partidos p2 ON g.id_partido = p2.id_partido 
+                 WHERE p2.id_temporada = p.id_temporada 
+                 AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
