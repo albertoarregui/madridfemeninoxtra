@@ -12,7 +12,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
 <div class="stats-rankings-ui">
     <div class="filters-container">
-        <!-- Explorer Filter (Custom Order) -->
         <div class="filter-wrapper">
             <select id="filtro-tipo">
                 <option value="convocatorias">Convocatorias</option>
@@ -46,7 +45,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             >
         </div>
 
-        <!-- Season Selector -->
         <div class="filter-wrapper">
             <select id="filtro-temporada">
                 <option value="todos">Todas las Temporadas</option>
@@ -72,7 +70,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             >
         </div>
 
-        <!-- Competition Selector (Custom Order) -->
         <div class="filter-wrapper">
             <select id="filtro-competicion">
                 <option value="todos">Todas las Competiciones</option>
@@ -100,21 +97,13 @@ const { rankingsData, seasons, competitions } = Astro.props;
         </div>
     </div>
 
-    <!-- Filter Info Tag Removed as requested -->
-    <!-- <div id="active-filter-tag" class="text-center mb-6 text-sm text-gray-500 font-medium"></div> -->
-
     <div class="ranking-cards-container">
-        <!-- Dynamic Table Container -->
         <div class="ranking-card" id="dynamic-table-card">
             <h3 class="ranking-title" id="dynamic-table-title">Ranking</h3>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead id="dynamic-table-head">
-                        <!-- Headers injected by JS -->
-                    </thead>
-                    <tbody id="dynamic-table-body">
-                        <!-- Rows injected by JS -->
-                    </tbody>
+                    <thead id="dynamic-table-head"> </thead>
+                    <tbody id="dynamic-table-body"> </tbody>
                 </table>
             </div>
         </div>
@@ -128,9 +117,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
     const tableTitle = document.getElementById("dynamic-table-title");
     const tableHead = document.getElementById("dynamic-table-head");
     const tableBody = document.getElementById("dynamic-table-body");
-    // const activeFilterTag = document.getElementById("active-filter-tag"); // Removed
 
-    // Definitions for table configurations
     const tableConfigs = {
         goles: {
             title: "Máximas Goleadoras",
@@ -150,7 +137,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             dataKeys: ["goles", "asistencias", "goles_generados"],
             primaryKey: "goles_generados",
         },
-        // Legacy key removed but kept in mind if needed
         partidos: {
             title: "Más Partidos Jugados",
             headers: ["Pos", "Jugadora", "Partidos"],
@@ -236,10 +222,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
         const config = tableConfigs[selectedType];
 
-        // Update Title
         tableTitle.textContent = config.title;
 
-        // Render Headers
         tableHead.innerHTML = `
             <tr>
                 ${config.headers
@@ -254,16 +238,12 @@ const { rankingsData, seasons, competitions } = Astro.props;
             </tr>
         `;
 
-        // Process Data
-        // Aggregate by player
         const playerMap = {};
 
         rankingsData.forEach((item) => {
-            // Filter Season
             if (selectedSeason !== "todos" && item.temporada !== selectedSeason)
                 return;
 
-            // Filter Competition
             if (selectedCompetition === "oficiales") {
                 const officialComps = [
                     "Liga F",
@@ -276,11 +256,9 @@ const { rankingsData, seasons, competitions } = Astro.props;
                 selectedCompetition !== "todos" &&
                 item.competicion !== selectedCompetition
             ) {
-                // Fuzzy match for Amistosos if needed, but exact match should work if data is clean
                 return;
             }
 
-            // Aggregate
             if (!playerMap[item.id_jugadora]) {
                 playerMap[item.id_jugadora] = {
                     nombre: item.nombre,
@@ -294,15 +272,11 @@ const { rankingsData, seasons, competitions } = Astro.props;
         });
 
         let sortKey = config.primaryKey;
-        // Legacy check removed as distinct keys handle it now
 
-        // Convert to array and sort
         const sortedPlayers = Object.values(playerMap)
-            .filter((p) => p[sortKey] > 0) // Only show players with > 0 stats
+            .filter((p) => p[sortKey] > 0)
             .sort((a, b) => b[sortKey] - a[sortKey])
-            .slice(0, 50); // Limit to top 50
-
-        // Render Body
+            .slice(0, 50);
         if (sortedPlayers.length === 0) {
             tableBody.innerHTML =
                 '<tr><td colspan="10" class="no-data">No hay datos registrados.</td></tr>';
@@ -310,10 +284,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
             tableBody.innerHTML = sortedPlayers
                 .map((player, index) => {
                     const isFirst = index === 0;
-                    // const isLast = index === sortedPlayers.length - 1; // Unused
-                    const extraStyle = ""; // Simplified style
-
-                    // Value cells
+                    const extraStyle = "";
                     const valueCells = config.dataKeys
                         .map(
                             (key) => `
@@ -345,10 +316,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
         }
     }
 
-    // Init
     calculateRankings();
 
-    // Listeners
     typeSelect.addEventListener("change", calculateRankings);
     seasonSelect.addEventListener("change", calculateRankings);
     competitionSelect.addEventListener("change", calculateRankings);
@@ -382,7 +351,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
         max-width: 320px;
     }
 
-    /* Labels removed */
     .filter-label {
         display: none;
     }
@@ -390,7 +358,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
     .filter-icon {
         position: absolute;
         right: 1.25rem;
-        top: 50%; /* Center vertically */
+        top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
         color: #6b7280;
@@ -401,11 +369,11 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
     .filters-container select {
         width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.5rem; /* More padding left for pill shape */
+        padding: 0.875rem 3rem 0.875rem 1.5rem;
         background: #ffffff;
         color: #1f2937;
         border: 1px solid #d1d5db;
-        border-radius: 9999px; /* Fully rounded */
+        border-radius: 9999px;
         font-size: 0.95rem;
         font-weight: 500;
         cursor: pointer;
@@ -417,7 +385,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
         -moz-appearance: none;
     }
 
-    /* Centering the options text visually might need text-align-last: center or just padding */
     .filters-container select {
         text-align: left;
         padding-left: 2rem;
@@ -557,7 +524,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
         width: 4rem;
     }
 
-    /* Top 3 Highlighting */
     tbody tr:nth-child(1) .pos-cell {
         color: #d97706;
         font-size: 1.1rem;
@@ -584,21 +550,20 @@ const { rankingsData, seasons, competitions } = Astro.props;
         flex-shrink: 0;
         border: 2px solid #ffffff;
         box-shadow: 0 0 0 1px #e5e7eb;
-        border-radius: 8px; /* Square with rounded corners */
+        border-radius: 8px;
         overflow: hidden;
         background: #f3f4f6;
         display: flex;
-        align-items: flex-end; /* Align image to bottom */
+        align-items: flex-end;
         justify-content: center;
     }
 
-    /* Top 3 sizing logic */
     tbody tr:nth-child(1) .player-thumb-wrapper {
-        width: 18rem; /* Ultra Hero size */
+        width: 18rem;
         height: 18rem;
         min-width: 18rem;
         min-height: 18rem;
-        border-color: #ffd700; /* Gold */
+        border-color: #ffd700;
         box-shadow:
             0 0 0 2px #ffd700,
             0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -606,36 +571,36 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
     tbody tr:nth-child(2) .player-thumb-wrapper,
     tbody tr:nth-child(3) .player-thumb-wrapper {
-        width: 10rem; /* Very Large */
+        width: 10rem;
         height: 10rem;
         min-width: 10rem;
         min-height: 10rem;
     }
 
     tbody tr:nth-child(2) .player-thumb-wrapper {
-        border-color: #c0c0c0; /* Silver */
+        border-color: #c0c0c0;
         box-shadow:
             0 0 0 2px #c0c0c0,
             0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     tbody tr:nth-child(3) .player-thumb-wrapper {
-        border-color: #cd7f32; /* Bronze */
+        border-color: #cd7f32;
         box-shadow:
             0 0 0 2px #cd7f32,
             0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
     tbody tr:hover .player-thumb-wrapper {
-        transform: scale(1.05); /* Slightly less zoom */
+        transform: scale(1.05);
         border-color: #fbbf24;
     }
 
     .player-thumb-img {
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Prevent cropping */
-        object-position: bottom center; /* Anchor to bottom */
+        object-fit: contain;
+        object-position: bottom center;
     }
 
     .player-name {
@@ -681,23 +646,21 @@ const { rankingsData, seasons, competitions } = Astro.props;
         .ranking-title {
             padding: 0.75rem 1rem;
             font-size: 1rem;
-            min-height: 60px; /* Ensure space */
+            min-height: 60px;
         }
 
-        /* Compact table cells */
         td,
         th {
-            padding: 0.5rem 0.25rem; /* Minimal horizontal padding */
-            font-size: 0.8rem; /* Smaller font */
+            padding: 0.5rem 0.25rem;
+            font-size: 0.8rem;
         }
 
-        /* Allow wrapping for names to save width */
         td.player-cell,
         .player-name {
             white-space: normal;
             line-height: 1.2;
             word-wrap: break-word;
-            max-width: 120px; /* Force wrapping on long names */
+            max-width: 120px;
         }
 
         .stat-cell {
@@ -720,7 +683,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             max-width: 100%;
         }
 
-        /* Reduce thumbnail sizes on mobile */
         .player-thumb-wrapper {
             width: 2rem;
             height: 2rem;
@@ -729,7 +691,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             border-radius: 6px;
         }
 
-        /* Top 3 sizing logic for mobile - Even smaller */
         tbody tr:nth-child(1) .player-thumb-wrapper {
             width: 4rem;
             height: 4rem;
@@ -745,7 +706,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
             min-height: 3rem;
         }
 
-        /* Minimize Pos column */
         .w-16 {
             width: 1.5rem;
         }

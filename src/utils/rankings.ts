@@ -44,7 +44,6 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             authToken: authToken,
         });
 
-        // Comprehensive query aggregating everything by player/season/comp
         const query = `
             WITH 
             lineup_data AS (

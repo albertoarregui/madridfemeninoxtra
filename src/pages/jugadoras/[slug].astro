@@ -150,17 +150,44 @@ const debutDisplay =
         ? `${formatShortDate(debutInfo.fecha_debut)}${debutInfo.rival ? ` (${debutInfo.rival})` : ""}`
         : "-";
 
-const positionCoords: Record<string, { left: string; top: string }> = {
-    Portera: { left: "10%", top: "50%" },
-    Defensa: { left: "30%", top: "50%" },
-    Centrocampista: { left: "55%", top: "50%" },
-    Delantera: { left: "80%", top: "50%" },
+const getPlayerCoordinates = (pos: string) => {
+    const p = pos.toLowerCase();
+    let left = "50%";
+    let top = "50%";
+
+    // Determinar eje X (Línea de juego)
+    if (p.includes("portera")) {
+        left = "10%";
+    } else if (p.includes("defensa") || p.includes("central")) {
+        left = "30%";
+    } else if (p.includes("lateral")) {
+        left = "30%";
+        // Laterales por defecto abiertos si no se especifica lado, o ajustar si se especifica
+        if (p.includes("izquierd"))
+            top = "20%"; // Arriba
+        else if (p.includes("derech"))
+            top = "80%"; // Abajo
+        else top = "20%"; // Default para lateral genérico si no hay lado? O quizás 50? Usaremos 20/80 si podemos
+    } else if (
+        p.includes("centrocampista") ||
+        p.includes("pivote") ||
+        p.includes("interior") ||
+        p.includes("mediapunta")
+    ) {
+        left = "55%";
+    } else if (p.includes("delantera") || p.includes("ariete")) {
+        left = "80%";
+    } else if (p.includes("extremo")) {
+        left = "80%";
+        if (p.includes("izquierd")) top = "20%";
+        else if (p.includes("derech")) top = "80%";
+        else top = "20%";
+    }
+
+    return { left, top };
 };
 
-const playerPosition = positionCoords[player.posicion] || {
-    left: "50%",
-    top: "50%",
-};
+const playerPosition = getPlayerCoordinates(player.posicion || "");
 ---
 
 <Layout
@@ -840,7 +867,7 @@ const playerPosition = positionCoords[player.posicion] || {
             width: 30px;
             height: 30px;
             background: white;
-            border: 3px solid #ff6b00;
+            border: 3px solid #ffde59;
             border-radius: 50%;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
