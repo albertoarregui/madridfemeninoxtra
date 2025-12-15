@@ -1,30 +1,53 @@
 ---
-interface GoalData {
-    id_gol: number;
-    goleadora: string | null;
-    asistente: string | null;
-    id_partido: number;
-    goles_a_favor: number;
-    goles_en_contra: number;
-    minuto: number | null;
-    parte_cuerpo: string | null;
-    tipo: string | null;
-    competicion?: string;
-    temporada?: string;
-}
+import type { RankingStat } from "../utils/rankings";
 
 interface Props {
-    goalsData: GoalData[];
+    rankingsData: RankingStat[];
     seasons: string[];
     competitions: string[];
 }
 
-const { goalsData, seasons, competitions } = Astro.props;
+const { rankingsData, seasons, competitions } = Astro.props;
 ---
 
 <div class="stats-rankings-ui">
     <div class="filters-container">
+        <!-- Stat Type Selector -->
         <div class="filter-wrapper">
+            <label for="filtro-tipo" class="filter-label">Estadística</label>
+            <select id="filtro-tipo">
+                <option value="goles_asistencias">Goles y Asistencias</option>
+                <option value="partidos">Partidos Jugados</option>
+                <option value="minutos">Minutos Jugados</option>
+                <option value="titularidades">Titularidades</option>
+                <option value="convocatorias">Convocatorias</option>
+                <option value="cambios_entrada">Cambios (Entrada)</option>
+                <option value="cambios_salida">Cambios (Salida)</option>
+                <option value="victorias">Victorias</option>
+                <option value="porterias_cero">Porterías a cero</option>
+                <option value="tarjetas_amarillas">Tarjetas Amarillas</option>
+                <option value="tarjetas_rojas">Tarjetas Rojas</option>
+                <option value="capitanias">Capitanías</option>
+            </select>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="filter-icon"
+                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
+                    d="M6 9l6 6l6 -6"></path></svg
+            >
+        </div>
+
+        <!-- Season Selector -->
+        <div class="filter-wrapper">
+            <label for="filtro-temporada" class="filter-label">Temporada</label>
             <select id="filtro-temporada">
                 <option value="todos">Todas las Temporadas</option>
                 {
@@ -44,17 +67,19 @@ const { goalsData, seasons, competitions } = Astro.props;
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="filter-icon"
+                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
+                    d="M6 9l6 6l6 -6"></path></svg
             >
-                <>
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                    <path d="M6 9l6 6l6 -6"></path>
-                </>
-            </svg>
         </div>
 
+        <!-- Competition Selector -->
         <div class="filter-wrapper">
+            <label for="filtro-competicion" class="filter-label"
+                >Competición</label
+            >
             <select id="filtro-competicion">
                 <option value="todos">Todas las Competiciones</option>
+                <option value="oficiales">Partidos Oficiales</option>
                 {
                     competitions.map((comp) => (
                         <option value={comp}>{comp}</option>
@@ -72,70 +97,121 @@ const { goalsData, seasons, competitions } = Astro.props;
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="filter-icon"
+                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
+                    d="M6 9l6 6l6 -6"></path></svg
             >
-                <>
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                    <path d="M6 9l6 6l6 -6"></path>
-                </>
-            </svg>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="ranking-card" id="scorers-table">
-            <h3 class="ranking-title">Máximas Goleadoras</h3>
+    <!-- Filter Info Tag -->
+    <div
+        id="active-filter-tag"
+        class="text-center mb-6 text-sm text-gray-500 font-medium"
+    >
+    </div>
+
+    <div class="ranking-cards-container">
+        <!-- Dynamic Table Container -->
+        <div class="ranking-card" id="dynamic-table-card">
+            <h3 class="ranking-title" id="dynamic-table-title">Ranking</h3>
             <div class="overflow-x-auto">
                 <table class="w-full">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="w-16 text-center">Pos</th>
-                            <th scope="col">Jugadora</th>
-                            <th scope="col" class="text-center">Goles</th>
-                        </tr>
+                    <thead id="dynamic-table-head">
+                        <!-- Headers injected by JS -->
                     </thead>
-                    <tbody id="scorers-body"> </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="ranking-card" id="assisters-table">
-            <h3 class="ranking-title">Máximas Asistentes</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="w-16 text-center">Pos</th>
-                            <th scope="col">Jugadora</th>
-                            <th scope="col" class="text-center">Asistencias</th>
-                        </tr>
-                    </thead>
-                    <tbody id="assisters-body"> </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="ranking-card" id="contributors-table">
-            <h3 class="ranking-title">Más Goles Generados</h3>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="w-16 text-center">Pos</th>
-                            <th scope="col">Jugadora</th>
-                            <th scope="col" class="text-center">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contributors-body"> </tbody>
+                    <tbody id="dynamic-table-body">
+                        <!-- Rows injected by JS -->
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
 
-<script define:vars={{ goalsData }}>
+<script define:vars={{ rankingsData }}>
+    const typeSelect = document.getElementById("filtro-tipo");
     const seasonSelect = document.getElementById("filtro-temporada");
     const competitionSelect = document.getElementById("filtro-competicion");
-    const scorersBody = document.getElementById("scorers-body");
-    const assistersBody = document.getElementById("assisters-body");
-    const contributorsBody = document.getElementById("contributors-body");
+    const tableTitle = document.getElementById("dynamic-table-title");
+    const tableHead = document.getElementById("dynamic-table-head");
+    const tableBody = document.getElementById("dynamic-table-body");
+    const activeFilterTag = document.getElementById("active-filter-tag");
+
+    // Definitions for table configurations
+    const tableConfigs = {
+        goles_asistencias: {
+            title: "Máximas Goleadoras y Asistentes",
+            headers: ["Pos", "Jugadora", "Goles", "Asistencias", "G+A"],
+            dataKeys: ["goles", "asistencias", "goles_generados"],
+            primaryKey: "goles", // Default sort
+        },
+        partidos: {
+            title: "Más Partidos Jugados",
+            headers: ["Pos", "Jugadora", "Partidos"],
+            dataKeys: ["partidos"],
+            primaryKey: "partidos",
+        },
+        minutos: {
+            title: "Más Minutos Jugados",
+            headers: ["Pos", "Jugadora", "Minutos"],
+            dataKeys: ["minutos"],
+            primaryKey: "minutos",
+        },
+        titularidades: {
+            title: "Más Titularidades",
+            headers: ["Pos", "Jugadora", "Titularidades"],
+            dataKeys: ["titularidades"],
+            primaryKey: "titularidades",
+        },
+        convocatorias: {
+            title: "Más Convocatorias",
+            headers: ["Pos", "Jugadora", "Convocatorias"],
+            dataKeys: ["convocatorias"],
+            primaryKey: "convocatorias",
+        },
+        cambios_entrada: {
+            title: "Más Cambios (Entrada)",
+            headers: ["Pos", "Jugadora", "Entradas"],
+            dataKeys: ["cambio_entrada"],
+            primaryKey: "cambio_entrada",
+        },
+        cambios_salida: {
+            title: "Más Cambios (Salida)",
+            headers: ["Pos", "Jugadora", "Salidas"],
+            dataKeys: ["cambio_salida"],
+            primaryKey: "cambio_salida",
+        },
+        victorias: {
+            title: "Más Victorias",
+            headers: ["Pos", "Jugadora", "Victorias"],
+            dataKeys: ["victorias"],
+            primaryKey: "victorias",
+        },
+        porterias_cero: {
+            title: "Porterías a Cero",
+            headers: ["Pos", "Portera", "P. Imbat."],
+            dataKeys: ["porterias_cero"],
+            primaryKey: "porterias_cero",
+        },
+        tarjetas_amarillas: {
+            title: "Tarjetas Amarillas",
+            headers: ["Pos", "Jugadora", "Amarillas"],
+            dataKeys: ["tarjetas_amarillas"],
+            primaryKey: "tarjetas_amarillas",
+        },
+        tarjetas_rojas: {
+            title: "Tarjetas Rojas",
+            headers: ["Pos", "Jugadora", "Rojas"],
+            dataKeys: ["tarjetas_rojas"],
+            primaryKey: "tarjetas_rojas",
+        },
+        capitanias: {
+            title: "Capitanías",
+            headers: ["Pos", "Jugadora", "Capitanías"],
+            dataKeys: ["capitanias"],
+            primaryKey: "capitanias",
+        },
+    };
 
     function getPlayerImage(playerName) {
         if (!playerName) return "";
@@ -148,177 +224,152 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     function calculateRankings() {
+        const selectedType = typeSelect.value;
         const selectedSeason = seasonSelect.value;
         const selectedCompetition = competitionSelect.value;
 
-        const filteredData = goalsData.filter((item) => {
-            const matchesSeason =
-                selectedSeason === "todos" || item.temporada === selectedSeason;
-            const matchesCompetition =
-                selectedCompetition === "todos" ||
-                item.competicion === selectedCompetition;
-            return matchesSeason && matchesCompetition;
+        const config = tableConfigs[selectedType];
+
+        // Update Title
+        tableTitle.textContent = config.title;
+
+        // Update Tag
+        let tagText = "";
+        if (selectedSeason !== "todos")
+            tagText += `Temporada ${selectedSeason}`;
+        else tagText += "Histórico Global";
+
+        if (selectedCompetition === "oficiales")
+            tagText += " • Partidos Oficiales";
+        else if (selectedCompetition !== "todos")
+            tagText += ` • ${selectedCompetition}`;
+
+        activeFilterTag.textContent = tagText;
+
+        // Render Headers
+        tableHead.innerHTML = `
+            <tr>
+                ${config.headers
+                    .map(
+                        (h, i) => `
+                    <th scope="col" class="${i === 1 ? "" : "text-center"} ${i === 0 ? "w-16" : ""}">
+                        ${h}
+                    </th>
+                `,
+                    )
+                    .join("")}
+            </tr>
+        `;
+
+        // Process Data
+        // Aggregate by player
+        const playerMap = {};
+
+        rankingsData.forEach((item) => {
+            // Filter Season
+            if (selectedSeason !== "todos" && item.temporada !== selectedSeason)
+                return;
+
+            // Filter Competition
+            if (selectedCompetition === "oficiales") {
+                const officialComps = [
+                    "Liga F",
+                    "UWCL",
+                    "Copa de la Reina",
+                    "Supercopa de España",
+                ];
+                if (!officialComps.includes(item.competicion)) return;
+            } else if (
+                selectedCompetition !== "todos" &&
+                item.competicion !== selectedCompetition
+            ) {
+                return;
+            }
+
+            // Aggregate
+            if (!playerMap[item.id_jugadora]) {
+                playerMap[item.id_jugadora] = {
+                    nombre: item.nombre,
+                    ...Object.fromEntries(config.dataKeys.map((k) => [k, 0])),
+                };
+            }
+
+            config.dataKeys.forEach((key) => {
+                playerMap[item.id_jugadora][key] += item[key] || 0;
+            });
         });
 
-        console.log("Datos filtrados:", filteredData.length, "registros");
-        console.log("Primeros 3 registros:", filteredData.slice(0, 3));
+        // Convert key to primary sort key depending on selected type
+        // For 'goles_asistencias', actually we want to sort by Goals first, but maybe we can just show top scorers.
+        // Actually for the "Goles y Asistencias" view, the user might expect:
+        // A single table sorted by... usually Goals? Or maybe 3 separate tables like before?
+        // The user said: "Pero que no estén al mismo tiempo que goles, asistencias y goles generados sino que mediante un filtro aparezca cada tabla de una en una."
+        // So even for goals/assists, maybe we should treat them as separate reachable options?
+        // But in the dropdown I put "Goles y Asistencias" combined.
+        // Let's make "Goles y Asistencias" sort by Goles by default, but show Assists and G+A columns.
 
-        const scorersMap = {};
-        filteredData.forEach((item) => {
-            if (item.goleadora) {
-                scorersMap[item.goleadora] =
-                    (scorersMap[item.goleadora] || 0) + 1;
-            }
-        });
+        let sortKey = config.primaryKey;
+        // Special logic for "goles_asistencias": prioritize goles
+        if (selectedType === "goles_asistencias") sortKey = "goles";
 
-        const sortedScorers = Object.entries(scorersMap)
-            .map(([jugadora, goles]) => ({ jugadora, goles }))
-            .sort((a, b) => b.goles - a.goles);
+        // Convert to array and sort
+        const sortedPlayers = Object.values(playerMap)
+            .filter((p) => p[sortKey] > 0) // Only show players with > 0 stats
+            .sort((a, b) => b[sortKey] - a[sortKey])
+            .slice(0, 50); // Limit to top 50
 
-        console.log("Goleadoras calculadas:", sortedScorers.length);
-        console.log("Top 3 goleadoras:", sortedScorers.slice(0, 3));
-
-        const assistersMap = {};
-        filteredData.forEach((item) => {
-            if (item.asistente) {
-                assistersMap[item.asistente] =
-                    (assistersMap[item.asistente] || 0) + 1;
-            }
-        });
-
-        const sortedAssisters = Object.entries(assistersMap)
-            .map(([jugadora, asistencias]) => ({ jugadora, asistencias }))
-            .sort((a, b) => b.asistencias - a.asistencias);
-
-        const contributorsMap = {};
-        filteredData.forEach((item) => {
-            if (item.goleadora) {
-                contributorsMap[item.goleadora] = contributorsMap[
-                    item.goleadora
-                ] || { goles: 0, asistencias: 0 };
-                contributorsMap[item.goleadora].goles += 1;
-            }
-            if (item.asistente) {
-                contributorsMap[item.asistente] = contributorsMap[
-                    item.asistente
-                ] || { goles: 0, asistencias: 0 };
-                contributorsMap[item.asistente].asistencias += 1;
-            }
-        });
-
-        const sortedContributors = Object.entries(contributorsMap)
-            .map(([jugadora, stats]) => ({
-                jugadora,
-                total: stats.goles + stats.asistencias,
-                goles: stats.goles,
-                asistencias: stats.asistencias,
-            }))
-            .sort((a, b) => b.total - a.total);
-
-        if (sortedScorers.length === 0) {
-            scorersBody.innerHTML =
-                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
+        // Render Body
+        if (sortedPlayers.length === 0) {
+            tableBody.innerHTML =
+                '<tr><td colspan="10" class="no-data">No hay datos registrados.</td></tr>';
         } else {
-            scorersBody.innerHTML = sortedScorers
-                .map((item, index) => {
+            tableBody.innerHTML = sortedPlayers
+                .map((player, index) => {
                     const isFirst = index === 0;
-                    const isLast = index === sortedScorers.length - 1;
+                    const isLast = index === sortedPlayers.length - 1;
                     const extraStyle =
                         (isFirst ? "padding-top: 1.5rem;" : "") +
                         (isLast ? " padding-bottom: 1.5rem;" : "");
-                    return `
-                <tr>
-                    <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
-                    <td class="player-cell" style="${extraStyle}">
-                        <div class="flex items-center gap-2">
-                            <div style="width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block; background: #f9f9f9;">
-                                <img 
-                                    src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}"
-                                    style="width: 100%; height: 100%; object-fit: contain; display: block;"
-                                />
-                            </div>
-                            <div class="player-name">${item.jugadora}</div>
-                        </div>
-                    </td>
-                    <td class="stat-cell text-center" style="${extraStyle}">${item.goles}</td>
-                </tr>
-            `;
-                })
-                .join("");
-        }
 
-        if (sortedAssisters.length === 0) {
-            assistersBody.innerHTML =
-                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
-        } else {
-            assistersBody.innerHTML = sortedAssisters
-                .map((item, index) => {
-                    const isFirst = index === 0;
-                    const isLast = index === sortedAssisters.length - 1;
-                    const extraStyle =
-                        (isFirst ? "padding-top: 1.5rem;" : "") +
-                        (isLast ? " padding-bottom: 1.5rem;" : "");
-                    return `
-                <tr>
-                    <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
-                    <td class="player-cell" style="${extraStyle}">
-                        <div class="flex items-center gap-2">
-                            <div style="width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block; background: #f9f9f9;">
-                                <img 
-                                    src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}"
-                                    style="width: 100%; height: 100%; object-fit: contain; display: block;"
-                                />
-                            </div>
-                            <div class="player-name">${item.jugadora}</div>
-                        </div>
-                    </td>
-                    <td class="stat-cell text-center" style="${extraStyle}">${item.asistencias}</td>
-                </tr>
-            `;
-                })
-                .join("");
-        }
+                    // Value cells
+                    const valueCells = config.dataKeys
+                        .map(
+                            (key) => `
+                    <td class="stat-cell text-center" style="${extraStyle}">${player[key]}</td>
+                `,
+                        )
+                        .join("");
 
-        if (sortedContributors.length === 0) {
-            contributorsBody.innerHTML =
-                '<tr><td colspan="3" class="no-data">No hay datos registrados.</td></tr>';
-        } else {
-            contributorsBody.innerHTML = sortedContributors
-                .map((item, index) => {
-                    const isFirst = index === 0;
-                    const isLast = index === sortedContributors.length - 1;
-                    const extraStyle =
-                        (isFirst ? "padding-top: 1.5rem;" : "") +
-                        (isLast ? " padding-bottom: 1.5rem;" : "");
                     return `
-                <tr>
-                    <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
-                    <td class="player-cell" style="${extraStyle}">
-                        <div class="flex items-center gap-2">
-                            <div style="width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; flex-shrink: 0; border: 1px solid #e5e7eb; overflow: hidden; display: inline-block; background: #f9f9f9;">
-                                <img 
-                                    src="${getPlayerImage(item.jugadora)}" 
-                                    alt="${item.jugadora}"
-                                    style="width: 100%; height: 100%; object-fit: contain; display: block;"
-                                />
+                    <tr>
+                        <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
+                        <td class="player-cell" style="${extraStyle}">
+                            <div class="flex items-center gap-2">
+                                <div class="player-thumb-wrapper">
+                                    <img 
+                                        src="${getPlayerImage(player.nombre)}" 
+                                        alt="${player.nombre}"
+                                        class="player-thumb-img"
+                                    />
+                                </div>
+                                <div class="player-name">${player.nombre}</div>
                             </div>
-                            <div class="player-name">${item.jugadora}</div>
-                        </div>
-                    </td>
-                    <td class="stat-cell text-center" style="${extraStyle}">${item.total}</td>
-                </tr>
-            `;
+                        </td>
+                        ${valueCells}
+                    </tr>
+                `;
                 })
                 .join("");
         }
     }
 
+    // Init
     calculateRankings();
 
-    seasonSelect?.addEventListener("change", calculateRankings);
-    competitionSelect?.addEventListener("change", calculateRankings);
+    // Listeners
+    typeSelect.addEventListener("change", calculateRankings);
+    seasonSelect.addEventListener("change", calculateRankings);
+    competitionSelect.addEventListener("change", calculateRankings);
 </script>
 
 <style>
@@ -329,25 +380,33 @@ const { goalsData, seasons, competitions } = Astro.props;
 
     .filters-container {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
         flex-wrap: wrap;
         justify-content: center;
     }
 
     .filter-wrapper {
         position: relative;
-        display: inline-block;
+        display: flex;
+        flex-direction: column;
         flex: 1;
         min-width: 200px;
         max-width: 300px;
     }
 
+    .filter-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 0.5rem;
+        margin-left: 0.5rem;
+    }
+
     .filter-icon {
         position: absolute;
         right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 2.3rem; /* Adjusted for label */
         pointer-events: none;
         color: #2b2b2b;
         width: 20px;
@@ -360,12 +419,12 @@ const { goalsData, seasons, competitions } = Astro.props;
         background: #ffffff;
         color: #2b2b2b;
         border: 2px solid #ffde59;
-        border-radius: 25px;
+        border-radius: 12px;
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
+        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.1);
         outline: none;
         appearance: none;
         -webkit-appearance: none;
@@ -378,31 +437,29 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     .filters-container select:focus {
-        outline: none;
         border-color: #ffd700;
-        box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
+        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.3);
     }
 
     .ranking-card {
         background: #ffffff;
-        box-shadow:
-            0 4px 6px -1px rgba(0, 0, 0, 0.1),
-            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         border: 1px solid #f0f0f0;
-        border-radius: 0;
+        border-radius: 12px;
         overflow: hidden;
     }
 
     .ranking-title {
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 700;
         color: #2b2b2b;
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
-        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid #ffde59;
+        background: #fffdf5;
         margin: 0;
-        text-align: center;
+        text-align: left;
         text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     table {
@@ -412,15 +469,16 @@ const { goalsData, seasons, competitions } = Astro.props;
 
     thead {
         background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
     }
 
     th {
-        padding: 0.75rem 1.5rem 1.25rem 1.5rem;
+        padding: 1rem 1.5rem;
         text-align: left;
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        color: #6c757d;
+        color: #666;
         letter-spacing: 0.05em;
     }
 
@@ -428,25 +486,16 @@ const { goalsData, seasons, competitions } = Astro.props;
         text-align: center;
     }
 
-    tbody tr:first-child td {
-        padding-top: 1.5rem !important;
-    }
-
-    tbody tr:last-child td {
-        padding-bottom: 1.5rem !important;
-    }
-
     tbody tr {
         border-bottom: 1px solid #f0f0f0;
-        transition: background 0.3s ease;
+        transition: background 0.2s ease;
     }
 
     tbody tr:last-child {
         border-bottom: none;
     }
-
     tbody tr:hover {
-        background: rgba(255, 222, 89, 0.15);
+        background: #fffdf0;
     }
 
     td {
@@ -455,36 +504,64 @@ const { goalsData, seasons, competitions } = Astro.props;
     }
 
     .pos-cell {
-        font-size: 0.875rem;
-        color: #6c757d;
-        font-weight: 500;
+        font-size: 0.9rem;
+        color: #888;
+        font-weight: 600;
     }
 
-    .player-cell {
-        vertical-align: middle;
+    .player-thumb-wrapper {
+        width: 2.5rem;
+        height: 2.5rem;
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+        flex-shrink: 0;
+        border: 1px solid #eee;
+        border-radius: 50%; /* Rounded thumbs */
+        overflow: hidden;
+        background: #f9f9f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .player-thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .player-name {
-        font-size: 0.875rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: #2b2b2b;
-        white-space: nowrap;
     }
 
     .stat-cell {
-        font-size: 0.875rem;
+        font-size: 1rem;
         font-weight: 700;
         color: #2b2b2b;
     }
 
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #888;
+        font-style: italic;
+    }
+
+    .w-16 {
+        width: 4rem;
+    }
     .text-center {
         text-align: center;
     }
-
-    .no-data {
-        padding: 2rem;
-        text-align: center;
-        color: #6c757d;
-        font-size: 0.9rem;
+    .flex {
+        display: flex;
+    }
+    .items-center {
+        align-items: center;
+    }
+    .gap-2 {
+        gap: 0.5rem;
     }
 </style>

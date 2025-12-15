@@ -1,40 +1,39 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
-import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
+import { fetchRankingsDirectly } from "../utils/rankings";
 import StatsRankings from "../components/StatsRankings.astro";
 
-const goalsData = await fetchGoalsAssistsDirectly();
+const rankingsData = await fetchRankingsDirectly();
 
 const uniqueSeasons = [
     ...new Set(
-        goalsData.map((g) => g.temporada).filter((s): s is string => !!s),
+        rankingsData.map((g) => g.temporada).filter((s): s is string => !!s),
     ),
 ].sort();
 const uniqueCompetitions = [
     ...new Set(
-        goalsData.map((g) => g.competicion).filter((c): c is string => !!c),
+        rankingsData.map((g) => g.competicion).filter((c): c is string => !!c),
     ),
 ].sort();
 ---
 
 <Layout
-    title=" Máximas goleadoras y asistentes del Real Madrid Femenino | Madrid Femenino Xtra"
-    description="Consulta el detalle de todos los goles y asistencias por jugadora, por temporada y competición."
+    title=" Rankings y Estadísticas | Madrid Femenino Xtra"
+    description="Consulta todos los rankings de estadísticas del Real Madrid Femenino: goles, asistencias, partidos, minutos y más."
 >
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 class="page-title">GOLES Y ASISTENCIAS</h1>
+        <h1 class="page-title">RANKINGS Y ESTADÍSTICAS</h1>
 
         <h2 class="content-h2">
-            Consulta el detalle de todos los goles y asistencias por jugadora,
-            por temporada y competición. Sigue toda la actualidad del Real
-            Madrid en Madrid Femenino Xtra.
+            Consulta los líderes históricos y por temporada en todas las
+            categorías estadísticas del Real Madrid Femenino.
         </h2>
 
         {
-            goalsData.length > 0 ? (
+            rankingsData.length > 0 ? (
                 <StatsRankings
-                    goalsData={goalsData}
+                    rankingsData={rankingsData}
                     seasons={uniqueSeasons}
                     competitions={uniqueCompetitions}
                 />
