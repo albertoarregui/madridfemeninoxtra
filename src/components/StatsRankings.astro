@@ -372,16 +372,21 @@ const { rankingsData, seasons, competitions } = Astro.props;
     competitionSelect.addEventListener("change", calculateRankings);
 </script>
 
-<style>
+<style is:global>
     .stats-rankings-ui {
         width: 100%;
         margin: 0 auto;
+        font-family:
+            "Inter",
+            system-ui,
+            -apple-system,
+            sans-serif;
     }
 
     .filters-container {
         display: flex;
         gap: 1.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 2rem;
         flex-wrap: wrap;
         justify-content: center;
     }
@@ -391,40 +396,42 @@ const { rankingsData, seasons, competitions } = Astro.props;
         display: flex;
         flex-direction: column;
         flex: 1;
-        min-width: 200px;
-        max-width: 300px;
+        min-width: 220px;
+        max-width: 320px;
     }
 
     .filter-label {
         font-size: 0.85rem;
-        font-weight: 600;
-        color: #666;
+        font-weight: 700;
+        color: #4b5563;
         margin-bottom: 0.5rem;
         margin-left: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .filter-icon {
         position: absolute;
-        right: 1rem;
-        top: 2.3rem; /* Adjusted for label */
+        right: 1.25rem;
+        top: 2.4rem;
         pointer-events: none;
-        color: #2b2b2b;
-        width: 20px;
-        height: 20px;
+        color: #6b7280;
+        width: 18px;
+        height: 18px;
     }
 
     .filters-container select {
         width: 100%;
-        padding: 0.75rem 3rem 0.75rem 1.5rem;
+        padding: 0.875rem 3rem 0.875rem 1.25rem;
         background: #ffffff;
-        color: #2b2b2b;
-        border: 2px solid #ffde59;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
         border-radius: 12px;
         font-size: 0.95rem;
-        font-weight: 600;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.1);
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         outline: none;
         appearance: none;
         -webkit-appearance: none;
@@ -432,44 +439,83 @@ const { rankingsData, seasons, competitions } = Astro.props;
     }
 
     .filters-container select:hover {
-        background: #fffef8;
-        border-color: #ffd700;
+        border-color: #fbbf24;
+        background: #fffdf5;
     }
 
     .filters-container select:focus {
-        border-color: #ffd700;
-        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.3);
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+        background: #ffffff;
+    }
+
+    .ranking-cards-container {
+        margin-top: 1rem;
     }
 
     .ranking-card {
         background: #ffffff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        border: 1px solid #f0f0f0;
-        border-radius: 12px;
+        box-shadow:
+            0 10px 15px -3px rgba(0, 0, 0, 0.1),
+            0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
         overflow: hidden;
     }
 
     .ranking-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2b2b2b;
-        padding: 1rem 1.5rem;
-        border-bottom: 2px solid #ffde59;
-        background: #fffdf5;
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #111827;
+        padding: 1.25rem 2rem;
+        border-bottom: 2px solid #fbbf24;
+        background: #ffffff;
         margin: 0;
         text-align: left;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.025em;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .ranking-title::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 24px;
+        background: #fbbf24;
+        border-radius: 4px;
+    }
+
+    .overflow-x-auto {
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db transparent;
+        overflow-x: auto;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 6px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 20px;
     }
 
     table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
     }
 
     thead {
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
+        background: #f9fafb;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     th {
@@ -478,8 +524,11 @@ const { rankingsData, seasons, competitions } = Astro.props;
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
-        color: #666;
+        color: #6b7280;
         letter-spacing: 0.05em;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
     }
 
     th.text-center {
@@ -487,41 +536,81 @@ const { rankingsData, seasons, competitions } = Astro.props;
     }
 
     tbody tr {
-        border-bottom: 1px solid #f0f0f0;
-        transition: background 0.2s ease;
+        background: #ffffff;
+        transition: all 0.2s ease;
     }
 
-    tbody tr:last-child {
-        border-bottom: none;
+    tbody tr:nth-child(even) {
+        background: #fcfcfc;
     }
+
     tbody tr:hover {
-        background: #fffdf0;
+        background: #fffbeb;
+        transform: scale(1.001);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        position: relative;
+        z-index: 5;
     }
 
     td {
-        padding: 1rem 1.5rem;
+        padding: 1.15rem 1.5rem;
         white-space: nowrap;
+        color: #374151;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
     }
 
     .pos-cell {
         font-size: 0.9rem;
-        color: #888;
+        color: #9ca3af;
         font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        width: 4rem;
+    }
+
+    /* Top 3 Highlighting */
+    tbody tr:nth-child(1) .pos-cell {
+        color: #d97706;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+    tbody tr:nth-child(2) .pos-cell {
+        color: #5f666f;
+        font-weight: 800;
+    }
+    tbody tr:nth-child(3) .pos-cell {
+        color: #b45309;
+        font-weight: 800;
+    }
+
+    .player-cell {
+        vertical-align: middle;
     }
 
     .player-thumb-wrapper {
-        width: 2.5rem;
-        height: 2.5rem;
-        min-width: 2.5rem;
-        min-height: 2.5rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
         flex-shrink: 0;
-        border: 1px solid #eee;
-        border-radius: 50%; /* Rounded thumbs */
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 0 1px #e5e7eb;
+        border-radius: 50%;
         overflow: hidden;
-        background: #f9f9f9;
+        background: #f3f4f6;
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    tbody tr:hover .player-thumb-wrapper {
+        transform: scale(1.1);
+        border-color: #fbbf24;
     }
 
     .player-thumb-img {
@@ -533,24 +622,28 @@ const { rankingsData, seasons, competitions } = Astro.props;
     .player-name {
         font-size: 0.95rem;
         font-weight: 600;
-        color: #2b2b2b;
+        color: #111827;
+        letter-spacing: -0.01em;
     }
 
     .stat-cell {
-        font-size: 1rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: #2b2b2b;
+        color: #111827;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
     }
 
     .no-data {
-        padding: 3rem;
+        padding: 4rem 2rem;
         text-align: center;
-        color: #888;
+        color: #9ca3af;
         font-style: italic;
+        background: #f9fafb;
     }
 
     .w-16 {
-        width: 4rem;
+        width: 5rem;
     }
     .text-center {
         text-align: center;
@@ -562,6 +655,28 @@ const { rankingsData, seasons, competitions } = Astro.props;
         align-items: center;
     }
     .gap-2 {
-        gap: 0.5rem;
+        gap: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+        .ranking-title {
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        td,
+        th {
+            padding: 0.75rem 1rem;
+        }
+
+        .filters-container {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .filter-wrapper {
+            width: 100%;
+            max-width: 100%;
+        }
     }
 </style>
