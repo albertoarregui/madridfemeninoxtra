@@ -4,6 +4,7 @@ import {
     fetchGamesDirectly,
     fetchMatchLineups,
     fetchMatchSubstitutions,
+    fetchMatchGoals,
 } from "../../utils/partidos";
 
 const { slug } = Astro.params;
@@ -38,6 +39,7 @@ const formatTime = (timeString: string | null | undefined): string => {
 // Empty data arrays - to be populated with real database data
 const lineup = await fetchMatchLineups(game.id_partido);
 const subs = await fetchMatchSubstitutions(game.id_partido);
+const debugGoals = await fetchMatchGoals(game.id_partido);
 const mockTimeline: any[] = [];
 ---
 
@@ -274,6 +276,21 @@ const mockTimeline: any[] = [];
                         </div>
                     </div>
                 </section>
+
+                {/* TEMP DEBUG SECTION - REMOVE AFTER FIXING STATS */}
+                {
+                    debugGoals.length > 0 && (
+                        <section
+                            class="debug-card"
+                            style="margin-top: 2rem; padding: 1rem; background: #fff; border: 1px solid red;"
+                        >
+                            <h3>Debug: Goles y Asistencias Raw Data</h3>
+                            <pre style="overflow: auto; font-size: 0.8rem; max-height: 300px;">
+                                {JSON.stringify(debugGoals, null, 2)}
+                            </pre>
+                        </section>
+                    )
+                }
             </div>
 
             <div class="right-column">
@@ -697,6 +714,7 @@ const mockTimeline: any[] = [];
             gap: 1rem;
             padding: 0.5rem;
             border-bottom: 1px solid #f0f0f0;
+            background-color: #ffffff;
         }
 
         a.lineup-row:hover {
@@ -749,8 +767,9 @@ const mockTimeline: any[] = [];
             display: flex;
             align-items: center;
             padding: 0.75rem 1rem;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
             gap: 1rem;
+            background: #ffffff; /* Consistent white bg */
         }
 
         .sub-row:last-child {
@@ -759,35 +778,43 @@ const mockTimeline: any[] = [];
 
         .sub-time {
             font-weight: bold;
-            background: #eee;
+            background: #f5f5f5;
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             font-size: 0.85rem;
             min-width: 35px;
             text-align: center;
+            color: #555;
         }
 
         .sub-movement {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
             flex: 1;
         }
 
         .sub-movement.in .sub-arrow {
             color: green;
+            font-size: 0.9rem;
         }
         .sub-movement.out .sub-arrow {
             color: red;
+            font-size: 0.9rem;
         }
 
         .sub-player-link {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
             text-decoration: none;
             color: #333;
             font-weight: 500;
+            transition: color 0.15s;
+        }
+
+        .sub-player-link:hover {
+            color: #000;
         }
 
         .sub-player-link:hover .sub-name {
@@ -795,11 +822,11 @@ const mockTimeline: any[] = [];
         }
 
         .sub-img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
+            width: 40px; /* Matches lineup photo width slightly smaller height */
+            height: 48px; /* Rectangular aspect ratio for subs too */
+            border-radius: 4px; /* Matching lineup rect style */
             object-fit: cover;
-            border: 1px solid #ddd;
+            background: #eee;
         }
 
         .no-data-msg {

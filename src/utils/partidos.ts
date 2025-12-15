@@ -350,3 +350,29 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
         return [];
     }
 }
+
+export async function fetchMatchGoals(matchId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return [];
+
+        const client = createClient({ url, authToken });
+
+        const query = `
+            SELECT * FROM goles_y_asistencias WHERE id_partido = ?
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [matchId]
+        });
+
+        return result.rows;
+    } catch (error) {
+        console.error("Error fetching match goals:", error);
+        return [];
+    }
+}
