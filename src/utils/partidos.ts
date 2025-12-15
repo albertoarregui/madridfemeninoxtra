@@ -196,10 +196,13 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 a.id_alineacion,
                 a.id_jugadora,
                 j.nombre,
-                j.posicion
+                j.posicion,
+                d.dorsal
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
-            WHERE a.id_partido = ?
+            LEFT JOIN partidos p ON a.id_partido = p.id_partido
+            LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
+            WHERE a.id_partido = ? AND a.titular = 1
             ORDER BY 
                 CASE j.posicion 
                     WHEN 'Portera' THEN 1
@@ -220,8 +223,8 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         logDebug(`Lineups found: ${result.rows.length}`);
 
         return result.rows.map((row: any) => {
-            // Helper for image (duplicated from players.ts to avoid circular deps if any)
-            let fileName = null; // Removed row.foto_url as it doesn't exist
+            // Helper for image 
+            let fileName: string | null = null;
             if (!fileName && row.nombre) {
                 const slug = slugify(row.nombre).replace(/-/g, '_');
                 const parts = slug.split('_').filter((p: string) => p.length > 0);
@@ -239,7 +242,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 id: row.id_alineacion,
                 name: displayName,
                 pos: displayPos,
-                number: '-',
+                number: row.dorsal || '-',
                 imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
                 slug: row.nombre ? slugify(row.nombre) : '#'
             };
