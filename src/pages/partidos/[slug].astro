@@ -39,6 +39,7 @@ const formatTime = (timeString: string | null | undefined): string => {
 
 // Data Fetching
 const lineup = await fetchMatchLineups(game.id_partido);
+const subs = await fetchMatchSubstitutions(game.id_partido);
 const timelineEvents = await fetchMatchEvents(game.id_partido);
 const stadiumStats = await fetchStadiumStats(game.estadio);
 
@@ -55,7 +56,7 @@ if (game.estadio) {
     const slugName = game.estadio
         .toLowerCase()
         .replace(/ /g, "-")
-        .replace(/[áéíóú]/g, (c) => "aeiou"["áéíóú".indexOf(c)]);
+        .replace(/[áéíóú]/g, (c: string) => "aeiou"["áéíóú".indexOf(c)]);
     // Try to find a key that includes this slug
     const matchingKey = Object.keys(stadiumImages).find((key) =>
         key.includes(slugName),

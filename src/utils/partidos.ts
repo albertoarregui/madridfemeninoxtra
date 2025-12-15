@@ -237,13 +237,11 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         return result.rows.map((row: any) => {
             // Helper for image 
             let fileName: string | null = null;
-            if (!fileName && row.nombre) {
+            if (row.nombre) {
                 const slug = slugify(row.nombre).replace(/-/g, '_');
                 const parts = slug.split('_').filter((p: string) => p.length > 0);
                 const nameForFile = parts.slice(0, 4).join('_');
                 fileName = `${nameForFile}.png`;
-            } else if (fileName && !fileName.includes('.')) {
-                fileName += '.png';
             }
 
             // Fallback if player not found in join
@@ -319,14 +317,12 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
 
             // Helpers to process player data
             const processPlayer = (row: any) => {
-                let fileName = row.foto_url;
-                if (!fileName && row.nombre) {
+                let fileName: string | null = null;
+                if (row.nombre) {
                     const slug = slugify(row.nombre).replace(/-/g, '_');
                     const parts = slug.split('_').filter((p: string) => p.length > 0);
                     const nameForFile = parts.slice(0, 4).join('_');
                     fileName = `${nameForFile}.png`;
-                } else if (fileName && !fileName.includes('.')) {
-                    fileName += '.png';
                 }
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
