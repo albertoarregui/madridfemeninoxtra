@@ -26,7 +26,9 @@ const { rankingsData, seasons, competitions } = Astro.props;
                 <option value="tarjetas_amarillas">Tarjetas Amarillas</option>
                 <option value="tarjetas_rojas">Tarjetas Rojas</option>
                 <option value="capitanias">Capitanías</option>
-                <option value="goles_asistencias">Goles y Asistencias</option>
+                <option value="goles">Máximas Goleadoras</option>
+                <option value="asistencias">Máximas Asistentes</option>
+                <option value="goles_generados">Goles Generados</option>
             </select>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -130,12 +132,25 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
     // Definitions for table configurations
     const tableConfigs = {
-        goles_asistencias: {
-            title: "Máximas Goleadoras y Asistentes",
+        goles: {
+            title: "Máximas Goleadoras",
+            headers: ["Pos", "Jugadora", "Goles"],
+            dataKeys: ["goles"],
+            primaryKey: "goles",
+        },
+        asistencias: {
+            title: "Máximas Asistentes",
+            headers: ["Pos", "Jugadora", "Asistencias"],
+            dataKeys: ["asistencias"],
+            primaryKey: "asistencias",
+        },
+        goles_generados: {
+            title: "Goles Generados (G+A)",
             headers: ["Pos", "Jugadora", "Goles", "Asistencias", "G+A"],
             dataKeys: ["goles", "asistencias", "goles_generados"],
-            primaryKey: "goles", // Default sort
+            primaryKey: "goles_generados",
         },
+        // Legacy key removed but kept in mind if needed
         partidos: {
             title: "Más Partidos Jugados",
             headers: ["Pos", "Jugadora", "Partidos"],
@@ -224,21 +239,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
         // Update Title
         tableTitle.textContent = config.title;
 
-        // Update Tag - REMOVED
-        /*
-        let tagText = "";
-        if (selectedSeason !== "todos")
-            tagText += `Temporada ${selectedSeason}`;
-        else tagText += "Histórico Global";
-
-        if (selectedCompetition === "oficiales")
-            tagText += " • Partidos Oficiales";
-        else if (selectedCompetition !== "todos")
-            tagText += ` • ${selectedCompetition}`;
-
-        activeFilterTag.textContent = tagText;
-        */
-
         // Render Headers
         tableHead.innerHTML = `
             <tr>
@@ -294,8 +294,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
         });
 
         let sortKey = config.primaryKey;
-        // Special logic for "goles_asistencias": prioritize goles
-        if (selectedType === "goles_asistencias") sortKey = "goles";
+        // Legacy check removed as distinct keys handle it now
 
         // Convert to array and sort
         const sortedPlayers = Object.values(playerMap)
