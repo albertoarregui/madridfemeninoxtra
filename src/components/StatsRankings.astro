@@ -12,15 +12,13 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
 <div class="stats-rankings-ui">
     <div class="filters-container">
-        <!-- Stat Type Selector -->
+        <!-- Explorer Filter (Custom Order) -->
         <div class="filter-wrapper">
-            <label for="filtro-tipo" class="filter-label">Estadística</label>
             <select id="filtro-tipo">
-                <option value="goles_asistencias">Goles y Asistencias</option>
-                <option value="partidos">Partidos Jugados</option>
-                <option value="minutos">Minutos Jugados</option>
-                <option value="titularidades">Titularidades</option>
                 <option value="convocatorias">Convocatorias</option>
+                <option value="partidos">Partidos Jugados</option>
+                <option value="titularidades">Titularidades</option>
+                <option value="minutos">Minutos Jugados</option>
                 <option value="cambios_entrada">Cambios (Entrada)</option>
                 <option value="cambios_salida">Cambios (Salida)</option>
                 <option value="victorias">Victorias</option>
@@ -28,6 +26,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
                 <option value="tarjetas_amarillas">Tarjetas Amarillas</option>
                 <option value="tarjetas_rojas">Tarjetas Rojas</option>
                 <option value="capitanias">Capitanías</option>
+                <option value="goles_asistencias">Goles y Asistencias</option>
             </select>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +46,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
 
         <!-- Season Selector -->
         <div class="filter-wrapper">
-            <label for="filtro-temporada" class="filter-label">Temporada</label>
             <select id="filtro-temporada">
                 <option value="todos">Todas las Temporadas</option>
                 {
@@ -72,19 +70,16 @@ const { rankingsData, seasons, competitions } = Astro.props;
             >
         </div>
 
-        <!-- Competition Selector -->
+        <!-- Competition Selector (Custom Order) -->
         <div class="filter-wrapper">
-            <label for="filtro-competicion" class="filter-label"
-                >Competición</label
-            >
             <select id="filtro-competicion">
                 <option value="todos">Todas las Competiciones</option>
                 <option value="oficiales">Partidos Oficiales</option>
-                {
-                    competitions.map((comp) => (
-                        <option value={comp}>{comp}</option>
-                    ))
-                }
+                <option value="Liga F">Liga F</option>
+                <option value="UWCL">UWCL</option>
+                <option value="Copa de la Reina">Copa de la Reina</option>
+                <option value="Supercopa de España">Supercopa de España</option>
+                <option value="Amistosos">Amistosos</option>
             </select>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -103,12 +98,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
         </div>
     </div>
 
-    <!-- Filter Info Tag -->
-    <div
-        id="active-filter-tag"
-        class="text-center mb-6 text-sm text-gray-500 font-medium"
-    >
-    </div>
+    <!-- Filter Info Tag Removed as requested -->
+    <!-- <div id="active-filter-tag" class="text-center mb-6 text-sm text-gray-500 font-medium"></div> -->
 
     <div class="ranking-cards-container">
         <!-- Dynamic Table Container -->
@@ -135,7 +126,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
     const tableTitle = document.getElementById("dynamic-table-title");
     const tableHead = document.getElementById("dynamic-table-head");
     const tableBody = document.getElementById("dynamic-table-body");
-    const activeFilterTag = document.getElementById("active-filter-tag");
+    // const activeFilterTag = document.getElementById("active-filter-tag"); // Removed
 
     // Definitions for table configurations
     const tableConfigs = {
@@ -233,7 +224,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
         // Update Title
         tableTitle.textContent = config.title;
 
-        // Update Tag
+        // Update Tag - REMOVED
+        /*
         let tagText = "";
         if (selectedSeason !== "todos")
             tagText += `Temporada ${selectedSeason}`;
@@ -245,6 +237,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
             tagText += ` • ${selectedCompetition}`;
 
         activeFilterTag.textContent = tagText;
+        */
 
         // Render Headers
         tableHead.innerHTML = `
@@ -283,6 +276,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
                 selectedCompetition !== "todos" &&
                 item.competicion !== selectedCompetition
             ) {
+                // Fuzzy match for Amistosos if needed, but exact match should work if data is clean
                 return;
             }
 
@@ -298,15 +292,6 @@ const { rankingsData, seasons, competitions } = Astro.props;
                 playerMap[item.id_jugadora][key] += item[key] || 0;
             });
         });
-
-        // Convert key to primary sort key depending on selected type
-        // For 'goles_asistencias', actually we want to sort by Goals first, but maybe we can just show top scorers.
-        // Actually for the "Goles y Asistencias" view, the user might expect:
-        // A single table sorted by... usually Goals? Or maybe 3 separate tables like before?
-        // The user said: "Pero que no estén al mismo tiempo que goles, asistencias y goles generados sino que mediante un filtro aparezca cada tabla de una en una."
-        // So even for goals/assists, maybe we should treat them as separate reachable options?
-        // But in the dropdown I put "Goles y Asistencias" combined.
-        // Let's make "Goles y Asistencias" sort by Goles by default, but show Assists and G+A columns.
 
         let sortKey = config.primaryKey;
         // Special logic for "goles_asistencias": prioritize goles
@@ -326,10 +311,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
             tableBody.innerHTML = sortedPlayers
                 .map((player, index) => {
                     const isFirst = index === 0;
-                    const isLast = index === sortedPlayers.length - 1;
-                    const extraStyle =
-                        (isFirst ? "padding-top: 1.5rem;" : "") +
-                        (isLast ? " padding-bottom: 1.5rem;" : "");
+                    // const isLast = index === sortedPlayers.length - 1; // Unused
+                    const extraStyle = ""; // Simplified style
 
                     // Value cells
                     const valueCells = config.dataKeys
@@ -400,33 +383,30 @@ const { rankingsData, seasons, competitions } = Astro.props;
         max-width: 320px;
     }
 
+    /* Labels removed */
     .filter-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #4b5563;
-        margin-bottom: 0.5rem;
-        margin-left: 0.5rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        display: none;
     }
 
     .filter-icon {
         position: absolute;
         right: 1.25rem;
-        top: 2.4rem;
+        top: 50%; /* Center vertically */
+        transform: translateY(-50%);
         pointer-events: none;
         color: #6b7280;
         width: 18px;
         height: 18px;
+        z-index: 2;
     }
 
     .filters-container select {
         width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.25rem;
+        padding: 0.875rem 3rem 0.875rem 1.5rem; /* More padding left for pill shape */
         background: #ffffff;
         color: #1f2937;
         border: 1px solid #d1d5db;
-        border-radius: 12px;
+        border-radius: 9999px; /* Fully rounded */
         font-size: 0.95rem;
         font-weight: 500;
         cursor: pointer;
@@ -436,6 +416,12 @@ const { rankingsData, seasons, competitions } = Astro.props;
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
+    }
+
+    /* Centering the options text visually might need text-align-last: center or just padding */
+    .filters-container select {
+        text-align: left;
+        padding-left: 2rem;
     }
 
     .filters-container select:hover {
