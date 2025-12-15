@@ -376,3 +376,119 @@ export async function fetchMatchGoals(matchId: string | number): Promise<any[]> 
         return [];
     }
 }
+
+export async function fetchStadiumStats(stadiumName: string | null): Promise<{ wins: number, draws: number, losses: number, total: number }> {
+    if (!stadiumName) return { wins: 0, draws: 0, losses: 0, total: 0 };
+
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return { wins: 0, draws: 0, losses: 0, total: 0 };
+
+        const client = createClient({ url, authToken });
+
+        // Count matches for this stadium where RM played
+        // Assuming RM corresponds to `goles_rm` > `goles_rival` for win, etc.
+        // We need to know if RM is local or visitor? 
+        // Based on the site "Madrid Femenino Xtra", likely tracks RM matches. 
+        // Let's assume the table `partidos` stores RM stats consistently or we check names.
+        // Usually `goles_rm` implies Real Madrid columns.
+
+        const query = `
+            SELECT 
+                SUM(CASE WHEN goles_rm > goles_rival THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN goles_rm = goles_rival THEN 1 ELSE 0 END) as draws,
+                SUM(CASE WHEN goles_rm < goles_rival THEN 1 ELSE 0 END) as losses,
+                COUNT(*) as total
+            FROM partidos 
+            WHERE estadio = ? AND played = 1
+        `;
+        // 'played' column might not exist, checking schema might be needed. 
+        // Assuming played games have non-null scores.
+
+        const safeQuery = `
+             SELECT 
+                SUM(CASE WHEN goles_rm > goles_rival THEN 1 ELSE 0 END) as wins,
+                SUM(CASE WHEN goles_rm = goles_rival THEN 1 ELSE 0 END) as draws,
+                SUM(CASE WHEN goles_rm < goles_rival THEN 1 ELSE 0 END) as losses,
+                COUNT(*) as total
+            FROM partidos 
+            WHERE estadio = ? AND goles_rm IS NOT NULL
+        `;
+
+        const result = await client.execute({
+            sql: safeQuery,
+            args: [stadiumName]
+        });
+
+        const row = result.rows[0];
+        return {
+            wins: Number(row.wins || 0),
+            draws: Number(row.draws || 0),
+            losses: Number(row.losses || 0),
+            total: Number(row.total || 0)
+        };
+
+    } catch (error) {
+        console.error("Error fetching stadium stats:", error);
+        return { wins: 0, draws: 0, losses: 0, total: 0 };
+    }
+}
+
+export async function fetchMatchEvents(matchId: string | number): Promise<any[]> {
+    try {
+        const subsPromise = fetchMatchSubstitutions(matchId);
+
+        // We will fetch goals separately to ensure we get names
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const client = createClient({ url, authToken });
+
+        const goalsQuery = `
+            SELECT g.*, j.nombre as nombre_jugadora 
+            FROM goles_y_asistencias g
+            LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
+            WHERE g.id_partido = ?
+        `;
+
+        const [subs, goalsResult] = await Promise.all([
+            subsPromise,
+            client.execute({ sql: goalsQuery, args: [matchId] })
+        ]);
+
+        const events: any[] = [];
+
+        // Process Goals
+        for (const goal of goalsResult.rows) {
+            let playerName = goal.nombre_jugadora;
+            // Fallback to generic name if join fails
+            if (!playerName) playerName = "Jugadora";
+
+            events.push({
+                minute: Number(goal.minuto),
+                type: 'goal',
+                text: `Gol de ${playerName}${goal.tipo === 'penalti' ? ' (P)' : ''}`,
+                team: 'local' // Context needed for team, assuming Local/RM for now
+            });
+        }
+
+        // Process Subs
+        for (const sub of subs) {
+            events.push({
+                minute: sub.minute,
+                type: 'sub',
+                text: `⬆️ ${sub.playerIn.name} | ⬇️ ${sub.playerOut.name}`,
+                team: 'local'
+            });
+        }
+
+        return events.sort((a, b) => a.minute - b.minute);
+
+    } catch (e) {
+        console.error("Error fetching match events:", e);
+        return [];
+    }
+}

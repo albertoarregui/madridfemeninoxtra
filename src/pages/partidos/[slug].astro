@@ -4,6 +4,8 @@ import {
     fetchGamesDirectly,
     fetchMatchLineups,
     fetchMatchSubstitutions,
+    fetchStadiumStats,
+    fetchMatchEvents,
 } from "../../utils/partidos";
 
 const { slug } = Astro.params;
@@ -35,10 +37,34 @@ const formatTime = (timeString: string | null | undefined): string => {
     return timeString.substring(0, 5); // Extract HH:MM
 };
 
-// Empty data arrays - to be populated with real database data
+// Data Fetching
 const lineup = await fetchMatchLineups(game.id_partido);
-const subs = await fetchMatchSubstitutions(game.id_partido);
-const mockTimeline: any[] = [];
+const timelineEvents = await fetchMatchEvents(game.id_partido);
+const stadiumStats = await fetchStadiumStats(game.estadio);
+
+// Dynamic Stadium Images
+const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/estadios/*.{jpeg,jpg,png,webp}",
+);
+let stadiumImageSrc = null;
+
+// Normalize stadium name to match filename (approx)
+// e.g. "Alfredo Di Stéfano" -> "alfredo-di-stefano"
+// naive matching: check if any file contains the stadium name slugified or part of it
+if (game.estadio) {
+    const slugName = game.estadio
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[áéíóú]/g, (c) => "aeiou"["áéíóú".indexOf(c)]);
+    // Try to find a key that includes this slug
+    const matchingKey = Object.keys(stadiumImages).find((key) =>
+        key.includes(slugName),
+    );
+    if (matchingKey) {
+        const imgModule = await stadiumImages[matchingKey]();
+        stadiumImageSrc = imgModule.default.src;
+    }
+}
 ---
 
 <Layout
@@ -148,20 +174,6 @@ const mockTimeline: any[] = [];
                                             <span class="player-name-bold">
                                                 {player.name}
                                             </span>
-                                            {player.goals > 0 && (
-                                                <span class="stat-group">
-                                                    {Array(player.goals)
-                                                        .fill("⚽")
-                                                        .join("")}
-                                                </span>
-                                            )}
-                                            {player.assists > 0 && (
-                                                <span class="stat-group">
-                                                    {Array(player.assists)
-                                                        .fill("🅰️")
-                                                        .join("")}
-                                                </span>
-                                            )}
                                         </div>
                                         <div class="player-meta-row">
                                             <span class="player-pos-label">
@@ -242,15 +254,99 @@ const mockTimeline: any[] = [];
                     </div>
                 </section>
 
+                {/* Timeline Moved to Right Column */}
+            </div>
+
+            <div class="right-column">
+                <section class="stadium-card">
+                    <h2 class="section-header">Estadio</h2>
+                    <div class="stadium-content">
+                        <div class="stadium-photo">
+                            {
+                                stadiumImageSrc ? (
+                                    <img
+                                        src={stadiumImageSrc}
+                                        alt={game.estadio}
+                                        class="stadium-img-rect"
+                                    />
+                                ) : (
+                                    <div class="photo-placeholder-large" />
+                                )
+                            }
+                        </div>
+                        <div class="stadium-info">
+                            <p class="stadium-name-large">
+                                {game.estadio || "Estadio"}
+                            </p>
+                            <div class="stadium-meta">
+                                <p>
+                                    <strong>Aforo:</strong>
+                                    {
+                                        game.aforo
+                                            ? `${game.aforo} espectadores`
+                                            : "Info no disponible"
+                                    }
+                                </p>
+                                <p>
+                                    <strong>Ubicación:</strong>
+                                    {game.ubicacion || "Madrid (Madrid) 🇪🇸"}
+                                </p>
+                            </div>
+                        </div>
+                        {
+                            stadiumStats.total > 0 && (
+                                <div class="stadium-stats">
+                                    <div class="stat-bar">
+                                        <div class="bar-label">Ganados</div>
+                                        <div class="progress-track">
+                                            <div
+                                                class="bar-fill won"
+                                                style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
+                                            >
+                                                <span class="bar-text">
+                                                    {stadiumStats.wins}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-bar">
+                                        <div class="bar-label">Empatados</div>
+                                        <div class="progress-track">
+                                            <div
+                                                class="bar-fill drawn"
+                                                style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
+                                            >
+                                                <span class="bar-text">
+                                                    {stadiumStats.draws}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-bar">
+                                        <div class="bar-label">Perdidos</div>
+                                        <div class="progress-track">
+                                            <div
+                                                class="bar-fill lost"
+                                                style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
+                                            >
+                                                <span class="bar-text">
+                                                    {stadiumStats.losses}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+                    </div>
+                </section>
+
                 <section class="timeline-card">
                     <h2 class="section-header">Timeline del partido</h2>
                     <div class="timeline-container">
-                        <div class="timeline-left-badge">
-                            <div class="badge-placeholder-small"></div>
-                        </div>
                         <div class="timeline-track">
                             {
-                                mockTimeline.map((event, index) => (
+                                timelineEvents.map((event, index) => (
                                     <div class="timeline-event">
                                         <div class="event-time">
                                             <span class="minute-badge">
@@ -260,7 +356,13 @@ const mockTimeline: any[] = [];
                                         <div class="event-content">
                                             <div
                                                 class={`event-icon ${event.type}`}
-                                            />
+                                            >
+                                                {event.type === "goal"
+                                                    ? "⚽"
+                                                    : event.type === "sub"
+                                                      ? "🔄"
+                                                      : "•"}
+                                            </div>
                                             <span class="event-text">
                                                 {event.text}
                                             </span>
@@ -268,57 +370,13 @@ const mockTimeline: any[] = [];
                                     </div>
                                 ))
                             }
-                        </div>
-                        <div class="timeline-right-badge">
-                            <div class="badge-placeholder-small"></div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <div class="right-column">
-                <section class="stadium-card">
-                    <h2 class="section-header">Estadio</h2>
-                    <div class="stadium-content">
-                        <div class="stadium-photo">
-                            <div class="photo-placeholder-large"></div>
-                        </div>
-                        <div class="stadium-info">
-                            <p>
-                                <strong>Nombre:</strong>
-                                {game.estadio || "Vallecas"}
-                            </p>
-                            <p><strong>Aforo:</strong> 14,708 espectadores</p>
-                            <p>
-                                <strong>Ubicación:</strong> Madrid (Madrid) 🇪🇸
-                            </p>
-                            <p><strong>Inauguración:</strong> 10/05/1976</p>
-                        </div>
-                        <div class="stadium-stats">
-                            <div class="stat-bar">
-                                <div class="bar-label">Ganados</div>
-                                <div
-                                    class="bar-fill"
-                                    style="width: 60%; background: #ffcccc;"
-                                >
-                                </div>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="bar-label">Empatados</div>
-                                <div
-                                    class="bar-fill"
-                                    style="width: 30%; background: #cce5ff;"
-                                >
-                                </div>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="bar-label">Perdidos</div>
-                                <div
-                                    class="bar-fill"
-                                    style="width: 10%; background: #ffffcc;"
-                                >
-                                </div>
-                            </div>
+                            {
+                                timelineEvents.length === 0 && (
+                                    <p class="no-data-msg">
+                                        Sin eventos registrados
+                                    </p>
+                                )
+                            }
                         </div>
                     </div>
                 </section>
@@ -710,13 +768,69 @@ const mockTimeline: any[] = [];
             flex-shrink: 0;
             overflow: hidden;
             background: #eee;
-            border-radius: 4px; /* Slight rounding but not circle */
+            border-radius: 4px;
         }
 
         .player-img-rect {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: top center; /* Fix for cutting off heads */
+        }
+
+        .stadium-img-rect {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .stadium-name-large {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .stadium-meta {
+            font-size: 0.9rem;
+            text-align: center;
+            color: #666;
+        }
+
+        /* STADIUM STATS COLORS */
+        .bar-fill {
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            min-width: 10%; /* Ensure text fits */
+            transition: width 0.5s ease-out;
+        }
+
+        .progress-track {
+            flex: 1;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill.won {
+            background: #bbf7d0; /* Pastel green */
+        }
+        .bar-fill.drawn {
+            background: #fef08a; /* Pastel yellow */
+        }
+        .bar-fill.lost {
+            background: #fecaca; /* Pastel red */
+        }
+
+        .bar-text {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #444;
         }
 
         .player-number-bold {
@@ -773,57 +887,49 @@ const mockTimeline: any[] = [];
         .sub-movement {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            flex: 1;
-        }
-
-        .sub-movement.in .sub-arrow {
-            color: green;
-            font-size: 0.9rem;
-        }
-        .sub-movement.out .sub-arrow {
-            color: red;
-            font-size: 0.9rem;
-        }
-
-        .sub-player-link {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-            transition: color 0.15s;
-        }
-
-        .sub-player-link:hover {
-            color: #000;
-        }
-
-        .sub-player-link:hover .sub-name {
-            text-decoration: underline;
-        }
-
-        .sub-img {
-            width: 40px; /* Matches lineup photo width slightly smaller height */
-            height: 48px; /* Rectangular aspect ratio for subs too */
-            border-radius: 4px; /* Matching lineup rect style */
-            object-fit: cover;
-            background: #eee;
-        }
-
-        .no-data-msg {
-            padding: 1rem;
-            text-align: center;
-            color: #777;
-            font-style: italic;
-        }
-
-        /* LINEUP METADATA STYLES */
-        .player-name-row {
-            display: flex;
-            align-items: center;
             gap: 0.5rem;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        /* TIMELINE STYLES UPDATED */
+        .timeline-container {
+            padding: 1.5rem 1rem;
+        }
+
+        .timeline-track {
+            border-left: 2px solid #e5e5e5;
+            padding-left: 1.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .event-time {
+            position: absolute;
+            left: -2.35rem; /* Adjust based on padding/border */
+            top: 0;
+        }
+
+        .event-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            font-size: 1rem;
+        }
+
+        .minute-badge {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-size: 0.75rem;
+            font-weight: bold;
         }
 
         .stat-group {
