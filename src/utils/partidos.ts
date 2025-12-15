@@ -163,13 +163,30 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
     return stats;
 }
 
+// Helper to log to file
+function logDebug(message: string) {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.resolve(process.cwd(), 'debug_ssr_log.txt');
+        const timestamp = new Date().toISOString();
+        fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+    } catch (e) {
+        // ignore
+    }
+}
+
 export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
+    logDebug(`Fetching lineups for matchId: ${matchId}`);
     try {
         const { createClient } = await import('@libsql/client');
         const url = import.meta.env.TURSO_DATABASE_URL;
         const authToken = import.meta.env.TURSO_AUTH_TOKEN;
 
-        if (!url || !authToken) return [];
+        if (!url || !authToken) {
+            logDebug("Missing credentials");
+            return [];
+        }
 
         const client = createClient({ url, authToken });
 
@@ -200,12 +217,21 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             args: [matchId]
         });
 
-        // Need to import getPlayerImageUrl from players utils or duplicate it. 
-        // To avoid circular dependency if players.ts imports partidos.ts, we'll duplicate or handle it.
-        // matches.ts doesn't import players.ts content currently. 
-        // Let's implement basic logic or import helper if moved to shared.
-        // For now, simple slugify/image logic here or just pass raw data and let component handle?
-        // Component expects imageUrl.
+        logDebug(`Lineups found: ${result.rows.length}`);
+        if (result.rows.length === 0) {
+            // Check if alineaciones has rows at all for this match
+            try {
+                const rawCheck = await client.execute({
+                    sql: "SELECT count(*) as c FROM alineaciones WHERE id_partido = ?",
+                    args: [matchId]
+                });
+                if (rawCheck.rows.length > 0) {
+                    logDebug(`Raw alineaciones count (without join): ${rawCheck.rows[0].c}`);
+                }
+            } catch (e) {
+                logDebug(`Error checking raw count: ${e}`);
+            }
+        }
 
         return result.rows.map((row: any) => {
             // Helper for image (duplicated from players.ts to avoid circular deps if any)
@@ -230,6 +256,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         });
 
     } catch (error) {
+        logDebug(`Error fetching lineups: ${error}`);
         console.error("Error fetching lineups:", error);
         return [];
     }
