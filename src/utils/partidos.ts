@@ -56,6 +56,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 cl.nombre AS club_local,
                 cv.nombre AS club_visitante,
                 e.nombre AS estadio,
+                e.ciudad,
+                e.pais,
                 IFNULL(p.goles_rm, 0) AS goles_rm,
                 IFNULL(p.goles_rival, 0) AS goles_rival,
                 a.nombre AS arbitra_nombre,
