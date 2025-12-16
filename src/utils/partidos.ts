@@ -448,6 +448,16 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         const validGoals = (matchScore === 0) ? [] : goalsResult.rows;
 
+        const formatDisplayMinute = (min: any): string => {
+            const s = String(min);
+            if (s.includes('+')) return s;
+            const val = Number(min);
+            if (!isNaN(val) && val > 90) {
+                return `90+${val - 90}`;
+            }
+            return s;
+        };
+
         for (const goal of validGoals) {
             let playerName = goal.nombre_jugadora;
 
@@ -489,7 +499,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             events.push({
                 minute: parseMinute(goal.minuto),
-                displayMinute: goal.minuto,
+                displayMinute: formatDisplayMinute(goal.minuto),
                 type: 'goal',
                 text: goalText,
                 team: 'local'
@@ -508,7 +518,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             events.push({
                 minute: parseMinute(sub.minute),
-                displayMinute: String(sub.minute),
+                displayMinute: formatDisplayMinute(sub.minute),
                 type: 'sub',
                 text: `⬆️ ${sub.playerIn.name} | ⬇️ ${sub.playerOut.name}`,
                 team: 'local'
