@@ -1,50 +1,85 @@
 ---
-import realMadridEscudo from "../assets/escudos/real_madrid.png";
-import EspanyolEscudo from "../assets/escudos/espanyol.png";
 import vsImagen from "../assets/vs.png";
 import uwclLogo from "../assets/competiciones/uwcl.png";
 import LigaFLogo from "../assets/competiciones/liga_f.png";
 import CopadelaReinaLogo from "../assets/competiciones/copa_de_la_reina.png";
+
+const LOCAL_TEAM = "Espanyol";
+const VISITOR_TEAM = "Real Madrid";
+const MATCH_DATE = "2025-12-20T19:00:00+01:00"; // ISO format for script
+const MATCH_DATE_DISPLAY = "20/12/2025 19:00 CEST";
+const STADIUM = "Ciudad Deportiva Dani Jarque";
+const TV = "Teledeporte";
+
+const COMPETITION_INFO = {
+    name: "Copa de la Reina",
+    logo: CopadelaReinaLogo,
+    detail: "| Octavos de Final",
+};
+
+const shields = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+function getShieldSrc(teamName: string) {
+    const slug = teamName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/\./g, "");
+
+    const activeShieldPath = Object.keys(shields).find((path) =>
+        path.includes(`/${slug}.`),
+    );
+
+    return activeShieldPath ? shields[activeShieldPath].default.src : "";
+}
 ---
 
 <aside class="card-proximo-partido">
     <h1>PRÓXIMO PARTIDO</h1>
 
     <div class="escudos">
-        <img src={EspanyolEscudo.src} alt="Espanyol" class="escudo" />
+        <img src={getShieldSrc(LOCAL_TEAM)} alt={LOCAL_TEAM} class="escudo" />
         <img src={vsImagen.src} alt="Versus" class="vs-imagen" />
-        <img src={realMadridEscudo.src} alt="Real Madrid" class="escudo" />
+        <img
+            src={getShieldSrc(VISITOR_TEAM)}
+            alt={VISITOR_TEAM}
+            class="escudo"
+        />
     </div>
 
     <div class="cuenta-atras" id="cuenta-atras">Cargando...</div>
 
     <div class="competicion-line">
         <img
-            src={CopadelaReinaLogo.src}
-            alt="Copa de la Reina"
+            src={COMPETITION_INFO.logo.src}
+            alt={COMPETITION_INFO.name}
             class="competicion-logo"
         />
-        <span id="competicion-jornada">| Octavos de Final</span>
+        <span id="competicion-jornada">{COMPETITION_INFO.detail}</span>
     </div>
 
     <div class="info-line">
         <span class="emoji" role="img" aria-label="Reloj de alarma">⏰</span>
-        <span id="fecha-hora">20/12/2025 19:00 CEST</span>
+        <span id="fecha-hora">{MATCH_DATE_DISPLAY}</span>
     </div>
 
     <div class="info-line">
         <span class="emoji" role="img" aria-label="Estadio">🏟</span>
-        <span id="estadio">Ciudad Deportiva Dani Jarque</span>
+        <span id="estadio">{STADIUM}</span>
     </div>
 
     <div class="info-line">
         <span class="emoji" role="img" aria-label="Televisión">📺</span>
-        <span class="TV" id="TV">Teledeporte</span>
+        <span class="TV" id="TV">{TV}</span>
     </div>
 </aside>
 
-<script is:inline>
-    const fechaPartido = new Date("2025-12-20T19:00:00+01:00");
+<script is:inline define:vars={{ MATCH_DATE }}>
+    const fechaPartido = new Date(MATCH_DATE);
 
     function actualizarCuentaAtras() {
         const ahora = new Date();
