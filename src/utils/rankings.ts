@@ -1,3 +1,4 @@
+import { slugify } from "./players";
 
 export const cleanApiValue = (value: any): any => {
     if (typeof value === 'string' && value.toLowerCase().trim() === 'null') {
@@ -111,7 +112,6 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             SELECT 
                 j.id_jugadora,
                 j.nombre,
-                j.slug,
                 t.temporada,
                 c.competicion,
                 COALESCE(l.convocatorias, 0) as convocatorias,
@@ -145,7 +145,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
         return result.rows.map((row: any) => ({
             id_jugadora: row.id_jugadora,
             nombre: row.nombre,
-            slug: row.slug,
+            slug: slugify(row.nombre),
             temporada: row.temporada,
             competicion: row.competicion,
             goles: Number(row.goles),
