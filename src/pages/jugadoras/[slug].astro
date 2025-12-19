@@ -73,6 +73,26 @@ if (!player) {
     return Astro.redirect("/404");
 }
 
+const playerImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+function getPlayerImageSrc(slug: string) {
+    const lookupSlug = slug.replace(/-/g, "_");
+    // Try finding exact match or match with underscore
+    const matchingPath = Object.keys(playerImages).find(
+        (path) =>
+            path.includes(`/${lookupSlug}.`) || path.includes(`/${slug}.`),
+    );
+
+    return matchingPath
+        ? playerImages[matchingPath].default.src
+        : player.imageUrl;
+}
+
+const resolvedImage = getPlayerImageSrc(player.slug);
+
 const isGoalkeeper = player.posicion === "Portera";
 const playerStats = await fetchPlayerStats(player.id_jugadora, isGoalkeeper);
 
@@ -218,7 +238,7 @@ const playerPosition = getPlayerCoordinates(player.posicion || "");
                 <div class="ficha-content">
                     <div class="player-photo-container">
                         <img
-                            src={player.imageUrl}
+                            src={resolvedImage}
                             alt={`Foto de ${player.nombre}`}
                             class="player-photo"
                             onerror="this.onerror=null; this.src='/images/placeholder_jugadora.png';"
