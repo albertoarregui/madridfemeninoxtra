@@ -843,4 +843,13 @@ export const TOTAL_PLAYERS = [
         debut_date: "2025-09-21",
         rm_career: "2022-Actualidad",
     },
+    {
+        id: "naiara-sanmartin",
+        name: "Naiara Sanmartín",
+        date_birth: "2006-01-23",
+        country: "es",
+        position: "Extremo",
+        debut_date: "2025-12-17",
+        rm_career: "2020-Actualidad",
+    },
 ]
