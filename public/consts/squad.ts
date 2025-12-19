@@ -263,4 +263,15 @@ export const SQUAD = [
         weight: 62,
         number: 24,
     },
+    {
+        id: "marina_salas",
+        name: "Marina Salas",
+        position: "Centrocampista",
+        date_birth: "2001-07-17",
+        birth_place: "España",
+        country: "es",
+        height: 1.62,
+        weight: 55,
+        number: 29,
+    },
 ]
