@@ -9,6 +9,7 @@ export const cleanApiValue = (value: any): any => {
 export interface RankingStat {
     id_jugadora: number;
     nombre: string;
+    slug: string;
     temporada: string;
     competicion: string;
     goles: number;
@@ -110,6 +111,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             SELECT 
                 j.id_jugadora,
                 j.nombre,
+                j.slug,
                 t.temporada,
                 c.competicion,
                 COALESCE(l.convocatorias, 0) as convocatorias,
@@ -143,6 +145,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
         return result.rows.map((row: any) => ({
             id_jugadora: row.id_jugadora,
             nombre: row.nombre,
+            slug: row.slug,
             temporada: row.temporada,
             competicion: row.competicion,
             goles: Number(row.goles),
