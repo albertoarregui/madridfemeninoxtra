@@ -50,8 +50,9 @@ let stadiumImageSrc = null;
 if (game.estadio) {
     const slugName = game.estadio
         .toLowerCase()
-        .replace(/ñ/g, "n")
-        .replace(/[áéíóú]/g, (c: string) => "aeiou"["áéíóú".indexOf(c)])
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]/g, "_")
         .replace(/_+/g, "_")
         .replace(/^_|_$/g, "");
@@ -121,14 +122,12 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                         <div class="team-block">
                             <div class="shield-container">
                                 {
-                                    localShield ? (
+                                    localShield && (
                                         <img
                                             src={localShield}
                                             alt={game.club_local}
                                             class="team-shield-large"
                                         />
-                                    ) : (
-                                        <div class="shield-placeholder" />
                                     )
                                 }
                             </div>
@@ -158,14 +157,12 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                         <div class="team-block">
                             <div class="shield-container">
                                 {
-                                    visitorShield ? (
+                                    visitorShield && (
                                         <img
                                             src={visitorShield}
                                             alt={game.club_visitante}
                                             class="team-shield-large"
                                         />
-                                    ) : (
-                                        <div class="shield-placeholder" />
                                     )
                                 }
                             </div>
@@ -210,12 +207,16 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                                     class="lineup-row"
                                 >
                                     <div class="player-photo-rect">
-                                        <img
-                                            src={player.imageUrl}
-                                            alt={player.name}
-                                            class="player-img-rect"
-                                            onerror="this.src='/assets/escudos/placeholder.png'"
-                                        />
+                                        {player.imageUrl &&
+                                            !player.imageUrl.includes(
+                                                "placeholder.png",
+                                            ) && (
+                                                <img
+                                                    src={player.imageUrl}
+                                                    alt={player.name}
+                                                    class="player-img-rect"
+                                                />
+                                            )}
                                     </div>
 
                                     <span class="player-number-bold">
@@ -268,11 +269,18 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                                             href={`/jugadoras/${sub.playerIn.slug}`}
                                             class="sub-player-link"
                                         >
-                                            <img
-                                                src={sub.playerIn.imageUrl}
-                                                class="sub-img"
-                                                onerror="this.src='/assets/escudos/placeholder.png'"
-                                            />
+                                            {sub.playerIn.imageUrl &&
+                                                !sub.playerIn.imageUrl.includes(
+                                                    "placeholder.png",
+                                                ) && (
+                                                    <img
+                                                        src={
+                                                            sub.playerIn
+                                                                .imageUrl
+                                                        }
+                                                        class="sub-img"
+                                                    />
+                                                )}
                                             <span class="sub-name">
                                                 {sub.playerIn.name}
                                             </span>
@@ -284,11 +292,18 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                                             href={`/jugadoras/${sub.playerOut.slug}`}
                                             class="sub-player-link"
                                         >
-                                            <img
-                                                src={sub.playerOut.imageUrl}
-                                                class="sub-img"
-                                                onerror="this.src='/assets/escudos/placeholder.png'"
-                                            />
+                                            {sub.playerOut.imageUrl &&
+                                                !sub.playerOut.imageUrl.includes(
+                                                    "placeholder.png",
+                                                ) && (
+                                                    <img
+                                                        src={
+                                                            sub.playerOut
+                                                                .imageUrl
+                                                        }
+                                                        class="sub-img"
+                                                    />
+                                                )}
                                             <span class="sub-name">
                                                 {sub.playerOut.name}
                                             </span>
@@ -316,14 +331,12 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                     <div class="stadium-content">
                         <div class="stadium-photo">
                             {
-                                stadiumImageSrc ? (
+                                stadiumImageSrc && (
                                     <img
                                         src={stadiumImageSrc}
                                         alt={game.estadio}
                                         class="stadium-img-rect"
                                     />
-                                ) : (
-                                    <div class="photo-placeholder-large" />
                                 )
                             }
                         </div>
