@@ -8,6 +8,18 @@ interface Props {
 }
 
 const { rankingsData, seasons, competitions } = Astro.props;
+
+const playerImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+const playerImageMap = Object.fromEntries(
+    Object.entries(playerImages).map(([path, mod]) => {
+        const fileName = path.split("/").pop()?.split(".")[0];
+        return [fileName, mod.default.src];
+    }),
+);
 ---
 
 <div class="stats-rankings-ui">
@@ -110,7 +122,7 @@ const { rankingsData, seasons, competitions } = Astro.props;
     </div>
 </div>
 
-<script define:vars={{ rankingsData }}>
+<script define:vars={{ rankingsData, playerImageMap }}>
     const typeSelect = document.getElementById("filtro-tipo");
     const seasonSelect = document.getElementById("filtro-temporada");
     const competitionSelect = document.getElementById("filtro-competicion");
@@ -212,7 +224,8 @@ const { rankingsData, seasons, competitions } = Astro.props;
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/\s+/g, "_");
-        return `/assets/jugadoras/${slug}.png`;
+
+        return playerImageMap[slug] || "";
     }
 
     function calculateRankings() {
