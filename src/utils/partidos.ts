@@ -304,13 +304,20 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
         const substitutions: any[] = [];
         const playersIn = rows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
 
+        const usedPlayersOut = new Set();
+
         playersIn.forEach((pIn: any) => {
             const minute = pIn.minuto_entrada;
 
             const pOut = rows.find((r: any) =>
                 r.minuto_salida === minute &&
-                r.id_alineacion !== pIn.id_alineacion
+                r.id_alineacion !== pIn.id_alineacion &&
+                !usedPlayersOut.has(r.id_alineacion)
             );
+
+            if (pOut) {
+                usedPlayersOut.add(pOut.id_alineacion);
+            }
 
             const processPlayer = (row: any) => {
                 let fileName: string | null = null;
