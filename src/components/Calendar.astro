@@ -1,0 +1,304 @@
+---
+import { CALENDAR } from "/public/consts/calendar.ts";
+
+const shields = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+function getShieldSrc(teamName: string) {
+    const slug = teamName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/\./g, "");
+
+    const activeShieldPath = Object.keys(shields).find((path) =>
+        path.includes(`/${slug}.`),
+    );
+
+    return activeShieldPath ? shields[activeShieldPath].default.src : "";
+}
+
+const currentMonth = "ENERO";
+const currentYear = 2026;
+
+// January 2026 starts on Thursday (4) and has 31 days.
+// 0: Mon, 1: Tue, 2: Wed, 3: Thu, 4: Fri, 5: Sat, 6: Sun
+// JS Day: 0=Sun, 1=Mon... 4=Thu.
+// Let's verify: Jan 1 2026 is a Thursday.
+// We want grid Monday starts.
+// Mon=0, Tue=1, Wed=2, Thu=3...
+const startDayOfWeek = 3; // Thursday
+const daysInMonth = 31;
+const totalSlots = 35; // 5 rows * 7 days -> 35 slots. 31 days + 3 offset = 34. Fits.
+
+const days = Array.from({ length: totalSlots }, (_, i) => {
+    const dayNum = i - startDayOfWeek + 1;
+    if (dayNum > 0 && dayNum <= daysInMonth) {
+        return dayNum;
+    }
+    return null;
+});
+
+const getMatchForDay = (day: number) => {
+    const dateStr = `2026-01-${day.toString().padStart(2, "0")}`;
+    return CALENDAR.find((match) => match.date === dateStr);
+};
+---
+
+<div class="calendar-widget">
+    <div class="calendar-header">
+        <span class="month">{currentMonth}</span>
+        <span class="year">{currentYear}</span>
+    </div>
+
+    <div class="calendar-grid">
+        <div class="weekday">L</div>
+        <div class="weekday">M</div>
+        <div class="weekday">X</div>
+        <div class="weekday">J</div>
+        <div class="weekday">V</div>
+        <div class="weekday">S</div>
+        <div class="weekday">D</div>
+
+        {
+            days.map((day) => {
+                const match = day ? getMatchForDay(day) : null;
+                const isHome = match?.homeaway === "home";
+                const isAway = match?.homeaway === "away";
+                const isNeutral = match?.homeaway === "neutral";
+                const rivalName = match
+                    ? match.team1 === "Real Madrid"
+                        ? match.team2
+                        : match.team1
+                    : "";
+
+                return (
+                    <div
+                        class={`day ${day ? "" : "empty"} ${match ? "has-match" : ""}`}
+                    >
+                        <span class="day-number">{day}</span>
+                        {match && (
+                            <div class="match-content">
+                                {isHome && (
+                                    <div
+                                        class="icon-indicator home"
+                                        title="Casa"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+                                            <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+                                            <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+                                        </svg>
+                                    </div>
+                                )}
+                                {isAway && (
+                                    <div
+                                        class="icon-indicator away"
+                                        title="Fuera"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M14.5 6.5l3 -2.9a2.05 2.05 0 0 1 2.9 2.9l-2.9 3l2.5 7.5l-2.5 2.55l-3.5 -6.55l-3 3v3l-2 2l-1.5 -4.5l-4.5 -1.5l2 -2h3l3 -3l-6.5 -3.5l2.5 -2.5l7.5 2.5z" />
+                                        </svg>
+                                    </div>
+                                )}
+                                <img
+                                    src={getShieldSrc(rivalName)}
+                                    alt={rivalName}
+                                    class="rival-shield"
+                                    title={rivalName}
+                                />
+                            </div>
+                        )}
+                    </div>
+                );
+            })
+        }
+    </div>
+</div>
+
+<style>
+    .calendar-widget {
+        background-color: #1a1f3c; /* Dark Blue from reference */
+        padding: 20px;
+        border-radius: 16px;
+        color: white;
+        font-family: "Arial", sans-serif;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-bottom: 30px;
+        width: 100%;
+        max-width: 450px; /* Limit width */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .month {
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .year {
+        font-size: 1.2rem;
+        font-weight: normal;
+        opacity: 0.8;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px; /* Spacing between cells */
+        text-align: center;
+    }
+
+    .weekday {
+        font-size: 0.8rem;
+        color: #8fa0bc; /* Lighter blue-grey text */
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .day {
+        aspect-ratio: 1; /* Square cells */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding-top: 5px;
+        border-radius: 8px;
+        position: relative;
+        font-size: 1rem;
+        font-weight: 500;
+        min-height: 50px;
+    }
+
+    .day.empty {
+        background: transparent;
+    }
+
+    .day-number {
+        z-index: 2;
+        line-height: 1;
+    }
+
+    .match-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .rival-shield {
+        width: 70%;
+        height: 70%;
+        object-fit: contain;
+        opacity: 1;
+        transition: transform 0.2s;
+        z-index: 1;
+    }
+
+    .day:hover .rival-shield {
+        transform: scale(1.1);
+    }
+
+    .day.has-match .day-number {
+        position: absolute;
+        top: 4px;
+        left: 6px;
+        font-size: 0.75rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        z-index: 3;
+    }
+
+    .icon-indicator {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 16px;
+        height: 16px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 50%;
+        padding: 2px;
+    }
+
+    .icon-indicator svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Highlight visual for match days similar to reference circle */
+    .day.has-match::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        height: 90%;
+        border-radius: 50%;
+        background-color: rgba(
+            255,
+            255,
+            255,
+            0.05
+        ); /* very subtle circle background */
+    }
+
+    /* Optional: Special highlight for today */
+    /*
+    .day.today {
+        background-color: var(--primary-color);
+        color: #1a1f3c;
+    }
+    */
+</style>

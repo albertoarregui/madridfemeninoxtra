@@ -1,0 +1,38 @@
+export const CALENDAR = [
+    {
+        id: "real-madrid-vs-sevilla",
+        team1: "Real Madrid",
+        team2: "Sevilla FC",
+        homeaway: "home",
+        date: "2026-01-10",
+        time: "17:00",
+        competition: "Liga F",
+    },
+    {
+        id: "real-madrid-vs-athletic",
+        team1: "Real Madrid",
+        team2: "Athletic Club",
+        homeaway: "home",
+        date: "2026-01-13",
+        time: "17:00",
+        competition: "Liga F",
+    },
+    {
+        id: "levante-vs-real-madrid",
+        team1: "Levante UD",
+        team2: "Real Madrid",
+        homeaway: "away",
+        date: "2026-01-17",
+        time: "17:00",
+        competition: "Liga F",
+    },
+    {
+        id: "real-madrid-vs-atletico-de-madrid",
+        team1: "Real Madrid",
+        team2: "Atlético de Madrid",
+        homeaway: "neutral",
+        date: "2026-01-20",
+        time: "19:00",
+        competition: "Supercopa de España",
+    },
+];
