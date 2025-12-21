@@ -117,28 +117,38 @@ const visitorShield = await getShieldSrc(game.club_visitante);
 
         <div class="match-grid">
             <div class="left-column">
-                <section class="match-card">
-                    <h2 class="section-header">Ficha del partido</h2>
-                    <div class="match-result-redesigned">
-                        <div class="team-block">
-                            <div class="shield-container">
+                <section class="match-card-new">
+                    <div class="match-header-info">
+                        <span class="header-text">
+                            {game.competicion_nombre}
+                            {
+                                !isNaN(Number(game.jornada))
+                                    ? ` (J${game.jornada})`
+                                    : ""
+                            }
+                            <span class="bullet">•</span>
+                            {formatDate(game.fecha)} - {formatTime(game.hora)}
+                        </span>
+                    </div>
+
+                    <div class="match-main-content">
+                        <div class="team-block-large">
+                            <div class="shield-container-large">
                                 {
                                     localShield && (
                                         <img
                                             src={localShield}
                                             alt={game.club_local}
-                                            class="team-shield-large"
+                                            class="team-shield-xl"
                                         />
                                     )
                                 }
                             </div>
-                            <span class="team-name-large"
-                                >{game.club_local}</span
-                            >
+                            <span class="team-name-xl">{game.club_local}</span>
                         </div>
 
-                        <div class="score-block">
-                            <span class="score-main">
+                        <div class="score-block-large">
+                            <span class="score-xl">
                                 {
                                     game.club_local
                                         .toLowerCase()
@@ -155,46 +165,28 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                             </span>
                         </div>
 
-                        <div class="team-block">
-                            <div class="shield-container">
+                        <div class="team-block-large">
+                            <div class="shield-container-large">
                                 {
                                     visitorShield && (
                                         <img
                                             src={visitorShield}
                                             alt={game.club_visitante}
-                                            class="team-shield-large"
+                                            class="team-shield-xl"
                                         />
                                     )
                                 }
                             </div>
-                            <span class="team-name-large"
+                            <span class="team-name-xl"
                                 >{game.club_visitante}</span
                             >
                         </div>
                     </div>
-                    <div class="match-info-grid">
-                        <div class="info-item">
-                            <span class="info-icon">🏆</span>
-                            <span class="info-text"
-                                >{game.competicion_nombre} ({
-                                    !isNaN(Number(game.jornada)) ? "J" : ""
-                                }{game.jornada})</span
-                            >
-                        </div>
-                        <div class="info-item">
-                            <span class="info-icon">📅</span>
-                            <span class="info-text"
-                                >{formatDate(game.fecha)} - {
-                                    formatTime(game.hora)
-                                }</span
-                            >
-                        </div>
-                        <div class="info-item" style="grid-column: span 2;">
-                            <span class="info-icon">👔</span>
-                            <span class="info-text"
-                                >{game.arbitra_nombre || "Árbitra"}</span
-                            >
-                        </div>
+
+                    <div class="match-footer-info">
+                        <span class="referee-text">
+                            👔 {game.arbitra_nombre || "Árbitra por confirmar"}
+                        </span>
                     </div>
                 </section>
 
@@ -245,8 +237,23 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                                                 <span
                                                     class="sub-indicator"
                                                     title="Sustituida"
+                                                    style="color: #ff6b6b;"
                                                 >
-                                                    ⬇️
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="20"
+                                                        height="20"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                    >
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                    </svg>
                                                 </span>
                                             )}
                                         </div>
@@ -477,7 +484,54 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                                                       : "•"}
                                             </div>
                                             <span class="event-text">
-                                                {event.text}
+                                                {event.type === "sub" ? (
+                                                    <div
+                                                        class="timeline-sub-info"
+                                                        style="display: flex; align-items: center; gap: 8px;"
+                                                    >
+                                                        <span style="display: inline-flex; align-items: center; color: #77dd77; font-weight: 600;">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="20"
+                                                                height="20"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
+                                                            >
+                                                                <path
+                                                                    stroke="none"
+                                                                    d="M0 0h24v24H0z"
+                                                                    fill="none"
+                                                                />
+                                                                <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
+                                                            </svg>
+                                                            {event.playerIn}
+                                                        </span>
+                                                        <span style="color: #ccc;">
+                                                            |
+                                                        </span>
+                                                        <span style="display: inline-flex; align-items: center; color: #ff6b6b; font-weight: 600;">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="20"
+                                                                height="20"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                            >
+                                                                <path
+                                                                    stroke="none"
+                                                                    d="M0 0h24v24H0z"
+                                                                    fill="none"
+                                                                />
+                                                                <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                            </svg>
+                                                            {event.playerOut}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    event.text
+                                                )}
                                             </span>
                                         </div>
                                     </div>
@@ -532,14 +586,137 @@ const visitorShield = await getShieldSrc(game.club_visitante);
             gap: 1.5rem;
         }
 
-        .section-header {
-            background: #ffde59;
-            color: #2b2b2b;
-            padding: 0.75rem 1rem;
-            margin: 0;
-            font-size: 1rem;
+        .match-card-new {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            border-top: 5px solid #ffde59;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .match-header-info {
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+            width: 100%;
+        }
+
+        .header-text {
+            font-size: 1.1rem;
+            color: #555;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bullet {
+            margin: 0 8px;
+            color: #ffde59;
             font-weight: bold;
-            text-transform: capitalize;
+        }
+
+        .match-main-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+            padding: 1rem 0;
+        }
+
+        .team-block-large {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .shield-container-large {
+            width: 130px;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .team-shield-xl {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .team-name-xl {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #2b2b2b;
+            line-height: 1.2;
+        }
+
+        .score-block-large {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1rem;
+        }
+
+        .score-xl {
+            font-size: 5rem;
+            font-weight: 900;
+            color: #2b2b2b;
+            line-height: 1;
+            font-family:
+                "Bebas Neue", sans-serif; /* Assuming font is available per global styles */
+            letter-spacing: 2px;
+        }
+
+        .match-footer-info {
+            width: 100%;
+            text-align: center;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .referee-text {
+            font-size: 1rem;
+            color: #777;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .match-main-content {
+                gap: 1rem;
+            }
+            .shield-container-large {
+                width: 90px;
+                height: 90px;
+            }
+            .score-xl {
+                font-size: 3.5rem;
+            }
+            .team-name-xl {
+                font-size: 1.1rem;
+            }
+            .header-text {
+                font-size: 0.9rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            .bullet {
+                display: none;
+            }
         }
 
         .match-card {
@@ -690,12 +867,14 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         }
 
         .sub-img {
-            width: 40px;
-            height: 48px;
+            width: 60px;
+            height: 75px;
             border-radius: 4px;
             object-fit: cover;
+            object-position: top center;
             background: #eee;
             display: block;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .no-data-msg {
@@ -943,12 +1122,13 @@ const visitorShield = await getShieldSrc(game.club_visitante);
         }
 
         .player-photo-rect {
-            width: 50px;
-            height: 60px;
+            width: 75px;
+            height: 95px;
             flex-shrink: 0;
             overflow: hidden;
             background: #eee;
-            border-radius: 4px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .player-img-rect {

@@ -527,7 +527,9 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 minute: parseMinute(sub.minute),
                 displayMinute: formatDisplayMinute(sub.minute),
                 type: 'sub',
-                text: `⬆️ ${sub.playerIn.name} | ⬇️ ${sub.playerOut.name}`,
+                text: `Entra ${sub.playerIn.name} por ${sub.playerOut.name}`,
+                playerIn: sub.playerIn.name,
+                playerOut: sub.playerOut.name,
                 team: 'local'
             });
         }
