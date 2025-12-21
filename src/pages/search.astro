@@ -36,13 +36,13 @@ if (query) {
 
 // Image resolution logic
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    "../assets/jugadoras/*.{png,jpg,jpeg,webp}",
 );
 const rivalImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+    "../assets/escudos/*.{png,jpg,jpeg,webp}",
 );
 const coachImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/entrenadores/*.{png,jpg,jpeg,webp}",
+    "../assets/entrenadores/*.{png,jpg,jpeg,webp}",
 );
 
 async function getImage(result: SearchResult) {
@@ -65,16 +65,15 @@ async function getImage(result: SearchResult) {
         return null;
     }
 
-    // Normalize slug: explicitly replace hyphens with underscores to match filenames
-    // e.g. "real-madrid" -> "real_madrid"
-    const slugUnderscored = result.slug.replace(/-/g, "_");
+    // Normalize slug: explicitly replace hyphens with underscores + lowercase
+    const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
+    const slugNormal = result.slug.toLowerCase();
 
     // Find matching key in the glob record
-    // We look for a key that contains the folder and the slug (either original or underscored)
-    // and ends with one of the supported extensions.
     const matchingPath = Object.keys(imagesRecord).find((path) => {
-        const fileName = path.split("/").pop()?.split(".")[0];
-        return fileName === result.slug || fileName === slugUnderscored;
+        // Path is like "../assets/escudos/real_madrid.png"
+        const fileName = path.split("/").pop()?.split(".")[0].toLowerCase();
+        return fileName === slugNormal || fileName === slugUnderscored;
     });
 
     if (matchingPath) {
