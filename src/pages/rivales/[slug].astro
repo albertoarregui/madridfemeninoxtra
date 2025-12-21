@@ -136,6 +136,19 @@ const competitions = uniqueCompetitions.sort((a, b) => {
     return indexA - indexB;
 });
 
+const getSeason = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const startYear = month >= 8 ? year : year - 1;
+    const endYear = startYear + 1;
+    return `${startYear.toString().slice(-2)}/${endYear.toString().slice(-2)}`;
+};
+
+const uniqueSeasons = [
+    ...new Set(rivalMatches.map((m) => getSeason(m.fecha))),
+].sort((a, b) => b.localeCompare(a));
+
 const circumference = 220;
 const totalMatches = rivalStats.total.pj;
 
@@ -270,519 +283,1089 @@ const mockPlayers: string[] = [];
                                     }
                                 </select>
                             </div>
-                        </div>
-                        <div class="charts-row">
-                            <div class="chart-item">
-                                <svg
-                                    viewBox="0 0 100 100"
-                                    class="pie-chart"
-                                    id="results-chart"
-                                >
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="35"
-                                        fill="none"
-                                        stroke="#c8e6c9"
-                                        stroke-width="20"
-                                        stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
-                                        transform="rotate(-90 50 50)"></circle>
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="35"
-                                        fill="none"
-                                        stroke="#fff9c4"
-                                        stroke-width="20"
-                                        stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
-                                        stroke-dashoffset={-winsArc}
-                                        transform="rotate(-90 50 50)"></circle>
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="35"
-                                        fill="none"
-                                        stroke="#ffcdd2"
-                                        stroke-width="20"
-                                        stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
-                                        stroke-dashoffset={-(
-                                            winsArc + drawsArc
-                                        )}
-                                        transform="rotate(-90 50 50)"></circle>
-                                </svg>
-                                <div class="chart-legend" id="results-legend">
-                                    <div>
-                                        <span class="dot green"></span> Ganados ({
-                                            rivalStats.total.pg
-                                        })
-                                    </div>
-                                    <div>
-                                        <span class="dot orange"></span> Empatados
-                                        ({rivalStats.total.pe})
-                                    </div>
-                                    <div>
-                                        <span class="dot red"></span> Perdidos ({
-                                            rivalStats.total.pp
-                                        })
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="chart-item">
-                                <svg
-                                    viewBox="0 0 100 100"
-                                    class="pie-chart"
-                                    id="goals-chart"
-                                >
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="35"
-                                        fill="none"
-                                        stroke="#c8e6c9"
-                                        stroke-width="20"
-                                        stroke-dasharray={`${goalsForArc} ${circumference - goalsForArc}`}
-                                        transform="rotate(-90 50 50)"></circle>
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="35"
-                                        fill="none"
-                                        stroke="#ffcdd2"
-                                        stroke-width="20"
-                                        stroke-dasharray={`${goalsAgainstArc} ${circumference - goalsAgainstArc}`}
-                                        stroke-dashoffset={-goalsForArc}
-                                        transform="rotate(-90 50 50)"></circle>
-                                </svg>
-                                <div class="chart-legend" id="goals-legend">
-                                    <div>
-                                        <span class="dot green"></span> A favor ({
-                                            rivalStats.total.gf
-                                        })
-                                    </div>
-                                    <div>
-                                        <span class="dot red"></span> En contra ({
-                                            rivalStats.total.gc
-                                        })
-                                    </div>
-                                </div>
+                            <div class="control">
+                                <label>TEMPORADA:</label>
+                                <select id="season-filter">
+                                    <option value="all">Todas</option>
+                                    {
+                                        uniqueSeasons.map((season) => (
+                                            <option value={season}>
+                                                {season}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
                             </div>
                         </div>
                     </div>
-                </section>
-
-                <section class="stats-table-card">
-                    <h3 class="section-subheader">
-                        Estadísticas contra el {rival.nombre}
-                    </h3>
-                    <div class="table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>JUGADOS COMO</th>
-                                    <th>PJ</th>
-                                    <th>PG</th>
-                                    <th>%PG</th>
-                                    <th>PE</th>
-                                    <th>%PE</th>
-                                    <th>PP</th>
-                                    <th>%PP</th>
-                                    <th class="highlight-yellow">⚽</th>
-                                    <th class="highlight-red">⚽</th>
-                                    <th class="highlight-blue">📊</th>
-                                    <th>Avg.</th>
-                                    <th>Dif.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>LOCAL</td>
-                                    <td>{rivalStats.home.pj}</td>
-                                    <td>{rivalStats.home.pg}</td>
-                                    <td>{rivalStats.home.percPG}%</td>
-                                    <td>{rivalStats.home.pe}</td>
-                                    <td>{rivalStats.home.percPE}%</td>
-                                    <td>{rivalStats.home.pp}</td>
-                                    <td>{rivalStats.home.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.home.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.home.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.home.dif > 0 ? "+" : ""}{
-                                            rivalStats.home.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.home.avg}</td>
-                                    <td>{rivalStats.home.dif}</td>
-                                </tr>
-                                <tr>
-                                    <td>VISITANTE</td>
-                                    <td>{rivalStats.away.pj}</td>
-                                    <td>{rivalStats.away.pg}</td>
-                                    <td>{rivalStats.away.percPG}%</td>
-                                    <td>{rivalStats.away.pe}</td>
-                                    <td>{rivalStats.away.percPE}%</td>
-                                    <td>{rivalStats.away.pp}</td>
-                                    <td>{rivalStats.away.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.away.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.away.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.away.dif > 0 ? "+" : ""}{
-                                            rivalStats.away.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.away.avg}</td>
-                                    <td>{rivalStats.away.dif}</td>
-                                </tr>
-
-                                <tr class="total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td>{rivalStats.total.pj}</td>
-                                    <td>{rivalStats.total.pg}</td>
-                                    <td>{rivalStats.total.percPG}%</td>
-                                    <td>{rivalStats.total.pe}</td>
-                                    <td>{rivalStats.total.percPE}%</td>
-                                    <td>{rivalStats.total.pp}</td>
-                                    <td>{rivalStats.total.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.total.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.total.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.total.dif > 0 ? "+" : ""}{
-                                            rivalStats.total.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.total.avg}</td>
-                                    <td>{rivalStats.total.dif}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="matches-card">
-                    <h3 class="section-subheader">
-                        Todos los partidos disputados contra el {rival.nombre}
-                    </h3>
-                    <div class="table-wrapper">
-                        <table class="matches-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Competición</th>
-                                    <th>En</th>
-                                    <th>Res.</th>
-                                    <th>Árbitra</th>
-                                    <th>Estadio</th>
-                                    <th>Asist.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    rivalMatches.length > 0 ? (
-                                        rivalMatches.map((match: any) => {
-                                            const golesRM =
-                                                parseInt(match.golesRM) || 0;
-                                            const golesRival =
-                                                parseInt(match.golesRival) || 0;
-                                            let resultClass = "";
-                                            if (golesRM > golesRival) {
-                                                resultClass =
-                                                    "resultado-victoria";
-                                            } else if (golesRM === golesRival) {
-                                                resultClass =
-                                                    "resultado-empate";
-                                            } else {
-                                                resultClass =
-                                                    "resultado-derrota";
-                                            }
-
-                                            return (
-                                                <tr>
-                                                    <td>
-                                                        {new Date(
-                                                            match.fecha,
-                                                        ).toLocaleDateString(
-                                                            "es-ES",
-                                                        )}
-                                                    </td>
-                                                    <td>{match.competicion}</td>
-                                                    <td>{match.ubicacion}</td>
-                                                    <td class={resultClass}>
-                                                        {match.resultado}
-                                                    </td>
-                                                    <td>{match.arbitra}</td>
-                                                    <td>{match.estadio}</td>
-                                                    <td>
-                                                        {match.asistencia ||
-                                                            "-"}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colspan="7"
-                                                style="text-align: center; padding: 2rem;"
-                                            >
-                                                No hay partidos registrados
-                                            </td>
-                                        </tr>
-                                    )
-                                }
-                            </tbody>
-                        </table>
+                    <div class="charts-row">
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="results-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#c8e6c9"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#fff9c4"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
+                                    stroke-dashoffset={-winsArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
+                                    stroke-dashoffset={-(winsArc + drawsArc)}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="results-legend">
+                                <div>
+                                    <span class="dot green"></span> Ganados ({
+                                        rivalStats.total.pg
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot orange"></span> Empatados ({
+                                        rivalStats.total.pe
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> Perdidos ({
+                                        rivalStats.total.pp
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="goals-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#c8e6c9"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${goalsForArc} ${circumference - goalsForArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${goalsAgainstArc} ${circumference - goalsAgainstArc}`}
+                                    stroke-dashoffset={-goalsForArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="goals-legend">
+                                <div>
+                                    <span class="dot green"></span> A favor ({
+                                        rivalStats.total.gf
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> En contra ({
+                                        rivalStats.total.gc
+                                    })
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </div>
 
-            <div class="right-column">
-                <section class="stadium-card">
-                    <h2 class="section-header">ESTADIO</h2>
-                    <div class="stadium-content">
-                        <div class="stadium-photo">
-                            <div class="photo-placeholder"></div>
-                        </div>
-                    </div>
-                </section>
+            <section class="stats-table-card">
+                <h3 class="section-subheader">
+                    Estadísticas contra el {rival.nombre}
+                </h3>
+                <div class="table-wrapper">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>JUGADOS COMO</th>
+                                <th>PJ</th>
+                                <th>PG</th>
+                                <th>%PG</th>
+                                <th>PE</th>
+                                <th>%PE</th>
+                                <th>PP</th>
+                                <th>%PP</th>
+                                <th class="highlight-yellow">⚽</th>
+                                <th class="highlight-red">⚽</th>
+                                <th class="highlight-blue">📊</th>
+                                <th>Avg.</th>
+                                <th>Dif.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>LOCAL</td>
+                                <td>{rivalStats.home.pj}</td>
+                                <td>{rivalStats.home.pg}</td>
+                                <td>{rivalStats.home.percPG}%</td>
+                                <td>{rivalStats.home.pe}</td>
+                                <td>{rivalStats.home.percPE}%</td>
+                                <td>{rivalStats.home.pp}</td>
+                                <td>{rivalStats.home.percPP}%</td>
+                                <td class="highlight-yellow"
+                                    >{rivalStats.home.gf}</td
+                                >
+                                <td class="highlight-red"
+                                    >{rivalStats.home.gc}</td
+                                >
+                                <td class="highlight-blue"
+                                    >{rivalStats.home.dif > 0 ? "+" : ""}{
+                                        rivalStats.home.dif
+                                    }</td
+                                >
+                                <td>{rivalStats.home.avg}</td>
+                                <td>{rivalStats.home.dif}</td>
+                            </tr>
+                            <tr>
+                                <td>VISITANTE</td>
+                                <td>{rivalStats.away.pj}</td>
+                                <td>{rivalStats.away.pg}</td>
+                                <td>{rivalStats.away.percPG}%</td>
+                                <td>{rivalStats.away.pe}</td>
+                                <td>{rivalStats.away.percPE}%</td>
+                                <td>{rivalStats.away.pp}</td>
+                                <td>{rivalStats.away.percPP}%</td>
+                                <td class="highlight-yellow"
+                                    >{rivalStats.away.gf}</td
+                                >
+                                <td class="highlight-red"
+                                    >{rivalStats.away.gc}</td
+                                >
+                                <td class="highlight-blue"
+                                    >{rivalStats.away.dif > 0 ? "+" : ""}{
+                                        rivalStats.away.dif
+                                    }</td
+                                >
+                                <td>{rivalStats.away.avg}</td>
+                                <td>{rivalStats.away.dif}</td>
+                            </tr>
 
-                <section class="records-card">
-                    <h2 class="section-header">RÉCORDS</h2>
-                    <div class="records-list">
-                        {
-                            rivalRecords?.maximo_goleador && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Máxima goleadora:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.maximo_goleador.nombre} -{" "}
-                                        {rivalRecords.maximo_goleador.goles}
-                                    </span>
-                                </div>
-                            )
-                        }
-                        {
-                            rivalRecords?.goleador_rival && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Goleador rival:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.goleador_rival.nombre} -{" "}
-                                        {rivalRecords.goleador_rival.goles}
-                                    </span>
-                                </div>
-                            )
-                        }
-                        {
-                            rivalRecords?.mas_partidos && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Jugadora con más partidos:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.mas_partidos.nombre} -{" "}
-                                        {rivalRecords.mas_partidos.partidos}
-                                    </span>
-                                </div>
-                            )
-                        }
-                        {
-                            rivalRecords?.mayor_victoria && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Mayor victoria:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.mayor_victoria.resultado}
-                                    </span>
-                                </div>
-                            )
-                        }
-                        {
-                            rivalRecords?.mayor_derrota && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Mayor derrota:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.mayor_derrota.resultado}
-                                    </span>
-                                </div>
-                            )
-                        }
-                        {
-                            rivalRecords?.mas_repetido && (
-                                <div class="record-row">
-                                    <span class="record-label">
-                                        Más repetido:
-                                    </span>
-                                    <span class="record-value">
-                                        {rivalRecords.mas_repetido.resultado} -{" "}
-                                        {rivalRecords.mas_repetido.veces} veces
-                                    </span>
-                                </div>
-                            )
-                        }
-                    </div>
-                </section>
+                            <tr class="total-row">
+                                <td><strong>TOTAL</strong></td>
+                                <td>{rivalStats.total.pj}</td>
+                                <td>{rivalStats.total.pg}</td>
+                                <td>{rivalStats.total.percPG}%</td>
+                                <td>{rivalStats.total.pe}</td>
+                                <td>{rivalStats.total.percPE}%</td>
+                                <td>{rivalStats.total.pp}</td>
+                                <td>{rivalStats.total.percPP}%</td>
+                                <td class="highlight-yellow"
+                                    >{rivalStats.total.gf}</td
+                                >
+                                <td class="highlight-red"
+                                    >{rivalStats.total.gc}</td
+                                >
+                                <td class="highlight-blue"
+                                    >{rivalStats.total.dif > 0 ? "+" : ""}{
+                                        rivalStats.total.dif
+                                    }</td
+                                >
+                                <td>{rivalStats.total.avg}</td>
+                                <td>{rivalStats.total.dif}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-                <section class="top-scorers-card">
-                    <h2 class="section-header">MÁXIMAS GOLEADORAS</h2>
-                    <div class="top-list">
-                        {
-                            topPlayersData.topScorers.length > 0 ? (
-                                topPlayersData.topScorers.map(
-                                    (player: any, index: number) => (
-                                        <div class="top-item">
-                                            <span class="position">
-                                                {index + 1}.
-                                            </span>
-                                            <span class="player-name">
-                                                {player.nombre}
-                                            </span>
-                                            <span class="stat-value">
-                                                {player.goles}{" "}
-                                                {player.goles === 1
-                                                    ? "gol"
-                                                    : "goles"}
-                                            </span>
-                                        </div>
-                                    ),
+            <section class="matches-card">
+                <h3 class="section-subheader">
+                    Todos los partidos disputados contra el {rival.nombre}
+                </h3>
+                <div class="table-wrapper">
+                    <table class="matches-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Competición</th>
+                                <th>En</th>
+                                <th>Res.</th>
+                                <th>Árbitra</th>
+                                <th>Estadio</th>
+                                <th>Asist.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {
+                                rivalMatches.length > 0 ? (
+                                    rivalMatches.map((match: any) => {
+                                        const golesRM =
+                                            parseInt(match.golesRM) || 0;
+                                        const golesRival =
+                                            parseInt(match.golesRival) || 0;
+                                        let resultClass = "";
+                                        if (golesRM > golesRival) {
+                                            resultClass = "resultado-victoria";
+                                        } else if (golesRM === golesRival) {
+                                            resultClass = "resultado-empate";
+                                        } else {
+                                            resultClass = "resultado-derrota";
+                                        }
+
+                                        return (
+                                            <tr>
+                                                <td>
+                                                    {new Date(
+                                                        match.fecha,
+                                                    ).toLocaleDateString(
+                                                        "es-ES",
+                                                    )}
+                                                </td>
+                                                <td>{match.competicion}</td>
+                                                <td>{match.ubicacion}</td>
+                                                <td class={resultClass}>
+                                                    {match.resultado}
+                                                </td>
+                                                <td>{match.arbitra}</td>
+                                                <td>{match.estadio}</td>
+                                                <td>
+                                                    {match.asistencia || "-"}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colspan="7"
+                                            style="text-align: center; padding: 2rem;"
+                                        >
+                                            No hay partidos registrados
+                                        </td>
+                                    </tr>
                                 )
-                            ) : (
-                                <p class="no-data">Sin datos disponibles</p>
-                            )
-                        }
-                    </div>
-                </section>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
 
-                <section class="top-assisters-card">
-                    <h2 class="section-header">MÁS ASISTENTES</h2>
-                    <div class="top-list">
-                        {
-                            topPlayersData.topAssisters.length > 0 ? (
-                                topPlayersData.topAssisters.map(
-                                    (player: any, index: number) => (
-                                        <div class="top-item">
-                                            <span class="position">
-                                                {index + 1}.
-                                            </span>
-                                            <span class="player-name">
-                                                {player.nombre}
-                                            </span>
-                                            <span class="stat-value">
-                                                {player.asistencias}{" "}
-                                                {player.asistencias === 1
-                                                    ? "asistencia"
-                                                    : "asistencias"}
-                                            </span>
-                                        </div>
-                                    ),
-                                )
-                            ) : (
-                                <p class="no-data">Sin datos disponibles</p>
-                            )
-                        }
+        <div class="right-column">
+            <section class="stadium-card">
+                <h2 class="section-header">ESTADIO</h2>
+                <div class="stadium-content">
+                    <div class="stadium-photo">
+                        <div class="photo-placeholder"></div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section class="top-contributors-card">
-                    <h2 class="section-header">MÁS GOLES GENERADOS (G+A)</h2>
-                    <div class="top-list">
-                        {
-                            topPlayersData.topContributors.length > 0 ? (
-                                topPlayersData.topContributors.map(
-                                    (player: any, index: number) => (
-                                        <div class="top-item">
-                                            <span class="position">
-                                                {index + 1}.
-                                            </span>
-                                            <span class="player-name">
-                                                {player.nombre}
-                                            </span>
-                                            <span class="stat-value">
-                                                {player.total} ({player.goles}G
-                                                + {player.asistencias}A)
-                                            </span>
-                                        </div>
-                                    ),
-                                )
-                            ) : (
-                                <p class="no-data">Sin datos disponibles</p>
+            <section class="records-card">
+                <h2 class="section-header">RÉCORDS</h2>
+                <div class="records-list">
+                    {
+                        rivalRecords?.maximo_goleador && (
+                            <div class="record-row">
+                                <span class="record-label">
+                                    Máxima goleadora:
+                                </span>
+                                <span class="record-value">
+                                    {rivalRecords.maximo_goleador.nombre} -{" "}
+                                    {rivalRecords.maximo_goleador.goles}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.goleador_rival && (
+                            <div class="record-row">
+                                <span class="record-label">
+                                    Goleador rival:
+                                </span>
+                                <span class="record-value">
+                                    {rivalRecords.goleador_rival.nombre} -{" "}
+                                    {rivalRecords.goleador_rival.goles}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mas_partidos && (
+                            <div class="record-row">
+                                <span class="record-label">
+                                    Jugadora con más partidos:
+                                </span>
+                                <span class="record-value">
+                                    {rivalRecords.mas_partidos.nombre} -{" "}
+                                    {rivalRecords.mas_partidos.partidos}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mayor_victoria && (
+                            <div class="record-row">
+                                <span class="record-label">
+                                    Mayor victoria:
+                                </span>
+                                <span class="record-value">
+                                    {rivalRecords.mayor_victoria.resultado}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mayor_derrota && (
+                            <div class="record-row">
+                                <span class="record-label">Mayor derrota:</span>
+                                <span class="record-value">
+                                    {rivalRecords.mayor_derrota.resultado}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mas_repetido && (
+                            <div class="record-row">
+                                <span class="record-label">Más repetido:</span>
+                                <span class="record-value">
+                                    {rivalRecords.mas_repetido.resultado} -{" "}
+                                    {rivalRecords.mas_repetido.veces} veces
+                                </span>
+                            </div>
+                        )
+                    }
+                </div>
+            </section>
+
+            <section class="top-scorers-card">
+                <h2 class="section-header">MÁXIMAS GOLEADORAS</h2>
+                <div class="top-list">
+                    {
+                        topPlayersData.topScorers.length > 0 ? (
+                            topPlayersData.topScorers.map(
+                                (player: any, index: number) => (
+                                    <div class="top-item">
+                                        <span class="position">
+                                            {index + 1}.
+                                        </span>
+                                        <span class="player-name">
+                                            {player.nombre}
+                                        </span>
+                                        <span class="stat-value">
+                                            {player.goles}{" "}
+                                            {player.goles === 1
+                                                ? "gol"
+                                                : "goles"}
+                                        </span>
+                                    </div>
+                                ),
                             )
-                        }
-                    </div>
-                </section>
-            </div>
+                        ) : (
+                            <p class="no-data">Sin datos disponibles</p>
+                        )
+                    }
+                </div>
+            </section>
+
+            <section class="top-assisters-card">
+                <h2 class="section-header">MÁS ASISTENTES</h2>
+                <div class="top-list">
+                    {
+                        topPlayersData.topAssisters.length > 0 ? (
+                            topPlayersData.topAssisters.map(
+                                (player: any, index: number) => (
+                                    <div class="top-item">
+                                        <span class="position">
+                                            {index + 1}.
+                                        </span>
+                                        <span class="player-name">
+                                            {player.nombre}
+                                        </span>
+                                        <span class="stat-value">
+                                            {player.asistencias}{" "}
+                                            {player.asistencias === 1
+                                                ? "asistencia"
+                                                : "asistencias"}
+                                        </span>
+                                    </div>
+                                ),
+                            )
+                        ) : (
+                            <p class="no-data">Sin datos disponibles</p>
+                        )
+                    }
+                </div>
+            </section>
+
+            <section class="top-contributors-card">
+                <h2 class="section-header">MÁS GOLES GENERADOS (G+A)</h2>
+                <div class="top-list">
+                    {
+                        topPlayersData.topContributors.length > 0 ? (
+                            topPlayersData.topContributors.map(
+                                (player: any, index: number) => (
+                                    <div class="top-item">
+                                        <span class="position">
+                                            {index + 1}.
+                                        </span>
+                                        <span class="player-name">
+                                            {player.nombre}
+                                        </span>
+                                        <span class="stat-value">
+                                            {player.total} ({player.goles}G +{" "}
+                                            {player.asistencias}A)
+                                        </span>
+                                    </div>
+                                ),
+                            )
+                        ) : (
+                            <p class="no-data">Sin datos disponibles</p>
+                        )
+                    }
+                </div>
+            </section>
         </div>
     </main>
+</Layout>
 
-    <style>
+<script define:vars={{ initialMatches: rivalMatches }}>
+    // Helper to determine season from date
+    function getSeason(dateStr) {
+        const d = new Date(dateStr);
+        const year = d.getFullYear();
+        const month = d.getMonth() + 1;
+        const startYear = month >= 8 ? year : year - 1;
+        const endYear = startYear + 1;
+        return `${startYear.toString().slice(-2)}/${endYear.toString().slice(-2)}`;
+    }
+
+    // Add season to matches
+    const allMatches = initialMatches.map((m) => ({
+        ...m,
+        season: getSeason(m.fecha),
+    }));
+
+    const compFilter = document.getElementById("competition-filter");
+    const seasonFilter = document.getElementById("season-filter");
+
+    function calculateStats(matches) {
+        const stats = {
+            home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
+            away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
+            total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
+        };
+
+        matches.forEach((match) => {
+            const golesRM = parseInt(match.golesRM) || 0;
+            const golesRival = parseInt(match.golesRival) || 0;
+            const isHome = match.esLocal;
+            const location = isHome ? stats.home : stats.away;
+
+            location.pj++;
+            location.gf += golesRM;
+            location.gc += golesRival;
+
+            if (golesRM > golesRival) location.pg++;
+            else if (golesRM === golesRival) location.pe++;
+            else location.pp++;
+        });
+
+        // Aggregate totals
+        stats.total.pj = stats.home.pj + stats.away.pj;
+        stats.total.pg = stats.home.pg + stats.away.pg;
+        stats.total.pe = stats.home.pe + stats.away.pe;
+        stats.total.pp = stats.home.pp + stats.away.pp;
+        stats.total.gf = stats.home.gf + stats.away.gf;
+        stats.total.gc = stats.home.gc + stats.away.gc;
+
+        const addFields = (obj) => ({
+            ...obj,
+            percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
+            percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
+            percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
+            avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
+            dif: obj.gf - obj.gc,
+        });
+
+        return {
+            home: addFields(stats.home),
+            away: addFields(stats.away),
+            total: addFields(stats.total),
+        };
+    }
+
+    function updateCharts(stats) {
+        const circumference = 220;
+        const totalMatches = stats.total.pj;
+        const totalGoals = stats.total.gf + stats.total.gc;
+
+        // Updated Arcs
+        const winsArc =
+            totalMatches > 0
+                ? Math.round((stats.total.pg / totalMatches) * circumference)
+                : 0;
+        const drawsArc =
+            totalMatches > 0
+                ? Math.round((stats.total.pe / totalMatches) * circumference)
+                : 0;
+        const lossesArc =
+            totalMatches > 0
+                ? Math.round((stats.total.pp / totalMatches) * circumference)
+                : 0;
+
+        const goalsForArc =
+            totalGoals > 0
+                ? Math.round((stats.total.gf / totalGoals) * circumference)
+                : 0;
+        const goalsAgainstArc =
+            totalGoals > 0
+                ? Math.round((stats.total.gc / totalGoals) * circumference)
+                : 0;
+
+        // Update DOM - Circles
+        // Results Chart
+        const resultsChart = document.getElementById("results-chart");
+        if (resultsChart) {
+            const circles = resultsChart.querySelectorAll("circle");
+            // 0: wins, 1: draws, 2: losses
+            if (circles[0])
+                circles[0].setAttribute(
+                    "stroke-dasharray",
+                    `${winsArc} ${circumference - winsArc}`,
+                );
+            if (circles[1]) {
+                circles[1].setAttribute(
+                    "stroke-dasharray",
+                    `${drawsArc} ${circumference - drawsArc}`,
+                );
+                circles[1].setAttribute("stroke-dashoffset", -winsArc);
+            }
+            if (circles[2]) {
+                circles[2].setAttribute(
+                    "stroke-dasharray",
+                    `${lossesArc} ${circumference - lossesArc}`,
+                );
+                circles[2].setAttribute(
+                    "stroke-dashoffset",
+                    -(winsArc + drawsArc),
+                );
+            }
+        }
+
+        // Goals Chart
+        const goalsChart = document.getElementById("goals-chart");
+        if (goalsChart) {
+            const circles = goalsChart.querySelectorAll("circle");
+            // 0: for, 1: against
+            if (circles[0])
+                circles[0].setAttribute(
+                    "stroke-dasharray",
+                    `${goalsForArc} ${circumference - goalsForArc}`,
+                );
+            if (circles[1]) {
+                circles[1].setAttribute(
+                    "stroke-dasharray",
+                    `${goalsAgainstArc} ${circumference - goalsAgainstArc}`,
+                );
+                circles[1].setAttribute("stroke-dashoffset", -goalsForArc);
+            }
+        }
+
+        // Update Legends
+        const resultsLegend = document.getElementById("results-legend");
+        if (resultsLegend) {
+            const divs = resultsLegend.querySelectorAll("div");
+            if (divs[0])
+                divs[0].innerHTML = `<span class="dot green"></span> Ganados (${stats.total.pg})`;
+            if (divs[1])
+                divs[1].innerHTML = `<span class="dot orange"></span> Empatados (${stats.total.pe})`;
+            if (divs[2])
+                divs[2].innerHTML = `<span class="dot red"></span> Perdidos (${stats.total.pp})`;
+        }
+
+        const goalsLegend = document.getElementById("goals-legend");
+        if (goalsLegend) {
+            const divs = goalsLegend.querySelectorAll("div");
+            if (divs[0])
+                divs[0].innerHTML = `<span class="dot green"></span> A favor (${stats.total.gf})`;
+            if (divs[1])
+                divs[1].innerHTML = `<span class="dot red"></span> En contra (${stats.total.gc})`;
+        }
+    }
+
+    function updateTable(stats) {
+        const table = document.querySelector(".stats-table tbody");
+        if (!table) return;
+
+        // Helper to generate row HTML
+        const getRowHtml = (label, data) => `
+                <td>${label}</td>
+                <td>${data.pj}</td>
+                <td>${data.pg}</td>
+                <td>${data.percPG}%</td>
+                <td>${data.pe}</td>
+                <td>${data.percPE}%</td>
+                <td>${data.pp}</td>
+                <td>${data.percPP}%</td>
+                <td class="highlight-yellow">${data.gf}</td>
+                <td class="highlight-red">${data.gc}</td>
+                <td class="highlight-blue">${data.dif > 0 ? "+" : ""}${data.dif}</td>
+                <td>${data.avg}</td>
+                <td>${data.dif}</td>
+            `;
+
+        table.innerHTML = `
+                <tr>${getRowHtml("LOCAL", stats.home)}</tr>
+                <tr>${getRowHtml("VISITANTE", stats.away)}</tr>
+                <tr class="total-row">${getRowHtml("<strong>TOTAL</strong>", stats.total)}</tr>
+            `;
+    }
+
+    function updateUI() {
+        const selectedComp = compFilter.value;
+        const selectedSeason = seasonFilter.value;
+
+        const filteredMatches = allMatches.filter((m) => {
+            const compMatch =
+                selectedComp === "all" || m.competicion === selectedComp;
+            const seasonMatch =
+                selectedSeason === "all" || m.season === selectedSeason;
+            return compMatch && seasonMatch;
+        });
+
+        const newStats = calculateStats(filteredMatches);
+        updateCharts(newStats);
+        updateTable(newStats);
+    }
+
+    if (compFilter) compFilter.addEventListener("change", updateUI);
+    if (seasonFilter) seasonFilter.addEventListener("change", updateUI);
+</script>
+
+<style>
+    .rival-details-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        overflow-x: hidden;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: color 0.3s;
+    }
+
+    .back-link:hover {
+        color: #ffde59;
+    }
+
+    .rival-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .left-column,
+    .right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .section-header {
+        background: #ffde59;
+        color: #2b2b2b;
+        padding: 0.75rem 1rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .section-subheader {
+        background: #ffde59;
+        color: #000;
+        padding: 0.75rem 1rem;
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: bold;
+    }
+
+    .rival-card,
+    .players-card,
+    .charts-card,
+    .stats-table-card,
+    .matches-card,
+    .stadium-card,
+    .kit-card,
+    .records-card,
+    .top-scorers-card,
+    .top-assisters-card,
+    .top-contributors-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .rival-info {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .rival-shield {
+        flex-shrink: 0;
+    }
+
+    .rival-shield img {
+        width: 300px;
+        height: 300px;
+        object-fit: contain;
+    }
+
+    .rival-details {
+        flex: 1;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .info-row .label {
+        font-weight: 600;
+        width: 150px;
+    }
+
+    .info-row .value {
+        flex: 1;
+        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .country-flag {
+        width: 24px;
+        height: 16px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+    }
+
+    .info-row .link {
+        color: #0066cc;
+    }
+
+    .players-list {
+        padding: 1.5rem;
+        font-size: 0.9rem;
+        line-height: 1.8;
+    }
+
+    .charts-content {
+        padding: 1.5rem;
+    }
+
+    .chart-controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .control label {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .control select {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .btn-ok {
+        padding: 0.5rem 1rem;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .chart-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pie-chart {
+        width: 200px;
+        height: 200px;
+    }
+
+    .chart-legend {
+        font-size: 0.85rem;
+    }
+
+    .chart-legend .dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .dot.green {
+        background: #c8e6c9;
+    }
+    .dot.orange {
+        background: #fff9c4;
+    }
+    .dot.red {
+        background: #ffcdd2;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stats-table,
+    .matches-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .stats-table th,
+    .stats-table td,
+    .matches-table th,
+    .matches-table td {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
+
+    .stats-table th,
+    .matches-table th {
+        background: #333;
+        color: white;
+        font-weight: 600;
+    }
+
+    .stats-table th.highlight-yellow {
+        background: #ffcc00;
+        color: #333;
+    }
+
+    .stats-table th.highlight-red {
+        background: #dc3545;
+    }
+
+    .stats-table th.highlight-blue {
+        background: #007bff;
+    }
+
+    .stats-table tbody tr:nth-child(even) {
+        background: transparent;
+    }
+
+    .total-row {
+        border-top: 2px solid #333;
+    }
+
+    .stats-table tbody tr:not(.total-row) {
+        background: #f0f0f0;
+    }
+
+    .resultado-victoria {
+        background-color: #c8e6c9 !important;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .resultado-empate {
+        background-color: #fff9c4 !important;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .resultado-derrota {
+        background-color: #ffcdd2 !important;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .stats-table .total-row {
+        background: #ffde59 !important;
+        font-weight: bold;
+        border-top: 2px solid #333;
+    }
+
+    .total-row td:first-child {
+        background: #ffffff !important;
+    }
+
+    .matches-table tbody tr {
+        background: #f0f0f0;
+    }
+
+    .matches-table
+        tbody
+        td:not(.resultado-victoria):not(.resultado-empate):not(
+            .resultado-derrota
+        ) {
+        background: #f0f0f0;
+    }
+
+    .matches-controls {
+        padding: 1rem;
+        background: #f9f9f9;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        background: #ffde59;
+        color: #2b2b2b;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .stadium-photo,
+    .kit-row {
+        padding: 1.5rem;
+    }
+
+    .photo-placeholder {
+        width: 100%;
+        height: 200px;
+        background: #f0f0f0;
+        border-radius: 8px;
+    }
+
+    .kit-row {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .kit-placeholder {
+        width: 120px;
+        height: 150px;
+        border-radius: 8px;
+    }
+
+    .kit-placeholder.home {
+        background: linear-gradient(to bottom, #ff0000, #cc0000);
+    }
+
+    .kit-placeholder.away {
+        background: linear-gradient(to bottom, #006600, #004400);
+    }
+
+    .records-list,
+    .top-list {
+        padding: 1.5rem;
+    }
+
+    .record-row,
+    .top-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+        color: #000;
+    }
+
+    .record-label,
+    .player-name {
+        font-weight: 600;
+    }
+
+    .record-value,
+    .stat-value {
+        color: #000;
+        font-weight: bold;
+    }
+
+    .top-item {
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .position {
+        width: 30px;
+        font-weight: bold;
+        color: #000;
+    }
+
+    .player-name {
+        flex: 1;
+    }
+
+    @media (max-width: 1024px) {
+        .rival-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .charts-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
         .rival-details-page {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-            overflow-x: hidden;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #666;
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            transition: color 0.3s;
-        }
-
-        .back-link:hover {
-            color: #ffde59;
+            padding: 1rem 0.5rem;
         }
 
         .rival-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-        }
-
-        .left-column,
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            width: 100%;
-            overflow-x: hidden;
-        }
-
-        .section-header {
-            background: #ffde59;
-            color: #2b2b2b;
-            padding: 0.75rem 1rem;
-            margin: 0;
-            font-size: 1rem;
-            font-weight: bold;
-        }
-
-        .section-subheader {
-            background: #ffde59;
-            color: #000;
-            padding: 0.75rem 1rem;
-            margin: 0;
-            font-size: 0.95rem;
-            font-weight: bold;
+            grid-template-columns: 1fr;
+            gap: 1rem;
         }
 
         .rival-card,
@@ -791,517 +1374,165 @@ const mockPlayers: string[] = [];
         .stats-table-card,
         .matches-card,
         .stadium-card,
-        .kit-card,
         .records-card,
         .top-scorers-card,
         .top-assisters-card,
         .top-contributors-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
+            margin-bottom: 1rem;
+            overflow-x: hidden;
         }
 
         .rival-info {
-            padding: 1.5rem;
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .rival-shield {
-            flex-shrink: 0;
-        }
-
-        .rival-shield img {
-            width: 300px;
-            height: 300px;
-            object-fit: contain;
-        }
-
-        .rival-details {
-            flex: 1;
-        }
-
-        .info-row {
-            display: flex;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .info-row .label {
-            font-weight: 600;
-            width: 150px;
-        }
-
-        .info-row .value {
-            flex: 1;
-            text-align: right;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 0.5rem;
-        }
-
-        .country-flag {
-            width: 24px;
-            height: 16px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-        }
-
-        .info-row .link {
-            color: #0066cc;
-        }
-
-        .players-list {
-            padding: 1.5rem;
-            font-size: 0.9rem;
-            line-height: 1.8;
-        }
-
-        .charts-content {
-            padding: 1.5rem;
-        }
-
-        .chart-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .control {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .control label {
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .control select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .btn-ok {
-            padding: 0.5rem 1rem;
-            background: #4caf50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .charts-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-
-        .chart-item {
-            display: flex;
             flex-direction: column;
             align-items: center;
             gap: 1rem;
+            padding: 1rem;
+        }
+
+        .rival-shield {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .rival-shield img {
+            max-width: 150px;
+            width: 100%;
+            height: auto;
+        }
+
+        .rival-details {
+            width: 100%;
+        }
+
+        .info-row {
+            font-size: 0.95rem;
+            padding: 0.6rem 0;
+            flex-wrap: wrap;
+        }
+
+        .info-row .label {
+            font-size: 0.95rem;
+            width: 45%;
+        }
+
+        .info-row .value {
+            font-size: 0.95rem;
+            width: 55%;
+        }
+
+        .players-card {
+            display: none;
+        }
+
+        .charts-content,
+        .records-list,
+        .top-list {
+            padding: 0.75rem;
+            overflow-x: hidden;
+        }
+
+        .charts-row {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .chart-item {
+            width: 100%;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
         }
 
         .pie-chart {
-            width: 200px;
-            height: 200px;
+            width: 140px;
+            height: 140px;
+            max-width: 140px;
         }
 
         .chart-legend {
             font-size: 0.85rem;
-        }
-
-        .chart-legend .dot {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-        }
-
-        .dot.green {
-            background: #c8e6c9;
-        }
-        .dot.orange {
-            background: #fff9c4;
-        }
-        .dot.red {
-            background: #ffcdd2;
+            text-align: center;
+            width: 100%;
         }
 
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            width: 100%;
         }
 
         .stats-table,
         .matches-table {
+            min-width: 700px;
             width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
+        }
+
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 2;
+        }
+
+        .stats-table th:first-child {
+            background: #333;
+            z-index: 3;
+        }
+
+        .stats-table tbody tr td:first-child {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        .stats-table .total-row td:first-child {
+            background: #ffffff !important;
+        }
+
+        .stats-table,
+        .matches-table {
+            font-size: 0.7rem;
         }
 
         .stats-table th,
         .stats-table td,
         .matches-table th,
         .matches-table td {
-            padding: 0.75rem 0.5rem;
-            text-align: center;
-            border: 1px solid #ddd;
+            padding: 0.4rem 0.2rem;
+            white-space: nowrap;
         }
 
-        .stats-table th,
-        .matches-table th {
-            background: #333;
-            color: white;
-            font-weight: 600;
+        .section-header {
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            white-space: normal;
+            word-wrap: break-word;
         }
 
-        .stats-table th.highlight-yellow {
-            background: #ffcc00;
-            color: #333;
+        .section-subheader {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            white-space: normal;
+            word-wrap: break-word;
         }
 
-        .stats-table th.highlight-red {
-            background: #dc3545;
-        }
-
-        .stats-table th.highlight-blue {
-            background: #007bff;
-        }
-
-        .stats-table tbody tr:nth-child(even) {
-            background: transparent;
-        }
-
-        .total-row {
-            border-top: 2px solid #333;
-        }
-
-        .stats-table tbody tr:not(.total-row) {
-            background: #f0f0f0;
-        }
-
-        .resultado-victoria {
-            background-color: #c8e6c9 !important;
-            font-weight: 600;
-            color: #000;
-        }
-
-        .resultado-empate {
-            background-color: #fff9c4 !important;
-            font-weight: 600;
-            color: #000;
-        }
-
-        .resultado-derrota {
-            background-color: #ffcdd2 !important;
-            font-weight: 600;
-            color: #000;
-        }
-
-        .stats-table .total-row {
-            background: #ffde59 !important;
-            font-weight: bold;
-            border-top: 2px solid #333;
-        }
-
-        .total-row td:first-child {
-            background: #ffffff !important;
-        }
-
-        .matches-table tbody tr {
-            background: #f0f0f0;
-        }
-
-        .matches-table
-            tbody
-            td:not(.resultado-victoria):not(.resultado-empate):not(
-                .resultado-derrota
-            ) {
-            background: #f0f0f0;
-        }
-
-        .matches-controls {
-            padding: 1rem;
-            background: #f9f9f9;
-        }
-
-        .filter-btn {
-            padding: 0.5rem 1rem;
-            background: #ffde59;
-            color: #2b2b2b;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .stadium-photo,
-        .kit-row {
-            padding: 1.5rem;
-        }
-
-        .photo-placeholder {
-            width: 100%;
-            height: 200px;
-            background: #f0f0f0;
-            border-radius: 8px;
-        }
-
-        .kit-row {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .kit-placeholder {
-            width: 120px;
-            height: 150px;
-            border-radius: 8px;
-        }
-
-        .kit-placeholder.home {
-            background: linear-gradient(to bottom, #ff0000, #cc0000);
-        }
-
-        .kit-placeholder.away {
-            background: linear-gradient(to bottom, #006600, #004400);
-        }
-
+        .stadium-content,
         .records-list,
         .top-list {
-            padding: 1.5rem;
+            padding: 0.75rem;
         }
 
         .record-row,
         .top-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #eee;
-            color: #000;
+            font-size: 0.85rem;
+            padding: 0.5rem 0;
         }
-
-        .record-label,
-        .player-name {
-            font-weight: 600;
-        }
-
-        .record-value,
-        .stat-value {
-            color: #000;
-            font-weight: bold;
-        }
-
-        .top-item {
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .position {
-            width: 30px;
-            font-weight: bold;
-            color: #000;
-        }
-
-        .player-name {
-            flex: 1;
-        }
-
-        @media (max-width: 1024px) {
-            .rival-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .rival-details-page {
-                padding: 1rem 0.5rem;
-            }
-
-            .rival-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .rival-card,
-            .players-card,
-            .charts-card,
-            .stats-table-card,
-            .matches-card,
-            .stadium-card,
-            .records-card,
-            .top-scorers-card,
-            .top-assisters-card,
-            .top-contributors-card {
-                margin-bottom: 1rem;
-                overflow-x: hidden;
-            }
-
-            .rival-info {
-                flex-direction: column;
-                align-items: center;
-                gap: 1rem;
-                padding: 1rem;
-            }
-
-            .rival-shield {
-                width: 100%;
-                text-align: center;
-                margin-bottom: 0;
-                display: flex;
-                justify-content: center;
-            }
-
-            .rival-shield img {
-                max-width: 150px;
-                width: 100%;
-                height: auto;
-            }
-
-            .rival-details {
-                width: 100%;
-            }
-
-            .info-row {
-                font-size: 0.95rem;
-                padding: 0.6rem 0;
-                flex-wrap: wrap;
-            }
-
-            .info-row .label {
-                font-size: 0.95rem;
-                width: 45%;
-            }
-
-            .info-row .value {
-                font-size: 0.95rem;
-                width: 55%;
-            }
-
-            .players-card {
-                display: none;
-            }
-
-            .charts-content,
-            .records-list,
-            .top-list {
-                padding: 0.75rem;
-                overflow-x: hidden;
-            }
-
-            .charts-row {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                width: 100%;
-                overflow-x: hidden;
-            }
-
-            .chart-item {
-                width: 100%;
-                max-width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                overflow-x: hidden;
-            }
-
-            .pie-chart {
-                width: 140px;
-                height: 140px;
-                max-width: 140px;
-            }
-
-            .chart-legend {
-                font-size: 0.85rem;
-                text-align: center;
-                width: 100%;
-            }
-
-            .table-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                width: 100%;
-            }
-
-            .stats-table,
-            .matches-table {
-                min-width: 700px;
-                width: 100%;
-            }
-
-            .stats-table th:first-child,
-            .stats-table td:first-child {
-                position: sticky;
-                left: 0;
-                background: #fff;
-                z-index: 2;
-            }
-
-            .stats-table th:first-child {
-                background: #333;
-                z-index: 3;
-            }
-
-            .stats-table tbody tr td:first-child {
-                background: #f0f0f0;
-                font-weight: 600;
-            }
-
-            .stats-table .total-row td:first-child {
-                background: #ffffff !important;
-            }
-
-            .stats-table,
-            .matches-table {
-                font-size: 0.7rem;
-            }
-
-            .stats-table th,
-            .stats-table td,
-            .matches-table th,
-            .matches-table td {
-                padding: 0.4rem 0.2rem;
-                white-space: nowrap;
-            }
-
-            .section-header {
-                font-size: 0.85rem;
-                padding: 0.5rem 0.75rem;
-                white-space: normal;
-                word-wrap: break-word;
-            }
-
-            .section-subheader {
-                font-size: 0.8rem;
-                padding: 0.5rem 0.75rem;
-                white-space: normal;
-                word-wrap: break-word;
-            }
-
-            .stadium-content,
-            .records-list,
-            .top-list {
-                padding: 0.75rem;
-            }
-
-            .record-row,
-            .top-item {
-                font-size: 0.85rem;
-                padding: 0.5rem 0;
-            }
-        }
-    </style>
-</Layout>
+    }
+</style>
