@@ -18,7 +18,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         console.log('Fetching rival records for rival ID:', rivalId);
 
         let topScorer = null;
-        let rivalTopScorer = null;
         let mostAppearances = null;
         let biggestWin = null;
         let biggestLoss = null;

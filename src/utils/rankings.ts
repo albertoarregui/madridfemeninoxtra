@@ -247,12 +247,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 posicion: matches[0].posicion || ''
             };
 
-            // Helper to update max streaks for a key (e.g. 'all', '2023/24', 'Liga F')
-            const updateMax = (map: any, key: string, field: string, current: number) => {
-                if (!map[key]) map[key] = { ...basePlayer, temporada: 'all', competicion: 'all', streak_scoring: 0, streak_assisting: 0, streak_ga: 0, streak_clean_sheet: 0 };
-                //@ts-ignore
-                if (current > map[key][field]) map[key][field] = current;
-            };
 
             // State trackers
             const currentStreaks: any = {

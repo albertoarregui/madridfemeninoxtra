@@ -388,15 +388,7 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
 
         const client = createClient({ url, authToken });
 
-        const query = `
-            SELECT 
-                SUM(CASE WHEN goles_rm > goles_rival THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN goles_rm = goles_rival THEN 1 ELSE 0 END) as draws,
-                SUM(CASE WHEN goles_rm < goles_rival THEN 1 ELSE 0 END) as losses,
-                COUNT(*) as total
-            FROM partidos 
-            WHERE estadio = ? AND played = 1
-        `;
+
 
         const safeQuery = `
              SELECT 

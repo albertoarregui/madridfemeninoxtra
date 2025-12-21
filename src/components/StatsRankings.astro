@@ -1,3 +1,4 @@
+---
 import type { RankingStat, StreakData } from "../utils/rankings";
 
 interface Props {
@@ -40,10 +41,18 @@ const playerImageMap = Object.fromEntries(
                 <option value="goles">Máximas Goleadoras</option>
                 <option value="asistencias">Máximas Asistentes</option>
                 <option value="goles_generados">Goles Generados</option>
-                <option value="streak_scoring">Racha: Partidos seguidos marcando</option>
-                <option value="streak_assisting">Racha: Partidos seguidos asistiendo</option>
-                <option value="streak_ga">Racha: Partidos seguidos generando gol (G+A)</option>
-                <option value="streak_clean_sheet">Racha: Partidos seguidos imbatida (Porteras/Defensas)</option>
+                <option value="streak_scoring"
+                    >Racha: Partidos seguidos marcando</option
+                >
+                <option value="streak_assisting"
+                    >Racha: Partidos seguidos asistiendo</option
+                >
+                <option value="streak_ga"
+                    >Racha: Partidos seguidos generando gol (G+A)</option
+                >
+                <option value="streak_clean_sheet"
+                    >Racha: Partidos seguidos imbatida (Porteras/Defensas)</option
+                >
             </select>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -219,34 +228,33 @@ const playerImageMap = Object.fromEntries(
             dataKeys: ["capitanias"],
             primaryKey: "capitanias",
         },
-        // Streaks
         streak_scoring: {
             title: "Racha: Partidos Marcando",
             headers: ["Pos", "Jugadora", "Partidos"],
             dataKeys: ["streak_scoring"],
             primaryKey: "streak_scoring",
-            isStreak: true
+            isStreak: true,
         },
         streak_assisting: {
             title: "Racha: Partidos Asistiendo",
             headers: ["Pos", "Jugadora", "Partidos"],
             dataKeys: ["streak_assisting"],
             primaryKey: "streak_assisting",
-            isStreak: true
+            isStreak: true,
         },
         streak_ga: {
             title: "Racha: Partidos Generando Gol",
             headers: ["Pos", "Jugadora", "Partidos"],
             dataKeys: ["streak_ga"],
             primaryKey: "streak_ga",
-            isStreak: true
+            isStreak: true,
         },
         streak_clean_sheet: {
             title: "Racha: Partidos Imbatida",
             headers: ["Pos", "Portera/Defensa", "Partidos"],
             dataKeys: ["streak_clean_sheet"],
             primaryKey: "streak_clean_sheet",
-            isStreak: true
+            isStreak: true,
         },
     };
 
@@ -259,7 +267,12 @@ const playerImageMap = Object.fromEntries(
     function isDefenderOrGK(pos) {
         if (!pos) return false;
         const p = pos.toLowerCase();
-        return p.includes('portera') || p.includes('defensa') || p.includes('central') || p.includes('lateral');
+        return (
+            p.includes("portera") ||
+            p.includes("defensa") ||
+            p.includes("central") ||
+            p.includes("lateral")
+        );
     }
 
     function calculateRankings() {
@@ -289,38 +302,45 @@ const playerImageMap = Object.fromEntries(
         let sortedPlayers = [];
 
         if (config.isStreak) {
-            // Handle Streak Data
-            // Note: Our streaksData contains rows for 'global', 'season:X', 'comp:Y'.
-            // It does NOT support specific Season + Specific Competition combination.
-            
-            sortedPlayers = streaksData.filter(item => {
-                const matchSeason = selectedSeason === 'todos' ? (item.temporada === 'all') : (item.temporada === selectedSeason);
-                
+            sortedPlayers = streaksData.filter((item) => {
+                const matchSeason =
+                    selectedSeason === "todos"
+                        ? item.temporada === "all"
+                        : item.temporada === selectedSeason;
+
                 let matchComp = false;
-                if (selectedCompetition === 'todos') {
-                    matchComp = (item.competicion === 'all' || item.competicion === 'todos');
-                } else if (selectedCompetition === 'oficiales') {
-                     matchComp = (item.competicion === 'all' || item.competicion === 'todos');
+                if (selectedCompetition === "todos") {
+                    matchComp =
+                        item.competicion === "all" ||
+                        item.competicion === "todos";
+                } else if (selectedCompetition === "oficiales") {
+                    matchComp =
+                        item.competicion === "all" ||
+                        item.competicion === "todos";
                 } else {
-                    matchComp = (item.competicion === selectedCompetition);
+                    matchComp = item.competicion === selectedCompetition;
                 }
 
                 return matchSeason && matchComp;
             });
 
-            // Filter out 0 values and sort
             sortedPlayers = sortedPlayers
-                .filter(p => Number(p[config.primaryKey]) > 0)
-                .sort((a, b) => Number(b[config.primaryKey]) - Number(a[config.primaryKey]));    
-        
+                .filter((p) => Number(p[config.primaryKey]) > 0)
+                .sort(
+                    (a, b) =>
+                        Number(b[config.primaryKey]) -
+                        Number(a[config.primaryKey]),
+                );
         } else {
-            // Handle Standard Rankings (Aggregated)
             const playerMap = {};
-    
+
             rankingsData.forEach((item) => {
-                if (selectedSeason !== "todos" && item.temporada !== selectedSeason)
+                if (
+                    selectedSeason !== "todos" &&
+                    item.temporada !== selectedSeason
+                )
                     return;
-    
+
                 if (selectedCompetition === "oficiales") {
                     const officialComps = [
                         "Liga F",
@@ -336,33 +356,33 @@ const playerImageMap = Object.fromEntries(
                     return;
                 }
 
-                // Positional Filter for Porterias a cero
-                if (selectedType === 'porterias_cero') {
+                if (selectedType === "porterias_cero") {
                     if (!isDefenderOrGK(item.posicion)) return;
                 }
-    
+
                 if (!playerMap[item.id_jugadora]) {
                     playerMap[item.id_jugadora] = {
                         nombre: item.nombre,
                         slug: item.slug,
                         posicion: item.posicion,
-                        ...Object.fromEntries(config.dataKeys.map((k) => [k, 0])),
+                        ...Object.fromEntries(
+                            config.dataKeys.map((k) => [k, 0]),
+                        ),
                     };
                 }
-    
+
                 config.dataKeys.forEach((key) => {
                     playerMap[item.id_jugadora][key] += item[key] || 0;
                 });
             });
-    
+
             const sortKey = config.primaryKey;
-    
+
             sortedPlayers = Object.values(playerMap)
                 .filter((p) => p[sortKey] > 0)
                 .sort((a, b) => b[sortKey] - a[sortKey]);
         }
 
-        // Limit to 50
         sortedPlayers = sortedPlayers.slice(0, 50);
         if (sortedPlayers.length === 0) {
             tableBody.innerHTML =
@@ -370,7 +390,6 @@ const playerImageMap = Object.fromEntries(
         } else {
             tableBody.innerHTML = sortedPlayers
                 .map((player, index) => {
-                    const isFirst = index === 0;
                     const extraStyle = "";
                     const valueCells = config.dataKeys
                         .map(
