@@ -62,29 +62,105 @@ const otherVideos = videos.slice(1);
 
         {
             otherVideos.length > 0 && (
-                <div class="video-scroll-container">
-                    {otherVideos.map((video) => (
-                        <a
-                            href={video.link}
-                            target="_blank"
-                            class="video-card-small"
+                <div class="scroll-wrapper">
+                    <button
+                        class="scroll-btn left"
+                        id="scrollLeft"
+                        aria-label="Scroll left"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
+                            style="transform: rotate(180deg);"
                         >
-                            <div class="video-thumbnail">
-                                <img
-                                    src={video.thumbnail}
-                                    alt={video.title}
-                                    loading="lazy"
+                            <>
+                                <path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
                                 />
-                                <div class="play-icon">▶</div>
-                            </div>
-                            <h3 class="video-title-small">{video.title}</h3>
-                        </a>
-                    ))}
+                                <path d="M9 6l6 6l-6 6" />
+                            </>
+                        </svg>
+                    </button>
+
+                    <div class="video-scroll-container" id="videoScroll">
+                        {otherVideos.map((video) => (
+                            <a
+                                href={video.link}
+                                target="_blank"
+                                class="video-card-small"
+                            >
+                                <div class="video-thumbnail">
+                                    <img
+                                        src={video.thumbnail}
+                                        alt={video.title}
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <h3 class="video-title-small">{video.title}</h3>
+                            </a>
+                        ))}
+                    </div>
+
+                    <button
+                        class="scroll-btn right"
+                        id="scrollRight"
+                        aria-label="Scroll right"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
+                        >
+                            <>
+                                <path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
+                                <path d="M9 6l6 6l-6 6" />
+                            </>
+                        </svg>
+                    </button>
                 </div>
             )
         }
     </div>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const scrollContainer = document.getElementById("videoScroll");
+        const scrollLeftBtn = document.getElementById("scrollLeft");
+        const scrollRightBtn = document.getElementById("scrollRight");
+
+        if (scrollContainer && scrollLeftBtn && scrollRightBtn) {
+            scrollLeftBtn.addEventListener("click", () => {
+                scrollContainer.scrollBy({ left: -300, behavior: "smooth" });
+            });
+
+            scrollRightBtn.addEventListener("click", () => {
+                scrollContainer.scrollBy({ left: 300, behavior: "smooth" });
+            });
+        }
+    });
+</script>
 
 <style>
     .youtube-section-container {
@@ -122,28 +198,52 @@ const otherVideos = videos.slice(1);
         height: 100%;
     }
 
+    .scroll-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
     .video-scroll-container {
         display: flex;
         gap: 1.5rem;
         overflow-x: auto;
         padding-bottom: 1.5rem;
-        scrollbar-width: thin;
-        scrollbar-color: #ffde59 #f0f0f0;
+        scrollbar-width: none; /* Hide scrollbar Firefox */
+        -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
         -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        flex: 1;
     }
 
     .video-scroll-container::-webkit-scrollbar {
-        height: 8px;
+        display: none; /* Hide scrollbar Chrome/Safari */
     }
 
-    .video-scroll-container::-webkit-scrollbar-track {
-        background: #f0f0f0;
-        border-radius: 4px;
+    .scroll-btn {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        z-index: 2;
+        flex-shrink: 0;
     }
 
-    .video-scroll-container::-webkit-scrollbar-thumb {
-        background-color: #ffde59;
-        border-radius: 4px;
+    .scroll-btn:hover {
+        background: #ffde59;
+        transform: scale(1.1);
+    }
+
+    .scroll-btn:active {
+        transform: scale(0.95);
     }
 
     .video-card-small {
@@ -178,31 +278,6 @@ const otherVideos = videos.slice(1);
         transform: scale(1.05);
     }
 
-    .play-icon {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.2rem;
-        opacity: 0.9;
-        transition: all 0.3s ease;
-        border: 2px solid white;
-    }
-
-    .video-card-small:hover .play-icon {
-        background: #ff0000;
-        transform: translate(-50%, -50%) scale(1.1);
-        border-color: #ff0000;
-    }
-
     .video-title-small {
         font-size: 0.95rem;
         font-weight: 600;
@@ -216,16 +291,20 @@ const otherVideos = videos.slice(1);
     }
 
     @media (max-width: 768px) {
-        .section-title {
-            font-size: 1.8rem;
-        }
-
         .video-card-small {
             flex: 0 0 240px;
         }
 
         .video-thumbnail {
             height: 135px;
+        }
+
+        .scroll-btn {
+            display: none; /* Hide arrows on mobile where touch scroll is better */
+        }
+
+        .video-scroll-container {
+            scrollbar-width: none; /* Keep hidden on mobile too, or allowed if preferred */
         }
     }
 </style>
