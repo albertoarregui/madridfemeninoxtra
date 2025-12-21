@@ -1,15 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
+import { Image } from "astro:assets";
 
 const query = Astro.url.searchParams.get("q") || "";
-const searchUrl = `/api/search?q=${encodeURIComponent(query)}`;
 
 interface SearchResult {
     type: "player" | "rival" | "match" | "coach";
     title: string;
     subtitle: string;
     url: string;
+    slug: string;
     relevance: number;
 }
 
@@ -31,6 +32,46 @@ if (query) {
         console.error("Search error:", e);
         error = "Error al realizar la búsqueda";
     }
+}
+
+// Image resolution logic
+const playerImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+);
+const rivalImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+);
+const coachImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/entrenadores/*.{png,jpg,jpeg,webp}",
+);
+
+async function getImage(result: SearchResult) {
+    let imagesRecord: Record<
+        string,
+        () => Promise<{ default: ImageMetadata }>
+    > = {};
+    let folderName = "";
+
+    if (result.type === "player") {
+        imagesRecord = playerImages;
+        folderName = "jugadoras";
+    } else if (result.type === "rival") {
+        imagesRecord = rivalImages;
+        folderName = "escudos";
+    } else if (result.type === "coach") {
+        imagesRecord = coachImages;
+        folderName = "entrenadores";
+    } else {
+        return null;
+    }
+
+    const imagePath = `/src/assets/${folderName}/${result.slug}.png`;
+    const imageLoader = imagesRecord[imagePath];
+
+    if (imageLoader) {
+        return (await imageLoader()).default;
+    }
+    return null;
 }
 
 const playerResults = results.filter((r) => r.type === "player");
@@ -95,19 +136,35 @@ const matchResults = results.filter((r) => r.type === "match");
                                     Jugadoras ({playerResults.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {playerResults.map((result) => (
-                                        <a
-                                            href={result.url}
-                                            class="result-card"
-                                        >
-                                            <h3 class="result-title">
-                                                {result.title}
-                                            </h3>
-                                            <p class="result-subtitle">
-                                                {result.subtitle}
-                                            </p>
-                                        </a>
-                                    ))}
+                                    {playerResults.map(async (result) => {
+                                        const image = await getImage(result);
+                                        return (
+                                            <a
+                                                href={result.url}
+                                                class="result-card"
+                                            >
+                                                {image && (
+                                                    <div class="result-image-container player-image">
+                                                        <Image
+                                                            src={image}
+                                                            alt={result.title}
+                                                            width={60}
+                                                            height={60}
+                                                            class="result-image"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div class="result-info">
+                                                    <h3 class="result-title">
+                                                        {result.title}
+                                                    </h3>
+                                                    <p class="result-subtitle">
+                                                        {result.subtitle}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </section>
                         )}
@@ -118,19 +175,35 @@ const matchResults = results.filter((r) => r.type === "match");
                                     Rivales ({rivalResults.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {rivalResults.map((result) => (
-                                        <a
-                                            href={result.url}
-                                            class="result-card"
-                                        >
-                                            <h3 class="result-title">
-                                                {result.title}
-                                            </h3>
-                                            <p class="result-subtitle">
-                                                {result.subtitle}
-                                            </p>
-                                        </a>
-                                    ))}
+                                    {rivalResults.map(async (result) => {
+                                        const image = await getImage(result);
+                                        return (
+                                            <a
+                                                href={result.url}
+                                                class="result-card"
+                                            >
+                                                {image && (
+                                                    <div class="result-image-container">
+                                                        <Image
+                                                            src={image}
+                                                            alt={result.title}
+                                                            width={60}
+                                                            height={60}
+                                                            class="result-image"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div class="result-info">
+                                                    <h3 class="result-title">
+                                                        {result.title}
+                                                    </h3>
+                                                    <p class="result-subtitle">
+                                                        {result.subtitle}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </section>
                         )}
@@ -141,19 +214,35 @@ const matchResults = results.filter((r) => r.type === "match");
                                     Entrenadores ({coachResults.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {coachResults.map((result) => (
-                                        <a
-                                            href={result.url}
-                                            class="result-card"
-                                        >
-                                            <h3 class="result-title">
-                                                {result.title}
-                                            </h3>
-                                            <p class="result-subtitle">
-                                                {result.subtitle}
-                                            </p>
-                                        </a>
-                                    ))}
+                                    {coachResults.map(async (result) => {
+                                        const image = await getImage(result);
+                                        return (
+                                            <a
+                                                href={result.url}
+                                                class="result-card"
+                                            >
+                                                {image && (
+                                                    <div class="result-image-container player-image">
+                                                        <Image
+                                                            src={image}
+                                                            alt={result.title}
+                                                            width={60}
+                                                            height={60}
+                                                            class="result-image"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div class="result-info">
+                                                    <h3 class="result-title">
+                                                        {result.title}
+                                                    </h3>
+                                                    <p class="result-subtitle">
+                                                        {result.subtitle}
+                                                    </p>
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </section>
                         )}
@@ -169,12 +258,14 @@ const matchResults = results.filter((r) => r.type === "match");
                                             href={result.url}
                                             class="result-card"
                                         >
-                                            <h3 class="result-title">
-                                                {result.title}
-                                            </h3>
-                                            <p class="result-subtitle">
-                                                {result.subtitle}
-                                            </p>
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
                                         </a>
                                     ))}
                                 </div>
@@ -323,7 +414,9 @@ const matchResults = results.filter((r) => r.type === "match");
         border: 2px solid #eee;
         text-decoration: none;
         transition: all 0.3s ease;
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
 
     .result-card:hover {
@@ -332,11 +425,37 @@ const matchResults = results.filter((r) => r.type === "match");
         box-shadow: 0 4px 12px rgba(255, 222, 89, 0.3);
     }
 
+    .result-image-container {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .player-image .result-image {
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .result-image {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+    }
+
+    .result-info {
+        flex: 1;
+    }
+
     .result-title {
         font-size: 1.2rem;
         font-weight: 700;
         color: #2b2b2b;
         margin-bottom: 0.5rem;
+        line-height: 1.2;
     }
 
     .result-subtitle {

@@ -33,6 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
                     title: player.nombre,
                     subtitle: player.posicion || '',
                     url: `/jugadoras/${player.slug}`,
+                    slug: player.slug,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -46,6 +47,7 @@ export const GET: APIRoute = async ({ url }) => {
                     title: club.nombre,
                     subtitle: 'Rival',
                     url: `/rivales/${club.slug}`,
+                    slug: club.slug,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -59,6 +61,7 @@ export const GET: APIRoute = async ({ url }) => {
                     title: coach.nombre,
                     subtitle: 'Entrenador',
                     url: `/entrenadores/${coach.slug}`,
+                    slug: coach.slug,
                     relevance: name.startsWith(query) ? 9 : 4
                 });
             }
@@ -77,6 +80,7 @@ export const GET: APIRoute = async ({ url }) => {
                     title: `${partido.club_local} vs ${partido.club_visitante}`,
                     subtitle: `${partido.fecha_formateada} - ${partido.competicion_nombre}`,
                     url: `/partidos/${partido.slug}`, // Fixed: Using slug instead of id_partido
+                    slug: partido.slug,
                     relevance: rival.startsWith(query) ? 8 : 3
                 });
             }

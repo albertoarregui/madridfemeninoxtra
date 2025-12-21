@@ -93,7 +93,7 @@ function formatDate(dateString: string) {
 
 	<script is:inline>
 		const WP_URL =
-			"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=10&_embed=true";
+			"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=5&_embed=true";
 
 		async function loadNews() {
 			const newsGrid = document.querySelector(".news-grid");
@@ -119,13 +119,13 @@ function formatDate(dateString: string) {
 						const title = post.title.rendered;
 						const excerpt = post.excerpt.rendered;
 						const date = new Date(post.date);
-						const formattedDate = new Intl.DateTimeFormat("es-ES", {
-							month: "short",
-							day: "numeric",
-						}).format(date);
+						const formattedDate = date.toLocaleDateString("es-ES");
 						const featuredImage =
 							post._embedded?.["wp:featuredmedia"]?.[0]
 								?.source_url;
+						const category =
+							post._embedded?.["wp:term"]?.[0]?.[0]?.name ||
+							"Noticia";
 						const link = `/noticias/${post.slug}`;
 
 						return `
@@ -140,7 +140,10 @@ function formatDate(dateString: string) {
 									: ""
 							}
 							<div class="news-content-inner">
-								<time class="news-date">${formattedDate}</time>
+								<div class="news-meta">
+									<time class="news-date">${formattedDate}</time>
+									<span class="news-category">${category}</span>
+								</div>
 								<h3 class="news-title">${title}</h3>
 								<div class="news-excerpt">${excerpt}</div>
 								<a href="${link}" class="news-link">Leer más →</a>
