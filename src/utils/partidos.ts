@@ -509,6 +509,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 displayMinute: formatDisplayMinute(goal.minuto),
                 type: 'goal',
                 text: goalText,
+                scorer: playerName,
+                assistant: assistantName,
+                isPenalty: goal.tipo === 'penalti',
+                isOwnGoal: (!goal.nombre_jugadora && !goal.goleadora),
                 team: 'local'
             });
         }
