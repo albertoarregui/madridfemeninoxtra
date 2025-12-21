@@ -1,8 +1,13 @@
 ---
-import { CALENDAR } from "../../public/consts/calendar";
+import { CALENDAR } from "../consts/calendar";
 
 const shields = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+const competitions = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/competiciones/*.{png,jpg,jpeg,webp}",
     { eager: true },
 );
 
@@ -21,6 +26,25 @@ function getShieldSrc(teamName: string) {
     return activeShieldPath ? shields[activeShieldPath].default.src : "";
 }
 
+function getCompetitionLogo(competitionName: string) {
+    const slug = competitionName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/\./g, "");
+
+    // Manual mapping or fuzzy match
+    // Check specific known filenames first if needed, or rely on slug
+    // files are: liga_f.png, supercopa_de_espana.png
+
+    const activeCompPath = Object.keys(competitions).find((path) =>
+        path.includes(`/${slug}.`),
+    );
+
+    return activeCompPath ? competitions[activeCompPath].default.src : "";
+}
+
 const MONTHS_DATA = [
     { month: "ENERO", year: 2026, days: 31, startDay: 3, num: 0 }, // Jan 1 is Thu (3)
     { month: "FEBRERO", year: 2026, days: 28, startDay: 6, num: 1 }, // Feb 1 is Sun (6)
@@ -34,6 +58,38 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     const monthStr = (monthIndex + 1).toString().padStart(2, "0");
     const dateStr = `2026-${monthStr}-${day.toString().padStart(2, "0")}`;
     return CALENDAR.find((match) => match.date === dateStr);
+};
+
+const getDayInfo = (
+    i: number,
+    monthData: (typeof MONTHS_DATA)[0],
+    monthIndex: number,
+) => {
+    const dayNum = i - monthData.startDay + 1;
+    const isValidDay = dayNum > 0 && monthData.days >= dayNum;
+
+    if (!isValidDay && i >= 35 && dayNum > monthData.days) return null;
+    if (!isValidDay && i >= 35) return null;
+
+    const match = isValidDay ? getMatchForDay(dayNum, monthIndex) : null;
+    const isHome = match?.homeaway === "home";
+    const isAway = match?.homeaway === "away";
+    const rivalName = match
+        ? match.team1 === "Real Madrid"
+            ? match.team2
+            : match.team1
+        : "";
+    const competitionLogo = match ? getCompetitionLogo(match.competition) : "";
+
+    return {
+        dayNum,
+        isValidDay,
+        match,
+        isHome,
+        isAway,
+        rivalName,
+        competitionLogo,
+    };
 };
 ---
 
@@ -98,31 +154,29 @@ const getMatchForDay = (day: number, monthIndex: number) => {
                     <div class="weekday">D</div>
 
                     {Array.from({ length: 42 }).map((_, i) => {
-                        const dayNum = i - monthData.startDay + 1;
-                        const isValidDay =
-                            dayNum > 0 && !(dayNum > monthData.days);
+                        const info = getDayInfo(i, monthData, index);
+                        if (!info) return null;
 
-                        if (!isValidDay && i >= 35 && dayNum > monthData.days)
-                            return null; // Hide extra empty row if not needed
-                        if (!isValidDay && i >= 35) return null; // Clean up end of grid
-
-                        const match = isValidDay
-                            ? getMatchForDay(dayNum, index)
-                            : null;
-                        const isHome = match?.homeaway === "home";
-                        const isAway = match?.homeaway === "away";
-                        const rivalName = match
-                            ? match.team1 === "Real Madrid"
-                                ? match.team2
-                                : match.team1
-                            : "";
+                        const {
+                            dayNum,
+                            isValidDay,
+                            match,
+                            isHome,
+                            isAway,
+                            rivalName,
+                            competitionLogo,
+                        } = info;
 
                         return (
                             <div
                                 class={`day ${isValidDay ? "" : "empty"} ${match ? "has-match" : ""}`}
                             >
                                 {isValidDay && (
-                                    <span class="day-number">{dayNum}</span>
+                                    <span
+                                        class={`day-number ${match ? "badge-style" : ""}`}
+                                    >
+                                        {dayNum}
+                                    </span>
                                 )}
                                 {match && (
                                     <div class="match-content">
@@ -184,6 +238,14 @@ const getMatchForDay = (day: number, monthIndex: number) => {
                                             class="rival-shield"
                                             title={rivalName}
                                         />
+                                        {competitionLogo && (
+                                            <img
+                                                src={competitionLogo}
+                                                alt={match.competition}
+                                                class="competition-logo"
+                                                title={match.competition}
+                                            />
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -265,6 +327,7 @@ const getMatchForDay = (day: number, monthIndex: number) => {
         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
         width: 100%;
         animation: fadeIn 0.3s ease-in-out;
+        box-sizing: border-box; /* Proper sizing */
     }
 
     .calendar-widget.active {
@@ -286,7 +349,7 @@ const getMatchForDay = (day: number, monthIndex: number) => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 25px;
+        margin-bottom: 20px; /* Reduced margin */
     }
 
     .month-label {
@@ -335,14 +398,14 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 10px; /* Increased gap */
+        gap: 8px; /* Slightly reduced gap */
         text-align: center;
     }
 
     .weekday {
         font-size: 0.9rem;
         color: #666;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         font-weight: 700;
         text-transform: uppercase;
     }
@@ -353,17 +416,16 @@ const getMatchForDay = (day: number, monthIndex: number) => {
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        padding-top: 6px;
         border-radius: 10px;
         position: relative;
         font-size: 1.1rem;
         font-weight: 600;
         color: #555;
-        background-color: #f9f9f9; /* Subtle background for days */
+        background-color: transparent; /* Transparent background */
         transition:
             transform 0.2s,
             box-shadow 0.2s;
-        min-height: 55px; /* enforced larger size */
+        min-height: 50px; /* Slightly reduced min height */
     }
 
     .day:hover {
@@ -378,6 +440,27 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     .day-number {
         z-index: 2;
         line-height: 1;
+        margin-top: 4px; /* Standard positioning */
+    }
+
+    .day-number.badge-style {
+        position: absolute;
+        top: -6px;
+        left: -6px;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff; /* White bg for contrast */
+        color: #333;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: 2px solid #333; /* Dark border to match SVG style */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        margin: 0;
+        z-index: 5;
     }
 
     .match-content {
@@ -405,30 +488,28 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     }
 
     .rival-shield {
-        width: 80%; /* Larger shields */
-        height: 80%;
+        width: 70%; /* Adjusted size */
+        height: 70%;
         object-fit: contain;
         z-index: 1;
     }
 
-    .day.has-match .day-number {
+    .competition-logo {
         position: absolute;
-        top: 3px;
-        left: 5px;
-        font-size: 0.8rem;
-        color: #333;
+        bottom: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        object-fit: contain;
         z-index: 3;
-        font-weight: 700;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 4px;
-        padding: 0 2px;
+        opacity: 0.8;
     }
 
     .icon-indicator {
         position: absolute;
         top: -6px;
         right: -6px;
-        width: 22px; /* Larger icon container */
+        width: 22px;
         height: 22px;
         z-index: 4;
         display: flex;
@@ -443,12 +524,10 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     }
 
     .icon-indicator.home {
-        background-color: #2ecc71; /* Green for Home? Or just dark */
         background-color: #333;
     }
 
     .icon-indicator.away {
-        background-color: #3498db; /* Blue for Away? Or just dark */
         background-color: #555;
     }
 
