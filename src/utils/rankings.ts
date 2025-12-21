@@ -11,6 +11,7 @@ export interface RankingStat {
     id_jugadora: number;
     nombre: string;
     slug: string;
+    posicion: string;
     temporada: string;
     competicion: string;
     goles: number;
@@ -27,6 +28,19 @@ export interface RankingStat {
     tarjetas_amarillas: number;
     tarjetas_rojas: number;
     capitanias: number;
+}
+
+export interface StreakData {
+    id_jugadora: number;
+    nombre: string;
+    slug: string;
+    posicion: string;
+    temporada: string;
+    competicion: string;
+    streak_scoring: number;
+    streak_assisting: number;
+    streak_ga: number; // Goals + Assists
+    streak_clean_sheet: number;
 }
 
 export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
@@ -112,6 +126,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             SELECT 
                 j.id_jugadora,
                 j.nombre,
+                j.posicion,
                 t.temporada,
                 c.competicion,
                 COALESCE(l.convocatorias, 0) as convocatorias,
@@ -146,6 +161,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             id_jugadora: row.id_jugadora,
             nombre: row.nombre,
             slug: slugify(row.nombre),
+            posicion: row.posicion,
             temporada: row.temporada,
             competicion: row.competicion,
             goles: Number(row.goles),
@@ -166,6 +182,166 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
 
     } catch (error) {
         console.error("Error fetching rankings directly:", error);
+        return [];
+    }
+}
+
+export async function fetchPlayerStreaks(): Promise<StreakData[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return [];
+
+        const client = createClient({ url, authToken });
+
+        // Fetch granular match data for calculation
+        // We need: player, match date, season, competition, minutes_played, goals, assists
+        // Ordered by date ASC
+        const query = `
+            SELECT 
+                j.id_jugadora,
+                j.nombre,
+                j.posicion,
+                p.fecha,
+                t.temporada,
+                c.competicion,
+                a.minutos_jugados,
+                p.goles_rival,
+                (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND ga.goleadora = j.id_jugadora) as goals,
+                (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND ga.asistente = j.id_jugadora) as assists
+            FROM alineaciones a
+            JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            JOIN partidos p ON a.id_partido = p.id_partido
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            JOIN competiciones c ON p.id_competicion = c.id_competicion
+            WHERE 
+                p.competicion != 'Amistoso' 
+                AND a.minutos_jugados > 0
+            ORDER BY j.id_jugadora, p.fecha ASC
+        `;
+
+        const result = await client.execute(query);
+        const rows = result.rows;
+
+        // Group by player
+        const playersMap: Record<number, any[]> = {};
+        rows.forEach((r: any) => {
+            if (!playersMap[r.id_jugadora]) playersMap[r.id_jugadora] = [];
+            playersMap[r.id_jugadora].push(r);
+        });
+
+        const streaks: StreakData[] = [];
+
+        for (const playerIdStr in playersMap) {
+            const playerId = Number(playerIdStr);
+            const matches = playersMap[playerId];
+            if (!matches.length) continue;
+
+            const basePlayer = {
+                id_jugadora: playerId,
+                nombre: matches[0].nombre,
+                slug: slugify(matches[0].nombre),
+                posicion: matches[0].posicion || ''
+            };
+
+            // Helper to update max streaks for a key (e.g. 'all', '2023/24', 'Liga F')
+            const updateMax = (map: any, key: string, field: string, current: number) => {
+                if (!map[key]) map[key] = { ...basePlayer, temporada: 'all', competicion: 'all', streak_scoring: 0, streak_assisting: 0, streak_ga: 0, streak_clean_sheet: 0 };
+                //@ts-ignore
+                if (current > map[key][field]) map[key][field] = current;
+            };
+
+            // State trackers
+            const currentStreaks: any = {
+                // Keyed by context key (e.g. 'all', 'temporada:X', 'competicion:Y')
+                // Value: { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 }
+            };
+
+            const maxStreaksMap: Record<string, any> = {};
+
+            // Initialize contexts for the player generally (though we create on fly)
+
+            for (const m of matches) {
+                const season = m.temporada;
+                const competition = m.competicion;
+
+                // Contexts: Global, Season, Comp
+                const contexts = ['global', `season:${season}`, `comp:${competition}`];
+
+                const hasGoal = Number(m.goals) > 0;
+                const hasAssist = Number(m.assists) > 0;
+                const hasGA = hasGoal || hasAssist;
+
+                // Detailed position check
+                const isDefensive = basePlayer.posicion && (
+                    basePlayer.posicion.includes('Portera') ||
+                    basePlayer.posicion.includes('Defensa') ||
+                    basePlayer.posicion.includes('Central') ||
+                    basePlayer.posicion.includes('Lateral')
+                );
+                const isCleanSheet = isDefensive && Number(m.goles_rival) === 0;
+
+                contexts.forEach(ctx => {
+                    if (!currentStreaks[ctx]) currentStreaks[ctx] = { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 };
+
+                    // Scoring
+                    if (hasGoal) currentStreaks[ctx].scoring++;
+                    else currentStreaks[ctx].scoring = 0;
+
+                    // Assisting
+                    if (hasAssist) currentStreaks[ctx].assisting++;
+                    else currentStreaks[ctx].assisting = 0;
+
+                    // G+A
+                    if (hasGA) currentStreaks[ctx].ga++;
+                    else currentStreaks[ctx].ga = 0;
+
+                    // Clean Sheet
+                    if (isCleanSheet) currentStreaks[ctx].clean_sheet++;
+                    else currentStreaks[ctx].clean_sheet = 0;
+
+                    // Update Max
+                    if (!maxStreaksMap[ctx]) {
+                        maxStreaksMap[ctx] = {
+                            ...basePlayer,
+                            temporada: ctx.startsWith('season:') ? season : (ctx === 'global' ? 'all' : 'all'),
+                            competicion: ctx.startsWith('comp:') ? competition : (ctx === 'global' ? 'all' : 'all'),
+                            streak_scoring: 0,
+                            streak_assisting: 0,
+                            streak_ga: 0,
+                            streak_clean_sheet: 0
+                        };
+                        // Fix metadata for specific contexts to ensure filtered views work
+                        if (ctx.startsWith('season:')) {
+                            maxStreaksMap[ctx].competicion = 'todos'; // Will match "all" filter logic if needed, or we adapt
+                        }
+                        if (ctx.startsWith('comp:')) {
+                            maxStreaksMap[ctx].temporada = 'todos';
+                        }
+                        if (ctx === 'global') {
+                            maxStreaksMap[ctx].temporada = 'todos';
+                            maxStreaksMap[ctx].competicion = 'todos';
+                        }
+                    }
+
+                    if (currentStreaks[ctx].scoring > maxStreaksMap[ctx].streak_scoring) maxStreaksMap[ctx].streak_scoring = currentStreaks[ctx].scoring;
+                    if (currentStreaks[ctx].assisting > maxStreaksMap[ctx].streak_assisting) maxStreaksMap[ctx].streak_assisting = currentStreaks[ctx].assisting;
+                    if (currentStreaks[ctx].ga > maxStreaksMap[ctx].streak_ga) maxStreaksMap[ctx].streak_ga = currentStreaks[ctx].ga;
+                    if (currentStreaks[ctx].clean_sheet > maxStreaksMap[ctx].streak_clean_sheet) maxStreaksMap[ctx].streak_clean_sheet = currentStreaks[ctx].clean_sheet;
+                });
+            }
+
+            // Push all contexts to result
+            Object.values(maxStreaksMap).forEach(val => streaks.push(val as StreakData));
+        }
+
+        return streaks;
+
+    } catch (error) {
+        console.error("Error fetching player streaks:", error);
         return [];
     }
 }
