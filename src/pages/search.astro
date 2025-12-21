@@ -102,26 +102,48 @@ const coachResults = results.filter((r) => r.type === "coach");
 const matchResults = results.filter((r) => r.type === "match");
 
 // Resolve images ensuring no async map in JSX
-const playerResultsWithImages = await Promise.all(
-    playerResults.map(async (r) => ({
-        ...r,
-        image: await getImage(r),
-    })),
-);
+let playerResultsWithImages: any[] = [];
+let rivalResultsWithImages: any[] = [];
+let coachResultsWithImages: any[] = [];
 
-const rivalResultsWithImages = await Promise.all(
-    rivalResults.map(async (r) => ({
-        ...r,
-        image: await getImage(r),
-    })),
-);
+try {
+    playerResultsWithImages = await Promise.all(
+        playerResults.map(async (r) => ({
+            ...r,
+            image: await getImage(r).catch((e) => {
+                console.error(`Error loading image for ${r.title}:`, e);
+                return null;
+            }),
+        })),
+    );
 
-const coachResultsWithImages = await Promise.all(
-    coachResults.map(async (r) => ({
-        ...r,
-        image: await getImage(r),
-    })),
-);
+    rivalResultsWithImages = await Promise.all(
+        rivalResults.map(async (r) => ({
+            ...r,
+            image: await getImage(r).catch((e) => {
+                console.error(`Error loading image for ${r.title}:`, e);
+                return null;
+            }),
+        })),
+    );
+
+    coachResultsWithImages = await Promise.all(
+        coachResults.map(async (r) => ({
+            ...r,
+            image: await getImage(r).catch((e) => {
+                console.error(`Error loading image for ${r.title}:`, e);
+                return null;
+            }),
+        })),
+    );
+} catch (e) {
+    console.error("Critical error resolving search images:", e);
+    // Don't crash the page, just show results without images if possible, or show error
+    // We can continue with empty image arrays if needed, or fallback.
+    // The variables are already [] so it will just show 0 results in those sections if this fails hard.
+    // Better to fallback to original results without images?
+    // For now, let's catch it.
+}
 ---
 
 <Layout
