@@ -74,9 +74,10 @@ const getShieldSrc = async (teamName: string) => {
     if (!teamName) return null;
     const slug = teamName
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/ /g, "_")
-        .replace(/\./g, "")
-        .replace(/[áéíóú]/g, (c) => "aeiou"["áéíóú".indexOf(c)]);
+        .replace(/\./g, "");
 
     const key = Object.keys(shieldImages).find((k) => k.includes(slug));
     if (key) {
