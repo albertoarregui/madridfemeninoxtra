@@ -1,5 +1,5 @@
 ---
-import { CALENDAR } from "/public/consts/calendar.ts";
+import { CALENDAR } from "../consts/calendar";
 
 const shields = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
@@ -21,201 +21,358 @@ function getShieldSrc(teamName: string) {
     return activeShieldPath ? shields[activeShieldPath].default.src : "";
 }
 
-const currentMonth = "ENERO";
-const currentYear = 2026;
+const MONTHS_DATA = [
+    { month: "ENERO", year: 2026, days: 31, startDay: 3, num: 0 }, // Jan 1 is Thu (3)
+    { month: "FEBRERO", year: 2026, days: 28, startDay: 6, num: 1 }, // Feb 1 is Sun (6)
+    { month: "MARZO", year: 2026, days: 31, startDay: 6, num: 2 }, // Mar 1 is Sun (6)
+    { month: "ABRIL", year: 2026, days: 30, startDay: 2, num: 3 }, // Apr 1 is Wed (2)
+    { month: "MAYO", year: 2026, days: 31, startDay: 4, num: 4 }, // May 1 is Fri (4)
+];
 
-// January 2026 starts on Thursday (4) and has 31 days.
-// 0: Mon, 1: Tue, 2: Wed, 3: Thu, 4: Fri, 5: Sat, 6: Sun
-// JS Day: 0=Sun, 1=Mon... 4=Thu.
-// Let's verify: Jan 1 2026 is a Thursday.
-// We want grid Monday starts.
-// Mon=0, Tue=1, Wed=2, Thu=3...
-const startDayOfWeek = 3; // Thursday
-const daysInMonth = 31;
-const totalSlots = 35; // 5 rows * 7 days -> 35 slots. 31 days + 3 offset = 34. Fits.
-
-const days = Array.from({ length: totalSlots }, (_, i) => {
-    const dayNum = i - startDayOfWeek + 1;
-    if (dayNum > 0 && dayNum <= daysInMonth) {
-        return dayNum;
-    }
-    return null;
-});
-
-const getMatchForDay = (day: number) => {
-    const dateStr = `2026-01-${day.toString().padStart(2, "0")}`;
+const getMatchForDay = (day: number, monthIndex: number) => {
+    // monthIndex 0 = Jan (01), 1 = Feb (02)...
+    const monthStr = (monthIndex + 1).toString().padStart(2, "0");
+    const dateStr = `2026-${monthStr}-${day.toString().padStart(2, "0")}`;
     return CALENDAR.find((match) => match.date === dateStr);
 };
 ---
 
-<div class="calendar-widget">
-    <div class="calendar-header">
-        <span class="month">{currentMonth}</span>
-        <span class="year">{currentYear}</span>
-    </div>
-
-    <div class="calendar-grid">
-        <div class="weekday">L</div>
-        <div class="weekday">M</div>
-        <div class="weekday">X</div>
-        <div class="weekday">J</div>
-        <div class="weekday">V</div>
-        <div class="weekday">S</div>
-        <div class="weekday">D</div>
-
-        {
-            days.map((day) => {
-                const match = day ? getMatchForDay(day) : null;
-                const isHome = match?.homeaway === "home";
-                const isAway = match?.homeaway === "away";
-                const isNeutral = match?.homeaway === "neutral";
-                const rivalName = match
-                    ? match.team1 === "Real Madrid"
-                        ? match.team2
-                        : match.team1
-                    : "";
-
-                return (
-                    <div
-                        class={`day ${day ? "" : "empty"} ${match ? "has-match" : ""}`}
-                    >
-                        <span class="day-number">{day}</span>
-                        {match && (
-                            <div class="match-content">
-                                {isHome && (
-                                    <div
-                                        class="icon-indicator home"
-                                        title="Casa"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
-                                            <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
-                                            <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
-                                        </svg>
-                                    </div>
-                                )}
-                                {isAway && (
-                                    <div
-                                        class="icon-indicator away"
-                                        title="Fuera"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M14.5 6.5l3 -2.9a2.05 2.05 0 0 1 2.9 2.9l-2.9 3l2.5 7.5l-2.5 2.55l-3.5 -6.55l-3 3v3l-2 2l-1.5 -4.5l-4.5 -1.5l2 -2h3l3 -3l-6.5 -3.5l2.5 -2.5l7.5 2.5z" />
-                                        </svg>
-                                    </div>
-                                )}
-                                <img
-                                    src={getShieldSrc(rivalName)}
-                                    alt={rivalName}
-                                    class="rival-shield"
-                                    title={rivalName}
-                                />
-                            </div>
-                        )}
+<div class="calendar-widget-container">
+    {
+        MONTHS_DATA.map((monthData, index) => (
+            <div
+                class={`calendar-widget ${index === 0 ? "active" : ""}`}
+                data-month-index={index}
+            >
+                <div class="calendar-header">
+                    <button class="nav-btn prev-btn" disabled={index === 0}>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
+                        >
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M15 6l-6 6l6 6" />
+                        </svg>
+                    </button>
+                    <div class="month-label">
+                        <span class="month">{monthData.month}</span>
+                        <span class="year">{monthData.year}</span>
                     </div>
-                );
-            })
-        }
-    </div>
+                    <button
+                        class="nav-btn next-btn"
+                        disabled={index === MONTHS_DATA.length - 1}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
+                        >
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M9 6l6 6l-6 6" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="weekday">L</div>
+                    <div class="weekday">M</div>
+                    <div class="weekday">X</div>
+                    <div class="weekday">J</div>
+                    <div class="weekday">V</div>
+                    <div class="weekday">S</div>
+                    <div class="weekday">D</div>
+
+                    {Array.from({ length: 42 }).map((_, i) => {
+                        const dayNum = i - monthData.startDay + 1;
+                        const isValidDay =
+                            dayNum > 0 && dayNum <= monthData.days;
+
+                        if (!isValidDay && i >= 35 && dayNum > monthData.days)
+                            return null; // Hide extra empty row if not needed
+                        if (!isValidDay && i >= 35) return null; // Clean up end of grid
+
+                        const match = isValidDay
+                            ? getMatchForDay(dayNum, index)
+                            : null;
+                        const isHome = match?.homeaway === "home";
+                        const isAway = match?.homeaway === "away";
+                        const rivalName = match
+                            ? match.team1 === "Real Madrid"
+                                ? match.team2
+                                : match.team1
+                            : "";
+
+                        return (
+                            <div
+                                class={`day ${isValidDay ? "" : "empty"} ${match ? "has-match" : ""}`}
+                            >
+                                {isValidDay && (
+                                    <span class="day-number">{dayNum}</span>
+                                )}
+                                {match && (
+                                    <div class="match-content">
+                                        {isHome && (
+                                            <div
+                                                class="icon-indicator home"
+                                                title="Casa"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                >
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+                                                    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+                                                    <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        {isAway && (
+                                            <div
+                                                class="icon-indicator away"
+                                                title="Fuera"
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                >
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M14.5 6.5l3 -2.9a2.05 2.05 0 0 1 2.9 2.9l-2.9 3l2.5 7.5l-2.5 2.55l-3.5 -6.55l-3 3v3l-2 2l-1.5 -4.5l-4.5 -1.5l2 -2h3l3 -3l-6.5 -3.5l2.5 -2.5l7.5 2.5z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <img
+                                            src={getShieldSrc(rivalName)}
+                                            alt={rivalName}
+                                            class="rival-shield"
+                                            title={rivalName}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        ))
+    }
 </div>
 
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const widgets = document.querySelectorAll(".calendar-widget");
+
+        widgets.forEach((widget) => {
+            const prevBtn = widget.querySelector(".prev-btn");
+            const nextBtn = widget.querySelector(".next-btn");
+
+            if (prevBtn) {
+                prevBtn.addEventListener("click", () => {
+                    const currentIndexAttr =
+                        widget.getAttribute("data-month-index");
+                    if (currentIndexAttr !== null) {
+                        const currentIndex = parseInt(currentIndexAttr);
+                        if (currentIndex > 0) {
+                            changeMonth(currentIndex - 1);
+                        }
+                    }
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener("click", () => {
+                    const currentIndexAttr =
+                        widget.getAttribute("data-month-index");
+                    if (currentIndexAttr !== null) {
+                        const currentIndex = parseInt(currentIndexAttr);
+                        changeMonth(currentIndex + 1);
+                    }
+                });
+            }
+        });
+
+        function changeMonth(newIndex: number) {
+            const allWidgets = document.querySelectorAll(".calendar-widget");
+            allWidgets.forEach((w) => {
+                const widget = w as HTMLElement;
+                const idxAttr = widget.getAttribute("data-month-index");
+                if (idxAttr !== null) {
+                    const idx = parseInt(idxAttr);
+                    if (idx === newIndex) {
+                        widget.style.display = "block";
+                        widget.classList.add("active");
+                    } else {
+                        widget.style.display = "none";
+                        widget.classList.remove("active");
+                    }
+                }
+            });
+        }
+    });
+</script>
+
 <style>
-    .calendar-widget {
-        background-color: #1a1f3c; /* Dark Blue from reference */
-        padding: 20px;
-        border-radius: 16px;
-        color: white;
-        font-family: "Arial", sans-serif;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        margin-bottom: 30px;
+    .calendar-widget-container {
         width: 100%;
-        max-width: 450px; /* Limit width */
-        margin-left: auto;
-        margin-right: auto;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    .calendar-widget {
+        display: none; /* Hidden by default */
+        background-color: #ffffff; /* Light theme */
+        padding: 24px;
+        border-radius: 12px;
+        color: #333;
+        font-family: "Arial", sans-serif;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .calendar-widget.active {
+        display: block; /* Show active month */
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .calendar-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-left: 10px;
-        padding-right: 10px;
+        margin-bottom: 25px;
+    }
+
+    .month-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1.2;
     }
 
     .month {
-        font-size: 1.2rem;
-        font-weight: bold;
+        font-size: 1.4rem;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        color: #333;
     }
 
     .year {
-        font-size: 1.2rem;
-        font-weight: normal;
-        opacity: 0.8;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #666;
+    }
+
+    .nav-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+        color: #333;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+        background-color: #f0f0f0;
+        color: #000;
+    }
+
+    .nav-btn:disabled {
+        opacity: 0.2;
+        cursor: default;
     }
 
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 8px; /* Spacing between cells */
+        gap: 10px; /* Increased gap */
         text-align: center;
     }
 
     .weekday {
-        font-size: 0.8rem;
-        color: #8fa0bc; /* Lighter blue-grey text */
-        margin-bottom: 10px;
-        font-weight: 600;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
     }
 
     .day {
-        aspect-ratio: 1; /* Square cells */
+        aspect-ratio: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        padding-top: 5px;
-        border-radius: 8px;
+        padding-top: 6px;
+        border-radius: 10px;
         position: relative;
-        font-size: 1rem;
-        font-weight: 500;
-        min-height: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #555;
+        background-color: #f9f9f9; /* Subtle background for days */
+        transition:
+            transform 0.2s,
+            box-shadow 0.2s;
+        min-height: 55px; /* enforced larger size */
+    }
+
+    .day:hover {
+        background-color: #f0f0f0;
     }
 
     .day.empty {
         background: transparent;
+        pointer-events: none;
     }
 
     .day-number {
@@ -232,73 +389,71 @@ const getMatchForDay = (day: number) => {
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .rival-shield {
-        width: 70%;
-        height: 70%;
-        object-fit: contain;
-        opacity: 1;
-        transition: transform 0.2s;
         z-index: 1;
     }
 
-    .day:hover .rival-shield {
-        transform: scale(1.1);
+    .day.has-match {
+        background-color: #fff;
+        border: 2px solid #f0f0f0;
+    }
+
+    .day.has-match:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        border-color: #ffde59;
+        z-index: 10;
+    }
+
+    .rival-shield {
+        width: 80%; /* Larger shields */
+        height: 80%;
+        object-fit: contain;
+        z-index: 1;
     }
 
     .day.has-match .day-number {
         position: absolute;
-        top: 4px;
-        left: 6px;
-        font-size: 0.75rem;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        top: 3px;
+        left: 5px;
+        font-size: 0.8rem;
+        color: #333;
         z-index: 3;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 4px;
+        padding: 0 2px;
     }
 
     .icon-indicator {
         position: absolute;
-        top: 2px;
-        right: 2px;
-        width: 16px;
-        height: 16px;
-        z-index: 3;
+        top: -6px;
+        right: -6px;
+        width: 22px; /* Larger icon container */
+        height: 22px;
+        z-index: 4;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.4);
+        background: #333;
+        color: white;
         border-radius: 50%;
-        padding: 2px;
+        padding: 3px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .icon-indicator.home {
+        background-color: #2ecc71; /* Green for Home? Or just dark */
+        background-color: #333;
+    }
+
+    .icon-indicator.away {
+        background-color: #3498db; /* Blue for Away? Or just dark */
+        background-color: #555;
     }
 
     .icon-indicator svg {
         width: 100%;
         height: 100%;
     }
-
-    /* Highlight visual for match days similar to reference circle */
-    .day.has-match::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 90%;
-        height: 90%;
-        border-radius: 50%;
-        background-color: rgba(
-            255,
-            255,
-            255,
-            0.05
-        ); /* very subtle circle background */
-    }
-
-    /* Optional: Special highlight for today */
-    /*
-    .day.today {
-        background-color: var(--primary-color);
-        color: #1a1f3c;
-    }
-    */
 </style>
