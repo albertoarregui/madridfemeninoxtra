@@ -310,14 +310,14 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                         };
                         // Fix metadata for specific contexts to ensure filtered views work
                         if (ctx.startsWith('season:')) {
-                            maxStreaksMap[ctx].competicion = 'todos'; // Will match "all" filter logic if needed, or we adapt
+                            maxStreaksMap[ctx].competicion = 'all';
                         }
                         if (ctx.startsWith('comp:')) {
-                            maxStreaksMap[ctx].temporada = 'todos';
+                            maxStreaksMap[ctx].temporada = 'all';
                         }
                         if (ctx === 'global') {
-                            maxStreaksMap[ctx].temporada = 'todos';
-                            maxStreaksMap[ctx].competicion = 'todos';
+                            maxStreaksMap[ctx].temporada = 'all';
+                            maxStreaksMap[ctx].competicion = 'all';
                         }
                     }
 
