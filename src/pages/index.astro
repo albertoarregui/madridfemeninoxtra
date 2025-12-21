@@ -125,8 +125,37 @@ function formatDate(dateString: string) {
 								?.source_url;
 						const rawCategories =
 							post._embedded?.["wp:term"]?.[0] || [];
-						const categories = rawCategories.map((cat) => cat.name);
+						let categories = rawCategories.map((cat) => cat.name);
 						const link = `/noticias/${post.slug}`;
+
+						const getCategoryPriority = (catName) => {
+							const lower = catName.toLowerCase();
+							if (
+								lower.includes("previa") ||
+								lower.includes("crónica") ||
+								lower.includes("postpartido")
+							)
+								return 1;
+							if (
+								lower.includes("primer equipo") ||
+								lower.includes("cantera")
+							)
+								return 2;
+							if (
+								lower.includes("liga f") ||
+								lower.includes("uwcl") ||
+								lower.includes("champions") ||
+								lower.includes("copa") ||
+								lower.includes("supercopa")
+							)
+								return 3;
+							return 4;
+						};
+
+						categories.sort(
+							(a, b) =>
+								getCategoryPriority(a) - getCategoryPriority(b),
+						);
 
 						const getCategoryStyle = (catName) => {
 							const lower = catName.toLowerCase();
