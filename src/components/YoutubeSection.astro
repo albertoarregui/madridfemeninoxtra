@@ -1,0 +1,231 @@
+---
+const CHANNEL_ID = "UCHcGAOmFVh9sH4FsVxE2rhQ";
+const RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`;
+
+interface Video {
+    id: string;
+    title: string;
+    thumbnail: string;
+    link: string;
+}
+
+let videos: Video[] = [];
+
+try {
+    const response = await fetch(RSS_URL);
+    if (response.ok) {
+        const text = await response.text();
+        const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
+        let match;
+
+        while ((match = entryRegex.exec(text)) !== null) {
+            const entry = match[1];
+            const videoIdMatch = /<yt:videoId>(.*?)<\/yt:videoId>/.exec(entry);
+            const titleMatch = /<title>(.*?)<\/title>/.exec(entry);
+
+            if (videoIdMatch && titleMatch) {
+                videos.push({
+                    id: videoIdMatch[1],
+                    title: titleMatch[1],
+                    thumbnail: `https://i.ytimg.com/vi/${videoIdMatch[1]}/mqdefault.jpg`,
+                    link: `https://www.youtube.com/watch?v=${videoIdMatch[1]}`,
+                });
+            }
+        }
+    }
+} catch (error) {
+    console.error("Error fetching YouTube feed:", error);
+}
+
+const mainVideo = videos[0];
+const otherVideos = videos.slice(1);
+---
+
+<section class="youtube-section-container">
+    <h2 class="section-title">ÚLTIMOS VÍDEOS</h2>
+    <div class="youtube-content">
+        {
+            mainVideo ? (
+                <div class="main-video">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${mainVideo.id}`}
+                        title={mainVideo.title}
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                    />
+                </div>
+            ) : (
+                <p>Cargando vídeos...</p>
+            )
+        }
+
+        {
+            otherVideos.length > 0 && (
+                <div class="video-scroll-container">
+                    {otherVideos.map((video) => (
+                        <a
+                            href={video.link}
+                            target="_blank"
+                            class="video-card-small"
+                        >
+                            <div class="video-thumbnail">
+                                <img
+                                    src={video.thumbnail}
+                                    alt={video.title}
+                                    loading="lazy"
+                                />
+                                <div class="play-icon">▶</div>
+                            </div>
+                            <h3 class="video-title-small">{video.title}</h3>
+                        </a>
+                    ))}
+                </div>
+            )
+        }
+    </div>
+</section>
+
+<style>
+    .youtube-section-container {
+        padding: 2rem 0;
+        margin-top: 1rem;
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--negro, #333);
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+        border-left: 4px solid var(--amarillo, #ffde59);
+        text-transform: uppercase;
+    }
+
+    .main-video {
+        width: 100%;
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+        height: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+        background: #000;
+    }
+
+    .main-video iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .video-scroll-container {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 1.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: #ffde59 #f0f0f0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .video-scroll-container::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .video-scroll-container::-webkit-scrollbar-track {
+        background: #f0f0f0;
+        border-radius: 4px;
+    }
+
+    .video-scroll-container::-webkit-scrollbar-thumb {
+        background-color: #ffde59;
+        border-radius: 4px;
+    }
+
+    .video-card-small {
+        flex: 0 0 280px;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.3s ease;
+    }
+
+    .video-card-small:hover {
+        transform: translateY(-5px);
+    }
+
+    .video-thumbnail {
+        position: relative;
+        width: 100%;
+        height: 157px; /* 16:9 for 280px width */
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .video-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .video-card-small:hover .video-thumbnail img {
+        transform: scale(1.05);
+    }
+
+    .play-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        opacity: 0.9;
+        transition: all 0.3s ease;
+        border: 2px solid white;
+    }
+
+    .video-card-small:hover .play-icon {
+        background: #ff0000;
+        transform: translate(-50%, -50%) scale(1.1);
+        border-color: #ff0000;
+    }
+
+    .video-title-small {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #2b2b2b;
+        margin: 0;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .section-title {
+            font-size: 1.8rem;
+        }
+
+        .video-card-small {
+            flex: 0 0 240px;
+        }
+
+        .video-thumbnail {
+            height: 135px;
+        }
+    }
+</style>
