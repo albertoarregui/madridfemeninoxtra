@@ -65,12 +65,22 @@ async function getImage(result: SearchResult) {
         return null;
     }
 
-    const imagePath = `/src/assets/${folderName}/${result.slug}.png`;
-    const imageLoader = imagesRecord[imagePath];
+    // Normalize slug: explicitly replace hyphens with underscores to match filenames
+    // e.g. "real-madrid" -> "real_madrid"
+    const slugUnderscored = result.slug.replace(/-/g, "_");
 
-    if (imageLoader) {
-        return (await imageLoader()).default;
+    // Find matching key in the glob record
+    // We look for a key that contains the folder and the slug (either original or underscored)
+    // and ends with one of the supported extensions.
+    const matchingPath = Object.keys(imagesRecord).find((path) => {
+        const fileName = path.split("/").pop()?.split(".")[0];
+        return fileName === result.slug || fileName === slugUnderscored;
+    });
+
+    if (matchingPath) {
+        return (await imagesRecord[matchingPath]()).default;
     }
+
     return null;
 }
 
