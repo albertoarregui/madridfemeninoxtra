@@ -36,13 +36,13 @@ if (query) {
 
 // Image resolution logic
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
-    "../assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
 );
 const rivalImages = import.meta.glob<{ default: ImageMetadata }>(
-    "../assets/escudos/*.{png,jpg,jpeg,webp}",
+    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
 );
 const coachImages = import.meta.glob<{ default: ImageMetadata }>(
-    "../assets/entrenadores/*.{png,jpg,jpeg,webp}",
+    "/src/assets/entrenadores/*.{png,jpg,jpeg,webp}",
 );
 
 async function getImage(result: SearchResult) {
@@ -69,9 +69,22 @@ async function getImage(result: SearchResult) {
     const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
     const slugNormal = result.slug.toLowerCase();
 
-    // Find matching key in the glob record
+    // Construct valid keys for direct lookup using absolute paths
+    const candidates = [
+        `/src/assets/${folderName}/${slugUnderscored}.png`,
+        `/src/assets/${folderName}/${slugNormal}.png`,
+        `/src/assets/${folderName}/${slugUnderscored}.jpg`,
+        `/src/assets/${folderName}/${slugNormal}.jpg`,
+    ];
+
+    for (const key of candidates) {
+        if (imagesRecord[key]) {
+            return (await imagesRecord[key]()).default;
+        }
+    }
+
+    // Fallback: Find matching key in the glob record by checking filenames case-insensitive
     const matchingPath = Object.keys(imagesRecord).find((path) => {
-        // Path is like "../assets/escudos/real_madrid.png"
         const fileName = path.split("/").pop()?.split(".")[0].toLowerCase();
         return fileName === slugNormal || fileName === slugUnderscored;
     });
