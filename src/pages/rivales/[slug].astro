@@ -6,6 +6,7 @@ import {
     fetchRivalTopPlayers,
     fetchRivalMatches,
     calculateRivalStats,
+    calculateStreaks,
 } from "../../utils/rival-records";
 import type { ImageMetadata } from "astro";
 
@@ -116,6 +117,7 @@ const topPlayersData = await fetchRivalTopPlayers(rival.id_club);
 const rivalMatches = await fetchRivalMatches(rival.id_club);
 
 const rivalStats = calculateRivalStats(rivalMatches);
+const streaks = calculateStreaks(rivalMatches);
 
 const competitionOrder = [
     "Liga F",
@@ -142,7 +144,7 @@ const getSeason = (dateStr: string) => {
     const month = d.getMonth() + 1;
     const startYear = month >= 8 ? year : year - 1;
     const endYear = startYear + 1;
-    return `${startYear.toString().slice(-2)}/${endYear.toString().slice(-2)}`;
+    return `${startYear}/${endYear.toString().slice(-2)}`;
 };
 
 const uniqueSeasons = [
@@ -581,6 +583,66 @@ const mockPlayers: string[] = [];
             <section class="records-card">
                 <h2 class="section-header">RÉCORDS</h2>
                 <div class="records-list">
+                    <div class="record-row">
+                        <span class="record-label"
+                            >Mayor racha de victorias:</span
+                        >
+                        <span class="record-value">{streaks.wins}</span>
+                    </div>
+                    <div class="record-row">
+                        <span class="record-label">Mayor racha de empates:</span
+                        >
+                        <span class="record-value">{streaks.draws}</span>
+                    </div>
+                    <div class="record-row">
+                        <span class="record-label"
+                            >Mayor racha de derrotas:</span
+                        >
+                        <span class="record-value">{streaks.losses}</span>
+                    </div>
+                    <div class="record-row">
+                        <span class="record-label">Mayor racha sin ganar:</span>
+                        <span class="record-value">{streaks.noWins}</span>
+                    </div>
+                    <div class="record-row">
+                        <span class="record-label"
+                            >Mayor racha portería a cero:</span
+                        >
+                        <span class="record-value">{streaks.cleanSheets}</span>
+                    </div>
+                    {
+                        rivalRecords?.mayor_victoria && (
+                            <div class="record-row">
+                                <span class="record-label">
+                                    Mayor victoria:
+                                </span>
+                                <span class="record-value">
+                                    {rivalRecords.mayor_victoria.resultado}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mayor_derrota && (
+                            <div class="record-row">
+                                <span class="record-label">Mayor derrota:</span>
+                                <span class="record-value">
+                                    {rivalRecords.mayor_derrota.resultado}
+                                </span>
+                            </div>
+                        )
+                    }
+                    {
+                        rivalRecords?.mas_repetido && (
+                            <div class="record-row">
+                                <span class="record-label">Más repetido:</span>
+                                <span class="record-value">
+                                    {rivalRecords.mas_repetido.resultado} -{" "}
+                                    {rivalRecords.mas_repetido.veces} veces
+                                </span>
+                            </div>
+                        )
+                    }
                     {
                         rivalRecords?.maximo_goleador && (
                             <div class="record-row">
@@ -616,39 +678,6 @@ const mockPlayers: string[] = [];
                                 <span class="record-value">
                                     {rivalRecords.mas_partidos.nombre} -{" "}
                                     {rivalRecords.mas_partidos.partidos}
-                                </span>
-                            </div>
-                        )
-                    }
-                    {
-                        rivalRecords?.mayor_victoria && (
-                            <div class="record-row">
-                                <span class="record-label">
-                                    Mayor victoria:
-                                </span>
-                                <span class="record-value">
-                                    {rivalRecords.mayor_victoria.resultado}
-                                </span>
-                            </div>
-                        )
-                    }
-                    {
-                        rivalRecords?.mayor_derrota && (
-                            <div class="record-row">
-                                <span class="record-label">Mayor derrota:</span>
-                                <span class="record-value">
-                                    {rivalRecords.mayor_derrota.resultado}
-                                </span>
-                            </div>
-                        )
-                    }
-                    {
-                        rivalRecords?.mas_repetido && (
-                            <div class="record-row">
-                                <span class="record-label">Más repetido:</span>
-                                <span class="record-value">
-                                    {rivalRecords.mas_repetido.resultado} -{" "}
-                                    {rivalRecords.mas_repetido.veces} veces
                                 </span>
                             </div>
                         )
@@ -755,7 +784,7 @@ const mockPlayers: string[] = [];
         const month = d.getMonth() + 1;
         const startYear = month >= 8 ? year : year - 1;
         const endYear = startYear + 1;
-        return `${startYear.toString().slice(-2)}/${endYear.toString().slice(-2)}`;
+        return `${startYear}/${endYear.toString().slice(-2)}`;
     }
 
     // Add season to matches

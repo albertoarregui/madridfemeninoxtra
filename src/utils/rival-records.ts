@@ -378,3 +378,76 @@ export function calculateRivalStats(matches: any[]) {
         total: addCalculatedFields(stats.total),
     };
 }
+
+export function calculateStreaks(matches: any[]) {
+    // Sort matches by date ascending for streak calculation
+    const sortedMatches = [...matches].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    let currentWinStreak = 0;
+    let maxWinStreak = 0;
+
+    let currentDrawStreak = 0;
+    let maxDrawStreak = 0;
+
+    let currentLossStreak = 0;
+    let maxLossStreak = 0;
+
+    let currentNoWinStreak = 0;
+    let maxNoWinStreak = 0;
+
+    let currentCleanSheetStreak = 0;
+    let maxCleanSheetStreak = 0;
+
+    sortedMatches.forEach(match => {
+        const golesRM = parseInt(match.golesRM) || 0;
+        const golesRival = parseInt(match.golesRival) || 0;
+
+        // Win Streak
+        if (golesRM > golesRival) {
+            currentWinStreak++;
+        } else {
+            currentWinStreak = 0;
+        }
+        if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+
+        // Draw Streak
+        if (golesRM === golesRival) {
+            currentDrawStreak++;
+        } else {
+            currentDrawStreak = 0;
+        }
+        if (currentDrawStreak > maxDrawStreak) maxDrawStreak = currentDrawStreak;
+
+        // Loss Streak
+        if (golesRM < golesRival) {
+            currentLossStreak++;
+        } else {
+            currentLossStreak = 0;
+        }
+        if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+
+        // No Win Streak (Draw or Loss)
+        if (golesRM <= golesRival) {
+            currentNoWinStreak++;
+        } else {
+            currentNoWinStreak = 0;
+        }
+        if (currentNoWinStreak > maxNoWinStreak) maxNoWinStreak = currentNoWinStreak;
+
+        // Clean Sheet Streak
+        if (golesRival === 0) {
+            currentCleanSheetStreak++;
+        } else {
+            currentCleanSheetStreak = 0;
+        }
+        if (currentCleanSheetStreak > maxCleanSheetStreak) maxCleanSheetStreak = currentCleanSheetStreak;
+    });
+
+    return {
+        wins: maxWinStreak,
+        draws: maxDrawStreak,
+        losses: maxLossStreak,
+        noWins: maxNoWinStreak,
+        cleanSheets: maxCleanSheetStreak
+    };
+}
