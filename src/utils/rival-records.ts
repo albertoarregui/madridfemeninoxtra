@@ -398,6 +398,9 @@ export function calculateStreaks(matches: any[]) {
     let currentCleanSheetStreak = 0;
     let maxCleanSheetStreak = 0;
 
+    let currentUndefeatedStreak = 0;
+    let maxUndefeatedStreak = 0;
+
     sortedMatches.forEach(match => {
         const golesRM = parseInt(match.golesRM) || 0;
         const golesRival = parseInt(match.golesRival) || 0;
@@ -434,6 +437,14 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentNoWinStreak > maxNoWinStreak) maxNoWinStreak = currentNoWinStreak;
 
+        // Undefeated Streak (Win or Draw)
+        if (golesRM >= golesRival) {
+            currentUndefeatedStreak++;
+        } else {
+            currentUndefeatedStreak = 0;
+        }
+        if (currentUndefeatedStreak > maxUndefeatedStreak) maxUndefeatedStreak = currentUndefeatedStreak;
+
         // Clean Sheet Streak
         if (golesRival === 0) {
             currentCleanSheetStreak++;
@@ -448,6 +459,7 @@ export function calculateStreaks(matches: any[]) {
         draws: maxDrawStreak,
         losses: maxLossStreak,
         noWins: maxNoWinStreak,
+        undefeated: maxUndefeatedStreak,
         cleanSheets: maxCleanSheetStreak
     };
 }

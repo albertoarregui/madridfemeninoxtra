@@ -117,7 +117,6 @@ const topPlayersData = await fetchRivalTopPlayers(rival.id_club);
 const rivalMatches = await fetchRivalMatches(rival.id_club);
 
 const rivalStats = calculateRivalStats(rivalMatches);
-const streaks = calculateStreaks(rivalMatches);
 
 const competitionOrder = [
     "Liga F",
@@ -146,6 +145,17 @@ const getSeason = (dateStr: string) => {
     const endYear = startYear + 1;
     return `${startYear}/${endYear.toString().slice(-2)}`;
 };
+
+// Filter matches for records (Exclude Friendlies)
+const officialMatches = rivalMatches.filter(
+    (m) => m.competicion !== "Amistoso",
+);
+const homeMatches = officialMatches.filter((m) => m.esLocal);
+const awayMatches = officialMatches.filter((m) => !m.esLocal);
+
+const streaksTotal = calculateStreaks(officialMatches);
+const streaksHome = calculateStreaks(homeMatches);
+const streaksAway = calculateStreaks(awayMatches);
 
 const uniqueSeasons = [
     ...new Set(rivalMatches.map((m) => getSeason(m.fecha))),
@@ -264,6 +274,105 @@ const mockPlayers: string[] = [];
                     </h2>
                     <div class="players-list">
                         <p>{mockPlayers.join(", ")}</p>
+                    </div>
+                </section>
+
+                <section class="stats-table-card">
+                    <h3 class="section-subheader">
+                        Estadísticas contra el {rival.nombre}
+                    </h3>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>JUGADOS COMO</th>
+                                    <th>PJ</th>
+                                    <th>PG</th>
+                                    <th>%PG</th>
+                                    <th>PE</th>
+                                    <th>%PE</th>
+                                    <th>PP</th>
+                                    <th>%PP</th>
+                                    <th class="highlight-yellow">⚽</th>
+                                    <th class="highlight-red">⚽</th>
+                                    <th class="highlight-blue">📊</th>
+                                    <th>Avg.</th>
+                                    <th>Dif.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>LOCAL</td>
+                                    <td>{rivalStats.home.pj}</td>
+                                    <td>{rivalStats.home.pg}</td>
+                                    <td>{rivalStats.home.percPG}%</td>
+                                    <td>{rivalStats.home.pe}</td>
+                                    <td>{rivalStats.home.percPE}%</td>
+                                    <td>{rivalStats.home.pp}</td>
+                                    <td>{rivalStats.home.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{rivalStats.home.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{rivalStats.home.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{rivalStats.home.dif > 0 ? "+" : ""}{
+                                            rivalStats.home.dif
+                                        }</td
+                                    >
+                                    <td>{rivalStats.home.avg}</td>
+                                    <td>{rivalStats.home.dif}</td>
+                                </tr>
+                                <tr>
+                                    <td>VISITANTE</td>
+                                    <td>{rivalStats.away.pj}</td>
+                                    <td>{rivalStats.away.pg}</td>
+                                    <td>{rivalStats.away.percPG}%</td>
+                                    <td>{rivalStats.away.pe}</td>
+                                    <td>{rivalStats.away.percPE}%</td>
+                                    <td>{rivalStats.away.pp}</td>
+                                    <td>{rivalStats.away.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{rivalStats.away.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{rivalStats.away.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{rivalStats.away.dif > 0 ? "+" : ""}{
+                                            rivalStats.away.dif
+                                        }</td
+                                    >
+                                    <td>{rivalStats.away.avg}</td>
+                                    <td>{rivalStats.away.dif}</td>
+                                </tr>
+
+                                <tr class="total-row">
+                                    <td><strong>TOTAL</strong></td>
+                                    <td>{rivalStats.total.pj}</td>
+                                    <td>{rivalStats.total.pg}</td>
+                                    <td>{rivalStats.total.percPG}%</td>
+                                    <td>{rivalStats.total.pe}</td>
+                                    <td>{rivalStats.total.percPE}%</td>
+                                    <td>{rivalStats.total.pp}</td>
+                                    <td>{rivalStats.total.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{rivalStats.total.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{rivalStats.total.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{rivalStats.total.dif > 0 ? "+" : ""}{
+                                            rivalStats.total.dif
+                                        }</td
+                                    >
+                                    <td>{rivalStats.total.avg}</td>
+                                    <td>{rivalStats.total.dif}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </section>
 
@@ -475,105 +584,6 @@ const mockPlayers: string[] = [];
             </div>
 
             <div class="right-column">
-                <section class="stats-table-card">
-                    <h3 class="section-subheader">
-                        Estadísticas contra el {rival.nombre}
-                    </h3>
-                    <div class="table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>JUGADOS COMO</th>
-                                    <th>PJ</th>
-                                    <th>PG</th>
-                                    <th>%PG</th>
-                                    <th>PE</th>
-                                    <th>%PE</th>
-                                    <th>PP</th>
-                                    <th>%PP</th>
-                                    <th class="highlight-yellow">⚽</th>
-                                    <th class="highlight-red">⚽</th>
-                                    <th class="highlight-blue">📊</th>
-                                    <th>Avg.</th>
-                                    <th>Dif.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>LOCAL</td>
-                                    <td>{rivalStats.home.pj}</td>
-                                    <td>{rivalStats.home.pg}</td>
-                                    <td>{rivalStats.home.percPG}%</td>
-                                    <td>{rivalStats.home.pe}</td>
-                                    <td>{rivalStats.home.percPE}%</td>
-                                    <td>{rivalStats.home.pp}</td>
-                                    <td>{rivalStats.home.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.home.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.home.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.home.dif > 0 ? "+" : ""}{
-                                            rivalStats.home.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.home.avg}</td>
-                                    <td>{rivalStats.home.dif}</td>
-                                </tr>
-                                <tr>
-                                    <td>VISITANTE</td>
-                                    <td>{rivalStats.away.pj}</td>
-                                    <td>{rivalStats.away.pg}</td>
-                                    <td>{rivalStats.away.percPG}%</td>
-                                    <td>{rivalStats.away.pe}</td>
-                                    <td>{rivalStats.away.percPE}%</td>
-                                    <td>{rivalStats.away.pp}</td>
-                                    <td>{rivalStats.away.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.away.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.away.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.away.dif > 0 ? "+" : ""}{
-                                            rivalStats.away.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.away.avg}</td>
-                                    <td>{rivalStats.away.dif}</td>
-                                </tr>
-
-                                <tr class="total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td>{rivalStats.total.pj}</td>
-                                    <td>{rivalStats.total.pg}</td>
-                                    <td>{rivalStats.total.percPG}%</td>
-                                    <td>{rivalStats.total.pe}</td>
-                                    <td>{rivalStats.total.percPE}%</td>
-                                    <td>{rivalStats.total.pp}</td>
-                                    <td>{rivalStats.total.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.total.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.total.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.total.dif > 0 ? "+" : ""}{
-                                            rivalStats.total.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.total.avg}</td>
-                                    <td>{rivalStats.total.dif}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
                 <section class="stadium-card">
                     <h2 class="section-header">ESTADIO</h2>
                     <div class="stadium-content">
@@ -585,37 +595,77 @@ const mockPlayers: string[] = [];
 
                 <section class="records-card">
                     <h2 class="section-header">RÉCORDS</h2>
+                    <div class="records-grid-header">
+                        <span class="header-label"></span>
+                        <span class="header-val">TOTAL</span>
+                        <span class="header-val">CASA</span>
+                        <span class="header-val">FUERA</span>
+                    </div>
                     <div class="records-list">
                         <div class="record-row">
-                            <span class="record-label"
-                                >Mayor racha de victorias:</span
+                            <span class="record-label">Victorias seguidas:</span
                             >
-                            <span class="record-value">{streaks.wins}</span>
+                            <span class="record-value">{streaksTotal.wins}</span
+                            >
+                            <span class="record-value">{streaksHome.wins}</span>
+                            <span class="record-value">{streaksAway.wins}</span>
                         </div>
                         <div class="record-row">
-                            <span class="record-label"
-                                >Mayor racha de empates:</span
+                            <span class="record-label">Empates seguidos:</span>
+                            <span class="record-value"
+                                >{streaksTotal.draws}</span
                             >
-                            <span class="record-value">{streaks.draws}</span>
+                            <span class="record-value">{streaksHome.draws}</span
+                            >
+                            <span class="record-value">{streaksAway.draws}</span
+                            >
                         </div>
                         <div class="record-row">
-                            <span class="record-label"
-                                >Mayor racha de derrotas:</span
-                            >
-                            <span class="record-value">{streaks.losses}</span>
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label"
-                                >Mayor racha sin ganar:</span
-                            >
-                            <span class="record-value">{streaks.noWins}</span>
-                        </div>
-                        <div class="record-row">
-                            <span class="record-label"
-                                >Mayor racha portería a cero:</span
+                            <span class="record-label">Derrotas seguidas:</span>
+                            <span class="record-value"
+                                >{streaksTotal.losses}</span
                             >
                             <span class="record-value"
-                                >{streaks.cleanSheets}</span
+                                >{streaksHome.losses}</span
+                            >
+                            <span class="record-value"
+                                >{streaksAway.losses}</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Sin ganar:</span>
+                            <span class="record-value"
+                                >{streaksTotal.noWins}</span
+                            >
+                            <span class="record-value"
+                                >{streaksHome.noWins}</span
+                            >
+                            <span class="record-value"
+                                >{streaksAway.noWins}</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Sin perder:</span>
+                            <span class="record-value"
+                                >{streaksTotal.undefeated}</span
+                            >
+                            <span class="record-value"
+                                >{streaksHome.undefeated}</span
+                            >
+                            <span class="record-value"
+                                >{streaksAway.undefeated}</span
+                            >
+                        </div>
+                        <div class="record-row">
+                            <span class="record-label">Portería a 0:</span>
+                            <span class="record-value"
+                                >{streaksTotal.cleanSheets}</span
+                            >
+                            <span class="record-value"
+                                >{streaksHome.cleanSheets}</span
+                            >
+                            <span class="record-value"
+                                >{streaksAway.cleanSheets}</span
                             >
                         </div>
                         {
@@ -1576,5 +1626,49 @@ const mockPlayers: string[] = [];
             font-size: 0.85rem;
             padding: 0.5rem 0;
         }
+    }
+
+    .records-card .records-grid-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        padding: 0.75rem 1.5rem 0.25rem 1.5rem;
+        background: #f9f9f9;
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 2px solid #eee;
+        font-size: 0.85rem;
+    }
+    .records-card .header-label {
+        text-align: left;
+    }
+
+    .records-card .records-list {
+        padding: 0;
+    }
+
+    /* Streaks rows (first 6 items) */
+    .records-card .record-row:nth-child(-n + 6) {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        padding: 0.75rem 1.5rem;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        justify-content: unset; /* Override default */
+    }
+
+    /* Single record rows (7th item onwards) */
+    .records-card .record-row:nth-child(n + 7) {
+        display: flex;
+        padding: 0.75rem 1.5rem;
+        justify-content: space-between;
+        border-bottom: 1px solid #eee;
+    }
+
+    .records-card .record-row:nth-child(-n + 6) .record-value {
+        text-align: center;
+    }
+
+    .records-card .record-row:nth-child(-n + 6) .record-label {
+        text-align: left;
     }
 </style>
