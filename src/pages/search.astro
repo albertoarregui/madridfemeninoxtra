@@ -83,10 +83,27 @@ async function getImage(result: SearchResult) {
     return null;
 }
 
-const playerResults = results.filter((r) => r.type === "player");
-const rivalResults = results.filter((r) => r.type === "rival");
-const coachResults = results.filter((r) => r.type === "coach");
-const matchResults = results.filter((r) => r.type === "match");
+// Resolve images ensuring no async map in JSX
+const playerResultsWithImages = await Promise.all(
+    playerResults.map(async (r) => ({
+        ...r,
+        image: await getImage(r),
+    })),
+);
+
+const rivalResultsWithImages = await Promise.all(
+    rivalResults.map(async (r) => ({
+        ...r,
+        image: await getImage(r),
+    })),
+);
+
+const coachResultsWithImages = await Promise.all(
+    coachResults.map(async (r) => ({
+        ...r,
+        image: await getImage(r),
+    })),
+);
 ---
 
 <Layout
@@ -139,119 +156,111 @@ const matchResults = results.filter((r) => r.type === "match");
                             </div>
                         )}
 
-                        {playerResults.length > 0 && (
+                        {playerResultsWithImages.length > 0 && (
                             <section class="results-section">
                                 <h2 class="section-title">
-                                    Jugadoras ({playerResults.length})
+                                    Jugadoras ({playerResultsWithImages.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {playerResults.map(async (result) => {
-                                        const image = await getImage(result);
-                                        return (
-                                            <a
-                                                href={result.url}
-                                                class="result-card"
-                                            >
-                                                {image && (
-                                                    <div class="result-image-container player-image">
-                                                        <Image
-                                                            src={image}
-                                                            alt={result.title}
-                                                            width={60}
-                                                            height={60}
-                                                            class="result-image"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div class="result-info">
-                                                    <h3 class="result-title">
-                                                        {result.title}
-                                                    </h3>
-                                                    <p class="result-subtitle">
-                                                        {result.subtitle}
-                                                    </p>
+                                    {playerResultsWithImages.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card"
+                                        >
+                                            {result.image && (
+                                                <div class="result-image-container player-image">
+                                                    <Image
+                                                        src={result.image}
+                                                        alt={result.title}
+                                                        width={60}
+                                                        height={60}
+                                                        class="result-image"
+                                                    />
                                                 </div>
-                                            </a>
-                                        );
-                                    })}
+                                            )}
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
                                 </div>
                             </section>
                         )}
 
-                        {rivalResults.length > 0 && (
+                        {rivalResultsWithImages.length > 0 && (
                             <section class="results-section">
                                 <h2 class="section-title">
-                                    Rivales ({rivalResults.length})
+                                    Rivales ({rivalResultsWithImages.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {rivalResults.map(async (result) => {
-                                        const image = await getImage(result);
-                                        return (
-                                            <a
-                                                href={result.url}
-                                                class="result-card"
-                                            >
-                                                {image && (
-                                                    <div class="result-image-container">
-                                                        <Image
-                                                            src={image}
-                                                            alt={result.title}
-                                                            width={60}
-                                                            height={60}
-                                                            class="result-image"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div class="result-info">
-                                                    <h3 class="result-title">
-                                                        {result.title}
-                                                    </h3>
-                                                    <p class="result-subtitle">
-                                                        {result.subtitle}
-                                                    </p>
+                                    {rivalResultsWithImages.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card"
+                                        >
+                                            {result.image && (
+                                                <div class="result-image-container">
+                                                    <Image
+                                                        src={result.image}
+                                                        alt={result.title}
+                                                        width={60}
+                                                        height={60}
+                                                        class="result-image"
+                                                    />
                                                 </div>
-                                            </a>
-                                        );
-                                    })}
+                                            )}
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
                                 </div>
                             </section>
                         )}
 
-                        {coachResults.length > 0 && (
+                        {coachResultsWithImages.length > 0 && (
                             <section class="results-section">
                                 <h2 class="section-title">
-                                    Entrenadores ({coachResults.length})
+                                    Entrenadores (
+                                    {coachResultsWithImages.length})
                                 </h2>
                                 <div class="results-grid">
-                                    {coachResults.map(async (result) => {
-                                        const image = await getImage(result);
-                                        return (
-                                            <a
-                                                href={result.url}
-                                                class="result-card"
-                                            >
-                                                {image && (
-                                                    <div class="result-image-container player-image">
-                                                        <Image
-                                                            src={image}
-                                                            alt={result.title}
-                                                            width={60}
-                                                            height={60}
-                                                            class="result-image"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div class="result-info">
-                                                    <h3 class="result-title">
-                                                        {result.title}
-                                                    </h3>
-                                                    <p class="result-subtitle">
-                                                        {result.subtitle}
-                                                    </p>
+                                    {coachResultsWithImages.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card"
+                                        >
+                                            {result.image && (
+                                                <div class="result-image-container player-image">
+                                                    <Image
+                                                        src={result.image}
+                                                        alt={result.title}
+                                                        width={60}
+                                                        height={60}
+                                                        class="result-image"
+                                                    />
                                                 </div>
-                                            </a>
-                                        );
-                                    })}
+                                            )}
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
                                 </div>
                             </section>
                         )}
