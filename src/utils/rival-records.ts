@@ -306,7 +306,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         console.log('========== END DEBUG ==========');
 
         return matchesResult.rows.map((match: any) => {
-            const esLocal = Number(match.id_club_visitante) === Number(rivalId);
+            // Fix: Check if the displayed rival is the local team in this match
+            const esLocal = Number(match.id_club_local) === Number(rivalId);
 
             return {
                 id: match.id_partido,
