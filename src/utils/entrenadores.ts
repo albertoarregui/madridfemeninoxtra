@@ -273,13 +273,7 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas para trayectoria');
-            console.error('Credenciales de Turso no configuradas para trayectoria');
-            // Mock data for UI verification
-            return [
-                { club: "Real Madrid", anio_inicio: "2021", anio_fin: null },
-                { club: "Deportivo Abanca", anio_inicio: "2019", anio_fin: "2021" },
-                { club: "Albacete", anio_inicio: "2017", anio_fin: "2019" }
-            ];
+            return [];
         }
 
         const client = createClient({
@@ -290,14 +284,14 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
         const query = `
             SELECT 
                 club,
-                anio_inicio,
-                anio_fin
+                año_inicio,
+                año_fin
             FROM 
                 trayectoria_entrenadores
             WHERE 
                 id_entrenador = ?
             ORDER BY 
-                anio_inicio DESC
+                año_inicio DESC
         `;
 
         const result = await client.execute({
@@ -307,8 +301,8 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
 
         return result.rows.map((row: any) => ({
             club: cleanApiValue(row.club),
-            anio_inicio: cleanApiValue(row.anio_inicio),
-            anio_fin: cleanApiValue(row.anio_fin),
+            anio_inicio: cleanApiValue(row.año_inicio),
+            anio_fin: cleanApiValue(row.año_fin),
         }));
 
     } catch (error) {
