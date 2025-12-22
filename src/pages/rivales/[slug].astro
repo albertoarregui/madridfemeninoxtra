@@ -378,38 +378,66 @@ const mockPlayers: string[] = [];
 
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="charts-content">
-                        <div
-                            class="chart-controls"
-                            style="justify-content: center;"
-                        >
-                            <div class="control">
-                                <label>COMPETICIÓN:</label>
-                                <select id="competition-filter">
-                                    <option value="all">Todas</option>
-                                    <option value="oficiales"
-                                        >Partidos oficiales</option
-                                    >
-                                    {
-                                        competitions.map((comp) => (
-                                            <option value={comp}>{comp}</option>
-                                        ))
-                                    }
-                                </select>
-                            </div>
-                            <div class="control">
-                                <label>TEMPORADA:</label>
-                                <select id="season-filter">
-                                    <option value="all">Todas</option>
-                                    {
-                                        uniqueSeasons.map((season) => (
-                                            <option value={season}>
-                                                {season}
-                                            </option>
-                                        ))
-                                    }
-                                </select>
-                            </div>
+                    <div class="filters-container">
+                        <div class="filter-wrapper">
+                            <select id="competition-filter">
+                                <option value="all"
+                                    >Todas las Competiciones</option
+                                >
+                                <option value="oficiales"
+                                    >Partidos oficiales</option
+                                >
+                                {
+                                    competitions.map((comp) => (
+                                        <option value={comp}>{comp}</option>
+                                    ))
+                                }
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
+                        </div>
+                        <div class="filter-wrapper">
+                            <select id="season-filter">
+                                <option value="all">Todas las Temporadas</option
+                                >
+                                {
+                                    uniqueSeasons.map((season) => (
+                                        <option value={season}>{season}</option>
+                                    ))
+                                }
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
                         </div>
                     </div>
                     <div class="charts-row">
@@ -1286,20 +1314,95 @@ const mockPlayers: string[] = [];
         -webkit-overflow-scrolling: touch;
     }
 
+    /* Filters Styles - Matched with Rankings */
+    .filters-container {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 1.5rem;
+    }
+
+    .filter-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 240px;
+    }
+
+    .filter-icon {
+        position: absolute;
+        right: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #6b7280;
+        width: 18px;
+        height: 18px;
+        z-index: 2;
+    }
+
+    .filters-container select {
+        width: 100%;
+        padding: 0.875rem 3rem 0.875rem 1.5rem;
+        background: #ffffff;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+        border-radius: 9999px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+
+    .filters-container select:hover {
+        border-color: #fbbf24;
+        background: #fffdf5;
+    }
+
+    .filters-container select:focus {
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+        background: #ffffff;
+    }
+
+    @media (max-width: 768px) {
+        .filters-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        .filter-wrapper {
+            width: 100%;
+        }
+    }
+
+    /* Table Styles - Matched with Entrenadores/Rankings */
     .stats-table,
     .matches-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.85rem;
+        font-family:
+            "Inter",
+            system-ui,
+            -apple-system,
+            sans-serif;
     }
 
     .stats-table th,
     .stats-table td,
     .matches-table th,
     .matches-table td {
-        padding: 0.75rem 0.5rem;
+        padding: 0.75rem 1rem;
         text-align: center;
-        border: 1px solid #ddd;
+        border: 1px solid #e5e7eb;
+        font-size: 0.95rem;
+        color: #374151;
     }
 
     .stats-table th,
@@ -1307,78 +1410,45 @@ const mockPlayers: string[] = [];
         background: #333;
         color: white;
         font-weight: 600;
-    }
-
-    .stats-table th.highlight-yellow {
-        background: #ffcc00;
-        color: #333;
-    }
-
-    .stats-table th.highlight-red {
-        background: #dc3545;
-    }
-
-    .stats-table th.highlight-blue {
-        background: #007bff;
-    }
-
-    .stats-table tbody tr:nth-child(even) {
-        background: transparent;
-    }
-
-    .total-row {
-        border-top: 2px solid #333;
-    }
-
-    .stats-table tbody tr:not(.total-row) {
-        background: #f0f0f0;
-    }
-
-    .resultado-victoria {
-        background-color: #c8e6c9 !important;
-        font-weight: 600;
-        color: #000;
-    }
-
-    .resultado-empate {
-        background-color: #fff9c4 !important;
-        font-weight: 600;
-        color: #000;
-    }
-
-    .resultado-derrota {
-        background-color: #ffcdd2 !important;
-        font-weight: 600;
-        color: #000;
-    }
-
-    .stats-table .total-row {
-        background: #ffde59 !important;
-        font-weight: bold;
-        border-top: 2px solid #333;
-    }
-
-    /* Force styling for the table headers */
-    .stats-table thead tr th {
-        background-color: #333 !important;
-        color: white !important;
         text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.5px;
-        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
     }
 
-    .stats-table tbody tr:nth-child(even) {
-        background-color: #fcebd0 !important; /* Slight yellow tint for alternate rows */
-    }
-    .stats-table tbody tr:nth-child(odd) {
-        background-color: #ffffff !important;
+    .stats-table tbody tr:nth-child(even),
+    .matches-table tbody tr:nth-child(even) {
+        background: #f9fafb;
     }
 
-    .stats-table {
-        border-radius: 8px 8px 0 0;
-        overflow: hidden;
-        border: 1px solid #ddd;
+    .stats-table tbody tr:hover,
+    .matches-table tbody tr:hover {
+        background: #f3f4f6;
+    }
+
+    /* Total row styling */
+    .stats-table tr.total-row td {
+        background: #ffde59;
+        font-weight: 800;
+        color: #111827;
+        border-top: 2px solid #333;
+    }
+
+    .matches-table .resultado-victoria {
+        color: #059669;
+        font-weight: 700;
+    }
+    .matches-table .resultado-empate {
+        color: #d97706;
+        font-weight: 700;
+    }
+    .matches-table .resultado-derrota {
+        color: #dc2626;
+        font-weight: 700;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 0 0 8px 8px; /* Smooth corners at bottom */
     }
 
     .total-row td:first-child {
