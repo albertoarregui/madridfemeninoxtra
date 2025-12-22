@@ -65,21 +65,77 @@ const noIndex = filteredNews.length === 0;
                 </h2>
             </header>
 
-            stroke-width="2" >
-            <path d="M5 12h14M12 5l7 7-7 7"></path>
+            {
+                filteredNews.length > 0 ? (
+                    <div class="noticias-grid">
+                        {filteredNews.map((noticia) => {
+                            const featuredImage =
+                                noticia._embedded?.["wp:featuredmedia"]?.[0]
+                                    ?.source_url;
+                            const featuredImageAlt =
+                                noticia._embedded?.["wp:featuredmedia"]?.[0]
+                                    ?.alt_text || noticia.title.rendered;
+                            const link = `/noticias/${noticia.slug}`;
+                            return (
+                                <article class="noticia-card">
+                                    <a
+                                        href={link}
+                                        class="card-link-wrapper"
+                                        aria-label={`Leer más sobre ${noticia.title.rendered}`}
+                                    />
+                                    {featuredImage && (
+                                        <div class="noticia-image">
+                                            <img
+                                                src={featuredImage}
+                                                alt={featuredImageAlt}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    )}
+                                    <div class="noticia-content">
+                                        <div class="noticia-meta">
+                                            <time datetime={noticia.date}>
+                                                {formatDate(noticia.date)}
+                                            </time>
+                                        </div>
+                                        <h2
+                                            class="noticia-title"
+                                            set:html={noticia.title.rendered}
+                                        />
+                                        <div
+                                            class="noticia-excerpt"
+                                            set:html={noticia.excerpt.rendered}
+                                        />
+                                        <div class="read-more">
+                                            Leer más
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                            >
+                                                <path d="M5 12h14M12 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <p class="no-category-news">
+                        {error
+                            ? "Error al cargar las noticias."
+                            : "No hay noticias disponibles en esta categoría."}
+                    </p>
+                )
+            }
         </div>
     </main>
 </Layout>
-
-); })} ) : (
-<p class="no-category-news">
-    {
-        error
-            ? "Error al cargar las noticias."
-            : "No hay noticias disponibles en esta categoría."
-    }
-</p>
-) }
 
 <style>
     .card-link-wrapper {
