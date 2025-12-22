@@ -177,8 +177,10 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 FROM goles_y_asistencias ga
                 INNER JOIN partidos p ON ga.id_partido = p.id_partido
                 INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.goleadora IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY goles DESC
                 LIMIT 10
@@ -194,8 +196,10 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 FROM goles_y_asistencias ga
                 INNER JOIN partidos p ON ga.id_partido = p.id_partido
                 INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
+                INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.asistente IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY asistencias DESC
                 LIMIT 10
@@ -211,12 +215,15 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     SUM(asistencias) as asistencias,
                     SUM(goles) + SUM(asistencias) as total
                 FROM (
+
                     SELECT j.id_jugadora, j.nombre, COUNT(*) as goles, 0 as asistencias
                     FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
                     INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
+                    INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                     
                     UNION ALL
@@ -225,8 +232,10 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
                     INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
+                    INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.asistente IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                 )
                 GROUP BY nombre
