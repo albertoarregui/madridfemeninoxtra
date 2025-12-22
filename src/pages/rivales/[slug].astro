@@ -222,6 +222,19 @@ const concededArc =
         ? Math.round((rivalStats.total.conceded / totalMatches) * circumference)
         : 0;
 
+const totalCards =
+    (rivalStats.total.yellowCards || 0) + (rivalStats.total.redCards || 0);
+const yellowCardsArc =
+    totalCards > 0
+        ? Math.round(
+              (rivalStats.total.yellowCards / totalCards) * circumference,
+          )
+        : 0;
+const redCardsArc =
+    totalCards > 0
+        ? Math.round((rivalStats.total.redCards / totalCards) * circumference)
+        : 0;
+
 const mockPlayers: string[] = [];
 
 const isRealMadrid =
@@ -639,6 +652,46 @@ const isRealMadrid =
                                 </div>
                             </div>
                         </div>
+
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="cards-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#fff9c4"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${yellowCardsArc} ${circumference - yellowCardsArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${redCardsArc} ${circumference - redCardsArc}`}
+                                    stroke-dashoffset={-yellowCardsArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="cards-legend">
+                                <div>
+                                    <span class="dot yellow"></span> Amarillas ({
+                                        rivalStats.total.yellowCards
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> Rojas ({
+                                        rivalStats.total.redCards
+                                    })
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -666,46 +719,59 @@ const isRealMadrid =
                             <tbody>
                                 {
                                     rivalMatches.length > 0 ? (
-                                        rivalMatches.map((match: any) => {
-                                            const golesRM =
-                                                parseInt(match.golesRM) || 0;
-                                            const golesRival =
-                                                parseInt(match.golesRival) || 0;
-                                            let resultClass = "";
-                                            if (golesRM > golesRival) {
-                                                resultClass =
-                                                    "resultado-victoria";
-                                            } else if (golesRM === golesRival) {
-                                                resultClass =
-                                                    "resultado-empate";
-                                            } else {
-                                                resultClass =
-                                                    "resultado-derrota";
-                                            }
+                                        rivalMatches.map(
+                                            (match: any, index: number) => {
+                                                const golesRM =
+                                                    parseInt(match.golesRM) ||
+                                                    0;
+                                                const golesRival =
+                                                    parseInt(
+                                                        match.golesRival,
+                                                    ) || 0;
+                                                let resultClass = "";
+                                                if (golesRM > golesRival) {
+                                                    resultClass =
+                                                        "resultado-victoria";
+                                                } else if (
+                                                    golesRM === golesRival
+                                                ) {
+                                                    resultClass =
+                                                        "resultado-empate";
+                                                } else {
+                                                    resultClass =
+                                                        "resultado-derrota";
+                                                }
 
-                                            return (
-                                                <tr>
-                                                    <td>
-                                                        {new Date(
-                                                            match.fecha,
-                                                        ).toLocaleDateString(
-                                                            "es-ES",
-                                                        )}
-                                                    </td>
-                                                    <td>{match.competicion}</td>
-                                                    <td>{match.ubicacion}</td>
-                                                    <td class={resultClass}>
-                                                        {match.resultado}
-                                                    </td>
-                                                    <td>{match.arbitra}</td>
-                                                    <td>{match.estadio}</td>
-                                                    <td>
-                                                        {match.asistencia ||
-                                                            "-"}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
+                                                return (
+                                                    <tr
+                                                        class={`match-row ${index >= 5 ? "hidden-match" : ""}`}
+                                                    >
+                                                        <td>
+                                                            {new Date(
+                                                                match.fecha,
+                                                            ).toLocaleDateString(
+                                                                "es-ES",
+                                                            )}
+                                                        </td>
+                                                        <td>
+                                                            {match.competicion}
+                                                        </td>
+                                                        <td>
+                                                            {match.ubicacion}
+                                                        </td>
+                                                        <td class={resultClass}>
+                                                            {match.resultado}
+                                                        </td>
+                                                        <td>{match.arbitra}</td>
+                                                        <td>{match.estadio}</td>
+                                                        <td>
+                                                            {match.asistencia ||
+                                                                "-"}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            },
+                                        )
                                     ) : (
                                         <tr>
                                             <td
@@ -720,6 +786,16 @@ const isRealMadrid =
                             </tbody>
                         </table>
                     </div>
+                    {
+                        rivalMatches.length > 5 && (
+                            <div class="matches-footer">
+                                <button id="show-more-matches" class="btn-more">
+                                    Ver todos los partidos (
+                                    {rivalMatches.length})
+                                </button>
+                            </div>
+                        )
+                    }
                 </section>
             </div>
 
@@ -1023,6 +1099,8 @@ const isRealMadrid =
                 gc: 0,
                 cleanSheets: 0,
                 conceded: 0,
+                yellowCards: 0,
+                redCards: 0,
             },
             away: {
                 pj: 0,
@@ -1033,6 +1111,8 @@ const isRealMadrid =
                 gc: 0,
                 cleanSheets: 0,
                 conceded: 0,
+                yellowCards: 0,
+                redCards: 0,
             },
             total: {
                 pj: 0,
@@ -1043,6 +1123,8 @@ const isRealMadrid =
                 gc: 0,
                 cleanSheets: 0,
                 conceded: 0,
+                yellowCards: 0,
+                redCards: 0,
             },
         };
 
@@ -1062,6 +1144,9 @@ const isRealMadrid =
                 location.conceded++;
             }
 
+            location.yellowCards += match.amarillas || 0;
+            location.redCards += match.rojas || 0;
+
             if (golesRM > golesRival) location.pg++;
             else if (golesRM === golesRival) location.pe++;
             else location.pp++;
@@ -1074,9 +1159,13 @@ const isRealMadrid =
         stats.total.pp = stats.home.pp + stats.away.pp;
         stats.total.gf = stats.home.gf + stats.away.gf;
         stats.total.gc = stats.home.gc + stats.away.gc;
+        stats.total.gc = stats.home.gc + stats.away.gc;
         stats.total.cleanSheets =
             stats.home.cleanSheets + stats.away.cleanSheets;
         stats.total.conceded = stats.home.conceded + stats.away.conceded;
+        stats.total.yellowCards =
+            stats.home.yellowCards + stats.away.yellowCards;
+        stats.total.redCards = stats.home.redCards + stats.away.redCards;
 
         const addFields = (obj) => ({
             ...obj,
@@ -1234,6 +1323,49 @@ const isRealMadrid =
             if (divs[1])
                 divs[1].innerHTML = `<span class="dot red"></span> Con gol (${stats.total.conceded})`;
         }
+
+        // Cards Chart Logic
+        const totalCards =
+            (stats.total.yellowCards || 0) + (stats.total.redCards || 0);
+        const yellowCardsArc =
+            totalCards > 0
+                ? Math.round(
+                      (stats.total.yellowCards / totalCards) * circumference,
+                  )
+                : 0;
+        const redCardsArc =
+            totalCards > 0
+                ? Math.round(
+                      (stats.total.redCards / totalCards) * circumference,
+                  )
+                : 0;
+
+        const cardsChart = document.getElementById("cards-chart");
+        if (cardsChart) {
+            const circles = cardsChart.querySelectorAll("circle");
+            // 0: yellow, 1: red
+            if (circles[0])
+                circles[0].setAttribute(
+                    "stroke-dasharray",
+                    `${yellowCardsArc} ${circumference - yellowCardsArc}`,
+                );
+            if (circles[1]) {
+                circles[1].setAttribute(
+                    "stroke-dasharray",
+                    `${redCardsArc} ${circumference - redCardsArc}`,
+                );
+                circles[1].setAttribute("stroke-dashoffset", -yellowCardsArc);
+            }
+        }
+
+        const cardsLegend = document.getElementById("cards-legend");
+        if (cardsLegend) {
+            const divs = cardsLegend.querySelectorAll("div");
+            if (divs[0])
+                divs[0].innerHTML = `<span class="dot yellow"></span> Amarillas (${stats.total.yellowCards})`;
+            if (divs[1])
+                divs[1].innerHTML = `<span class="dot red"></span> Rojas (${stats.total.redCards})`;
+        }
     }
 
     function updateTable(stats) {
@@ -1309,6 +1441,19 @@ const isRealMadrid =
     if (compFilter) compFilter.addEventListener("change", updateUI);
     if (seasonFilter) seasonFilter.addEventListener("change", updateUI);
     if (locationFilter) locationFilter.addEventListener("change", updateUI);
+
+    const showMoreBtn = document.getElementById("show-more-matches");
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener("click", () => {
+            const hiddenMatches = document.querySelectorAll(".hidden-match");
+            hiddenMatches.forEach((row) => {
+                row.classList.remove("hidden-match");
+                // Animate entry if desired, or just show
+                row.style.display = "table-row";
+            });
+            showMoreBtn.parentElement.style.display = "none";
+        });
+    }
 </script>
 
 <style>
@@ -1481,7 +1626,7 @@ const isRealMadrid =
 
     .charts-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
         padding: 0 1.5rem 2rem 1.5rem; /* Added padding to separate from bottom and sides */
     }
@@ -1515,6 +1660,9 @@ const isRealMadrid =
     }
     .dot.orange {
         background: #fff9c4;
+    }
+    .dot.yellow {
+        background: #ffee58;
     }
     .dot.red {
         background: #ffcdd2;
@@ -1683,6 +1831,37 @@ const isRealMadrid =
             .resultado-derrota
         ) {
         background: #f0f0f0;
+    }
+
+    .hidden-match {
+        display: none;
+    }
+
+    .matches-footer {
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        background: #f9f9f9;
+        border-top: 1px solid #eee;
+    }
+
+    .btn-more {
+        padding: 0.5rem 1.5rem;
+        background: #ffde59;
+        color: #2b2b2b;
+        border: none;
+        border-radius: 9999px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+            transform 0.2s,
+            background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-more:hover {
+        transform: translateY(-2px);
+        background: #fbbf24;
     }
 
     .matches-controls {

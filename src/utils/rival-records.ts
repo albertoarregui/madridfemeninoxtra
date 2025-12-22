@@ -337,6 +337,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
                 estadio: match.estadio || '-',
+                amarillas: match.amarillas_rm || 0,
+                rojas: match.rojas_rm || 0,
                 // Debug log for attendance
                 asistencia: match.asistencia ? match.asistencia.toString().trim() : null,
             };
@@ -349,9 +351,9 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
 
 export function calculateRivalStats(matches: any[]) {
     const stats = {
-        home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 },
-        away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 },
-        total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 }
+        home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0, yellowCards: 0, redCards: 0 },
+        away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0, yellowCards: 0, redCards: 0 },
+        total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0, yellowCards: 0, redCards: 0 }
     };
 
     matches.forEach(match => {
@@ -371,6 +373,9 @@ export function calculateRivalStats(matches: any[]) {
             location.conceded = (location.conceded || 0) + 1;
         }
 
+        location.yellowCards = (location.yellowCards || 0) + (match.amarillas || 0);
+        location.redCards = (location.redCards || 0) + (match.rojas || 0);
+
         if (golesRM > golesRival) {
             location.pg++;
         } else if (golesRM === golesRival) {
@@ -388,6 +393,8 @@ export function calculateRivalStats(matches: any[]) {
     stats.total.gc = stats.home.gc + stats.away.gc;
     stats.total.cleanSheets = stats.home.cleanSheets + stats.away.cleanSheets;
     stats.total.conceded = stats.home.conceded + stats.away.conceded;
+    stats.total.yellowCards = stats.home.yellowCards + stats.away.yellowCards;
+    stats.total.redCards = stats.home.redCards + stats.away.redCards;
 
     const addCalculatedFields = (obj: any) => ({
         ...obj,
