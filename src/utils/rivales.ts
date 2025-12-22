@@ -47,18 +47,20 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
 
         const query = `
             SELECT 
-                id_club,
-                nombre,
-                ciudad,
-                pais,
-                slug,
-                estadio
+                c.id_club,
+                c.nombre,
+                c.ciudad,
+                c.pais,
+                c.slug,
+                e.nombre as estadio
             FROM 
-                clubes
+                clubes c
+            LEFT JOIN
+                estadios e ON c.estadio = e.id_estadio
             WHERE
-                nombre != 'Real Madrid Femenino'
+                c.nombre != 'Real Madrid Femenino'
             ORDER BY 
-                nombre ASC
+                c.nombre ASC
         `;
 
         const result = await client.execute(query);
