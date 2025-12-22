@@ -218,23 +218,23 @@ const refereeStats = game.id_arbitra
                                     >
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
-                                            width="20"
-                                            height="20"
+                                            width="24"
+                                            height="24"
                                             viewBox="0 0 24 24"
                                             fill="none"
                                             stroke="currentColor"
                                             stroke-width="2"
                                             stroke-linecap="round"
                                             stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-whistle"
+                                            class="icon icon-tabler icons-tabler-outline icon-tabler-user"
                                         >
                                             <path
                                                 stroke="none"
                                                 d="M0 0h24v24H0z"
                                                 fill="none"
                                             />
-                                            <path d="M12 14v6" />
-                                            <path d="M12.17 11.232a3.003 3.003 0 0 1 -.17 -1.232v-2a3 3 0 1 1 6 0v2a3.003 3.003 0 0 1 -.17 1.232l3.17 3.32a1.6 1.6 0 0 1 -2.32 2.32l-6.68 -6.64z" />
+                                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                                         </svg>
                                         {game.arbitra_nombre}
                                     </button>
@@ -245,738 +245,525 @@ const refereeStats = game.id_arbitra
                                 )
                             }
                         </div>
-
-                        // At the end of the file (before
-                    </div>):
-
-                    <div
-                        id="referee-modal"
-                        class="modal-overlay"
-                        style="display: none;"
-                    >
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3 id="modal-referee-name">Nombre Árbitra</h3>
-                                <button
-                                    class="close-btn"
-                                    onclick="closeRefereeModal()"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        ><path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"></path><path
-                                            d="M18 6l-12 12"></path><path
-                                            d="M6 6l12 12"></path></svg
-                                    >
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="stat-row">
-                                    <div class="stat-item result win">
-                                        <span class="stat-val" id="ref-wins"
-                                            >0</span
-                                        >
-                                        <span class="stat-label">Victorias</span
-                                        >
-                                    </div>
-                                    <div class="stat-item result draw">
-                                        <span class="stat-val" id="ref-draws"
-                                            >0</span
-                                        >
-                                        <span class="stat-label">Empates</span>
-                                    </div>
-                                    <div class="stat-item result loss">
-                                        <span class="stat-val" id="ref-losses"
-                                            >0</span
-                                        >
-                                        <span class="stat-label">Derrotas</span>
-                                    </div>
-                                </div>
-
-                                <div class="card-stats-row">
-                                    <div class="card-stat yellow">
-                                        <div class="card-icon yellow-card">
-                                        </div>
-                                        <span
-                                            class="card-count"
-                                            id="ref-yellows">0</span
-                                        >
-                                    </div>
-                                    <div class="card-stat red">
-                                        <div class="card-icon red-card"></div>
-                                        <span class="card-count" id="ref-reds"
-                                            >0</span
-                                        >
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-
-                    <script is:inline>
-                        function openRefereeModal(btn) {
-                            const stats = JSON.parse(btn.dataset.stats || "{}");
-                            const name = btn.dataset.name;
-
-                            document.getElementById(
-                                "modal-referee-name",
-                            ).textContent = name;
-
-                            document.getElementById("ref-wins").textContent =
-                                stats.wins || 0;
-                            document.getElementById("ref-draws").textContent =
-                                stats.draws || 0;
-                            document.getElementById("ref-losses").textContent =
-                                stats.losses || 0;
-
-                            document.getElementById("ref-yellows").textContent =
-                                stats.yellowCards || 0;
-                            document.getElementById("ref-reds").textContent =
-                                stats.redCards || 0;
-
-                            const modal =
-                                document.getElementById("referee-modal");
-                            modal.style.display = "flex";
-                            // Prevent body scroll
-                            document.body.style.overflow = "hidden";
-                        }
-
-                        function closeRefereeModal() {
-                            const modal =
-                                document.getElementById("referee-modal");
-                            modal.style.display = "none";
-                            document.body.style.overflow = "";
-                        }
-
-                        // Close on click outside
-                        document
-                            .getElementById("referee-modal")
-                            .addEventListener("click", (e) => {
-                                if (e.target.id === "referee-modal") {
-                                    closeRefereeModal();
-                                }
-                            });
-                    </script>
-
-                    <style>
-                        /* ... existing styles ... */
-
-                        .referee-btn {
-                            background: none;
-                            border: none;
-                            cursor: pointer;
-                            display: inline-flex;
-                            align-items: center;
-                            gap: 8px;
-                            font-size: 1rem;
-                            color: #555;
-                            font-weight: 600;
-                            padding: 5px 10px;
-                            border-radius: 6px;
-                            transition: all 0.2s ease;
-                        }
-
-                        .referee-btn:hover {
-                            background-color: #f0f0f0;
-                            color: #2b2b2b;
-                        }
-
-                        /* Modal Styles */
-                        .modal-overlay {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(0, 0, 0, 0.6);
-                            z-index: 1000;
-                            display: flex; /* hidden by default via inline style */
-                            align-items: center;
-                            justify-content: center;
-                            backdrop-filter: blur(4px);
-                            padding: 1rem;
-                        }
-
-                        .modal-content {
-                            background: white;
-                            border-radius: 16px;
-                            width: 100%;
-                            max-width: 400px;
-                            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-                            overflow: hidden;
-                            animation: modalPop 0.3s
-                                cubic-bezier(0.34, 1.56, 0.64, 1);
-                        }
-
-                        @keyframes modalPop {
-                            from {
-                                opacity: 0;
-                                transform: scale(0.95) translateY(10px);
-                            }
-                            to {
-                                opacity: 1;
-                                transform: scale(1) translateY(0);
-                            }
-                        }
-
-                        .modal-header {
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            padding: 1rem 1.5rem;
-                            border-bottom: 1px solid #eee;
-                            background: #fafafa;
-                        }
-
-                        .modal-header h3 {
-                            margin: 0;
-                            font-size: 1.1rem;
-                            font-weight: 800;
-                            color: #2b2b2b;
-                            text-transform: uppercase;
-                        }
-
-                        .close-btn {
-                            background: none;
-                            border: none;
-                            cursor: pointer;
-                            padding: 4px;
-                            border-radius: 50%;
-                            color: #888;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            transition: all 0.2s;
-                        }
-
-                        .close-btn:hover {
-                            background: #eee;
-                            color: #e53e3e;
-                        }
-
-                        .modal-body {
-                            padding: 1.5rem;
-                            display: flex;
-                            flex-direction: column;
-                            gap: 1.5rem;
-                        }
-
-                        .stat-row {
-                            display: grid;
-                            grid-template-columns: repeat(3, 1fr);
-                            gap: 1rem;
-                        }
-
-                        .stat-item {
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            padding: 0.75rem 0.5rem;
-                            border-radius: 12px;
-                            background: #f8f9fa;
-                        }
-
-                        .stat-item.win {
-                            background: #e6fcf5;
-                            color: #0ca678;
-                        }
-                        .stat-item.draw {
-                            background: #fff9db;
-                            color: #f59f00;
-                        }
-                        .stat-item.loss {
-                            background: #fff5f5;
-                            color: #e03131;
-                        }
-
-                        .stat-val {
-                            font-size: 1.5rem;
-                            font-weight: 800;
-                            line-height: 1;
-                            margin-bottom: 4px;
-                        }
-
-                        .stat-label {
-                            font-size: 0.75rem;
-                            text-transform: uppercase;
-                            font-weight: 700;
-                            opacity: 0.9;
-                        }
-
-                        .card-stats-row {
-                            display: flex;
-                            justify-content: center;
-                            gap: 2rem;
-                            padding-top: 0.5rem;
-                            border-top: 1px solid #eee;
-                            padding-top: 1.5rem;
-                        }
-
-                        .card-stat {
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                        }
-
-                        .card-icon {
-                            width: 24px;
-                            height: 34px;
-                            border-radius: 4px;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                        }
-
-                        .yellow-card {
-                            background: #ffd43b;
-                        }
-                        .red-card {
-                            background: #fa5252;
-                        }
-
-                        .card-count {
-                            font-size: 1.5rem;
-                            font-weight: 800;
-                            color: #495057;
-                        }
-                    </style>
                 </section>
-            </div>
-        </div>
 
-        <section class="lineup-card">
-            <h2 class="section-header">XI titular</h2>
-            <div class="lineup-list">
-                {
-                    lineup.map((player: any) => (
-                        <a
-                            href={`/jugadoras/${player.slug}`}
-                            class="lineup-row"
-                        >
-                            <div class="player-photo-rect">
-                                {player.imageUrl &&
-                                    !player.imageUrl.includes(
-                                        "placeholder.png",
-                                    ) && (
-                                        <img
-                                            src={player.imageUrl}
-                                            alt={player.name}
-                                            class="player-img-rect"
-                                        />
-                                    )}
-                            </div>
-
-                            <span class="player-number-bold">
-                                {player.number}
-                            </span>
-
-                            <div class="player-info-col">
-                                <div class="player-name-row">
-                                    <span class="player-name-bold">
-                                        {player.name}
-                                    </span>
-                                </div>
-                                <div class="player-meta-row">
-                                    <span class="player-pos-label">
-                                        {player.pos}
-                                    </span>
-                                    <span class="separator">•</span>
-                                    <span
-                                        class="player-minutes"
-                                        title="Minutos jugados"
+                <div
+                    id="referee-modal"
+                    class="modal-overlay"
+                    style="display: none;"
+                >
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modal-referee-name">Nombre Árbitra</h3>
+                            <button
+                                class="close-btn"
+                                onclick="closeRefereeModal()"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M18 6l-12 12"></path><path
+                                        d="M6 6l12 12"></path></svg
+                                >
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="stat-row">
+                                <div class="stat-item result win">
+                                    <span class="stat-val" id="ref-wins">0</span
                                     >
-                                        {player.minutes}'
-                                    </span>
-                                    {player.substituted && (
-                                        <span
-                                            class="sub-indicator"
-                                            title="Sustituida"
-                                            style="color: #ff6b6b;"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                            >
-                                                <path
-                                                    stroke="none"
-                                                    d="M0 0h24v24H0z"
-                                                    fill="none"
-                                                />
-                                                <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                            </svg>
-                                        </span>
-                                    )}
+                                    <span class="stat-label">Victorias</span>
+                                </div>
+                                <div class="stat-item result draw">
+                                    <span class="stat-val" id="ref-draws"
+                                        >0</span
+                                    >
+                                    <span class="stat-label">Empates</span>
+                                </div>
+                                <div class="stat-item result loss">
+                                    <span class="stat-val" id="ref-losses"
+                                        >0</span
+                                    >
+                                    <span class="stat-label">Derrotas</span>
                                 </div>
                             </div>
-                        </a>
-                    ))
-                }
-            </div>
-        </section>
 
-        <section class="subs-card">
-            <h2 class="section-header">Sustituciones</h2>
-            <div class="lineup-list">
-                {
-                    subs.map((sub: any) => (
-                        <div class="sub-row">
-                            <div class="sub-time">{sub.minute}'</div>
-                            <div class="sub-movement in">
-                                <span class="sub-arrow" style="color: #77dd77;">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
+                            <div class="card-stats-row">
+                                <div class="card-stat yellow">
+                                    <div class="card-icon yellow-card"></div>
+                                    <span class="card-count" id="ref-yellows"
+                                        >0</span
                                     >
-                                        <>
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
-                                        </>
-                                    </svg>
-                                </span>
-                                <a
-                                    href={`/jugadoras/${sub.playerIn.slug}`}
-                                    class="sub-player-link"
-                                >
-                                    {sub.playerIn.imageUrl &&
-                                        !sub.playerIn.imageUrl.includes(
-                                            "placeholder.png",
-                                        ) && (
-                                            <img
-                                                src={sub.playerIn.imageUrl}
-                                                class="sub-img"
-                                            />
-                                        )}
-                                    <span class="sub-name">
-                                        {sub.playerIn.name}
-                                    </span>
-                                </a>
-                            </div>
-                            <div class="sub-movement out">
-                                <span class="sub-arrow" style="color: #ff6b6b;">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                </div>
+                                <div class="card-stat red">
+                                    <div class="card-icon red-card"></div>
+                                    <span class="card-count" id="ref-reds"
+                                        >0</span
                                     >
-                                        <>
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                        </>
-                                    </svg>
-                                </span>
-                                <a
-                                    href={`/jugadoras/${sub.playerOut.slug}`}
-                                    class="sub-player-link"
-                                >
-                                    {sub.playerOut.imageUrl &&
-                                        !sub.playerOut.imageUrl.includes(
-                                            "placeholder.png",
-                                        ) && (
-                                            <img
-                                                src={sub.playerOut.imageUrl}
-                                                class="sub-img"
-                                            />
-                                        )}
-                                    <span class="sub-name">
-                                        {sub.playerOut.name}
-                                    </span>
-                                </a>
+                                </div>
                             </div>
                         </div>
-                    ))
-                }
-                {
-                    subs.length === 0 && (
-                        <p class="no-data-msg">
-                            No hay registros de sustituciones
-                        </p>
-                    )
-                }
-            </div>
-        </section>
-
-        {/* Timeline Moved to Right Column */}
-    </main>
-
-    <div class="right-column">
-        <section class="stadium-card">
-            <h2 class="section-header">Estadio</h2>
-            <div class="stadium-content">
-                <div class="stadium-photo">
-                    {
-                        stadiumImageSrc && (
-                            <img
-                                src={stadiumImageSrc}
-                                alt={game.estadio}
-                                class="stadium-img-rect"
-                            />
-                        )
-                    }
-                </div>
-                <div class="stadium-info">
-                    <p class="stadium-name-large">
-                        {game.estadio || "Estadio"}
-                    </p>
-                    <div class="stadium-meta">
-                        <p>
-                            <strong>Aforo:</strong>
-                            {
-                                game.aforo
-                                    ? `${game.aforo} espectadores`
-                                    : "Info no disponible"
-                            }
-                        </p>
-                        <p>
-                            <strong>Ubicación:</strong>
-                            {
-                                game.ciudad && game.pais
-                                    ? `${game.ciudad} (${game.pais})`
-                                    : "Ubicación desconocida"
-                            }
-                        </p>
                     </div>
                 </div>
-                {
-                    stadiumStats.total > 0 && (
-                        <div class="stadium-stats">
-                            <div class="stat-bar">
-                                <div class="bar-label">Ganados</div>
-                                <div class="progress-track">
-                                    <div
-                                        class="bar-fill won"
-                                        style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
-                                    >
-                                        <span class="bar-text">
-                                            {stadiumStats.wins}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="bar-label">Empatados</div>
-                                <div class="progress-track">
-                                    <div
-                                        class="bar-fill drawn"
-                                        style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
-                                    >
-                                        <span class="bar-text">
-                                            {stadiumStats.draws}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="bar-label">Perdidos</div>
-                                <div class="progress-track">
-                                    <div
-                                        class="bar-fill lost"
-                                        style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
-                                    >
-                                        <span class="bar-text">
-                                            {stadiumStats.losses}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                }
-            </div>
-        </section>
 
-        <section class="timeline-card">
-            <h2 class="section-header">Timeline</h2>
-            <div class="timeline-container">
-                <div class="timeline-track">
-                    {
-                        timelineEvents.map((event, index) => (
-                            <div class="timeline-event">
-                                <div class="event-time">
-                                    <span class="minute-badge">
-                                        {event.displayMinute}'
-                                    </span>
-                                </div>
-                                <div class="event-content">
-                                    <div class={`event-icon ${event.type}`}>
-                                        {event.type === "goal" ? (
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                            >
-                                                <path
-                                                    stroke="none"
-                                                    d="M0 0h24v24H0z"
-                                                    fill="none"
+                <section class="lineup-card">
+                    <h2 class="section-header">XI titular</h2>
+                    <div class="lineup-list">
+                        {
+                            lineup.map((player: any) => (
+                                <a
+                                    href={`/jugadoras/${player.slug}`}
+                                    class="lineup-row"
+                                >
+                                    <div class="player-photo-rect">
+                                        {player.imageUrl &&
+                                            !player.imageUrl.includes(
+                                                "placeholder.png",
+                                            ) && (
+                                                <img
+                                                    src={player.imageUrl}
+                                                    alt={player.name}
+                                                    class="player-img-rect"
                                                 />
-                                                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
-                                                <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                            </svg>
-                                        ) : event.type === "sub" ? (
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                class="icon icon-tabler icons-tabler-outline icon-tabler-refresh"
-                                            >
-                                                <path
-                                                    stroke="none"
-                                                    d="M0 0h24v24H0z"
-                                                    fill="none"
-                                                />
-                                                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-                                                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-                                            </svg>
-                                        ) : (
-                                            "•"
-                                        )}
+                                            )}
                                     </div>
-                                    <span class="event-text">
-                                        {event.type === "sub" ? (
-                                            <div
-                                                class="timeline-sub-info"
-                                                style="display: flex; align-items: center; gap: 8px;"
+
+                                    <span class="player-number-bold">
+                                        {player.number}
+                                    </span>
+
+                                    <div class="player-info-col">
+                                        <div class="player-name-row">
+                                            <span class="player-name-bold">
+                                                {player.name}
+                                            </span>
+                                        </div>
+                                        <div class="player-meta-row">
+                                            <span class="player-pos-label">
+                                                {player.pos}
+                                            </span>
+                                            <span class="separator">•</span>
+                                            <span
+                                                class="player-minutes"
+                                                title="Minutos jugados"
                                             >
-                                                <span style="display: inline-flex; align-items: center; color: #77dd77; font-weight: 600;">
+                                                {player.minutes}'
+                                            </span>
+                                            {player.substituted && (
+                                                <span
+                                                    class="sub-indicator"
+                                                    title="Sustituida"
+                                                    style="color: #ff6b6b;"
+                                                >
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
                                                         width="20"
                                                         height="20"
                                                         viewBox="0 0 24 24"
                                                         fill="currentColor"
-                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
+                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
                                                     >
                                                         <path
                                                             stroke="none"
                                                             d="M0 0h24v24H0z"
                                                             fill="none"
                                                         />
-                                                        <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
+                                                        <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
                                                     </svg>
-                                                    {event.playerIn}
                                                 </span>
-                                                <span style="color: #ccc;">
-                                                    |
-                                                </span>
-                                                <div style="display: flex; align-items: center; margin-left: 6px;">
-                                                    <span style="display: flex; color: #ff6b6b;">
+                                            )}
+                                        </div>
+                                    </div>
+                                </a>
+                            ))
+                        }
+                    </div>
+                </section>
+
+                <section class="subs-card">
+                    <h2 class="section-header">Sustituciones</h2>
+                    <div class="lineup-list">
+                        {
+                            subs.map((sub: any) => (
+                                <div class="sub-row">
+                                    <div class="sub-time">{sub.minute}'</div>
+                                    <div class="sub-movement in">
+                                        <span
+                                            class="sub-arrow"
+                                            style="color: #77dd77;"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
+                                            >
+                                                <>
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
+                                                </>
+                                            </svg>
+                                        </span>
+                                        <a
+                                            href={`/jugadoras/${sub.playerIn.slug}`}
+                                            class="sub-player-link"
+                                        >
+                                            {sub.playerIn.imageUrl &&
+                                                !sub.playerIn.imageUrl.includes(
+                                                    "placeholder.png",
+                                                ) && (
+                                                    <img
+                                                        src={
+                                                            sub.playerIn
+                                                                .imageUrl
+                                                        }
+                                                        class="sub-img"
+                                                    />
+                                                )}
+                                            <span class="sub-name">
+                                                {sub.playerIn.name}
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div class="sub-movement out">
+                                        <span
+                                            class="sub-arrow"
+                                            style="color: #ff6b6b;"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                            >
+                                                <>
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                </>
+                                            </svg>
+                                        </span>
+                                        <a
+                                            href={`/jugadoras/${sub.playerOut.slug}`}
+                                            class="sub-player-link"
+                                        >
+                                            {sub.playerOut.imageUrl &&
+                                                !sub.playerOut.imageUrl.includes(
+                                                    "placeholder.png",
+                                                ) && (
+                                                    <img
+                                                        src={
+                                                            sub.playerOut
+                                                                .imageUrl
+                                                        }
+                                                        class="sub-img"
+                                                    />
+                                                )}
+                                            <span class="sub-name">
+                                                {sub.playerOut.name}
+                                            </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            ))
+                        }
+                        {
+                            subs.length === 0 && (
+                                <p class="no-data-msg">
+                                    No hay registros de sustituciones
+                                </p>
+                            )
+                        }
+                    </div>
+                </section>
+
+                {/* Timeline Moved to Right Column */}
+            </div>
+        </div>
+        <!-- Close Left Column -->
+
+        <div class="right-column">
+            <section class="stadium-card">
+                <h2 class="section-header">Estadio</h2>
+                <div class="stadium-content">
+                    <div class="stadium-photo">
+                        {
+                            stadiumImageSrc && (
+                                <img
+                                    src={stadiumImageSrc}
+                                    alt={game.estadio}
+                                    class="stadium-img-rect"
+                                />
+                            )
+                        }
+                    </div>
+                    <div class="stadium-info">
+                        <p class="stadium-name-large">
+                            {game.estadio || "Estadio"}
+                        </p>
+                        <div class="stadium-meta">
+                            <p>
+                                <strong>Aforo:</strong>
+                                {
+                                    game.aforo
+                                        ? `${game.aforo} espectadores`
+                                        : "Info no disponible"
+                                }
+                            </p>
+                            <p>
+                                <strong>Ubicación:</strong>
+                                {
+                                    game.ciudad && game.pais
+                                        ? `${game.ciudad} (${game.pais})`
+                                        : "Ubicación desconocida"
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {
+                        stadiumStats.total > 0 && (
+                            <div class="stadium-stats">
+                                <div class="stat-bar">
+                                    <div class="bar-label">Ganados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill won"
+                                            style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.wins}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Empatados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill drawn"
+                                            style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.draws}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Perdidos</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill lost"
+                                            style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.losses}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+                </div>
+            </section>
+
+            <section class="timeline-card">
+                <h2 class="section-header">Timeline</h2>
+                <div class="timeline-container">
+                    <div class="timeline-track">
+                        {
+                            timelineEvents.map((event, index) => (
+                                <div class="timeline-event">
+                                    <div class="event-time">
+                                        <span class="minute-badge">
+                                            {event.displayMinute}'
+                                        </span>
+                                    </div>
+                                    <div class="event-content">
+                                        <div class={`event-icon ${event.type}`}>
+                                            {event.type === "goal" ? (
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
+                                                >
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                                                    <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
+                                                    <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
+                                                </svg>
+                                            ) : event.type === "sub" ? (
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-refresh"
+                                                >
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                    />
+                                                    <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                                                    <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                                                </svg>
+                                            ) : (
+                                                "•"
+                                            )}
+                                        </div>
+                                        <span class="event-text">
+                                            {event.type === "sub" ? (
+                                                <div
+                                                    class="timeline-sub-info"
+                                                    style="display: flex; align-items: center; gap: 8px;"
+                                                >
+                                                    <span style="display: inline-flex; align-items: center; color: #77dd77; font-weight: 600;">
                                                         <svg
                                                             xmlns="http://www.w3.org/2000/svg"
                                                             width="20"
                                                             height="20"
                                                             viewBox="0 0 24 24"
                                                             fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
                                                         >
                                                             <path
                                                                 stroke="none"
                                                                 d="M0 0h24v24H0z"
                                                                 fill="none"
                                                             />
-                                                            <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                            <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
                                                         </svg>
+                                                        {event.playerIn}
                                                     </span>
-                                                    <span style="color: #ff6b6b; font-weight: 600; margin-left: 4px;">
-                                                        {event.playerOut}
+                                                    <span style="color: #ccc;">
+                                                        |
                                                     </span>
-                                                </div>
-                                            </div>
-                                        ) : event.type === "goal" ? (
-                                            <div style="display: flex; align-items: center; gap: 6px;">
-                                                <span style="font-weight: 600;">
-                                                    {event.scorer}
-                                                </span>
-                                                {event.isPenalty && (
-                                                    <span style="font-size: 0.8em; color: #555;">
-                                                        (P)
-                                                    </span>
-                                                )}
-                                                {event.isOwnGoal && (
-                                                    <span style="font-size: 0.8em; color: #d00;">
-                                                        (P.P.)
-                                                    </span>
-                                                )}
-                                                {event.assistant && (
-                                                    <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="16"
-                                                            height="16"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                        </svg>
-                                                        <span style="font-weight: 600; color: #000;">
-                                                            {event.assistant}
+                                                    <div style="display: flex; align-items: center; margin-left: 6px;">
+                                                        <span style="display: flex; color: #ff6b6b;">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="20"
+                                                                height="20"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                            >
+                                                                <path
+                                                                    stroke="none"
+                                                                    d="M0 0h24v24H0z"
+                                                                    fill="none"
+                                                                />
+                                                                <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                            </svg>
                                                         </span>
+                                                        <span style="color: #ff6b6b; font-weight: 600; margin-left: 4px;">
+                                                            {event.playerOut}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : event.type === "goal" ? (
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <span style="font-weight: 600;">
+                                                        {event.scorer}
                                                     </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            event.text
-                                        )}
-                                    </span>
+                                                    {event.isPenalty && (
+                                                        <span style="font-size: 0.8em; color: #555;">
+                                                            (P)
+                                                        </span>
+                                                    )}
+                                                    {event.isOwnGoal && (
+                                                        <span style="font-size: 0.8em; color: #d00;">
+                                                            (P.P.)
+                                                        </span>
+                                                    )}
+                                                    {event.assistant && (
+                                                        <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
+                                                            >
+                                                                <path
+                                                                    stroke="none"
+                                                                    d="M0 0h24v24H0z"
+                                                                    fill="none"
+                                                                />
+                                                                <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
+                                                            </svg>
+                                                            <span style="font-weight: 600; color: #000;">
+                                                                {
+                                                                    event.assistant
+                                                                }
+                                                            </span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                event.text
+                                            )}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
-                    }
-                    {
-                        timelineEvents.length === 0 && (
-                            <p class="no-data-msg">Sin eventos registrados</p>
-                        )
-                    }
+                            ))
+                        }
+                        {
+                            timelineEvents.length === 0 && (
+                                <p class="no-data-msg">
+                                    Sin eventos registrados
+                                </p>
+                            )
+                        }
+                    </div>
                 </div>
-            </div>
-        </section>
-    </div>
+            </section>
+        </div>
+        <!-- Close Right Column -->
+    </main>
+    <!-- Close Match Grid -->
 </Layout>
 
 <style>
@@ -1651,6 +1438,27 @@ const refereeStats = game.id_arbitra
         font-size: 0.75rem;
         font-weight: bold;
         color: #444;
+    }
+
+    .referee-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.1rem; /* Matched to original metadata-text */
+        color: #555;
+        font-weight: 700;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        text-transform: uppercase; /* Match metadata-text style if needed, previous was mixed but usually uppercase headers */
+    }
+
+    .referee-btn:hover {
+        background-color: #f0f0f0;
+        color: #2b2b2b;
     }
 
     .player-number-bold {
