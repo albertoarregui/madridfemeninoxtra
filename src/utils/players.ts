@@ -429,3 +429,50 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
         return null;
     }
 }
+
+export async function fetchPlayerTrajectory(playerId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas para trayectoria');
+            return [];
+        }
+
+        const client = createClient({
+            url: url,
+            authToken: authToken,
+        });
+
+        const query = `
+            SELECT 
+                club,
+                anio_inicio,
+                anio_fin
+            FROM 
+                trayectoria_jugadoras
+            WHERE 
+                id_jugadora = ?
+            ORDER BY 
+                anio_inicio DESC
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [playerId],
+        });
+
+        return result.rows.map((row: any) => ({
+            club: cleanApiValue(row.club),
+            anio_inicio: cleanApiValue(row.anio_inicio),
+            anio_fin: cleanApiValue(row.anio_fin),
+        }));
+
+    } catch (error) {
+        console.error("Error fetching player trajectory:", error);
+        return [];
+    }
+}

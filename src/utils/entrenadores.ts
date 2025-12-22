@@ -263,3 +263,50 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
         return null;
     }
 }
+
+export async function fetchCoachTrajectory(coachId: string | number): Promise<any[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas para trayectoria');
+            return [];
+        }
+
+        const client = createClient({
+            url: url,
+            authToken: authToken,
+        });
+
+        const query = `
+            SELECT 
+                club,
+                anio_inicio,
+                anio_fin
+            FROM 
+                trayectoria_entrenadores
+            WHERE 
+                id_entrenador = ?
+            ORDER BY 
+                anio_inicio DESC
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [coachId],
+        });
+
+        return result.rows.map((row: any) => ({
+            club: cleanApiValue(row.club),
+            anio_inicio: cleanApiValue(row.anio_inicio),
+            anio_fin: cleanApiValue(row.anio_fin),
+        }));
+
+    } catch (error) {
+        console.error("Error fetching coach trajectory:", error);
+        return [];
+    }
+}
