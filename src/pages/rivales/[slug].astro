@@ -387,6 +387,9 @@ const mockPlayers: string[] = [];
                                 <label>COMPETICIÓN:</label>
                                 <select id="competition-filter">
                                     <option value="all">Todas</option>
+                                    <option value="oficiales"
+                                        >Partidos oficiales</option
+                                    >
                                     {
                                         competitions.map((comp) => (
                                             <option value={comp}>{comp}</option>
@@ -1037,8 +1040,21 @@ const mockPlayers: string[] = [];
         const selectedSeason = seasonFilter.value;
 
         const filteredMatches = allMatches.filter((m) => {
-            const compMatch =
-                selectedComp === "all" || m.competicion === selectedComp;
+            let compMatch = false;
+            if (selectedComp === "all") {
+                compMatch = true;
+            } else if (selectedComp === "oficiales") {
+                const officialComps = [
+                    "Liga F",
+                    "UWCL",
+                    "Copa de la Reina",
+                    "Supercopa de España",
+                ];
+                compMatch = officialComps.includes(m.competicion);
+            } else {
+                compMatch = m.competicion === selectedComp;
+            }
+
             const seasonMatch =
                 selectedSeason === "all" || m.season === selectedSeason;
             return compMatch && seasonMatch;
@@ -1336,6 +1352,20 @@ const mockPlayers: string[] = [];
         background: #ffde59 !important;
         font-weight: bold;
         border-top: 2px solid #333;
+    }
+
+    /* Ensure specific styling applies */
+    .stats-table thead tr th {
+        background: #333;
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .stats-table {
+        border-radius: 8px 8px 0 0;
+        overflow: hidden; /* For border radius on headers */
     }
 
     .total-row td:first-child {
