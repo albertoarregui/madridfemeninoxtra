@@ -125,9 +125,20 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                             <span class="metadata-text">
                                 {game.competicion_nombre}
                                 {
-                                    !isNaN(Number(game.jornada))
-                                        ? ` (J${game.jornada})`
-                                        : ""
+                                    (() => {
+                                        const jornada = game.jornada;
+                                        if (!jornada) return "";
+
+                                        const lower =
+                                            String(jornada).toLowerCase();
+                                        if (lower.includes("amistoso"))
+                                            return "";
+
+                                        if (!isNaN(Number(jornada)))
+                                            return ` (J${jornada})`;
+
+                                        return ` (${jornada})`;
+                                    })()
                                 }
                                 <span class="bullet">•</span>
                                 {formatDate(game.fecha)} - {
