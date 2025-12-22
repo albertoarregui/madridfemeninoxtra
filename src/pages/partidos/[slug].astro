@@ -5,6 +5,7 @@ import {
     fetchMatchLineups,
     fetchMatchSubstitutions,
     fetchStadiumStats,
+    fetchRefereeStats,
     fetchMatchEvents,
 } from "../../utils/partidos";
 
@@ -91,6 +92,9 @@ const localShield =
     (await getShieldSrc(game.club_local)) ||
     (await getShieldSrc("Real Madrid"));
 const visitorShield = await getShieldSrc(game.club_visitante);
+const refereeStats = game.id_arbitra
+    ? await fetchRefereeStats(game.id_arbitra)
+    : null;
 ---
 
 <Layout
@@ -202,1283 +206,1578 @@ const visitorShield = await getShieldSrc(game.club_visitante);
                         </div>
 
                         <div class="match-metadata-bottom">
-                            <span class="referee-text">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-user"
+                            {
+                                game.arbitra_nombre ? (
+                                    <button
+                                        class="referee-btn"
+                                        data-stats={JSON.stringify(
+                                            refereeStats,
+                                        )}
+                                        data-name={game.arbitra_nombre}
+                                        onclick="openRefereeModal(this)"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            class="icon icon-tabler icons-tabler-outline icon-tabler-whistle"
+                                        >
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M12 14v6" />
+                                            <path d="M12.17 11.232a3.003 3.003 0 0 1 -.17 -1.232v-2a3 3 0 1 1 6 0v2a3.003 3.003 0 0 1 -.17 1.232l3.17 3.32a1.6 1.6 0 0 1 -2.32 2.32l-6.68 -6.64z" />
+                                        </svg>
+                                        {game.arbitra_nombre}
+                                    </button>
+                                ) : (
+                                    <span class="referee-text">
+                                        Árbitra por confirmar
+                                    </span>
+                                )
+                            }
+                        </div>
+
+                        // At the end of the file (before
+                    </div>):
+
+                    <div
+                        id="referee-modal"
+                        class="modal-overlay"
+                        style="display: none;"
+                    >
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 id="modal-referee-name">Nombre Árbitra</h3>
+                                <button
+                                    class="close-btn"
+                                    onclick="closeRefereeModal()"
                                 >
-                                    <path
-                                        stroke="none"
-                                        d="M0 0h24v24H0z"
-                                        fill="none"></path>
-                                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"
-                                    ></path>
-                                    <path
-                                        d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"
-                                    ></path>
-                                </svg>
-                                {game.arbitra_nombre || "Árbitra por confirmar"}
-                            </span>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        ><path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"></path><path
+                                            d="M18 6l-12 12"></path><path
+                                            d="M6 6l12 12"></path></svg
+                                    >
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="stat-row">
+                                    <div class="stat-item result win">
+                                        <span class="stat-val" id="ref-wins"
+                                            >0</span
+                                        >
+                                        <span class="stat-label">Victorias</span
+                                        >
+                                    </div>
+                                    <div class="stat-item result draw">
+                                        <span class="stat-val" id="ref-draws"
+                                            >0</span
+                                        >
+                                        <span class="stat-label">Empates</span>
+                                    </div>
+                                    <div class="stat-item result loss">
+                                        <span class="stat-val" id="ref-losses"
+                                            >0</span
+                                        >
+                                        <span class="stat-label">Derrotas</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-stats-row">
+                                    <div class="card-stat yellow">
+                                        <div class="card-icon yellow-card">
+                                        </div>
+                                        <span
+                                            class="card-count"
+                                            id="ref-yellows">0</span
+                                        >
+                                    </div>
+                                    <div class="card-stat red">
+                                        <div class="card-icon red-card"></div>
+                                        <span class="card-count" id="ref-reds"
+                                            >0</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <script is:inline>
+                        function openRefereeModal(btn) {
+                            const stats = JSON.parse(btn.dataset.stats || "{}");
+                            const name = btn.dataset.name;
+
+                            document.getElementById(
+                                "modal-referee-name",
+                            ).textContent = name;
+
+                            document.getElementById("ref-wins").textContent =
+                                stats.wins || 0;
+                            document.getElementById("ref-draws").textContent =
+                                stats.draws || 0;
+                            document.getElementById("ref-losses").textContent =
+                                stats.losses || 0;
+
+                            document.getElementById("ref-yellows").textContent =
+                                stats.yellowCards || 0;
+                            document.getElementById("ref-reds").textContent =
+                                stats.redCards || 0;
+
+                            const modal =
+                                document.getElementById("referee-modal");
+                            modal.style.display = "flex";
+                            // Prevent body scroll
+                            document.body.style.overflow = "hidden";
+                        }
+
+                        function closeRefereeModal() {
+                            const modal =
+                                document.getElementById("referee-modal");
+                            modal.style.display = "none";
+                            document.body.style.overflow = "";
+                        }
+
+                        // Close on click outside
+                        document
+                            .getElementById("referee-modal")
+                            .addEventListener("click", (e) => {
+                                if (e.target.id === "referee-modal") {
+                                    closeRefereeModal();
+                                }
+                            });
+                    </script>
+
+                    <style>
+                        /* ... existing styles ... */
+
+                        .referee-btn {
+                            background: none;
+                            border: none;
+                            cursor: pointer;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-size: 1rem;
+                            color: #555;
+                            font-weight: 600;
+                            padding: 5px 10px;
+                            border-radius: 6px;
+                            transition: all 0.2s ease;
+                        }
+
+                        .referee-btn:hover {
+                            background-color: #f0f0f0;
+                            color: #2b2b2b;
+                        }
+
+                        /* Modal Styles */
+                        .modal-overlay {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.6);
+                            z-index: 1000;
+                            display: flex; /* hidden by default via inline style */
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(4px);
+                            padding: 1rem;
+                        }
+
+                        .modal-content {
+                            background: white;
+                            border-radius: 16px;
+                            width: 100%;
+                            max-width: 400px;
+                            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                            overflow: hidden;
+                            animation: modalPop 0.3s
+                                cubic-bezier(0.34, 1.56, 0.64, 1);
+                        }
+
+                        @keyframes modalPop {
+                            from {
+                                opacity: 0;
+                                transform: scale(0.95) translateY(10px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: scale(1) translateY(0);
+                            }
+                        }
+
+                        .modal-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 1rem 1.5rem;
+                            border-bottom: 1px solid #eee;
+                            background: #fafafa;
+                        }
+
+                        .modal-header h3 {
+                            margin: 0;
+                            font-size: 1.1rem;
+                            font-weight: 800;
+                            color: #2b2b2b;
+                            text-transform: uppercase;
+                        }
+
+                        .close-btn {
+                            background: none;
+                            border: none;
+                            cursor: pointer;
+                            padding: 4px;
+                            border-radius: 50%;
+                            color: #888;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.2s;
+                        }
+
+                        .close-btn:hover {
+                            background: #eee;
+                            color: #e53e3e;
+                        }
+
+                        .modal-body {
+                            padding: 1.5rem;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 1.5rem;
+                        }
+
+                        .stat-row {
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 1rem;
+                        }
+
+                        .stat-item {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            padding: 0.75rem 0.5rem;
+                            border-radius: 12px;
+                            background: #f8f9fa;
+                        }
+
+                        .stat-item.win {
+                            background: #e6fcf5;
+                            color: #0ca678;
+                        }
+                        .stat-item.draw {
+                            background: #fff9db;
+                            color: #f59f00;
+                        }
+                        .stat-item.loss {
+                            background: #fff5f5;
+                            color: #e03131;
+                        }
+
+                        .stat-val {
+                            font-size: 1.5rem;
+                            font-weight: 800;
+                            line-height: 1;
+                            margin-bottom: 4px;
+                        }
+
+                        .stat-label {
+                            font-size: 0.75rem;
+                            text-transform: uppercase;
+                            font-weight: 700;
+                            opacity: 0.9;
+                        }
+
+                        .card-stats-row {
+                            display: flex;
+                            justify-content: center;
+                            gap: 2rem;
+                            padding-top: 0.5rem;
+                            border-top: 1px solid #eee;
+                            padding-top: 1.5rem;
+                        }
+
+                        .card-stat {
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+
+                        .card-icon {
+                            width: 24px;
+                            height: 34px;
+                            border-radius: 4px;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                        }
+
+                        .yellow-card {
+                            background: #ffd43b;
+                        }
+                        .red-card {
+                            background: #fa5252;
+                        }
+
+                        .card-count {
+                            font-size: 1.5rem;
+                            font-weight: 800;
+                            color: #495057;
+                        }
+                    </style>
                 </section>
+            </div>
+        </div>
 
-                <section class="lineup-card">
-                    <h2 class="section-header">XI titular</h2>
-                    <div class="lineup-list">
-                        {
-                            lineup.map((player: any) => (
-                                <a
-                                    href={`/jugadoras/${player.slug}`}
-                                    class="lineup-row"
-                                >
-                                    <div class="player-photo-rect">
-                                        {player.imageUrl &&
-                                            !player.imageUrl.includes(
-                                                "placeholder.png",
-                                            ) && (
-                                                <img
-                                                    src={player.imageUrl}
-                                                    alt={player.name}
-                                                    class="player-img-rect"
-                                                />
-                                            )}
-                                    </div>
+        <section class="lineup-card">
+            <h2 class="section-header">XI titular</h2>
+            <div class="lineup-list">
+                {
+                    lineup.map((player: any) => (
+                        <a
+                            href={`/jugadoras/${player.slug}`}
+                            class="lineup-row"
+                        >
+                            <div class="player-photo-rect">
+                                {player.imageUrl &&
+                                    !player.imageUrl.includes(
+                                        "placeholder.png",
+                                    ) && (
+                                        <img
+                                            src={player.imageUrl}
+                                            alt={player.name}
+                                            class="player-img-rect"
+                                        />
+                                    )}
+                            </div>
 
-                                    <span class="player-number-bold">
-                                        {player.number}
+                            <span class="player-number-bold">
+                                {player.number}
+                            </span>
+
+                            <div class="player-info-col">
+                                <div class="player-name-row">
+                                    <span class="player-name-bold">
+                                        {player.name}
                                     </span>
-
-                                    <div class="player-info-col">
-                                        <div class="player-name-row">
-                                            <span class="player-name-bold">
-                                                {player.name}
-                                            </span>
-                                        </div>
-                                        <div class="player-meta-row">
-                                            <span class="player-pos-label">
-                                                {player.pos}
-                                            </span>
-                                            <span class="separator">•</span>
-                                            <span
-                                                class="player-minutes"
-                                                title="Minutos jugados"
+                                </div>
+                                <div class="player-meta-row">
+                                    <span class="player-pos-label">
+                                        {player.pos}
+                                    </span>
+                                    <span class="separator">•</span>
+                                    <span
+                                        class="player-minutes"
+                                        title="Minutos jugados"
+                                    >
+                                        {player.minutes}'
+                                    </span>
+                                    {player.substituted && (
+                                        <span
+                                            class="sub-indicator"
+                                            title="Sustituida"
+                                            style="color: #ff6b6b;"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
                                             >
-                                                {player.minutes}'
-                                            </span>
-                                            {player.substituted && (
-                                                <span
-                                                    class="sub-indicator"
-                                                    title="Sustituida"
-                                                    style="color: #ff6b6b;"
-                                                >
+                                                <path
+                                                    stroke="none"
+                                                    d="M0 0h24v24H0z"
+                                                    fill="none"
+                                                />
+                                                <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                            </svg>
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </a>
+                    ))
+                }
+            </div>
+        </section>
+
+        <section class="subs-card">
+            <h2 class="section-header">Sustituciones</h2>
+            <div class="lineup-list">
+                {
+                    subs.map((sub: any) => (
+                        <div class="sub-row">
+                            <div class="sub-time">{sub.minute}'</div>
+                            <div class="sub-movement in">
+                                <span class="sub-arrow" style="color: #77dd77;">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
+                                    >
+                                        <>
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
+                                        </>
+                                    </svg>
+                                </span>
+                                <a
+                                    href={`/jugadoras/${sub.playerIn.slug}`}
+                                    class="sub-player-link"
+                                >
+                                    {sub.playerIn.imageUrl &&
+                                        !sub.playerIn.imageUrl.includes(
+                                            "placeholder.png",
+                                        ) && (
+                                            <img
+                                                src={sub.playerIn.imageUrl}
+                                                class="sub-img"
+                                            />
+                                        )}
+                                    <span class="sub-name">
+                                        {sub.playerIn.name}
+                                    </span>
+                                </a>
+                            </div>
+                            <div class="sub-movement out">
+                                <span class="sub-arrow" style="color: #ff6b6b;">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                    >
+                                        <>
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                        </>
+                                    </svg>
+                                </span>
+                                <a
+                                    href={`/jugadoras/${sub.playerOut.slug}`}
+                                    class="sub-player-link"
+                                >
+                                    {sub.playerOut.imageUrl &&
+                                        !sub.playerOut.imageUrl.includes(
+                                            "placeholder.png",
+                                        ) && (
+                                            <img
+                                                src={sub.playerOut.imageUrl}
+                                                class="sub-img"
+                                            />
+                                        )}
+                                    <span class="sub-name">
+                                        {sub.playerOut.name}
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    ))
+                }
+                {
+                    subs.length === 0 && (
+                        <p class="no-data-msg">
+                            No hay registros de sustituciones
+                        </p>
+                    )
+                }
+            </div>
+        </section>
+
+        {/* Timeline Moved to Right Column */}
+    </main>
+
+    <div class="right-column">
+        <section class="stadium-card">
+            <h2 class="section-header">Estadio</h2>
+            <div class="stadium-content">
+                <div class="stadium-photo">
+                    {
+                        stadiumImageSrc && (
+                            <img
+                                src={stadiumImageSrc}
+                                alt={game.estadio}
+                                class="stadium-img-rect"
+                            />
+                        )
+                    }
+                </div>
+                <div class="stadium-info">
+                    <p class="stadium-name-large">
+                        {game.estadio || "Estadio"}
+                    </p>
+                    <div class="stadium-meta">
+                        <p>
+                            <strong>Aforo:</strong>
+                            {
+                                game.aforo
+                                    ? `${game.aforo} espectadores`
+                                    : "Info no disponible"
+                            }
+                        </p>
+                        <p>
+                            <strong>Ubicación:</strong>
+                            {
+                                game.ciudad && game.pais
+                                    ? `${game.ciudad} (${game.pais})`
+                                    : "Ubicación desconocida"
+                            }
+                        </p>
+                    </div>
+                </div>
+                {
+                    stadiumStats.total > 0 && (
+                        <div class="stadium-stats">
+                            <div class="stat-bar">
+                                <div class="bar-label">Ganados</div>
+                                <div class="progress-track">
+                                    <div
+                                        class="bar-fill won"
+                                        style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
+                                    >
+                                        <span class="bar-text">
+                                            {stadiumStats.wins}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="bar-label">Empatados</div>
+                                <div class="progress-track">
+                                    <div
+                                        class="bar-fill drawn"
+                                        style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
+                                    >
+                                        <span class="bar-text">
+                                            {stadiumStats.draws}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stat-bar">
+                                <div class="bar-label">Perdidos</div>
+                                <div class="progress-track">
+                                    <div
+                                        class="bar-fill lost"
+                                        style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
+                                    >
+                                        <span class="bar-text">
+                                            {stadiumStats.losses}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div>
+        </section>
+
+        <section class="timeline-card">
+            <h2 class="section-header">Timeline</h2>
+            <div class="timeline-container">
+                <div class="timeline-track">
+                    {
+                        timelineEvents.map((event, index) => (
+                            <div class="timeline-event">
+                                <div class="event-time">
+                                    <span class="minute-badge">
+                                        {event.displayMinute}'
+                                    </span>
+                                </div>
+                                <div class="event-content">
+                                    <div class={`event-icon ${event.type}`}>
+                                        {event.type === "goal" ? (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
+                                            >
+                                                <path
+                                                    stroke="none"
+                                                    d="M0 0h24v24H0z"
+                                                    fill="none"
+                                                />
+                                                <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                                                <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
+                                                <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
+                                            </svg>
+                                        ) : event.type === "sub" ? (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                class="icon icon-tabler icons-tabler-outline icon-tabler-refresh"
+                                            >
+                                                <path
+                                                    stroke="none"
+                                                    d="M0 0h24v24H0z"
+                                                    fill="none"
+                                                />
+                                                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                                                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                                            </svg>
+                                        ) : (
+                                            "•"
+                                        )}
+                                    </div>
+                                    <span class="event-text">
+                                        {event.type === "sub" ? (
+                                            <div
+                                                class="timeline-sub-info"
+                                                style="display: flex; align-items: center; gap: 8px;"
+                                            >
+                                                <span style="display: inline-flex; align-items: center; color: #77dd77; font-weight: 600;">
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
                                                         width="20"
                                                         height="20"
                                                         viewBox="0 0 24 24"
                                                         fill="currentColor"
-                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
                                                     >
                                                         <path
                                                             stroke="none"
                                                             d="M0 0h24v24H0z"
                                                             fill="none"
                                                         />
-                                                        <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                        <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
                                                     </svg>
+                                                    {event.playerIn}
                                                 </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </a>
-                            ))
-                        }
-                    </div>
-                </section>
-
-                <section class="subs-card">
-                    <h2 class="section-header">Sustituciones</h2>
-                    <div class="lineup-list">
-                        {
-                            subs.map((sub: any) => (
-                                <div class="sub-row">
-                                    <div class="sub-time">{sub.minute}'</div>
-                                    <div class="sub-movement in">
-                                        <span
-                                            class="sub-arrow"
-                                            style="color: #77dd77;"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
-                                            >
-                                                <>
-                                                    <path
-                                                        stroke="none"
-                                                        d="M0 0h24v24H0z"
-                                                        fill="none"
-                                                    />
-                                                    <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
-                                                </>
-                                            </svg>
-                                        </span>
-                                        <a
-                                            href={`/jugadoras/${sub.playerIn.slug}`}
-                                            class="sub-player-link"
-                                        >
-                                            {sub.playerIn.imageUrl &&
-                                                !sub.playerIn.imageUrl.includes(
-                                                    "placeholder.png",
-                                                ) && (
-                                                    <img
-                                                        src={
-                                                            sub.playerIn
-                                                                .imageUrl
-                                                        }
-                                                        class="sub-img"
-                                                    />
+                                                <span style="color: #ccc;">
+                                                    |
+                                                </span>
+                                                <div style="display: flex; align-items: center; margin-left: 6px;">
+                                                    <span style="display: flex; color: #ff6b6b;">
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="20"
+                                                            height="20"
+                                                            viewBox="0 0 24 24"
+                                                            fill="currentColor"
+                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
+                                                        >
+                                                            <path
+                                                                stroke="none"
+                                                                d="M0 0h24v24H0z"
+                                                                fill="none"
+                                                            />
+                                                            <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
+                                                        </svg>
+                                                    </span>
+                                                    <span style="color: #ff6b6b; font-weight: 600; margin-left: 4px;">
+                                                        {event.playerOut}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : event.type === "goal" ? (
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <span style="font-weight: 600;">
+                                                    {event.scorer}
+                                                </span>
+                                                {event.isPenalty && (
+                                                    <span style="font-size: 0.8em; color: #555;">
+                                                        (P)
+                                                    </span>
                                                 )}
-                                            <span class="sub-name">
-                                                {sub.playerIn.name}
-                                            </span>
-                                        </a>
-                                    </div>
-                                    <div class="sub-movement out">
-                                        <span
-                                            class="sub-arrow"
-                                            style="color: #ff6b6b;"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                fill="currentColor"
-                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                            >
-                                                <>
-                                                    <path
-                                                        stroke="none"
-                                                        d="M0 0h24v24H0z"
-                                                        fill="none"
-                                                    />
-                                                    <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                                </>
-                                            </svg>
-                                        </span>
-                                        <a
-                                            href={`/jugadoras/${sub.playerOut.slug}`}
-                                            class="sub-player-link"
-                                        >
-                                            {sub.playerOut.imageUrl &&
-                                                !sub.playerOut.imageUrl.includes(
-                                                    "placeholder.png",
-                                                ) && (
-                                                    <img
-                                                        src={
-                                                            sub.playerOut
-                                                                .imageUrl
-                                                        }
-                                                        class="sub-img"
-                                                    />
+                                                {event.isOwnGoal && (
+                                                    <span style="font-size: 0.8em; color: #d00;">
+                                                        (P.P.)
+                                                    </span>
                                                 )}
-                                            <span class="sub-name">
-                                                {sub.playerOut.name}
-                                            </span>
-                                        </a>
-                                    </div>
+                                                {event.assistant && (
+                                                    <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="currentColor"
+                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
+                                                        >
+                                                            <path
+                                                                stroke="none"
+                                                                d="M0 0h24v24H0z"
+                                                                fill="none"
+                                                            />
+                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
+                                                        </svg>
+                                                        <span style="font-weight: 600; color: #000;">
+                                                            {event.assistant}
+                                                        </span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            event.text
+                                        )}
+                                    </span>
                                 </div>
-                            ))
-                        }
-                        {
-                            subs.length === 0 && (
-                                <p class="no-data-msg">
-                                    No hay registros de sustituciones
-                                </p>
-                            )
-                        }
-                    </div>
-                </section>
-
-                {/* Timeline Moved to Right Column */}
-            </div>
-
-            <div class="right-column">
-                <section class="stadium-card">
-                    <h2 class="section-header">Estadio</h2>
-                    <div class="stadium-content">
-                        <div class="stadium-photo">
-                            {
-                                stadiumImageSrc && (
-                                    <img
-                                        src={stadiumImageSrc}
-                                        alt={game.estadio}
-                                        class="stadium-img-rect"
-                                    />
-                                )
-                            }
-                        </div>
-                        <div class="stadium-info">
-                            <p class="stadium-name-large">
-                                {game.estadio || "Estadio"}
-                            </p>
-                            <div class="stadium-meta">
-                                <p>
-                                    <strong>Aforo:</strong>
-                                    {
-                                        game.aforo
-                                            ? `${game.aforo} espectadores`
-                                            : "Info no disponible"
-                                    }
-                                </p>
-                                <p>
-                                    <strong>Ubicación:</strong>
-                                    {
-                                        game.ciudad && game.pais
-                                            ? `${game.ciudad} (${game.pais})`
-                                            : "Ubicación desconocida"
-                                    }
-                                </p>
                             </div>
-                        </div>
-                        {
-                            stadiumStats.total > 0 && (
-                                <div class="stadium-stats">
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Ganados</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill won"
-                                                style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.wins}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Empatados</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill drawn"
-                                                style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.draws}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Perdidos</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill lost"
-                                                style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.losses}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        }
-                    </div>
-                </section>
-
-                <section class="timeline-card">
-                    <h2 class="section-header">Timeline</h2>
-                    <div class="timeline-container">
-                        <div class="timeline-track">
-                            {
-                                timelineEvents.map((event, index) => (
-                                    <div class="timeline-event">
-                                        <div class="event-time">
-                                            <span class="minute-badge">
-                                                {event.displayMinute}'
-                                            </span>
-                                        </div>
-                                        <div class="event-content">
-                                            <div
-                                                class={`event-icon ${event.type}`}
-                                            >
-                                                {event.type === "goal" ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        stroke-width="2"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                        <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
-                                                        <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                    </svg>
-                                                ) : event.type === "sub" ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        stroke-width="2"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        class="icon icon-tabler icons-tabler-outline icon-tabler-refresh"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-                                                        <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-                                                    </svg>
-                                                ) : (
-                                                    "•"
-                                                )}
-                                            </div>
-                                            <span class="event-text">
-                                                {event.type === "sub" ? (
-                                                    <div
-                                                        class="timeline-sub-info"
-                                                        style="display: flex; align-items: center; gap: 8px;"
-                                                    >
-                                                        <span style="display: inline-flex; align-items: center; color: #77dd77; font-weight: 600;">
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="20"
-                                                                height="20"
-                                                                viewBox="0 0 24 24"
-                                                                fill="currentColor"
-                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
-                                                            >
-                                                                <path
-                                                                    stroke="none"
-                                                                    d="M0 0h24v24H0z"
-                                                                    fill="none"
-                                                                />
-                                                                <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
-                                                            </svg>
-                                                            {event.playerIn}
-                                                        </span>
-                                                        <span style="color: #ccc;">
-                                                            |
-                                                        </span>
-                                                        <div style="display: flex; align-items: center; margin-left: 6px;">
-                                                            <span style="display: flex; color: #ff6b6b;">
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                    class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                                                </svg>
-                                                            </span>
-                                                            <span style="color: #ff6b6b; font-weight: 600; margin-left: 4px;">
-                                                                {
-                                                                    event.playerOut
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : event.type === "goal" ? (
-                                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                                        <span style="font-weight: 600;">
-                                                            {event.scorer}
-                                                        </span>
-                                                        {event.isPenalty && (
-                                                            <span style="font-size: 0.8em; color: #555;">
-                                                                (P)
-                                                            </span>
-                                                        )}
-                                                        {event.isOwnGoal && (
-                                                            <span style="font-size: 0.8em; color: #d00;">
-                                                                (P.P.)
-                                                            </span>
-                                                        )}
-                                                        {event.assistant && (
-                                                            <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="16"
-                                                                    height="16"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                    class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                                </svg>
-                                                                <span style="font-weight: 600; color: #000;">
-                                                                    {
-                                                                        event.assistant
-                                                                    }
-                                                                </span>
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    event.text
-                                                )}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                            {
-                                timelineEvents.length === 0 && (
-                                    <p class="no-data-msg">
-                                        Sin eventos registrados
-                                    </p>
-                                )
-                            }
-                        </div>
-                    </div>
-                </section>
+                        ))
+                    }
+                    {
+                        timelineEvents.length === 0 && (
+                            <p class="no-data-msg">Sin eventos registrados</p>
+                        )
+                    }
+                </div>
             </div>
-        </div>
-    </main>
+        </section>
+    </div>
+</Layout>
 
-    <style>
-        .match-details-page {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
+<style>
+    .match-details-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #666;
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            transition: color 0.3s;
-        }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: color 0.3s;
+    }
 
-        .back-link:hover {
-            color: #ffde59;
-        }
+    .back-link:hover {
+        color: #ffde59;
+    }
 
-        .match-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-        }
+    .match-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+    }
 
-        .left-column,
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+    .left-column,
+    .right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
 
-        .section-header {
-            background: #ffde59;
-            color: #2b2b2b;
-            padding: 1rem 1.5rem;
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
+    .section-header {
+        background: #ffde59;
+        color: #2b2b2b;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
 
-        .match-card-new {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+    .match-card-new {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 
-        .match-content-body {
-            padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-            width: 100%;
-        }
+    .match-content-body {
+        padding: 2rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 100%;
+    }
 
-        .match-metadata-top {
-            text-align: center;
-            margin-bottom: -0.5rem; /* Pull tighter to score */
-        }
+    .match-metadata-top {
+        text-align: center;
+        margin-bottom: -0.5rem; /* Pull tighter to score */
+    }
 
-        .metadata-text {
-            font-size: 1.1rem;
-            color: #555;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+    .metadata-text {
+        font-size: 1.1rem;
+        color: #555;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-        .match-metadata-bottom {
-            text-align: center;
-            margin-top: -0.5rem; /* Pull tighter to score */
-        }
+    .match-metadata-bottom {
+        text-align: center;
+        margin-top: -0.5rem; /* Pull tighter to score */
+    }
 
-        .bullet {
-            margin: 0 8px;
-            color: #ffde59;
-            font-weight: bold;
-        }
+    .bullet {
+        margin: 0 8px;
+        color: #ffde59;
+        font-weight: bold;
+    }
 
+    .match-main-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        width: 100%;
+        padding: 1rem 0;
+    }
+
+    .team-block-large {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        text-align: center;
+    }
+
+    .shield-container-large {
+        width: 130px;
+        height: 130px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .team-shield-xl {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    }
+
+    .team-name-xl {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #2b2b2b;
+        line-height: 1.2;
+    }
+
+    .score-block-large {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1rem;
+    }
+
+    .score-xl {
+        font-size: 5rem;
+        font-weight: 900;
+        color: #2b2b2b;
+        line-height: 1;
+        font-family:
+            "Bebas Neue", sans-serif; /* Assuming font is available per global styles */
+        letter-spacing: 2px;
+    }
+
+    .match-footer-info {
+        width: 100%;
+        text-align: center;
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+    }
+
+    .referee-text {
+        font-size: 1rem;
+        color: #777;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
         .match-main-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-            width: 100%;
-            padding: 1rem 0;
-        }
-
-        .team-block-large {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             gap: 1rem;
-            flex: 1;
-            text-align: center;
         }
-
         .shield-container-large {
-            width: 130px;
-            height: 130px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 90px;
+            height: 90px;
         }
-
-        .team-shield-xl {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
-        }
-
-        .team-name-xl {
-            font-size: 1.3rem;
-            font-weight: 800;
-            color: #2b2b2b;
-            line-height: 1.2;
-        }
-
-        .score-block-large {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 1rem;
-        }
-
         .score-xl {
-            font-size: 5rem;
-            font-weight: 900;
-            color: #2b2b2b;
-            line-height: 1;
-            font-family:
-                "Bebas Neue", sans-serif; /* Assuming font is available per global styles */
-            letter-spacing: 2px;
+            font-size: 3.5rem;
         }
-
-        .match-footer-info {
-            width: 100%;
-            text-align: center;
-            border-top: 1px solid #eee;
-            padding-top: 1rem;
+        .team-name-xl {
+            font-size: 1.1rem;
         }
-
-        .referee-text {
-            font-size: 1rem;
-            color: #777;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .match-main-content {
-                gap: 1rem;
-            }
-            .shield-container-large {
-                width: 90px;
-                height: 90px;
-            }
-            .score-xl {
-                font-size: 3.5rem;
-            }
-            .team-name-xl {
-                font-size: 1.1rem;
-            }
-            .header-text {
-                font-size: 0.9rem;
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-            }
-            .bullet {
-                display: none;
-            }
-        }
-
-        .lineup-card,
-        .subs-card,
-        .timeline-card,
-        .stadium-card,
-        .rival-card,
-        .records-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .match-result-redesigned {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2rem;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .team-block {
+        .header-text {
+            font-size: 0.9rem;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            flex: 1;
+            gap: 0.25rem;
+        }
+        .bullet {
+            display: none;
+        }
+    }
+
+    .lineup-card,
+    .subs-card,
+    .timeline-card,
+    .stadium-card,
+    .rival-card,
+    .records-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .match-result-redesigned {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .team-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+    }
+
+    .shield-container {
+        width: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .team-shield-large {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .shield-placeholder {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #eee;
+    }
+
+    .team-name-large {
+        font-weight: 700;
+        text-align: center;
+        font-size: 1rem;
+        color: #333;
+    }
+
+    .score-block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .score-main {
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+    .match-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #fafafa;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    .info-icon {
+        font-size: 1.2rem;
+    }
+
+    .lineup-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sub-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        gap: 1rem;
+        background: #ffffff;
+    }
+
+    .sub-row:last-child {
+        border-bottom: none;
+    }
+
+    .sub-time {
+        font-weight: bold;
+        background: #f5f5f5;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        min-width: 35px;
+        text-align: center;
+        color: #555;
+    }
+
+    .sub-movement {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+        font-size: 0.9rem;
+    }
+
+    .sub-player-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .sub-player-link:hover .sub-name {
+        text-decoration: underline;
+    }
+
+    .sub-img {
+        width: 60px;
+        height: 75px;
+        border-radius: 4px;
+        object-fit: cover;
+        object-position: top center;
+        background: #eee;
+        display: block;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-data-msg {
+        padding: 1rem;
+        text-align: center;
+        color: #777;
+        font-style: italic;
+    }
+
+    .lineup-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        background: #ffffff;
+    }
+
+    .lineup-row:nth-child(even) {
+        background: #ffffff;
+    }
+
+    .player-pos {
+        font-weight: bold;
+        width: 30px;
+        text-align: center;
+    }
+
+    .team-badge-small {
+        width: 30px;
+        height: 30px;
+    }
+
+    .player-name {
+        flex: 1;
+        font-weight: 600;
+    }
+
+    .player-photo-small {
+        width: 40px;
+        height: 40px;
+    }
+
+    .player-number {
+        font-weight: bold;
+        width: 40px;
+        text-align: center;
+    }
+
+    /* TIMELINE */
+    .timeline-container {
+        position: relative;
+        display: flex;
+        padding: 1.5rem 1.5rem 1.5rem 5rem;
+        gap: 1rem;
+    }
+
+    .timeline-left-badge,
+    .timeline-right-badge {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+    }
+
+    .timeline-track {
+        flex: 1;
+        position: relative;
+        padding-left: 5rem;
+        border-left: 4px solid #ffde59;
+    }
+
+    .timeline-event {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .event-time {
+        position: absolute;
+        right: calc(100% + 5.5rem);
+        margin-right: 0;
+        top: 0;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .minute-badge {
+        background: #ffde59;
+        color: #2b2b2b;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .event-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .event-icon {
+        width: 24px;
+        height: 24px;
+        /* border-radius: 50%; Removed background */
+        background: transparent;
+        display: flex; /* Ensure centering if needed */
+        align-items: center;
+        justify-content: center;
+    }
+
+    .event-icon.goal {
+        background: transparent; /* Override */
+        color: #000; /* Black ball */
+    }
+
+    .event-icon.goal svg {
+        /* color: #16a34a;  SVG might need color if stroke is currentColor */
+    }
+
+    .event-icon.yellow {
+        background: transparent;
+    }
+
+    .referee-text {
+        font-size: 1.1rem; /* Match metadata-text */
+        color: #777;
+        font-weight: 700; /* Match metadata-text weight/boldness nearly */
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-transform: none; /* Lowercase/Normal */
+    }
+
+    /* Ensure bullet color */
+    .bullet {
+        color: #2b2b2b !important;
+    }
+
+    .event-text {
+        font-size: 0.9rem;
+    }
+
+    .stadium-content {
+        padding: 1.5rem;
+    }
+
+    .stadium-photo {
+        margin-bottom: 1rem;
+    }
+
+    .stadium-info {
+        margin-bottom: 1.5rem;
+    }
+
+    .stadium-info p {
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .stadium-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .bar-label {
+        width: 100px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .bar-fill {
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .rival-chart {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .donut-chart {
+        width: 200px;
+        height: 200px;
+    }
+
+    .chart-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+    }
+
+    .records-list {
+        padding: 1.5rem;
+    }
+
+    .record-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .record-label {
+        font-weight: 600;
+    }
+
+    .record-value {
+        color: #ff6b00;
+    }
+
+    @media (max-width: 1024px) {
+        .match-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .match-result {
+            flex-direction: column;
         }
 
-        .shield-container {
-            width: 100px;
-            height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .team-shield-large {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .shield-placeholder {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #eee;
-        }
-
-        .team-name-large {
-            font-weight: 700;
-            text-align: center;
-            font-size: 1rem;
-            color: #333;
-        }
-
-        .score-block {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .score-main {
-            font-size: 3.5rem;
-            font-weight: 800;
-            letter-spacing: -1px;
+        .score {
+            font-size: 2rem;
         }
 
         .match-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: #fafafa;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-            color: #555;
-        }
-
-        .info-icon {
-            font-size: 1.2rem;
-        }
-
-        .lineup-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sub-row {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 1rem;
-            background: #ffffff;
-        }
-
-        .sub-row:last-child {
-            border-bottom: none;
-        }
-
-        .sub-time {
-            font-weight: bold;
-            background: #f5f5f5;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            min-width: 35px;
-            text-align: center;
-            color: #555;
-        }
-
-        .sub-movement {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .sub-player-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .sub-player-link:hover .sub-name {
-            text-decoration: underline;
-        }
-
-        .sub-img {
-            width: 60px;
-            height: 75px;
-            border-radius: 4px;
-            object-fit: cover;
-            object-position: top center;
-            background: #eee;
-            display: block;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-data-msg {
-            padding: 1rem;
-            text-align: center;
-            color: #777;
-            font-style: italic;
-        }
-
-        .lineup-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #f0f0f0;
-            background: #ffffff;
-        }
-
-        .lineup-row:nth-child(even) {
-            background: #ffffff;
-        }
-
-        .player-pos {
-            font-weight: bold;
-            width: 30px;
-            text-align: center;
-        }
-
-        .team-badge-small {
-            width: 30px;
-            height: 30px;
-        }
-
-        .player-name {
-            flex: 1;
-            font-weight: 600;
-        }
-
-        .player-photo-small {
-            width: 40px;
-            height: 40px;
-        }
-
-        .player-number {
-            font-weight: bold;
-            width: 40px;
-            text-align: center;
-        }
-
-        /* TIMELINE */
-        .timeline-container {
-            position: relative;
-            display: flex;
-            padding: 1.5rem 1.5rem 1.5rem 5rem;
-            gap: 1rem;
-        }
-
-        .timeline-left-badge,
-        .timeline-right-badge {
-            width: 50px;
-            height: 50px;
-            flex-shrink: 0;
-        }
-
-        .timeline-track {
-            flex: 1;
-            position: relative;
-            padding-left: 5rem;
-            border-left: 4px solid #ffde59;
-        }
-
-        .timeline-event {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .event-time {
-            position: absolute;
-            right: calc(100% + 5.5rem);
-            margin-right: 0;
-            top: 0;
-            white-space: nowrap;
-            text-align: right;
-        }
-
-        .minute-badge {
-            background: #ffde59;
-            color: #2b2b2b;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-
-        .event-content {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .event-icon {
-            width: 24px;
-            height: 24px;
-            /* border-radius: 50%; Removed background */
-            background: transparent;
-            display: flex; /* Ensure centering if needed */
-            align-items: center;
-            justify-content: center;
-        }
-
-        .event-icon.goal {
-            background: transparent; /* Override */
-            color: #000; /* Black ball */
-        }
-
-        .event-icon.goal svg {
-            /* color: #16a34a;  SVG might need color if stroke is currentColor */
-        }
-
-        .event-icon.yellow {
-            background: transparent;
-        }
-
-        .referee-text {
-            font-size: 1.1rem; /* Match metadata-text */
-            color: #777;
-            font-weight: 700; /* Match metadata-text weight/boldness nearly */
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-transform: none; /* Lowercase/Normal */
-        }
-
-        /* Ensure bullet color */
-        .bullet {
-            color: #2b2b2b !important;
-        }
-
-        .event-text {
-            font-size: 0.9rem;
-        }
-
-        .stadium-content {
-            padding: 1.5rem;
-        }
-
-        .stadium-photo {
-            margin-bottom: 1rem;
-        }
-
-        .stadium-info {
-            margin-bottom: 1.5rem;
-        }
-
-        .stadium-info p {
-            margin: 0.5rem 0;
-            font-size: 0.9rem;
-        }
-
-        .stadium-stats {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .stat-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .bar-label {
-            width: 100px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .bar-fill {
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .rival-chart {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .donut-chart {
-            width: 200px;
-            height: 200px;
-        }
-
-        .chart-legend {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-        }
-
-        .records-list {
-            padding: 1.5rem;
-        }
-
-        .record-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .record-label {
-            font-weight: 600;
-        }
-
-        .record-value {
-            color: #ff6b00;
-        }
-
-        @media (max-width: 1024px) {
-            .match-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .match-result {
-                flex-direction: column;
-            }
-
-            .score {
-                font-size: 2rem;
-            }
-
-            .match-info-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        a.lineup-row {
-            text-decoration: none;
-            color: inherit;
-            transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.5rem;
-            border-bottom: 1px solid #f0f0f0;
-            background-color: #ffffff;
-        }
-
-        a.lineup-row:hover {
-            background-color: #f9f9f9;
-        }
-
-        .player-photo-rect {
-            width: 75px;
-            height: 95px;
-            flex-shrink: 0;
-            overflow: hidden;
-            background: #eee;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .player-img-rect {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: top center;
-        }
-
-        .stadium-img-rect {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .stadium-name-large {
-            font-size: 1.2rem;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .stadium-meta {
-            font-size: 0.9rem;
-            text-align: center;
-            color: #666;
-        }
-
-        .bar-fill {
-            height: 24px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 8px;
-            min-width: 10%;
-            transition: width 0.5s ease-out;
-        }
-
-        .progress-track {
-            flex: 1;
-            background: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .bar-fill.won {
-            background: #bbf7d0;
-        }
-        .bar-fill.drawn {
-            background: #fef08a;
-        }
-        .bar-fill.lost {
-            background: #fecaca;
-        }
-
-        .bar-text {
-            font-size: 0.75rem;
-            font-weight: bold;
-            color: #444;
-        }
-
-        .player-number-bold {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #333;
-            min-width: 30px;
-            text-align: center;
-        }
-
-        .player-info-col {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .player-name-bold {
-            font-weight: 600;
-            font-size: 1rem;
-            line-height: 1.2;
-        }
-
-        .player-pos-label {
-            font-size: 0.8rem;
-            color: #777;
-            text-transform: uppercase;
-        }
-
-        .sub-row {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 1rem;
-            background: #ffffff;
-        }
-
-        .sub-row:last-child {
-            border-bottom: none;
-        }
-
-        .sub-time {
-            font-weight: bold;
-            background: #f5f5f5;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            min-width: 35px;
-            text-align: center;
-            color: #555;
-        }
-
-        .sub-movement {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .timeline-container {
-            padding: 1.5rem 1rem;
-        }
-
-        .timeline-track {
-            border-left: 2px solid #e5e5e5;
-            padding-left: 1.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .timeline-event {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .event-time {
-            position: absolute;
-            left: -2.35rem;
-            top: 0;
-        }
-
-        .event-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            font-size: 1rem;
-        }
-
-        .minute-badge {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 2px 5px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .stat-group {
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-        }
-
-        .player-meta-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 2px;
-        }
-
-        .separator {
-            color: #ccc;
-        }
-
-        .player-minutes {
-            font-weight: 500;
-            color: #444;
-            background: #f0f0f0;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 0.75rem;
-        }
-
-        .sub-indicator {
-            font-size: 0.8rem;
-        }
-    </style>
-</Layout>
+            grid-template-columns: 1fr;
+        }
+    }
+
+    a.lineup-row {
+        text-decoration: none;
+        color: inherit;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        background-color: #ffffff;
+    }
+
+    a.lineup-row:hover {
+        background-color: #f9f9f9;
+    }
+
+    .player-photo-rect {
+        width: 75px;
+        height: 95px;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: #eee;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .player-img-rect {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+    }
+
+    .stadium-img-rect {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .stadium-name-large {
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stadium-meta {
+        font-size: 0.9rem;
+        text-align: center;
+        color: #666;
+    }
+
+    .bar-fill {
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 8px;
+        min-width: 10%;
+        transition: width 0.5s ease-out;
+    }
+
+    .progress-track {
+        flex: 1;
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .bar-fill.won {
+        background: #bbf7d0;
+    }
+    .bar-fill.drawn {
+        background: #fef08a;
+    }
+    .bar-fill.lost {
+        background: #fecaca;
+    }
+
+    .bar-text {
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: #444;
+    }
+
+    .player-number-bold {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #333;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    .player-info-col {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .player-name-bold {
+        font-weight: 600;
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+
+    .player-pos-label {
+        font-size: 0.8rem;
+        color: #777;
+        text-transform: uppercase;
+    }
+
+    .sub-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        gap: 1rem;
+        background: #ffffff;
+    }
+
+    .sub-row:last-child {
+        border-bottom: none;
+    }
+
+    .sub-time {
+        font-weight: bold;
+        background: #f5f5f5;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        min-width: 35px;
+        text-align: center;
+        color: #555;
+    }
+
+    .sub-movement {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        font-size: 0.9rem;
+    }
+
+    .timeline-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .timeline-track {
+        border-left: 2px solid #e5e5e5;
+        padding-left: 1.5rem;
+        margin-left: 0.5rem;
+    }
+
+    .timeline-event {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .event-time {
+        position: absolute;
+        left: -2.35rem;
+        top: 0;
+    }
+
+    .event-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+    }
+
+    .minute-badge {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+
+    .stat-group {
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+    }
+
+    .player-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .separator {
+        color: #ccc;
+    }
+
+    .player-minutes {
+        font-weight: 500;
+        color: #444;
+        background: #f0f0f0;
+        padding: 1px 4px;
+        border-radius: 3px;
+        font-size: 0.75rem;
+    }
+
+    .sub-indicator {
+        font-size: 0.8rem;
+    }
+</style>

@@ -432,6 +432,75 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
     }
 }
 
+export async function fetchRefereeStats(refereeId: string | number | null): Promise<{ wins: number, draws: number, losses: number, total: number, yellowCards: number, redCards: number }> {
+    if (!refereeId) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
+
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
+
+        const client = createClient({ url, authToken });
+
+        // Query to get match results
+        const matchQuery = `
+             SELECT 
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
+                    ELSE 0 
+                END) as wins,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
+                    ELSE 0 
+                END) as draws,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
+                    ELSE 0 
+                END) as losses,
+                COUNT(*) as total
+            FROM partidos p
+            WHERE p.id_arbitra = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+        `;
+
+        // Query to get card stats
+        // We join with the 'tarjetas' table if it exists. Based on grep, it seems to exist.
+        // We filter by match ID where referee matches.
+        const cardQuery = `
+            SELECT 
+                SUM(CASE WHEN t.tipo_tarjeta = 'Amarilla' THEN 1 ELSE 0 END) as yellowCards,
+                SUM(CASE WHEN t.tipo_tarjeta = 'Roja' THEN 1 ELSE 0 END) as redCards
+            FROM tarjetas t
+            INNER JOIN partidos p ON t.id_partido = p.id_partido
+            WHERE p.id_arbitra = ?
+        `;
+
+        const [matchResult, cardResult] = await Promise.all([
+            client.execute({ sql: matchQuery, args: [refereeId] }),
+            client.execute({ sql: cardQuery, args: [refereeId] })
+        ]);
+
+        const matchRow = matchResult.rows[0];
+        const cardRow = cardResult.rows[0];
+
+        return {
+            wins: Number(matchRow.wins || 0),
+            draws: Number(matchRow.draws || 0),
+            losses: Number(matchRow.losses || 0),
+            total: Number(matchRow.total || 0),
+            yellowCards: Number(cardRow.yellowCards || 0),
+            redCards: Number(cardRow.redCards || 0)
+        };
+
+    } catch (error) {
+        console.error("Error fetching referee stats:", error);
+        return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
+    }
+}
+
 export async function fetchMatchEvents(matchId: string | number, matchScore?: number): Promise<any[]> {
     try {
         const subsPromise = fetchMatchSubstitutions(matchId);

@@ -1,0 +1,46 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { createClient } from "@libsql/client";
+
+const url = import.meta.env.TURSO_DATABASE_URL;
+const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+const client = createClient({ url, authToken });
+
+const { rows: columns } = await client.execute("PRAGMA table_info(partidos)");
+---
+
+<Layout title="Debug Schema">
+    <main style="padding: 2rem;">
+        <h1>Table Schema: Partidos</h1>
+
+        <div style="overflow: auto; max-height: 600px; border: 1px solid #ccc;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #eee;">
+                        <th style="padding: 5px; border: 1px solid #ddd;"
+                            >Name</th
+                        >
+                        <th style="padding: 5px; border: 1px solid #ddd;"
+                            >Type</th
+                        >
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        columns.map((row: any) => (
+                            <tr>
+                                <td style="padding: 5px; border: 1px solid #ddd;">
+                                    {row.name}
+                                </td>
+                                <td style="padding: 5px; border: 1px solid #ddd;">
+                                    {row.type}
+                                </td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        </div>
+    </main>
+</Layout>
