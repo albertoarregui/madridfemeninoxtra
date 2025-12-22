@@ -57,7 +57,8 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             SELECT 
                 id_jugadora, 
                 nombre, 
-                fecha_nacimiento, 
+                fecha_nacimiento,
+                lugar_nacimiento, 
                 pais_origen, 
                 altura, 
                 peso, 
@@ -82,6 +83,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 altura: cleanApiValue(player.altura) || null,
                 peso: cleanApiValue(player.peso) || null,
                 fecha_nacimiento: cleanApiValue(player.fecha_nacimiento) || '',
+                lugar_nacimiento: cleanApiValue(player.lugar_nacimiento) || null,
             };
         });
     } catch (error) {
