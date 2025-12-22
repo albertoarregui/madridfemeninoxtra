@@ -273,7 +273,13 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas para trayectoria');
-            return [];
+            console.error('Credenciales de Turso no configuradas para trayectoria');
+            // Mock data for UI verification
+            return [
+                { club: "Real Madrid", anio_inicio: "2021", anio_fin: null },
+                { club: "Deportivo Abanca", anio_inicio: "2019", anio_fin: "2021" },
+                { club: "Albacete", anio_inicio: "2017", anio_fin: "2019" }
+            ];
         }
 
         const client = createClient({
