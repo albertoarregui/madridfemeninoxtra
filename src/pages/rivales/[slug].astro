@@ -410,6 +410,30 @@ const isRealMadrid =
                     <h2 class="section-header">GRÁFICAS</h2>
                     <div class="filters-container">
                         <div class="filter-wrapper">
+                            <select id="location-filter">
+                                <option value="all">Local/Visitante</option>
+                                <option value="local">Como Local</option>
+                                <option value="visitor">Como Visitante</option>
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
+                        </div>
+                        <div class="filter-wrapper">
                             <select id="competition-filter">
                                 <option value="all"
                                     >Todas las Competiciones</option
@@ -935,6 +959,7 @@ const isRealMadrid =
 
     const compFilter = document.getElementById("competition-filter");
     const seasonFilter = document.getElementById("season-filter");
+    const locationFilter = document.getElementById("location-filter");
 
     function calculateStats(matches) {
         const stats = {
@@ -1112,6 +1137,7 @@ const isRealMadrid =
     function updateUI() {
         const selectedComp = compFilter.value;
         const selectedSeason = seasonFilter.value;
+        const selectedLocation = locationFilter.value;
 
         const filteredMatches = allMatches.filter((m) => {
             let compMatch = false;
@@ -1134,7 +1160,15 @@ const isRealMadrid =
 
             const seasonMatch =
                 selectedSeason === "all" || m.season === selectedSeason;
-            return compMatch && seasonMatch;
+
+            let locationMatch = true;
+            if (selectedLocation === "local") {
+                locationMatch = m.esLocal === true;
+            } else if (selectedLocation === "visitor") {
+                locationMatch = m.esLocal === false;
+            }
+
+            return compMatch && seasonMatch && locationMatch;
         });
 
         const newStats = calculateStats(filteredMatches);
@@ -1144,6 +1178,7 @@ const isRealMadrid =
 
     if (compFilter) compFilter.addEventListener("change", updateUI);
     if (seasonFilter) seasonFilter.addEventListener("change", updateUI);
+    if (locationFilter) locationFilter.addEventListener("change", updateUI);
 </script>
 
 <style>

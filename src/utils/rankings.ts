@@ -28,6 +28,9 @@ export interface RankingStat {
     tarjetas_amarillas: number;
     tarjetas_rojas: number;
     capitanias: number;
+    goles_victoria: number;
+    goles_empate: number;
+    goles_abrelatas: number;
 }
 
 export interface StreakData {
@@ -90,6 +93,36 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 WHERE goleadora IS NOT NULL
                 GROUP BY goleadora, p.id_temporada, p.id_competicion
             ),
+            advanced_goal_data AS (
+                WITH goal_details AS (
+                    SELECT 
+                        ga.goleadora,
+                        ga.id_partido,
+                        p.id_temporada,
+                        p.id_competicion,
+                        p.goles_rm,
+                        p.goles_rival,
+                        ROW_NUMBER() OVER (PARTITION BY ga.id_partido ORDER BY ga.minuto ASC) as goal_rank
+                    FROM goles_y_asistencias ga
+                    JOIN partidos p ON ga.id_partido = p.id_partido
+                    WHERE ga.goleadora IS NOT NULL
+                )
+                SELECT
+                    goleadora as id_jugadora,
+                    id_temporada,
+                    id_competicion,
+                    SUM(CASE WHEN goal_rank = 1 THEN 1 ELSE 0 END) as goles_abrelatas,
+                    SUM(CASE 
+                        WHEN goles_rm > goles_rival AND goal_rank = (goles_rival + 1) THEN 1 
+                        ELSE 0 
+                    END) as goles_victoria,
+                    SUM(CASE 
+                        WHEN goles_rm = goles_rival AND goal_rank = goles_rm THEN 1 
+                        ELSE 0 
+                    END) as goles_empate
+                FROM goal_details
+                GROUP BY goleadora, id_temporada, id_competicion
+            ),
             assist_data AS (
                 SELECT 
                     asistente as id_jugadora,
@@ -138,6 +171,9 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(l.victorias, 0) as victorias,
                 COALESCE(l.porterias_cero, 0) as porterias_cero,
                 COALESCE(g.goles, 0) as goles,
+                COALESCE(agd.goles_victoria, 0) as goles_victoria,
+                COALESCE(agd.goles_empate, 0) as goles_empate,
+                COALESCE(agd.goles_abrelatas, 0) as goles_abrelatas,
                 COALESCE(a.asistencias, 0) as asistencias,
                 COALESCE(cd.tarjetas_amarillas, 0) as tarjetas_amarillas,
                 COALESCE(cd.tarjetas_rojas, 0) as tarjetas_rojas,
@@ -147,6 +183,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             CROSS JOIN competiciones c
             LEFT JOIN lineup_data l ON j.id_jugadora = l.id_jugadora AND t.id_temporada = l.id_temporada AND c.id_competicion = l.id_competicion
             LEFT JOIN goal_data g ON j.id_jugadora = g.id_jugadora AND t.id_temporada = g.id_temporada AND c.id_competicion = g.id_competicion
+            LEFT JOIN advanced_goal_data agd ON j.id_jugadora = agd.id_jugadora AND t.id_temporada = agd.id_temporada AND c.id_competicion = agd.id_competicion
             LEFT JOIN assist_data a ON j.id_jugadora = a.id_jugadora AND t.id_temporada = a.id_temporada AND c.id_competicion = a.id_competicion
             LEFT JOIN card_data cd ON j.id_jugadora = cd.id_jugadora AND t.id_temporada = cd.id_temporada AND c.id_competicion = cd.id_competicion
             LEFT JOIN u_captain_data cp ON j.id_jugadora = cp.id_jugadora AND t.id_temporada = cp.id_temporada AND c.id_competicion = cp.id_competicion
@@ -165,6 +202,9 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             temporada: row.temporada,
             competicion: row.competicion,
             goles: Number(row.goles),
+            goles_victoria: Number(row.goles_victoria),
+            goles_empate: Number(row.goles_empate),
+            goles_abrelatas: Number(row.goles_abrelatas),
             asistencias: Number(row.asistencias),
             goles_generados: Number(row.goles) + Number(row.asistencias),
             convocatorias: Number(row.convocatorias),
