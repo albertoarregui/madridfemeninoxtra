@@ -297,7 +297,9 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                     a.nombre as arbitra,
                     p.id_estadio,
                     e.nombre as estadio,
-                    p.asistencia
+                    p.asistencia,
+                    (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = p.id_partido AND t.id_equipo != ? AND (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rm,
+                    (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = p.id_partido AND t.id_equipo != ? AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) LIKE '%RED%' OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm
                 FROM partidos p
                 LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
                 LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
@@ -305,8 +307,23 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
                 ORDER BY p.fecha DESC
             `,
-            args: [rivalId, rivalId],
+            args: [rivalId, rivalId, rivalId, rivalId],
         });
+
+        // DEBUG: Log cards for the first match to diagnose 0 counts
+        if (matchesResult.rows.length > 0) {
+            try {
+                const firstMatchId = matchesResult.rows[0].id_partido;
+                const debugCards = await db.execute({
+                    sql: "SELECT * FROM tarjetas WHERE id_partido = ?",
+                    args: [firstMatchId]
+                });
+                console.log(`[DEBUG] Raw cards for match ${firstMatchId} against rival ${rivalId}:`, debugCards.rows);
+                console.log(`[DEBUG] Counts from query: Amarillas=${matchesResult.rows[0].amarillas_rm}, Rojas=${matchesResult.rows[0].rojas_rm}`);
+            } catch (err) {
+                console.error("[DEBUG] Error fetching raw cards:", err);
+            }
+        }
 
         console.log('Matches found for rival:', matchesResult.rows.length);
         if (matchesResult.rows.length > 0) {
