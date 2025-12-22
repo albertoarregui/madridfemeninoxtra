@@ -349,9 +349,9 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
 
 export function calculateRivalStats(matches: any[]) {
     const stats = {
-        home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
-        away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 },
-        total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0 }
+        home: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 },
+        away: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 },
+        total: { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, cleanSheets: 0, conceded: 0 }
     };
 
     matches.forEach(match => {
@@ -364,6 +364,12 @@ export function calculateRivalStats(matches: any[]) {
         location.pj++;
         location.gf += golesRM;
         location.gc += golesRival;
+
+        if (golesRival === 0) {
+            location.cleanSheets = (location.cleanSheets || 0) + 1;
+        } else {
+            location.conceded = (location.conceded || 0) + 1;
+        }
 
         if (golesRM > golesRival) {
             location.pg++;
@@ -380,6 +386,8 @@ export function calculateRivalStats(matches: any[]) {
     stats.total.pp = stats.home.pp + stats.away.pp;
     stats.total.gf = stats.home.gf + stats.away.gf;
     stats.total.gc = stats.home.gc + stats.away.gc;
+    stats.total.cleanSheets = stats.home.cleanSheets + stats.away.cleanSheets;
+    stats.total.conceded = stats.home.conceded + stats.away.conceded;
 
     const addCalculatedFields = (obj: any) => ({
         ...obj,
