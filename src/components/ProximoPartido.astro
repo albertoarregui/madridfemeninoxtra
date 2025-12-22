@@ -3,18 +3,82 @@ import vsImagen from "../assets/vs.png";
 import uwclLogo from "../assets/competiciones/uwcl.png";
 import LigaFLogo from "../assets/competiciones/liga_f.png";
 import CopadelaReinaLogo from "../assets/competiciones/copa_de_la_reina.png";
+import SupercopaLogo from "../assets/competiciones/supercopa.png"; // Assuming you might have this, or fallback
+import { CALENDAR } from "../consts/calendar";
 
-const LOCAL_TEAM = "Real Madrid";
-const VISITOR_TEAM = "Sevilla FC";
-const MATCH_DATE = "2026-01-10T17:00:00+01:00";
-const MATCH_DATE_DISPLAY = "10/01/2026 17:00 CEST";
-const STADIUM = "Estadio Alfredo Di Stefano";
-const TV = "DAZN";
+// Helper to parse date string "YYYY-MM-DD" and time "HH:MM CEST" -> Date object
+function parseMatchDate(dateStr: string, timeStr: string): Date {
+    const [hours, minutes] = timeStr.replace(/[^0-9:]/g, "").split(":");
+    // Create date assuming approximate local time for simplicity, or appended logic
+    // We stick to the date string + T + HH:MM:00
+    // Note: This relies on browser/server local time or explicit offset.
+    // Given the previous hardcoded value had +01:00, we'll try to be consistent.
+    return new Date(`${dateStr}T${hours}:${minutes}:00`);
+}
+
+const now = new Date();
+const twoHours = 2 * 60 * 60 * 1000;
+
+// Find the first match where (Start Time + 2 hours) is in the future
+const nextMatch = CALENDAR.find((match) => {
+    const matchDate = parseMatchDate(match.date, match.time);
+    const matchEndTime = new Date(matchDate.getTime() + twoHours);
+    return matchEndTime > now;
+});
+
+// Default fallback or hidden state if no match found
+// We'll use the first match in calendar if "nextMatch" is undefined?
+// Or render nothing? For now, let's keep it safe and use the first one if logic fails,
+// or clean fallback vars.
+
+const activeMatch = nextMatch || CALENDAR[CALENDAR.length - 1]; // Fallback to last match or handle empty?
+
+if (!activeMatch) {
+    // Handle case with absolutely no matches
+    // For now we'll just not render the component content or render a placeholder
+}
+
+const LOCAL_TEAM = activeMatch.team1;
+const VISITOR_TEAM = activeMatch.team2;
+
+const activeDateObj = parseMatchDate(activeMatch.date, activeMatch.time);
+// Allow passing an ISO string for strict countdowns if available
+const MATCH_DATE = activeDateObj.toISOString();
+
+const formatDisplayDate = (dateObj: Date) => {
+    return (
+        new Intl.DateTimeFormat("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(dateObj) +
+        " " +
+        (activeMatch.time.includes("CEST") ? "CEST" : "CET")
+    );
+};
+
+const MATCH_DATE_DISPLAY = formatDisplayDate(activeDateObj);
+const STADIUM = activeMatch.stadium || "Estadio Alfredo Di Stéfano";
+const TV = activeMatch.tv || "DAZN";
+
+// Map competition names to logos
+const getCompetitionLogo = (compName: string) => {
+    if (compName.includes("Liga F")) return LigaFLogo;
+    if (compName.includes("Champions") || compName.includes("UWCL"))
+        return uwclLogo;
+    if (compName.includes("Copa")) return CopadelaReinaLogo;
+    if (compName.includes("Supercopa")) return SupercopaLogo; // Make sure this exists or import it
+    return LigaFLogo; // Default
+};
+
+const competitionLogo = getCompetitionLogo(activeMatch.competition);
 
 const COMPETITION_INFO = {
-    name: "Liga F",
-    logo: LigaFLogo,
-    detail: "| Jornada 15",
+    name: activeMatch.competition,
+    logo: competitionLogo,
+    detail: "", // Detail like "Jornada 15" is not in calendar.ts, leaving empty for now
 };
 
 const shields = import.meta.glob<{ default: ImageMetadata }>(
@@ -38,7 +102,7 @@ function getShieldSrc(teamName: string) {
 }
 ---
 
-<aside class="card-proximo-partido">
+<aside class="card-proximo-partido" style={!activeMatch ? "display:none" : ""}>
     <div class="escudos">
         <img src={getShieldSrc(LOCAL_TEAM)} alt={LOCAL_TEAM} class="escudo" />
         <img src={vsImagen.src} alt="Versus" class="vs-imagen" />
@@ -53,11 +117,15 @@ function getShieldSrc(teamName: string) {
 
     <div class="competicion-line">
         <img
-            src={COMPETITION_INFO.logo.src}
+            src={COMPETITION_INFO.logo
+                ? COMPETITION_INFO.logo.src
+                : LigaFLogo.src}
             alt={COMPETITION_INFO.name}
             class="competicion-logo"
         />
-        <span id="competicion-jornada">{COMPETITION_INFO.detail}</span>
+        <span id="competicion-jornada"
+            >{COMPETITION_INFO.name} {COMPETITION_INFO.detail}</span
+        >
     </div>
 
     <div class="info-line">
@@ -82,11 +150,25 @@ function getShieldSrc(teamName: string) {
     function actualizarCuentaAtras() {
         const ahora = new Date();
         const diferencia = fechaPartido.getTime() - ahora.getTime();
+        // Use a 2 hour buffer to keep showing "Match Started" message or similar?
+        // User requested: "after 2 hours ... begins a new countdown".
+        // The server-side logic picks the NEW match.
+        // The client-side countdown just counts to the provided MATCH_DATE.
 
         if (diferencia <= 0) {
             const elemento = document.getElementById("cuenta-atras");
             if (elemento) {
-                elemento.innerHTML = "¡EL PARTIDO HA COMENZADO!";
+                // If diff is negative but less than 2 hours, it means match is in progress
+                // But since we reload page to get new match, this script just handles the CURRENT activeMatch.
+                // If activeMatch is in the future, it counts down.
+                // If activeMatch is the one "in progress" (selected by server because < 2h passed),
+                // we should show "EN JUEGO" or similar.
+
+                // Note: Logic in frontmatter: "matchEndTime > now" -> filters IN future matches.
+                // So "nextMatch" is the one that hasn't finished (started < 2h ago).
+                // If difference < 0, it means it started.
+                elemento.innerHTML =
+                    "<span style='font-weight:800; color:#d32f2f; font-size: 1.5rem;'>¡PARTIDO EN JUEGO!</span>";
             }
             return;
         }
