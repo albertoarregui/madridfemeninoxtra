@@ -766,6 +766,40 @@ const refereeStats = game.id_arbitra
     <!-- Close Match Grid -->
 </Layout>
 
+<script is:inline>
+    function openRefereeModal(btn) {
+        try {
+            const stats = JSON.parse(btn.dataset.stats);
+            const name = btn.dataset.name;
+
+            document.getElementById("modal-referee-name").textContent = name;
+
+            document.getElementById("ref-wins").textContent = stats.wins;
+            document.getElementById("ref-draws").textContent = stats.draws;
+            document.getElementById("ref-losses").textContent = stats.losses;
+            document.getElementById("ref-yellows").textContent =
+                stats.yellow_cards;
+            document.getElementById("ref-reds").textContent = stats.red_cards;
+
+            const modal = document.getElementById("referee-modal");
+            modal.style.display = "flex";
+
+            // Close when clicking outside
+            modal.onclick = function (e) {
+                if (e.target === modal) {
+                    closeRefereeModal();
+                }
+            };
+        } catch (e) {
+            console.error("Error opening modal:", e);
+        }
+    }
+
+    function closeRefereeModal() {
+        document.getElementById("referee-modal").style.display = "none";
+    }
+</script>
+
 <style>
     .match-details-page {
         max-width: 1400px;
