@@ -106,8 +106,8 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     t.id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
-                    SUM(CASE WHEN t.tipo_tarjeta = 'Amarilla' THEN 1 ELSE 0 END) as tarjetas_amarillas,
-                    SUM(CASE WHEN t.tipo_tarjeta = 'Roja' THEN 1 ELSE 0 END) as tarjetas_rojas
+                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
+                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'ROJA' THEN 1 ELSE 0 END) as tarjetas_rojas
                 FROM tarjetas t
                 JOIN partidos p ON t.id_partido = p.id_partido
                 GROUP BY t.id_jugadora, p.id_temporada, p.id_competicion

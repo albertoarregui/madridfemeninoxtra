@@ -210,8 +210,8 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 SELECT 
                     p.id_temporada,
                     p.id_competicion,
-                    SUM(CASE WHEN t.tipo_tarjeta = 'Amarilla' THEN 1 ELSE 0 END) as tarjetas_amarillas,
-                    SUM(CASE WHEN t.tipo_tarjeta = 'Roja' THEN 1 ELSE 0 END) as tarjetas_rojas
+                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
+                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'ROJA' THEN 1 ELSE 0 END) as tarjetas_rojas
                 FROM tarjetas t
                 JOIN partidos p ON t.id_partido = p.id_partido
                 WHERE t.id_jugadora = ?
@@ -339,6 +339,13 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         });
 
         const estadisticasArray = Object.values(estadisticas);
+
+        // Debug log for cards
+        const totalYellowRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_amarillas) || 0), 0);
+        const totalRedRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_rojas) || 0), 0);
+        if (totalYellowRequest > 0 || totalRedRequest > 0) {
+            console.log(`[DEBUG_CARDS] Player ${playerId} has ${totalYellowRequest} yellow and ${totalRedRequest} red cards.`);
+        }
 
         const careerTotal: any = {
             convocatorias: 0,
