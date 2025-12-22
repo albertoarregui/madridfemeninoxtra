@@ -218,7 +218,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
             JOIN temporadas t ON p.id_temporada = t.id_temporada
             JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE 
-                p.competicion != 'Amistoso' 
+                c.competicion != 'Amistoso' 
                 AND a.minutos_jugados > 0
             ORDER BY j.id_jugadora, p.fecha ASC
         `;
