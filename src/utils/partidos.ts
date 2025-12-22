@@ -204,7 +204,10 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 j.posicion,
                 d.dorsal,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
-                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
@@ -261,7 +264,10 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 minutes: row.minutos_jugados,
                 substituted: row.minuto_salida !== null,
                 goals: row.goles,
-                assists: row.asistencias
+                assists: row.asistencias,
+                yellowCards: row.tarjetas_amarillas,
+                redCards: row.tarjetas_rojas,
+                doubleYellows: row.tarjetas_doble_amarillas
             };
         });
     } catch (error) {
@@ -289,7 +295,13 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 a.minuto_entrada,
                 a.minuto_salida,
                 j.nombre,
-                j.posicion
+                j.nombre,
+                j.posicion,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
@@ -332,7 +344,12 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
                     imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
-                    slug: row.nombre ? slugify(row.nombre) : '#'
+                    slug: row.nombre ? slugify(row.nombre) : '#',
+                    goals: row.goles,
+                    assists: row.asistencias,
+                    yellowCards: row.tarjetas_amarillas,
+                    redCards: row.tarjetas_rojas,
+                    doubleYellows: row.tarjetas_doble_amarillas
                 };
             };
 
@@ -519,9 +536,17 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE g.id_partido = ?
         `;
 
-        const [subs, goalsResult] = await Promise.all([
+        const cardsQuery = `
+            SELECT t.*, j.nombre as nombre_jugadora
+            FROM tarjetas t
+            LEFT JOIN jugadoras j ON t.id_jugadora = j.id_jugadora
+            WHERE t.id_partido = ?
+        `;
+
+        const [subs, goalsResult, cardsResult] = await Promise.all([
             subsPromise,
-            client.execute({ sql: goalsQuery, args: [matchId] })
+            client.execute({ sql: goalsQuery, args: [matchId] }),
+            client.execute({ sql: cardsQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -586,6 +611,42 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 assistant: assistantName,
                 isPenalty: goal.tipo === 'penalti',
                 isOwnGoal: (!goal.nombre_jugadora && !goal.goleadora),
+                team: 'local'
+            });
+        }
+
+        const cards = cardsResult.rows;
+
+        for (const card of cards) {
+            const parseMinute = (min: any): number => {
+                if (!min) return 0;
+                const s = String(min);
+                if (s.includes('+')) {
+                    const [base, extra] = s.split('+');
+                    return Number(base) + Number(extra);
+                }
+                return Number(min);
+            };
+
+            const rawType = String(card.tipo_tarjeta).toUpperCase();
+            let cardType = 'Yellow';
+            let cardText = 'Tarjeta amarilla';
+
+            if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
+                cardType = 'DoubleYellow';
+                cardText = 'Doble amarilla';
+            } else if (rawType.includes('ROJA') || rawType === 'RED') {
+                cardType = 'Red';
+                cardText = 'Tarjeta roja';
+            }
+
+            events.push({
+                minute: parseMinute(card.minuto),
+                displayMinute: formatDisplayMinute(card.minuto),
+                type: 'card',
+                cardType: cardType,
+                text: `${cardText} a ${card.nombre_jugadora || 'Jugadora'}`,
+                player: card.nombre_jugadora,
                 team: 'local'
             });
         }

@@ -211,7 +211,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                     p.id_temporada,
                     p.id_competicion,
                     SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
-                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'ROJA' THEN 1 ELSE 0 END) as tarjetas_rojas
+                    SUM(CASE WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) = 'RED' THEN 1 ELSE 0 END) as tarjetas_rojas
                 FROM tarjetas t
                 JOIN partidos p ON t.id_partido = p.id_partido
                 WHERE t.id_jugadora = ?
