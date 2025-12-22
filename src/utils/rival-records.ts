@@ -310,7 +310,53 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             args: [rivalId, rivalId],
         });
 
-        return matchesResult.rows.map((match: any) => {
+        const rows = matchesResult.rows;
+
+        if (rows.length === 0) return [];
+
+        // Fetch cards for these matches separately to avoid subquery issues
+        const matchIds = rows.map((m: any) => m.id_partido);
+        // Create placeholders ? for the IN clause
+        const placeholders = matchIds.map(() => '?').join(',');
+
+        const cardsResult = await db.execute({
+            sql: `SELECT * FROM tarjetas WHERE id_partido IN (${placeholders})`,
+            args: matchIds
+        });
+
+        // Map cards by match ID
+        const cardsByMatch: Record<string, { yellow: number; red: number }> = {};
+        matchIds.forEach((id: any) => {
+            cardsByMatch[id] = { yellow: 0, red: 0 };
+        });
+
+        cardsResult.rows.forEach((card: any) => {
+            // Count card if it is NOT for the rival (so it is for RM)
+            // Logic: if id_equipo != rivalId OR id_equipo IS NULL (assuming 2 team match)
+            const cardTeamId = Number(card.id_equipo);
+            const rId = Number(rivalId);
+
+            if (cardTeamId !== rId) {
+                const matchId = card.id_partido;
+                if (cardsByMatch[matchId]) {
+                    const type = (card.tipo_tarjeta || '').toUpperCase();
+                    // Exclude double yellow from yellow count? Logic says yes if it counts as red.
+                    // But usually:
+                    // Yellow = 'AMARILLA' or 'YELLOW' (excluding double)
+                    // Red = 'ROJA' or 'RED' or 'DOBLE'
+
+                    if ((type.includes('AMARILLA') || type.includes('YELLOW')) && !type.includes('DOBLE')) {
+                        cardsByMatch[matchId].yellow++;
+                    } else if (type.includes('ROJA') || type.includes('RED') || type.includes('DOBLE')) {
+                        cardsByMatch[matchId].red++;
+                    }
+                }
+            }
+        });
+
+        return rows.map((match: any) => {
+            const cards = cardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
+
             // Check if the displayed rival is the local team in this match
             // If match.id_club_local === rivalId, then Rival is Local.
             const esLocal = Number(match.id_club_local) === Number(rivalId);
@@ -332,8 +378,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
                 estadio: match.estadio || '-',
-                amarillas: match.amarillas_rm || 0,
-                rojas: match.rojas_rm || 0,
+                amarillas: cards.yellow,
+                rojas: cards.red,
                 // Debug log for attendance
                 asistencia: match.asistencia ? match.asistencia.toString().trim() : null,
             };
