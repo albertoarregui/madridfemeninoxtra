@@ -218,8 +218,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
             JOIN temporadas t ON p.id_temporada = t.id_temporada
             JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE 
-                c.competicion != 'Amistoso' 
-                AND a.minutos_jugados > 0
+                a.minutos_jugados > 0
             ORDER BY j.id_jugadora, p.fecha ASC
         `;
 
@@ -263,7 +262,12 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 const competition = m.competicion;
 
                 // Contexts: Global, Season, Comp
-                const contexts = ['global', `season:${season}`, `comp:${competition}`];
+                const contexts = [`season:${season}`, `comp:${competition}`];
+
+                // Only add to global streaks if it's NOT a friendly
+                if (competition !== 'Amistoso') {
+                    contexts.push('global');
+                }
 
                 const hasGoal = Number(m.goals) > 0;
                 const hasAssist = Number(m.assists) > 0;
