@@ -119,135 +119,213 @@ const refereeStats = game.id_arbitra
             Volver al resto de partidos
         </a>
 
-        <div class="match-grid">
-            <div class="left-column">
-                <section class="match-card-new">
-                    <h2 class="section-header">FICHA DEL PARTIDO</h2>
+        <div class="match-header-grid">
+            <section class="match-card-new">
+                <h2 class="section-header">FICHA DEL PARTIDO</h2>
+                <div class="match-content-body">
+                    <div class="match-metadata-top">
+                        <span class="metadata-text">
+                            {game.competicion_nombre}
+                            {
+                                (() => {
+                                    const jornada = game.jornada;
+                                    if (!jornada) return "";
 
-                    <div class="match-content-body">
-                        <div class="match-metadata-top">
-                            <span class="metadata-text">
-                                {game.competicion_nombre}
+                                    const lower = String(jornada).toLowerCase();
+                                    if (lower.includes("amistoso")) return "";
+
+                                    if (!isNaN(Number(jornada)))
+                                        return ` (J${jornada})`;
+
+                                    return ` (${jornada})`;
+                                })()
+                            }
+                            <span class="bullet">•</span>
+                            {formatDate(game.fecha)} - {formatTime(game.hora)}
+                        </span>
+                    </div>
+
+                    <div class="match-main-content">
+                        <div class="team-block-large">
+                            <div class="shield-container-large">
                                 {
-                                    (() => {
-                                        const jornada = game.jornada;
-                                        if (!jornada) return "";
-
-                                        const lower =
-                                            String(jornada).toLowerCase();
-                                        if (lower.includes("amistoso"))
-                                            return "";
-
-                                        if (!isNaN(Number(jornada)))
-                                            return ` (J${jornada})`;
-
-                                        return ` (${jornada})`;
-                                    })()
+                                    localShield && (
+                                        <img
+                                            src={localShield}
+                                            alt={game.club_local}
+                                            class="team-shield-xl"
+                                        />
+                                    )
                                 }
-                                <span class="bullet">•</span>
-                                {formatDate(game.fecha)} - {
-                                    formatTime(game.hora)
+                            </div>
+                            <span class="team-name-xl">{game.club_local}</span>
+                        </div>
+
+                        <div class="score-block-large">
+                            <span class="score-xl">
+                                {
+                                    game.club_local
+                                        .toLowerCase()
+                                        .includes("real madrid")
+                                        ? game.goles_rm
+                                        : game.goles_rival
+                                } - {
+                                    game.club_local
+                                        .toLowerCase()
+                                        .includes("real madrid")
+                                        ? game.goles_rival
+                                        : game.goles_rm
                                 }
                             </span>
                         </div>
 
-                        <div class="match-main-content">
-                            <div class="team-block-large">
-                                <div class="shield-container-large">
-                                    {
-                                        localShield && (
-                                            <img
-                                                src={localShield}
-                                                alt={game.club_local}
-                                                class="team-shield-xl"
-                                            />
-                                        )
-                                    }
-                                </div>
-                                <span class="team-name-xl"
-                                    >{game.club_local}</span
-                                >
+                        <div class="team-block-large">
+                            <div class="shield-container-large">
+                                {
+                                    visitorShield && (
+                                        <img
+                                            src={visitorShield}
+                                            alt={game.club_visitante}
+                                            class="team-shield-xl"
+                                        />
+                                    )
+                                }
                             </div>
-
-                            <div class="score-block-large">
-                                <span class="score-xl">
-                                    {
-                                        game.club_local
-                                            .toLowerCase()
-                                            .includes("real madrid")
-                                            ? game.goles_rm
-                                            : game.goles_rival
-                                    } - {
-                                        game.club_local
-                                            .toLowerCase()
-                                            .includes("real madrid")
-                                            ? game.goles_rival
-                                            : game.goles_rm
-                                    }
-                                </span>
-                            </div>
-
-                            <div class="team-block-large">
-                                <div class="shield-container-large">
-                                    {
-                                        visitorShield && (
-                                            <img
-                                                src={visitorShield}
-                                                alt={game.club_visitante}
-                                                class="team-shield-xl"
-                                            />
-                                        )
-                                    }
-                                </div>
-                                <span class="team-name-xl"
-                                    >{game.club_visitante}</span
-                                >
-                            </div>
-                        </div>
-
-                        <div class="match-metadata-bottom">
-                            {
-                                game.arbitra_nombre ? (
-                                    <button
-                                        class="referee-btn"
-                                        data-stats={JSON.stringify(
-                                            refereeStats,
-                                        )}
-                                        data-name={game.arbitra_nombre}
-                                        onclick="openRefereeModal(this)"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-user"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                                        </svg>
-                                        {game.arbitra_nombre}
-                                    </button>
-                                ) : (
-                                    <span class="referee-text">
-                                        Árbitra por confirmar
-                                    </span>
-                                )
-                            }
+                            <span class="team-name-xl"
+                                >{game.club_visitante}</span
+                            >
                         </div>
                     </div>
-                </section>
 
+                    <div class="match-metadata-bottom">
+                        {
+                            game.arbitra_nombre ? (
+                                <button
+                                    class="referee-btn"
+                                    data-stats={JSON.stringify(refereeStats)}
+                                    data-name={game.arbitra_nombre}
+                                    onclick="openRefereeModal(this)"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-user"
+                                    >
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                    </svg>
+                                    {game.arbitra_nombre}
+                                </button>
+                            ) : (
+                                <span class="referee-text">
+                                    Árbitra por confirmar
+                                </span>
+                            )
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <section class="stadium-card">
+                <h2 class="section-header">Estadio</h2>
+                <div class="stadium-content">
+                    <div class="stadium-photo">
+                        {
+                            stadiumImageSrc && (
+                                <img
+                                    src={stadiumImageSrc}
+                                    alt={game.estadio}
+                                    class="stadium-img-rect"
+                                />
+                            )
+                        }
+                    </div>
+                    <div class="stadium-info">
+                        <p class="stadium-name-large">
+                            {game.estadio || "Estadio"}
+                        </p>
+                        <div class="stadium-meta">
+                            <p>
+                                <strong>Aforo:</strong>
+                                {
+                                    game.capacidad
+                                        ? `${game.capacidad} espectadores`
+                                        : "Info no disponible"
+                                }
+                            </p>
+                            <p>
+                                <strong>Ubicación:</strong>
+                                {
+                                    game.ciudad && game.pais
+                                        ? `${game.ciudad} (${game.pais})`
+                                        : "Ubicación desconocida"
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {
+                        stadiumStats.total > 0 && (
+                            <div class="stadium-stats">
+                                <div class="stat-bar">
+                                    <div class="bar-label">Ganados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill won"
+                                            style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.wins}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Empatados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill drawn"
+                                            style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.draws}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Perdidos</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill lost"
+                                            style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.losses}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+                </div>
+            </section>
+        </div>
+
+        <div class="match-grid">
+            <div class="left-column">
                 <div
                     id="referee-modal"
                     class="modal-overlay"
@@ -747,91 +825,6 @@ const refereeStats = game.id_arbitra
             <!-- Close Left Column -->
 
             <div class="right-column">
-                <section class="stadium-card">
-                    <h2 class="section-header">Estadio</h2>
-                    <div class="stadium-content">
-                        <div class="stadium-photo">
-                            {
-                                stadiumImageSrc && (
-                                    <img
-                                        src={stadiumImageSrc}
-                                        alt={game.estadio}
-                                        class="stadium-img-rect"
-                                    />
-                                )
-                            }
-                        </div>
-                        <div class="stadium-info">
-                            <p class="stadium-name-large">
-                                {game.estadio || "Estadio"}
-                            </p>
-                            <div class="stadium-meta">
-                                <p>
-                                    <strong>Aforo:</strong>
-                                    {
-                                        game.capacidad
-                                            ? `${game.capacidad} espectadores`
-                                            : "Info no disponible"
-                                    }
-                                </p>
-                                <p>
-                                    <strong>Ubicación:</strong>
-                                    {
-                                        game.ciudad && game.pais
-                                            ? `${game.ciudad} (${game.pais})`
-                                            : "Ubicación desconocida"
-                                    }
-                                </p>
-                            </div>
-                        </div>
-                        {
-                            stadiumStats.total > 0 && (
-                                <div class="stadium-stats">
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Ganados</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill won"
-                                                style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.wins}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Empatados</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill drawn"
-                                                style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.draws}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="stat-bar">
-                                        <div class="bar-label">Perdidos</div>
-                                        <div class="progress-track">
-                                            <div
-                                                class="bar-fill lost"
-                                                style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
-                                            >
-                                                <span class="bar-text">
-                                                    {stadiumStats.losses}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        }
-                    </div>
-                </section>
-
                 <section class="timeline-card">
                     <h2 class="section-header">Timeline</h2>
                     <div class="timeline-container">
@@ -894,7 +887,7 @@ const refereeStats = game.id_arbitra
                                                 ) : event.type === "card" ? (
                                                     event.cardType ===
                                                     "DoubleYellow" ? (
-                                                        <div style="position: relative; width: 16px; height: 18px; display: flex; align-items: center; justify-content: center;">
+                                                        <div style="position: relative; width: 14px; height: 16px; display: flex; align-items: center; justify-content: center;">
                                                             <div
                                                                 class="card-icon yellow"
                                                                 style="position: absolute; transform: rotate(-15deg) translateX(-2px);"
@@ -910,7 +903,7 @@ const refereeStats = game.id_arbitra
                                                         />
                                                     )
                                                 ) : (
-                                                    "•"
+                                                    event.text
                                                 )}
                                             </div>
                                             <span class="event-text">
@@ -1005,6 +998,11 @@ const refereeStats = game.id_arbitra
                                                             </span>
                                                         )}
                                                     </div>
+                                                ) : event.type === "card" ? (
+                                                    <strong style="color: #333;">
+                                                        {event.player ||
+                                                            "Jugadora"}
+                                                    </strong>
                                                 ) : (
                                                     event.text
                                                 )}
@@ -1088,6 +1086,21 @@ const refereeStats = game.id_arbitra
             color: #ffde59;
         }
 
+        .match-header-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            align-items: stretch; /* Ensure equal height */
+        }
+
+        .match-card-new,
+        .stadium-card {
+            height: 100%; /* Fill the grid area */
+            display: flex;
+            flex-direction: column;
+        }
+
         .match-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -1099,6 +1112,14 @@ const refereeStats = game.id_arbitra
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .match-header-grid,
+            .match-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .section-header {
@@ -1699,11 +1720,25 @@ const refereeStats = game.id_arbitra
             object-position: top center;
         }
 
+        .stadium-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        .stadium-photo {
+            flex: 1; /* Allow growing */
+            min-height: 200px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
         .stadium-img-rect {
             width: 100%;
-            height: 200px;
+            height: 100%;
             object-fit: cover;
-            border-radius: 8px;
         }
 
         .stadium-name-large {

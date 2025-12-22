@@ -489,8 +489,17 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
         // We filter by match ID where referee matches.
         const cardQuery = `
             SELECT 
-                SUM(CASE WHEN t.tipo_tarjeta = 'Amarilla' THEN 1 ELSE 0 END) as yellowCards,
-                SUM(CASE WHEN t.tipo_tarjeta = 'Roja' THEN 1 ELSE 0 END) as redCards
+                SUM(CASE 
+                    WHEN (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%') 
+                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%' 
+                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%' 
+                    THEN 1 ELSE 0 END) as yellowCards,
+                SUM(CASE 
+                    WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
+                         OR UPPER(t.tipo_tarjeta) LIKE '%RED%' 
+                         OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' 
+                         OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
+                    THEN 1 ELSE 0 END) as redCards
             FROM tarjetas t
             INNER JOIN partidos p ON t.id_partido = p.id_partido
             WHERE p.id_arbitra = ?
