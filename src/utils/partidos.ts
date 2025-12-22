@@ -392,9 +392,20 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
 
         const safeQuery = `
              SELECT 
-                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as wins,
-                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as draws,
-                SUM(CASE WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 ELSE 0 END) as losses,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
+                    ELSE 0 
+                END) as wins,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
+                    ELSE 0 
+                END) as draws,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
+                    ELSE 0 
+                END) as losses,
                 COUNT(*) as total
             FROM partidos p
             LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
