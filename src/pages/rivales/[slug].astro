@@ -1,6 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { fetchRivalsDirectly } from "../../utils/rivales";
+import { fetchRivalsDirectly, slugify } from "../../utils/rivales";
 import {
     fetchRivalRecords,
     fetchRivalTopPlayers,
@@ -108,6 +108,30 @@ try {
     }
 } catch (error) {
     console.error(`Error loading flag for ${rival.pais}:`, error);
+}
+
+// Stadium Images Logic
+let stadiumImage: ImageMetadata | undefined;
+try {
+    const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
+        "/src/assets/estadios/*.{png,jpg,jpeg,webp}",
+    );
+    // Try to find image by stadium name slug
+    if (rival.estadio) {
+        const stadiumSlug = slugify(rival.estadio).replace(/-/g, "_");
+        const stadiumPath = `/src/assets/estadios/${stadiumSlug}.png`; // Assuming png primarily, glob handles import but we need key
+        
+        // Find the matching key in glob result
+        const matchingKey = Object.keys(stadiumImages).find(key => {
+            return key.includes(stadiumSlug);
+        });
+
+        if (matchingKey && stadiumImages[matchingKey]) {
+            stadiumImage = (await stadiumImages[matchingKey]()).default;
+        }
+    }
+} catch (error) {
+    console.error(`Error loading stadium image for ${rival.estadio}:`, error);
 }
 
 const rivalRecords = await fetchRivalRecords(rival.id_club);
@@ -619,7 +643,19 @@ const mockPlayers: string[] = [];
                     <h2 class="section-header">ESTADIO</h2>
                     <div class="stadium-content">
                         <div class="stadium-photo">
-                            <div class="photo-placeholder"></div>
+                            {
+                                stadiumImage ? (
+                                    <img
+                                        src={stadiumImage.src}
+                                        alt={`Estadio ${rival.estadio}`}
+                                        class="stadium-img"
+                                    />
+                                ) : (
+                                    <div class="photo-placeholder">
+                                        <span>Foto no disponible</span>
+                                    </div>
+                                )
+                            }
                         </div>
                     </div>
                 </section>
@@ -1486,11 +1522,26 @@ const mockPlayers: string[] = [];
         padding: 1.5rem;
     }
 
-    .photo-placeholder {
+    .stadium-photo {
         width: 100%;
-        height: 200px;
-        background: #f0f0f0;
-        border-radius: 8px;
+        height: 250px;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .stadium-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .photo-placeholder {
+        color: #999;
+        font-style: italic;
+    }    border-radius: 8px;
     }
 
     .kit-row {
