@@ -49,7 +49,7 @@ export const CALENDAR = [
     },
     {
         id: "deportivo-vs-real-madrid",
-        team1: "Deportivo de La Coruña",
+        team1: "Deportivo Abanca",
         team2: "Real Madrid",
         homeaway: "away",
         date: "2026-02-01",
@@ -85,7 +85,7 @@ export const CALENDAR = [
     },
     {
         id: "alhama-vs-real-madrid",
-        team1: "Alhama El Pozo",
+        team1: "Alhama",
         team2: "Real Madrid",
         homeaway: "away",
         date: "2026-02-15",
@@ -110,7 +110,7 @@ export const CALENDAR = [
     {
         id: "real-madrid-vs-tenerife",
         team1: "Real Madrid",
-        team2: "Tenerife",
+        team2: "Costa Adeje Tenerife",
         homeaway: "home",
         date: "2026-02-22",
         time: "",
