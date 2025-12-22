@@ -1048,9 +1048,12 @@ const mockPlayers: string[] = [];
                     "Liga F",
                     "UWCL",
                     "Copa de la Reina",
+                    "Supercopa", // Modified to be less strict
                     "Supercopa de España",
                 ];
-                compMatch = officialComps.includes(m.competicion);
+                compMatch = officialComps.some((c) =>
+                    m.competicion.includes(c),
+                ); // Use includes for partial match
             } else {
                 compMatch = m.competicion === selectedComp;
             }
@@ -1241,6 +1244,7 @@ const mockPlayers: string[] = [];
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 2rem;
+        padding: 0 1.5rem 2rem 1.5rem; /* Added padding to separate from bottom and sides */
     }
 
     .chart-item {
@@ -1354,18 +1358,27 @@ const mockPlayers: string[] = [];
         border-top: 2px solid #333;
     }
 
-    /* Ensure specific styling applies */
+    /* Force styling for the table headers */
     .stats-table thead tr th {
-        background: #333;
-        color: white;
+        background-color: #333 !important;
+        color: white !important;
         text-transform: uppercase;
         font-size: 0.8rem;
         letter-spacing: 0.5px;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .stats-table tbody tr:nth-child(even) {
+        background-color: #fcebd0 !important; /* Slight yellow tint for alternate rows */
+    }
+    .stats-table tbody tr:nth-child(odd) {
+        background-color: #ffffff !important;
     }
 
     .stats-table {
         border-radius: 8px 8px 0 0;
-        overflow: hidden; /* For border radius on headers */
+        overflow: hidden;
+        border: 1px solid #ddd;
     }
 
     .total-row td:first-child {
