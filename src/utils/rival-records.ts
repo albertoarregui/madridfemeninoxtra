@@ -306,8 +306,15 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         console.log('========== END DEBUG ==========');
 
         return matchesResult.rows.map((match: any) => {
-            // Fix: Check if the displayed rival is the local team in this match
+            // Check if the displayed rival is the local team in this match
+            // If match.id_club_local === rivalId, then Rival is Local.
             const esLocal = Number(match.id_club_local) === Number(rivalId);
+
+            // Format result as Home-Away
+            // If Rival is Local, Home score is match.goles_rival (Rival Goals), Away score is match.goles_rm (Opponent/RM Goals).
+            // If Rival is Visitor, Home score is match.goles_rm (Opponent/RM Goals), Away score is match.goles_rival (Rival Goals).
+            const statsLocal = esLocal ? match.goles_rival : match.goles_rm;
+            const statsVisitor = esLocal ? match.goles_rm : match.goles_rival;
 
             return {
                 id: match.id_partido,
@@ -315,7 +322,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 competicion: match.competicion || '-',
                 esLocal: esLocal,
                 ubicacion: esLocal ? 'Local' : 'Visitante',
-                resultado: `${match.goles_rm}-${match.goles_rival}`,
+                resultado: `${statsLocal}-${statsVisitor}`,
                 golesRM: match.goles_rm,
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
