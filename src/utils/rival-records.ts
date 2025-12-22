@@ -302,6 +302,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         console.log('Matches found for rival:', matchesResult.rows.length);
         if (matchesResult.rows.length > 0) {
             console.log('Sample match:', JSON.stringify(matchesResult.rows[0], null, 2));
+            console.log('Attendance value:', matchesResult.rows[0].asistencia);
         }
         console.log('========== END DEBUG ==========');
 
@@ -327,7 +328,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
                 estadio: match.estadio || '-',
-                asistencia: match.asistencia || null,
+                // Debug log for attendance
+                asistencia: match.asistencia ? match.asistencia.toString().trim() : null,
             };
         });
     } catch (error) {
