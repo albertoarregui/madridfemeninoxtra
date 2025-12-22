@@ -263,66 +263,95 @@ function getShieldSrc(teamName: string) {
 <style is:global>
     .card-proximo-partido {
         position: relative;
-        width: fit-content;
-        padding: 30px 20px;
+        width: 100%;
+        max-width: 450px;
+        padding: 30px;
         background: #ffffff;
-        border-radius: 12px;
-        border: 3px solid transparent;
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.08); /* Subtle border */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); /* Softer shadow */
         text-align: center;
         transition:
-            box-shadow 0.3s ease,
-            border-color 0.3s ease;
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
         margin: 0 auto 30px auto;
+        overflow: hidden;
+    }
+
+    .card-proximo-partido:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        border-color: rgba(255, 222, 89, 0.3);
+    }
+
+    /* Top accent line */
+    .card-proximo-partido::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: var(--amarillo, #ffde59);
     }
 
     .competicion-line {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        margin: 0 0 1.5rem 0;
-        font-size: 1.25rem;
-        color: var(--gris-titulo);
-        font-weight: 600;
+        gap: 12px;
+        margin: 0 0 2rem 0;
+        font-size: 1.1rem;
+        color: #555;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .competicion-line .competicion-logo {
-        height: 2rem;
+        height: 2.5rem;
         width: auto;
         object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
     }
 
     .escudos {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 2rem;
-        margin-bottom: 1.5rem;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
         margin-top: 10px;
     }
 
     .escudo {
-        max-width: 90px;
-        height: 90px;
+        width: 80px;
+        height: 80px;
         object-fit: contain;
+        transition: transform 0.3s ease;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+    }
+
+    .escudo:hover {
+        transform: scale(1.1);
     }
 
     .vs-imagen {
-        width: 90px;
-        height: 90px;
+        width: 60px;
+        height: 60px;
         object-fit: contain;
-        opacity: 1;
+        opacity: 0.8;
     }
 
     .cuenta-atras {
         display: flex;
         justify-content: center;
-        gap: 15px;
-        margin: 0 auto 10px auto;
-        padding: 0;
-        background-color: transparent;
-        border-radius: 8px;
+        gap: 20px;
+        margin: 0 auto 25px auto;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #eee;
     }
 
     .time-group {
@@ -330,32 +359,73 @@ function getShieldSrc(teamName: string) {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 5px;
+        gap: 4px;
     }
 
     .time-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #333;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #2b2b2b;
         line-height: 1;
-        display: block;
+        font-feature-settings: "tnum";
+        font-variant-numeric: tabular-nums;
     }
 
     .time-label {
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: #777;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #888;
         text-transform: uppercase;
-        display: block;
-        line-height: 1;
+        letter-spacing: 0.1em;
+    }
+
+    .info-line {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-size: 1rem;
+        color: #444;
+        font-weight: 500;
+    }
+
+    /* Style the SVGs specifically */
+    .info-line svg {
+        color: var(--amarillo, #ffde59); /* Icon color matching brand */
+        /* If yellow is too light on white, might need a darker shade or stroke */
+        /* Trying a slightly darker yellow/orange for visibility if needed, 
+           or keep outline stroke. Assuming #ffde59 is readable or changing to a darker gold */
+        stroke: #d4af37; /* Darker gold/yellow for icons */
+        filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.05));
     }
 
     @media (max-width: 900px) {
         .card-proximo-partido {
             margin: 20px auto;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            padding: 20px 15px;
+        }
+
+        .escudo {
+            width: 60px;
+            height: 60px;
+        }
+
+        .vs-imagen {
+            width: 40px;
+            height: 40px;
+        }
+
+        .time-value {
+            font-size: 1.5rem;
+        }
+
+        .cuenta-atras {
+            gap: 10px;
+            padding: 10px;
         }
     }
 </style>
