@@ -37,12 +37,13 @@ export const GET = async () => {
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
                 
+                CASE
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
                    WHEN IFNULL(p.goles_rm, 0) < IFNULL(p.goles_rival, 0) THEN 'D'
                    WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '1' OR p.penaltis = 1 OR TRIM(p.penaltis) = '1') THEN 'V'
                    WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '0' OR p.penaltis = 0 OR TRIM(p.penaltis) = '0') THEN 'D'
                    ELSE 'E'
-                   END AS resultado
+                END AS resultado
 
               FROM partidos p
               LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
