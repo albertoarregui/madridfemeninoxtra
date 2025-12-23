@@ -2,6 +2,9 @@ export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
     return text.toString().toLowerCase()
         .trim()
+        .trim()
+        .replace(/ø/g, 'o').replace(/Ø/g, 'O')
+        .replace(/ö/g, 'o').replace(/Ö/g, 'O')
         .replace(/\s+/g, '-')
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^\w\-]+/g, '')
