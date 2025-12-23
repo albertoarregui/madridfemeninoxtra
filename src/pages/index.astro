@@ -9,18 +9,33 @@ import Searcher from "../components/Searcher.astro";
 import YoutubeSection from "../components/YoutubeSection.astro";
 import StatsImage from "../assets/real_madrid_stats.png";
 
+const WP_URL =
+	"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=5&_embed=true";
+
 interface Noticia {
 	id: number;
-	title: string;
-	excerpt: string;
+	title: { rendered: string };
+	excerpt: { rendered: string };
 	slug: string;
 	date: string;
 	link: string;
-	featuredImage?: string;
-	categories: string[];
+	_embedded?: {
+		"wp:featuredmedia"?: Array<{ source_url: string }>;
+		"wp:term"?: Array<Array<{ name: string }>>;
+	};
 }
 
-let noticias: Noticia[] = [];
+let posts: Noticia[] = [];
+let error = false;
+
+try {
+	const response = await fetch(WP_URL);
+	if (!response.ok) throw new Error("Failed to fetch");
+	posts = await response.json();
+} catch (e) {
+	console.error("Error fetching news:", e);
+	error = true;
+}
 
 function formatDate(dateString: string) {
 	const date = new Date(dateString);
@@ -28,6 +43,45 @@ function formatDate(dateString: string) {
 		month: "short",
 		day: "numeric",
 	}).format(date);
+}
+
+function getCategoryPriority(catName: string) {
+	const lower = catName.toLowerCase();
+	if (
+		lower.includes("previa") ||
+		lower.includes("crónica") ||
+		lower.includes("postpartido")
+	)
+		return 1;
+	if (lower.includes("primer equipo") || lower.includes("cantera")) return 2;
+	if (
+		lower.includes("liga f") ||
+		lower.includes("uwcl") ||
+		lower.includes("champions") ||
+		lower.includes("copa") ||
+		lower.includes("supercopa")
+	)
+		return 3;
+	return 4;
+}
+
+function getCategoryStyle(catName: string) {
+	const lower = catName.toLowerCase();
+	if (lower.includes("liga f"))
+		return "background-color: #00ced1; color: white;"; // Turquoise
+	if (lower.includes("uwcl") || lower.includes("champions"))
+		return "background-color: #003399; color: white;"; // Dark Blue
+	if (lower.includes("copa de la reina"))
+		return "background-color: #ff914d; color: white;"; // Orange
+	if (lower.includes("supercopa"))
+		return "background-color: #ff3333; color: white;"; // Red
+	if (lower.includes("primer equipo") || lower.includes("cantera"))
+		return "background-color: #c9a0dc; color: white;"; // Lilac
+	if (lower.includes("previa"))
+		return "background-color: #ffde59; color: white;"; // Yellow
+	if (lower.includes("postpartido") || lower.includes("crónica"))
+		return "background-color: #800080; color: white;"; // Purple
+	return "background-color: #ffde59; color: white;"; // Default Yellow
 }
 ---
 
@@ -59,11 +113,89 @@ function formatDate(dateString: string) {
 					Reina y Supercopa de España.
 				</p>
 
-				<div class="news-grid"></div>
+				{
+					error ? (
+						<p class="no-news">
+							Error al cargar las noticias. Por favor, intenta de
+							nuevo más tarde.
+						</p>
+					) : posts.length === 0 ? (
+						<p class="no-news">
+							No hay noticias disponibles en este momento.
+						</p>
+					) : (
+						<div class="news-grid">
+							{posts.map((post) => {
+								const title = post.title.rendered;
+								const excerpt = post.excerpt.rendered;
+								const formattedDate = formatDate(post.date);
+								const featuredImage =
+									post._embedded?.["wp:featuredmedia"]?.[0]
+										?.source_url;
+								const rawCategories =
+									post._embedded?.["wp:term"]?.[0] || [];
+								let categories = rawCategories.map(
+									(cat) => cat.name,
+								);
+								const link = `/noticias/${post.slug}`;
 
-				<p class="no-news" style="display: none;">
-					No hay noticias disponibles en este momento.
-				</p>
+								categories.sort(
+									(a, b) =>
+										getCategoryPriority(a) -
+										getCategoryPriority(b),
+								);
+
+								return (
+									<article
+										class="news-card"
+										onclick={`window.location.href='${link}'`}
+										style="cursor: pointer;"
+									>
+										{featuredImage && (
+											<div class="news-image">
+												<img
+													src={featuredImage}
+													alt={title}
+													loading="lazy"
+												/>
+											</div>
+										)}
+										<div class="news-content-inner">
+											<div class="news-meta">
+												<time class="news-date">
+													{formattedDate}
+												</time>
+												<div
+													class="news-categories"
+													style="display: flex; gap: 6px; flex-wrap: wrap;"
+												>
+													{categories.map((cat) => (
+														<span
+															class="news-category"
+															style={getCategoryStyle(
+																cat,
+															)}
+														>
+															{cat}
+														</span>
+													))}
+												</div>
+											</div>
+											<h3 class="news-title">{title}</h3>
+											<div
+												class="news-excerpt"
+												set:html={excerpt}
+											/>
+											<a href={link} class="news-link">
+												Leer más →
+											</a>
+										</div>
+									</article>
+								);
+							})}
+						</div>
+					)
+				}
 
 				<a href="/noticias/primer-equipo" class="view-all-news">
 					Más noticias →
@@ -107,148 +239,4 @@ function formatDate(dateString: string) {
 			</div>
 		</aside>
 	</div>
-
-	<script is:inline>
-		const WP_URL =
-			"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=5&_embed=true";
-
-		async function loadNews() {
-			const newsGrid = document.querySelector(".news-grid");
-			const noNewsMessage = document.querySelector(".no-news");
-
-			try {
-				const response = await fetch(WP_URL);
-				if (!response.ok) throw new Error("Failed to fetch");
-
-				const posts = await response.json();
-
-				if (posts.length === 0) {
-					if (newsGrid) newsGrid.style.display = "none";
-					if (noNewsMessage) noNewsMessage.style.display = "block";
-					return;
-				}
-
-				if (noNewsMessage) noNewsMessage.style.display = "none";
-				if (!newsGrid) return;
-
-				newsGrid.innerHTML = posts
-					.map((post) => {
-						const title = post.title.rendered;
-						const excerpt = post.excerpt.rendered;
-						const date = new Date(post.date);
-						const formattedDate = date.toLocaleDateString("es-ES");
-						const featuredImage =
-							post._embedded?.["wp:featuredmedia"]?.[0]
-								?.source_url;
-						const rawCategories =
-							post._embedded?.["wp:term"]?.[0] || [];
-						let categories = rawCategories.map((cat) => cat.name);
-						const link = `/noticias/${post.slug}`;
-
-						const getCategoryPriority = (catName) => {
-							const lower = catName.toLowerCase();
-							if (
-								lower.includes("previa") ||
-								lower.includes("crónica") ||
-								lower.includes("postpartido")
-							)
-								return 1;
-							if (
-								lower.includes("primer equipo") ||
-								lower.includes("cantera")
-							)
-								return 2;
-							if (
-								lower.includes("liga f") ||
-								lower.includes("uwcl") ||
-								lower.includes("champions") ||
-								lower.includes("copa") ||
-								lower.includes("supercopa")
-							)
-								return 3;
-							return 4;
-						};
-
-						categories.sort(
-							(a, b) =>
-								getCategoryPriority(a) - getCategoryPriority(b),
-						);
-
-						const getCategoryStyle = (catName) => {
-							const lower = catName.toLowerCase();
-							if (lower.includes("liga f"))
-								return "background-color: #00ced1; color: white;"; // Turquoise
-							if (
-								lower.includes("uwcl") ||
-								lower.includes("champions")
-							)
-								return "background-color: #003399; color: white;"; // Dark Blue
-							if (lower.includes("copa de la reina"))
-								return "background-color: #ff914d; color: white;"; // Orange
-							if (lower.includes("supercopa"))
-								return "background-color: #ff3333; color: white;"; // Red
-							if (
-								lower.includes("primer equipo") ||
-								lower.includes("cantera")
-							)
-								return "background-color: #c9a0dc; color: white;"; // Lilac
-							if (lower.includes("previa"))
-								return "background-color: #ffde59; color: white;"; // Yellow
-							if (
-								lower.includes("postpartido") ||
-								lower.includes("crónica")
-							)
-								return "background-color: #800080; color: white;"; // Purple
-							return "background-color: #ffde59; color: white;"; // Default Yellow
-						};
-
-						return `
-						<article class="news-card" onclick="window.location.href='${link}'" style="cursor: pointer;">
-							${
-								featuredImage
-									? `
-								<div class="news-image">
-									<img src="${featuredImage}" alt="${title}" loading="lazy" />
-								</div>
-							`
-									: ""
-							}
-							<div class="news-content-inner">
-								<div class="news-meta">
-									<time class="news-date">${formattedDate}</time>
-                                    <div class="news-categories" style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                        ${categories
-											.map(
-												(cat) => `
-                                            <span class="news-category" style="${getCategoryStyle(cat)}">${cat}</span>
-                                        `,
-											)
-											.join("")}
-                                    </div>
-								</div>
-								<h3 class="news-title">${title}</h3>
-								<div class="news-excerpt">${excerpt}</div>
-								<a href="${link}" class="news-link">Leer más →</a>
-							</div>
-						</article>
-					`;
-					})
-					.join("");
-			} catch (error) {
-				console.error("Error loading news:", error);
-				if (newsGrid) newsGrid.style.display = "none";
-				if (noNewsMessage) {
-					noNewsMessage.textContent =
-						"Error al cargar las noticias. Por favor, intenta de nuevo más tarde.";
-					noNewsMessage.style.display = "block";
-				}
-			}
-		}
-
-		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", loadNews);
-		} else {
-			loadNews();
-		}
-	</script>
 </Layout>
