@@ -53,6 +53,30 @@ if (post.meta && post.meta.subtitulo) {
 const currentUrl = `https://www.madridfemeninoxtra.com/noticias/${post.slug}`;
 const shareTitle = encodeURIComponent(title);
 const shareUrl = encodeURIComponent(currentUrl);
+
+const schema = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: title,
+    image: [featuredImage],
+    datePublished: post.date,
+    dateModified: post.modified,
+    author: [
+        {
+            "@type": "Person",
+            name: "Madrid Femenino Xtra",
+            url: "https://www.madridfemeninoxtra.com",
+        },
+    ],
+    publisher: {
+        "@type": "Organization",
+        name: "Madrid Femenino Xtra",
+        logo: {
+            "@type": "ImageObject",
+            url: "https://www.madridfemeninoxtra.com/logo.png",
+        },
+    },
+};
 ---
 
 <Layout
@@ -62,6 +86,7 @@ const shareUrl = encodeURIComponent(currentUrl);
         : `Noticia del Real Madrid Femenino`}
     image={featuredImage}
 >
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
     <main class="news-detail-page">
         <article class="news-article">
             <header class="article-header">

@@ -188,14 +188,36 @@ const getPlayerCoordinates = (pos: string) => {
         }
     }
     return { left, top };
+    return { left, top };
 };
 const playerPosition = getPlayerCoordinates(player.posicion || "");
+
+const schema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: player.nombre,
+    jobTitle: "Jugadora de Fútbol",
+    affiliation: {
+        "@type": "SportsTeam",
+        name: "Real Madrid Femenino",
+    },
+    image: resolvedImage,
+    birthDate: player.fecha_nacimiento,
+    birthPlace: {
+        "@type": "Place",
+        name: player.lugar_nacimiento,
+    },
+    height: player.altura ? `${player.altura} m` : undefined,
+    weight: player.peso ? `${player.peso} kg` : undefined,
+    nationality: player.pais_origin,
+};
 ---
 
 <Layout
     title={`${player.nombre} | Madrid Femenino Xtra`}
     description={`Ficha completa de ${player.nombre}, jugadora del Real Madrid Femenino. Consulta sus estadísticas, posición, biografía y récords.`}
 >
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
     <main class="player-profile-page">
         <a href="/jugadoras" class="back-link">
             <svg
@@ -215,7 +237,7 @@ const playerPosition = getPlayerCoordinates(player.posicion || "");
         </a>
         <div class="profile-grid">
             <section class="ficha-section">
-                <h2 class="section-header">Ficha de {player.nombre}</h2>
+                <h1 class="section-header">Ficha de {player.nombre}</h1>
                 <div class="ficha-content">
                     <div class="player-photo-container">
                         <img
