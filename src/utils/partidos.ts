@@ -67,6 +67,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
                    WHEN IFNULL(p.goles_rm, 0) < IFNULL(p.goles_rival, 0) THEN 'D'
+                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND CAST(p.penaltis AS INTEGER) = 1 THEN 'V'
+                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND CAST(p.penaltis AS INTEGER) = 0 THEN 'D'
                    ELSE 'E'
                    END AS resultado
 
@@ -156,10 +158,18 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
         if (golesRm > golesRival) {
             stats.wins++;
-        } else if (golesRm === golesRival) {
-            stats.draws++;
-        } else {
+        } else if (golesRm < golesRival) {
             stats.losses++;
+        } else {
+            // Draw in regular time, check penalties
+            const penalties = match.penaltis;
+            if (penalties === 1 || penalties === '1') {
+                stats.wins++;
+            } else if (penalties === 0 || penalties === '0') {
+                stats.losses++;
+            } else {
+                stats.draws++;
+            }
         }
     });
 
