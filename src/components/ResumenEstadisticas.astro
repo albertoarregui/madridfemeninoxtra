@@ -1,8 +1,207 @@
+---
+import { fetchGamesDirectly } from "../utils/partidos";
+import { fetchPlayersDirectly } from "../utils/players";
+import { fetchRivalsDirectly } from "../utils/rivales";
+import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
+
+// 1. Fetch data server-side
+const [partidos, jugadoras, clubes, golesData] = await Promise.all([
+    fetchGamesDirectly(),
+    fetchPlayersDirectly(),
+    fetchRivalsDirectly(),
+    fetchGoalsAssistsDirectly(),
+]);
+
+// 2. Process Statistics (Server Side)
+let stats = {
+    victorias: 0,
+    empates: 0,
+    derrotas: 0,
+    golesA: 0,
+    golesC: 0,
+    uniqueTemporadaIds: new Set(),
+    uniqueArbitraIds: new Set(),
+    uniqueEstadioIds: new Set(),
+};
+
+for (const p of partidos) {
+    const rmGoles = Number(p.goles_rm) || 0;
+    const rivalGoles = Number(p.goles_rival) || 0;
+
+    // Check penalties if defined
+    // API returns numeric 1/0 or string "1"/"0", or sometimes null
+    const penaltisResultado =
+        p.penaltis !== null && p.penaltis !== undefined
+            ? Number(p.penaltis)
+            : NaN;
+
+    stats.golesA += rmGoles;
+    stats.golesC += rivalGoles;
+
+    if (rmGoles > rivalGoles) {
+        stats.victorias++;
+    } else if (rmGoles < rivalGoles) {
+        stats.derrotas++;
+    } else {
+        // Draw logic
+        if (isNaN(penaltisResultado)) {
+            stats.empates++;
+        } else if (penaltisResultado === 1) {
+            stats.victorias++;
+        } else if (penaltisResultado === 0) {
+            stats.derrotas++;
+        } else {
+             // Fallback if penalty format is unexpected, count as draw
+             stats.empates++;
+        }
+    }
+
+    if (p.id_temporada) stats.uniqueTemporadaIds.add(String(p.id_temporada));
+    if (p.id_arbitra) stats.uniqueArbitraIds.add(String(p.id_arbitra));
+    if (p.id_estadio) stats.uniqueEstadioIds.add(String(p.id_estadio));
+}
+
+const totalGolesFavor = golesData.length; // Assuming API returns all individual goals for RM
+const totalGolesContra = stats.golesC;
+const totalGoles = totalGolesFavor - totalGolesContra;
+const totalRivales = clubes.length; // Depending on if RM is in list, client side subtracted 1. The util fetches "!= Real Madrid" so likely exact.
+// Verify fetchRivalsDirectly usually filters out Real Madrid? Yes, checked query.
+
+const resumen = [
+    {
+        label: "Temporadas",
+        value: stats.uniqueTemporadaIds.size,
+    },
+    {
+        label: "Partidos",
+        value: partidos.length,
+    },
+    {
+        label: "Victorias",
+        value: stats.victorias,
+    },
+    { label: "Empates", value: stats.empates },
+    {
+        label: "Derrotas",
+        value: stats.derrotas,
+    },
+    { label: "Goles a favor", value: totalGolesFavor },
+    {
+        label: "Goles en contra",
+        value: totalGolesContra,
+    },
+    {
+        label: "Diferencia de goles",
+        value: totalGoles,
+    },
+    { label: "Jugadoras", value: jugadoras.length },
+    { label: "Rivales", value: totalRivales },
+    {
+        label: "Estadios",
+        value: stats.uniqueEstadioIds.size,
+    },
+    {
+        label: "Árbitras",
+        value: stats.uniqueArbitraIds.size,
+    },
+];
+---
+
 <div id="stats-grid" class="stats-grid-container" style="margin-top: 2rem;">
+    {
+        resumen.map((item) => (
+            <div class="stat-card">
+                <span class="stat-value">{item.value}</span>
+                <span class="stat-label">{item.label}</span>
+            </div>
+        ))
+    }
 </div>
 
-<script is:inline>
-    const API_URLS = {
+<style is:global>
+    .stats-grid-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding: 0;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background-color: #ffffff;
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .stat-value {
+        font-size: 2.5em;
+        font-weight: 900;
+        color: var(--negro, #333);
+        line-height: 1;
+        margin-bottom: 8px;
+        transition: color 0.3s ease;
+    }
+
+    .stat-label {
+        font-size: 0.85em;
+        text-transform: uppercase;
+        color: #666;
+        font-weight: 600;
+        transition: color 0.3s ease;
+    }
+
+    .stat-card:hover .stat-value {
+        color: #ffde59;
+        color: #ffde59; /* Ensures primary color on hover */
+    }
+
+    .stat-card:hover .stat-label {
+        color: #ffde59;
+    }
+
+    @media (max-width: 900px) {
+        .stats-grid-container {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+    }
+
+    @media (max-width: 500px) {
+        .stats-grid-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-card {
+            padding: 16px 12px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+        }
+    }
+</style>
         partidos: "/api/partidos",
         jugadoras: "/api/players",
         clubes: "/api/clubes",
