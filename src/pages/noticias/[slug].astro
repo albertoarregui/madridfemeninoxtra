@@ -38,6 +38,7 @@ const featuredImageAlt =
     post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text || title;
 const categories =
     post._embedded?.["wp:term"]?.[0]?.map((cat: any) => cat.name) || [];
+const authorName = post._embedded?.author?.[0]?.name || "Madrid Femenino Xtra";
 
 let subtitle = "";
 if (post.meta && post.meta.subtitulo) {
@@ -53,6 +54,34 @@ if (post.meta && post.meta.subtitulo) {
 const currentUrl = `https://www.madridfemeninoxtra.com/noticias/${post.slug}`;
 const shareTitle = encodeURIComponent(title);
 const shareUrl = encodeURIComponent(currentUrl);
+
+const getCategoryPriority = (catName: string) => {
+    const lower = catName.toLowerCase();
+    // 1. Primer equipo / Cantera
+    if (lower.includes("primer equipo") || lower.includes("cantera")) return 1;
+    // 2. Previas / Crónicas
+    if (
+        lower.includes("previa") ||
+        lower.includes("crónica") ||
+        lower.includes("postpartido")
+    )
+        return 2;
+    // 3. Competiciones
+    if (
+        lower.includes("liga f") ||
+        lower.includes("uwcl") ||
+        lower.includes("champions") ||
+        lower.includes("copa") ||
+        lower.includes("supercopa")
+    )
+        return 3;
+    // 4. Resto
+    return 4;
+};
+
+categories.sort(
+    (a: string, b: string) => getCategoryPriority(a) - getCategoryPriority(b),
+);
 
 const schema = {
     "@context": "https://schema.org",
@@ -233,6 +262,8 @@ const schema = {
 
             <div class="article-meta-date">
                 <span class="article-date">{date}</span>
+                <span class="separator"> . </span>
+                <span class="article-author">{authorName}</span>
             </div>
 
             <div class="article-content" set:html={content} />
