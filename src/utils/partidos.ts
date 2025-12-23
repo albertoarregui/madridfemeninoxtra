@@ -67,8 +67,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
                    WHEN IFNULL(p.goles_rm, 0) < IFNULL(p.goles_rival, 0) THEN 'D'
-                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND CAST(p.penaltis AS INTEGER) = 1 THEN 'V'
-                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND CAST(p.penaltis AS INTEGER) = 0 THEN 'D'
+                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '1' OR p.penaltis = 1 OR TRIM(p.penaltis) = '1') THEN 'V'
+                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '0' OR p.penaltis = 0 OR TRIM(p.penaltis) = '0') THEN 'D'
                    ELSE 'E'
                    END AS resultado
 
