@@ -473,12 +473,7 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
         });
 
         if (result.rows.length === 0) {
-            // Fallback to mock data if DB is empty for UI verification
-            return [
-                { club: "Real Madrid", anio_inicio: "2020", anio_fin: null },
-                { club: "Deportivo Abanca", anio_inicio: "2019", anio_fin: "2020" },
-                { club: "Atlético de Madrid", anio_inicio: "2017", anio_fin: "2019" }
-            ];
+            return [];
         }
 
         return result.rows.map((row: any) => ({
@@ -489,11 +484,6 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
 
     } catch (error) {
         console.error("Error fetching player trajectory:", error);
-        // Fallback to mock data on error (authentication or network)
-        return [
-            { club: "Real Madrid", anio_inicio: "2020", anio_fin: null },
-            { club: "Deportivo Abanca", anio_inicio: "2019", anio_fin: "2020" },
-            { club: "Atlético de Madrid", anio_inicio: "2017", anio_fin: "2019" }
-        ];
+        return [];
     }
 }
