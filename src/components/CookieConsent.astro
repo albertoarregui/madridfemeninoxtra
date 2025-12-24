@@ -1,0 +1,185 @@
+---
+interface Props {
+    showAds?: boolean;
+}
+
+const { showAds = true } = Astro.props;
+---
+
+{
+    showAds && (
+        <div id="cookie-banner" class="cookie-banner hidden">
+            <div class="cookie-content">
+                <p>
+                    Utilizamos cookies propias y de terceros para mejorar su
+                    experiencia y mostrarle publicidad relacionada con sus
+                    preferencias mediante el análisis de sus hábitos de
+                    navegación.
+                </p>
+                <div class="cookie-buttons">
+                    <button id="accept-cookies" class="btn-accept">
+                        Aceptar
+                    </button>
+                    <button id="reject-cookies" class="btn-reject">
+                        Rechazar
+                    </button>
+                    <a href="/politica-cookies" class="cookie-link">
+                        Más información
+                    </a>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+<script is:inline>
+    // Función para cargar Google AdSense
+    function loadAdSense() {
+        const script = document.createElement("script");
+        script.src =
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753331336777901";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        document.head.appendChild(script);
+    }
+
+    // Lógica del banner
+    document.addEventListener("DOMContentLoaded", () => {
+        const banner = document.getElementById("cookie-banner");
+        const acceptBtn = document.getElementById("accept-cookies");
+        const rejectBtn = document.getElementById("reject-cookies");
+
+        if (!banner) return;
+
+        const cookieConsent = localStorage.getItem("cookie_consent");
+
+        if (cookieConsent === "accepted") {
+            loadAdSense();
+        } else if (!cookieConsent) {
+            banner.classList.remove("hidden");
+        }
+
+        acceptBtn?.addEventListener("click", () => {
+            localStorage.setItem("cookie_consent", "accepted");
+            banner.classList.add("hidden");
+            loadAdSense();
+        });
+
+        rejectBtn?.addEventListener("click", () => {
+            localStorage.setItem("cookie_consent", "rejected");
+            // Eliminamos banner
+            banner.classList.add("hidden");
+            // No cargamos AdSense
+        });
+    });
+</script>
+
+<style>
+    .cookie-banner {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 600px;
+        background-color: rgba(33, 33, 33, 0.95);
+        border: 1px solid #ffde59;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+
+    .cookie-banner.hidden {
+        display: none;
+    }
+
+    .cookie-content p {
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .cookie-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-accept,
+    .btn-reject {
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+    }
+
+    .btn-accept {
+        background-color: #ffde59;
+        color: #000;
+    }
+
+    .btn-accept:hover {
+        background-color: #e6c84c;
+        transform: translateY(-2px);
+    }
+
+    .btn-reject {
+        background-color: transparent;
+        border: 1px solid #ffde59;
+        color: #ffde59;
+    }
+
+    .btn-reject:hover {
+        background-color: rgba(255, 222, 89, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .cookie-link {
+        color: #bdbdbd;
+        font-size: 0.85rem;
+        text-decoration: underline;
+        margin-left: 0.5rem;
+    }
+
+    .cookie-link:hover {
+        color: #fff;
+    }
+
+    @media (max-width: 600px) {
+        .cookie-banner {
+            bottom: 0;
+            left: 0;
+            transform: none;
+            width: 100%;
+            border-radius: 12px 12px 0 0;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .cookie-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-accept,
+        .btn-reject {
+            width: 100%;
+        }
+
+        .cookie-link {
+            margin-left: 0;
+            margin-top: 0.5rem;
+        }
+    }
+</style>
