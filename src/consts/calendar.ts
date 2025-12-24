@@ -29,7 +29,7 @@ export const CALENDAR = [
         team2: "Real Madrid",
         homeaway: "away",
         date: "2026-01-17",
-        time: "17:00 CEST",
+        time: "12:00 CEST",
         competition: "Liga F",
         matchday: "Jornada 16",
         stadium: 'Ciudad Deportiva de Buñol',
