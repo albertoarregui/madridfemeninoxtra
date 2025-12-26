@@ -1,0 +1,307 @@
+---
+import Layout from "../layouts/Layout.astro";
+import CandidateCard from "../components/CandidateCard.astro";
+import { SQUAD } from "../../public/consts/squad";
+import "@fontsource/archivo-black";
+
+// 1. Data Preparation
+// Filter squad by position
+const goalkeepers = SQUAD.filter((p) => p.position === "Portera");
+const defenders = SQUAD.filter(
+    (p) =>
+        p.position.toLowerCase().includes("defensa") ||
+        p.position.toLowerCase().includes("lateral"),
+);
+const midfielders = SQUAD.filter((p) => p.position === "Centrocampista");
+const forwards = SQUAD.filter(
+    (p) =>
+        p.position.toLowerCase().includes("delantera") ||
+        p.position.toLowerCase().includes("extremo"),
+);
+
+// Define U23 (Born after Jan 1, 2002 for example)
+const u23Players = SQUAD.filter(
+    (p) => new Date(p.date_birth).getFullYear() >= 2002,
+);
+
+// Manual Mock Data for other categories
+const canteranas = [
+    {
+        name: "Laia Suárez",
+        image: "https://www.realmadrid.com/img/horizontal_940px/laia-suarez_1hp2764_chi_h_20240916053358.jpg",
+    },
+    {
+        name: "Bea Vélez",
+        image: "https://www.realmadrid.com/img/horizontal_940px/bea-velez_1hp2728_chi_h_20240916053401.jpg",
+    },
+    {
+        name: "Amaya García",
+        image: "https://www.realmadrid.com/img/horizontal_940px/amaya_1hp2956_chi_h_20240916053405.jpg",
+    },
+    {
+        name: "Iris Santiago",
+        image: "https://www.realmadrid.com/img/horizontal_940px/iris_1hp3022_chi_h_20240916053403.jpg",
+    },
+    {
+        name: "Noemi Bejarano",
+        image: "https://www.realmadrid.com/img/horizontal_940px/noemi_1hp2991_chi_h_20240916053400.jpg",
+    },
+];
+
+const goals = [
+    {
+        name: "Weir vs Man City",
+        image: "https://as01.epimg.net/futbol/imagenes/2022/08/21/femenino/1661110682_936780_1661110825_noticia_normal.jpg",
+    },
+    {
+        name: "Athenea vs Chelsea",
+        image: "https://e00-marca.uecdn.es/assets/multimedia/imagenes/2022/11/23/16692348577317.jpg",
+    },
+    {
+        name: "Olga vs Barça",
+        image: "https://fotografias.lasexta.com/clipping/cmsimages02/2024/03/24/C99A4B3A-6447-495B-88F4-07C442D26315/olga-carmona-celebra-gol-clasico_98.jpg?crop=3000,1688,x0,y142&width=1900&height=1069&optimize=high&format=webply",
+    },
+];
+
+const matches = [
+    {
+        name: "Real Madrid 4-0 Celtic",
+        image: "https://img2.rtve.es/i/?w=1600&i=1729193297372.jpg",
+    },
+    {
+        name: "Real Madrid 3-2 Chelsea",
+        image: "https://phantom-marca.unidadeditorial.es/1e3b699c278912803b9840228303866a/resize/828/f/jpg/assets/multimedia/imagenes/2024/11/02/17305712615438.jpg",
+    },
+];
+
+// Fichajes (New signings 24/25) - Mock logic, listing recent ones
+const signings = SQUAD.filter((p) =>
+    [
+        "merle_frohms",
+        "maria_mendez",
+        "sheila_garcia",
+        "alba_redondo",
+        "maelle_lakrar",
+        "antonia_silva",
+        "leupolz",
+    ].includes(p.id),
+); // Adjust IDs as needed based on squad.ts content. Found IDs: maria_mendez, sheila_garcia, alba_redondo, maelle_lakrar, antonia_silva. 'leupolz' not in squad.ts snippet, 'merle_frohms' is.
+
+const categories = [
+    { title: "MEJOR JUGADORA (MVP)", candidates: SQUAD },
+    { title: "JUGADORA REVELACIÓN", candidates: SQUAD },
+    { title: "MEJOR JOVEN (U23)", candidates: u23Players },
+    { title: "MEJOR CANTERANA", candidates: canteranas }, // Using manual
+    { title: "MEJOR FICHAJE", candidates: signings },
+    { title: "MEJOR PORTERA", candidates: goalkeepers },
+    { title: "MEJOR DEFENSA", candidates: defenders },
+    { title: "MEJOR CENTROCAMPISTA", candidates: midfielders },
+    { title: "MEJOR DELANTERA", candidates: forwards },
+    { title: "MEJOR GOL", candidates: goals }, // Using manual
+    { title: "MEJOR PARTIDO", candidates: matches }, // Using manual
+];
+
+// Helper to get image URL from squad object or use direct property
+function getImage(candidate: any) {
+    if (candidate.image) return candidate.image; // Manual object
+    // Squad object
+    return `/p_stats/${candidate.id}.png`;
+}
+---
+
+<Layout title="Premios de la Temporada | Madrid Femenino Xtra">
+    <div class="awards-page">
+        <header class="awards-header">
+            <h1 class="gala-title">PREMIOS DE LA TEMPORADA</h1>
+            <p class="gala-subtitle">VOTA A LAS MEJORES DEL AÑO</p>
+        </header>
+
+        <div class="categories-container">
+            {
+                categories.map((cat, index) => (
+                    <section class="category-section">
+                        <h2 class="category-title">
+                            <span class="category-number">0{index + 1}</span>
+                            {cat.title}
+                        </h2>
+                        <div class="scroll-wrapper">
+                            <div class="candidates-row">
+                                {cat.candidates.map((candidate: any) => (
+                                    <CandidateCard
+                                        name={candidate.name}
+                                        image={getImage(candidate)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                ))
+            }
+        </div>
+
+        <div class="voting-footer">
+            <div class="locked-message">
+                <span class="lock-icon">🔒</span>
+                VOTACIONES PRÓXIMAMENTE
+            </div>
+            <button class="vote-button disabled" disabled>ENVIAR VOTOS</button>
+        </div>
+    </div>
+</Layout>
+
+<style>
+    :root {
+        --awards-bg: #0a0e27;
+        --awards-gold: #ffde59;
+        --awards-gold-gradient: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+    }
+
+    body {
+        background-color: var(--awards-bg);
+    }
+
+    .awards-page {
+        background-color: var(--awards-bg);
+        color: white;
+        min-height: 100vh;
+        padding-bottom: 120px; /* Space for fixed footer */
+        font-family: "Poppins", sans-serif;
+    }
+
+    .awards-header {
+        text-align: center;
+        padding: 3rem 1rem;
+        background: linear-gradient(to bottom, #000 0%, var(--awards-bg) 100%);
+        border-bottom: 1px solid rgba(255, 222, 89, 0.2);
+    }
+
+    .gala-title {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 2.5rem;
+        text-transform: uppercase;
+        color: var(--awards-gold);
+        letter-spacing: -1px;
+        margin-bottom: 0.5rem;
+        background: var(--awards-gold-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 4px 20px rgba(255, 222, 89, 0.1);
+    }
+
+    .gala-subtitle {
+        font-size: 1rem;
+        color: #8892b0;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .category-section {
+        margin-bottom: 3rem;
+        padding: 1rem 0;
+    }
+
+    .category-title {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        border-left: 4px solid var(--awards-gold);
+        margin-left: 1rem; /* Indent */
+        margin-right: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .category-number {
+        color: var(--awards-gold);
+        font-family: "Archivo Black", sans-serif;
+        margin-right: 1rem;
+        font-size: 1.4rem;
+        opacity: 0.8;
+    }
+
+    .scroll-wrapper {
+        overflow-x: auto;
+        padding: 0 1rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+    }
+
+    .scroll-wrapper::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+
+    .candidates-row {
+        display: flex;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        min-width: min-content;
+    }
+
+    /* Footer */
+    .voting-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(10, 14, 39, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        z-index: 100;
+    }
+
+    .locked-message {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #8892b0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .lock-icon {
+        font-size: 1.2rem;
+    }
+
+    .vote-button {
+        width: 100%;
+        max-width: 400px;
+        padding: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+
+    .vote-button.disabled {
+        background: #333;
+        color: #666;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
+        .gala-title {
+            font-size: 2rem;
+        }
+    }
+</style>
