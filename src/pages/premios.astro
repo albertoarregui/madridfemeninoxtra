@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import CandidateCard from "../components/CandidateCard.astro";
 import { SQUAD } from "../../public/consts/squad";
+import { SQUAD as ACADEMY_SQUAD } from "../../public/consts/academy_players";
 import "@fontsource/archivo-black";
 
 // 1. Data Preparation
@@ -108,7 +109,7 @@ const categories = [
     { title: "MEJOR JUGADORA (MVP)", candidates: SQUAD },
     { title: "JUGADORA REVELACIÓN", candidates: SQUAD },
     { title: "MEJOR JOVEN (U23)", candidates: u23Players },
-    { title: "MEJOR CANTERANA", candidates: canteranas },
+    { title: "MEJOR CANTERANA", candidates: ACADEMY_SQUAD },
     { title: "MEJOR FICHAJE", candidates: signings },
     { title: "MEJOR PORTERA", candidates: goalkeepers },
     { title: "MEJOR DEFENSA", candidates: defenders },
@@ -134,17 +135,71 @@ const categories = [
                             <span class="category-number">0{index + 1}</span>
                             {cat.title}
                         </h2>
-                        <div class="scroll-wrapper">
-                            <div class="candidates-row">
-                                {cat.candidates.map((candidate: any) => (
-                                    <CandidateCard
-                                        name={candidate.name}
-                                        playerId={candidate.id}
-                                        manualImage={candidate.manualImage}
-                                        country={candidate.country}
-                                    />
-                                ))}
+                        <div class="scroll-container">
+                            <button
+                                class="scroll-btn left"
+                                aria-label="Scroll Left"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
+                                >
+                                    <>
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M15 6l-6 6l6 6" />
+                                    </>
+                                </svg>
+                            </button>
+                            <div class="scroll-wrapper">
+                                <div class="candidates-row">
+                                    {cat.candidates.map((candidate: any) => (
+                                        <CandidateCard
+                                            name={candidate.name}
+                                            playerId={candidate.id}
+                                            manualImage={candidate.manualImage}
+                                            country={candidate.country}
+                                        />
+                                    ))}
+                                </div>
                             </div>
+                            <button
+                                class="scroll-btn right"
+                                aria-label="Scroll Right"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
+                                >
+                                    <>
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M9 6l6 6l-6 6" />
+                                    </>
+                                </svg>
+                            </button>
                         </div>
                     </section>
                 ))
@@ -153,7 +208,25 @@ const categories = [
 
         <div class="voting-section">
             <div class="locked-message">
-                <span class="lock-icon">🔒</span>
+                <span class="lock-icon">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="icon icon-tabler icons-tabler-outline icon-tabler-lock"
+                        ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                        ></path><path
+                            d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"
+                        ></path><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"
+                        ></path><path d="M8 11v-4a4 4 0 1 1 8 0v4"></path></svg
+                    >
+                </span>
                 VOTACIONES PRÓXIMAMENTE
             </div>
             <button class="vote-button disabled" disabled>ENVIAR VOTOS</button>
@@ -242,16 +315,66 @@ const categories = [
         opacity: 0.7;
     }
 
+    .scroll-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
     .scroll-wrapper {
         overflow-x: auto;
         padding: 0 1rem;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         padding-bottom: 20px; /* Space for hover effects */
+        width: 100%;
+        scroll-behavior: smooth; /* Native smooth scroll */
     }
 
     .scroll-wrapper::-webkit-scrollbar {
         display: none;
+    }
+
+    .scroll-btn {
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 222, 89, 0.3);
+        color: var(--awards-gold);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .scroll-btn:hover {
+        background: var(--awards-gold);
+        color: #000;
+        transform: scale(1.1);
+    }
+
+    .scroll-btn.left {
+        /* position absolute if we want them floating over cards, but flex row is safer to avoid overlap */
+        /* Let's try absolute to save space */
+        position: absolute;
+        left: 0;
+        z-index: 20;
+    }
+
+    .scroll-btn.right {
+        position: absolute;
+        right: 0;
+        z-index: 20;
+    }
+
+    @media (max-width: 768px) {
+        .scroll-btn {
+            display: none; /* Hide on mobile, touch scroll is better */
+        }
     }
 
     .candidates-row {
@@ -313,3 +436,21 @@ const categories = [
         }
     }
 </style>
+
+<script>
+    document.querySelectorAll(".scroll-container").forEach((container) => {
+        const leftBtn = container.querySelector(".scroll-btn.left");
+        const rightBtn = container.querySelector(".scroll-btn.right");
+        const wrapper = container.querySelector(".scroll-wrapper"); // Correct selector
+
+        if (!leftBtn || !rightBtn || !wrapper) return;
+
+        leftBtn.addEventListener("click", () => {
+            wrapper.scrollBy({ left: -300, behavior: "smooth" });
+        });
+
+        rightBtn.addEventListener("click", () => {
+            wrapper.scrollBy({ left: 300, behavior: "smooth" });
+        });
+    });
+</script>
