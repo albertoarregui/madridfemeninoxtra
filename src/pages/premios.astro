@@ -508,81 +508,128 @@ const categories = [
     }
 </style>
 
-<script>
-    // Modal Elements
-    const modal = document.getElementById("video-modal");
-    const closeBtn = document.getElementById("close-modal-btn");
-    const container = document.getElementById("tweet-container");
+<script is:inline>
+    // Twitter Widgets JS Shim (ensures availability)
+    window.twttr = (function (d, s, id) {
+        var js,
+            fjs = d.getElementsByTagName(s)[0],
+            t = window.twttr || {};
+        if (d.getElementById(id)) return t;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://platform.twitter.com/widgets.js";
+        fjs.parentNode.insertBefore(js, fjs);
 
-    // Make function global
-    window.openVideoModal = (url) => {
-        if (!modal || !container) return;
-
-        container.innerHTML = ""; // Clear previous
-
-        // Create Tweet Embed structure
-        const blockquote = document.createElement("blockquote");
-        blockquote.className = "twitter-tweet";
-        blockquote.setAttribute("data-theme", "dark");
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.textContent = "Loading video...";
-
-        blockquote.appendChild(link);
-        container.appendChild(blockquote);
-
-        modal.classList.add("active");
-
-        // Scan for widgets
-        if (window.twttr && window.twttr.widgets) {
-            window.twttr.widgets.load(container);
-        }
-    };
-
-    window.closeVideoModal = () => {
-        if (modal) {
-            modal.classList.remove("active");
-            if (container) container.innerHTML = ""; // Stop video playback
-        }
-    };
-
-    if (closeBtn) {
-        closeBtn.addEventListener("click", window.closeVideoModal);
-    }
-
-    if (modal) {
-        modal.addEventListener("click", (e) => {
-            if (e.target === modal) window.closeVideoModal();
-        });
-    }
-
-    // Scroll Logic
-    document.querySelectorAll(".scroll-container").forEach((container) => {
-        const leftBtn = container.querySelector(".scroll-btn.left");
-        const rightBtn = container.querySelector(".scroll-btn.right");
-        const wrapper = container.querySelector(".scroll-wrapper");
-
-        if (!leftBtn || !rightBtn || !wrapper) return;
-
-        leftBtn.addEventListener("click", () => {
-            wrapper.scrollBy({ left: -300, behavior: "smooth" });
-        });
-
-        rightBtn.addEventListener("click", () => {
-            wrapper.scrollBy({ left: 300, behavior: "smooth" });
-        });
-
-        const checkScroll = () => {
-            const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth;
-            const display = hasOverflow ? "flex" : "none";
-            if (leftBtn instanceof HTMLElement) leftBtn.style.display = display;
-            if (rightBtn instanceof HTMLElement)
-                rightBtn.style.display = display;
+        t._e = [];
+        t.ready = function (f) {
+            t._e.push(f);
         };
 
-        checkScroll();
-        window.addEventListener("resize", checkScroll);
-        setTimeout(checkScroll, 500);
+        return t;
+    })(document, "script", "twitter-wjs");
+
+    // Main Logic
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("video-modal");
+        const closeBtn = document.getElementById("close-modal-btn");
+        const container = document.getElementById("tweet-container");
+
+        // Logic to open modal
+        window.openVideoModal = (url) => {
+            console.log("Attempting to open video:", url);
+            if (!modal || !container) {
+                console.error("Modal elements not found");
+                return;
+            }
+
+            container.innerHTML = "";
+            modal.style.display = "flex";
+            modal.classList.add("active");
+
+            // Extract Tweet ID
+            const match = url.match(/status\/(\d+)/);
+            const tweetId = match ? match[1] : null;
+
+            if (tweetId) {
+                console.log("Tweet ID found:", tweetId);
+                window.twttr.ready((t) => {
+                    t.widgets
+                        .createTweet(tweetId, container, {
+                            theme: "dark",
+                            align: "center",
+                            conversation: "none",
+                            dnt: true,
+                        })
+                        .then((el) => console.log("Tweet created", el));
+                });
+            } else {
+                console.error("No Tweet ID found in URL");
+                container.innerHTML =
+                    '<p style="color:white; text-align:center;">Error: Invalid Video Link</p>';
+            }
+        };
+
+        window.closeVideoModal = () => {
+            if (modal) {
+                modal.classList.remove("active");
+                modal.style.display = "none";
+                if (container) container.innerHTML = "";
+            }
+        };
+
+        // Event Delegation for clicks
+        document.addEventListener("click", (e) => {
+            const card = e.target.closest(".candidate-card[data-video-url]");
+            if (card) {
+                // Prevent default if it was a link (it's a div, but good practice)
+                e.preventDefault();
+                const url = card.getAttribute("data-video-url");
+                if (url) {
+                    window.openVideoModal(url);
+                }
+            }
+        });
+
+        // Close Listeners
+        if (closeBtn) {
+            closeBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                window.closeVideoModal();
+            });
+        }
+
+        if (modal) {
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) window.closeVideoModal();
+            });
+        }
+
+        // Scroll Logic
+        document.querySelectorAll(".scroll-container").forEach((container) => {
+            const leftBtn = container.querySelector(".scroll-btn.left");
+            const rightBtn = container.querySelector(".scroll-btn.right");
+            const wrapper = container.querySelector(".scroll-wrapper");
+
+            if (!leftBtn || !rightBtn || !wrapper) return;
+
+            leftBtn.addEventListener("click", () => {
+                wrapper.scrollBy({ left: -300, behavior: "smooth" });
+            });
+
+            rightBtn.addEventListener("click", () => {
+                wrapper.scrollBy({ left: 300, behavior: "smooth" });
+            });
+
+            const checkScroll = () => {
+                const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth;
+                const display = hasOverflow ? "flex" : "none";
+                if (leftBtn) leftBtn.style.display = display;
+                if (rightBtn) rightBtn.style.display = display;
+            };
+
+            checkScroll();
+            window.addEventListener("resize", checkScroll);
+            setTimeout(checkScroll, 500);
+        });
     });
 </script>
