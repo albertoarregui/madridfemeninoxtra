@@ -14,12 +14,25 @@ export const VOTING_END = new Date("2026-06-01T10:00:00");
 
 // Data Helpers
 const goalkeepers = SQUAD.filter((p) => p.position === "Portera");
-const defenders = SQUAD.filter(
+const defendersRaw = SQUAD.filter(
     (p) =>
         p.position.toLowerCase().includes("defensa") ||
         p.position.toLowerCase().includes("lateral") ||
         p.id === "eva_navarro",
 );
+
+// Reorder Eva Navarro (Move from end to between Sheila Garcia and Sara Holmgaard)
+const defenders = [...defendersRaw];
+const evaIndex = defenders.findIndex((p) => p.id === "eva_navarro");
+if (evaIndex > -1) {
+    const [eva] = defenders.splice(evaIndex, 1);
+    const saraIndex = defenders.findIndex((p) => p.id === "sara_holmgaard");
+    if (saraIndex > -1) {
+        defenders.splice(saraIndex, 0, eva);
+    } else {
+        defenders.push(eva);
+    }
+}
 const midfielders = SQUAD.filter((p) => p.position === "Centrocampista");
 const forwards = SQUAD.filter(
     (p) =>
