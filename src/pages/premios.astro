@@ -37,13 +37,15 @@ const goalkeepers = SQUAD.filter((p) => p.position === "Portera");
 const defenders = SQUAD.filter(
     (p) =>
         p.position.toLowerCase().includes("defensa") ||
-        p.position.toLowerCase().includes("lateral"),
+        p.position.toLowerCase().includes("lateral") ||
+        p.id === "eva_navarro",
 );
 const midfielders = SQUAD.filter((p) => p.position === "Centrocampista");
 const forwards = SQUAD.filter(
     (p) =>
-        p.position.toLowerCase().includes("delantera") ||
-        p.position.toLowerCase().includes("extremo"),
+        (p.position.toLowerCase().includes("delantera") ||
+            p.position.toLowerCase().includes("extremo")) &&
+        p.id !== "eva_navarro",
 );
 
 // Define U23 (Born after Jan 1, 2002)
@@ -126,24 +128,26 @@ const matches = [
     },
 ];
 
-const signings = SQUAD.filter((p) =>
-    [
-        "merle_frohms",
-        "maria_mendez",
-        "sheila_garcia",
-        "alba_redondo",
-        "maelle_lakrar",
-        "antonia_silva",
-        "leupolz",
-    ].includes(p.id),
-);
+const signingsIDs = [
+    "merle_frohms",
+    "sara_holmgaard",
+    "bella_andersson",
+    "hanna_bennison",
+    "sara_dabritz",
+    "paula_comendador",
+    "lotte_keukelaar",
+];
+
+const signings = SQUAD.filter((p) => signingsIDs.includes(p.id));
+
+const revelacionCandidates = SQUAD.filter((p) => !signingsIDs.includes(p.id));
 
 const categories = [
     { id: "mvp", title: "MEJOR JUGADORA (MVP)", candidates: SQUAD },
     {
         id: "revelacion",
         title: "JUGADORA QUE MÁS HA MEJORADO",
-        candidates: SQUAD,
+        candidates: revelacionCandidates,
     },
     { id: "u23", title: "MEJOR JOVEN (U23)", candidates: u23Players },
     { id: "cantera", title: "MEJOR CANTERANA", candidates: ACADEMY_SQUAD },
