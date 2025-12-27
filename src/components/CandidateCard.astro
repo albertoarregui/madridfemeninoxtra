@@ -13,6 +13,7 @@ interface Props {
     videoUrl?: string; // URL to open on click
     imageScale?: number;
     icon?: ImageMetadata; // Custom icon (e.g. Shield) replacing flag
+    yOffset?: number; // Vertical offset for image
 }
 
 const {
@@ -24,6 +25,7 @@ const {
     videoUrl,
     imageScale = 1,
     icon,
+    yOffset = 0,
 } = Astro.props;
 
 // Dynamic Image Imports (Eager for simpler handling)
@@ -58,6 +60,25 @@ if (!playerImageSrc && manualImage) {
     playerImageSrc = manualImage;
 }
 
+const countryMap: Record<string, string> = {
+    es: "espana",
+    de: "alemania",
+    br: "brasil",
+    fr: "francia",
+    se: "suecia",
+    dk: "dinamarca",
+    "gb-sct": "escocia",
+    co: "colombia",
+    nl: "paises_bajos",
+    au: "australia",
+    mx: "mexico",
+    pt: "portugal",
+    no: "noruega",
+    it: "italia",
+    us: "usa",
+    uk: "inglaterra",
+};
+
 // Resolve Flag or Custom Icon
 if (icon) {
     flagImageSrc = icon;
@@ -85,13 +106,15 @@ const Tag = videoUrl ? "a" : "div";
     style={videoUrl ? "text-decoration: none; cursor: pointer;" : ""}
 >
     <!-- Gold Dust Background Layer -->
-    <div class="gold-dust-bg">
-        <Image src={goldDust} alt="" class="bg-image" />
+    <div class="card-background">
+        <div class="gold-dust-bg">
+            <Image src={goldDust} alt="" class="bg-image" />
+        </div>
     </div>
 
     <!-- Content -->
     <div class="card-content">
-        <div class="image-wrapper">
+        <div class="image-wrapper" style={`bottom: calc(80px + ${yOffset}px)`}>
             {
                 playerImageSrc &&
                     (typeof playerImageSrc === "string" ? (
@@ -163,18 +186,26 @@ const Tag = videoUrl ? "a" : "div";
         position: relative;
         width: 220px;
         height: 340px;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .card-background {
+        position: absolute;
+        inset: 0;
         border-radius: 16px;
         background: radial-gradient(circle at center, #2e3552 0%, #1a1f3c 100%);
         overflow: hidden;
-        flex-shrink: 0;
-        cursor: pointer;
-        transition:
-            transform 0.3s ease,
-            box-shadow 0.3s ease;
         border: 2px solid rgba(255, 255, 255, 0.05);
+        transition:
+            box-shadow 0.3s ease,
+            border-color 0.3s ease;
+        z-index: 0;
+        pointer-events: none;
     }
 
-    .candidate-card.selected {
+    .candidate-card.selected .card-background {
         border-color: #ffde59;
         box-shadow: 0 0 20px rgba(255, 222, 89, 0.4);
     }
