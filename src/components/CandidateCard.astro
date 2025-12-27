@@ -12,6 +12,7 @@ interface Props {
     selected?: boolean;
     videoUrl?: string; // URL to open on click
     imageScale?: number;
+    icon?: ImageMetadata; // Custom icon (e.g. Shield) replacing flag
 }
 
 const {
@@ -22,6 +23,7 @@ const {
     selected = false,
     videoUrl,
     imageScale = 1,
+    icon,
 } = Astro.props;
 
 // Dynamic Image Imports (Eager for simpler handling)
@@ -56,27 +58,10 @@ if (!playerImageSrc && manualImage) {
     playerImageSrc = manualImage;
 }
 
-// Resolve Flag Image
-const countryMap: Record<string, string> = {
-    es: "espana",
-    de: "alemania",
-    br: "brasil",
-    fr: "francia",
-    se: "suecia",
-    dk: "dinamarca",
-    "gb-sct": "escocia",
-    co: "colombia",
-    nl: "paises_bajos",
-    au: "australia",
-    mx: "mexico",
-    pt: "portugal",
-    no: "noruega",
-    it: "italia",
-    us: "usa",
-    uk: "inglaterra",
-};
-
-if (country) {
+// Resolve Flag or Custom Icon
+if (icon) {
+    flagImageSrc = icon;
+} else if (country) {
     let flagName = countryMap[country.toLowerCase()] || country.toLowerCase();
 
     const matchingFlagKey = Object.keys(flagImages).find((key) => {
