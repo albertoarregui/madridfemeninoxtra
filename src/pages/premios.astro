@@ -1,4 +1,5 @@
 ---
+import { turso } from "../lib/turso";
 import Layout from "../layouts/Layout.astro";
 import CandidateCard from "../components/CandidateCard.astro";
 import { SQUAD } from "../../public/consts/squad";
@@ -119,18 +120,38 @@ const signings = SQUAD.filter((p) =>
 );
 
 const categories = [
-    { title: "MEJOR JUGADORA (MVP)", candidates: SQUAD },
-    { title: "JUGADORA REVELACIÓN", candidates: SQUAD },
-    { title: "MEJOR JOVEN (U23)", candidates: u23Players },
-    { title: "MEJOR CANTERANA", candidates: ACADEMY_SQUAD },
-    { title: "MEJOR FICHAJE", candidates: signings },
-    { title: "MEJOR PORTERA", candidates: goalkeepers },
-    { title: "MEJOR DEFENSA", candidates: defenders },
-    { title: "MEJOR CENTROCAMPISTA", candidates: midfielders },
-    { title: "MEJOR DELANTERA", candidates: forwards },
-    { title: "MEJOR GOL", candidates: goals },
-    { title: "MEJOR PARTIDO", candidates: matches },
+    { id: "mvp", title: "MEJOR JUGADORA (MVP)", candidates: SQUAD },
+    { id: "revelacion", title: "JUGADORA REVELACIÓN", candidates: SQUAD },
+    { id: "u23", title: "MEJOR JOVEN (U23)", candidates: u23Players },
+    { id: "cantera", title: "MEJOR CANTERANA", candidates: ACADEMY_SQUAD },
+    { id: "fichaje", title: "MEJOR FICHAJE", candidates: signings },
+    { id: "portera", title: "MEJOR PORTERA", candidates: goalkeepers },
+    { id: "defensa", title: "MEJOR DEFENSA", candidates: defenders },
+    {
+        id: "centrocampista",
+        title: "MEJOR CENTROCAMPISTA",
+        candidates: midfielders,
+    },
+    { id: "delantera", title: "MEJOR DELANTERA", candidates: forwards },
+    { id: "gol", title: "MEJOR GOL", candidates: goals },
+    { id: "partido", title: "MEJOR PARTIDO", candidates: matches },
 ];
+
+// Fetch User Votes
+const { userId } = Astro.locals.auth();
+let userVotes = [];
+
+if (userId) {
+    try {
+        const result = await turso.execute({
+            sql: "SELECT category_id, candidate_id FROM votes WHERE user_id = ?",
+            args: [userId],
+        });
+        userVotes = result.rows;
+    } catch (e) {
+        console.error("Error fetching user votes", e);
+    }
+}
 ---
 
 <Layout title="Premios de la Temporada | Madrid Femenino Xtra">
@@ -143,7 +164,7 @@ const categories = [
         <div class="categories-container">
             {
                 categories.map((cat, index) => (
-                    <section class="category-section">
+                    <section class="category-section" data-category-id={cat.id}>
                         <h2 class="category-title">
                             <span class="category-number">{index + 1}</span>
                             {cat.title}
@@ -178,16 +199,28 @@ const categories = [
                             <div class="scroll-wrapper">
                                 <div class="candidates-row">
                                     {cat.candidates.map((candidate: any) => (
-                                        <CandidateCard
-                                            name={candidate.name}
-                                            playerId={candidate.id}
-                                            manualImage={candidate.manualImage}
-                                            country={candidate.country}
-                                            videoUrl={candidate.videoUrl}
-                                            imageScale={candidate.imageScale}
-                                            icon={candidate.icon}
-                                            yOffset={candidate.yOffset}
-                                        />
+                                        <div
+                                            class="candidate-wrapper"
+                                            data-id={
+                                                candidate.id || candidate.name
+                                            }
+                                            data-category={cat.id}
+                                        >
+                                            <CandidateCard
+                                                name={candidate.name}
+                                                playerId={candidate.id}
+                                                manualImage={
+                                                    candidate.manualImage
+                                                }
+                                                country={candidate.country}
+                                                videoUrl={candidate.videoUrl}
+                                                imageScale={
+                                                    candidate.imageScale
+                                                }
+                                                icon={candidate.icon}
+                                                yOffset={candidate.yOffset}
+                                            />
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -545,8 +578,8 @@ const categories = [
     }
 </style>
 
-<script is:inline>
-    // Twitter Widgets JS Shim (ensures availability)
+<script is:inline define:vars={{ initialVotes: userVotes }}>
+    // Twitter Widgets JS Shim
     window.twttr = (function (d, s, id) {
         var js,
             fjs = d.getElementsByTagName(s)[0],
@@ -556,44 +589,124 @@ const categories = [
         js.id = id;
         js.src = "https://platform.twitter.com/widgets.js";
         fjs.parentNode.insertBefore(js, fjs);
-
         t._e = [];
         t.ready = function (f) {
             t._e.push(f);
         };
-
         return t;
     })(document, "script", "twitter-wjs");
 
-    // Main Logic
     document.addEventListener("DOMContentLoaded", () => {
+        // --- 1. INITIALIZE VOTES ---
+        const currentVotes = new Map(); // categoryId -> candidateId
+
+        if (Array.isArray(initialVotes)) {
+            console.log("Loading votes:", initialVotes);
+            initialVotes.forEach((vote) => {
+                const catId = vote.category_id || vote.categoryId;
+                const candId = vote.candidate_id || vote.candidateId;
+                if (catId && candId) {
+                    currentVotes.set(catId, candId);
+                    // Mark visually
+                    const wrapper = document.querySelector(
+                        `.candidate-wrapper[data-category="${catId}"][data-id="${candId}"]`,
+                    );
+                    if (wrapper) {
+                        const card = wrapper.querySelector(".candidate-card");
+                        if (card) card.classList.add("selected");
+                    }
+                }
+            });
+        }
+
+        // --- 2. SELECTIONS ---
+        document.querySelectorAll(".candidate-wrapper").forEach((wrapper) => {
+            wrapper.addEventListener("click", (e) => {
+                if (
+                    e.target.closest("a") ||
+                    e.target.closest("button") ||
+                    e.target.closest(".play-icon-overlay")
+                )
+                    return;
+
+                const categoryId = wrapper.dataset.category;
+                const candidateId = wrapper.dataset.id;
+                const card = wrapper.querySelector(".candidate-card");
+
+                if (!categoryId || !candidateId || !card) return;
+
+                const currentSelected = document.querySelector(
+                    `.candidate-wrapper[data-category="${categoryId}"] .candidate-card.selected`,
+                );
+                if (currentSelected) {
+                    currentSelected.classList.remove("selected");
+                }
+
+                if (currentSelected !== card) {
+                    card.classList.add("selected");
+                    currentVotes.set(categoryId, candidateId);
+                } else {
+                    currentVotes.delete(categoryId);
+                }
+            });
+        });
+
+        // --- 3. SUBMIT ---
+        const submitBtn = document.getElementById("submit-votes-btn");
+        if (submitBtn) {
+            submitBtn.addEventListener("click", async () => {
+                const votesArray = Array.from(currentVotes.entries()).map(
+                    ([cat, cand]) => ({
+                        categoryId: cat,
+                        candidateId: cand,
+                    }),
+                );
+
+                if (votesArray.length === 0) {
+                    alert("Por favor, selecciona al menos un candidato.");
+                    return;
+                }
+
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "ENVIANDO...";
+                submitBtn.disabled = true;
+
+                try {
+                    const response = await fetch("/api/vote", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ votes: votesArray }),
+                    });
+
+                    if (response.ok) {
+                        submitBtn.innerText = "¡VOTOS ENVIADOS!";
+                        submitBtn.style.background = "#4ade80"; // Green
+                        setTimeout(() => {
+                            submitBtn.innerText = "VOTOS ACTUALIZADOS";
+                            submitBtn.disabled = false;
+                        }, 2000);
+                    } else {
+                        throw new Error("Error en el envío");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    submitBtn.innerText = "ERROR - REINTENTAR";
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+
+        // --- 4. MODAL & SCROLL ---
         const modal = document.getElementById("video-modal");
-        const closeBtn = document.getElementById("close-modal-btn");
         const container = document.getElementById("tweet-container");
 
-        // Logic to open modal
         window.openVideoModal = (url) => {
             if (!modal || !container) return;
-
-            // Show loading state with embedded fallback link
-            container.innerHTML = `
-                <div id="video-loader" style="width:100%; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; gap:1.5rem; text-align:center;">
-                    <div style="width:40px; height:40px; border:4px solid rgba(255, 222, 89, 0.3); border-top-color:#ffde59; border-radius:50%; animation:spin 1s linear infinite;"></div>
-                    <div style="font-family:'Archivo Black', sans-serif; font-size:1.2rem; letter-spacing:1px; color:#ffde59;">CARGANDO VÍDEO...</div>
-                </div>
-                <blockquote class="twitter-tweet" data-theme="dark" data-align="center" data-conversation="none" data-dnt="true">
-                    <a href="${url}" style="color:#ffde59;">Ver Vídeo en X</a>
-                </blockquote>
-                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-            `;
-
+            container.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:300px;color:white;">Cargando...</div>`;
             modal.style.display = "flex";
             setTimeout(() => modal.classList.add("active"), 10);
-
-            // Trigger Load
-            if (window.twttr && window.twttr.widgets) {
+            if (window.twttr && window.twttr.widgets)
                 window.twttr.widgets.load(container);
-            }
         };
 
         window.closeVideoModal = () => {
@@ -604,59 +717,49 @@ const categories = [
             }
         };
 
-        // Event Delegation for clicks
         document.addEventListener("click", (e) => {
             const card = e.target.closest(".candidate-card[data-video-url]");
             if (card) {
-                // Prevent default if it was a link (it's a div, but good practice)
                 e.preventDefault();
                 const url = card.getAttribute("data-video-url");
-                if (url) {
-                    window.openVideoModal(url);
-                }
+                if (url) window.openVideoModal(url);
             }
         });
 
-        // Close Listeners
-        if (closeBtn) {
-            closeBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                window.closeVideoModal();
-            });
+        if (document.getElementById("close-modal-btn")) {
+            document
+                .getElementById("close-modal-btn")
+                .addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    window.closeVideoModal();
+                });
         }
-
-        if (modal) {
+        if (modal)
             modal.addEventListener("click", (e) => {
                 if (e.target === modal) window.closeVideoModal();
             });
-        }
 
-        // Scroll Logic
         document.querySelectorAll(".scroll-container").forEach((container) => {
             const leftBtn = container.querySelector(".scroll-btn.left");
             const rightBtn = container.querySelector(".scroll-btn.right");
             const wrapper = container.querySelector(".scroll-wrapper");
-
             if (!leftBtn || !rightBtn || !wrapper) return;
 
-            leftBtn.addEventListener("click", () => {
-                wrapper.scrollBy({ left: -300, behavior: "smooth" });
-            });
-
-            rightBtn.addEventListener("click", () => {
-                wrapper.scrollBy({ left: 300, behavior: "smooth" });
-            });
+            leftBtn.addEventListener("click", () =>
+                wrapper.scrollBy({ left: -300, behavior: "smooth" }),
+            );
+            rightBtn.addEventListener("click", () =>
+                wrapper.scrollBy({ left: 300, behavior: "smooth" }),
+            );
 
             const checkScroll = () => {
                 const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth;
                 const display = hasOverflow ? "flex" : "none";
-                if (leftBtn) leftBtn.style.display = display;
-                if (rightBtn) rightBtn.style.display = display;
+                leftBtn.style.display = display;
+                rightBtn.style.display = display;
             };
-
             checkScroll();
             window.addEventListener("resize", checkScroll);
-            setTimeout(checkScroll, 500);
         });
     });
 </script>
