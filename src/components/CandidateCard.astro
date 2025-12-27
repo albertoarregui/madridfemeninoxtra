@@ -166,18 +166,19 @@ if (country) {
         height: 100%;
         pointer-events: none;
         z-index: 0;
-        opacity: 0.8;
+        opacity: 1;
+        mix-blend-mode: screen; /* Makes black from invert transparent */
     }
 
     .bg-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        mask-image: linear-gradient(
-            to bottom,
-            black 60%,
-            transparent 100%
-        ); /* Fade out slightly if needed */
+        /* Trick to turn WhiteBG+GoldFG into BlackBG+GoldFG */
+        /* 1. Invert: White->Black, Gold(Yellow)->Blue */
+        /* 2. Hue-rotate 180deg: Blue->Yellow */
+        /* 3. Increase brightness/contrast for visibility */
+        filter: invert(1) hue-rotate(180deg) brightness(1.5) contrast(1.2);
     }
 
     .card-content {
