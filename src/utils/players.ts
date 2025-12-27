@@ -342,13 +342,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const estadisticasArray = Object.values(estadisticas);
 
-        // Debug log for cards
-        const totalYellowRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_amarillas) || 0), 0);
-        const totalRedRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_rojas) || 0), 0);
-        if (totalYellowRequest > 0 || totalRedRequest > 0) {
-            console.log(`[DEBUG_CARDS] Player ${playerId} has ${totalYellowRequest} yellow and ${totalRedRequest} red cards.`);
-        }
-
         const careerTotal: any = {
             convocatorias: 0,
             partidos: 0,
