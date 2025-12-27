@@ -189,6 +189,13 @@ if (isAuthenticated) {
                 options: {
                     indexAxis: 'y', // Horizontal bar chart better for names
                     responsive: true,
+                    maintainAspectRatio: false, // Allow chart to grow/shrink into container
+                    layout: {
+                        padding: {
+                            left: 0, // Chart.js handles label width automatically usually, but we ensure no negative space
+                            right: 20
+                        }
+                    },
                     plugins: {
                         legend: { display: false }
                     },
@@ -200,7 +207,36 @@ if (isAuthenticated) {
                         },
                         y: {
                             grid: { display: false },
-                            ticks: { color: '#fff', font: { size: 11 } }
+                            ticks: { 
+                                color: '#fff', 
+                                font: { size: 11 },
+                                autoSkip: false, // Show all labels
+                                callback: function(value) {
+                                    // Custom truncation/wrapping if needed, but let's rely on Chart.js auto-resizing first.
+                                    // For very long labels, Chart.js might still cut them if canvas width is fixed.
+                                    // We'll return the value as is, but rely on maintainAspectRatio: false + CSS height.
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 25) {
+                                        return label.split(/(?<=^.{15,})\s/); // Simple wrap attempt or just return array
+                                        // Actually simplest is just returning the label, Chart.js 3+ handles arrays for multiline.
+                                        // Let's just wrap by chunks if really long.
+                                        const words = label.split(' ');
+                                        const lines = [];
+                                        let currentLine = words[0];
+                                        for (let i = 1; i < words.length; i++) {
+                                            if (currentLine.length + words[i].length < 20) {
+                                                currentLine += ' ' + words[i];
+                                            } else {
+                                                lines.push(currentLine);
+                                                currentLine = words[i];
+                                            }
+                                        }
+                                        lines.push(currentLine);
+                                        return lines;
+                                    }
+                                    return label;
+                                }
+                            } 
                         }
                     }
                 }
