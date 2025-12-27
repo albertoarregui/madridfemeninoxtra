@@ -61,20 +61,17 @@ const canteranas = [
 const goals = [
     {
         name: "Sara Däbritz vs Atlético",
-        id: "sara_dabritz",
-        manualImage: undefined, // Uses Squad image
+        manualImage: undefined,
         country: "de",
     },
     {
         name: "Iris Ashley vs Athletic",
-        id: "iris_ashley_santiago",
-        manualImage: undefined, // Uses Academy/Folder image
-        videoUrl: "https://x.com/realmadridfem/status/1878053176717959374?s=20", // Corrected hypothetical ID or user provided. User provided 1978... wait, user provided: https://x.com/realmadridfem/status/1978053176717959374?s=20. That year 2025/26? 1978 is likely the specific ID. I will paste exact user provided link.
+        manualImage: undefined,
+        videoUrl: "https://x.com/realmadridfem/status/1878053176717959374?s=20",
         country: "es",
     },
     {
         name: "Linda Caicedo vs Wolfsburgo",
-        id: "linda_caicedo",
         manualImage: undefined,
         videoUrl: "https://x.com/realmadridfem/status/1998807422446821856?s=20",
         country: "co",
@@ -234,7 +231,17 @@ const categories = [
             </div>
             <button class="vote-button disabled" disabled>ENVIAR VOTOS</button>
         </div>
+
+        <!-- Video Modal -->
+        <div id="video-modal" class="video-modal" style="display: none;">
+            <div class="modal-content" id="modal-content">
+                <button class="close-btn" id="close-modal-btn">×</button>
+                <div id="tweet-container"></div>
+            </div>
+        </div>
     </div>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"
+    ></script>
 </Layout>
 
 <style>
@@ -448,9 +455,106 @@ const categories = [
             font-size: 2rem;
         }
     }
+
+    /* Modal Styles */
+    .video-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+        padding: 1rem;
+    }
+
+    .video-modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        position: relative;
+        width: 100%;
+        max-width: 550px;
+        min-height: 200px;
+        background: transparent;
+        display: flex;
+        justify-content: center;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: -50px;
+        right: 0;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2.5rem;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+        z-index: 1010;
+    }
+
+    .close-btn:hover {
+        opacity: 1;
+    }
 </style>
 
 <script>
+    // Modal Elements
+    const modal = document.getElementById("video-modal");
+    const closeBtn = document.getElementById("close-modal-btn");
+    const container = document.getElementById("tweet-container");
+
+    // Make function global
+    window.openVideoModal = (url) => {
+        if (!modal || !container) return;
+
+        container.innerHTML = ""; // Clear previous
+
+        // Create Tweet Embed structure
+        const blockquote = document.createElement("blockquote");
+        blockquote.className = "twitter-tweet";
+        blockquote.setAttribute("data-theme", "dark");
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.textContent = "Loading video...";
+
+        blockquote.appendChild(link);
+        container.appendChild(blockquote);
+
+        modal.classList.add("active");
+
+        // Scan for widgets
+        if (window.twttr && window.twttr.widgets) {
+            window.twttr.widgets.load(container);
+        }
+    };
+
+    window.closeVideoModal = () => {
+        if (modal) {
+            modal.classList.remove("active");
+            if (container) container.innerHTML = ""; // Stop video playback
+        }
+    };
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", window.closeVideoModal);
+    }
+
+    if (modal) {
+        modal.addEventListener("click", (e) => {
+            if (e.target === modal) window.closeVideoModal();
+        });
+    }
+
+    // Scroll Logic
     document.querySelectorAll(".scroll-container").forEach((container) => {
         const leftBtn = container.querySelector(".scroll-btn.left");
         const rightBtn = container.querySelector(".scroll-btn.right");
@@ -476,7 +580,6 @@ const categories = [
 
         checkScroll();
         window.addEventListener("resize", checkScroll);
-        // Also check shortly after load if images/fonts shift layout
         setTimeout(checkScroll, 500);
     });
 </script>
