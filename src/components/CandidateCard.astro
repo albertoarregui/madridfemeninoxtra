@@ -14,6 +14,7 @@ interface Props {
     imageScale?: number;
     icon?: ImageMetadata; // Custom icon (e.g. Shield) replacing flag
     yOffset?: number; // Vertical offset for image
+    poster?: boolean; // If true, rendering as cover/poster
 }
 
 const {
@@ -26,6 +27,7 @@ const {
     imageScale = 1,
     icon,
     yOffset = 0,
+    poster = false,
 } = Astro.props;
 
 // Dynamic Image Imports (Eager for simpler handling)
@@ -121,18 +123,18 @@ const Tag = videoUrl ? "a" : "div";
                         <img
                             src={playerImageSrc}
                             alt={name}
-                            class="player-photo"
+                            class={poster ? "video-thumbnail" : "player-photo"}
                             loading="lazy"
-                            style={`--base-scale: ${imageScale}`}
+                            style={poster ? "" : `--base-scale: ${imageScale}`}
                         />
                     ) : (
                         <Image
                             src={playerImageSrc}
                             alt={name}
-                            class="player-photo"
+                            class={poster ? "video-thumbnail" : "player-photo"}
                             width={200}
                             height={200}
-                            style={`--base-scale: ${imageScale}`}
+                            style={poster ? "" : `--base-scale: ${imageScale}`}
                         />
                     ))
             }
@@ -368,15 +370,11 @@ const Tag = videoUrl ? "a" : "div";
         max-width: none !important; /* Override player photo */
         object-fit: cover;
         border-radius: 12px;
-        filter: brightness(0.7);
-        transition:
-            filter 0.3s ease,
-            transform 0.3s ease;
+        transition: transform 0.3s ease;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
     .candidate-card:hover .video-thumbnail {
-        filter: brightness(1);
         transform: scale(1.02);
     }
 
