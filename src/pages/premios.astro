@@ -253,6 +253,31 @@ if (userId) {
                                                 yOffset={candidate.yOffset}
                                                 poster={candidate.poster}
                                             />
+                                            {candidate.videoUrl && (
+                                                <button
+                                                    class="watch-video-btn"
+                                                    data-video-url={
+                                                        candidate.videoUrl
+                                                    }
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                        class="icon icon-tabler icons-tabler-filled icon-tabler-player-play"
+                                                    >
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                    </svg>
+                                                    VER VÍDEO
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -615,9 +640,42 @@ if (userId) {
             box-shadow: 0 0 0 0 rgba(255, 222, 89, 0);
         }
     }
+    .watch-video-btn {
+        margin-top: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-family: "Poppins", sans-serif;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .watch-video-btn:hover {
+        background: white;
+        color: black;
+        transform: scale(1.05);
+    }
 </style>
 
 <script is:inline define:vars={{ initialVotes: userVotes }}>
+    // Handle Video Button Clicks (Delegation)
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".watch-video-btn");
+        if (btn) {
+            e.stopPropagation(); // Stop bubble so it doesn't trigger vote if inside card (it isn't, but safe)
+            const videoUrl = btn.dataset.videoUrl;
+            if (videoUrl) {
+                openVideoModal(videoUrl);
+            }
+        }
+    });
+
     // Twitter Widgets JS Shim
     window.twttr = (function (d, s, id) {
         var js,
