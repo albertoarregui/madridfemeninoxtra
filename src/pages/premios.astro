@@ -21,6 +21,16 @@ import chelseaShield from "../assets/escudos/chelsea.png";
 import eintrachtShield from "../assets/escudos/eintracht_de_frankfurt.png";
 import wolfsburgShield from "../assets/escudos/wolfsburgo.png";
 
+// Voting Window Configuration
+const VOTING_START = new Date("2026-05-25T10:00:00");
+const VOTING_END = new Date("2026-06-01T10:00:00");
+const now = new Date();
+
+const hasStarted = now >= VOTING_START;
+const hasEnded = now > VOTING_END;
+const isOpen = hasStarted && !hasEnded;
+const isDev = import.meta.env.DEV;
+
 // 1. Data Preparation
 const goalkeepers = SQUAD.filter((p) => p.position === "Portera");
 const defenders = SQUAD.filter(
@@ -316,12 +326,40 @@ if (userId) {
 
         <div class="voting-section">
             <SignedIn>
-                <button
-                    id="submit-votes-btn"
-                    class="vote-button"
-                    style="background: var(--awards-gold); color: black; cursor: pointer;"
-                    >ENVIAR VOTOS</button
-                >
+                {
+                    isOpen ? (
+                        <button id="submit-votes-btn" class="vote-button">
+                            ENVIAR VOTOS
+                        </button>
+                    ) : (
+                        <div
+                            class="locked-message"
+                            style="display: flex; flex-direction: column; font-size: 1.2rem; color: var(--awards-gold); text-align: center; gap: 1rem;"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="48"
+                                height="48"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <>
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    <path d="M12 8v4" />
+                                </>
+                            </svg>
+                            <span style="font-family: 'Archivo Black', sans-serif;">
+                                {hasEnded
+                                    ? "VOTACIONES CERRADAS"
+                                    : `LAS VOTACIONES ABREN EL 25 DE MAYO DE 2026 A LAS 10:00H`}
+                            </span>
+                        </div>
+                    )
+                }
             </SignedIn>
         </div>
 
@@ -369,9 +407,37 @@ if (userId) {
         color: var(--awards-gold); /* #ffde59 */
         letter-spacing: -1px;
         margin-bottom: 0.5rem;
-        /* Removed gradient to match category numbers */
-        text-shadow: 0 4px 25px rgba(255, 222, 89, 0.1); /* Reduced glow */
-        opacity: 0.9;
+        text-shadow: none;
+        opacity: 1;
+    }
+
+    .header-login-btn {
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        color: #2b2b2b;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 50px;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: pulse-gold 2s infinite;
+    }
+
+    .header-login-btn:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
+        color: #000;
     }
 
     .gala-subtitle {
@@ -623,29 +689,6 @@ if (userId) {
         opacity: 1;
     }
 
-    .header-login-btn {
-        background: #ffde59;
-        color: black;
-        border: none;
-        padding: 1rem 2.5rem;
-        font-family: "Archivo Black", sans-serif;
-        font-size: 1.1rem;
-        cursor: pointer;
-        clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        animation: pulse-gold 2s infinite;
-    }
-
-    .header-login-btn:hover {
-        transform: scale(1.05) translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
-    }
-
     @keyframes pulse-gold {
         0% {
             box-shadow: 0 0 0 0 rgba(255, 222, 89, 0.4);
@@ -687,7 +730,17 @@ if (userId) {
     }
 </style>
 
-<script is:inline define:vars={{ initialVotes: userVotes }}>
+<script
+    is:inline
+    define:vars={{
+        initialVotes: userVotes,
+        isOpen: isOpen,
+        hasEnded: hasEnded,
+    }}
+>
+    // Force disabled state if not open
+    const canInteract = isOpen; // Actually, passing boolean from server to client
+
     // Handle Video Button Clicks (Delegation)
     document.addEventListener("click", (e) => {
         const btn = e.target.closest(".watch-video-btn");
@@ -743,6 +796,9 @@ if (userId) {
         // --- 2. SELECTIONS ---
         document.querySelectorAll(".candidate-wrapper").forEach((wrapper) => {
             wrapper.addEventListener("click", (e) => {
+                if (!canInteract) return;
+                if (!canInteract) return; // Prevent selection if closed
+
                 if (
                     e.target.closest("a") ||
                     e.target.closest("button") ||
