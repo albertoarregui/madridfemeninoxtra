@@ -43,8 +43,8 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
     try {
         const { createClient } = await import('@libsql/client');
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env.TURSO_DATABASE_URL_2 || import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN_2 || import.meta.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas');
@@ -139,8 +139,8 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
     try {
         const { createClient } = await import('@libsql/client');
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env.TURSO_DATABASE_URL_2 || import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN_2 || import.meta.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas para stats');
@@ -389,8 +389,8 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
     try {
         const { createClient } = await import('@libsql/client');
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env.TURSO_DATABASE_URL_2 || import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN_2 || import.meta.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas para debut');
@@ -443,8 +443,8 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
     try {
         const { createClient } = await import('@libsql/client');
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env.TURSO_DATABASE_URL_2 || import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN_2 || import.meta.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('Credenciales de Turso no configuradas para trayectoria');

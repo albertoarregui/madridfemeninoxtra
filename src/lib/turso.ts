@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 
-const url = import.meta.env.TURSO_DATABASE_URL;
-const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+const url = import.meta.env.TURSO_DATABASE_URL_2 || import.meta.env.TURSO_DATABASE_URL;
+const authToken = import.meta.env.TURSO_AUTH_TOKEN_2 || import.meta.env.TURSO_AUTH_TOKEN;
 
 // Create client if credentials exist, otherwise return a mock that logs errors
 // This prevents the entire app from crashing if env vars are missing
