@@ -10,7 +10,9 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   site: 'https://www.madridfemeninoxtra.com',
   output: 'server',
-  adapter: vercel(),
+  adapter: vercel({
+    imageService: true,
+  }),
   vite: {
     plugins: [tailwindcss()]
   },
