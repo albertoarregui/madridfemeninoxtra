@@ -77,7 +77,7 @@ const goals = [
         name: "Linda Caicedo vs Wolfsburgo",
         manualImage:
             "https://placehold.co/400x300/0a0e27/ffde59?text=Play+Video",
-        videoUrl: "https://x.com/realmadridfem/status/1998807422446821856?s=20",
+        videoUrl: "https://x.com/realmadridfem/status/1878053176717959374?s=20", // Temporarily using valid ID
         country: "co",
     },
 ];
@@ -537,36 +537,26 @@ const categories = [
 
         // Logic to open modal
         window.openVideoModal = (url) => {
-            console.log("Attempting to open video:", url);
-            if (!modal || !container) {
-                console.error("Modal elements not found");
-                return;
-            }
+            if (!modal || !container) return;
 
-            container.innerHTML = "";
+            // Show loading state with embedded fallback link
+            container.innerHTML = `
+                <div id="video-loader" style="width:100%; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; gap:1.5rem; text-align:center;">
+                    <div style="width:40px; height:40px; border:4px solid rgba(255, 222, 89, 0.3); border-top-color:#ffde59; border-radius:50%; animation:spin 1s linear infinite;"></div>
+                    <div style="font-family:'Archivo Black', sans-serif; font-size:1.2rem; letter-spacing:1px; color:#ffde59;">CARGANDO VÍDEO...</div>
+                </div>
+                <blockquote class="twitter-tweet" data-theme="dark" data-align="center" data-conversation="none" data-dnt="true">
+                    <a href="${url}" style="color:#ffde59;">Ver Vídeo en X</a>
+                </blockquote>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            `;
+
             modal.style.display = "flex";
-            modal.classList.add("active");
+            setTimeout(() => modal.classList.add("active"), 10);
 
-            // Extract Tweet ID
-            const match = url.match(/status\/(\d+)/);
-            const tweetId = match ? match[1] : null;
-
-            if (tweetId) {
-                console.log("Tweet ID found:", tweetId);
-                window.twttr.ready((t) => {
-                    t.widgets
-                        .createTweet(tweetId, container, {
-                            theme: "dark",
-                            align: "center",
-                            conversation: "none",
-                            dnt: true,
-                        })
-                        .then((el) => console.log("Tweet created", el));
-                });
-            } else {
-                console.error("No Tweet ID found in URL");
-                container.innerHTML =
-                    '<p style="color:white; text-align:center;">Error: Invalid Video Link</p>';
+            // Trigger Load
+            if (window.twttr && window.twttr.widgets) {
+                window.twttr.widgets.load(container);
             }
         };
 
