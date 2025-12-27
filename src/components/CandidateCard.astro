@@ -12,12 +12,14 @@ interface Props {
 
 const { name, playerId, manualImage, country, selected = false } = Astro.props;
 
-// Dynamic Image Imports
+// Dynamic Image Imports (Eager for simpler handling)
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    { eager: true },
 );
 const flagImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/banderas/*.svg",
+    { eager: true },
 );
 
 let playerImageSrc: ImageMetadata | string | undefined;
@@ -25,12 +27,23 @@ let flagImageSrc: ImageMetadata | undefined;
 
 // Resolve Player Image
 if (playerId) {
-    const path = `/src/assets/jugadoras/${playerId}.png`;
-    if (playerImages[path]) {
-        playerImageSrc = (await playerImages[path]()).default;
+    // Try to find the image in the Glob result
+    // Normalize logic: check if any key ends with `/id.ext`
+    const normalizedId = playerId.toLowerCase().trim();
+
+    // Look for exact match or robust match
+    // Glob keys are like "/src/assets/jugadoras/misa_rodriguez.png"
+    const matchingKey = Object.keys(playerImages).find((key) => {
+        const filename = key.split("/").pop()?.split(".")[0]; // Get 'misa_rodriguez' from path
+        return filename === normalizedId;
+    });
+
+    if (matchingKey) {
+        playerImageSrc = playerImages[matchingKey].default;
     }
-    // Fallback/Check extensions if needed, but assuming .png as per list
 }
+
+// Fallback to manual if no squad image found
 if (!playerImageSrc && manualImage) {
     playerImageSrc = manualImage;
 }
@@ -46,15 +59,26 @@ const countryMap: Record<string, string> = {
     "gb-sct": "escocia",
     co: "colombia",
     nl: "paises_bajos",
-    au: "australia", // assuming exist
-    mx: "mexico", // assuming exist
+    au: "australia",
+    mx: "mexico",
+    pt: "portugal", // Added common
+    no: "noruega", // Added common
+    it: "italia", // Added common
+    us: "usa",
+    uk: "inglaterra", // if needed
 };
 
 if (country) {
-    const flagName = countryMap[country.toLowerCase()] || country.toLowerCase();
-    const path = `/src/assets/banderas/${flagName}.svg`;
-    if (flagImages[path]) {
-        flagImageSrc = (await flagImages[path]()).default;
+    let flagName = countryMap[country.toLowerCase()] || country.toLowerCase();
+
+    // Robust search for flag
+    const matchingFlagKey = Object.keys(flagImages).find((key) => {
+        const filename = key.split("/").pop()?.split(".")[0];
+        return filename === flagName;
+    });
+
+    if (matchingFlagKey) {
+        flagImageSrc = flagImages[matchingFlagKey].default;
     }
 }
 ---
@@ -92,19 +116,22 @@ if (country) {
                         />
                     ))
             }
+            {!playerImageSrc && <div class="no-photo-placeholder" />}
         </div>
 
         <div class="info">
             <div class="name">{name}</div>
             {
                 flagImageSrc && (
-                    <Image
-                        src={flagImageSrc}
-                        alt={country || "flag"}
-                        class="country-flag"
-                        width={24}
-                        height={16}
-                    />
+                    <div class="flag-container">
+                        <Image
+                            src={flagImageSrc}
+                            alt={country || "flag"}
+                            class="country-flag"
+                            width={24}
+                            height={16}
+                        />
+                    </div>
                 )
             }
         </div>
@@ -249,8 +276,14 @@ if (country) {
         color: #ffde59;
     }
 
+    .flag-container {
+        display: flex;
+        justify-content: center;
+        padding-bottom: 2px;
+    }
+
     .country-flag {
-        display: inline-block;
+        display: block;
         border-radius: 2px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
@@ -270,5 +303,12 @@ if (country) {
         font-weight: bold;
         font-size: 14px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .no-photo-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
     }
 </style>
