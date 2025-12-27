@@ -1,0 +1,310 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { turso } from "../../lib/turso";
+import { CATEGORIES } from "../../consts/awards-data";
+
+// Auth Logic
+const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD;
+let isAuthenticated = false;
+let loginError = "";
+
+// Check Cookie
+if (Astro.cookies.has("admin_auth")) {
+    const cookieVal = Astro.cookies.get("admin_auth")?.value;
+    if (cookieVal === ADMIN_PASSWORD) {
+        isAuthenticated = true;
+    }
+}
+
+// Handle Login POST
+if (Astro.request.method === "POST") {
+    try {
+        const data = await Astro.request.formData();
+        const password = data.get("password")?.toString();
+
+        if (password === ADMIN_PASSWORD) {
+            Astro.cookies.set("admin_auth", password, {
+                path: "/",
+                httpOnly: true,
+                secure: true,
+                maxAge: 60 * 60 * 24, // 1 day
+            });
+            isAuthenticated = true;
+        } else {
+            loginError = "Contraseña incorrecta";
+        }
+    } catch (e) {
+        loginError = "Error al procesar solicitud";
+    }
+}
+
+// Fetch Data if Authenticated
+let voteStats: Record<string, Record<string, number>> = {};
+let totalVotes = 0;
+
+if (isAuthenticated) {
+    try {
+        const result = await turso.execute("SELECT * FROM votes");
+        const votes = result.rows;
+        totalVotes = votes.length;
+
+        // Initialize Stats
+        CATEGORIES.forEach(cat => {
+            voteStats[cat.id] = {};
+            cat.candidates.forEach((cand: any) => {
+                const cId = cand.id || cand.name; // Logic matching premios.astro
+                voteStats[cat.id][cId] = 0;
+            });
+        });
+
+        // Count Votes
+        votes.forEach((row: any) => {
+            const catId = row.category_id as string;
+            const candId = row.candidate_id as string;
+            if (voteStats[catId]) {
+                 if (voteStats[catId][candId] !== undefined) {
+                    voteStats[catId][candId]++;
+                 } else {
+                    // Handle unknown candidate (maybe id changed?)
+                    voteStats[catId][candId] = 1;
+                 }
+            }
+        });
+
+    } catch (e) {
+        console.error("Error fetching admin stats", e);
+    }
+}
+---
+
+<Layout title="Admin Resultados | Madrid Femenino Xtra">
+    <div class="admin-page">
+        <div class="container">
+            <h1 class="page-title">PANEL DE RESULTADOS</h1>
+
+            {!isAuthenticated ? (
+                <div class="login-card">
+                    <h2>Acceso Restringido</h2>
+                    <form method="POST">
+                        <input 
+                            type="password" 
+                            name="password" 
+                            placeholder="Contraseña de Administrador" 
+                            required 
+                        />
+                        <button type="submit">ENTRAR</button>
+                    </form>
+                    {loginError && <p class="error">{loginError}</p>}
+                </div>
+            ) : (
+                <div class="dashboard">
+                    <div class="summary-card">
+                        <h3>Total Votos Registrados: <span class="highlight">{totalVotes}</span></h3>
+                        <form method="POST" action="/api/logout-admin"> <!-- or just clear cookie button logic -->
+                            <!-- simple reload effectively keeps logged in, logic to logout needs separate endpoint or just clear cookie in browser -->
+                        </form>
+                    </div>
+
+                    <div class="charts-grid">
+                        {CATEGORIES.map(category => (
+                            <div class="category-card">
+                                <h3>{category.title}</h3>
+                                <canvas id={`chart-${category.id}`}></canvas>
+                                <div class="stats-table-wrapper">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Candidata</th>
+                                                <th>Votos</th>
+                                                <th>%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {(() => {
+                                                const catVotes = voteStats[category.id] || {};
+                                                const totalCatVotes = Object.values(catVotes).reduce((a, b) => a + b, 0);
+                                                
+                                                // Sort by votes desc
+                                                const sorted = Object.entries(catVotes).sort(([,a], [,b]) => b - a);
+
+                                                return sorted.map(([cId, count]) => {
+                                                    const candidate = category.candidates.find((c:any) => (c.id || c.name) === cId);
+                                                    const name = candidate ? (candidate.name || cId) : cId;
+                                                    const percent = totalCatVotes > 0 ? ((count / totalCatVotes) * 100).toFixed(1) : "0";
+                                                    
+                                                    return (
+                                                        <tr>
+                                                            <td>{name}</td>
+                                                            <td>{count}</td>
+                                                            <td>{percent}%</td>
+                                                        </tr>
+                                                    );
+                                                });
+                                            })()}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    </div>
+</Layout>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{isAuthenticated && (
+<script define:vars={{ categories: CATEGORIES, stats: voteStats }}>
+    document.addEventListener('DOMContentLoaded', () => {
+        categories.forEach(cat => {
+            const ctx = document.getElementById(`chart-${cat.id}`);
+            if (!ctx) return;
+
+            const catVotes = stats[cat.id] || {};
+            // Sort to match table
+            const sorted = Object.entries(catVotes).sort(([,a], [,b]) => b - a);
+            
+            const labels = sorted.map(([cId]) => {
+                 const candidate = cat.candidates.find(c => (c.id || c.name) === cId);
+                 return candidate ? (candidate.name || cId) : cId;
+            });
+            const data = sorted.map(([, count]) => count);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Votos',
+                        data: data,
+                        backgroundColor: 'rgba(255, 222, 89, 0.6)',
+                        borderColor: '#ffde59',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bar chart better for names
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#ccc' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#fff', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        });
+    });
+</script>
+)}
+
+<style>
+    .admin-page {
+        min-height: 100vh;
+        background: #0a0e27;
+        color: white;
+        padding: 4rem 1rem;
+        font-family: 'Poppins', sans-serif;
+    }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .page-title {
+        text-align: center;
+        color: #ffde59;
+        font-family: 'Archivo Black', sans-serif;
+        margin-bottom: 3rem;
+        font-size: 2.5rem;
+    }
+
+    /* Login Styles */
+    .login-card {
+        max-width: 400px;
+        margin: 0 auto;
+        background: rgba(255,255,255,0.05);
+        padding: 2rem;
+        border-radius: 20px;
+        text-align: center;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .login-card input {
+        width: 100%;
+        padding: 1rem;
+        margin: 1rem 0;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid #333;
+        color: white;
+        border-radius: 8px;
+    }
+    .login-card button {
+        width: 100%;
+        padding: 1rem;
+        background: #ffde59;
+        color: black;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .error { color: #ff6b6b; margin-top: 1rem; }
+
+    /* Dashboard Styles */
+    .summary-card {
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 1.5rem;
+    }
+    .highlight { color: #ffde59; font-weight: bold; }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 2rem;
+    }
+    .category-card {
+        background: rgba(255,255,255,0.03);
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .category-card h3 {
+        color: #ffde59;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .stats-table-wrapper {
+        margin-top: 1.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    .stats-table th {
+        text-align: left;
+        color: #888;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .stats-table td {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .stats-table td:nth-child(2), .stats-table td:nth-child(3) {
+        text-align: right;
+    }
+</style>
