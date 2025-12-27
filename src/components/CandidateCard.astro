@@ -10,9 +10,17 @@ interface Props {
     manualImage?: string; // fallback for non-squad players
     country?: string; // country code for flag
     selected?: boolean;
+    videoUrl?: string; // URL to open on click
 }
 
-const { name, playerId, manualImage, country, selected = false } = Astro.props;
+const {
+    name,
+    playerId,
+    manualImage,
+    country,
+    selected = false,
+    videoUrl,
+} = Astro.props;
 
 // Dynamic Image Imports (Eager for simpler handling)
 const playerImages = import.meta.glob(
@@ -80,7 +88,10 @@ if (country) {
 }
 ---
 
-<div class={`candidate-card ${selected ? "selected" : ""}`}>
+<div
+    class={`candidate-card ${selected ? "selected" : ""}`}
+    onclick={videoUrl ? `window.open('${videoUrl}', '_blank')` : undefined}
+>
     <!-- Gold Dust Background Layer -->
     <div class="gold-dust-bg">
         <Image src={goldDust} alt="" class="bg-image" />
@@ -109,6 +120,33 @@ if (country) {
                     ))
             }
             {!playerImageSrc && <div class="no-photo-placeholder" />}
+            {
+                videoUrl && (
+                    <div class="play-icon-overlay">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="60"
+                            height="60"
+                            viewBox="0 0 24 24"
+                            fill="rgba(0,0,0,0.6)"
+                            stroke="#fff"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon-play"
+                        >
+                            <>
+                                <path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
+                                <path d="M7 4v16l13 -8z" />
+                            </>
+                        </svg>
+                    </div>
+                )
+            }
         </div>
 
         <div class="info">
@@ -270,5 +308,25 @@ if (country) {
         height: 100px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.1);
+    }
+
+    .play-icon-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        pointer-events: none; /* Click goes to card */
+        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+    }
+
+    .play-icon-overlay svg {
+        transition: transform 0.2s ease;
+    }
+
+    .candidate-card:hover .play-icon-overlay svg {
+        transform: scale(1.1);
+        stroke: var(--awards-gold, #ffde59);
+        fill: rgba(0, 0, 0, 0.8);
     }
 </style>

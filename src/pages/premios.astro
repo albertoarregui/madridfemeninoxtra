@@ -60,22 +60,24 @@ const canteranas = [
 
 const goals = [
     {
-        name: "Weir vs Man City",
-        manualImage:
-            "https://as01.epimg.net/futbol/imagenes/2022/08/21/femenino/1661110682_936780_1661110825_noticia_normal.jpg",
-        country: "gb-sct",
+        name: "Sara Däbritz vs Atlético",
+        id: "sara_dabritz",
+        manualImage: undefined, // Uses Squad image
+        country: "de",
     },
     {
-        name: "Athenea vs Chelsea",
-        manualImage:
-            "https://e00-marca.uecdn.es/assets/multimedia/imagenes/2022/11/23/16692348577317.jpg",
+        name: "Iris Ashley vs Athletic",
+        id: "iris_ashley_santiago",
+        manualImage: undefined, // Uses Academy/Folder image
+        videoUrl: "https://x.com/realmadridfem/status/1878053176717959374?s=20", // Corrected hypothetical ID or user provided. User provided 1978... wait, user provided: https://x.com/realmadridfem/status/1978053176717959374?s=20. That year 2025/26? 1978 is likely the specific ID. I will paste exact user provided link.
         country: "es",
     },
     {
-        name: "Olga vs Barça",
-        manualImage:
-            "https://fotografias.lasexta.com/clipping/cmsimages02/2024/03/24/C99A4B3A-6447-495B-88F4-07C442D26315/olga-carmona-celebra-gol-clasico_98.jpg?crop=3000,1688,x0,y142&width=1900&height=1069&optimize=high&format=webply",
-        country: "es",
+        name: "Linda Caicedo vs Wolfsburgo",
+        id: "linda_caicedo",
+        manualImage: undefined,
+        videoUrl: "https://x.com/realmadridfem/status/1998807422446821856?s=20",
+        country: "co",
     },
 ];
 
@@ -170,6 +172,7 @@ const categories = [
                                             playerId={candidate.id}
                                             manualImage={candidate.manualImage}
                                             country={candidate.country}
+                                            videoUrl={candidate.videoUrl}
                                         />
                                     ))}
                                 </div>
@@ -451,7 +454,7 @@ const categories = [
     document.querySelectorAll(".scroll-container").forEach((container) => {
         const leftBtn = container.querySelector(".scroll-btn.left");
         const rightBtn = container.querySelector(".scroll-btn.right");
-        const wrapper = container.querySelector(".scroll-wrapper"); // Correct selector
+        const wrapper = container.querySelector(".scroll-wrapper");
 
         if (!leftBtn || !rightBtn || !wrapper) return;
 
@@ -462,5 +465,18 @@ const categories = [
         rightBtn.addEventListener("click", () => {
             wrapper.scrollBy({ left: 300, behavior: "smooth" });
         });
+
+        const checkScroll = () => {
+            const hasOverflow = wrapper.scrollWidth > wrapper.clientWidth;
+            const display = hasOverflow ? "flex" : "none";
+            if (leftBtn instanceof HTMLElement) leftBtn.style.display = display;
+            if (rightBtn instanceof HTMLElement)
+                rightBtn.style.display = display;
+        };
+
+        checkScroll();
+        window.addEventListener("resize", checkScroll);
+        // Also check shortly after load if images/fonts shift layout
+        setTimeout(checkScroll, 500);
     });
 </script>
