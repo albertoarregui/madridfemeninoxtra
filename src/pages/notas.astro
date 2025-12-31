@@ -210,8 +210,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                                                     type="text" 
                                                     id={`rating-${player.id}`}
                                                     class="rating-input"
-                                                    value={existingRatings[player.id] || ''} 
-                                                    placeholder="-"
+                                                    value={existingRatings[player.id] || '5'} 
                                                     readonly
                                                     data-player-id={player.id}
                                                 />
@@ -262,6 +261,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         const pid = element.dataset.playerId;
         const input = document.getElementById('mvp-input');
         if(input) input.value = pid;
+        // MVP is selected, so form might be valid now if ratings are blocked
         validateForm();
     }
 
@@ -269,16 +269,17 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         const input = document.getElementById(`rating-${playerId}`);
         if (!input) return;
 
-        // If card is in S/C mode, do nothing (or auto-disable S/C?)
-        // Let's auto-disable S/C if user tries to set rating
+        // If card is in S/C mode, auto-disable S/C and set to 5 (or calc)
         const scBtn = document.getElementById(`sc-${playerId}`);
         if (scBtn && scBtn.classList.contains('active')) {
-             toggleSC(playerId); // Turn off S/C
+             toggleSC(playerId); // This resets to 5
+             return; // toggleSC sets to 5, so we apply delta next click or now? 
+             // Better UX: Just turn off S/C and set to 5 (or 5+delta).
+             // Let's just return after toggleSC, which sets it to 5.
         }
 
         let val = parseInt(input.value);
         if (isNaN(val) || val === 0) {
-            // Start at 5 if empty or was S/C (0)
             val = 5;
         } else {
             val += delta;
@@ -306,7 +307,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
             input.value = '0'; // 0 represents S/C
             wrapper.classList.add('disabled');
         } else {
-            input.value = ''; // Clear to force user to choose or go back to pending
+            input.value = '5'; // Reset to default 5
             wrapper.classList.remove('disabled');
         }
         
@@ -323,11 +324,14 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         card.classList.remove('pending', 'ready', 'sc-active');
 
         if (val === '0') {
-            card.classList.add('ready', 'sc-active'); // Ready (as S/C)
-        } else if (val && parseInt(val) >= 1) {
-            card.classList.add('ready'); // Ready (Rated)
+            card.classList.add('ready', 'sc-active'); 
         } else {
-            card.classList.add('pending'); // Pending
+             // With default 5, it's always "ready" technically, unless we want to distinguish "touched" vs "default".
+             // User wants default 5. So it is ready by default?
+             // "solo deja enviar las valoraciones si marca en todas" 
+             // If default is 5, then "marca" is implicitly done for everyone?
+             // Yes, typically defaults mean you don't HAVE to touch everyone.
+            card.classList.add('ready'); 
         }
     }
 
@@ -335,52 +339,28 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         const submitBtn = document.getElementById('submit-ratings');
         if (!submitBtn) return;
 
-        const inputs = document.querySelectorAll('.rating-input');
-        let allValid = true;
-        let missingCount = 0;
-
-        inputs.forEach(input => {
-            const val = input.value;
-            // Valid if it has a number > 0 OR it is '0' (S/C)
-            // Invalid if empty string
-            if (val === '' || val === null || val === undefined) {
-                allValid = false;
-                missingCount++;
-            }
-        });
-
-        // MVP is technically optional but usually desired. User requirement only mentioned "all players".
-        // Let's check only players for blocking.
+        // If default is 5, validation is always true for ratings being present.
+        // Unless we require MVP? User said "solo deja enviar... ya sea la nota o que no es valorable".
+        // With default 5, "nota" is always present.
         
-        if (allValid) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'ENVIAR VALORACIONES';
-            submitBtn.classList.remove('disabled-btn');
-            
-            // Check feedback msg
-            const fb = document.getElementById('form-feedback');
-            if(fb) fb.classList.add('hidden');
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `FALTAN ${missingCount} JUGADORAS`;
-            submitBtn.classList.add('disabled-btn');
-        }
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'ENVIAR VALORACIONES';
+        submitBtn.classList.remove('disabled-btn');
     }
 
-    // Initialize state on load
+    // Initialize state
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.rating-input').forEach(input => {
             const pid = input.dataset.playerId;
             const val = input.value;
             
-            // If value is 0 (from DB), set S/C active
             if (val === '0') {
                 const scBtn = document.getElementById(`sc-${pid}`);
                 if (scBtn) scBtn.classList.add('active');
                 const wrapper = input.parentElement;
                 if (wrapper) wrapper.classList.add('disabled');
             }
-            
+            // Ensure visual state matches
             updateCardState(pid);
         });
         validateForm();
@@ -725,27 +705,27 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     .mvp-chip.selected .mvp-badge { opacity: 1; transform: scale(1); }
 
 
-    /* RATINGS GRID */
+    /* Cards Grid */
     .players-ratings-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-        gap: 1.2rem;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Increased min-width slightly */
+        gap: 1rem;
+        padding: 0 0.5rem;
     }
 
     .rating-card {
-        background: white;
-        border-radius: 12px;
-        padding: 0.8rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         display: grid;
-        grid-template-columns: 50px 1fr auto;
+        grid-template-columns: 50px 1fr auto; /* 1fr gives space to text, auto for controls */
         align-items: center;
         gap: 0.8rem;
-        border: 1px solid #f9f9f9;
-        transition: transform 0.2s;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 0.8rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid var(--accent); /* Default ready state */
         min-width: 0;
-        width: 100%;
-        box-sizing: border-box;
     }
     .rating-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
 
@@ -766,13 +746,14 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
     .r-number { color: #888; font-size: 0.75rem; font-weight: 700; }
     .r-name { 
-        font-size: 0.9rem; font-weight: 900; text-transform: uppercase; color: #333;
+        font-size: 0.95rem; 
+        font-weight: 800; 
+        text-transform: uppercase; 
+        color: #333;
         white-space: normal;
-        overflow: visible;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
         line-height: 1.1;
+        word-break: break-word; /* Ensure clear wrapping */
+        padding-right: 0.5rem; /* Space between name and buttons */
     }
 
     .rating-control-group {
