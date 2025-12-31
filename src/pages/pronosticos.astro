@@ -110,10 +110,10 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
 <Layout title="La Porra | Madrid Femenino Xtra">
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pronosticos-page">
-        <header class="text-center mb-12">
+        <header class="text-center mb-12 max-w-4xl mx-auto">
             <!-- Using global page-title style, forcing visible color -->
             <h1 class="page-title" style="color: var(--text-primary);">LA PORRA</h1>
-             <p class="content-h2-center mx-auto max-w-2xl">
+             <p class="content-h2 mx-auto" style="text-align: center;">
                 Adivina el resultado del próximo partido y gana puntos para subir en la clasificación.
             </p>
              <div class="auth-controls mt-6 flex justify-center">
@@ -193,18 +193,16 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                             <div class="scorers-select-container">
                                 {playersWithImages.map(player => (
                                     <div 
-                                        class={`scorer-chip ${userPrediction && userPrediction.scorers && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
+                                        class={`scorer-item ${userPrediction && userPrediction.scorers && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
                                         data-player-id={player.id}
                                         onclick="toggleScorer(this)"
                                         title={player.name}
                                     >
-                                        <div class="chip-image-container">
-                                             <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
+                                        <div class="scorer-image-wrapper">
+                                             <img src={player.image} alt={player.name} class="scorer-img" loading="lazy" />
+                                             <div class="scorer-number">{player.number}</div>
                                         </div>
-                                        <div class="chip-info">
-                                            <span class="player-num">#{player.number}</span>
-                                            <span class="player-name-chip">{player.name}</span>
-                                        </div>
+                                        <div class="scorer-name">{player.name}</div>
                                     </div>
                                 ))}
                             </div>
@@ -273,7 +271,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 </Layout>
 
 <script is:inline>
-    // Global function
+    /* Global function */
     function toggleScorer(element) {
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
@@ -296,7 +294,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
             // Collect selected scorers
             const selectedScorers = [];
-            document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
+            document.querySelectorAll('.scorer-item.selected').forEach(chip => {
                 const pid = (chip as HTMLElement).dataset.playerId;
                 if(pid) selectedScorers.push(pid);
             });
@@ -465,44 +463,42 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         max-width: 150px;
     }
 
-    /* SCORE INPUTS STYLE */
+    /* SCORE INPUTS STYLE - Squared but with search bar feel */
     .score-board-container {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1.5rem;
     }
 
     .score-input-wrapper {
-        border: 2px solid transparent;
-        border-radius: 8px;
+        border: 2px solid #ccc; /* Match search bar default */
+        border-radius: 12px; /* Slight rounded square */
         padding: 5px;
-        transition: all 0.2s;
-        /* Hover effect container */
+        transition: all 0.3s ease;
+        background: white;
     }
     
     .score-input-wrapper:hover {
-        background-color: rgba(255, 222, 89, 0.1); /* Subtle yellow background */
         border-color: var(--accent);
     }
     
     .score-input-wrapper:focus-within {
-        background-color: rgba(255, 222, 89, 0.2);
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.3);
+        box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
     .score-board-container input {
         width: 70px;
-        height: 80px;
+        height: 70px;
         text-align: center;
         background: transparent;
         border: none;
         color: var(--primary);
-        font-size: 3.5rem;
+        font-size: 3rem;
         font-weight: 800;
         padding: 0;
         font-family: 'Archivo Black', sans-serif;
-        line-height: 1;
+        line-height: normal;
     }
     
     .score-board-container input:focus {
@@ -514,8 +510,8 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         font-size: 3rem;
         font-weight: 700;
         color: #ddd;
-        margin-top: -10px;
     }
+
 
     /* BUTTON STYLE MATCHING PREMIOS */
     .submit-btn {
@@ -548,7 +544,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
     
     .header-login-btn {
-        /* Matching style for login in header */
         background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
         color: #2b2b2b;
         border: none;
@@ -567,38 +562,130 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         box-shadow: 0 6px 15px rgba(255, 222, 89, 0.5);
     }
 
-    /* SCORERS */
+    /* SCORERS - SQUAD STYLE */
     .scorers-section {
         margin-top: 2rem;
         border-top: 1px solid #f0f0f0;
-        padding-top: 1.5rem;
+        padding-top: 2rem;
     }
     .scorers-title {
-        font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1.5rem;
+        font-size: 1.2rem; font-weight: 800; text-transform: uppercase; margin-bottom: 2rem;
         color: var(--primary); text-align: center; letter-spacing: 1px;
     }
+    
     .scorers-select-container {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 1rem;
-        max-height: 400px; overflow-y: auto; padding: 0.5rem;
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+        gap: 1.5rem;
+        max-height: 500px; 
+        overflow-y: auto; 
+        padding: 1rem;
     }
-    .scorer-chip {
-        display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 0.8rem;
-        background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s;
-        border: 2px solid transparent; text-align: center; user-select: none;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+
+    .scorer-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        position: relative;
     }
-    .scorer-chip:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .scorer-chip.selected { background: #fafafa; border-color: var(--accent); }
-    .scorer-chip.selected .chip-image-container { border-color: var(--accent); }
-    .chip-image-container {
-        width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: #f0f0f0;
-        border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    .scorer-item:hover {
+        transform: translateY(-5px);
+        z-index: 10;
     }
-    .chip-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    .chip-info { display: flex; flex-direction: column; line-height: 1; gap: 0.2rem; }
-    .player-num { font-size: 0.75rem; font-weight: 700; color: #999; }
-    .player-name-chip { font-size: 0.9rem; font-weight: 700; color: #333; }
-    .scorer-chip.selected .player-name-chip { color: var(--accent); }
+
+    .scorer-image-wrapper {
+        width: 90px;
+        height: 90px;
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Selection Borders based on Squad.astro */
+    .scorer-image-wrapper::before,
+    .scorer-image-wrapper::after {
+        content: "";
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+        opacity: 0;
+        z-index: 2;
+    }
+
+    .scorer-image-wrapper::before {
+        top: -3px; left: -3px;
+        border-top-color: var(--accent);
+        border-left-color: var(--accent);
+    }
+    .scorer-image-wrapper::after {
+        bottom: -3px; right: -3px;
+        border-bottom-color: var(--accent);
+        border-right-color: var(--accent);
+    }
+
+    .scorer-item:hover .scorer-image-wrapper::before,
+    .scorer-item:hover .scorer-image-wrapper::after,
+    .scorer-item.selected .scorer-image-wrapper::before,
+    .scorer-item.selected .scorer-image-wrapper::after {
+        opacity: 1;
+    }
+    
+    .scorer-item.selected .scorer-image-wrapper::before,
+    .scorer-item.selected .scorer-image-wrapper::after {
+        border-width: 4px; /* Thicker for selection */
+    }
+
+    .scorer-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Squad uses grayscale effect */
+        filter: grayscale(80%);
+        transition: filter 0.3s ease;
+    }
+    
+    .scorer-item:hover .scorer-img,
+    .scorer-item.selected .scorer-img {
+        filter: grayscale(0%);
+    }
+
+    .scorer-number {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--accent);
+        font-family: "Permanent Marker", cursive;
+        font-size: 1.5rem;
+        font-weight: 900;
+        z-index: 3;
+        text-shadow: 2px 2px 2px rgba(0,0,0,0.8);
+        line-height: 1;
+    }
+
+    .scorer-name {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #888;
+        text-align: center;
+        text-transform: uppercase;
+        transition: color 0.3s;
+        line-height: 1.2;
+    }
+    
+    .scorer-item:hover .scorer-name,
+    .scorer-item.selected .scorer-name {
+        color: var(--primary);
+    }
+    
+    .scorer-item.selected .scorer-name {
+        color: var(--accent);
+        text-shadow: 0 0 1px rgba(0,0,0,0.5);
+    }
 
     /* LEADERBOARD TABLE */
     .leaderboard-table-wrapper {
