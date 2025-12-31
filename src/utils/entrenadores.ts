@@ -35,20 +35,8 @@ export const cleanApiValue = (value: any): any => {
 
 export async function fetchCoachesDirectly(): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
-
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
-            return [];
-        }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
+        const { dbMain } = await import('../lib/turso');
+        const client = dbMain;
 
         const query = `
             SELECT 
@@ -117,20 +105,8 @@ export async function fetchCoaches(): Promise<any[]> {
 
 export async function fetchCoachStats(coachId: string | number): Promise<any> {
     try {
-        const { createClient } = await import('@libsql/client');
-
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
-            return null;
-        }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
+        const { dbMain } = await import('../lib/turso');
+        const client = dbMain;
 
         const statsQuery = `
             SELECT
@@ -269,20 +245,8 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
 
 export async function fetchCoachTrajectory(coachId: string | number): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
-
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas para trayectoria');
-            return [];
-        }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
+        const { dbMain } = await import('../lib/turso');
+        const client = dbMain;
 
         const query = `
             SELECT 

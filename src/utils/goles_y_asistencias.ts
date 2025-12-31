@@ -26,20 +26,8 @@ export interface GoalAssistFilters {
 
 export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Promise<GoalAssist[]> {
     try {
-        const { createClient } = await import('@libsql/client');
-
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
-            return [];
-        }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
+        const { dbMain } = await import('../lib/turso');
+        const client = dbMain;
 
         let whereClauses: string[] = [];
         let params: any[] = [];

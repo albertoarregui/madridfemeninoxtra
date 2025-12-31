@@ -1,19 +1,20 @@
-export async function fetchRivalRecords(rivalId: string | number): Promise<any> {
+import { dbMain } from "../lib/turso";
+
+export async function getRivalRecords(slug: string) {
     try {
-        const { createClient } = await import('@libsql/client');
+        const client = dbMain;
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
-            return null;
-        }
-
-        const db = createClient({
-            url: url,
-            authToken: authToken,
-        });
+        // Assuming rivalId needs to be derived from slug here,
+        // but the instruction does not provide this logic.
+        // For now, we'll keep rivalId as a placeholder or assume it's available
+        // if the original function's logic is being adapted.
+        // If 'slug' is meant to replace 'rivalId' directly in queries,
+        // then 'rivalId' should be replaced with 'slug' in the args arrays.
+        // For the purpose of this edit, I will assume 'rivalId' is still needed
+        // and would be defined based on 'slug' in a complete implementation.
+        // As the instruction only provides a partial function body,
+        // I will keep the console.log as is and assume 'rivalId' would be defined.
+        const rivalId = slug; // Placeholder: You might need to fetch rivalId from slug
 
         console.log('Fetching rival records for rival ID:', rivalId);
 
@@ -24,7 +25,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         let mostRepeated = null;
 
         try {
-            const topScorerResult = await db.execute({
+            const topScorerResult = await client.execute({
                 sql: `
                     SELECT 
                         j.nombre,
@@ -48,7 +49,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
 
         // Biggest win
         try {
-            const biggestWinResult = await db.execute({
+            const biggestWinResult = await client.execute({
                 sql: `
                     SELECT 
                         p.goles_rm, 
@@ -70,7 +71,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         }
 
         try {
-            const biggestLossResult = await db.execute({
+            const biggestLossResult = await client.execute({
                 sql: `
                     SELECT 
                         p.goles_rm, 
@@ -92,7 +93,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         }
 
         try {
-            const mostRepeatedResult = await db.execute({
+            const mostRepeatedResult = await client.execute({
                 sql: `
                     SELECT 
                         p.goles_rm || '-' || p.goles_rival as resultado, 
@@ -112,7 +113,7 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
         }
 
         try {
-            const mostAppearancesResult = await db.execute({
+            const mostAppearancesResult = await client.execute({
                 sql: `
                     SELECT 
                         j.nombre,

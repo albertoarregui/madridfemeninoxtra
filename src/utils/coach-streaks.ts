@@ -1,21 +1,11 @@
-export async function fetchCoachStreaks(coachId: string | number): Promise<any> {
+import { dbMain } from "../lib/turso";
+
+export async function getCoachStreaks(slug: string) {
     try {
-        const { createClient } = await import('@libsql/client');
+        const client = dbMain;
+        const coachId = slug;
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
-            return null;
-        }
-
-        const db = createClient({
-            url: url,
-            authToken: authToken,
-        });
-
-        const matchesResult = await db.execute({
+        const matchesResult = await client.execute({
             sql: `
                 SELECT p.goles_rm, p.goles_rival, p.fecha
                 FROM partidos p
