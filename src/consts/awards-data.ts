@@ -1,4 +1,4 @@
-import { SQUAD } from "../../public/consts/squad";
+import { SQUAD } from "./squad";
 import { SQUAD as ACADEMY_SQUAD } from "../../public/consts/academy_players";
 import saraGoal from "../assets/awards/sara_goal.png";
 import irisGoal from "../assets/awards/iris_goal.png";
