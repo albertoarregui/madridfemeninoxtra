@@ -128,31 +128,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             </div>
         </header>
 
-        <!-- RULES BANNER -->
-        <section class="rules-banner mb-8">
-            <div class="rules-card-horizontal">
-                <h3 class="rules-title-horizontal">REGLAS</h3>
-                <div class="rules-content-horizontal">
-                    <div class="rule-item">
-                        <span class="rule-badge">3 PTS</span>
-                        <span class="rule-text">Resultado Exacto</span>
-                    </div>
-                    <div class="rule-divider"></div>
-                    <div class="rule-item">
-                        <span class="rule-badge">1 PT</span>
-                        <span class="rule-text">Ganador / Empate</span>
-                    </div>
-                    <div class="rule-divider"></div>
-                    <div class="rule-item">
-                        <span class="rule-badge">1 PT</span>
-                        <span class="rule-text">Goleadora</span>
-                    </div>
-                </div>
-                <p class="rules-note-horizontal">
-                    * Los puntos se suman al finalizar el partido.
-                </p>
-            </div>
-        </section>
+
 
         <div class="grid-layout">
             <!-- LEFT COLUMN: PREDICTION CARD -->
@@ -188,7 +164,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                         min="0" 
                                         max="20" 
                                         value={userPrediction ? userPrediction.home_score : ''}
-                                        placeholder="-" 
+                                        placeholder="" 
                                         disabled={!userId || !isMatchOpen}
                                     />
                                     <div class="custom-spinners">
@@ -208,7 +184,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                         min="0" 
                                         max="20" 
                                         value={userPrediction ? userPrediction.away_score : ''}
-                                        placeholder="-"
+                                        placeholder=""
                                         disabled={!userId || !isMatchOpen}
                                     />
                                     <div class="custom-spinners">
@@ -308,6 +284,28 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- RIGHT COLUMN: RULES -->
+            <section class="rules-container">
+                <div class="card-title-overlay">REGLAS</div>
+                <div class="rules-content-vertical">
+                    <div class="rule-row">
+                        <span class="rule-points">3 PTS</span>
+                        <span class="rule-desc">Resultado Exacto</span>
+                    </div>
+                    <div class="rule-row">
+                        <span class="rule-points">1 PT</span>
+                        <span class="rule-desc">Ganador / Empate</span>
+                    </div>
+                    <div class="rule-row">
+                        <span class="rule-points">1 PT</span>
+                        <span class="rule-desc">Goleadora</span>
+                    </div>
+                    <p class="rules-note">
+                        * Los puntos se suman al finalizar el partido.
+                    </p>
                 </div>
             </section>
         </div>
@@ -430,11 +428,17 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         margin-top: 3rem;
     }
 
-    @media (min-width: 1024px) {
+    @media (min-width: 1200px) {
         .grid-layout {
-            grid-template-columns: 3fr 2fr;
+            grid-template-columns: 3fr 2fr 1.2fr; /* 3 columns grid */
             align-items: start;
         }
+    }
+    @media (min-width: 1024px) and (max-width: 1199px) {
+        .grid-layout {
+            grid-template-columns: 1.5fr 1fr; /* 2 columns tablet/small laptop */
+        }
+        .rules-container { grid-column: span 2; }
     }
 
     /* CARD STYLING */
@@ -704,7 +708,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     .scorers-title::after {
         content: '';
         display: block;
-        width: 60px;
+        width: 150px; /* Wider as requested */
         height: 4px;
         background: var(--accent);
         margin: 10px auto 0;
@@ -974,15 +978,48 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         margin-top: 0.5rem;
     }
 
+    /* Rules Vertical Styles */
+    .rules-content-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    .rule-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-bottom: 1px solid #f9f9f9;
+        padding-bottom: 1rem;
+    }
+    .rule-row:last-of-type { border-bottom: none; }
+    
+    .rule-points {
+        background: var(--primary);
+        color: var(--accent);
+        font-family: 'Archivo Black', sans-serif;
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        min-width: 70px;
+        text-align: center;
+    }
+    .rule-desc {
+        font-weight: 700;
+        color: #555;
+        font-size: 1rem;
+        text-transform: uppercase;
+        line-height: 1.2;
+    }
+    .rules-note {
+        font-size: 0.85rem;
+        color: #aaa;
+        font-style: italic;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
     @media (max-width: 768px) {
-        .rules-content-horizontal {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-        .rule-divider { display: none; }
-        .rule-item { width: 100%; }
-        .rules-title-horizontal { margin-bottom: 0.5rem; }
         .score-board-container input { width: 50px; font-size: 2.8rem; }
     }
 </style>

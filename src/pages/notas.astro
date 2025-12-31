@@ -1,14 +1,56 @@
----
 import Layout from "../layouts/Layout.astro";
 import { turso } from "../lib/turso";
 import { CALENDAR } from "../consts/calendar";
-import { SQUAD } from "../../public/consts/squad"; // Keep consistency with existing imports
+import { SQUAD } from "../../public/consts/squad";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
+import type { ImageMetadata } from 'astro';
+
+// Import assets
+const playerImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
+const teamShields = import.meta.glob<{ default: ImageMetadata }>('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
+const competitionLogos = import.meta.glob<{ default: ImageMetadata }>('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
+
+// Helpers
+async function getPlayerImage(id: string) {
+    const path = `/src/assets/jugadoras/${id}.png`;
+    if (playerImages[path]) {
+        const mod = await playerImages[path]();
+        return mod.default.src;
+    }
+    return '/assets/img/default-player.png';
+}
+
+const getShield = async (teamName) => {
+    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let path = `/src/assets/escudos/${slug}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
+    return '';
+};
+
+const getCompetitionLogo = async (compName) => {
+    const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let path = `/src/assets/competiciones/${slug}.png`;
+    if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
+    else if (slug.includes('uwcl') || slug.includes('champions')) path = '/src/assets/competiciones/uwcl.png';
+    else if (slug.includes('copa')) path = '/src/assets/competiciones/copa_de_la_reina.png';
+    else if (slug.includes('supercopa')) path = '/src/assets/competiciones/supercopa_de_espana.png';
+
+    if (competitionLogos[path]) return (await competitionLogos[path]()).default.src;
+    return '';
+};
 
 // 1. Find Last Played Match
 const now = new Date();
 const pastMatches = CALENDAR.filter((m) => new Date(m.date) < now);
 const lastMatch = pastMatches.length > 0 ? pastMatches[pastMatches.length - 1] : null;
+
+// Prepare match assets
+const homeShield = lastMatch ? await getShield(lastMatch.team1) : '';
+const awayShield = lastMatch ? await getShield(lastMatch.team2) : '';
+const compLogo = lastMatch ? await getCompetitionLogo(lastMatch.competition) : '';
 
 // 2. Fetch User's Previous Votes (if any)
 const { userId } = Astro.locals.auth();
@@ -39,17 +81,25 @@ if (userId && lastMatch) {
         console.error("Error fetching ratings", e);
     }
 }
+
+// Prepare squad details with images
+const squadWithImages = await Promise.all(SQUAD.map(async (p) => ({
+    ...p,
+    image: await getPlayerImage(p.id)
+})));
 ---
 
 <Layout title="Notas y MVP | Madrid Femenino Xtra">
-    <div class="notas-page">
-        <header class="page-header">
-            <h1 class="page-title">NOTAS DEL PARTIDO</h1>
-            <p class="page-subtitle">VALORA A LAS JUGADORAS Y ELIGE TU MVP</p>
-             <div class="auth-controls">
+    <div class="notas-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <header class="text-center mb-12 max-w-4xl mx-auto">
+            <h1 class="page-title" style="color: var(--text-primary);">NOTAS DEL PARTIDO</h1>
+            <p class="content-h2 mx-auto" style="text-align: center;">
+                Valora el rendimiento de las jugadoras y elige a la MVP del último partido.
+            </p>
+             <div class="auth-controls mt-6 flex justify-center">
                 <SignedOut>
-                    <SignInButton mode="modal" as="button" class="login-btn">
-                        INICIAR SESIÓN PARA VOTAR
+                    <SignInButton mode="modal" as="button" class="header-login-btn">
+                        INICIAR SESIÓN
                     </SignInButton>
                 </SignedOut>
                 <SignedIn>
@@ -61,62 +111,102 @@ if (userId && lastMatch) {
         {lastMatch ? (
             <div class="content-container" data-match-id={lastMatch.id}>
                 
-                <section class="match-context">
-                    <h2 class="section-title">PARTIDO DE LA JORNADA</h2>
-                    <div class="match-info">
-                        <span class="teams">{lastMatch.team1} vs {lastMatch.team2}</span>
-                        <span class="details">{lastMatch.competition} - {lastMatch.date}</span>
+                <!-- MATCH CARD -->
+                <section class="match-card mb-12">
+                    <div class="card-title-overlay">ÚLTIMO PARTIDO</div>
+                    
+                    <div class="match-header">
+                        {compLogo ? (
+                            <img src={compLogo} alt={lastMatch.competition} class="comp-logo" />
+                        ) : (
+                            <span class="competition-text">{lastMatch.competition}</span>
+                        )}
+                        <span class="match-date">{new Date(lastMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                    </div>
+
+                    <div class="teams-container">
+                        <div class="team home">
+                            {homeShield && <img src={homeShield} alt={lastMatch.team1} class="team-shield" />}
+                            <span class="team-name">{lastMatch.team1}</span>
+                        </div>
+                        <div class="vs-text">VS</div>
+                        <div class="team away">
+                            {awayShield && <img src={awayShield} alt={lastMatch.team2} class="team-shield" />}
+                            <span class="team-name">{lastMatch.team2}</span>
+                        </div>
                     </div>
                 </section>
 
                 <form id="ratings-form">
+                    
                     <!-- MVP Selection -->
-                    <section class="mvp-section">
-                        <h3 class="subsection-title">👑 ELIGE TU MVP</h3>
-                        <div class="select-wrapper">
-                             <select id="mvp-select" class="mvp-select" disabled={!userId}>
-                                <option value="">Selecciona la mejor jugadora...</option>
-                                {SQUAD.map((player) => (
-                                    <option value={player.id} selected={existingMVP === player.id}>
-                                        #{player.number} - {player.name}
-                                    </option>
-                                ))}
-                            </select>
+                    <section class="mvp-section mb-12">
+                        <div class="section-header-cnt">
+                            <h3 class="subsection-title">ELIGE TU MVP</h3>
                         </div>
+                        
+                        <div class="mvp-grid">
+                            {squadWithImages.map(player => (
+                                <div 
+                                    class={`mvp-chip ${existingMVP === player.id ? 'selected' : ''}`}
+                                    data-player-id={player.id}
+                                    onclick="selectMvp(this)"
+                                    title={player.name}
+                                >
+                                    <div class="chip-image-container">
+                                            <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
+                                    </div>
+                                    <div class="chip-info">
+                                        <span class="player-num">#{player.number}</span>
+                                        <span class="player-name-chip">{player.name}</span>
+                                    </div>
+                                    <div class="mvp-badge">MVP</div>
+                                </div>
+                            ))}
+                        </div>
+                        <input type="hidden" id="mvp-input" value={existingMVP || ''} />
                     </section>
+                    
+                    <hr class="section-divider" />
 
                     <!-- Player Ratings -->
-                    <section class="ratings-section">
-                        <h3 class="subsection-title">📊 NOTAS (1-10)</h3>
-                        <div class="players-grid">
-                            {SQUAD.map((player) => (
-                                <div class="player-card">
-                                    <div class="player-info">
-                                        <span class="player-number">#{player.number}</span>
-                                        <span class="player-name">{player.name}</span>
+                    <section class="ratings-section mt-12">
+                         <div class="section-header-cnt">
+                            <h3 class="subsection-title">PON NOTA (1-10)</h3>
+                        </div>
+
+                        <div class="players-ratings-grid">
+                            {squadWithImages.map((player) => (
+                                <div class="rating-card">
+                                    <div class="rating-player-info">
+                                        <div class="rating-img-wrapper">
+                                            <img src={player.image} alt={player.name} />
+                                        </div>
+                                        <div class="rating-text">
+                                            <span class="r-number">#{player.number}</span>
+                                            <span class="r-name">{player.name}</span>
+                                        </div>
                                     </div>
-                                    <div class="rating-control">
+                                    
+                                    <div class="rating-control-wrapper">
+                                        <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
                                         <input 
-                                            type="range" 
-                                            min="1" 
-                                            max="10" 
-                                            value={existingRatings[player.id] || 5} 
-                                            class="rating-slider"
+                                            type="number" 
                                             id={`rating-${player.id}`}
+                                            class="rating-input"
+                                            value={existingRatings[player.id] || ''} 
+                                            placeholder="-"
+                                            readonly
                                             data-player-id={player.id}
-                                            disabled={!userId}
-                                            oninput={`document.getElementById('display-${player.id}').textContent = this.value`}
                                         />
-                                        <span id={`display-${player.id}`} class="rating-value">
-                                            {existingRatings[player.id] || 5}
-                                        </span>
+                                        <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </section>
 
-                    <div class="actions">
+                    <div class="actions mt-12">
                         {!userId ? (
                             <p class="login-prompt">Inicia sesión para enviar tus notas</p>
                         ) : (
@@ -130,12 +220,42 @@ if (userId && lastMatch) {
 
             </div>
         ) : (
-            <div class="no-match">
+            <div class="no-match-card">
                 <p>No hay partidos recientes para valorar.</p>
             </div>
         )}
     </div>
 </Layout>
+
+<script is:inline>
+    // Global functions for inline handlers
+    function selectMvp(element) {
+        // Deselect all others
+        document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
+        // Select clicked
+        element.classList.add('selected');
+        // Update hidden input
+        const pid = element.dataset.playerId;
+        const input = document.getElementById('mvp-input');
+        if(input) input.value = pid;
+    }
+
+    function adjustRating(playerId, delta) {
+        console.log('Adjusting', playerId, delta);
+        const input = document.getElementById(`rating-${playerId}`);
+        if (!input) return;
+
+        let val = parseInt(input.value);
+        if (isNaN(val)) val = 5; // Default start at 5 if empty? Or maybe 0? Let's say if empty start at 5 for ease
+        else val += delta;
+
+        // Bounds 1-10
+        if (val < 1) val = 1;
+        if (val > 10) val = 10;
+
+        input.value = val;
+    }
+</script>
 
 <script>
     const form = document.getElementById('ratings-form');
@@ -148,30 +268,29 @@ if (userId && lastMatch) {
             e.preventDefault();
             
             const matchId = container.dataset.matchId;
-            const mvpSelect = document.getElementById('mvp-select') as HTMLSelectElement;
-            const mvpId = mvpSelect.value;
-
-            // Collect ratings distinct from default only if acted upon? 
-            // Or just submit all. Submitting all is safer to represent user state.
-            // But we should filter for sliders that might be untouched if we wanted 'did not play' logic.
-            // For simplicity, we submit all 20+ players with default 5? That's bad data.
-            // Better: Implicitly, we probably only want to rate players who played.
-            // But we don't know who played easily without match stats API.
-            // Let's submit ALL for now, or add a checkbox "No jugó".
-            // Alternative: Slider 0 = "N/A" or "No jugó". 
-            // Simplification for user request "intuitivas y faciles":
-            // Let's assume user only moves sliders for players they want to rate.
-            // But HTML range input always has a value.
-            // Let's send everything for now.
+            const mvpInput = document.getElementById('mvp-input') as HTMLInputElement;
+            const mvpId = mvpInput ? mvpInput.value : null;
             
             const ratings = [];
-            document.querySelectorAll('.rating-slider').forEach((slider) => {
-                const input = slider as HTMLInputElement;
-                ratings.push({
-                    player_id: input.dataset.playerId,
-                    rating: parseInt(input.value)
-                });
+            document.querySelectorAll('.rating-input').forEach((input) => {
+                const i = input as HTMLInputElement;
+                const val = parseInt(i.value);
+                if (!isNaN(val)) {
+                    ratings.push({
+                        player_id: i.dataset.playerId,
+                        rating: val
+                    });
+                }
             });
+
+            if (ratings.length === 0 && !mvpId) {
+                 if(feedbackMsg) {
+                    feedbackMsg.textContent = "Por favor, selecciona al menos una nota o MVP.";
+                    feedbackMsg.className = "feedback-msg error";
+                    feedbackMsg.classList.remove('hidden');
+                }
+                return;
+            }
 
             submitBtn.textContent = "ENVIANDO...";
             (submitBtn as HTMLButtonElement).disabled = true;
@@ -189,16 +308,14 @@ if (userId && lastMatch) {
 
                 if (response.ok) {
                     submitBtn.textContent = "¡ENVIADO!";
-                    submitBtn.style.background = "#2ecc71";
-                     if(feedbackMsg) {
+                    if(feedbackMsg) {
                         feedbackMsg.textContent = "Tus notas han sido registradas.";
-                        feedbackMsg.classList.remove('hidden', 'error');
-                        feedbackMsg.classList.add('success');
+                        feedbackMsg.className = "feedback-msg success";
+                        feedbackMsg.classList.remove('hidden');
                     }
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR NOTAS";
                        (submitBtn as HTMLButtonElement).disabled = false;
-                       submitBtn.style.background = "";
                     }, 2000);
                 } else {
                     throw new Error("Error en el envío");
@@ -209,8 +326,8 @@ if (userId && lastMatch) {
                 (submitBtn as HTMLButtonElement).disabled = false;
                  if(feedbackMsg) {
                     feedbackMsg.textContent = "Error al conectar con el servidor.";
-                    feedbackMsg.classList.remove('hidden', 'success');
-                    feedbackMsg.classList.add('error');
+                    feedbackMsg.className = "feedback-msg error";
+                    feedbackMsg.classList.remove('hidden');
                 }
             }
         });
@@ -219,187 +336,293 @@ if (userId && lastMatch) {
 
 <style>
     :root {
-        --primary: #0a0e27;
+        --primary: #2b2b2b;
         --accent: #ffde59;
-        --text: #ffffff;
-        --success: #2ecc71;
+        --text-primary: #2b2b2b;
     }
 
     .notas-page {
-        padding: 2rem 1rem;
-        color: var(--text);
         font-family: 'Poppins', sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
     }
 
-    .page-header {
+    /* MATCH CARD */
+    .match-card {
+        position: relative;
+        background: white;
+        border-radius: 12px;
+        padding: 3.5rem 2rem 2.5rem 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.05);
         text-align: center;
-        margin-bottom: 3rem;
     }
 
-    .page-title {
-        font-family: 'Archivo Black', sans-serif;
-        font-size: 2.5rem;
-        color: var(--accent);
-        margin: 0;
-    }
-    
-    .page-subtitle {
-        color: #a0a0a0;
-        font-size: 1rem;
-        margin-top: 0.5rem;
-        letter-spacing: 1px;
-    }
-
-    .login-btn {
-        margin-top: 1rem;
+    .card-title-overlay {
+        position: absolute;
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%) skew(-10deg);
         background: var(--accent);
-        color: var(--primary);
-        border: none;
+        color: #2b2b2b;
         padding: 0.5rem 1.5rem;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.6rem;
         font-weight: 700;
-        border-radius: 4px;
-        cursor: pointer;
+        letter-spacing: 1px;
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        z-index: 10;
+        line-height: 1;
     }
 
-    .match-context {
-        text-align: center;
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: rgba(255,255,255,0.05);
-        border-radius: 8px;
-        border: 1px solid rgba(255,222,89,0.2);
-    }
-
-    .section-title, .subsection-title {
-        color: var(--accent);
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-    }
-    
-    .match-info {
-        font-size: 1.2rem;
-        font-weight: 600;
+    .match-header {
         display: flex;
         flex-direction: column;
-    }
-    
-    .match-info .details {
-        font-size: 0.9rem;
-        color: #888;
-        font-weight: 400;
-    }
-
-    .mvp-section {
-        margin-bottom: 3rem;
-        text-align: center;
-    }
-
-    .mvp-select {
-        width: 100%;
-        max-width: 400px;
-        padding: 1rem;
-        background: #1a1f3c;
-        border: 2px solid #333;
-        color: white;
-        border-radius: 8px;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-
-    .mvp-select:focus {
-        border-color: var(--accent);
-        outline: none;
-    }
-
-    .ratings-section {
+        align-items: center;
+        gap: 0.5rem;
         margin-bottom: 2rem;
     }
+    .comp-logo { height: 50px; width: auto; }
+    .competition-text { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; color: var(--primary); }
+    .match-date { color: #888; font-weight: 500; text-transform: capitalize; }
 
-    .players-grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    .teams-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+    }
+    .team { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 120px;}
+    .team-shield { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05)); }
+    .team-name { font-weight: 900; font-size: 1rem; text-transform: uppercase; color: var(--primary); line-height: 1.1; }
+    .vs-text { font-family: 'Archivo Black', sans-serif; font-size: 1.5rem; color: #ddd; }
+
+    /* SECTION TITLES */
+    .section-header-cnt {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .subsection-title {
+        font-size: 1.2rem; 
+        font-weight: 800; 
+        text-transform: uppercase; 
+        color: var(--primary); 
+        text-align: center; 
+        letter-spacing: 1px;
+        position: relative;
+        display: inline-block;
+    }
+    .subsection-title::after {
+        content: '';
+        display: block;
+        width: 60px;
+        height: 4px;
+        background: var(--accent);
+        margin: 5px auto 0;
+        border-radius: 2px;
     }
 
-    .player-card {
-        background: #1a1f3c;
+    .section-divider {
+        border: 0;
+        height: 1px;
+        background: #f0f0f0;
+        margin: 4rem 0;
+    }
+
+    /* MVP GRID */
+    .mvp-grid {
+        display: grid; 
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); 
+        gap: 1.5rem;
         padding: 1rem;
-        border-radius: 8px;
+    }
+
+    .mvp-chip {
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        gap: 0.8rem; 
+        padding: 1rem;
+        background: white; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        transition: all 0.3s ease;
+        position: relative;
+        text-align: center; 
+        user-select: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border: 2px solid transparent;
+    }
+
+    .mvp-chip:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+
+    /* MVP Selector Corners */
+    .mvp-chip::before, .mvp-chip::after {
+        content: ""; position: absolute; width: 15px; height: 15px; border: 3px solid transparent;
+        transition: all 0.3s ease; opacity: 0; pointer-events: none;
+    }
+    .mvp-chip::before { top: -2px; left: -2px; border-top-color: var(--accent); border-left-color: var(--accent); border-radius: 4px 0 0 0; }
+    .mvp-chip::after { bottom: -2px; right: -2px; border-bottom-color: var(--accent); border-right-color: var(--accent); border-radius: 0 0 4px 0; }
+    
+    .mvp-chip:hover::before, .mvp-chip:hover::after,
+    .mvp-chip.selected::before, .mvp-chip.selected::after { opacity: 1; }
+    .mvp-chip.selected::before, .mvp-chip.selected::after { border-width: 4px; }
+    
+    .mvp-chip.selected { background: #fffdf5; }
+
+    .chip-image-container {
+        width: 70px; height: 70px; border-radius: 50%; overflow: hidden; 
+        background: #f0f0f0; border: 3px solid white; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;
+    }
+    .mvp-chip:hover .chip-image-container { transform: scale(1.05); }
+    .chip-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    
+    .chip-info { display: flex; flex-direction: column; line-height: 1.2; gap: 0.3rem; }
+    .player-num { font-size: 0.8rem; font-weight: 800; color: #ccc; }
+    .player-name-chip { font-size: 0.9rem; font-weight: 700; color: #444; }
+    .mvp-chip.selected .player-name-chip { color: var(--primary); }
+    .mvp-chip.selected .player-num { color: var(--accent); }
+
+    .mvp-badge {
+        position: absolute; top: -10px; right: -10px;
+        background: var(--accent); color: #000;
+        font-size: 0.7rem; font-weight: 900;
+        padding: 0.2rem 0.6rem; border-radius: 20px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        opacity: 0; transform: scale(0); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .mvp-chip.selected .mvp-badge { opacity: 1; transform: scale(1); }
+
+
+    /* RATINGS GRID */
+    .players-ratings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .rating-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
+        border: 1px solid #f9f9f9;
+        transition: transform 0.2s;
     }
+    .rating-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
 
-    .player-info {
+    .rating-player-info { display: flex; align-items: center; gap: 1rem; }
+    .rating-img-wrapper {
+        width: 60px; height: 60px; border-radius: 50%; overflow: hidden;
+        border: 2px solid #f0f0f0; flex-shrink: 0;
+    }
+    .rating-img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    
+    .rating-text { display: flex; flex-direction: column; }
+    .r-number { font-size: 0.8rem; font-weight: 800; color: #ddd; line-height: 1; }
+    .r-name { font-size: 1rem; font-weight: 700; color: var(--primary); text-transform: uppercase; line-height: 1.2; }
+
+    .rating-control-wrapper {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        background: #f8f8f8;
+        padding: 0.3rem;
+        border-radius: 30px;
     }
 
-    .player-number {
-        color: var(--accent);
-        font-weight: 700;
-        font-family: 'Archivo Black', sans-serif;
-    }
-
-    .rating-control {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1;
-        justify-content: flex-end;
-    }
-
-    .rating-slider {
-        flex: 1;
-        max-width: 150px;
-        accent-color: var(--accent);
-        cursor: pointer;
-    }
-
-    .rating-value {
-        font-size: 1.2rem;
-        font-weight: 700;
-        width: 30px;
-        text-align: center;
-        color: var(--accent);
-    }
-
-    .submit-btn {
-        width: 100%;
-        padding: 1.2rem;
-        background: var(--accent);
-        color: #000;
+    .rate-btn {
+        width: 32px; height: 32px;
+        border-radius: 50%;
         border: none;
-        border-radius: 8px;
-        font-size: 1.2rem;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        color: var(--primary);
         font-weight: 800;
+        font-size: 1.2rem;
         cursor: pointer;
+        transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .rate-btn:hover { background: var(--accent); }
+    .rate-btn:active { transform: scale(0.9); }
+
+    .rating-input {
+        width: 40px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        font-family: 'Archivo Black', sans-serif;
+        font-size: 1.3rem;
+        color: var(--primary);
+        padding: 0;
+    }
+    .rating-input:focus { outline: none; }
+
+
+    /* BUTTON STYLE */
+    .submit-btn {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #2b2b2b;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
         text-transform: uppercase;
-        transition: transform 0.2s;
-        box-shadow: 0 4px 15px rgba(255,222,89,0.3);
+        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
+        width: 100%;
+        max-width: 400px;
+        display: block; margin: 0 auto;
     }
 
     .submit-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
+        transform: scale(1.02) translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
+        color: #000;
     }
     
     .submit-btn:disabled {
-        opacity: 0.5;
+        background: #e0e0e0;
+        color: #a0a0a0;
         cursor: not-allowed;
         box-shadow: none;
-        background: #555;
+    }
+
+    .header-login-btn {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #2b2b2b;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 50px;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(255, 222, 89, 0.3);
+        transition: all 0.3s;
+    }
+    .header-login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(255, 222, 89, 0.5);
     }
     
-    .feedback-msg {
-        text-align: center;
-        margin-top: 1rem;
-    }
-    .feedback-msg.success { color: var(--success); }
+    .feedback-msg { margin-top: 1rem; font-weight: 600; text-align: center; }
+    .feedback-msg.success { color: #2ecc71; }
     .feedback-msg.error { color: #e74c3c; }
     .feedback-msg.hidden { display: none; }
+
+    .no-match-card {
+        text-align: center; padding: 4rem; background: #f9f9f9; border-radius: 12px; color: #888;
+    }
+
+    @media (max-width: 600px) {
+        .players-ratings-grid { grid-template-columns: 1fr; }
+    }
 </style>
