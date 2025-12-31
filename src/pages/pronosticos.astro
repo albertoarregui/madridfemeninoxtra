@@ -2,17 +2,13 @@
 import Layout from "../layouts/Layout.astro";
 import { turso } from "../lib/turso";
 import { CALENDAR } from "../consts/calendar";
-import {
-    SignInButton,
-    SignedIn,
-    SignedOut,
-    UserButton,
-} from "@clerk/astro/components";
+import { SQUAD } from "../../public/consts/squad";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
 
 // 1. Find Next Match
 const now = new Date();
-const nextMatchIndex = CALENDAR.findIndex((m) => new Date(m.date) >= now); // Simple check, ideally check time too if available
-const nextMatch = nextMatchIndex !== -1 ? CALENDAR[nextMatchIndex] : null;
+const nextMatchIndex = CALENDAR.find((m) => new Date(m.date) >= now); 
+const nextMatch = nextMatchIndex || null;
 
 // 2. Fetch Data (Server Side)
 const { userId } = Astro.locals.auth();
@@ -22,11 +18,19 @@ let leaderboard = [];
 if (userId && nextMatch) {
     try {
         const result = await turso.execute({
-            sql: "SELECT home_score, away_score FROM predictions WHERE user_id = ? AND match_id = ?",
+            sql: "SELECT home_score, away_score, scorers FROM predictions WHERE user_id = ? AND match_id = ?",
             args: [userId, nextMatch.id],
         });
         if (result.rows.length > 0) {
             userPrediction = result.rows[0];
+            // Parse scorers JSON if it exists
+            if (typeof userPrediction.scorers === 'string') {
+                try {
+                    userPrediction.scorers = JSON.parse(userPrediction.scorers);
+                } catch (e) {
+                    userPrediction.scorers = [];
+                }
+            }
         }
     } catch (e) {
         console.error("Error fetching user prediction", e);
@@ -34,30 +38,29 @@ if (userId && nextMatch) {
 }
 
 try {
-    // Mocking user names or fetching from clerk is complex server-side without extra setup.
-    // For now, we might just show "Usuario X" or rely on Clerk user ID if we can't map it easily
-    // without a 'users' table or clerk SDK call.
-    // Let's assume we just show masked ID or look into clerk integration later for names.
-    // Ideally we should store username in predictions table or have a users table sync.
-    // For MVP, simplistic approach:
     const result = await turso.execute({
-        sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id ORDER BY total_points DESC LIMIT 10",
+        sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id ORDER BY total_points DESC LIMIT 20",
         args: [],
     });
     leaderboard = result.rows;
-} catch (e) {
+} catch(e) {
     console.error("Error fetching leaderboard", e);
 }
 
-const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if needed
+const isMatchOpen = nextMatch ? true : false; 
+const matchDate = nextMatch ? new Date(nextMatch.date) : new Date();
+const formattedDate = matchDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+
+// Filtering squad - maybe just strict forwards/midfielders? For now all squad.
+const players = SQUAD.sort((a, b) => a.number - b.number);
 ---
 
 <Layout title="La Porra | Madrid Femenino Xtra">
     <div class="pronosticos-page">
         <header class="page-header">
-            <h1 class="page-title">LA PORRA</h1>
+            <h1 class="section-title">LA PORRA</h1>
             <p class="page-subtitle">ADIVINA EL RESULTADO Y GANA PUNTOS</p>
-            <div class="auth-controls">
+             <div class="auth-controls">
                 <SignedOut>
                     <SignInButton mode="modal" as="button" class="login-btn">
                         INICIAR SESIÓN
@@ -69,154 +72,153 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
             </div>
         </header>
 
-        <div class="content-container">
-            <!-- Next Match Prediction Card -->
-            <section class="prediction-section">
-                {
-                    nextMatch ? (
-                        <div class="match-card">
-                            <div class="match-info">
-                                <span class="competition">
-                                    {nextMatch.competition}
-                                </span>
-                                <span class="date">
-                                    {nextMatch.date} - {nextMatch.time}
-                                </span>
+        <div class="grid-layout">
+            <!-- LEFT COLUMN: PREDICTION CARD -->
+            <section class="prediction-column">
+                <h2 class="column-title">PRÓXIMO PARTIDO</h2>
+                
+                {nextMatch ? (
+                    <div class="match-card">
+                         <div class="match-header">
+                            <span class="competition-badge">{nextMatch.competition}</span>
+                            <span class="match-date">{formattedDate} - {nextMatch.time}</span>
+                        </div>
+                        
+                        <div class="teams-container" data-match-id={nextMatch.id}>
+                            <div class="team home">
+                                <span class="team-name">{nextMatch.team1}</span>
                             </div>
-
-                            <div
-                                class="teams-score-input"
-                                data-match-id={nextMatch.id}
-                            >
-                                <div class="team home">
-                                    <span class="team-name">
-                                        {nextMatch.team1}
-                                    </span>
-                                </div>
-
-                                <div class="score-inputs">
-                                    <input
-                                        type="number"
-                                        id="home-score"
-                                        min="0"
-                                        max="20"
-                                        value={
-                                            userPrediction
-                                                ? userPrediction.home_score
-                                                : ""
-                                        }
-                                        placeholder="-"
-                                        disabled={!userId || !isMatchOpen}
-                                    />
-                                    <span class="separator">:</span>
-                                    <input
-                                        type="number"
-                                        id="away-score"
-                                        min="0"
-                                        max="20"
-                                        value={
-                                            userPrediction
-                                                ? userPrediction.away_score
-                                                : ""
-                                        }
-                                        placeholder="-"
-                                        disabled={!userId || !isMatchOpen}
-                                    />
-                                </div>
-
-                                <div class="team away">
-                                    <span class="team-name">
-                                        {nextMatch.team2}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="action-area">
-                                {!userId ? (
-                                    <p class="login-prompt">
-                                        Inicia sesión para participar
-                                    </p>
-                                ) : (
-                                    <button
-                                        id="submit-prediction"
-                                        class="submit-btn"
-                                        disabled={!isMatchOpen}
-                                    >
-                                        {userPrediction
-                                            ? "ACTUALIZAR PRONÓSTICO"
-                                            : "ENVIAR PRONÓSTICO"}
-                                    </button>
-                                )}
-                                <p
-                                    id="feedback-msg"
-                                    class="feedback-msg hidden"
+                            
+                            <div class="score-board">
+                                <input 
+                                    type="number" 
+                                    id="home-score" 
+                                    min="0" 
+                                    max="20" 
+                                    value={userPrediction ? userPrediction.home_score : ''}
+                                    placeholder="-"
+                                    disabled={!userId || !isMatchOpen}
+                                />
+                                <span class="score-separator">:</span>
+                                <input 
+                                    type="number" 
+                                    id="away-score" 
+                                    min="0" 
+                                    max="20" 
+                                    value={userPrediction ? userPrediction.away_score : ''}
+                                    placeholder="-"
+                                     disabled={!userId || !isMatchOpen}
                                 />
                             </div>
+
+                            <div class="team away">
+                                <span class="team-name">{nextMatch.team2}</span>
+                            </div>
                         </div>
-                    ) : (
-                        <div class="no-match">
-                            <p>No hay partidos próximos programados.</p>
+
+                        <!-- GOALSCORERS SECTION -->
+                        <div class="scorers-section">
+                            <h3 class="scorers-title">¿QUIÉN MARCARÁ? (Opcional)</h3>
+                            <p class="scorers-hint">Selecciona las jugadoras del Real Madrid que crees que anotarán.</p>
+                            
+                            <div class="scorers-select-container">
+                                {players.map(player => (
+                                    <div 
+                                        class={`scorer-chip ${userPrediction && userPrediction.scorers && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
+                                        data-player-id={player.id}
+                                        onclick="toggleScorer(this)"
+                                    >
+                                        <span class="player-num">#{player.number}</span>
+                                        <span class="player-name-chip">{player.name.split(' ')[0]}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    )
-                }
+
+                        <div class="action-area">
+                             {!userId ? (
+                                <p class="login-prompt">Debes iniciar sesión para participar</p>
+                            ) : (
+                                <button id="submit-prediction" class="submit-btn" disabled={!isMatchOpen}>
+                                    {userPrediction ? "ACTUALIZAR PRONÓSTICO" : "ENVIAR PRONÓSTICO"}
+                                </button>
+                            )}
+                             <p id="feedback-msg" class="feedback-msg hidden"></p>
+                        </div>
+                    </div>
+                ) : (
+                    <div class="no-match-card">
+                        <p>No hay partidos próximos programados.</p>
+                    </div>
+                )}
             </section>
 
-            <!-- Leaderboard -->
-            <section class="leaderboard-section">
-                <h2 class="section-title">CLASIFICACIÓN GLOBAL</h2>
-                <div class="leaderboard-table">
-                    <div class="table-header">
-                        <span>POS</span>
-                        <span>USUARIO</span>
-                        <span>PUNTOS</span>
+            <!-- RIGHT COLUMN: LEADERBOARD -->
+            <section class="leaderboard-column">
+                <h2 class="column-title">CLASIFICACIÓN TOP 20</h2>
+                <div class="leaderboard-container">
+                    <div class="leaderboard-header">
+                        <span class="th-pos">#</span>
+                        <span class="th-user">USUARIO</span>
+                        <span class="th-pts">PTS</span>
                     </div>
-                    {
-                        leaderboard.length > 0 ? (
-                            leaderboard.map((user, index) => (
-                                <div class="table-row">
-                                    <span class="pos">{index + 1}</span>
-                                    <span class="user">
-                                        Madridista #
-                                        {user.user_id.toString().slice(-4)}
-                                    </span>
-                                    <span class="points">
-                                        {user.total_points || 0}
-                                    </span>
-                                </div>
-                            ))
-                        ) : (
-                            <div class="empty-state">
-                                Se el primero en puntuar!
+                    <div class="leaderboard-list">
+                        {leaderboard.length > 0 ? leaderboard.map((user, index) => (
+                            <div class={`leaderboard-row ${index < 3 ? 'top-3' : ''}`}>
+                                <span class="td-pos">{index + 1}</span>
+                                <span class="td-user">
+                                    <div class="user-avatar-placeholder">{user.user_id.slice(0, 1).toUpperCase()}</div>
+                                    Madridista #{user.user_id.toString().slice(-4)}
+                                </span>
+                                <span class="td-pts">{user.total_points || 0}</span>
                             </div>
-                        )
-                    }
+                        )) : (
+                            <div class="empty-state">
+                                ¡Aún no hay puntuaciones! Sé el primero.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </section>
         </div>
     </div>
 </Layout>
 
+<script is:inline>
+    // Global function for onclick handler
+    function toggleScorer(element) {
+        // Check if disabled (no auth)
+        const submitBtn = document.getElementById('submit-prediction');
+        if (!submitBtn) return; // Not auth
+        
+        element.classList.toggle('selected');
+    }
+</script>
+
 <script>
-    const submitBtn = document.getElementById("submit-prediction");
-    const homeInput = document.getElementById("home-score") as HTMLInputElement;
-    const awayInput = document.getElementById("away-score") as HTMLInputElement;
-    const feedbackMsg = document.getElementById("feedback-msg");
-    const container = document.querySelector(
-        ".teams-score-input",
-    ) as HTMLElement;
+    const submitBtn = document.getElementById('submit-prediction');
+    const homeInput = document.getElementById('home-score') as HTMLInputElement;
+    const awayInput = document.getElementById('away-score') as HTMLInputElement;
+    const feedbackMsg = document.getElementById('feedback-msg');
+    const container = document.querySelector('.teams-container') as HTMLElement;
 
     if (submitBtn && container) {
-        submitBtn.addEventListener("click", async () => {
+        submitBtn.addEventListener('click', async () => {
             const matchId = container.dataset.matchId;
             const homeScore = parseInt(homeInput.value);
             const awayScore = parseInt(awayInput.value);
 
+            // Collect selected scorers
+            const selectedScorers = [];
+            document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
+                const pid = (chip as HTMLElement).dataset.playerId;
+                if(pid) selectedScorers.push(pid);
+            });
+
             if (isNaN(homeScore) || isNaN(awayScore)) {
-                if (feedbackMsg) {
-                    feedbackMsg.textContent =
-                        "Por favor, introduce un resultado válido.";
-                    feedbackMsg.classList.remove("hidden", "success");
-                    feedbackMsg.classList.add("error");
+                if(feedbackMsg) {
+                    feedbackMsg.textContent = "Por favor, introduce un marcador válido.";
+                    feedbackMsg.className = 'feedback-msg error';
                 }
                 return;
             }
@@ -225,29 +227,30 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
             (submitBtn as HTMLButtonElement).disabled = true;
 
             try {
-                const response = await fetch("/api/predictions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        match_id: matchId,
-                        home_score: homeScore,
+                const response = await fetch('/api/predictions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        match_id: matchId, 
+                        home_score: homeScore, 
                         away_score: awayScore,
-                    }),
+                        scorers: selectedScorers
+                    })
                 });
 
                 if (response.ok) {
                     submitBtn.textContent = "¡GUARDADO!";
                     submitBtn.style.background = "#2ecc71";
-                    if (feedbackMsg) {
-                        feedbackMsg.textContent =
-                            "Tu pronóstico se ha guardado correctamente.";
-                        feedbackMsg.classList.remove("hidden", "error");
-                        feedbackMsg.classList.add("success");
+                    submitBtn.style.color = "#fff";
+                    
+                    if(feedbackMsg) {
+                        feedbackMsg.textContent = "Pronóstico guardado correctamente.";
+                        feedbackMsg.className = 'feedback-msg success';
                     }
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
                         (submitBtn as HTMLButtonElement).disabled = false;
-                        submitBtn.style.background = "";
+                        submitBtn.removeAttribute('style'); // Reset styles
                     }, 2000);
                 } else {
                     throw new Error("Error en la petición");
@@ -255,12 +258,10 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
             } catch (error) {
                 console.error(error);
                 submitBtn.textContent = "ERROR";
-                (submitBtn as HTMLButtonElement).disabled = false;
-                if (feedbackMsg) {
-                    feedbackMsg.textContent =
-                        "Ha ocurrido un error. Inténtalo de nuevo.";
-                    feedbackMsg.classList.remove("hidden", "success");
-                    feedbackMsg.classList.add("error");
+                 (submitBtn as HTMLButtonElement).disabled = false;
+                 if(feedbackMsg) {
+                    feedbackMsg.textContent = "Ha ocurrido un error. Inténtalo de nuevo.";
+                    feedbackMsg.className = 'feedback-msg error';
                 }
             }
         });
@@ -269,18 +270,19 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
 
 <style>
     :root {
-        --primary: #0a0e27;
+        --primary: #2b2b2b;
         --accent: #ffde59;
         --text: #ffffff;
-        --success: #2ecc71;
-        --error: #e74c3c;
+        --card-bg: #ffffff;
+        --text-dark: #2b2b2b;
     }
 
     .pronosticos-page {
         padding: 2rem 1rem;
         min-height: 80vh;
-        color: var(--text);
-        font-family: "Poppins", sans-serif;
+        font-family: 'Poppins', sans-serif;
+        max-width: 1200px; /* Wider for 2 cols */
+        margin: 0 auto;
     }
 
     .page-header {
@@ -288,133 +290,216 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
         margin-bottom: 3rem;
     }
 
-    .page-title {
-        font-family: "Archivo Black", sans-serif;
+    .section-title {
+        /* Matches global site title style */
+        font-family: 'Permanent Marker', cursive;
         font-size: 2.5rem;
         color: var(--accent);
-        text-transform: uppercase;
         margin: 0;
+        text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
     }
 
     .page-subtitle {
-        color: #a0a0a0;
+        color: #ddd;
         font-size: 1rem;
         margin-top: 0.5rem;
         text-transform: uppercase;
         letter-spacing: 2px;
     }
 
-    .auth-controls {
-        margin-top: 1rem;
+    /* GRID LAYOUT FOR DESKTOP */
+    .grid-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
     }
 
-    .login-btn {
-        background: var(--accent);
-        color: var(--primary);
-        border: none;
-        padding: 0.5rem 1.5rem;
-        font-weight: 700;
-        border-radius: 4px;
-        cursor: pointer;
-        text-transform: uppercase;
+    @media (min-width: 900px) {
+        .grid-layout {
+            grid-template-columns: 1.5fr 1fr; /* Match card slightly wider */
+            align-items: start;
+        }
     }
 
-    .content-container {
-        max-width: 600px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 4rem;
-    }
-
-    /* Match Card */
-    .match-card {
-        background: #1a1f3c;
-        border-radius: 12px;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .match-info {
-        margin-bottom: 2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .competition {
-        color: var(--accent);
-        font-weight: 700;
-        text-transform: uppercase;
+    .column-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.8rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--accent);
+        padding-left: 1rem;
         letter-spacing: 1px;
     }
 
-    .date {
-        color: #8892b0;
-        font-size: 0.9rem;
+    /* PREDICTION CARD */
+    .match-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        color: var(--text-dark);
+        border: 1px solid #eee;
     }
 
-    .teams-score-input {
+    .no-match-card {
+        background: rgba(255,255,255,0.1);
+        padding: 3rem;
+        text-align: center;
+        border-radius: 8px;
+        color: #aaa;
+    }
+
+    .match-header {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+
+    .competition-badge {
+        background: var(--primary);
+        color: var(--accent);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    .match-date {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: capitalize;
+    }
+
+    .teams-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 2rem;
     }
 
     .team {
         flex: 1;
-        font-weight: 600;
-        font-size: 1.1rem;
+        font-weight: 800;
+        font-size: 1.2rem;
         text-transform: uppercase;
+        color: var(--primary);
     }
+    
+    .team.home { text-align: right; margin-right: 1rem; }
+    .team.away { text-align: left; margin-left: 1rem; }
 
-    .team.home {
-        text-align: right;
-        margin-right: 1rem;
-    }
-    .team.away {
-        text-align: left;
-        margin-left: 1rem;
-    }
-
-    .score-inputs {
+    .score-board {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        background: #0f132a;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
+        border: 1px solid #eee;
     }
 
-    .score-inputs input {
-        width: 50px;
-        height: 50px;
+    .score-board input {
+         width: 60px;
+        height: 60px;
         text-align: center;
-        background: transparent;
-        border: 2px solid #2d3452;
-        color: white;
-        font-size: 1.5rem;
+        background: white;
+        border: 2px solid #ddd;
+        color: var(--primary);
+        font-size: 1.8rem;
         font-weight: 700;
         border-radius: 4px;
-        transition: border-color 0.2s;
+        transition: all 0.2s;
+        /* Remove arrows from number input */
+        -moz-appearance: textfield;
+    }
+    .score-board input::-webkit-outer-spin-button,
+    .score-board input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
 
-    .score-inputs input:focus {
+    .score-board input:focus {
         border-color: var(--accent);
         outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.2);
     }
 
-    .score-inputs input:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .separator {
-        font-size: 1.5rem;
+    .score-separator {
+        font-size: 2rem;
         font-weight: 700;
-        color: #555;
+        color: #ccc;
+    }
+
+    /* GOALSCORERS */
+    .scorers-section {
+        margin-top: 2rem;
+        border-top: 1px solid #eee;
+        padding-top: 1.5rem;
+    }
+
+    .scorers-title {
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 0.2rem;
+        color: var(--primary);
+    }
+
+    .scorers-hint {
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 1rem;
+    }
+
+    .scorers-select-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+        padding-bottom: 0.5rem;
+        /* Custom scrollbar */
+        scrollbar-width: thin;
+        scrollbar-color: #ddd #f1f1f1;
+    }
+
+    .scorer-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.4rem 0.8rem;
+        background: #f1f1f1;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        user-select: none;
+    }
+
+    .scorer-chip:hover {
+        background: #e0e0e0;
+    }
+
+    .scorer-chip.selected {
+        background: var(--primary);
+        color: var(--accent);
+        border-color: var(--primary);
+    }
+
+    .player-num {
+        font-weight: 700;
+        opacity: 0.7;
+    }
+
+    /* ACTIONS */
+    .action-area {
+        margin-top: 2rem;
+        text-align: center;
     }
 
     .submit-btn {
@@ -425,121 +510,131 @@ const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if ne
         padding: 1rem;
         font-weight: 800;
         text-transform: uppercase;
-        border-radius: 6px;
+        border-radius: 50px; /* Rounded button like header */
         cursor: pointer;
-        transition:
-            transform 0.2s,
-            background 0.2s;
+        transition: transform 0.2s, background 0.2s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        font-family: 'Archivo Black', sans-serif;
     }
 
     .submit-btn:hover:not(:disabled) {
         transform: translateY(-2px);
         background: #ffd700;
+        box-shadow: 0 6px 10px rgba(0,0,0,0.15);
     }
-
+    
     .submit-btn:disabled {
-        background: #333;
-        color: #666;
+        background: #ccc;
+        color: #888;
         cursor: not-allowed;
+        box-shadow: none;
     }
 
     .feedback-msg {
         margin-top: 1rem;
+        font-weight: 600;
         font-size: 0.9rem;
     }
-    .feedback-msg.success {
-        color: var(--success);
-    }
-    .feedback-msg.error {
-        color: var(--error);
-    }
-    .feedback-msg.hidden {
-        display: none;
+    .feedback-msg.success { color: #2ecc71; }
+    .feedback-msg.error { color: #e74c3c; }
+    .hidden { display: none; }
+
+    /* LEADERBOARD CARD */
+    .leaderboard-column {
+        color: var(--text);
     }
 
-    /* Leaderboard */
-    .leaderboard-section {
-        background: #1a1f3c;
-        border-radius: 12px;
-        padding: 1.5rem;
+    .leaderboard-container {
+        background: var(--primary); /* Dark bg for leaderboard */
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
-    .section-title {
-        color: white;
-        font-size: 1.2rem;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        border-bottom: 2px solid var(--accent);
-        display: inline-block;
-        padding-bottom: 0.5rem;
-    }
-
-    .leaderboard-section {
-        text-align: center;
-    }
-
-    .leaderboard-table {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .table-header,
-    .table-row {
+    .leaderboard-header {
         display: grid;
-        grid-template-columns: 50px 1fr 80px;
-        padding: 0.8rem;
+        grid-template-columns: 50px 1fr 60px;
+        background: rgba(0,0,0,0.3);
+        padding: 1rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #aaa;
+    }
+
+    .leaderboard-row {
+        display: grid;
+        grid-template-columns: 50px 1fr 60px;
+        padding: 1rem;
         align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        font-size: 0.95rem;
+    }
+    
+    .leaderboard-row:last-child {
+        border-bottom: none;
     }
 
-    .table-header {
-        font-weight: 700;
-        color: #8892b0;
+    .top-3 {
+        background: rgba(255, 222, 89, 0.05);
+    }
+    
+    .top-3 .td-pos {
+        color: var(--accent);
+        font-size: 1.2rem;
+        font-weight: 900;
+    }
+
+    .td-user {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .user-avatar-placeholder {
+        width: 30px;
+        height: 30px;
+        background: #444;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 0.8rem;
-        letter-spacing: 1px;
-    }
-
-    .table-row {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 6px;
-    }
-
-    .table-row:nth-child(2) {
-        /* 1st place after header */
-        background: rgba(255, 222, 89, 0.1);
-        border: 1px solid rgba(255, 222, 89, 0.3);
-    }
-
-    .pos {
         font-weight: 700;
+    }
+    
+    .top-3 .user-avatar-placeholder {
+        background: var(--accent);
+        color: var(--primary);
+    }
+
+    .td-pts {
+        font-weight: 700;
+        text-align: center;
         color: var(--accent);
     }
 
-    .user {
-        text-align: left;
-        font-weight: 500;
+    .login-prompt {
+        color: #888;
+        font-style: italic;
     }
 
-    .points {
+    .login-btn {
+        background: var(--accent);
+        color: var(--primary);
+        border: none;
+        padding: 0.5rem 1.5rem;
         font-weight: 700;
-        background: rgba(255, 255, 255, 0.1);
-        padding: 2px 8px;
-        border-radius: 4px;
-        justify-self: center;
+        border-radius: 50px;
+        cursor: pointer;
+        text-transform: uppercase; 
     }
 
-    @media (max-width: 480px) {
-        .teams-score-input {
+    @media (max-width: 600px) {
+        .teams-container {
             flex-direction: column;
             gap: 1rem;
         }
-        .team {
-            text-align: center !important;
-            margin: 0 !important;
-        }
-        .score-inputs {
-            width: 100%;
-            justify-content: center;
-        }
+        .team { text-align: center !important; margin: 0 !important; }
+        .score-board { width: 100%; justify-content: center; }
     }
 </style>
