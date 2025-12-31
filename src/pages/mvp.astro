@@ -18,31 +18,25 @@ let isVotingOpen = false;
 
 if (lastMatch) {
     const matchDate = new Date(lastMatch.date);
-    const timeSinceMatch = now.getTime() - matchDate.getTime();
-    const hoursFromMatch = timeSinceMatch / (1000 * 60 * 60);
-    
-    // Voting opens 2 hours after match start and stays open for 24 hours
-    // [TESTING] Forced open
-    targetMatch = lastMatch;
-    isVotingOpen = true; 
-    /*
-    if (hoursFromMatch >= 2 && hoursFromMatch <= 26) {
+    const msSince = now.getTime() - matchDate.getTime();
+    const hoursSince = msSince / (1000 * 60 * 60);
+
+    if (hoursSince < 2) {
+        // Less than 2 hours since start: Locked
+        targetMatch = lastMatch;
+        isVotingOpen = false;
+    } else if (hoursSince >= 2 && hoursSince <= 24) {
+        // Between 2h and 24h: Open
         targetMatch = lastMatch;
         isVotingOpen = true;
-    } else if (hoursFromMatch > 26) {
-        // After 24h voting window, show next match (locked)
+    } else {
+        // More than 24h: Show next match (Locked)
         targetMatch = nextMatch;
         isVotingOpen = false;
-    } else {
-        // Before 2h window, show last match but locked
-        targetMatch = lastMatch;
-        isVotingOpen = false;
     }
-    */
-} else if (nextMatch) {
-    // No previous matches, show next match (locked)
+} else {
     targetMatch = nextMatch;
-    isVotingOpen = true; // Forced open for testing even if next match
+    isVotingOpen = false;
 }
 
 // Prepare match assets
@@ -742,11 +736,11 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         border-radius: 12px;
         padding: 0.8rem;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: box-shadow 0.2s; /* Removed transform */
         border-left: 4px solid var(--accent); /* Default ready state */
         min-width: 0;
     }
-    .rating-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+    .rating-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.08); } /* Removed transform */
 
     .rating-player-info { display: contents; } /* Use grid tracks directly */
     
@@ -769,9 +763,10 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         font-weight: 800; 
         text-transform: uppercase; 
         color: #333;
-        white-space: normal;
+        white-space: nowrap; /* Prevent break */
+        overflow: hidden;
+        text-overflow: ellipsis;
         line-height: 1.1;
-        word-break: break-word; /* Ensure clear wrapping */
         padding-right: 0.5rem; /* Space between name and buttons */
     }
 

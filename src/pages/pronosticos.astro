@@ -6,36 +6,29 @@ import { SQUAD } from "../consts/squad";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
 import { getPlayerImage, getShield, getCompetitionLogo } from "../lib/assetHelpers";
 
-// 1. Find Next Match
-// 1. Find Matches
+// 1. Find Current/Next Match (Visible until 2 hours after start)
 const now = new Date();
-const nextMatchIndex = CALENDAR.findIndex((m) => new Date(m.date) >= now); 
+const nextMatchIndex = CALENDAR.findIndex((m) => {
+    const mDate = new Date(m.date);
+    // Match is considered "active/next" until 2 hours after it starts
+    const mEnd = new Date(mDate.getTime() + 2 * 60 * 60 * 1000); 
+    return mEnd > now;
+});
+
 const nextMatch = nextMatchIndex !== -1 ? CALENDAR[nextMatchIndex] : null;
 const previousMatch = nextMatchIndex > 0 ? CALENDAR[nextMatchIndex - 1] : null;
 
-// Determine if Match is Open for Logic: 
-// Open: 2 hours after PREVIOUS match ends (approx 4h after start) -> Close: 5 mins before CURRENT match starts
 let isMatchOpen = false;
 
 if (nextMatch) {
-    const nextMatchDate = new Date(nextMatch.date);
-    const msUntilMatch = nextMatchDate.getTime() - now.getTime();
+    const matchDate = new Date(nextMatch.date);
+    const msUntilMatch = matchDate.getTime() - now.getTime();
     
-    // Check closing condition: Must be > 5 mins (300000ms) before match
+    // Lock 5 minutes before match starts
     if (msUntilMatch > 300000) {
-        if (previousMatch) {
-            // Check opening condition: 2 hours after previous match ENDS
-            // Assuming match lasts ~2 hours, so 4 hours after start
-            const prevMatchDate = new Date(previousMatch.date);
-            const msSincePrevMatchStart = now.getTime() - prevMatchDate.getTime();
-            // 4 hours = 4 * 60 * 60 * 1000 = 14400000 ms
-            if (msSincePrevMatchStart > 14400000) {
-                isMatchOpen = true;
-            }
-        } else {
-            // No previous match (first of season), it's open if before cutoff
-            isMatchOpen = true;
-        }
+        isMatchOpen = true;
+    } else {
+        isMatchOpen = false;
     }
 }
 
