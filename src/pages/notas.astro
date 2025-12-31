@@ -13,24 +13,30 @@ const competitionLogos = import.meta.glob<{ default: ImageMetadata }>('/src/asse
 // Helpers
 async function getPlayerImage(id: string) {
     const path = `/src/assets/jugadoras/${id}.png`;
-    if (playerImages[path]) {
-        const mod = await playerImages[path]();
+    const imageLoader = playerImages[path];
+    if (imageLoader) {
+        const mod = await imageLoader();
         return mod.default.src;
     }
     return '/assets/img/default-player.png';
 }
 
-const getShield = async (teamName) => {
+const getShield = async (teamName: string) => {
     const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
     let path = `/src/assets/escudos/${slug}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    let loader = teamShields[path];
+    if (loader) return (await loader()).default.src;
+    
     path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    loader = teamShields[path];
+    if (loader) return (await loader()).default.src;
+    
     if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
     return '';
 };
 
-const getCompetitionLogo = async (compName) => {
+const getCompetitionLogo = async (compName: string) => {
     const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     let path = `/src/assets/competiciones/${slug}.png`;
     if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
@@ -38,7 +44,8 @@ const getCompetitionLogo = async (compName) => {
     else if (slug.includes('copa')) path = '/src/assets/competiciones/copa_de_la_reina.png';
     else if (slug.includes('supercopa')) path = '/src/assets/competiciones/supercopa_de_espana.png';
 
-    if (competitionLogos[path]) return (await competitionLogos[path]()).default.src;
+    const loader = competitionLogos[path];
+    if (loader) return (await loader()).default.src;
     return '';
 };
 
@@ -55,7 +62,8 @@ const compLogo = lastMatch ? await getCompetitionLogo(lastMatch.competition) : '
 // 2. Fetch User's Previous Votes (if any)
 const { userId } = Astro.locals.auth();
 let existingRatings: Record<string, number> = {};
-let existingMVP = null;
+let existingMVP: string | null = null;
+const squad: any[] = SQUAD;
 
 if (userId && lastMatch) {
     try {
@@ -83,7 +91,7 @@ if (userId && lastMatch) {
 }
 
 // Prepare squad details with images
-const squadWithImages = await Promise.all(SQUAD.map(async (p) => ({
+const squadWithImages = await Promise.all(squad.map(async (p) => ({
     ...p,
     image: await getPlayerImage(p.id)
 })));
@@ -257,11 +265,16 @@ const squadWithImages = await Promise.all(SQUAD.map(async (p) => ({
     }
 </script>
 
-<script>
+<script lang="ts">
     const form = document.getElementById('ratings-form');
     const submitBtn = document.getElementById('submit-ratings');
     const feedbackMsg = document.getElementById('form-feedback');
     const container = document.querySelector('.content-container') as HTMLElement;
+
+    interface RatingSubmission {
+        player_id: string | undefined;
+        rating: number;
+    }
 
     if (form && submitBtn && container) {
         form.addEventListener('submit', async (e) => {
@@ -271,7 +284,7 @@ const squadWithImages = await Promise.all(SQUAD.map(async (p) => ({
             const mvpInput = document.getElementById('mvp-input') as HTMLInputElement;
             const mvpId = mvpInput ? mvpInput.value : null;
             
-            const ratings = [];
+            const ratings: RatingSubmission[] = [];
             document.querySelectorAll('.rating-input').forEach((input) => {
                 const i = input as HTMLInputElement;
                 const val = parseInt(i.value);

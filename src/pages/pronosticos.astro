@@ -17,26 +17,43 @@ const nextMatchIndex = CALENDAR.find((m) => new Date(m.date) >= now);
 const nextMatch = nextMatchIndex || null;
 
 // Helpers
+interface LeaderboardEntry {
+    user_id: string;
+    total_points: number;
+}
+
+interface UserPrediction {
+    home_score: number;
+    away_score: number;
+    scorers: string[];
+}
+
 async function getPlayerImage(id: string) {
     const path = `/src/assets/jugadoras/${id}.png`;
-    if (playerImages[path]) {
-        const mod = await playerImages[path]();
+    const imageLoader = playerImages[path];
+    if (imageLoader) {
+        const mod = await imageLoader();
         return mod.default.src;
     }
     return '/assets/img/default-player.png';
 }
 
-const getShield = async (teamName) => {
+const getShield = async (teamName: string) => {
     const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
     let path = `/src/assets/escudos/${slug}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    let loader = teamShields[path];
+    if (loader) return (await loader()).default.src;
+    
     path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    loader = teamShields[path];
+    if (loader) return (await loader()).default.src;
+    
     if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
     return '';
 };
 
-const getCompetitionLogo = async (compName) => {
+const getCompetitionLogo = async (compName: string) => {
     const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     let path = `/src/assets/competiciones/${slug}.png`;
     if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
@@ -44,14 +61,15 @@ const getCompetitionLogo = async (compName) => {
     else if (slug.includes('copa')) path = '/src/assets/competiciones/copa_de_la_reina.png';
     else if (slug.includes('supercopa')) path = '/src/assets/competiciones/supercopa_de_espana.png';
 
-    if (competitionLogos[path]) return (await competitionLogos[path]()).default.src;
+    const loader = competitionLogos[path];
+    if (loader) return (await loader()).default.src;
     return '';
 };
 
 // 2. Fetch Data
 const { userId } = Astro.locals.auth();
-let userPrediction = null;
-let leaderboard = [];
+let userPrediction: UserPrediction | null = null;
+let leaderboard: LeaderboardEntry[] = [];
 
 if (userId && nextMatch) {
     try {
@@ -60,14 +78,24 @@ if (userId && nextMatch) {
             args: [userId, nextMatch.id],
         });
         if (result.rows.length > 0) {
-            userPrediction = result.rows[0];
-            if (typeof userPrediction.scorers === 'string') {
+            const row = result.rows[0];
+            let parsedScorers: string[] = [];
+
+            if (typeof row.scorers === 'string') {
                 try {
-                    userPrediction.scorers = JSON.parse(userPrediction.scorers);
+                    parsedScorers = JSON.parse(row.scorers);
                 } catch (e) {
-                    userPrediction.scorers = [];
+                    parsedScorers = [];
                 }
+            } else if (Array.isArray(row.scorers)) {
+                parsedScorers = row.scorers as string[];
             }
+            
+            userPrediction = {
+                home_score: Number(row.home_score),
+                away_score: Number(row.away_score),
+                scorers: parsedScorers
+            };
         }
     } catch (e) {
         console.error("Error fetching user prediction", e);
@@ -79,7 +107,10 @@ try {
         sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id ORDER BY total_points DESC LIMIT 20",
         args: [],
     });
-    leaderboard = result.rows;
+    leaderboard = result.rows.map((row: any) => ({
+        user_id: String(row.user_id),
+        total_points: Number(row.total_points)
+    }));
 } catch(e) {
     console.error("Error fetching leaderboard", e);
 }
@@ -95,7 +126,7 @@ const YOUTH_PLAYERS = [
     { id: "iris_ashley_santiago", name: "Iris Ashley", number: 43, image: "" }
 ];
 
-const fullSquad = [...SQUAD, ...YOUTH_PLAYERS];
+const fullSquad: any[] = [...SQUAD, ...YOUTH_PLAYERS];
 
 const playersWithImages = await Promise.all(fullSquad.sort((a, b) => a.number - b.number).map(async (p) => ({
     ...p,
@@ -211,7 +242,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                 <div class="scorers-select-container">
                                 {playersWithImages.map(player => (
                                     <div 
-                                        class={`scorer-chip ${userPrediction && userPrediction.scorers && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
+                                        class={`scorer-chip ${userPrediction && userPrediction.scorers && Array.isArray(userPrediction.scorers) && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
                                         data-player-id={player.id}
                                         onclick="toggleScorer(this)"
                                         title={player.name}
@@ -337,7 +368,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 </script>
 
-<script>
+<script lang="ts">
     const submitBtn = document.getElementById('submit-prediction');
     const homeInput = document.getElementById('home-score') as HTMLInputElement;
     const awayInput = document.getElementById('away-score') as HTMLInputElement;
@@ -351,7 +382,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             const awayScore = parseInt(awayInput.value);
 
             // Collect selected scorers
-            const selectedScorers = [];
+            const selectedScorers: string[] = [];
             document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
                 const pid = (chip as HTMLElement).dataset.playerId;
                 if(pid) selectedScorers.push(pid);
