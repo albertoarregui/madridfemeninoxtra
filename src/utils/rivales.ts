@@ -28,37 +28,6 @@ export const cleanApiValue = (value: any): any => {
     return value;
 };
 
-import { dbMain } from "../lib/turso";
-
-export async function getRivalInfo(rivalId: string | number): Promise<any> {
-    try {
-        const query = `
-            SELECT 
-                id_club,
-                nombre,
-                logo_url,
-                estadio
-            FROM 
-                clubes
-            WHERE 
-                id_club = ?
-        `;
-
-        const result = await dbMain.execute({
-            sql: query,
-            args: [rivalId],
-        });
-
-        if (result.rows.length > 0) {
-            return result.rows[0];
-        }
-        return null;
-    } catch (error) {
-        console.error(`Error al obtener información del rival con ID ${rivalId}:`, error);
-        return null;
-    }
-}
-
 export async function fetchRivalsDirectly(): Promise<any[]> {
     try {
         const { createClient } = await import('@libsql/client');

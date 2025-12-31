@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { dbUser } from "../../lib/turso";
+import { turso } from "../../lib/turso";
 
 export const POST: APIRoute = async ({ request, locals }) => {
     const { userId } = locals.auth();
@@ -20,20 +20,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
         const scorersJson = Array.isArray(scorers) ? JSON.stringify(scorers) : null;
 
         // Check if prediction exists
-        const existing = await dbUser.execute({
+        const existing = await turso.execute({
             sql: "SELECT id FROM predictions WHERE user_id = ? AND match_id = ?",
             args: [userId, match_id],
         });
 
         if (existing.rows.length > 0) {
             // Update
-            await dbUser.execute({
+            await turso.execute({
                 sql: "UPDATE predictions SET home_score = ?, away_score = ?, scorers = ? WHERE user_id = ? AND match_id = ?",
                 args: [home_score, away_score, scorersJson, userId, match_id],
             });
         } else {
             // Insert
-            await dbUser.execute({
+            await turso.execute({
                 sql: "INSERT INTO predictions (user_id, match_id, home_score, away_score, scorers) VALUES (?, ?, ?, ?, ?)",
                 args: [userId, match_id, home_score, away_score, scorersJson],
             });
@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        const result = await dbUser.execute({
+        const result = await turso.execute({
             sql: "SELECT home_score, away_score, scorers FROM predictions WHERE user_id = ? AND match_id = ?",
             args: [userId, matchId],
         });

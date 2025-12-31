@@ -1,20 +1,19 @@
-import { dbMain } from "../lib/turso";
-
-export async function getRivalRecords(slug: string) {
+export async function fetchRivalRecords(rivalId: string | number): Promise<any> {
     try {
-        const client = dbMain;
+        const { createClient } = await import('@libsql/client');
 
-        // Assuming rivalId needs to be derived from slug here,
-        // but the instruction does not provide this logic.
-        // For now, we'll keep rivalId as a placeholder or assume it's available
-        // if the original function's logic is being adapted.
-        // If 'slug' is meant to replace 'rivalId' directly in queries,
-        // then 'rivalId' should be replaced with 'slug' in the args arrays.
-        // For the purpose of this edit, I will assume 'rivalId' is still needed
-        // and would be defined based on 'slug' in a complete implementation.
-        // As the instruction only provides a partial function body,
-        // I will keep the console.log as is and assume 'rivalId' would be defined.
-        const rivalId = slug; // Placeholder: You might need to fetch rivalId from slug
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas');
+            return null;
+        }
+
+        const db = createClient({
+            url: url,
+            authToken: authToken,
+        });
 
         console.log('Fetching rival records for rival ID:', rivalId);
 
@@ -25,7 +24,7 @@ export async function getRivalRecords(slug: string) {
         let mostRepeated = null;
 
         try {
-            const topScorerResult = await client.execute({
+            const topScorerResult = await db.execute({
                 sql: `
                     SELECT 
                         j.nombre,
@@ -49,7 +48,7 @@ export async function getRivalRecords(slug: string) {
 
         // Biggest win
         try {
-            const biggestWinResult = await client.execute({
+            const biggestWinResult = await db.execute({
                 sql: `
                     SELECT 
                         p.goles_rm, 
@@ -71,7 +70,7 @@ export async function getRivalRecords(slug: string) {
         }
 
         try {
-            const biggestLossResult = await client.execute({
+            const biggestLossResult = await db.execute({
                 sql: `
                     SELECT 
                         p.goles_rm, 
@@ -93,7 +92,7 @@ export async function getRivalRecords(slug: string) {
         }
 
         try {
-            const mostRepeatedResult = await client.execute({
+            const mostRepeatedResult = await db.execute({
                 sql: `
                     SELECT 
                         p.goles_rm || '-' || p.goles_rival as resultado, 
@@ -113,7 +112,7 @@ export async function getRivalRecords(slug: string) {
         }
 
         try {
-            const mostAppearancesResult = await client.execute({
+            const mostAppearancesResult = await db.execute({
                 sql: `
                     SELECT 
                         j.nombre,

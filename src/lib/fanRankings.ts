@@ -1,11 +1,11 @@
-import { dbUser } from "./turso";
+import { turso } from "./turso";
 import { CALENDAR } from "../consts/calendar";
 
 export async function getFanRankings() {
     try {
         // 1. Fetch Raw Data
-        const ratingsResult = await dbUser.execute("SELECT * FROM ratings");
-        const mvpResult = await dbUser.execute("SELECT * FROM mvp_votes");
+        const ratingsResult = await turso.execute("SELECT * FROM ratings");
+        const mvpResult = await turso.execute("SELECT * FROM mvp_votes");
 
         const ratings = ratingsResult.rows as any[];
         const mvpVotes = mvpResult.rows as any[];

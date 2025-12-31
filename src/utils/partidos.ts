@@ -35,8 +35,20 @@ export function formatGameDate(dateString: string | null | undefined): string {
 
 export async function fetchGamesDirectly(): Promise<any[]> {
     try {
-        const { dbMain } = await import('../lib/turso');
-        const client = dbMain;
+        const { createClient } = await import('@libsql/client');
+
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas');
+            return [];
+        }
+
+        const client = createClient({
+            url: url,
+            authToken: authToken,
+        });
 
         const query = `
             SELECT
@@ -182,8 +194,16 @@ function logDebug(message: string) {
 export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
     logDebug(`Fetching lineups for matchId: ${matchId}`);
     try {
-        const { dbMain } = await import('../lib/turso');
-        const client = dbMain;
+        const { createClient } = await import('@libsql/client');
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            logDebug("Missing credentials");
+            return [];
+        }
+
+        const client = createClient({ url, authToken });
 
         // We try to select dorsal if it exists in alineaciones, otherwise just player info
         const query = `

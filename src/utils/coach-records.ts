@@ -1,19 +1,23 @@
-import { dbMain } from "../lib/turso";
-
-export async function getCoachRecords(slug: string) {
+export async function fetchCoachRecords(coachId: string | number): Promise<any> {
     try {
-        const client = dbMain;
+        const { createClient } = await import('@libsql/client');
 
-        // The original code used 'coachId'. If 'slug' is meant to replace 'coachId' directly in queries,
-        // you might need to rename 'coachId' to 'slug' in the SQL args, or derive 'coachId' from 'slug'.
-        // For now, assuming 'coachId' is still the variable to be used in the queries,
-        // but its origin from 'slug' is not specified in the instruction.
-        // If 'slug' is the actual ID to be used, replace 'coachId' with 'slug' in the args arrays below.
-        const coachId = slug; // Placeholder: assuming slug is the coachId for now based on context.
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.error('Credenciales de Turso no configuradas');
+            return null;
+        }
+
+        const db = createClient({
+            url: url,
+            authToken: authToken,
+        });
 
         console.log('Fetching coach records for coach ID:', coachId);
 
-        const mostFacedResult = await client.execute({
+        const mostFacedResult = await db.execute({
             sql: `
                 SELECT 
                     CASE 
@@ -34,7 +38,7 @@ export async function getCoachRecords(slug: string) {
         });
         console.log('Most faced:', mostFacedResult.rows[0]);
 
-        const mostWinsResult = await client.execute({
+        const mostWinsResult = await db.execute({
             sql: `
                 SELECT 
                     CASE 
@@ -55,7 +59,7 @@ export async function getCoachRecords(slug: string) {
         });
         console.log('Most wins:', mostWinsResult.rows[0]);
 
-        const mostDrawsResult = await client.execute({
+        const mostDrawsResult = await db.execute({
             sql: `
                 SELECT 
                     CASE 
@@ -76,7 +80,7 @@ export async function getCoachRecords(slug: string) {
         });
         console.log('Most draws:', mostDrawsResult.rows[0]);
 
-        const biggestWinResult = await client.execute({
+        const biggestWinResult = await db.execute({
             sql: `
                 SELECT 
                     CASE 
@@ -98,7 +102,7 @@ export async function getCoachRecords(slug: string) {
         });
         console.log('Biggest win:', biggestWinResult.rows[0]);
 
-        const biggestLossResult = await client.execute({
+        const biggestLossResult = await db.execute({
             sql: `
                 SELECT 
                     CASE 
@@ -120,7 +124,7 @@ export async function getCoachRecords(slug: string) {
         });
         console.log('Biggest loss:', biggestLossResult.rows[0]);
 
-        const mostRepeatedResult = await client.execute({
+        const mostRepeatedResult = await db.execute({
             sql: `
                 SELECT p.goles_rm || '-' || p.goles_rival as resultado, COUNT(*) as veces
                 FROM partidos p

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { dbUser } from "../../lib/turso";
+import { turso } from "../../lib/turso";
 
 export const POST: APIRoute = async ({ request, locals }) => {
     const { userId } = locals.auth();
@@ -24,18 +24,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
         // 1. Save MVP
         if (mvp_player_id) {
-            const currentMVP = await dbUser.execute({
+            const existingMVP = await turso.execute({
                 sql: "SELECT id FROM mvp_votes WHERE user_id = ? AND match_id = ?",
                 args: [userId, match_id],
             });
 
-            if (currentMVP.rows.length > 0) {
-                await dbUser.execute({
+            if (existingMVP.rows.length > 0) {
+                await turso.execute({
                     sql: "UPDATE mvp_votes SET player_id = ? WHERE user_id = ? AND match_id = ?",
                     args: [mvp_player_id, userId, match_id],
                 });
             } else {
-                await dbUser.execute({
+                await turso.execute({
                     sql: "INSERT INTO mvp_votes (user_id, match_id, player_id) VALUES (?, ?, ?)",
                     args: [userId, match_id, mvp_player_id],
                 });
@@ -46,13 +46,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         if (Array.isArray(ratings)) {
             for (const r of ratings) {
                 const { player_id, rating } = r;
-                const currentRatings = await dbUser.execute({
+                const existingRating = await turso.execute({
                     sql: "SELECT id FROM ratings WHERE user_id = ? AND match_id = ? AND player_id = ?",
                     args: [userId, match_id, player_id],
                 });
 
-                if (currentRatings.rows.length > 0) {
-                    await dbUser.execute({
+                if (existingRating.rows.length > 0) {
+                    await turso.execute({
                         sql: "UPDATE ratings SET rating = ? WHERE user_id = ? AND match_id = ? AND player_id = ?",
                         args: [rating, userId, match_id, player_id],
                     });
