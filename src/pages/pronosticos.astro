@@ -39,8 +39,6 @@ const getShield = async (teamName) => {
 const getCompetitionLogo = async (compName) => {
     const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     let path = `/src/assets/competiciones/${slug}.png`;
-    // Map specific names if needed or fuzzy match
-    // Check known files: liga_f.png, uwcl.png, copa_de_la_reina.png, supercopa_de_espana.png
     if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
     else if (slug.includes('uwcl') || slug.includes('champions')) path = '/src/assets/competiciones/uwcl.png';
     else if (slug.includes('copa')) path = '/src/assets/competiciones/copa_de_la_reina.png';
@@ -91,7 +89,15 @@ const matchDate = nextMatch ? new Date(nextMatch.date) : new Date();
 const formattedDate = matchDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
 // Prepare assets
-const playersWithImages = await Promise.all(SQUAD.sort((a, b) => a.number - b.number).map(async (p) => ({
+const YOUTH_PLAYERS = [
+    { id: "irune_dorado", name: "Irune Dorado", number: 28, image: "" },
+    { id: "silvia_cristobal", name: "Silvia Cristóbal", number: 29, image: "" },
+    { id: "iris_ashley_santiago", name: "Iris Ashley", number: 43, image: "" }
+];
+
+const fullSquad = [...SQUAD, ...YOUTH_PLAYERS];
+
+const playersWithImages = await Promise.all(fullSquad.sort((a, b) => a.number - b.number).map(async (p) => ({
     ...p,
     image: await getPlayerImage(p.id)
 })));
@@ -104,14 +110,15 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
 <Layout title="La Porra | Madrid Femenino Xtra">
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pronosticos-page">
-        <header class="page-header text-center mb-12">
-            <h1 class="page-title">LA PORRA</h1>
-             <p class="content-h2">
+        <header class="text-center mb-12">
+            <!-- Using global page-title style, forcing visible color -->
+            <h1 class="page-title" style="color: var(--text-primary);">LA PORRA</h1>
+             <p class="content-h2-center mx-auto max-w-2xl">
                 Adivina el resultado del próximo partido y gana puntos para subir en la clasificación.
             </p>
-             <div class="auth-controls mt-6">
+             <div class="auth-controls mt-6 flex justify-center">
                 <SignedOut>
-                    <SignInButton mode="modal" as="button" class="login-btn">
+                    <SignInButton mode="modal" as="button" class="header-login-btn">
                         INICIAR SESIÓN
                     </SignInButton>
                 </SignedOut>
@@ -146,26 +153,31 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                 <span class="team-name">{nextMatch.team1}</span>
                             </div>
                             
-                            <div class="score-board">
-                                <input 
-                                    type="number" 
-                                    id="home-score" 
-                                    min="0" 
-                                    max="20" 
-                                    value={userPrediction ? userPrediction.home_score : ''}
-                                    placeholder="" 
-                                    disabled={!userId || !isMatchOpen}
-                                />
+                            <!-- Score inputs with hover container ref -->
+                            <div class="score-board-container">
+                                <div class="score-input-wrapper">
+                                    <input 
+                                        type="number" 
+                                        id="home-score" 
+                                        min="0" 
+                                        max="20" 
+                                        value={userPrediction ? userPrediction.home_score : ''}
+                                        placeholder="" 
+                                        disabled={!userId || !isMatchOpen}
+                                    />
+                                </div>
                                 <span class="score-separator">:</span>
-                                <input 
-                                    type="number" 
-                                    id="away-score" 
-                                    min="0" 
-                                    max="20" 
-                                    value={userPrediction ? userPrediction.away_score : ''}
-                                    placeholder=""
-                                     disabled={!userId || !isMatchOpen}
-                                />
+                                <div class="score-input-wrapper">
+                                    <input 
+                                        type="number" 
+                                        id="away-score" 
+                                        min="0" 
+                                        max="20" 
+                                        value={userPrediction ? userPrediction.away_score : ''}
+                                        placeholder=""
+                                        disabled={!userId || !isMatchOpen}
+                                    />
+                                </div>
                             </div>
 
                             <div class="team away">
@@ -191,7 +203,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                         </div>
                                         <div class="chip-info">
                                             <span class="player-num">#{player.number}</span>
-                                            <span class="player-name-chip">{player.name.split(' ')[0]}</span>
+                                            <span class="player-name-chip">{player.name}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -221,26 +233,38 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                 <div class="leaderboard-container">
                     <div class="card-title-overlay">CLASIFICACIÓN</div>
                     
-                    <div class="leaderboard-header">
-                        <span class="th-pos">#</span>
-                        <span class="th-user">USUARIO</span>
-                        <span class="th-pts">PTS</span>
-                    </div>
-                    <div class="leaderboard-list">
-                        {leaderboard.length > 0 ? leaderboard.map((user, index) => (
-                            <div class={`leaderboard-row ${index < 3 ? 'top-3' : ''}`}>
-                                <span class="td-pos">{index + 1}</span>
-                                <span class="td-user">
-                                    <div class="user-avatar-placeholder">{user.user_id.slice(0, 1).toUpperCase()}</div>
-                                    Madridista #{user.user_id.toString().slice(-4)}
-                                </span>
-                                <span class="td-pts">{user.total_points || 0}</span>
-                            </div>
-                        )) : (
-                            <div class="empty-state">
-                                ¡Aún no hay puntuaciones! Sé el primero.
-                            </div>
-                        )}
+                    <div class="leaderboard-table-wrapper">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-pos">#</th>
+                                    <th class="th-user">USUARIO</th>
+                                    <th class="th-pts">PTS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {leaderboard.length > 0 ? leaderboard.map((user, index) => (
+                                    <tr class={`leaderboard-row ${index < 3 ? 'top-3' : ''}`}>
+                                        <td class="td-pos">{index + 1}</td>
+                                        <td class="td-user">
+                                            <div class="user-cell">
+                                                <div class="user-avatar-placeholder">{user.user_id.slice(0, 1).toUpperCase()}</div>
+                                                <span class="user-id">#{user.user_id.toString().slice(-4)}</span>
+                                            </div>
+                                        </td>
+                                        <td class="td-pts">
+                                            <span class="pts-badge">{user.total_points || 0}</span>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colspan="3" class="empty-state">
+                                            ¡Aún no hay puntuaciones! Sé el primero.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -253,7 +277,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     function toggleScorer(element) {
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
-        
         element.classList.toggle('selected');
     }
 </script>
@@ -268,7 +291,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     if (submitBtn && container) {
         submitBtn.addEventListener('click', async () => {
             const matchId = container.dataset.matchId;
-            const homeScore = parseInt(homeInput.value); // If empty, NaN
+            const homeScore = parseInt(homeInput.value); 
             const awayScore = parseInt(awayInput.value);
 
             // Collect selected scorers
@@ -304,9 +327,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
                 if (response.ok) {
                     submitBtn.textContent = "¡GUARDADO!";
-                    submitBtn.style.background = "#2ecc71";
-                    submitBtn.style.color = "#fff";
-                    
                     if(feedbackMsg) {
                         feedbackMsg.textContent = "Pronóstico guardado correctamente.";
                         feedbackMsg.className = 'feedback-msg success';
@@ -315,7 +335,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
                         (submitBtn as HTMLButtonElement).disabled = false;
-                        submitBtn.removeAttribute('style'); // Reset styles
                     }, 2000);
                 } else {
                     throw new Error("Error en la petición");
@@ -338,31 +357,11 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     :root {
         --primary: #2b2b2b;
         --accent: #ffde59;
-        --text: #ffffff;
-        --card-bg: #ffffff;
-        --text-dark: #2b2b2b;
+        --text-primary: #2b2b2b;
     }
 
     .pronosticos-page {
         font-family: 'Poppins', sans-serif;
-    }
-    
-    .page-title {
-        color: var(--text);
-        font-family: "Archivo Black", sans-serif;
-        font-size: 3.5rem;
-        line-height: 1;
-        text-transform: uppercase;
-        margin-bottom: 1rem;
-        text-align: center;
-    }
-    
-    .content-h2 {
-        color: #b0b0b0;
-        font-size: 1.1rem;
-        max-width: 800px;
-        margin: 0 auto;
-        line-height: 1.6;
     }
 
     /* GRID LAYOUT FOR DESKTOP */
@@ -386,49 +385,34 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         background: white;
         border-radius: 12px;
         padding: 3.5rem 2rem 2.5rem 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        color: var(--text-dark);
-        border: 1px solid rgba(255,255,255,0.05); /* Subtle border */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        color: var(--text-primary);
+        border: 1px solid rgba(0,0,0,0.05);
     }
-
-    /* Uniform look for both cards */
-    .leaderboard-container {
-        background: white; /* Changed to white as requested */
-        color: var(--text-dark); /* Dark text for white bg */
-    }
-
+    
     .card-title-overlay {
         position: absolute;
         top: -18px;
         left: 30px;
         background: var(--accent);
-        color: #000;
+        color: #2b2b2b;
         padding: 0.5rem 1.5rem;
         font-family: 'Bebas Neue', sans-serif;
         font-size: 1.6rem;
         font-weight: 700;
         letter-spacing: 1px;
         transform: skew(-10deg);
-        box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
         z-index: 10;
         line-height: 1;
     }
-    
     .card-title-overlay::after {
         content: ''; 
         display: block;
         transform: skew(10deg);
     }
 
-    .no-match-card {
-        background: rgba(255,255,255,0.1);
-        padding: 3rem;
-        text-align: center;
-        border-radius: 8px;
-        color: #aaa;
-    }
-
-    /* HEADER */
+    /* COMPONENT STYLES */
     .match-header {
         display: flex;
         flex-direction: column;
@@ -439,39 +423,12 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         gap: 1rem;
     }
 
-    .comp-logo {
-        height: 60px;
-        width: auto;
-        display: block;
-        object-fit: contain;
-    }
-    
-    .competition-text {
-        font-weight: 700;
-        font-size: 1.2rem;
-        text-transform: uppercase;
-        color: var(--primary);
-    }
+    .comp-logo { height: 60px; width: auto; object-fit: contain; }
+    .competition-text { font-weight: 700; font-size: 1.2rem; text-transform: uppercase; color: var(--primary); }
 
-    .date-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .match-date-day {
-        color: var(--primary);
-        font-size: 1.1rem;
-        text-transform: capitalize;
-        font-weight: 600;
-    }
-    
-    .match-date-time {
-        color: #666;
-        font-size: 1rem;
-        font-weight: 500;
-    }
+    .date-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .match-date-day { color: var(--primary); font-size: 1.1rem; text-transform: capitalize; font-weight: 600; }
+    .match-date-time { color: #888; font-size: 1rem; font-weight: 500; }
 
     /* TEAMS & SCORE */
     .teams-container {
@@ -480,7 +437,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         align-items: center;
         margin-bottom: 2.5rem;
         gap: 1rem;
-        padding: 0 1rem;
     }
 
     .team {
@@ -493,15 +449,11 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
     
     .team-shield {
-        width: 120px; /* Larger shields */
+        width: 120px;
         height: 120px;
         object-fit: contain;
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
         transition: transform 0.3s;
-    }
-    
-    .team-shield:hover {
-        transform: scale(1.05);
     }
     
     .team-name {
@@ -513,183 +465,79 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         max-width: 150px;
     }
 
-    .score-board {
+    /* SCORE INPUTS STYLE */
+    .score-board-container {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        /* Clean style, no background */
-        padding: 0 1rem;
+        gap: 1rem;
     }
 
-    .score-board input {
-        width: 60px;
-        height: 70px;
+    .score-input-wrapper {
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: 5px;
+        transition: all 0.2s;
+        /* Hover effect container */
+    }
+    
+    .score-input-wrapper:hover {
+        background-color: rgba(255, 222, 89, 0.1); /* Subtle yellow background */
+        border-color: var(--accent);
+    }
+    
+    .score-input-wrapper:focus-within {
+        background-color: rgba(255, 222, 89, 0.2);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.3);
+    }
+
+    .score-board-container input {
+        width: 70px;
+        height: 80px;
         text-align: center;
         background: transparent;
         border: none;
-        border-bottom: 4px solid #eee; /* Underline only */
         color: var(--primary);
-        font-size: 3rem;
+        font-size: 3.5rem;
         font-weight: 800;
-        border-radius: 0;
-        transition: border-color 0.2s;
         padding: 0;
         font-family: 'Archivo Black', sans-serif;
+        line-height: 1;
     }
     
-    .score-board input:focus {
-        border-color: var(--accent);
+    .score-board-container input:focus {
         outline: none;
     }
+    .score-board-container input::placeholder { color: transparent; }
     
-    .score-board input::placeholder {
-        color: transparent;
-    }
-
     .score-separator {
         font-size: 3rem;
         font-weight: 700;
-        color: var(--primary);
+        color: #ddd;
         margin-top: -10px;
     }
 
-    /* GOALSCORERS */
-    .scorers-section {
-        margin-top: 2rem;
-        border-top: 1px solid #f0f0f0;
-        padding-top: 1.5rem;
-        background: #fafafa; /* Subtle bg area for scorers */
-        border-radius: 8px;
-        padding: 1.5rem;
-    }
-
-    .scorers-title {
-        font-size: 1rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        margin-bottom: 1.5rem;
-        color: var(--primary);
-        text-align: center;
-        letter-spacing: 1px;
-    }
-
-    .scorers-select-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 1rem;
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .scorer-chip {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.8rem;
-        background: white;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 2px solid transparent;
-        text-align: center;
-        user-select: none;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-
-    .scorer-chip:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .scorer-chip.selected {
-        background: var(--primary);
-        border-color: var(--primary);
-    }
-    
-    .chip-image-container {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: #f0f0f0;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        position: relative;
-    }
-    
-    .chip-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        /* Ensure no cut off by scaling slightly down or fitting properly */
-        object-position: top center; 
-    }
-    
-    /* When selected, highlight image border */
-    .scorer-chip.selected .chip-image-container {
-        border-color: var(--accent);
-    }
-
-    .chip-info {
-        display: flex;
-        flex-direction: column;
-        line-height: 1;
-        gap: 0.2rem;
-    }
-
-    .player-num {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #999;
-    }
-    
-    .scorer-chip.selected .player-num {
-        color: rgba(255,255,255,0.7);
-    }
-
-    .player-name-chip {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #333;
-    }
-    
-    .scorer-chip.selected .player-name-chip {
-        color: var(--accent);
-    }
-
-    /* ACTIONS */
-    .action-area {
-        margin-top: 2rem;
-        text-align: center;
-    }
-
+    /* BUTTON STYLE MATCHING PREMIOS */
     .submit-btn {
-        background: var(--primary);
-        color: white;
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #2b2b2b;
         border: none;
-        width: 100%;
-        padding: 1.2rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        border-radius: 8px;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.1rem;
         cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 5px 0px #000;
-        font-family: 'Archivo Black', sans-serif;
-        font-size: 1.2rem;
-        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
+        width: 100%;
+        margin-top: 1rem;
     }
 
     .submit-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        background: #3a3a3a;
-        box-shadow: 0 7px 0px #000;
-    }
-    
-    .submit-btn:active:not(:disabled) {
-        transform: translateY(2px);
-        box-shadow: 0 0px 0px #000;
+        transform: scale(1.02) translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
+        color: #000;
     }
     
     .submit-btn:disabled {
@@ -698,102 +546,119 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         cursor: not-allowed;
         box-shadow: none;
     }
-
-
-    /* LEADERBOARD LIST - WHITE THEME */
-    .leaderboard-header {
-        display: grid;
-        grid-template-columns: 50px 1fr 60px;
-        padding: 0.8rem 1rem;
+    
+    .header-login-btn {
+        /* Matching style for login in header */
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #2b2b2b;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 50px;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1rem;
         font-weight: 800;
-        font-size: 0.8rem;
-        color: #999;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(255, 222, 89, 0.3);
+        transition: all 0.3s;
+    }
+    .header-login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(255, 222, 89, 0.5);
+    }
+
+    /* SCORERS */
+    .scorers-section {
+        margin-top: 2rem;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 1.5rem;
+    }
+    .scorers-title {
+        font-size: 1rem; font-weight: 800; text-transform: uppercase; margin-bottom: 1.5rem;
+        color: var(--primary); text-align: center; letter-spacing: 1px;
+    }
+    .scorers-select-container {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 1rem;
+        max-height: 400px; overflow-y: auto; padding: 0.5rem;
+    }
+    .scorer-chip {
+        display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 0.8rem;
+        background: white; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        border: 2px solid transparent; text-align: center; user-select: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .scorer-chip:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .scorer-chip.selected { background: #fafafa; border-color: var(--accent); }
+    .scorer-chip.selected .chip-image-container { border-color: var(--accent); }
+    .chip-image-container {
+        width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: #f0f0f0;
+        border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .chip-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .chip-info { display: flex; flex-direction: column; line-height: 1; gap: 0.2rem; }
+    .player-num { font-size: 0.75rem; font-weight: 700; color: #999; }
+    .player-name-chip { font-size: 0.9rem; font-weight: 700; color: #333; }
+    .scorer-chip.selected .player-name-chip { color: var(--accent); }
+
+    /* LEADERBOARD TABLE */
+    .leaderboard-table-wrapper {
+        overflow-x: auto;
+    }
+    .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    .leaderboard-table th {
+        padding: 1rem;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #888;
         border-bottom: 2px solid #f0f0f0;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-
-    .leaderboard-list {
-        max-height: 700px;
-        overflow-y: auto;
-    }
-
-    .leaderboard-row {
-        display: grid;
-        grid-template-columns: 50px 1fr 60px;
-        padding: 1rem 1rem;
-        align-items: center;
+    .leaderboard-table td {
+        padding: 1rem;
         border-bottom: 1px solid #f5f5f5;
-        font-size: 0.95rem;
-        color: var(--primary);
-        transition: background 0.2s;
+        vertical-align: middle;
     }
+    .leaderboard-table tr:last-child td { border-bottom: none; }
     
-    .leaderboard-row:hover {
-        background: #fafafa;
-    }
-    
-    .leaderboard-row:last-child {
-        border-bottom: none;
+    .leaderboard-table tr:hover {
+        background-color: #fafafa;
     }
 
-    .top-3 {
-        background: #fffbf0; /* Light yellow tint */
-    }
+    .th-pos, .td-pos { width: 50px; text-align: center; }
+    .th-pts, .td-pts { width: 80px; text-align: center; }
     
-    .top-3 .td-pos {
-        color: #d4af37; /* Gold-ish */
-        font-size: 1.2rem;
-        font-weight: 900;
+    .td-pos {
+        font-weight: 700; color: #ccc;
     }
+    .top-3 .td-pos { color: #d4af37; font-size: 1.2rem; font-weight: 900; }
+    .top-3 { background-color: #fffdf5; }
 
-    .td-user {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        font-weight: 600;
-    }
-
+    .user-cell { display: flex; align-items: center; gap: 0.8rem; }
     .user-avatar-placeholder {
-        width: 32px;
-        height: 32px;
-        background: #eee;
-        color: #555;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-        font-weight: 800;
+        width: 32px; height: 32px; background: #eee; color: #555;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 800; flex-shrink: 0;
     }
+    .top-3 .user-avatar-placeholder { background: var(--accent); color: var(--primary); }
+    .user-id { font-weight: 600; font-size: 0.95rem; color: var(--primary); }
     
-    .top-3 .user-avatar-placeholder {
-        background: var(--accent);
-        color: var(--primary);
+    .pts-badge {
+        background: #f0f0f0; color: #333; padding: 0.3rem 0.6rem;
+        border-radius: 6px; font-weight: 800; font-size: 0.9rem;
     }
+    .top-3 .pts-badge { background: var(--accent); color: var(--primary); }
 
-    .td-pts {
-        font-weight: 800;
-        text-align: center;
-        color: var(--primary);
-        background: #f0f0f0;
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.9rem;
-    }
-    
-    /* Login prompt styling */
-    .login-prompt {
-        color: #888;
-        font-weight: 500;
-        margin-bottom: 1rem;
-    }
+    .empty-state { text-align: center; padding: 2rem; color: #999; font-style: italic; }
+    .feedback-msg { margin-top: 1rem; font-weight: 600; text-align: center; }
+    .feedback-msg.success { color: #2ecc71; }
+    .feedback-msg.error { color: #e74c3c; }
 
     @media (max-width: 600px) {
-        .page-title { font-size: 2.5rem; }
-        .score-board input { width: 50px; font-size: 2.5rem; height: 60px; }
-        .scorers-select-container { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-        .card-title-overlay { font-size: 1.2rem; padding: 0.4rem 1rem; top: -15px; left: 15px; }
-        .team-shield { width: 90px; height: 90px; }
+        .score-board-container input { width: 50px; font-size: 2.8rem; }
     }
 </style>
