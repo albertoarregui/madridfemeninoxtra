@@ -188,9 +188,17 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                         min="0" 
                                         max="20" 
                                         value={userPrediction ? userPrediction.home_score : ''}
-                                        placeholder="" 
+                                        placeholder="-" 
                                         disabled={!userId || !isMatchOpen}
                                     />
+                                    <div class="custom-spinners">
+                                        <button class="spinner-btn up" onclick="adjustScore('home-score', 1)" disabled={!userId || !isMatchOpen}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 15l6 -6l6 6" /></svg>
+                                        </button>
+                                        <button class="spinner-btn down" onclick="adjustScore('home-score', -1)" disabled={!userId || !isMatchOpen}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 <span class="score-separator">:</span>
                                 <div class="score-input-wrapper">
@@ -200,9 +208,17 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                         min="0" 
                                         max="20" 
                                         value={userPrediction ? userPrediction.away_score : ''}
-                                        placeholder=""
+                                        placeholder="-"
                                         disabled={!userId || !isMatchOpen}
                                     />
+                                    <div class="custom-spinners">
+                                        <button class="spinner-btn up" onclick="adjustScore('away-score', 1)" disabled={!userId || !isMatchOpen}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 15l6 -6l6 6" /></svg>
+                                        </button>
+                                        <button class="spinner-btn down" onclick="adjustScore('away-score', -1)" disabled={!userId || !isMatchOpen}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -304,6 +320,22 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
         element.classList.toggle('selected');
+    }
+
+    function adjustScore(inputId, delta) {
+        const input = document.getElementById(inputId);
+        if (!input || input.disabled) return;
+        
+        // If empty, treat as 0
+        let val = parseInt(input.value);
+        if (isNaN(val)) val = 0;
+        else val += delta;
+        
+        // Bounds
+        if (val < 0) val = 0;
+        if (val > 20) val = 20; // Arbitrary max
+        
+        input.value = val;
     }
 </script>
 
@@ -509,6 +541,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         justify-content: center;
         width: 80px;
         height: 80px;
+        position: relative; /* For absolute spinners */
     }
     
     .score-input-wrapper:hover {
@@ -520,6 +553,16 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
+    /* Hide Default Spinners */
+    .score-board-container input::-webkit-outer-spin-button,
+    .score-board-container input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .score-board-container input[type=number] {
+        -moz-appearance: textfield;
+    }
+
     .score-board-container input {
         width: 100%;
         height: 100%;
@@ -529,15 +572,57 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         color: var(--primary);
         font-size: 3rem;
         font-weight: 800;
-        padding: 0;
+        padding: 0; /* Remove right padding needed for padding-right 20px */
+        padding-right: 15px; /* Space for spinners */
         font-family: 'Archivo Black', sans-serif;
-        line-height: normal; /* Important for alignment */
+        line-height: normal;
     }
     
     .score-board-container input:focus {
         outline: none;
     }
-    .score-board-container input::placeholder { color: transparent; }
+    .score-board-container input::placeholder { color: #eee; }
+
+    /* Custom Spinners */
+    .custom-spinners {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+        bottom: 4px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 20px;
+    }
+    
+    .spinner-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        color: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+        height: 45%;
+    }
+    
+    .spinner-btn:hover:not(:disabled) {
+        color: var(--primary);
+        background: rgba(0,0,0,0.05);
+        border-radius: 4px;
+    }
+    
+    .spinner-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .spinner-btn svg {
+        width: 16px;
+        height: 16px;
+    }
     
     .score-separator {
         font-size: 3rem;
