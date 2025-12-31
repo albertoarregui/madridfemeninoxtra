@@ -345,12 +345,12 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 </script>
 
-<script lang="ts">
+<script>
     const submitBtn = document.getElementById('submit-prediction');
-    const homeInput = document.getElementById('home-score') as HTMLInputElement;
-    const awayInput = document.getElementById('away-score') as HTMLInputElement;
+    const homeInput = document.getElementById('home-score');
+    const awayInput = document.getElementById('away-score');
     const feedbackMsg = document.getElementById('feedback-msg');
-    const container = document.querySelector('.teams-container') as HTMLElement;
+    const container = document.querySelector('.teams-container');
 
     if (submitBtn && container) {
         submitBtn.addEventListener('click', async () => {
@@ -359,9 +359,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             const awayScore = parseInt(awayInput.value);
 
             // Collect selected scorers
-            const selectedScorers: string[] = [];
+            const selectedScorers = [];
             document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
-                const pid = (chip as HTMLElement).dataset.playerId;
+                const pid = chip.dataset.playerId;
                 if(pid) selectedScorers.push(pid);
             });
 
@@ -375,7 +375,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             }
 
             submitBtn.textContent = "ENVIANDO...";
-            (submitBtn as HTMLButtonElement).disabled = true;
+            submitBtn.disabled = true;
 
             try {
                 const response = await fetch('/api/predictions', {
@@ -398,7 +398,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                     }
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
-                        (submitBtn as HTMLButtonElement).disabled = false;
+                        submitBtn.disabled = false;
                     }, 2000);
                 } else {
                     throw new Error("Error en la petición");
@@ -406,7 +406,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             } catch (error) {
                 console.error(error);
                 submitBtn.textContent = "ERROR";
-                 (submitBtn as HTMLButtonElement).disabled = false;
+                 submitBtn.disabled = false;
                  if(feedbackMsg) {
                     feedbackMsg.textContent = "Ha ocurrido un error. Inténtalo de nuevo.";
                     feedbackMsg.className = 'feedback-msg error';
