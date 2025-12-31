@@ -382,5 +382,3 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
         return [];
     }
 }
-
-
