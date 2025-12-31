@@ -11,6 +11,14 @@ const teamShields = import.meta.glob('/src/assets/escudos/*.{png,jpg,jpeg,webp}'
 const competitionLogos = import.meta.glob('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
 
 // Helpers
+// Helpers
+const slugify = (text: string) => {
+    return text.toLowerCase()
+        .replace(/ /g, '_')
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+};
+
 async function getPlayerImage(id: string) {
     const path = `/src/assets/jugadoras/${id}.png`;
     const imageLoader = playerImages[path];
@@ -22,7 +30,7 @@ async function getPlayerImage(id: string) {
 }
 
 async function getShield(teamName: string) {
-    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const slug = slugify(teamName);
     
     let path = `/src/assets/escudos/${slug}.png`;
     let loader = teamShields[path];
@@ -37,7 +45,7 @@ async function getShield(teamName: string) {
 }
 
 async function getCompetitionLogo(compName: string) {
-    const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const slug = slugify(compName);
     let path = `/src/assets/competiciones/${slug}.png`;
     
     if (slug.includes('liga')) {

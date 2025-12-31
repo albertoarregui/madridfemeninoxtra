@@ -12,6 +12,13 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 const teamShields = import.meta.glob('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
 const competitionLogos = import.meta.glob('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
 
+const slugify = (text: string) => {
+    return text.toLowerCase()
+        .replace(/ /g, '_')
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+};
+
 // 1. Find Next Match
 const now = new Date();
 const nextMatchIndex = CALENDAR.find((m) => new Date(m.date) >= now); 
@@ -40,7 +47,7 @@ async function getPlayerImage(id: string) {
 }
 
 async function getShield(teamName: string) {
-    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const slug = slugify(teamName);
     
     let path = `/src/assets/escudos/${slug}.png`;
     let loader = teamShields[path];
@@ -55,7 +62,7 @@ async function getShield(teamName: string) {
 }
 
 async function getCompetitionLogo(compName: string) {
-    const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const slug = slugify(compName);
     let path = `/src/assets/competiciones/${slug}.png`;
     if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
     else if (slug.includes('uwcl') || slug.includes('champions')) path = '/src/assets/competiciones/uwcl.png';
