@@ -6,26 +6,51 @@ import { SQUAD } from "../../public/consts/squad";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
 import type { ImageMetadata } from 'astro';
 
-// Import all player images and shields directly using import.meta.glob
+// Import all assets
 const playerImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
 const teamShields = import.meta.glob<{ default: ImageMetadata }>('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
+const competitionLogos = import.meta.glob<{ default: ImageMetadata }>('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
 
 // 1. Find Next Match
 const now = new Date();
 const nextMatchIndex = CALENDAR.find((m) => new Date(m.date) >= now); 
 const nextMatch = nextMatchIndex || null;
 
-// Helper to get image URL safely
+// Helpers
 async function getPlayerImage(id: string) {
     const path = `/src/assets/jugadoras/${id}.png`;
     if (playerImages[path]) {
         const mod = await playerImages[path]();
         return mod.default.src;
     }
-    return '/assets/img/default-player.png'; // Fallback
+    return '/assets/img/default-player.png';
 }
 
-// 2. Fetch Data (Server Side)
+const getShield = async (teamName) => {
+    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let path = `/src/assets/escudos/${slug}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
+    return '';
+};
+
+const getCompetitionLogo = async (compName) => {
+    const slug = compName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let path = `/src/assets/competiciones/${slug}.png`;
+    // Map specific names if needed or fuzzy match
+    // Check known files: liga_f.png, uwcl.png, copa_de_la_reina.png, supercopa_de_espana.png
+    if (slug.includes('liga')) path = '/src/assets/competiciones/liga_f.png';
+    else if (slug.includes('uwcl') || slug.includes('champions')) path = '/src/assets/competiciones/uwcl.png';
+    else if (slug.includes('copa')) path = '/src/assets/competiciones/copa_de_la_reina.png';
+    else if (slug.includes('supercopa')) path = '/src/assets/competiciones/supercopa_de_espana.png';
+
+    if (competitionLogos[path]) return (await competitionLogos[path]()).default.src;
+    return '';
+};
+
+// 2. Fetch Data
 const { userId } = Astro.locals.auth();
 let userPrediction = null;
 let leaderboard = [];
@@ -65,45 +90,26 @@ const isMatchOpen = nextMatch ? true : false;
 const matchDate = nextMatch ? new Date(nextMatch.date) : new Date();
 const formattedDate = matchDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-// Prepare squad with images
+// Prepare assets
 const playersWithImages = await Promise.all(SQUAD.sort((a, b) => a.number - b.number).map(async (p) => ({
     ...p,
     image: await getPlayerImage(p.id)
 })));
 
-// Helper for team shields - matching naming convention from previous tasks might be complex. 
-// Assuming team names in CALENDAR match file names or we try to slugify.
-// Using a simple slugify for shield checking: "Real Madrid" -> "real_madrid.png"
-const getShield = async (teamName) => {
-    // Basic slugify: remove accents, lowercase, replace spaces with underscores/hyphens
-    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
-    // Try underscore first, then hyphen, then maybe specific mappings
-    let path = `/src/assets/escudos/${slug}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
-    
-    path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
-    if (teamShields[path]) return (await teamShields[path]()).default.src;
-
-    // Hardcoded check for Real Madrid if needed, as it might be named differently
-    if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
-
-    return ''; // Return empty if not found, or default
-};
-
 const homeShield = nextMatch ? await getShield(nextMatch.team1) : '';
 const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
+const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '';
 
 ---
 
 <Layout title="La Porra | Madrid Femenino Xtra">
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pronosticos-page">
-        <header class="page-header text-center mb-10">
+        <header class="page-header text-center mb-12">
             <h1 class="page-title">LA PORRA</h1>
              <p class="content-h2">
                 Adivina el resultado del próximo partido y gana puntos para subir en la clasificación.
             </p>
-             <div class="auth-controls mt-4">
+             <div class="auth-controls mt-6">
                 <SignedOut>
                     <SignInButton mode="modal" as="button" class="login-btn">
                         INICIAR SESIÓN
@@ -118,15 +124,20 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         <div class="grid-layout">
             <!-- LEFT COLUMN: PREDICTION CARD -->
             <section class="prediction-column">
-                <!-- Title removed from here as requested -->
-                
                 {nextMatch ? (
                     <div class="match-card">
                         <div class="card-title-overlay">PRÓXIMO PARTIDO</div>
                         
                          <div class="match-header">
-                            <span class="competition-badge">{nextMatch.competition}</span>
-                            <span class="match-date">{formattedDate} - {nextMatch.time}</span>
+                            {compLogo ? (
+                                <img src={compLogo} alt={nextMatch.competition} class="comp-logo" />
+                            ) : (
+                                <span class="competition-text">{nextMatch.competition}</span>
+                            )}
+                            <div class="date-container">
+                                <span class="match-date-day">{formattedDate}</span>
+                                <span class="match-date-time">{nextMatch.time}</span>
+                            </div>
                         </div>
                         
                         <div class="teams-container" data-match-id={nextMatch.id}>
@@ -142,7 +153,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                                     min="0" 
                                     max="20" 
                                     value={userPrediction ? userPrediction.home_score : ''}
-                                    placeholder="-"
+                                    placeholder="" 
                                     disabled={!userId || !isMatchOpen}
                                 />
                                 <span class="score-separator">:</span>
@@ -152,7 +163,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                                     min="0" 
                                     max="20" 
                                     value={userPrediction ? userPrediction.away_score : ''}
-                                    placeholder="-"
+                                    placeholder=""
                                      disabled={!userId || !isMatchOpen}
                                 />
                             </div>
@@ -175,8 +186,8 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                                         onclick="toggleScorer(this)"
                                         title={player.name}
                                     >
-                                        <div class="chip-image">
-                                             <img src={player.image} alt={player.name} loading="lazy" />
+                                        <div class="chip-image-container">
+                                             <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
                                         </div>
                                         <div class="chip-info">
                                             <span class="player-num">#{player.number}</span>
@@ -238,7 +249,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
 </Layout>
 
 <script is:inline>
-    // Global function for onclick handler
+    // Global function
     function toggleScorer(element) {
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
@@ -257,7 +268,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
     if (submitBtn && container) {
         submitBtn.addEventListener('click', async () => {
             const matchId = container.dataset.matchId;
-            const homeScore = parseInt(homeInput.value);
+            const homeScore = parseInt(homeInput.value); // If empty, NaN
             const awayScore = parseInt(awayInput.value);
 
             // Collect selected scorers
@@ -271,6 +282,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                 if(feedbackMsg) {
                     feedbackMsg.textContent = "Por favor, introduce un marcador válido.";
                     feedbackMsg.className = 'feedback-msg error';
+                    feedbackMsg.classList.remove('hidden');
                 }
                 return;
             }
@@ -298,6 +310,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                     if(feedbackMsg) {
                         feedbackMsg.textContent = "Pronóstico guardado correctamente.";
                         feedbackMsg.className = 'feedback-msg success';
+                        feedbackMsg.classList.remove('hidden');
                     }
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
@@ -314,6 +327,7 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
                  if(feedbackMsg) {
                     feedbackMsg.textContent = "Ha ocurrido un error. Inténtalo de nuevo.";
                     feedbackMsg.className = 'feedback-msg error';
+                    feedbackMsg.classList.remove('hidden');
                 }
             }
         });
@@ -333,14 +347,13 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         font-family: 'Poppins', sans-serif;
     }
     
-    /* Reusing styles from Plantilla */
     .page-title {
         color: var(--text);
         font-family: "Archivo Black", sans-serif;
         font-size: 3.5rem;
-        line-height: normal;
+        line-height: 1;
         text-transform: uppercase;
-        margin-bottom: 0px;
+        margin-bottom: 1rem;
         text-align: center;
     }
     
@@ -356,13 +369,13 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
     .grid-layout {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: 3rem;
         margin-top: 3rem;
     }
 
     @media (min-width: 1024px) {
         .grid-layout {
-            grid-template-columns: 1.5fr 1fr; /* Match card slightly wider */
+            grid-template-columns: 3fr 2fr;
             align-items: start;
         }
     }
@@ -372,37 +385,37 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         position: relative;
         background: white;
         border-radius: 12px;
-        padding: 3rem 2rem 2rem 2rem; /* Top padding for title overlay */
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        padding: 3.5rem 2rem 2.5rem 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         color: var(--text-dark);
-        border: 1px solid #eee;
-        overflow: visible; /* For title overlay */
+        border: 1px solid rgba(255,255,255,0.05); /* Subtle border */
     }
 
+    /* Uniform look for both cards */
     .leaderboard-container {
-        background: #1a1f3c; /* Dark theme for leaderboard */
-        color: white;
-        border: 1px solid rgba(255,255,255,0.1);
-        padding: 3rem 0 0 0;
+        background: white; /* Changed to white as requested */
+        color: var(--text-dark); /* Dark text for white bg */
     }
 
     .card-title-overlay {
         position: absolute;
-        top: -15px;
-        left: 20px;
+        top: -18px;
+        left: 30px;
         background: var(--accent);
         color: #000;
-        padding: 0.3rem 1.2rem;
+        padding: 0.5rem 1.5rem;
         font-family: 'Bebas Neue', sans-serif;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 700;
         letter-spacing: 1px;
         transform: skew(-10deg);
-        box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+        z-index: 10;
+        line-height: 1;
     }
     
     .card-title-overlay::after {
-        content: ''; /* Fix skew for text */
+        content: ''; 
         display: block;
         transform: skew(10deg);
     }
@@ -415,37 +428,59 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         color: #aaa;
     }
 
+    /* HEADER */
     .match-header {
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 1rem;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 1.5rem;
+        gap: 1rem;
     }
 
-    .competition-badge {
-        background: var(--primary);
-        color: var(--accent);
-        padding: 0.3rem 0.8rem;
-        border-radius: 4px;
+    .comp-logo {
+        height: 60px;
+        width: auto;
+        display: block;
+        object-fit: contain;
+    }
+    
+    .competition-text {
         font-weight: 700;
+        font-size: 1.2rem;
         text-transform: uppercase;
-        font-size: 0.8rem;
+        color: var(--primary);
     }
 
-    .match-date {
-        color: #666;
-        font-size: 0.9rem;
+    .date-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .match-date-day {
+        color: var(--primary);
+        font-size: 1.1rem;
         text-transform: capitalize;
+        font-weight: 600;
+    }
+    
+    .match-date-time {
+        color: #666;
+        font-size: 1rem;
+        font-weight: 500;
     }
 
+    /* TEAMS & SCORE */
     .teams-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 2.5rem;
         gap: 1rem;
+        padding: 0 1rem;
     }
 
     .team {
@@ -453,146 +488,174 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.5rem;
+        gap: 1rem;
         text-align: center;
     }
     
     .team-shield {
-        width: 80px;
-        height: 80px;
+        width: 120px; /* Larger shields */
+        height: 120px;
         object-fit: contain;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        transition: transform 0.3s;
+    }
+    
+    .team-shield:hover {
+        transform: scale(1.05);
     }
     
     .team-name {
-        font-weight: 800;
-        font-size: 1rem;
+        font-weight: 900;
+        font-size: 1.1rem;
         text-transform: uppercase;
         color: var(--primary);
         line-height: 1.2;
+        max-width: 150px;
     }
 
     .score-board {
-        background: #f8f9fa;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
         display: flex;
         align-items: center;
-        gap: 0.3rem;
-        border: 1px solid #eee;
+        gap: 0.5rem;
+        /* Clean style, no background */
+        padding: 0 1rem;
     }
 
     .score-board input {
-        width: 50px;
-        height: 60px;
+        width: 60px;
+        height: 70px;
         text-align: center;
-        background: white;
-        border: 2px solid #ddd;
+        background: transparent;
+        border: none;
+        border-bottom: 4px solid #eee; /* Underline only */
         color: var(--primary);
-        font-size: 2rem;
-        font-weight: 700;
-        border-radius: 4px;
-        transition: all 0.2s;
-        -moz-appearance: textfield;
+        font-size: 3rem;
+        font-weight: 800;
+        border-radius: 0;
+        transition: border-color 0.2s;
         padding: 0;
+        font-family: 'Archivo Black', sans-serif;
     }
     
     .score-board input:focus {
         border-color: var(--accent);
         outline: none;
     }
+    
+    .score-board input::placeholder {
+        color: transparent;
+    }
 
     .score-separator {
-        font-size: 2rem;
+        font-size: 3rem;
         font-weight: 700;
-        color: #ddd;
+        color: var(--primary);
+        margin-top: -10px;
     }
 
     /* GOALSCORERS */
     .scorers-section {
         margin-top: 2rem;
-        border-top: 1px solid #eee;
+        border-top: 1px solid #f0f0f0;
         padding-top: 1.5rem;
+        background: #fafafa; /* Subtle bg area for scorers */
+        border-radius: 8px;
+        padding: 1.5rem;
     }
 
     .scorers-title {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1rem;
+        font-weight: 800;
         text-transform: uppercase;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         color: var(--primary);
-        border-left: 3px solid var(--accent);
-        padding-left: 0.5rem;
+        text-align: center;
+        letter-spacing: 1px;
     }
 
     .scorers-select-container {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 0.8rem;
-        max-height: 400px; /* Taller area */
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 1rem;
+        max-height: 400px;
         overflow-y: auto;
-        padding-right: 0.5rem;
     }
 
     .scorer-chip {
         display: flex;
+        flex-direction: column;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.5rem;
-        background: #f8f9fa;
-        border-radius: 6px;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
         border: 2px solid transparent;
+        text-align: center;
         user-select: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     .scorer-chip:hover {
-        background: #e9ecef;
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
     .scorer-chip.selected {
-        background: #fff;
-        border-color: var(--accent);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        background: var(--primary);
+        border-color: var(--primary);
     }
     
-    .chip-image {
-        width: 30px;
-        height: 30px;
+    .chip-image-container {
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         overflow: hidden;
-        background: #ccc;
-        flex-shrink: 0;
+        background: #f0f0f0;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        position: relative;
     }
     
-    .chip-image img {
+    .chip-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        /* Ensure no cut off by scaling slightly down or fitting properly */
+        object-position: top center; 
+    }
+    
+    /* When selected, highlight image border */
+    .scorer-chip.selected .chip-image-container {
+        border-color: var(--accent);
     }
 
     .chip-info {
         display: flex;
         flex-direction: column;
         line-height: 1;
+        gap: 0.2rem;
     }
 
     .player-num {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         font-weight: 700;
         color: #999;
     }
     
     .scorer-chip.selected .player-num {
-        color: var(--primary);
+        color: rgba(255,255,255,0.7);
     }
 
     .player-name-chip {
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 700;
         color: #333;
+    }
+    
+    .scorer-chip.selected .player-name-chip {
+        color: var(--accent);
     }
 
     /* ACTIONS */
@@ -602,70 +665,72 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
     }
 
     .submit-btn {
-        background: var(--accent);
-        color: var(--primary);
+        background: var(--primary);
+        color: white;
         border: none;
         width: 100%;
-        padding: 1rem;
+        padding: 1.2rem;
         font-weight: 800;
         text-transform: uppercase;
         border-radius: 8px;
         cursor: pointer;
-        transition: transform 0.2s, background 0.2s;
-        box-shadow: 0 4px 0px #e6c84c; /* Retro button style */
+        transition: all 0.2s;
+        box-shadow: 0 5px 0px #000;
         font-family: 'Archivo Black', sans-serif;
+        font-size: 1.2rem;
+        letter-spacing: 1px;
     }
 
     .submit-btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 6px 0px #e6c84c;
+        background: #3a3a3a;
+        box-shadow: 0 7px 0px #000;
     }
     
     .submit-btn:active:not(:disabled) {
         transform: translateY(2px);
-        box-shadow: 0 0px 0px #e6c84c;
+        box-shadow: 0 0px 0px #000;
     }
     
     .submit-btn:disabled {
-        background: #ccc;
-        color: #888;
+        background: #e0e0e0;
+        color: #a0a0a0;
         cursor: not-allowed;
         box-shadow: none;
     }
 
-    .feedback-msg {
-        margin-top: 1rem;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-    .feedback-msg.success { color: #2ecc71; }
-    .feedback-msg.error { color: #e74c3c; }
 
-
-    /* LEADERBOARD LIST */
+    /* LEADERBOARD LIST - WHITE THEME */
     .leaderboard-header {
         display: grid;
         grid-template-columns: 50px 1fr 60px;
         padding: 0.8rem 1rem;
-        font-weight: 700;
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.5);
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-weight: 800;
+        font-size: 0.8rem;
+        color: #999;
+        border-bottom: 2px solid #f0f0f0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     .leaderboard-list {
-        max-height: 600px;
+        max-height: 700px;
         overflow-y: auto;
     }
 
     .leaderboard-row {
         display: grid;
         grid-template-columns: 50px 1fr 60px;
-        padding: 0.8rem 1rem;
+        padding: 1rem 1rem;
         align-items: center;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        font-size: 0.9rem;
-        color: #eee;
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 0.95rem;
+        color: var(--primary);
+        transition: background 0.2s;
+    }
+    
+    .leaderboard-row:hover {
+        background: #fafafa;
     }
     
     .leaderboard-row:last-child {
@@ -673,12 +738,12 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
     }
 
     .top-3 {
-        background: rgba(255, 222, 89, 0.05);
+        background: #fffbf0; /* Light yellow tint */
     }
     
     .top-3 .td-pos {
-        color: var(--accent);
-        font-size: 1.1rem;
+        color: #d4af37; /* Gold-ish */
+        font-size: 1.2rem;
         font-weight: 900;
     }
 
@@ -686,18 +751,20 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
         display: flex;
         align-items: center;
         gap: 0.8rem;
+        font-weight: 600;
     }
 
     .user-avatar-placeholder {
-        width: 25px;
-        height: 25px;
-        background: rgba(255,255,255,0.1);
+        width: 32px;
+        height: 32px;
+        background: #eee;
+        color: #555;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.8rem;
+        font-weight: 800;
     }
     
     .top-3 .user-avatar-placeholder {
@@ -706,38 +773,27 @@ const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
     }
 
     .td-pts {
-        font-weight: 700;
+        font-weight: 800;
         text-align: center;
-        color: var(--accent);
+        color: var(--primary);
+        background: #f0f0f0;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
     }
     
-    .empty-state {
-        padding: 2rem;
-        text-align: center;
-        color: rgba(255,255,255,0.4);
-        font-style: italic;
-    }
-
-    .login-btn {
-        background: var(--accent);
-        color: var(--primary);
-        border: none;
-        padding: 0.6rem 2rem;
-        font-weight: 800;
-        border-radius: 4px;
-        cursor: pointer;
-        text-transform: uppercase;
-        font-size: 1rem;
-        transition: all 0.2s;
-    }
-    .login-btn:hover {
-        transform: scale(1.05);
+    /* Login prompt styling */
+    .login-prompt {
+        color: #888;
+        font-weight: 500;
+        margin-bottom: 1rem;
     }
 
     @media (max-width: 600px) {
-        .page-title { font-size: 2.2rem; }
-        .score-board input { width: 40px; font-size: 1.5rem; height: 50px; }
-        .scorers-select-container { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
-        .card-title-overlay { font-size: 1.1rem; padding: 0.3rem 0.8rem; top: -12px; left: 10px; }
+        .page-title { font-size: 2.5rem; }
+        .score-board input { width: 50px; font-size: 2.5rem; height: 60px; }
+        .scorers-select-container { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        .card-title-overlay { font-size: 1.2rem; padding: 0.4rem 1rem; top: -15px; left: 15px; }
+        .team-shield { width: 90px; height: 90px; }
     }
 </style>
