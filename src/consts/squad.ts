@@ -263,4 +263,7 @@ export const SQUAD = [
         weight: 62,
         number: 24,
     },
+    { id: "irune_dorado", name: "Irune Dorado", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 28 },
+    { id: "silvia_cristobal", name: "Silvia Cristóbal", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 29 },
+    { id: "iris_ashley_santiago", name: "Iris Ashley", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 43 }
 ]

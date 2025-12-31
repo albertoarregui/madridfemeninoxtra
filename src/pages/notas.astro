@@ -71,6 +71,32 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
     ...p,
     image: await getPlayerImage(p.id)
 })));
+
+// 3. Fetch Fan Rankings
+import { getFanRankings } from "../lib/fanRankings";
+const fanRankings = await getFanRankings();
+
+// Helper for direct image access in loop (since we need synchronous access in render loop)
+// Re-importing globs here locally if needed or just use the helper function logic?
+// Actually simpler to use the pre-loaded images from assetHelpers if possible, but they are async.
+// Let's use the glob directly as in other files for synchronous access if they are static.
+// OR map player IDs to the images we already loaded in squadWithImages?
+// Yes, let's create a map for easier access
+const playerImageMap = new Map(squadWithImages.map(p => [p.id, p.image]));
+
+// Update: In the template, I used playerImages[...] which is not available in scope if I removed it previously?
+// Ah, checking file content, I removed the inline globs in step 541!
+// So I MUST use a map or find from squadWithImages.
+// I will check the template replacement I just made.
+// It used `playerImages[...]`. This will fail.
+// I should fix the previous replacement step or fix this one to provide `playerImages` or change template logic.
+// I'll define playerImages here OR change template to use squadWithImages.find().image
+// But `squadWithImages` is async loaded.
+
+// Fix: I will define playerImages glob again here for synchronous access if needed, OR just use the squadWithImages map.
+// Using `playerImages` glob is standard in Astro for this project.
+const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}', { eager: true });
+
 ---
 
 <Layout title="Notas y MVP | Madrid Femenino Xtra">
@@ -107,7 +133,10 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
                         ) : (
                             <span class="competition-text">{targetMatch.competition}</span>
                         )}
-                        <span class="match-date">{new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                        <span class="match-date">
+                            {new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {' '}- {targetMatch.time}
+                        </span>
                     </div>
 
                     <div class="teams-container">
@@ -134,72 +163,69 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
                         </div>
                     )}
                     
-                    <!-- MVP Selection -->
-                    <section class="mvp-section mb-12">
-                        <div class="section-header-cnt">
-                            <h3 class="subsection-title">ELIGE TU MVP</h3>
-                        </div>
+                    <div class="voting-layout-grid">
+                        <!-- MVP Selection -->
+                        <section class="mvp-section ranking-col" style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;">
+                             <div class="card-title-overlay">ELIGE TU MVP</div>
+                            
+                            <div class="mvp-grid">
+                                {squadWithImages.map(player => (
+                                    <div 
+                                        class={`mvp-chip ${existingMVP === player.id ? 'selected' : ''}`}
+                                        data-player-id={player.id}
+                                        onclick="selectMvp(this)"
+                                        title={player.name}
+                                    >
+                                        <div class="chip-image-container">
+                                                <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
+                                        </div>
+                                        <div class="chip-info">
+                                            <span class="player-num">#{player.number}</span>
+                                            <span class="player-name-chip">{player.name}</span>
+                                        </div>
+                                        <div class="mvp-badge">MVP</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <input type="hidden" id="mvp-input" value={existingMVP || ''} />
+                        </section>
                         
-                        <div class="mvp-grid">
-                            {squadWithImages.map(player => (
-                                <div 
-                                    class={`mvp-chip ${existingMVP === player.id ? 'selected' : ''}`}
-                                    data-player-id={player.id}
-                                    onclick="selectMvp(this)"
-                                    title={player.name}
-                                >
-                                    <div class="chip-image-container">
-                                            <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
-                                    </div>
-                                    <div class="chip-info">
-                                        <span class="player-num">#{player.number}</span>
-                                        <span class="player-name-chip">{player.name}</span>
-                                    </div>
-                                    <div class="mvp-badge">MVP</div>
-                                </div>
-                            ))}
-                        </div>
-                        <input type="hidden" id="mvp-input" value={existingMVP || ''} />
-                    </section>
-                    
-                    <hr class="section-divider" />
+                        <!-- Player Ratings -->
+                        <section class="ratings-section ranking-col" style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;">
+                             <div class="card-title-overlay">PON NOTA (1-10)</div>
 
-                    <!-- Player Ratings -->
-                    <section class="ratings-section mt-12">
-                         <div class="section-header-cnt">
-                            <h3 class="subsection-title">PON NOTA (1-10)</h3>
-                        </div>
-
-                        <div class="players-ratings-grid">
-                            {squadWithImages.map((player) => (
-                                <div class="rating-card">
-                                    <div class="rating-player-info">
-                                        <div class="rating-img-wrapper">
-                                            <img src={player.image} alt={player.name} />
+                            <div class="players-ratings-grid">
+                                {squadWithImages.map((player) => (
+                                    <div class="rating-card">
+                                        <div class="rating-player-info">
+                                            <div class="rating-img-wrapper">
+                                                <img src={player.image} alt={player.name} />
+                                            </div>
+                                            <div class="rating-text">
+                                                <span class="r-number">#{player.number}</span>
+                                                <span class="r-name">{player.name}</span>
+                                            </div>
                                         </div>
-                                        <div class="rating-text">
-                                            <span class="r-number">#{player.number}</span>
-                                            <span class="r-name">{player.name}</span>
+                                        
+                                        <div class="rating-control-wrapper">
+                                            <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
+                                            <input 
+                                                type="text" 
+                                                id={`rating-${player.id}`}
+                                                class="rating-input"
+                                                value={existingRatings[player.id] || '5'} 
+                                                placeholder="-"
+                                                readonly
+                                                data-player-id={player.id}
+                                            />
+                                            <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
+                                             <button type="button" class="clear-rating-btn" onclick={`clearRating('${player.id}')`} title="No jugó / Borrar">✕</button>
                                         </div>
                                     </div>
-                                    
-                                    <div class="rating-control-wrapper">
-                                        <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
-                                        <input 
-                                            type="number" 
-                                            id={`rating-${player.id}`}
-                                            class="rating-input"
-                                            value={existingRatings[player.id] || ''} 
-                                            placeholder="-"
-                                            readonly
-                                            data-player-id={player.id}
-                                        />
-                                        <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
+                                ))}
+                            </div>
+                        </section>
+                    </div>
 
                     <div class="actions mt-12">
                         {!userId ? (
@@ -214,11 +240,107 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
                 </form>
 
             </div>
-        ) : (
             <div class="no-match-card">
                 <p>No hay partidos recientes para valorar.</p>
             </div>
         )}
+
+        {/* RANKINGS SECTION */}
+        <section class="rankings-zone mt-20">
+            <h2 class="section-title-global text-center mb-12">CLASIFICACIONES DE LA AFICIÓN</h2>
+            
+            <div class="rankings-grid">
+                
+                {/* 1. MATCH RANKING */}
+                <div class="ranking-col">
+                    <h3 class="ranking-header">JORNADA</h3>
+                    <div class="ranking-list">
+                        {fanRankings.match.map((p: any, i: number) => {
+                            const player = squad.find(s => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i+1}</span>
+                                    <img src={playerImageMap.get(player.id) || ''} alt={player.name} class="rank-img" />
+                                    <div class="rank-info">
+                                        <span class="rank-name">{player.name}</span>
+                                        <span class="rank-val">{p.avg.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {fanRankings.match.length === 0 && <p class="empty-rank">Sin datos</p>}
+                    </div>
+                </div>
+
+                {/* 2. MONTH RANKING */}
+                <div class="ranking-col">
+                    <h3 class="ranking-header">MES</h3>
+                    <div class="ranking-list">
+                         {fanRankings.month.map((p: any, i: number) => {
+                            const player = squad.find(s => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i+1}</span>
+                                     <img src={playerImages[`/src/assets/jugadoras/${player.id}.png`] ? (playerImages[`/src/assets/jugadoras/${player.id}.png`] as any).default.src : ''} alt={player.name} class="rank-img" />
+                                    <div class="rank-info">
+                                        <span class="rank-name">{player.name}</span>
+                                        <span class="rank-val">{p.avg.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                         {fanRankings.month.length === 0 && <p class="empty-rank">Sin datos</p>}
+                    </div>
+                </div>
+
+                {/* 3. SEASON RANKING */}
+                <div class="ranking-col">
+                    <h3 class="ranking-header">TEMPORADA</h3>
+                    <div class="ranking-list">
+                        {fanRankings.season.map((p: any, i: number) => {
+                            const player = squad.find(s => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i+1}</span>
+                                     <img src={playerImages[`/src/assets/jugadoras/${player.id}.png`] ? (playerImages[`/src/assets/jugadoras/${player.id}.png`] as any).default.src : ''} alt={player.name} class="rank-img" />
+                                    <div class="rank-info">
+                                        <span class="rank-name">{player.name}</span>
+                                        <span class="rank-val">{p.avg.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                         {fanRankings.season.length === 0 && <p class="empty-rank">Sin datos</p>}
+                    </div>
+                </div>
+
+                {/* 4. MVP RANKING */}
+                <div class="ranking-col">
+                    <h3 class="ranking-header">TOTAL MVPS</h3>
+                    <div class="ranking-list">
+                        {fanRankings.mvp.map((p: any, i: number) => {
+                            const player = squad.find(s => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i+1}</span>
+                                     <img src={playerImages[`/src/assets/jugadoras/${player.id}.png`] ? (playerImages[`/src/assets/jugadoras/${player.id}.png`] as any).default.src : ''} alt={player.name} class="rank-img" />
+                                    <div class="rank-info">
+                                        <span class="rank-name">{player.name}</span>
+                                        <span class="rank-val">{p.count}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                         {fanRankings.mvp.length === 0 && <p class="empty-rank">Sin datos</p>}
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 </Layout>
 
@@ -236,19 +358,27 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
     }
 
     function adjustRating(playerId, delta) {
-        console.log('Adjusting', playerId, delta);
         const input = document.getElementById(`rating-${playerId}`);
         if (!input) return;
 
         let val = parseInt(input.value);
-        if (isNaN(val)) val = 5; // Default start at 5 if empty? Or maybe 0? Let's say if empty start at 5 for ease
-        else val += delta;
+        if (isNaN(val)) {
+            // If currently cleared/empty, start at 5 (neutral)
+            val = 5;
+        } else {
+            val += delta;
+        }
 
         // Bounds 1-10
         if (val < 1) val = 1;
         if (val > 10) val = 10;
 
         input.value = val;
+    }
+
+    function clearRating(playerId) {
+        const input = document.getElementById(`rating-${playerId}`);
+        if (input) input.value = '';
     }
 </script>
 
@@ -379,8 +509,8 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
     .card-title-overlay {
         position: absolute;
         top: -18px;
-        left: 50%;
-        transform: translateX(-50%) skew(-10deg);
+        left: 30px;
+        transform: skew(-10deg);
         background: var(--accent);
         color: #2b2b2b;
         padding: 0.5rem 1.5rem;
@@ -445,6 +575,24 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
         height: 1px;
         background: #f0f0f0;
         margin: 4rem 0;
+    }
+
+    /* VOTING LAYOUT */
+    .voting-layout-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4rem;
+    }
+    
+    @media (min-width: 1024px) {
+        .voting-layout-grid {
+            grid-template-columns: 1fr 1.5fr; /* MVP takes less space than ratings */
+            align-items: start;
+        }
+        .mvp-section {
+            position: sticky;
+            top: 2rem;
+        }
     }
 
     /* MVP GRID */
@@ -582,6 +730,20 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
     }
     .rating-input:focus { outline: none; }
 
+    .clear-rating-btn {
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        border: none;
+        background: #ffebeb;
+        color: #e74c3c;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+        margin-left: 0.2rem;
+    }
+    .clear-rating-btn:hover { background: #e74c3c; color: white; }
+
 
     /* BUTTON STYLE */
     .submit-btn {
@@ -642,7 +804,83 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
         text-align: center; padding: 4rem; background: #f9f9f9; border-radius: 12px; color: #888;
     }
 
+    /* RANKINGS ZONE */
+    .section-title-global {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 2.5rem;
+        color: var(--primary);
+        position: relative;
+        display: inline-block;
+    }
+    .section-title-global::after {
+        content: ''; display: block; width: 100px; height: 5px; background: var(--accent); margin: 0 auto;
+    }
+
+    .rankings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+
+    .ranking-col {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 1px solid #f9f9f9;
+    }
+
+    .ranking-header {
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: var(--primary);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 0.5rem;
+    }
+
+    .ranking-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .ranking-item:last-child { border-bottom: none; }
+
+    .rank-pos {
+        font-family: 'Archivo Black', sans-serif;
+        font-size: 1.2rem;
+        color: #ddd;
+        width: 25px;
+    }
+    .rank-img {
+        width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+        border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .rank-info {
+        flex: 1;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .rank-name {
+        font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: #444;
+    }
+    .rank-val {
+        font-weight: 800; font-size: 1rem; color: var(--primary);
+    }
+    
+    .empty-rank { text-align: center; color: #ccc; font-style: italic; font-size: 0.9rem; }
+
     @media (max-width: 600px) {
         .players-ratings-grid { grid-template-columns: 1fr; }
+        .rankings-grid { grid-template-columns: 1fr; }
     }
 </style>
