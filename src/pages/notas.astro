@@ -134,7 +134,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                 <!-- MATCH CARD -->
                 <section class="match-card mb-12">
                     <div class="card-title-overlay">
-                        {isVotingOpen ? "PARTIDO PARA VALORAR" : "PRÓXIMO PARTIDO (VOTACIÓN CERRADA)"}
+                        {isVotingOpen ? "PARTIDO PARA VALORAR" : "PRÓXIMO PARTIDO"}
                     </div>
                     
                     <div class="match-info-simple">
@@ -203,18 +203,23 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                                             <span class="r-name">{player.name}</span>
                                         </div>
                                         
-                                        <div class="rating-control-wrapper">
-                                            <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
-                                            <input 
-                                                type="text" 
-                                                id={`rating-${player.id}`}
-                                                class="rating-input"
-                                                value={existingRatings[player.id] || '5'} 
-                                                placeholder="-"
-                                                readonly
-                                                data-player-id={player.id}
-                                            />
-                                            <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
+                                        <div class="rating-control-group">
+                                            <div class="rating-control-wrapper">
+                                                <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
+                                                <input 
+                                                    type="text" 
+                                                    id={`rating-${player.id}`}
+                                                    class="rating-input"
+                                                    value={existingRatings[player.id] || ''} 
+                                                    placeholder="-"
+                                                    readonly
+                                                    data-player-id={player.id}
+                                                />
+                                                <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
+                                            </div>
+                                            <button type="button" class="sc-btn" id={`sc-${player.id}`} onclick={`toggleSC('${player.id}')`} title="No Valorable">
+                                                N/V
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -252,23 +257,28 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 <script is:inline>
     // Global functions for inline handlers
     function selectMvp(element) {
-        // Deselect all others
         document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
-        // Select clicked
         element.classList.add('selected');
-        // Update hidden input
         const pid = element.dataset.playerId;
         const input = document.getElementById('mvp-input');
         if(input) input.value = pid;
+        validateForm();
     }
 
     function adjustRating(playerId, delta) {
         const input = document.getElementById(`rating-${playerId}`);
         if (!input) return;
 
+        // If card is in S/C mode, do nothing (or auto-disable S/C?)
+        // Let's auto-disable S/C if user tries to set rating
+        const scBtn = document.getElementById(`sc-${playerId}`);
+        if (scBtn && scBtn.classList.contains('active')) {
+             toggleSC(playerId); // Turn off S/C
+        }
+
         let val = parseInt(input.value);
-        if (isNaN(val)) {
-            // If currently cleared/empty, start at 5 (neutral)
+        if (isNaN(val) || val === 0) {
+            // Start at 5 if empty or was S/C (0)
             val = 5;
         } else {
             val += delta;
@@ -279,55 +289,121 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         if (val > 10) val = 10;
 
         input.value = val;
+        updateCardState(playerId);
+        validateForm();
     }
+
+    function toggleSC(playerId) {
+        const btn = document.getElementById(`sc-${playerId}`);
+        const input = document.getElementById(`rating-${playerId}`);
+        const wrapper = input.parentElement; // rating-control-wrapper
+        
+        if (!btn || !input) return;
+
+        const isActive = btn.classList.toggle('active');
+        
+        if (isActive) {
+            input.value = '0'; // 0 represents S/C
+            wrapper.classList.add('disabled');
+        } else {
+            input.value = ''; // Clear to force user to choose or go back to pending
+            wrapper.classList.remove('disabled');
+        }
+        
+        updateCardState(playerId);
+        validateForm();
+    }
+
+    function updateCardState(playerId) {
+        const input = document.getElementById(`rating-${playerId}`);
+        const card = input.closest('.rating-card');
+        const val = input.value;
+        
+        // Remove states
+        card.classList.remove('pending', 'ready', 'sc-active');
+
+        if (val === '0') {
+            card.classList.add('ready', 'sc-active'); // Ready (as S/C)
+        } else if (val && parseInt(val) >= 1) {
+            card.classList.add('ready'); // Ready (Rated)
+        } else {
+            card.classList.add('pending'); // Pending
+        }
+    }
+
+    function validateForm() {
+        const submitBtn = document.getElementById('submit-ratings');
+        if (!submitBtn) return;
+
+        const inputs = document.querySelectorAll('.rating-input');
+        let allValid = true;
+        let missingCount = 0;
+
+        inputs.forEach(input => {
+            const val = input.value;
+            // Valid if it has a number > 0 OR it is '0' (S/C)
+            // Invalid if empty string
+            if (val === '' || val === null || val === undefined) {
+                allValid = false;
+                missingCount++;
+            }
+        });
+
+        // MVP is technically optional but usually desired. User requirement only mentioned "all players".
+        // Let's check only players for blocking.
+        
+        if (allValid) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'ENVIAR VALORACIONES';
+            submitBtn.classList.remove('disabled-btn');
+            
+            // Check feedback msg
+            const fb = document.getElementById('form-feedback');
+            if(fb) fb.classList.add('hidden');
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `FALTAN ${missingCount} JUGADORAS`;
+            submitBtn.classList.add('disabled-btn');
+        }
+    }
+
+    // Initialize state on load
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.rating-input').forEach(input => {
+            const pid = input.dataset.playerId;
+            const val = input.value;
+            
+            // If value is 0 (from DB), set S/C active
+            if (val === '0') {
+                const scBtn = document.getElementById(`sc-${pid}`);
+                if (scBtn) scBtn.classList.add('active');
+                const wrapper = input.parentElement;
+                if (wrapper) wrapper.classList.add('disabled');
+            }
+            
+            updateCardState(pid);
+        });
+        validateForm();
+    });
 </script>
 
 <script lang="ts">
     import { actions } from 'astro:actions';
     
-    // Simple MVP Selection Logic
-    declare global {
-        interface Window {
-            selectMvp: (element: HTMLElement) => void;
-        }
-    }
-
     // Pass isVotingOpen to the script logic context if needed, but easier to just check presence of overlay
     const form = document.getElementById('ratings-form') as HTMLFormElement;
     const isLocked = form?.classList.contains('locked-form');
-    
+
     if (!isLocked) {
-        window.selectMvp = (element: HTMLElement) => {
-            // Remove previous selection
-            document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
-            // Add selection
-            element.classList.add('selected');
-            // Update input
-            const input = document.getElementById('mvp-input') as HTMLInputElement;
-            if (input) input.value = element.dataset.playerId || '';
-        };
-
-        // Handle Rating Selection
-        document.querySelectorAll('.rating-num').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.target as HTMLElement;
-                const parent = target.closest('.rating-numbers');
-                if (!parent) return;
-
-                // Visual update
-                parent.querySelectorAll('.rating-num').forEach(el => el.classList.remove('selected'));
-                target.classList.add('selected');
-
-                // Update hidden input
-                const playerId = parent.getAttribute('data-player-id');
-                const ratingInput = document.getElementById(`rating-${playerId}`) as HTMLInputElement;
-                if (ratingInput) ratingInput.value = target.dataset.value || '';
-            });
-        });
+        // Handlers are now mainly inline for simplicity in Astro, 
+        // but submit needs to gather data properly including 0s.
 
         // Submit Form
-        document.getElementById('submit-ratings')?.addEventListener('click', async () => {
+        document.getElementById('submit-ratings')?.addEventListener('click', async (e) => {
+            e.preventDefault(); 
              const btn = document.getElementById('submit-ratings') as HTMLButtonElement;
+             if (btn.disabled) return;
+
              btn.disabled = true;
              btn.textContent = 'Enviando...';
 
@@ -337,21 +413,22 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 
              // Collect Ratings
              const ratings: { player_id: string; rating: number }[] = [];
-             document.querySelectorAll('[id^="rating-"]').forEach((input: any) => {
-                 if (input.value) {
+             document.querySelectorAll('.rating-input').forEach((input: any) => {
+                 const pid = input.getAttribute('data-player-id');
+                 const val = input.value;
+                 
+                 // Push if valid number (including 0 for S/C)
+                 if (pid && val !== '' && val !== null) {
                      ratings.push({
-                         player_id: input.id.replace('rating-', ''),
-                         rating: parseInt(input.value)
+                         player_id: pid,
+                         rating: parseInt(val)
                      });
                  }
              });
 
-             if (!mvp && ratings.length === 0) {
-                 alert('Por favor selecciona al menos una MVP o valora a una jugadora.');
-                 btn.disabled = false;
-                 btn.textContent = 'ENVIAR VALORACIONES';
-                 return;
-             }
+             // We only submit if validation passed (btn not disabled), 
+             // but double check or just send. 
+             // Logic says: send 0s as well.
 
              // Send to API
              try {
@@ -378,7 +455,8 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                  console.error(e);
                  alert('Hubo un error al enviar tus votaciones. Inténtalo de nuevo.');
                  btn.disabled = false;
-                 btn.textContent = 'ENVIAR VOTACIONES';
+                 btn.textContent = 'ENVIAR VALORACIONES';
+                 validateForm(); // Re-check state
              }
         });
     }
@@ -697,8 +775,14 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         line-height: 1.1;
     }
 
-    .rating-control-wrapper {
+    .rating-control-group {
         grid-column: 3;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .rating-control-wrapper {
         display: flex;
         align-items: center;
         gap: 0.2rem;
@@ -707,6 +791,42 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         border-radius: 30px;
         flex-shrink: 0;
         width: max-content;
+        transition: opacity 0.3s;
+    }
+    
+    .rating-control-wrapper.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    .sc-btn {
+        background: #f0f0f0;
+        border: none;
+        border-radius: 8px;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #888;
+        cursor: pointer;
+        transition: all 0.2s;
+        height: 32px;
+    }
+    
+    .sc-btn:hover { background: #e0e0e0; }
+    
+    .sc-btn.active {
+        background: #2b2b2b;
+        color: #ffde59;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .rating-card.pending {
+        border-left: 4px solid #f0f0f0;
+    }
+    
+    .rating-card.ready {
+        border-left: 4px solid var(--accent);
+        background: #fffcf0;
     }
 
     .rate-btn {
