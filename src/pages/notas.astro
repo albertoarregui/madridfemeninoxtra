@@ -7,25 +7,35 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/comp
 import { getPlayerImage, getShield, getCompetitionLogo } from "../lib/assetHelpers";
 
 // 1. Find Last Played Match
-// 1. Find Match to Display (Smart Selection)
+// Smart match selection with new voting window
 const now = new Date();
 const pastMatches = CALENDAR.filter((m) => new Date(m.date) < now);
-const futureMatches = CALENDAR.filter((m) => new Date(m.date) >= now);
-
 const lastMatch = pastMatches.length > 0 ? pastMatches[pastMatches.length - 1] : null;
-const nextMatch = futureMatches.length > 0 ? futureMatches[0] : null;
+const nextMatch = CALENDAR.find(m => new Date(m.date) >= now) || null;
 
-// Logic: Show last match if it ended less than 3 days ago. Otherwise show next match (locked).
-let targetMatch = lastMatch;
-let isVotingOpen = true;
+let targetMatch = null;
+let isVotingOpen = false;
 
 if (lastMatch) {
-    const hoursSinceMatch = (now.getTime() - new Date(lastMatch.date).getTime()) / (1000 * 60 * 60);
-    if (hoursSinceMatch > 72 && nextMatch) {
+    const matchDate = new Date(lastMatch.date);
+    const timeSinceMatch = now.getTime() - matchDate.getTime();
+    const hoursFromMatch = timeSinceMatch / (1000 * 60 * 60);
+    
+    // Voting opens 2 hours after match start and stays open for 24 hours
+    if (hoursFromMatch >= 2 && hoursFromMatch <= 26) {
+        targetMatch = lastMatch;
+        isVotingOpen = true;
+    } else if (hoursFromMatch > 26) {
+        // After 24h voting window, show next match (locked)
         targetMatch = nextMatch;
+        isVotingOpen = false;
+    } else {
+        // Before 2h window, show last match but locked
+        targetMatch = lastMatch;
         isVotingOpen = false;
     }
 } else if (nextMatch) {
+    // No previous matches, show next match (locked)
     targetMatch = nextMatch;
     isVotingOpen = false;
 }
@@ -133,10 +143,10 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                         ) : (
                             <span class="competition-text">{targetMatch.competition}</span>
                         )}
-                        <span class="match-date">
-                            {new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            {' '}- {targetMatch.time}
-                        </span>
+                        <div class="match-date-container">
+                            <span class="match-date-day">{new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                            <span class="match-date-time">{targetMatch.time}</span>
+                        </div>
                     </div>
 
                     <div class="teams-container">
@@ -152,16 +162,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                     </div>
                 </section>
 
-                <form id="ratings-form" class={!isVotingOpen ? 'locked-form' : ''}>
-                    
-                    {!isVotingOpen && (
-                        <div class="lock-overlay">
-                            <div class="lock-message">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon icon icon-tabler icons-tabler-outline icon-tabler-lock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg>
-                                <p class="lock-text">LA VOTACIÓN SE ABRIRÁ AL FINALIZAR EL PARTIDO</p>
-                            </div>
-                        </div>
-                    )}
+                <form id="ratings-form">
                     
                     <div class="voting-layout-grid">
                         <!-- MVP Selection -->
@@ -229,8 +230,13 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                     <div class="actions mt-12">
                         {!userId ? (
                             <p class="login-prompt">Inicia sesión para enviar tus notas</p>
+                        ) : !isVotingOpen ? (
+                            <div class="locked-submit-area">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon-btn"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg>
+                                <p class="locked-text">La votación se abrirá 2 horas después del inicio del partido</p>
+                            </div>
                         ) : (
-                            <button type="submit" id="submit-ratings" class="submit-btn" disabled={!userId}>
+                            <button type="submit" id="submit-ratings" class="submit-btn">
                                 ENVIAR VALORACIONES
                             </button>
                         )}
@@ -580,9 +586,18 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
     .rating-img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
     
-    .rating-text { display: flex; flex-direction: column; }
-    .r-number { font-size: 0.8rem; font-weight: 800; color: #ddd; line-height: 1; }
-    .r-name { font-size: 1rem; font-weight: 700; color: var(--primary); text-transform: uppercase; line-height: 1.2; }
+    .rating-text {
+        flex: 1; display: flex; flex-direction: column; gap: 0.3rem;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .r-number { color: #888; font-size: 0.75rem; font-weight: 700; }
+    .r-name { 
+        font-size: 0.9rem; font-weight: 900; text-transform: uppercase; color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     .rating-control-wrapper {
         display: flex;
@@ -621,47 +636,29 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
     .rating-input:focus { outline: none; }
 
-    /* LOCKED STATE */
-    .locked-form {
-        position: relative;
-    }
-
-    .lock-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        min-height: 300px;
-        background: rgba(255, 255, 255, 0.97);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        z-index: 100;
-        padding: 2rem;
-        padding-top: 4rem;
-        border-radius: 12px;
-    }
-
-    .lock-message {
-        text-align: center;
+    /* LOCKED SUBMIT AREA */
+    .locked-submit-area {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1.5rem;
-        padding: 3rem;
-        max-width: 500px;
+        gap: 1rem;
+        padding: 2rem;
+        background: rgba(255, 222, 89, 0.1);
+        border-radius: 12px;
+        border: 2px dashed var(--accent);
     }
 
-    .lock-icon {
+    .lock-icon-btn {
         color: var(--accent);
-        filter: drop-shadow(0 4px 8px rgba(255, 222, 89, 0.3));
+        filter: drop-shadow(0 2px 4px rgba(255, 222, 89, 0.3));
     }
 
-    .lock-text {
+    .locked-text {
         font-family: 'Bebas Neue', sans-serif;
-        font-size: 1.8rem;
+        font-size: 1.3rem;
         color: var(--primary);
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
+        text-align: center;
         line-height: 1.3;
     }
 
