@@ -416,6 +416,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
              // Send to API
              try {
                 const matchId = document.querySelector('.content-container')?.getAttribute('data-match-id');
+                const feedbackMsg = document.getElementById('form-feedback');
                 
                 const response = await fetch('/api/ratings', {
                     method: 'POST',
@@ -428,18 +429,33 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                 });
 
                 if (response.ok) {
-                    alert('¡Votaciones enviadas correctamente! Gracias por participar.');
-                    window.location.reload();
+                    btn.textContent = "¡GUARDADO!";
+                    if(feedbackMsg) {
+                        feedbackMsg.textContent = "¡Votaciones enviadas correctamente! Gracias por participar.";
+                        feedbackMsg.className = 'feedback-msg success';
+                        feedbackMsg.classList.remove('hidden');
+                    }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 } else {
                     throw new Error('Error al enviar');
                 }
 
              } catch (e) {
                  console.error(e);
-                 alert('Hubo un error al enviar tus votaciones. Inténtalo de nuevo.');
+                 btn.textContent = "ERROR";
                  btn.disabled = false;
-                 btn.textContent = 'ENVIAR VALORACIONES';
-                 validateForm(); // Re-check state
+                 const feedbackMsg = document.getElementById('form-feedback');
+                 if(feedbackMsg) {
+                    feedbackMsg.textContent = "Hubo un error al enviar tus votaciones. Inténtalo de nuevo.";
+                    feedbackMsg.className = 'feedback-msg error';
+                    feedbackMsg.classList.remove('hidden');
+                 }
+                 setTimeout(() => {
+                     btn.textContent = 'ENVIAR VALORACIONES';
+                     validateForm(); // Re-check state
+                 }, 3000);
              }
         });
     }
