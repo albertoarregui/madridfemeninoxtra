@@ -7,14 +7,33 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/comp
 import { getPlayerImage, getShield, getCompetitionLogo } from "../lib/assetHelpers";
 
 // 1. Find Last Played Match
+// 1. Find Match to Display (Smart Selection)
 const now = new Date();
 const pastMatches = CALENDAR.filter((m) => new Date(m.date) < now);
+const futureMatches = CALENDAR.filter((m) => new Date(m.date) >= now);
+
 const lastMatch = pastMatches.length > 0 ? pastMatches[pastMatches.length - 1] : null;
+const nextMatch = futureMatches.length > 0 ? futureMatches[0] : null;
+
+// Logic: Show last match if it ended less than 3 days ago. Otherwise show next match (locked).
+let targetMatch = lastMatch;
+let isVotingOpen = true;
+
+if (lastMatch) {
+    const hoursSinceMatch = (now.getTime() - new Date(lastMatch.date).getTime()) / (1000 * 60 * 60);
+    if (hoursSinceMatch > 72 && nextMatch) {
+        targetMatch = nextMatch;
+        isVotingOpen = false;
+    }
+} else if (nextMatch) {
+    targetMatch = nextMatch;
+    isVotingOpen = false;
+}
 
 // Prepare match assets
-const homeShield = lastMatch ? await getShield(lastMatch.team1) : '';
-const awayShield = lastMatch ? await getShield(lastMatch.team2) : '';
-const compLogo = lastMatch ? await getCompetitionLogo(lastMatch.competition) : '';
+const homeShield = targetMatch ? await getShield(targetMatch.team1) : '';
+const awayShield = targetMatch ? await getShield(targetMatch.team2) : '';
+const compLogo = targetMatch ? await getCompetitionLogo(targetMatch.competition) : '';
 
 // 2. Fetch User's Previous Votes (if any)
 const { userId } = Astro.locals.auth();
@@ -22,12 +41,12 @@ let existingRatings: Record<string, number> = {};
 let existingMVP: string | null = null;
 const squad: any[] = SQUAD;
 
-if (userId && lastMatch) {
+if (userId && targetMatch && isVotingOpen) {
     try {
         // Fetch Ratings
         const ratingsResult = await turso.execute({
             sql: "SELECT player_id, rating FROM ratings WHERE user_id = ? AND match_id = ?",
-            args: [userId, lastMatch.id],
+            args: [userId, targetMatch.id],
         });
         ratingsResult.rows.forEach((row: any) => {
             existingRatings[row.player_id] = row.rating;
@@ -36,7 +55,7 @@ if (userId && lastMatch) {
         // Fetch MVP
         const mvpResult = await turso.execute({
             sql: "SELECT player_id FROM mvp_votes WHERE user_id = ? AND match_id = ?",
-            args: [userId, lastMatch.id],
+            args: [userId, targetMatch.id],
         });
         if (mvpResult.rows.length > 0) {
             existingMVP = mvpResult.rows[0].player_id;
@@ -73,36 +92,47 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
             </div>
         </header>
 
-        {lastMatch ? (
-            <div class="content-container" data-match-id={lastMatch.id}>
+        {targetMatch ? (
+            <div class="content-container" data-match-id={targetMatch.id}>
                 
                 <!-- MATCH CARD -->
                 <section class="match-card mb-12">
-                    <div class="card-title-overlay">ÚLTIMO PARTIDO</div>
+                    <div class="card-title-overlay">
+                        {isVotingOpen ? "PARTIDO PARA VALORAR" : "PRÓXIMO PARTIDO (VOTACIÓN CERRADA)"}
+                    </div>
                     
                     <div class="match-header">
                         {compLogo ? (
-                            <img src={compLogo} alt={lastMatch.competition} class="comp-logo" />
+                            <img src={compLogo} alt={targetMatch.competition} class="comp-logo" />
                         ) : (
-                            <span class="competition-text">{lastMatch.competition}</span>
+                            <span class="competition-text">{targetMatch.competition}</span>
                         )}
-                        <span class="match-date">{new Date(lastMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                        <span class="match-date">{new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                     </div>
 
                     <div class="teams-container">
                         <div class="team home">
-                            {homeShield && <img src={homeShield} alt={lastMatch.team1} class="team-shield" />}
-                            <span class="team-name">{lastMatch.team1}</span>
+                            {homeShield && <img src={homeShield} alt={targetMatch.team1} class="team-shield" />}
+                            <span class="team-name">{targetMatch.team1}</span>
                         </div>
                         <div class="vs-text">VS</div>
                         <div class="team away">
-                            {awayShield && <img src={awayShield} alt={lastMatch.team2} class="team-shield" />}
-                            <span class="team-name">{lastMatch.team2}</span>
+                            {awayShield && <img src={awayShield} alt={targetMatch.team2} class="team-shield" />}
+                            <span class="team-name">{targetMatch.team2}</span>
                         </div>
                     </div>
                 </section>
 
-                <form id="ratings-form">
+                <form id="ratings-form" class={!isVotingOpen ? 'locked-form' : ''}>
+                    
+                    {!isVotingOpen && (
+                        <div class="lock-overlay">
+                            <div class="lock-message">
+                                🔒<br/>
+                                LA VOTACIÓN SE ABRIRÁ AL FINALIZAR EL PARTIDO
+                            </div>
+                        </div>
+                    )}
                     
                     <!-- MVP Selection -->
                     <section class="mvp-section mb-12">
@@ -223,83 +253,103 @@ const squadWithImages = await Promise.all(squad.map(async (p) => ({
 </script>
 
 <script lang="ts">
-    const form = document.getElementById('ratings-form');
-    const submitBtn = document.getElementById('submit-ratings');
-    const feedbackMsg = document.getElementById('form-feedback');
-    const container = document.querySelector('.content-container') as HTMLElement;
-
-    interface RatingSubmission {
-        player_id: string | undefined;
-        rating: number;
+    import { actions } from 'astro:actions';
+    
+    // Simple MVP Selection Logic
+    declare global {
+        interface Window {
+            selectMvp: (element: HTMLElement) => void;
+        }
     }
 
-    if (form && submitBtn && container) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const matchId = container.dataset.matchId;
-            const mvpInput = document.getElementById('mvp-input') as HTMLInputElement;
-            const mvpId = mvpInput ? mvpInput.value : null;
-            
-            const ratings: RatingSubmission[] = [];
-            document.querySelectorAll('.rating-input').forEach((input) => {
-                const i = input as HTMLInputElement;
-                const val = parseInt(i.value);
-                if (!isNaN(val)) {
-                    ratings.push({
-                        player_id: i.dataset.playerId,
-                        rating: val
-                    });
-                }
+    // Pass isVotingOpen to the script logic context if needed, but easier to just check presence of overlay
+    const form = document.getElementById('ratings-form') as HTMLFormElement;
+    const isLocked = form?.classList.contains('locked-form');
+    
+    if (!isLocked) {
+        window.selectMvp = (element: HTMLElement) => {
+            // Remove previous selection
+            document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
+            // Add selection
+            element.classList.add('selected');
+            // Update input
+            const input = document.getElementById('mvp-input') as HTMLInputElement;
+            if (input) input.value = element.dataset.playerId || '';
+        };
+
+        // Handle Rating Selection
+        document.querySelectorAll('.rating-num').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                const parent = target.closest('.rating-numbers');
+                if (!parent) return;
+
+                // Visual update
+                parent.querySelectorAll('.rating-num').forEach(el => el.classList.remove('selected'));
+                target.classList.add('selected');
+
+                // Update hidden input
+                const playerId = parent.getAttribute('data-player-id');
+                const ratingInput = document.getElementById(`rating-${playerId}`) as HTMLInputElement;
+                if (ratingInput) ratingInput.value = target.dataset.value || '';
             });
+        });
 
-            if (ratings.length === 0 && !mvpId) {
-                 if(feedbackMsg) {
-                    feedbackMsg.textContent = "Por favor, selecciona al menos una nota o MVP.";
-                    feedbackMsg.className = "feedback-msg error";
-                    feedbackMsg.classList.remove('hidden');
-                }
-                return;
-            }
+        // Submit Form
+        document.getElementById('submit-ratings')?.addEventListener('click', async () => {
+             const btn = document.getElementById('submit-ratings') as HTMLButtonElement;
+             btn.disabled = true;
+             btn.textContent = 'Enviando...';
 
-            submitBtn.textContent = "ENVIANDO...";
-            (submitBtn as HTMLButtonElement).disabled = true;
+             // Collect MVP
+             const mvpInput = document.getElementById('mvp-input') as HTMLInputElement;
+             const mvp = mvpInput ? mvpInput.value : '';
 
-            try {
+             // Collect Ratings
+             const ratings: { player_id: string; rating: number }[] = [];
+             document.querySelectorAll('[id^="rating-"]').forEach((input: any) => {
+                 if (input.value) {
+                     ratings.push({
+                         player_id: input.id.replace('rating-', ''),
+                         rating: parseInt(input.value)
+                     });
+                 }
+             });
+
+             if (!mvp && ratings.length === 0) {
+                 alert('Por favor selecciona al menos una MVP o valora a una jugadora.');
+                 btn.disabled = false;
+                 btn.textContent = 'ENVIAR VALORACIONES';
+                 return;
+             }
+
+             // Send to API
+             try {
+                const matchId = document.querySelector('.content-container')?.getAttribute('data-match-id');
+                
                 const response = await fetch('/api/ratings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        match_id: matchId, 
-                        ratings: ratings,
-                        mvp_player_id: mvpId || null
+                    body: JSON.stringify({
+                        match_id: matchId,
+                        mvp_vote: mvp,
+                        ratings: ratings
                     })
                 });
 
                 if (response.ok) {
-                    submitBtn.textContent = "¡ENVIADO!";
-                    if(feedbackMsg) {
-                        feedbackMsg.textContent = "Tus notas han sido registradas.";
-                        feedbackMsg.className = "feedback-msg success";
-                        feedbackMsg.classList.remove('hidden');
-                    }
-                    setTimeout(() => {
-                        submitBtn.textContent = "ACTUALIZAR NOTAS";
-                       (submitBtn as HTMLButtonElement).disabled = false;
-                    }, 2000);
+                    alert('¡Votaciones enviadas correctamente! Gracias por participar.');
+                    window.location.reload();
                 } else {
-                    throw new Error("Error en el envío");
+                    throw new Error('Error al enviar');
                 }
-            } catch (error) {
-                console.error(error);
-                submitBtn.textContent = "ERROR";
-                (submitBtn as HTMLButtonElement).disabled = false;
-                 if(feedbackMsg) {
-                    feedbackMsg.textContent = "Error al conectar con el servidor.";
-                    feedbackMsg.className = "feedback-msg error";
-                    feedbackMsg.classList.remove('hidden');
-                }
-            }
+
+             } catch (e) {
+                 console.error(e);
+                 alert('Hubo un error al enviar tus votaciones. Inténtalo de nuevo.');
+                 btn.disabled = false;
+                 btn.textContent = 'ENVIAR VOTACIONES';
+             }
         });
     }
 </script>
