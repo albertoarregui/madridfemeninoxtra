@@ -1,0 +1,545 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { turso } from "../lib/turso";
+import { CALENDAR } from "../consts/calendar";
+import {
+    SignInButton,
+    SignedIn,
+    SignedOut,
+    UserButton,
+} from "@clerk/astro/components";
+
+// 1. Find Next Match
+const now = new Date();
+const nextMatchIndex = CALENDAR.findIndex((m) => new Date(m.date) >= now); // Simple check, ideally check time too if available
+const nextMatch = nextMatchIndex !== -1 ? CALENDAR[nextMatchIndex] : null;
+
+// 2. Fetch Data (Server Side)
+const { userId } = Astro.locals.auth();
+let userPrediction = null;
+let leaderboard = [];
+
+if (userId && nextMatch) {
+    try {
+        const result = await turso.execute({
+            sql: "SELECT home_score, away_score FROM predictions WHERE user_id = ? AND match_id = ?",
+            args: [userId, nextMatch.id],
+        });
+        if (result.rows.length > 0) {
+            userPrediction = result.rows[0];
+        }
+    } catch (e) {
+        console.error("Error fetching user prediction", e);
+    }
+}
+
+try {
+    // Mocking user names or fetching from clerk is complex server-side without extra setup.
+    // For now, we might just show "Usuario X" or rely on Clerk user ID if we can't map it easily
+    // without a 'users' table or clerk SDK call.
+    // Let's assume we just show masked ID or look into clerk integration later for names.
+    // Ideally we should store username in predictions table or have a users table sync.
+    // For MVP, simplistic approach:
+    const result = await turso.execute({
+        sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id ORDER BY total_points DESC LIMIT 10",
+        args: [],
+    });
+    leaderboard = result.rows;
+} catch (e) {
+    console.error("Error fetching leaderboard", e);
+}
+
+const isMatchOpen = nextMatch ? true : false; // Add logic for time cutoff if needed
+---
+
+<Layout title="La Porra | Madrid Femenino Xtra">
+    <div class="pronosticos-page">
+        <header class="page-header">
+            <h1 class="page-title">LA PORRA</h1>
+            <p class="page-subtitle">ADIVINA EL RESULTADO Y GANA PUNTOS</p>
+            <div class="auth-controls">
+                <SignedOut>
+                    <SignInButton mode="modal" as="button" class="login-btn">
+                        INICIAR SESIÓN
+                    </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                    <UserButton />
+                </SignedIn>
+            </div>
+        </header>
+
+        <div class="content-container">
+            <!-- Next Match Prediction Card -->
+            <section class="prediction-section">
+                {
+                    nextMatch ? (
+                        <div class="match-card">
+                            <div class="match-info">
+                                <span class="competition">
+                                    {nextMatch.competition}
+                                </span>
+                                <span class="date">
+                                    {nextMatch.date} - {nextMatch.time}
+                                </span>
+                            </div>
+
+                            <div
+                                class="teams-score-input"
+                                data-match-id={nextMatch.id}
+                            >
+                                <div class="team home">
+                                    <span class="team-name">
+                                        {nextMatch.team1}
+                                    </span>
+                                </div>
+
+                                <div class="score-inputs">
+                                    <input
+                                        type="number"
+                                        id="home-score"
+                                        min="0"
+                                        max="20"
+                                        value={
+                                            userPrediction
+                                                ? userPrediction.home_score
+                                                : ""
+                                        }
+                                        placeholder="-"
+                                        disabled={!userId || !isMatchOpen}
+                                    />
+                                    <span class="separator">:</span>
+                                    <input
+                                        type="number"
+                                        id="away-score"
+                                        min="0"
+                                        max="20"
+                                        value={
+                                            userPrediction
+                                                ? userPrediction.away_score
+                                                : ""
+                                        }
+                                        placeholder="-"
+                                        disabled={!userId || !isMatchOpen}
+                                    />
+                                </div>
+
+                                <div class="team away">
+                                    <span class="team-name">
+                                        {nextMatch.team2}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="action-area">
+                                {!userId ? (
+                                    <p class="login-prompt">
+                                        Inicia sesión para participar
+                                    </p>
+                                ) : (
+                                    <button
+                                        id="submit-prediction"
+                                        class="submit-btn"
+                                        disabled={!isMatchOpen}
+                                    >
+                                        {userPrediction
+                                            ? "ACTUALIZAR PRONÓSTICO"
+                                            : "ENVIAR PRONÓSTICO"}
+                                    </button>
+                                )}
+                                <p
+                                    id="feedback-msg"
+                                    class="feedback-msg hidden"
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div class="no-match">
+                            <p>No hay partidos próximos programados.</p>
+                        </div>
+                    )
+                }
+            </section>
+
+            <!-- Leaderboard -->
+            <section class="leaderboard-section">
+                <h2 class="section-title">CLASIFICACIÓN GLOBAL</h2>
+                <div class="leaderboard-table">
+                    <div class="table-header">
+                        <span>POS</span>
+                        <span>USUARIO</span>
+                        <span>PUNTOS</span>
+                    </div>
+                    {
+                        leaderboard.length > 0 ? (
+                            leaderboard.map((user, index) => (
+                                <div class="table-row">
+                                    <span class="pos">{index + 1}</span>
+                                    <span class="user">
+                                        Madridista #
+                                        {user.user_id.toString().slice(-4)}
+                                    </span>
+                                    <span class="points">
+                                        {user.total_points || 0}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div class="empty-state">
+                                Se el primero en puntuar!
+                            </div>
+                        )
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    const submitBtn = document.getElementById("submit-prediction");
+    const homeInput = document.getElementById("home-score") as HTMLInputElement;
+    const awayInput = document.getElementById("away-score") as HTMLInputElement;
+    const feedbackMsg = document.getElementById("feedback-msg");
+    const container = document.querySelector(
+        ".teams-score-input",
+    ) as HTMLElement;
+
+    if (submitBtn && container) {
+        submitBtn.addEventListener("click", async () => {
+            const matchId = container.dataset.matchId;
+            const homeScore = parseInt(homeInput.value);
+            const awayScore = parseInt(awayInput.value);
+
+            if (isNaN(homeScore) || isNaN(awayScore)) {
+                if (feedbackMsg) {
+                    feedbackMsg.textContent =
+                        "Por favor, introduce un resultado válido.";
+                    feedbackMsg.classList.remove("hidden", "success");
+                    feedbackMsg.classList.add("error");
+                }
+                return;
+            }
+
+            submitBtn.textContent = "ENVIANDO...";
+            (submitBtn as HTMLButtonElement).disabled = true;
+
+            try {
+                const response = await fetch("/api/predictions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        match_id: matchId,
+                        home_score: homeScore,
+                        away_score: awayScore,
+                    }),
+                });
+
+                if (response.ok) {
+                    submitBtn.textContent = "¡GUARDADO!";
+                    submitBtn.style.background = "#2ecc71";
+                    if (feedbackMsg) {
+                        feedbackMsg.textContent =
+                            "Tu pronóstico se ha guardado correctamente.";
+                        feedbackMsg.classList.remove("hidden", "error");
+                        feedbackMsg.classList.add("success");
+                    }
+                    setTimeout(() => {
+                        submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
+                        (submitBtn as HTMLButtonElement).disabled = false;
+                        submitBtn.style.background = "";
+                    }, 2000);
+                } else {
+                    throw new Error("Error en la petición");
+                }
+            } catch (error) {
+                console.error(error);
+                submitBtn.textContent = "ERROR";
+                (submitBtn as HTMLButtonElement).disabled = false;
+                if (feedbackMsg) {
+                    feedbackMsg.textContent =
+                        "Ha ocurrido un error. Inténtalo de nuevo.";
+                    feedbackMsg.classList.remove("hidden", "success");
+                    feedbackMsg.classList.add("error");
+                }
+            }
+        });
+    }
+</script>
+
+<style>
+    :root {
+        --primary: #0a0e27;
+        --accent: #ffde59;
+        --text: #ffffff;
+        --success: #2ecc71;
+        --error: #e74c3c;
+    }
+
+    .pronosticos-page {
+        padding: 2rem 1rem;
+        min-height: 80vh;
+        color: var(--text);
+        font-family: "Poppins", sans-serif;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-title {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 2.5rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #a0a0a0;
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .auth-controls {
+        margin-top: 1rem;
+    }
+
+    .login-btn {
+        background: var(--accent);
+        color: var(--primary);
+        border: none;
+        padding: 0.5rem 1.5rem;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+
+    .content-container {
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+    }
+
+    /* Match Card */
+    .match-card {
+        background: #1a1f3c;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .match-info {
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .competition {
+        color: var(--accent);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .date {
+        color: #8892b0;
+        font-size: 0.9rem;
+    }
+
+    .teams-score-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+    }
+
+    .team {
+        flex: 1;
+        font-weight: 600;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+    }
+
+    .team.home {
+        text-align: right;
+        margin-right: 1rem;
+    }
+    .team.away {
+        text-align: left;
+        margin-left: 1rem;
+    }
+
+    .score-inputs {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #0f132a;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+    }
+
+    .score-inputs input {
+        width: 50px;
+        height: 50px;
+        text-align: center;
+        background: transparent;
+        border: 2px solid #2d3452;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 700;
+        border-radius: 4px;
+        transition: border-color 0.2s;
+    }
+
+    .score-inputs input:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+
+    .score-inputs input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .separator {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #555;
+    }
+
+    .submit-btn {
+        background: var(--accent);
+        color: var(--primary);
+        border: none;
+        width: 100%;
+        padding: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-radius: 6px;
+        cursor: pointer;
+        transition:
+            transform 0.2s,
+            background 0.2s;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        background: #ffd700;
+    }
+
+    .submit-btn:disabled {
+        background: #333;
+        color: #666;
+        cursor: not-allowed;
+    }
+
+    .feedback-msg {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+    .feedback-msg.success {
+        color: var(--success);
+    }
+    .feedback-msg.error {
+        color: var(--error);
+    }
+    .feedback-msg.hidden {
+        display: none;
+    }
+
+    /* Leaderboard */
+    .leaderboard-section {
+        background: #1a1f3c;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .section-title {
+        color: white;
+        font-size: 1.2rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        border-bottom: 2px solid var(--accent);
+        display: inline-block;
+        padding-bottom: 0.5rem;
+    }
+
+    .leaderboard-section {
+        text-align: center;
+    }
+
+    .leaderboard-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .table-header,
+    .table-row {
+        display: grid;
+        grid-template-columns: 50px 1fr 80px;
+        padding: 0.8rem;
+        align-items: center;
+    }
+
+    .table-header {
+        font-weight: 700;
+        color: #8892b0;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .table-row {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+    }
+
+    .table-row:nth-child(2) {
+        /* 1st place after header */
+        background: rgba(255, 222, 89, 0.1);
+        border: 1px solid rgba(255, 222, 89, 0.3);
+    }
+
+    .pos {
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .user {
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .points {
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+        justify-self: center;
+    }
+
+    @media (max-width: 480px) {
+        .teams-score-input {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .team {
+            text-align: center !important;
+            margin: 0 !important;
+        }
+        .score-inputs {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
