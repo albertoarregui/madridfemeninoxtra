@@ -6,16 +6,16 @@ import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/comp
 import type { ImageMetadata } from 'astro';
 
 // Import assets
-const playerImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
-const teamShields = import.meta.glob<{ default: ImageMetadata }>('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
-const competitionLogos = import.meta.glob<{ default: ImageMetadata }>('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
+const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
+const teamShields = import.meta.glob('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
+const competitionLogos = import.meta.glob('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
 
 // Helpers
 async function getPlayerImage(id: string) {
     const path = `/src/assets/jugadoras/${id}.png`;
     const imageLoader = playerImages[path];
     if (imageLoader) {
-        const mod = await imageLoader();
+        const mod = await imageLoader() as any;
         return mod.default.src;
     }
     return '/assets/img/default-player.png';
@@ -26,11 +26,11 @@ const getShield = async (teamName: string) => {
     
     let path = `/src/assets/escudos/${slug}.png`;
     let loader = teamShields[path];
-    if (loader) return (await loader()).default.src;
+    if (loader) return (await loader() as any).default.src;
     
     path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
     loader = teamShields[path];
-    if (loader) return (await loader()).default.src;
+    if (loader) return (await loader() as any).default.src;
     
     if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
     return '';
@@ -45,7 +45,7 @@ const getCompetitionLogo = async (compName: string) => {
     else if (slug.includes('supercopa')) path = '/src/assets/competiciones/supercopa_de_espana.png';
 
     const loader = competitionLogos[path];
-    if (loader) return (await loader()).default.src;
+    if (loader) return (await loader() as any).default.src;
     return '';
 };
 
