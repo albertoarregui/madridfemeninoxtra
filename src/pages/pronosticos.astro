@@ -4,11 +4,26 @@ import { turso } from "../lib/turso";
 import { CALENDAR } from "../consts/calendar";
 import { SQUAD } from "../../public/consts/squad";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
+import type { ImageMetadata } from 'astro';
+
+// Import all player images and shields directly using import.meta.glob
+const playerImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
+const teamShields = import.meta.glob<{ default: ImageMetadata }>('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
 
 // 1. Find Next Match
 const now = new Date();
 const nextMatchIndex = CALENDAR.find((m) => new Date(m.date) >= now); 
 const nextMatch = nextMatchIndex || null;
+
+// Helper to get image URL safely
+async function getPlayerImage(id: string) {
+    const path = `/src/assets/jugadoras/${id}.png`;
+    if (playerImages[path]) {
+        const mod = await playerImages[path]();
+        return mod.default.src;
+    }
+    return '/assets/img/default-player.png'; // Fallback
+}
 
 // 2. Fetch Data (Server Side)
 const { userId } = Astro.locals.auth();
@@ -23,7 +38,6 @@ if (userId && nextMatch) {
         });
         if (result.rows.length > 0) {
             userPrediction = result.rows[0];
-            // Parse scorers JSON if it exists
             if (typeof userPrediction.scorers === 'string') {
                 try {
                     userPrediction.scorers = JSON.parse(userPrediction.scorers);
@@ -51,16 +65,45 @@ const isMatchOpen = nextMatch ? true : false;
 const matchDate = nextMatch ? new Date(nextMatch.date) : new Date();
 const formattedDate = matchDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-// Filtering squad - maybe just strict forwards/midfielders? For now all squad.
-const players = SQUAD.sort((a, b) => a.number - b.number);
+// Prepare squad with images
+const playersWithImages = await Promise.all(SQUAD.sort((a, b) => a.number - b.number).map(async (p) => ({
+    ...p,
+    image: await getPlayerImage(p.id)
+})));
+
+// Helper for team shields - matching naming convention from previous tasks might be complex. 
+// Assuming team names in CALENDAR match file names or we try to slugify.
+// Using a simple slugify for shield checking: "Real Madrid" -> "real_madrid.png"
+const getShield = async (teamName) => {
+    // Basic slugify: remove accents, lowercase, replace spaces with underscores/hyphens
+    const slug = teamName.toLowerCase().replace(/ /g, '_').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // Try underscore first, then hyphen, then maybe specific mappings
+    let path = `/src/assets/escudos/${slug}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+    
+    path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
+    if (teamShields[path]) return (await teamShields[path]()).default.src;
+
+    // Hardcoded check for Real Madrid if needed, as it might be named differently
+    if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png'; 
+
+    return ''; // Return empty if not found, or default
+};
+
+const homeShield = nextMatch ? await getShield(nextMatch.team1) : '';
+const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
+
 ---
 
 <Layout title="La Porra | Madrid Femenino Xtra">
-    <div class="pronosticos-page">
-        <header class="page-header">
-            <h1 class="section-title">LA PORRA</h1>
-            <p class="page-subtitle">ADIVINA EL RESULTADO Y GANA PUNTOS</p>
-             <div class="auth-controls">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pronosticos-page">
+        <header class="page-header text-center mb-10">
+            <h1 class="page-title">LA PORRA</h1>
+             <p class="content-h2">
+                Adivina el resultado del próximo partido y gana puntos para subir en la clasificación.
+            </p>
+             <div class="auth-controls mt-4">
                 <SignedOut>
                     <SignInButton mode="modal" as="button" class="login-btn">
                         INICIAR SESIÓN
@@ -75,10 +118,12 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         <div class="grid-layout">
             <!-- LEFT COLUMN: PREDICTION CARD -->
             <section class="prediction-column">
-                <h2 class="column-title">PRÓXIMO PARTIDO</h2>
+                <!-- Title removed from here as requested -->
                 
                 {nextMatch ? (
                     <div class="match-card">
+                        <div class="card-title-overlay">PRÓXIMO PARTIDO</div>
+                        
                          <div class="match-header">
                             <span class="competition-badge">{nextMatch.competition}</span>
                             <span class="match-date">{formattedDate} - {nextMatch.time}</span>
@@ -86,6 +131,7 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
                         
                         <div class="teams-container" data-match-id={nextMatch.id}>
                             <div class="team home">
+                                {homeShield && <img src={homeShield} alt={nextMatch.team1} class="team-shield" />}
                                 <span class="team-name">{nextMatch.team1}</span>
                             </div>
                             
@@ -112,24 +158,30 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
                             </div>
 
                             <div class="team away">
+                                {awayShield && <img src={awayShield} alt={nextMatch.team2} class="team-shield" />}
                                 <span class="team-name">{nextMatch.team2}</span>
                             </div>
                         </div>
 
                         <!-- GOALSCORERS SECTION -->
                         <div class="scorers-section">
-                            <h3 class="scorers-title">¿QUIÉN MARCARÁ? (Opcional)</h3>
-                            <p class="scorers-hint">Selecciona las jugadoras del Real Madrid que crees que anotarán.</p>
+                            <h3 class="scorers-title">¿QUIÉN MARCARÁ?</h3>
                             
                             <div class="scorers-select-container">
-                                {players.map(player => (
+                                {playersWithImages.map(player => (
                                     <div 
                                         class={`scorer-chip ${userPrediction && userPrediction.scorers && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
                                         data-player-id={player.id}
                                         onclick="toggleScorer(this)"
+                                        title={player.name}
                                     >
-                                        <span class="player-num">#{player.number}</span>
-                                        <span class="player-name-chip">{player.name.split(' ')[0]}</span>
+                                        <div class="chip-image">
+                                             <img src={player.image} alt={player.name} loading="lazy" />
+                                        </div>
+                                        <div class="chip-info">
+                                            <span class="player-num">#{player.number}</span>
+                                            <span class="player-name-chip">{player.name.split(' ')[0]}</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -155,8 +207,9 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
 
             <!-- RIGHT COLUMN: LEADERBOARD -->
             <section class="leaderboard-column">
-                <h2 class="column-title">CLASIFICACIÓN TOP 20</h2>
                 <div class="leaderboard-container">
+                    <div class="card-title-overlay">CLASIFICACIÓN</div>
+                    
                     <div class="leaderboard-header">
                         <span class="th-pos">#</span>
                         <span class="th-user">USUARIO</span>
@@ -181,13 +234,12 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
                 </div>
             </section>
         </div>
-    </div>
+    </main>
 </Layout>
 
 <script is:inline>
     // Global function for onclick handler
     function toggleScorer(element) {
-        // Check if disabled (no auth)
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
         
@@ -278,33 +330,26 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
     }
 
     .pronosticos-page {
-        padding: 2rem 1rem;
-        min-height: 80vh;
         font-family: 'Poppins', sans-serif;
-        max-width: 1200px; /* Wider for 2 cols */
-        margin: 0 auto;
     }
-
-    .page-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-
-    .section-title {
-        /* Matches global site title style */
-        font-family: 'Permanent Marker', cursive;
-        font-size: 2.5rem;
-        color: var(--accent);
-        margin: 0;
-        text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-    }
-
-    .page-subtitle {
-        color: #ddd;
-        font-size: 1rem;
-        margin-top: 0.5rem;
+    
+    /* Reusing styles from Plantilla */
+    .page-title {
+        color: var(--text);
+        font-family: "Archivo Black", sans-serif;
+        font-size: 3.5rem;
+        line-height: normal;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        margin-bottom: 0px;
+        text-align: center;
+    }
+    
+    .content-h2 {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
     }
 
     /* GRID LAYOUT FOR DESKTOP */
@@ -312,33 +357,54 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
+        margin-top: 3rem;
     }
 
-    @media (min-width: 900px) {
+    @media (min-width: 1024px) {
         .grid-layout {
             grid-template-columns: 1.5fr 1fr; /* Match card slightly wider */
             align-items: start;
         }
     }
 
-    .column-title {
-        font-family: 'Bebas Neue', sans-serif;
-        font-size: 1.8rem;
-        color: var(--text);
-        margin-bottom: 1rem;
-        border-left: 4px solid var(--accent);
-        padding-left: 1rem;
-        letter-spacing: 1px;
-    }
-
-    /* PREDICTION CARD */
-    .match-card {
+    /* CARD STYLING */
+    .match-card, .leaderboard-container {
+        position: relative;
         background: white;
-        border-radius: 8px;
-        padding: 2rem;
+        border-radius: 12px;
+        padding: 3rem 2rem 2rem 2rem; /* Top padding for title overlay */
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         color: var(--text-dark);
         border: 1px solid #eee;
+        overflow: visible; /* For title overlay */
+    }
+
+    .leaderboard-container {
+        background: #1a1f3c; /* Dark theme for leaderboard */
+        color: white;
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 3rem 0 0 0;
+    }
+
+    .card-title-overlay {
+        position: absolute;
+        top: -15px;
+        left: 20px;
+        background: var(--accent);
+        color: #000;
+        padding: 0.3rem 1.2rem;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        transform: skew(-10deg);
+        box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+    }
+    
+    .card-title-overlay::after {
+        content: ''; /* Fix skew for text */
+        display: block;
+        transform: skew(10deg);
     }
 
     .no-match-card {
@@ -379,59 +445,67 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         justify-content: space-between;
         align-items: center;
         margin-bottom: 2rem;
+        gap: 1rem;
     }
 
     .team {
         flex: 1;
-        font-weight: 800;
-        font-size: 1.2rem;
-        text-transform: uppercase;
-        color: var(--primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        text-align: center;
     }
     
-    .team.home { text-align: right; margin-right: 1rem; }
-    .team.away { text-align: left; margin-left: 1rem; }
+    .team-shield {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+    
+    .team-name {
+        font-weight: 800;
+        font-size: 1rem;
+        text-transform: uppercase;
+        color: var(--primary);
+        line-height: 1.2;
+    }
 
     .score-board {
         background: #f8f9fa;
-        padding: 1rem;
+        padding: 0.5rem 1rem;
         border-radius: 8px;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.3rem;
         border: 1px solid #eee;
     }
 
     .score-board input {
-         width: 60px;
+        width: 50px;
         height: 60px;
         text-align: center;
         background: white;
         border: 2px solid #ddd;
         color: var(--primary);
-        font-size: 1.8rem;
+        font-size: 2rem;
         font-weight: 700;
         border-radius: 4px;
         transition: all 0.2s;
-        /* Remove arrows from number input */
         -moz-appearance: textfield;
+        padding: 0;
     }
-    .score-board input::-webkit-outer-spin-button,
-    .score-board input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
+    
     .score-board input:focus {
         border-color: var(--accent);
         outline: none;
-        box-shadow: 0 0 0 3px rgba(255, 222, 89, 0.2);
     }
 
     .score-separator {
         font-size: 2rem;
         font-weight: 700;
-        color: #ccc;
+        color: #ddd;
     }
 
     /* GOALSCORERS */
@@ -442,58 +516,83 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
     }
 
     .scorers-title {
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 700;
         text-transform: uppercase;
-        margin-bottom: 0.2rem;
-        color: var(--primary);
-    }
-
-    .scorers-hint {
-        font-size: 0.85rem;
-        color: #888;
         margin-bottom: 1rem;
+        color: var(--primary);
+        border-left: 3px solid var(--accent);
+        padding-left: 0.5rem;
     }
 
     .scorers-select-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        max-height: 200px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 0.8rem;
+        max-height: 400px; /* Taller area */
         overflow-y: auto;
-        padding-bottom: 0.5rem;
-        /* Custom scrollbar */
-        scrollbar-width: thin;
-        scrollbar-color: #ddd #f1f1f1;
+        padding-right: 0.5rem;
     }
 
     .scorer-chip {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
-        padding: 0.4rem 0.8rem;
-        background: #f1f1f1;
-        border-radius: 20px;
-        font-size: 0.85rem;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
-        border: 1px solid transparent;
+        border: 2px solid transparent;
         user-select: none;
     }
 
     .scorer-chip:hover {
-        background: #e0e0e0;
+        background: #e9ecef;
+        transform: translateY(-2px);
     }
 
     .scorer-chip.selected {
-        background: var(--primary);
-        color: var(--accent);
-        border-color: var(--primary);
+        background: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .chip-image {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #ccc;
+        flex-shrink: 0;
+    }
+    
+    .chip-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .chip-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
     }
 
     .player-num {
+        font-size: 0.7rem;
         font-weight: 700;
-        opacity: 0.7;
+        color: #999;
+    }
+    
+    .scorer-chip.selected .player-num {
+        color: var(--primary);
+    }
+
+    .player-name-chip {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #333;
     }
 
     /* ACTIONS */
@@ -510,17 +609,21 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         padding: 1rem;
         font-weight: 800;
         text-transform: uppercase;
-        border-radius: 50px; /* Rounded button like header */
+        border-radius: 8px;
         cursor: pointer;
         transition: transform 0.2s, background 0.2s;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 0px #e6c84c; /* Retro button style */
         font-family: 'Archivo Black', sans-serif;
     }
 
     .submit-btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        background: #ffd700;
-        box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+        box-shadow: 0 6px 0px #e6c84c;
+    }
+    
+    .submit-btn:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: 0 0px 0px #e6c84c;
     }
     
     .submit-btn:disabled {
@@ -537,37 +640,32 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
     }
     .feedback-msg.success { color: #2ecc71; }
     .feedback-msg.error { color: #e74c3c; }
-    .hidden { display: none; }
 
-    /* LEADERBOARD CARD */
-    .leaderboard-column {
-        color: var(--text);
-    }
 
-    .leaderboard-container {
-        background: var(--primary); /* Dark bg for leaderboard */
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
+    /* LEADERBOARD LIST */
     .leaderboard-header {
         display: grid;
         grid-template-columns: 50px 1fr 60px;
-        background: rgba(0,0,0,0.3);
-        padding: 1rem;
+        padding: 0.8rem 1rem;
         font-weight: 700;
-        font-size: 0.9rem;
-        color: #aaa;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.5);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .leaderboard-list {
+        max-height: 600px;
+        overflow-y: auto;
     }
 
     .leaderboard-row {
         display: grid;
         grid-template-columns: 50px 1fr 60px;
-        padding: 1rem;
+        padding: 0.8rem 1rem;
         align-items: center;
         border-bottom: 1px solid rgba(255,255,255,0.05);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+        color: #eee;
     }
     
     .leaderboard-row:last-child {
@@ -580,7 +678,7 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
     
     .top-3 .td-pos {
         color: var(--accent);
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: 900;
     }
 
@@ -591,14 +689,14 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
     }
 
     .user-avatar-placeholder {
-        width: 30px;
-        height: 30px;
-        background: #444;
+        width: 25px;
+        height: 25px;
+        background: rgba(255,255,255,0.1);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         font-weight: 700;
     }
     
@@ -612,9 +710,11 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         text-align: center;
         color: var(--accent);
     }
-
-    .login-prompt {
-        color: #888;
+    
+    .empty-state {
+        padding: 2rem;
+        text-align: center;
+        color: rgba(255,255,255,0.4);
         font-style: italic;
     }
 
@@ -622,19 +722,22 @@ const players = SQUAD.sort((a, b) => a.number - b.number);
         background: var(--accent);
         color: var(--primary);
         border: none;
-        padding: 0.5rem 1.5rem;
-        font-weight: 700;
-        border-radius: 50px;
+        padding: 0.6rem 2rem;
+        font-weight: 800;
+        border-radius: 4px;
         cursor: pointer;
-        text-transform: uppercase; 
+        text-transform: uppercase;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+    .login-btn:hover {
+        transform: scale(1.05);
     }
 
     @media (max-width: 600px) {
-        .teams-container {
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .team { text-align: center !important; margin: 0 !important; }
-        .score-board { width: 100%; justify-content: center; }
+        .page-title { font-size: 2.2rem; }
+        .score-board input { width: 40px; font-size: 1.5rem; height: 50px; }
+        .scorers-select-container { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+        .card-title-overlay { font-size: 1.1rem; padding: 0.3rem 0.8rem; top: -12px; left: 10px; }
     }
 </style>
