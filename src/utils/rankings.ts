@@ -192,55 +192,55 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             ORDER BY j.nombre
         `;
 
-        t result = await client.execute(query);
+        const result = await client.execute(query);
 
-        rn result.rows.map((row: any) => ({
-            ugadora: row.id_jugadora,
-            re: row.nombre,
-            : slugify(row.nombre),
-            cion: row.posicion,
-            orada: row.temporada,
-            eticion: row.competicion,
-            s: Number(row.goles),
-            s_victoria: Number(row.goles_victoria),
-            s_empate: Number(row.goles_empate),
-            s_abrelatas: Number(row.goles_abrelatas),
-            tencias: Number(row.asistencias),
-            s_generados: Number(row.goles) + Number(row.asistencias),
-            ocatorias: Number(row.convocatorias),
-            idos: Number(row.partidos),
-            laridades: Number(row.titularidades),
-            tos: Number(row.minutos),
-            io_entrada: Number(row.cambio_entrada),
-            io_salida: Number(row.cambio_salida),
-            orias: Number(row.victorias),
-            erias_cero: Number(row.porterias_cero),
-            etas_amarillas: Number(row.tarjetas_amarillas),
-            etas_rojas: Number(row.tarjetas_rojas),
-            tanias: Number(row.capitanias)
-        
+        return result.rows.map((row: any) => ({
+            id_jugadora: row.id_jugadora,
+            nombre: row.nombre,
+            slug: slugify(row.nombre),
+            posicion: row.posicion,
+            temporada: row.temporada,
+            competicion: row.competicion,
+            goles: Number(row.goles),
+            goles_victoria: Number(row.goles_victoria),
+            goles_empate: Number(row.goles_empate),
+            goles_abrelatas: Number(row.goles_abrelatas),
+            asistencias: Number(row.asistencias),
+            goles_generados: Number(row.goles) + Number(row.asistencias),
+            convocatorias: Number(row.convocatorias),
+            partidos: Number(row.partidos),
+            titularidades: Number(row.titularidades),
+            minutos: Number(row.minutos),
+            cambio_entrada: Number(row.cambio_entrada),
+            cambio_salida: Number(row.cambio_salida),
+            victorias: Number(row.victorias),
+            porterias_cero: Number(row.porterias_cero),
+            tarjetas_amarillas: Number(row.tarjetas_amarillas),
+            tarjetas_rojas: Number(row.tarjetas_rojas),
+            capitanias: Number(row.capitanias)
+        }));
 
-    tch(error) {
-            ole.error("Error fetching rankings directly:", error);
-            rn [];
+    } catch (error) {
+        console.error("Error fetching rankings directly:", error);
+        return [];
+    }
+}
 
+export async function fetchPlayerStreaks(): Promise<StreakData[]> {
+    try {
+        const { createClient } = await import('@libsql/client');
 
+        const url = import.meta.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
 
-            export async function fetchPlayerStreaks(): Promise<StreakData[]> {
-                try {
-                    const { createClient } = await import('@libsql/client');
-
-                    const url = import.meta.env.TURSO_DATABASE_URL;
-                    const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-                    if(!url || !authToken) return [];
+        if (!url || !authToken) return [];
 
         const client = createClient({ url, authToken });
 
-        etch granular match data for calculation
-        e need: player, match date, season, competition, minutes_played, goals, assists
-        rdered by date ASC
-        t query = `
+        // Fetch granular match data for calculation
+        // We need: player, match date, season, competition, minutes_played, goals, assists
+        // Ordered by date ASC
+        const query = `
             SELECT 
                 j.id_jugadora,
                 j.nombre,
@@ -262,124 +262,125 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             ORDER BY j.id_jugadora, p.fecha ASC
         `;
 
-        t result = await client.execute(query);
-        t rows = result.rows;
+        const result = await client.execute(query);
+        const rows = result.rows;
 
-        roup by player
-        t playersMap: Record<number, any[]> = {};
-        .forEach((r: any) => {
-            !playersMap[r.id_jugadora]) playersMap[r.id_jugadora] = [];
-        ersMap[r.id_jugadora].push(r);
-        
+        // Group by player
+        const playersMap: Record<number, any[]> = {};
+        rows.forEach((r: any) => {
+            if (!playersMap[r.id_jugadora]) playersMap[r.id_jugadora] = [];
+            playersMap[r.id_jugadora].push(r);
+        });
 
-        t streaks: StreakData[] = [];
+        const streaks: StreakData[] = [];
 
-        (const playerIdStr in playersMap) {
-            t playerId = Number(playerIdStr);
-            t matches = playersMap[playerId];
-            !matches.length) continue;
+        for (const playerIdStr in playersMap) {
+            const playerId = Number(playerIdStr);
+            const matches = playersMap[playerId];
+            if (!matches.length) continue;
 
-            t basePlayer = {
-                ugadora: playerId,
-                re: matches[0].nombre,
-                : slugify(matches[0].nombre),
-                cion: matches[0].posicion || ''
-            
+            const basePlayer = {
+                id_jugadora: playerId,
+                nombre: matches[0].nombre,
+                slug: slugify(matches[0].nombre),
+                posicion: matches[0].posicion || ''
+            };
 
+            // State trackers
+            const currentStreaks: any = {
+                // Keyed by context key (e.g. 'all', 'temporada:X', 'competicion:Y')
+                // Value: { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 }
+            };
 
-            tate trackers
-            t currentStreaks: any = {
-                    eyed by context key(e.g. 'all', 'temporada:X', 'competicion:Y')
-                    alue: { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 }
-            
+            const maxStreaksMap: Record<string, any> = {};
 
-            t maxStreaksMap: Record<string, any> = {};
+            // Initialize contexts for the player generally (though we create on fly)
 
-                    nitialize contexts for the player generally(though we create on fly)
+            for (const m of matches) {
+                const season = m.temporada;
+                const competition = m.competicion;
 
-            (const m of matches) {
-                t season = m.temporada;
-                t competition = m.competicion;
+                // Contexts: Global, Season, Comp
+                const contexts = [`season:\${season}`, `comp:\${competition}`];
 
-                ontexts: Global, Season, Comp
-                t contexts = [`season:${season}`, `comp:${competition}`];
+                // Only add to global streaks if it's NOT a friendly
+                if (competition !== 'Amistoso') {
+                    contexts.push('global');
+                }
 
-                nly add to global streaks if it's NOT a friendly
-                competition !== 'Amistoso') {
-                    exts.push('global');
-                
+                const hasGoal = Number(m.goals) > 0;
+                const hasAssist = Number(m.assists) > 0;
+                const hasGA = hasGoal || hasAssist;
 
-                t hasGoal = Number(m.goals) > 0;
-                t hasAssist = Number(m.assists) > 0;
-                t hasGA = hasGoal || hasAssist;
+                // Detailed position check
+                const isDefensive = basePlayer.posicion && (
+                    basePlayer.posicion.includes('Portera') ||
+                    basePlayer.posicion.includes('Defensa') ||
+                    basePlayer.posicion.includes('Central') ||
+                    basePlayer.posicion.includes('Lateral')
+                );
+                const isCleanSheet = isDefensive && Number(m.goles_rival) === 0;
 
-                etailed position check
-                t isDefensive = basePlayer.posicion && (
-                        Player.posicion.includes('Portera') ||
-                        Player.posicion.includes('Defensa') ||
-                        Player.posicion.includes('Central') ||
-                        Player.posicion.includes('Lateral')
-                
-                t isCleanSheet = isDefensive && Number(m.goles_rival) === 0;
+                contexts.forEach(ctx => {
+                    if (!currentStreaks[ctx]) currentStreaks[ctx] = { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 };
 
-                    exts.forEach(ctx => {
-                        !currentStreaks[ctx]) currentStreaks[ctx] = { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 };
+                    // Scoring
+                    if (hasGoal) currentStreaks[ctx].scoring++;
+                    else currentStreaks[ctx].scoring = 0;
 
-                    coring
-                    hasGoal) currentStreaks[ctx].scoring++;
-                    currentStreaks[ctx].scoring = 0;
+                    // Assisting
+                    if (hasAssist) currentStreaks[ctx].assisting++;
+                    else currentStreaks[ctx].assisting = 0;
 
-                    ssisting
-                    hasAssist) currentStreaks[ctx].assisting++;
-                    currentStreaks[ctx].assisting = 0;
+                    // G+A
+                    if (hasGA) currentStreaks[ctx].ga++;
+                    else currentStreaks[ctx].ga = 0;
 
-                    +A
-                    hasGA) currentStreaks[ctx].ga++;
-                    currentStreaks[ctx].ga = 0;
+                    // Clean Sheet
+                    if (isCleanSheet) currentStreaks[ctx].clean_sheet++;
+                    else currentStreaks[ctx].clean_sheet = 0;
 
-                    lean Sheet
-                    isCleanSheet) currentStreaks[ctx].clean_sheet++;
-                    currentStreaks[ctx].clean_sheet = 0;
+                    // Update Max
+                    if (!maxStreaksMap[ctx]) {
+                        maxStreaksMap[ctx] = {
+                            ...basePlayer,
+                            temporada: ctx.startsWith('season:') ? season : (ctx === 'global' ? 'all' : 'all'),
+                            competicion: ctx.startsWith('comp:') ? competition : (ctx === 'global' ? 'all' : 'all'),
+                            streak_scoring: 0,
+                            streak_assisting: 0,
+                            streak_ga: 0,
+                            streak_clean_sheet: 0
+                        };
+                        // Fix metadata for specific contexts to ensure filtered views work
+                        if (ctx.startsWith('season:')) {
+                            maxStreaksMap[ctx].competicion = 'all';
+                        }
+                        if (ctx.startsWith('comp:')) {
+                            maxStreaksMap[ctx].temporada = 'all';
+                        }
+                        if (ctx === 'global') {
+                            maxStreaksMap[ctx].temporada = 'all';
+                            maxStreaksMap[ctx].competicion = 'all';
+                        }
+                    }
 
-                    pdate Max
-                    !maxStreaksMap[ctx]) {
-                        treaksMap[ctx] = {
-                            asePlayer,
-                            orada: ctx.startsWith('season:') ? season : (ctx === 'global' ? 'all' : 'all'),
-                            eticion: ctx.startsWith('comp:') ? competition : (ctx === 'global' ? 'all' : 'all'),
-                            ak_scoring: 0,
-                            ak_assisting: 0,
-                            ak_ga: 0,
-                            ak_clean_sheet: 0
-                        
-                        ix metadata for specific contexts to ensure filtered views work
-                        ctx.startsWith('season:')) {
-                            treaksMap[ctx].competicion = 'all';
+                    if (currentStreaks[ctx].scoring > maxStreaksMap[ctx].streak_scoring) maxStreaksMap[ctx].streak_scoring = currentStreaks[ctx].scoring;
+                    if (currentStreaks[ctx].assisting > maxStreaksMap[ctx].streak_assisting) maxStreaksMap[ctx].streak_assisting = currentStreaks[ctx].assisting;
+                    if (currentStreaks[ctx].ga > maxStreaksMap[ctx].streak_ga) maxStreaksMap[ctx].streak_ga = currentStreaks[ctx].ga;
+                    if (currentStreaks[ctx].clean_sheet > maxStreaksMap[ctx].streak_clean_sheet) maxStreaksMap[ctx].streak_clean_sheet = currentStreaks[ctx].clean_sheet;
+                });
+            }
 
-                            ctx.startsWith('comp:')) {
-                                treaksMap[ctx].temporada = 'all';
+            // Push all contexts to result
+            Object.values(maxStreaksMap).forEach(val => streaks.push(val as StreakData));
+        }
 
-                                ctx === 'global') {
-                                    treaksMap[ctx].temporada = 'all';
-                                    treaksMap[ctx].competicion = 'all';
+        return streaks;
 
-
-
-                                    currentStreaks[ctx].scoring > maxStreaksMap[ctx].streak_scoring) maxStreaksMap[ctx].streak_scoring = currentStreaks[ctx].scoring;
-                                    currentStreaks[ctx].assisting > maxStreaksMap[ctx].streak_assisting) maxStreaksMap[ctx].streak_assisting = currentStreaks[ctx].assisting;
-                                    currentStreaks[ctx].ga > maxStreaksMap[ctx].streak_ga) maxStreaksMap[ctx].streak_ga = currentStreaks[ctx].ga;
-                                    currentStreaks[ctx].clean_sheet > maxStreaksMap[ctx].streak_clean_sheet) maxStreaksMap[ctx].streak_clean_sheet = currentStreaks[ctx].clean_sheet;
-                
-            
-
-            ush all contexts to result
-                                    ct.values(maxStreaksMap).forEach(val => streaks.push(val as StreakData));
-        
-
-        rn streaks;
-
-                                    tch(error) {
-                                        ole.error("Error fetching player streaks:", error);
-                                        rn[];
+    } catch (error) {
+        console.error("Error fetching player streaks:", error);
+        return [];
+    }
+}
 
 

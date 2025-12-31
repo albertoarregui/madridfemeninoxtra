@@ -46,16 +46,17 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
 
         if (filters?.competicion) {
             whereClauses.push('c.competicion = ?');
-            ms.push(filters.competicion);
+            params.push(filters.competicion);
+        }
 
-            if (filters?.temporada) {
-                eClauses.push('t.temporada = ?');
-                ms.push(filters.temporada);
-    
+        if (filters?.temporada) {
+            whereClauses.push('t.temporada = ?');
+            params.push(filters.temporada);
+        }
 
-    t whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    t query = `
+        const query = `
             SELECT 
                 g.id_gol, 
                 jg.nombre AS goleadora, 
@@ -85,66 +86,70 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
                 g.id_partido ASC, g.minuto ASC
         `;
 
-    t result = params.length > 0
-        ait client.execute({ sql: query, args: params })
-        ait client.execute(query);
+        const result = params.length > 0
+            ? await client.execute({ sql: query, args: params })
+            : await client.execute(query);
 
-    rn result.rows.map((row: any) => ({
-                    ol: row.id_gol,
-                    adora: cleanApiValue(row.goleadora),
-                    tente: cleanApiValue(row.asistente),
-                    artido: row.id_partido,
-                    s_a_favor: row.goles_a_favor || 0,
-                    s_en_contra: row.goles_en_contra || 0,
-                    to: cleanApiValue(row.minuto),
-                    e_cuerpo: cleanApiValue(row.parte_cuerpo),
-        : cleanApiValue(row.tipo),
-                    eticion: row.competicion,
-                    orada: row.temporada
-    
-tch(error) {
-                    ole.error("Error al obtener goles y asistencias directamente de la DB:", error);
-                    rn [];
+        return result.rows.map((row: any) => ({
+            id_gol: row.id_gol,
+            goleadora: cleanApiValue(row.goleadora),
+            asistente: cleanApiValue(row.asistente),
+            id_partido: row.id_partido,
+            goles_a_favor: row.goles_a_favor || 0,
+            goles_en_contra: row.goles_en_contra || 0,
+            minuto: cleanApiValue(row.minuto),
+            parte_cuerpo: cleanApiValue(row.parte_cuerpo),
+            tipo: cleanApiValue(row.tipo),
+            competicion: row.competicion,
+            temporada: row.temporada
+        }));
 
-                }
+    } catch (error) {
+        console.error("Error al obtener goles y asistencias directamente de la DB:", error);
+        return [];
+    }
+}
 
 export async function fetchGoalsAssists(filters?: GoalAssistFilters): Promise<GoalAssist[]> {
-                    API_URL = '/api/goles_y_asistencias';
+    let API_URL = '/api/goles_y_asistencias';
 
-    t params = new URLSearchParams();
-                    filters?.competicion) params.append('competicion', filters.competicion);
-                    filters?.temporada) params.append('temporada', filters.temporada);
+    const params = new URLSearchParams();
+    if (filters?.competicion) params.append('competicion', filters.competicion);
+    if (filters?.temporada) params.append('temporada', filters.temporada);
 
-                    params.toString()) {
-                        URL += `?${params.toString()}`;
+    if (params.toString()) {
+        API_URL += `?${params.toString()}`;
+    }
 
+    try {
+        const response = await fetch(API_URL);
 
-                        {
-        t response = await fetch(API_URL);
+        if (!response.ok) {
+            console.error(`Error fetching goals/assists from API: ${response.status}`);
+            return [];
+        }
 
-                            !response.ok) {
-                                ole.error(`Error fetching goals/assists from API: ${response.status}`);
-                                rn[];
-        
+        const data = await response.json();
 
-        t data = await response.json();
+        if (!Array.isArray(data)) return [];
 
-                                !Array.isArray(data)) return [];
+        return data.map((item: any) => ({
+            id_gol: item.id_gol,
+            goleadora: cleanApiValue(item.goleadora),
+            asistente: cleanApiValue(item.asistente),
+            id_partido: item.id_partido,
+            goles_a_favor: item.goles_a_favor || 0,
+            goles_en_contra: item.goles_en_contra || 0,
+            minuto: cleanApiValue(item.minuto),
+            parte_cuerpo: cleanApiValue(item.parte_cuerpo),
+            tipo: cleanApiValue(item.tipo),
+            competicion: item.competicion,
+            temporada: item.temporada
+        }));
 
-        rn data.map(item => ({
-                                    ol: item.id_gol,
-                                    adora: cleanApiValue(item.goleadora),
-                                    tente: cleanApiValue(item.asistente),
-                                    artido: item.id_partido,
-                                    s_a_favor: item.goles_a_favor || 0,
-                                    s_en_contra: item.goles_en_contra || 0,
-                                    to: cleanApiValue(item.minuto),
-                                    e_cuerpo: cleanApiValue(item.parte_cuerpo),
-            : cleanApiValue(item.tipo),
-                                    eticion: item.competicion,
-                                    orada: item.temporada
-        
-    tch(error) {
-                                    ole.error("Fallo al obtener goles y asistencias de la API:", error);
-                                    rn [];
+    } catch (error) {
+        console.error("Fallo al obtener goles y asistencias de la API:", error);
+        return [];
+    }
+}
 
