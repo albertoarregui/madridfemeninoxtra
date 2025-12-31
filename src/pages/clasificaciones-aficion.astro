@@ -1,0 +1,273 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getFanRankings } from "../lib/fanRankings";
+import { SQUAD } from "../consts/squad";
+import { getPlayerImage } from "../lib/assetHelpers";
+
+// Fetch rankings
+const fanRankings = await getFanRankings();
+
+// Load player images
+const squadWithImages = await Promise.all(
+    SQUAD.map(async (p) => ({
+        ...p,
+        image: await getPlayerImage(p.id),
+    })),
+);
+
+const playerImageMap = new Map(squadWithImages.map((p) => [p.id, p.image]));
+const squad: any[] = SQUAD;
+---
+
+<Layout title="Clasificaciones de la Afición | Madrid Femenino Xtra">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 class="page-title">CLASIFICACIONES DE LA AFICIÓN</h1>
+
+        <p class="content-h2 text-center text-pretty max-w-4xl mx-auto mb-12">
+            Descubre a las jugadoras mejor valoradas por la afición en
+            diferentes períodos y las más votadas como MVP
+        </p>
+
+        <div class="rankings-grid">
+            {/* 1. MATCH RANKING */}
+            <div class="ranking-col">
+                <h3 class="ranking-header">JORNADA</h3>
+                <div class="ranking-list">
+                    {
+                        fanRankings.match.map((p: any, i: number) => {
+                            const player = squad.find((s) => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i + 1}</span>
+                                    <img
+                                        src={
+                                            playerImageMap.get(player.id) || ""
+                                        }
+                                        alt={player.name}
+                                        class="rank-img"
+                                    />
+                                    <div class="rank-info">
+                                        <span class="rank-name">
+                                            {player.name}
+                                        </span>
+                                        <span class="rank-val">
+                                            {p.avg.toFixed(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    }
+                    {
+                        fanRankings.match.length === 0 && (
+                            <p class="empty-rank">Sin datos</p>
+                        )
+                    }
+                </div>
+            </div>
+
+            {/* 2. MONTH RANKING */}
+            <div class="ranking-col">
+                <h3 class="ranking-header">MES</h3>
+                <div class="ranking-list">
+                    {
+                        fanRankings.month.map((p: any, i: number) => {
+                            const player = squad.find((s) => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i + 1}</span>
+                                    <img
+                                        src={
+                                            playerImageMap.get(player.id) || ""
+                                        }
+                                        alt={player.name}
+                                        class="rank-img"
+                                    />
+                                    <div class="rank-info">
+                                        <span class="rank-name">
+                                            {player.name}
+                                        </span>
+                                        <span class="rank-val">
+                                            {p.avg.toFixed(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    }
+                    {
+                        fanRankings.month.length === 0 && (
+                            <p class="empty-rank">Sin datos</p>
+                        )
+                    }
+                </div>
+            </div>
+
+            {/* 3. SEASON RANKING */}
+            <div class="ranking-col">
+                <h3 class="ranking-header">TEMPORADA</h3>
+                <div class="ranking-list">
+                    {
+                        fanRankings.season.map((p: any, i: number) => {
+                            const player = squad.find((s) => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i + 1}</span>
+                                    <img
+                                        src={
+                                            playerImageMap.get(player.id) || ""
+                                        }
+                                        alt={player.name}
+                                        class="rank-img"
+                                    />
+                                    <div class="rank-info">
+                                        <span class="rank-name">
+                                            {player.name}
+                                        </span>
+                                        <span class="rank-val">
+                                            {p.avg.toFixed(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    }
+                    {
+                        fanRankings.season.length === 0 && (
+                            <p class="empty-rank">Sin datos</p>
+                        )
+                    }
+                </div>
+            </div>
+
+            {/* 4. MVP RANKING */}
+            <div class="ranking-col">
+                <h3 class="ranking-header">TOTAL MVPS</h3>
+                <div class="ranking-list">
+                    {
+                        fanRankings.mvp.map((p: any, i: number) => {
+                            const player = squad.find((s) => s.id === p.id);
+                            if (!player) return null;
+                            return (
+                                <div class="ranking-item">
+                                    <span class="rank-pos">{i + 1}</span>
+                                    <img
+                                        src={
+                                            playerImageMap.get(player.id) || ""
+                                        }
+                                        alt={player.name}
+                                        class="rank-img"
+                                    />
+                                    <div class="rank-info">
+                                        <span class="rank-name">
+                                            {player.name}
+                                        </span>
+                                        <span class="rank-val">{p.count}</span>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    }
+                    {
+                        fanRankings.mvp.length === 0 && (
+                            <p class="empty-rank">Sin datos</p>
+                        )
+                    }
+                </div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .rankings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .ranking-col {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f9f9f9;
+    }
+
+    .ranking-header {
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: var(--primary);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 0.5rem;
+    }
+
+    .ranking-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
+
+    .rank-pos {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.2rem;
+        color: #ddd;
+        width: 25px;
+    }
+    .rank-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .rank-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .rank-name {
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: #444;
+    }
+    .rank-val {
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--primary);
+    }
+
+    .empty-rank {
+        text-align: center;
+        color: #ccc;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+        .rankings-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
