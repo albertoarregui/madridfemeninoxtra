@@ -36,8 +36,6 @@ if (!rival) {
 }
 
 if (!rival) {
-    console.log(`Rival not found for slug: ${slug}`);
-    console.log(`Available slugs: ${allRivals.map((r) => r.slug).join(", ")}`);
     return Astro.redirect("/404");
 }
 
@@ -68,22 +66,13 @@ try {
 
     const imagePath = `../../assets/escudos/${fileSlug}.png`;
 
-    console.log("Trying to load shield:", imagePath);
-    console.log("Available images:", Object.keys(images));
-
     if (images[imagePath]) {
         shieldImage = (await images[imagePath]()).default;
-        console.log("Shield loaded successfully for", rival.nombre);
     } else {
-        console.log(
-            "Shield not found for",
-            rival.nombre,
-            "at path:",
-            imagePath,
-        );
+        // console.log("Shield not found");
     }
 } catch (error) {
-    console.error(`Error loading shield for ${rival.nombre}:`, error);
+    // console.error(`Error loading shield for ${rival.nombre}:`, error);
 }
 
 let flagImage: ImageMetadata | undefined;
@@ -98,16 +87,13 @@ try {
         .replace(/\s+/g, "_");
     const flagPath = `/src/assets/banderas/${flagSlug}.svg`;
 
-    console.log("Trying to load flag:", flagPath);
-
     if (flags[flagPath]) {
         flagImage = (await flags[flagPath]()).default;
-        console.log("Flag loaded successfully for", rival.pais);
     } else {
-        console.log("Flag not found for", rival.pais, "at path:", flagPath);
+        // console.log("Flag not found");
     }
 } catch (error) {
-    console.error(`Error loading flag for ${rival.pais}:`, error);
+    // console.error(`Error loading flag for ${rival.pais}:`, error);
 }
 
 // Stadium Images Logic
@@ -119,7 +105,7 @@ try {
     // Try to find image by stadium name slug
     if (rival.estadio) {
         const stadiumSlug = slugify(rival.estadio).replace(/-/g, "_");
-        const stadiumPath = `/src/assets/estadios/${stadiumSlug}.png`; // Assuming png primarily, glob handles import but we need key
+        const stadiumPath = `/src/assets/estadios/${stadiumSlug}.png`;
 
         // Find the matching key in glob result
         const matchingKey = Object.keys(stadiumImages).find((key) => {
@@ -170,7 +156,6 @@ const getSeason = (dateStr: string) => {
     return `${startYear}/${endYear.toString().slice(-2)}`;
 };
 
-// Filter matches for records (Exclude Friendlies)
 const officialMatches = rivalMatches.filter(
     (m) => m.competicion !== "Amistoso",
 );
@@ -1410,12 +1395,12 @@ const isRealMadrid =
                     "Liga F",
                     "UWCL",
                     "Copa de la Reina",
-                    "Supercopa", // Modified to be less strict
+                    "Supercopa",
                     "Supercopa de España",
                 ];
                 compMatch = officialComps.some((c) =>
                     m.competicion.includes(c),
-                ); // Use includes for partial match
+                );
             } else {
                 compMatch = m.competicion === selectedComp;
             }
@@ -1628,7 +1613,7 @@ const isRealMadrid =
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
-        padding: 0 1.5rem 2rem 1.5rem; /* Added padding to separate from bottom and sides */
+        padding: 0 1.5rem 2rem 1.5rem;
     }
 
     .chart-item {
@@ -1673,7 +1658,6 @@ const isRealMadrid =
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Filters Styles - Matched with Rankings */
     .filters-container {
         display: flex;
         gap: 1.5rem;
@@ -1741,7 +1725,6 @@ const isRealMadrid =
         }
     }
 
-    /* Table Styles - Matched with Entrenadores/Rankings */
     .stats-table,
     .matches-table {
         width: 100%;
@@ -1757,13 +1740,13 @@ const isRealMadrid =
     .stats-table td,
     .matches-table th,
     .matches-table td {
-        padding: 0.5rem 0.25rem; /* Compact padding */
+        padding: 0.5rem 0.25rem;
         text-align: center;
         border: 1px solid #e5e7eb;
-        font-size: 0.8rem; /* Smaller font size to fit desktop */
+        font-size: 0.8rem;
         color: #374151;
-        white-space: nowrap; /* Prevent line breaks */
-        max-width: 200px; /* Max width to curb extremely long text if needed, though nowrap overrides without overflow hidden */
+        white-space: nowrap;
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -1774,7 +1757,7 @@ const isRealMadrid =
         color: white;
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 0.8rem; /* Slightly reduced header font size */
+        font-size: 0.8rem;
         letter-spacing: 0.05em;
     }
 
@@ -1797,24 +1780,24 @@ const isRealMadrid =
     }
 
     .matches-table .resultado-victoria {
-        background-color: #c8e6c9 !important; /* Pastel Green */
+        background-color: #c8e6c9 !important;
         color: #000000 !important;
         font-weight: 700;
     }
     .matches-table .resultado-empate {
-        background-color: #fff9c4 !important; /* Pastel Yellow */
+        background-color: #fff9c4 !important;
         color: #000000 !important;
         font-weight: 700;
     }
     .matches-table .resultado-derrota {
-        background-color: #ffcdd2 !important; /* Pastel Red */
+        background-color: #ffcdd2 !important;
         color: #000000 !important;
         font-weight: 700;
     }
 
     .table-wrapper {
         overflow-x: auto;
-        border-radius: 0 0 8px 8px; /* Smooth corners at bottom */
+        border-radius: 0 0 8px 8px;
     }
 
     .total-row td:first-child {

@@ -3,15 +3,23 @@ import Layout from "../layouts/Layout.astro";
 import { turso } from "../lib/turso";
 import { CALENDAR } from "../consts/calendar";
 import { SQUAD } from "../consts/squad";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
-import { getPlayerImage, getShield, getCompetitionLogo } from "../lib/assetHelpers";
+import {
+    SignInButton,
+    SignedIn,
+    SignedOut,
+    UserButton,
+} from "@clerk/astro/components";
+import {
+    getPlayerImage,
+    getShield,
+    getCompetitionLogo,
+} from "../lib/assetHelpers";
 
-// 1. Find Last Played Match
-// Smart match selection with new voting window
 const now = new Date();
 const pastMatches = CALENDAR.filter((m) => new Date(m.date) < now);
-const lastMatch = pastMatches.length > 0 ? pastMatches[pastMatches.length - 1] : null;
-const nextMatch = CALENDAR.find(m => new Date(m.date) >= now) || null;
+const lastMatch =
+    pastMatches.length > 0 ? pastMatches[pastMatches.length - 1] : null;
+const nextMatch = CALENDAR.find((m) => new Date(m.date) >= now) || null;
 
 let targetMatch = null;
 let isVotingOpen = false;
@@ -22,15 +30,12 @@ if (lastMatch) {
     const hoursSince = msSince / (1000 * 60 * 60);
 
     if (hoursSince < 2) {
-        // Less than 2 hours since start: Locked
         targetMatch = lastMatch;
         isVotingOpen = false;
     } else if (hoursSince >= 2 && hoursSince <= 24) {
-        // Between 2h and 24h: Open
         targetMatch = lastMatch;
         isVotingOpen = true;
     } else {
-        // More than 24h: Show next match (Locked)
         targetMatch = nextMatch;
         isVotingOpen = false;
     }
@@ -39,12 +44,12 @@ if (lastMatch) {
     isVotingOpen = false;
 }
 
-// Prepare match assets
-const homeShield = targetMatch ? await getShield(targetMatch.team1) : '';
-const awayShield = targetMatch ? await getShield(targetMatch.team2) : '';
-const compLogo = targetMatch ? await getCompetitionLogo(targetMatch.competition) : '';
+const homeShield = targetMatch ? await getShield(targetMatch.team1) : "";
+const awayShield = targetMatch ? await getShield(targetMatch.team2) : "";
+const compLogo = targetMatch
+    ? await getCompetitionLogo(targetMatch.competition)
+    : "";
 
-// 2. Fetch User's Previous Votes (if any)
 const { userId } = Astro.locals.auth();
 let existingRatings: Record<string, number> = {};
 let existingMVP: string | null = null;
@@ -52,73 +57,61 @@ const squad: any[] = SQUAD;
 
 if (userId && targetMatch && isVotingOpen) {
     try {
-        // Fetch Ratings
         const ratingsResult = await turso.execute({
             sql: "SELECT player_id, rating FROM ratings WHERE user_id = ? AND match_id = ?",
             args: [userId, targetMatch.id],
         });
         ratingsResult.rows.forEach((row: any) => {
-            existingRatings[row.player_id] = row.rating;
+            existingRatings[row.player_id] = row.rating as number;
         });
 
-        // Fetch MVP
         const mvpResult = await turso.execute({
             sql: "SELECT player_id FROM mvp_votes WHERE user_id = ? AND match_id = ?",
             args: [userId, targetMatch.id],
         });
         if (mvpResult.rows.length > 0) {
-            existingMVP = mvpResult.rows[0].player_id;
+            existingMVP = String(mvpResult.rows[0].player_id);
         }
-
     } catch (e) {
         console.error("Error fetching ratings", e);
     }
 }
 
-// Prepare squad details with images
-const squadWithImages = await Promise.all(squad.map(async (p) => ({
-    ...p,
-    image: await getPlayerImage(p.id)
-})));
+const squadWithImages = await Promise.all(
+    squad.map(async (p) => ({
+        ...p,
+        image: await getPlayerImage(p.id),
+    })),
+);
 
-// 3. Fetch Fan Rankings
 import { getFanRankings } from "../lib/fanRankings";
 const fanRankings = await getFanRankings();
 
-// Helper for direct image access in loop (since we need synchronous access in render loop)
-// Re-importing globs here locally if needed or just use the helper function logic?
-// Actually simpler to use the pre-loaded images from assetHelpers if possible, but they are async.
-// Let's use the glob directly as in other files for synchronous access if they are static.
-// OR map player IDs to the images we already loaded in squadWithImages?
-// Yes, let's create a map for easier access
-const playerImageMap = new Map(squadWithImages.map(p => [p.id, p.image]));
+const playerImageMap = new Map(squadWithImages.map((p) => [p.id, p.image]));
 
-// Update: In the template, I used playerImages[...] which is not available in scope if I removed it previously?
-// Ah, checking file content, I removed the inline globs in step 541!
-// So I MUST use a map or find from squadWithImages.
-// I will check the template replacement I just made.
-// It used `playerImages[...]`. This will fail.
-// I should fix the previous replacement step or fix this one to provide `playerImages` or change template logic.
-// I'll define playerImages here OR change template to use squadWithImages.find().image
-// But `squadWithImages` is async loaded.
-
-// Fix: I will define playerImages glob again here for synchronous access if needed, OR just use the squadWithImages map.
-// Using `playerImages` glob is standard in Astro for this project.
-const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}', { eager: true });
-
+const playerImages = import.meta.glob(
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
 ---
 
 <Layout title="MVP | Madrid Femenino Xtra">
     <div class="notas-page max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6">
         <header class="text-center mb-8 max-w-4xl mx-auto">
-            <h1 class="page-title" style="color: var(--text-primary);">NOTAS Y MVP</h1>
-            <!-- v2.3.0 -->
+            <h1 class="page-title" style="color: var(--text-primary);">
+                NOTAS Y MVP
+            </h1>
             <p class="content-h2 mx-auto" style="text-align: center;">
-                Valora el rendimiento de las jugadoras y elige a la MVP del último partido.
+                Valora el rendimiento de las jugadoras y elige a la MVP del
+                último partido.
             </p>
-             <div class="auth-controls mt-6 flex justify-center">
+            <div class="auth-controls mt-6 flex justify-center">
                 <SignedOut>
-                    <SignInButton mode="modal" as="button" class="header-login-btn">
+                    <SignInButton
+                        mode="modal"
+                        as="button"
+                        class="header-login-btn"
+                    >
                         INICIAR SESIÓN
                     </SignInButton>
                 </SignedOut>
@@ -128,140 +121,252 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
             </div>
         </header>
 
-        {targetMatch ? (
-            <div class="content-container" data-match-id={targetMatch.id}>
-                
-                <!-- MATCH CARD -->
-                <section class="match-card mb-12">
-                    <div class="card-title-overlay">
-                        {isVotingOpen ? "PARTIDO PARA VALORAR" : "PRÓXIMO PARTIDO"}
-                    </div>
-                    
-                    <div class="match-info-simple">
-                        {compLogo && <img src={compLogo} alt={targetMatch.competition} class="comp-logo-center" />}
-                        
-                        <div class="match-date-display">
-                            <span class="date-text">{new Date(targetMatch.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                            <span class="time-text">{targetMatch.time}</span>
+        {
+            targetMatch ? (
+                <div class="content-container" data-match-id={targetMatch.id}>
+                    <section class="match-card mb-12">
+                        <div class="card-title-overlay">
+                            {isVotingOpen
+                                ? "PARTIDO PARA VALORAR"
+                                : "PRÓXIMO PARTIDO"}
                         </div>
-                    </div>
 
-                    <div class="teams-simple">
-                        <div class="team-item">
-                            {homeShield && <img src={homeShield} alt={targetMatch.team1} class="shield-simple" />}
-                            <span class="team-label">{targetMatch.team1}</span>
-                        </div>
-                        <div class="vs-divider">VS</div>
-                        <div class="team-item">
-                            {awayShield && <img src={awayShield} alt={targetMatch.team2} class="shield-simple" />}
-                            <span class="team-label">{targetMatch.team2}</span>
-                        </div>
-                    </div>
-                </section>
+                        <div class="match-info-simple">
+                            {compLogo && (
+                                <img
+                                    src={compLogo}
+                                    alt={targetMatch.competition}
+                                    class="comp-logo-center"
+                                />
+                            )}
 
-                <form id="ratings-form">
-                    
-                    <div class="voting-layout-grid">
-                        <!-- MVP Selection -->
-                        <section class="mvp-section ranking-col" style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;">
-                             <div class="card-title-overlay">ELIGE TU MVP</div>
-                            
-                            <div class="mvp-grid">
-                                {squadWithImages.map(player => (
-                                    <div 
-                                        class={`mvp-chip ${existingMVP === player.id ? 'selected' : ''}`}
-                                        data-player-id={player.id}
-                                        onclick="selectMvp(this)"
-                                        title={player.name}
-                                    >
-                                        <div class="chip-image-container">
-                                                <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
-                                        </div>
-                                        <div class="chip-info">
-                                            <span class="player-num">#{player.number}</span>
-                                            <span class="player-name-chip">{player.name}</span>
-                                        </div>
-                                        <div class="mvp-badge">MVP</div>
-                                    </div>
-                                ))}
+                            <div class="match-date-display">
+                                <span class="date-text">
+                                    {new Date(
+                                        targetMatch.date,
+                                    ).toLocaleDateString("es-ES", {
+                                        weekday: "long",
+                                        day: "numeric",
+                                        month: "long",
+                                    })}
+                                </span>
+                                <span class="time-text">
+                                    {targetMatch.time}
+                                </span>
                             </div>
-                            <input type="hidden" id="mvp-input" value={existingMVP || ''} />
-                        </section>
-                        
-                        <!-- Player Ratings -->
-                        <section class="ratings-section ranking-col" style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;">
-                             <div class="card-title-overlay">PON NOTA (1-10)</div>
+                        </div>
 
-                            <div class="players-ratings-grid">
-                                {squadWithImages.map((player) => (
-                                    <div class="rating-card-v2">
-                                        <div class="rating-img-wrapper">
-                                            <img src={player.image} alt={player.name} />
-                                        </div>
-                                        <div class="rating-text">
-                                            <span class="player-number-text">#{player.number}</span>
-                                            <span class="player-name-text">{player.name}</span>
-                                        </div>
-                                        
-                                        <div class="rating-control-group">
-                                            <div class="rating-control-wrapper">
-                                                <button type="button" class="rate-btn minus" onclick={`adjustRating('${player.id}', -1)`}>-</button>
-                                                <input 
-                                                    type="text" 
-                                                    id={`rating-${player.id}`}
-                                                    class="rating-input"
-                                                    value={existingRatings[player.id] || '5'} 
-                                                    readonly
-                                                    data-player-id={player.id}
+                        <div class="teams-simple">
+                            <div class="team-item">
+                                {homeShield && (
+                                    <img
+                                        src={homeShield}
+                                        alt={targetMatch.team1}
+                                        class="shield-simple"
+                                    />
+                                )}
+                                <span class="team-label">
+                                    {targetMatch.team1}
+                                </span>
+                            </div>
+                            <div class="vs-divider">VS</div>
+                            <div class="team-item">
+                                {awayShield && (
+                                    <img
+                                        src={awayShield}
+                                        alt={targetMatch.team2}
+                                        class="shield-simple"
+                                    />
+                                )}
+                                <span class="team-label">
+                                    {targetMatch.team2}
+                                </span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <form id="ratings-form">
+                        <div class="voting-layout-grid">
+                            <section
+                                class="mvp-section ranking-col"
+                                style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;"
+                            >
+                                <div class="card-title-overlay">
+                                    ELIGE TU MVP
+                                </div>
+
+                                <div class="mvp-grid">
+                                    {squadWithImages.map((player) => (
+                                        <div
+                                            class={`mvp-chip ${existingMVP === player.id ? "selected" : ""}`}
+                                            data-player-id={player.id}
+                                            onclick="selectMvp(this)"
+                                            title={player.name}
+                                        >
+                                            <div class="chip-image-container">
+                                                <img
+                                                    src={player.image}
+                                                    alt={player.name}
+                                                    class="chip-img"
+                                                    loading="lazy"
                                                 />
-                                                <button type="button" class="rate-btn plus" onclick={`adjustRating('${player.id}', 1)`}>+</button>
                                             </div>
-                                            <button type="button" class="sc-btn" id={`sc-${player.id}`} onclick={`toggleSC('${player.id}')`} title="No Valorable">
-                                                N/V
-                                            </button>
+                                            <div class="chip-info">
+                                                <span class="player-num">
+                                                    #{player.number}
+                                                </span>
+                                                <span class="player-name-chip">
+                                                    {player.name}
+                                                </span>
+                                            </div>
+                                            <div class="mvp-badge">MVP</div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    </div>
+                                    ))}
+                                </div>
+                                <input
+                                    type="hidden"
+                                    id="mvp-input"
+                                    value={existingMVP || ""}
+                                />
+                            </section>
 
-                    <div class="actions mt-12">
-                        {!userId ? (
-                            <p class="login-prompt">Inicia sesión para enviar tus notas</p>
-                        ) : !isVotingOpen ? (
-                            <div class="locked-submit-area">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lock-icon-btn"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg>
-                                <p class="locked-text">La votación se abrirá 2 horas después del inicio del partido</p>
-                            </div>
-                        ) : (
-                            <button type="submit" id="submit-ratings" class="submit-btn">
-                                ENVIAR VALORACIONES
-                            </button>
-                        )}
-                         <p id="form-feedback" class="feedback-msg hidden"></p>
-                    </div>
-                </form>
+                            <section
+                                class="ratings-section ranking-col"
+                                style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;"
+                            >
+                                <div class="card-title-overlay">
+                                    PON NOTA (1-10)
+                                </div>
 
-            </div>
-        ) : (
-            <div class="no-match-card">
-                <p>No hay partidos recientes para valorar.</p>
-            </div>
-        )}
+                                <div class="players-ratings-grid">
+                                    {squadWithImages.map((player) => (
+                                        <div class="rating-card-v2">
+                                            <div class="rating-img-wrapper">
+                                                <img
+                                                    src={player.image}
+                                                    alt={player.name}
+                                                />
+                                            </div>
+                                            <div class="rating-text">
+                                                <span class="player-number-text">
+                                                    #{player.number}
+                                                </span>
+                                                <span class="player-name-text">
+                                                    {player.name}
+                                                </span>
+                                            </div>
 
+                                            <div class="rating-control-group">
+                                                <div class="rating-control-wrapper">
+                                                    <button
+                                                        type="button"
+                                                        class="rate-btn minus"
+                                                        onclick={`adjustRating('${player.id}', -1)`}
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <input
+                                                        type="text"
+                                                        id={`rating-${player.id}`}
+                                                        class="rating-input"
+                                                        value={
+                                                            existingRatings[
+                                                                player.id
+                                                            ] || "5"
+                                                        }
+                                                        readonly
+                                                        data-player-id={
+                                                            player.id
+                                                        }
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        class="rate-btn plus"
+                                                        onclick={`adjustRating('${player.id}', 1)`}
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="sc-btn"
+                                                    id={`sc-${player.id}`}
+                                                    onclick={`toggleSC('${player.id}')`}
+                                                    title="No Valorable"
+                                                >
+                                                    N/V
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="actions mt-12">
+                            {!userId ? (
+                                <p class="login-prompt">
+                                    Inicia sesión para enviar tus notas
+                                </p>
+                            ) : !isVotingOpen ? (
+                                <div class="locked-submit-area">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="32"
+                                        height="32"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="lock-icon-btn"
+                                    >
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" />
+                                        <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+                                        <path d="M8 11v-4a4 4 0 1 1 8 0v4" />
+                                    </svg>
+                                    <p class="locked-text">
+                                        La votación se abrirá 2 horas después
+                                        del inicio del partido
+                                    </p>
+                                </div>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    id="submit-ratings"
+                                    class="submit-btn"
+                                >
+                                    ENVIAR VALORACIONES
+                                </button>
+                            )}
+                            <p id="form-feedback" class="feedback-msg hidden" />
+                        </div>
+                    </form>
+                </div>
+            ) : (
+                <div class="no-match-card">
+                    <p>No hay partidos recientes para valorar.</p>
+                </div>
+            )
+        }
     </div>
 </Layout>
 
 <script is:inline>
-    // Global functions for inline handlers
     function selectMvp(element) {
-        document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
-        element.classList.add('selected');
+        document
+            .querySelectorAll(".mvp-chip")
+            .forEach((el) => el.classList.remove("selected"));
+        element.classList.add("selected");
         const pid = element.dataset.playerId;
-        const input = document.getElementById('mvp-input');
-        if(input) input.value = pid;
-        // MVP is selected, so form might be valid now if ratings are blocked
+        const input = document.getElementById("mvp-input");
+        if (input) input.value = pid;
         validateForm();
     }
 
@@ -269,13 +374,10 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         const input = document.getElementById(`rating-${playerId}`);
         if (!input) return;
 
-        // If card is in S/C mode, auto-disable S/C and set to 5 (or calc)
         const scBtn = document.getElementById(`sc-${playerId}`);
-        if (scBtn && scBtn.classList.contains('active')) {
-             toggleSC(playerId); // This resets to 5
-             return; // toggleSC sets to 5, so we apply delta next click or now? 
-             // Better UX: Just turn off S/C and set to 5 (or 5+delta).
-             // Let's just return after toggleSC, which sets it to 5.
+        if (scBtn && scBtn.classList.contains("active")) {
+            toggleSC(playerId);
+            return;
         }
 
         let val = parseInt(input.value);
@@ -285,7 +387,6 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
             val += delta;
         }
 
-        // Bounds 1-10
         if (val < 1) val = 1;
         if (val > 10) val = 10;
 
@@ -298,67 +399,58 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         const btn = document.getElementById(`sc-${playerId}`);
         const input = document.getElementById(`rating-${playerId}`);
         const wrapper = input.parentElement; // rating-control-wrapper
-        
+
         if (!btn || !input) return;
 
-        const isActive = btn.classList.toggle('active');
-        
+        const isActive = btn.classList.toggle("active");
+
         if (isActive) {
-            input.value = '0'; // 0 represents S/C
-            wrapper.classList.add('disabled');
+            input.value = "0"; // 0 represents S/C
+            wrapper.classList.add("disabled");
         } else {
-            input.value = '5'; // Reset to default 5
-            wrapper.classList.remove('disabled');
+            input.value = "5"; // Reset to default 5
+            wrapper.classList.remove("disabled");
         }
-        
+
         updateCardState(playerId);
         validateForm();
     }
 
     function updateCardState(playerId) {
         const input = document.getElementById(`rating-${playerId}`);
-        const card = input.closest('.rating-card');
+        const card = input.closest(".rating-card");
         const val = input.value;
-        
-        // Remove states
-        card.classList.remove('pending', 'ready', 'sc-active');
 
-        if (val === '0') {
-            card.classList.add('ready', 'sc-active'); 
+        // Remove states
+        card.classList.remove("pending", "ready", "sc-active");
+
+        if (val === "0") {
+            card.classList.add("ready", "sc-active");
         } else {
-             // With default 5, it's always "ready" technically, unless we want to distinguish "touched" vs "default".
-             // User wants default 5. So it is ready by default?
-             // "solo deja enviar las valoraciones si marca en todas" 
-             // If default is 5, then "marca" is implicitly done for everyone?
-             // Yes, typically defaults mean you don't HAVE to touch everyone.
-            card.classList.add('ready'); 
+            card.classList.add("ready");
         }
     }
 
     function validateForm() {
-        const submitBtn = document.getElementById('submit-ratings');
+        const submitBtn = document.getElementById("submit-ratings");
         if (!submitBtn) return;
 
-        // If default is 5, validation is always true for ratings being present.
-        // Unless we require MVP? User said "solo deja enviar... ya sea la nota o que no es valorable".
-        // With default 5, "nota" is always present.
-        
         submitBtn.disabled = false;
-        submitBtn.innerHTML = 'ENVIAR VALORACIONES';
-        submitBtn.classList.remove('disabled-btn');
+        submitBtn.innerHTML = "ENVIAR VALORACIONES";
+        submitBtn.classList.remove("disabled-btn");
     }
 
     // Initialize state
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.rating-input').forEach(input => {
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".rating-input").forEach((input) => {
             const pid = input.dataset.playerId;
             const val = input.value;
-            
-            if (val === '0') {
+
+            if (val === "0") {
                 const scBtn = document.getElementById(`sc-${pid}`);
-                if (scBtn) scBtn.classList.add('active');
+                if (scBtn) scBtn.classList.add("active");
                 const wrapper = input.parentElement;
-                if (wrapper) wrapper.classList.add('disabled');
+                if (wrapper) wrapper.classList.add("disabled");
             }
             // Ensure visual state matches
             updateCardState(pid);
@@ -368,91 +460,96 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 </script>
 
 <script>
-    // Pass isVotingOpen to the script logic context if needed, but easier to just check presence of overlay
-    const form = document.getElementById('ratings-form');
-    const isLocked = form?.classList.contains('locked-form');
+    const form = document.getElementById("ratings-form");
+    const isLocked = form?.classList.contains("locked-form");
 
     if (!isLocked) {
-        // Handlers are now mainly inline for simplicity in Astro, 
-        // but submit needs to gather data properly including 0s.
+        document
+            .getElementById("submit-ratings")
+            ?.addEventListener("click", async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById(
+                    "submit-ratings",
+                ) as HTMLButtonElement;
+                if (!btn || btn.disabled) return;
 
-        // Submit Form
-        document.getElementById('submit-ratings')?.addEventListener('click', async (e) => {
-            e.preventDefault(); 
-             const btn = document.getElementById('submit-ratings');
-             if (btn.disabled) return;
+                btn.disabled = true;
+                btn.textContent = "Enviando...";
 
-             btn.disabled = true;
-             btn.textContent = 'Enviando...';
+                const mvpInput = document.getElementById(
+                    "mvp-input",
+                ) as HTMLInputElement;
+                const mvp = mvpInput ? mvpInput.value : "";
 
-             // Collect MVP
-             const mvpInput = document.getElementById('mvp-input');
-             const mvp = mvpInput ? mvpInput.value : '';
+                const ratings: { player_id: string; rating: number }[] = [];
+                document.querySelectorAll(".rating-input").forEach((input) => {
+                    const inputEl = input as HTMLInputElement;
+                    const pid = inputEl.getAttribute("data-player-id");
+                    const val = inputEl.value;
 
-             // Collect Ratings
-             const ratings = [];
-             document.querySelectorAll('.rating-input').forEach(input => {
-                 const pid = input.getAttribute('data-player-id');
-                 const val = input.value;
-                 
-                 // Push if valid number (including 0 for S/C)
-                 if (pid && val !== '' && val !== null) {
-                     ratings.push({
-                         player_id: pid,
-                         rating: parseInt(val)
-                     });
-                 }
-             });
-
-             // We only submit if validation passed (btn not disabled), 
-             // but double check or just send. 
-             // Logic says: send 0s as well.
-
-             // Send to API
-             try {
-                const matchId = document.querySelector('.content-container')?.getAttribute('data-match-id');
-                const feedbackMsg = document.getElementById('form-feedback');
-                
-                const response = await fetch('/api/ratings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        match_id: matchId,
-                        mvp_vote: mvp,
-                        ratings: ratings
-                    })
+                    // Push if valid number (including 0 for S/C)
+                    if (pid && val !== "" && val !== null) {
+                        ratings.push({
+                            player_id: pid,
+                            rating: parseInt(val),
+                        });
+                    }
                 });
 
-                if (response.ok) {
-                    btn.textContent = "¡GUARDADO!";
-                    if(feedbackMsg) {
-                        feedbackMsg.textContent = "¡Votaciones enviadas correctamente! Gracias por participar.";
-                        feedbackMsg.className = 'feedback-msg success';
-                        feedbackMsg.classList.remove('hidden');
+                // Send to API
+                try {
+                    const matchId = document
+                        .querySelector(".content-container")
+                        ?.getAttribute("data-match-id");
+                    const feedbackMsg =
+                        document.getElementById("form-feedback");
+
+                    const response = await fetch("/api/ratings", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            match_id: matchId,
+                            mvp_vote: mvp,
+                            ratings: ratings,
+                        }),
+                    });
+
+                    if (response.ok) {
+                        btn.textContent = "¡GUARDADO!";
+                        if (feedbackMsg) {
+                            feedbackMsg.textContent =
+                                "¡Votaciones enviadas correctamente! Gracias por participar.";
+                            feedbackMsg.className = "feedback-msg success";
+                            feedbackMsg.classList.remove("hidden");
+                        }
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error("Error al enviar");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    btn.textContent = "ERROR";
+                    btn.disabled = false;
+                    const feedbackMsg =
+                        document.getElementById("form-feedback");
+                    if (feedbackMsg) {
+                        feedbackMsg.textContent =
+                            "Hubo un error al enviar tus votaciones. Inténtalo de nuevo.";
+                        feedbackMsg.className = "feedback-msg error";
+                        feedbackMsg.classList.remove("hidden");
                     }
                     setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                } else {
-                    throw new Error('Error al enviar');
+                        btn.textContent = "ENVIAR VALORACIONES";
+                        if (
+                            typeof (window as any).validateForm === "function"
+                        ) {
+                            (window as any).validateForm();
+                        }
+                    }, 3000);
                 }
-
-             } catch (e) {
-                 console.error(e);
-                 btn.textContent = "ERROR";
-                 btn.disabled = false;
-                 const feedbackMsg = document.getElementById('form-feedback');
-                 if(feedbackMsg) {
-                    feedbackMsg.textContent = "Hubo un error al enviar tus votaciones. Inténtalo de nuevo.";
-                    feedbackMsg.className = 'feedback-msg error';
-                    feedbackMsg.classList.remove('hidden');
-                 }
-                 setTimeout(() => {
-                     btn.textContent = 'ENVIAR VALORACIONES';
-                     validateForm(); // Re-check state
-                 }, 3000);
-             }
-        });
+            });
     }
 </script>
 
@@ -464,7 +561,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .notas-page {
-        font-family: 'Poppins', sans-serif;
+        font-family: "Poppins", sans-serif;
     }
 
     /* MATCH CARD */
@@ -473,8 +570,8 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         background: white;
         border-radius: 12px;
         padding: 3.5rem 2rem 2.5rem 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
         text-align: center;
     }
 
@@ -486,11 +583,11 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         background: var(--accent);
         color: #2b2b2b;
         padding: 0.5rem 1.5rem;
-        font-family: 'Bebas Neue', sans-serif;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 1.6rem;
         font-weight: 700;
         letter-spacing: 1px;
-        box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
         z-index: 10;
         line-height: 1;
     }
@@ -502,9 +599,21 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         gap: 0.5rem;
         margin-bottom: 2rem;
     }
-    .comp-logo { height: 50px; width: auto; }
-    .competition-text { font-weight: 700; font-size: 1.1rem; text-transform: uppercase; color: var(--primary); }
-    .match-date { color: #888; font-weight: 500; text-transform: capitalize; }
+    .comp-logo {
+        height: 50px;
+        width: auto;
+    }
+    .competition-text {
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        color: var(--primary);
+    }
+    .match-date {
+        color: #888;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
 
     .teams-container {
         display: flex;
@@ -512,28 +621,48 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         align-items: center;
         gap: 2rem;
     }
-    .team { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 120px;}
-    .team-shield { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.05)); }
-    .team-name { font-weight: 900; font-size: 1rem; text-transform: uppercase; color: var(--primary); line-height: 1.1; }
-    .vs-text { font-family: 'Archivo Black', sans-serif; font-size: 1.5rem; color: #ddd; }
+    .team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        width: 120px;
+    }
+    .team-shield {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.05));
+    }
+    .team-name {
+        font-weight: 900;
+        font-size: 1rem;
+        text-transform: uppercase;
+        color: var(--primary);
+        line-height: 1.1;
+    }
+    .vs-text {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.5rem;
+        color: #ddd;
+    }
 
-    /* SECTION TITLES */
     .section-header-cnt {
         text-align: center;
         margin-bottom: 2rem;
     }
     .subsection-title {
-        font-size: 1.2rem; 
-        font-weight: 800; 
-        text-transform: uppercase; 
-        color: var(--primary); 
-        text-align: center; 
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--primary);
+        text-align: center;
         letter-spacing: 1px;
         position: relative;
         display: inline-block;
     }
     .subsection-title::after {
-        content: '';
+        content: "";
         display: block;
         width: 60px;
         height: 4px;
@@ -622,7 +751,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .vs-divider {
-        font-family: 'Bebas Neue', sans-serif;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 2rem;
         color: #ddd;
         font-weight: 700;
@@ -630,72 +759,121 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 
     /* MVP GRID */
     .mvp-grid {
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 1.2rem;
         padding: 1rem;
         justify-items: center;
     }
 
     .mvp-chip {
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        gap: 0.8rem; 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
         padding: 1rem;
-        background: white; 
-        border-radius: 12px; 
-        cursor: pointer; 
+        background: white;
+        border-radius: 12px;
+        cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
-        text-align: center; 
+        text-align: center;
         user-select: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         border: 2px solid transparent;
         width: 100%;
     }
 
-    .mvp-chip:hover { transform: none; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .mvp-chip:hover {
+        transform: none;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
 
     /* MVP Selector Corners */
-    .mvp-chip::before, .mvp-chip::after {
-        content: ""; position: absolute; width: 15px; height: 15px; border: 3px solid transparent;
-        transition: all 0.3s ease; opacity: 0; pointer-events: none;
+    .mvp-chip::before,
+    .mvp-chip::after {
+        content: "";
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
     }
-    .mvp-chip::before { top: -2px; left: -2px; border-top-color: var(--accent); border-left-color: var(--accent); border-radius: 4px 0 0 0; }
-    .mvp-chip::after { bottom: -2px; right: -2px; border-bottom-color: var(--accent); border-right-color: var(--accent); border-radius: 0 0 4px 0; }
-    
+    .mvp-chip::before {
+        top: -2px;
+        left: -2px;
+        border-top-color: var(--accent);
+        border-left-color: var(--accent);
+        border-radius: 4px 0 0 0;
+    }
+    .mvp-chip::after {
+        bottom: -2px;
+        right: -2px;
+        border-bottom-color: var(--accent);
+        border-right-color: var(--accent);
+        border-radius: 0 0 4px 0;
+    }
+
     /* Desktop-only hover effects to prevent sticky hover on mobile */
     @media (hover: hover) {
-        .mvp-chip:hover::before, .mvp-chip:hover::after { opacity: 1; }
-        .mvp-chip:hover .chip-image-container { transform: scale(1.05); }
+        .mvp-chip:hover::before,
+        .mvp-chip:hover::after {
+            opacity: 1;
+        }
+        .mvp-chip:hover .chip-image-container {
+            transform: scale(1.05);
+        }
     }
-    
-    .mvp-chip.selected::before, .mvp-chip.selected::after { opacity: 1; }
-    .mvp-chip.selected::before, .mvp-chip.selected::after { border-width: 4px; }
-    
-    .mvp-chip.selected { background: #fffdf5; }
+
+    .mvp-chip.selected::before,
+    .mvp-chip.selected::after {
+        opacity: 1;
+    }
+    .mvp-chip.selected::before,
+    .mvp-chip.selected::after {
+        border-width: 4px;
+    }
+
+    .mvp-chip.selected {
+        background: #fffdf5;
+    }
 
     .chip-image-container {
-        width: 70px; height: 70px; border-radius: 50%; overflow: hidden; 
-        background: #f0f0f0; border: 3px solid white; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #f0f0f0;
+        border: 3px solid white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
     }
 
-    .chip-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    
-    .chip-info { 
-        display: flex; 
-        flex-direction: column; 
-        line-height: 1.2; 
+    .chip-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+    }
+
+    .chip-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
         gap: 0.3rem;
         width: 100%;
         overflow: hidden;
     }
-    .player-num { font-size: 0.8rem; font-weight: 800; color: #ccc; }
-    .player-name-chip { 
-        font-size: 0.85rem; 
-        font-weight: 700; 
+    .player-num {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #ccc;
+    }
+    .player-name-chip {
+        font-size: 0.85rem;
+        font-weight: 700;
         color: #444;
         white-space: normal;
         word-break: break-word;
@@ -703,8 +881,12 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         overflow-wrap: break-word;
         width: 100%;
     }
-    .mvp-chip.selected .player-name-chip { color: var(--primary); }
-    .mvp-chip.selected .player-num { color: var(--accent); }
+    .mvp-chip.selected .player-name-chip {
+        color: var(--primary);
+    }
+    .mvp-chip.selected .player-num {
+        color: var(--accent);
+    }
 
     .match-date-container {
         display: flex;
@@ -713,7 +895,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         gap: 0.5rem;
         margin-top: 0.5rem;
     }
-    
+
     .match-date-day {
         font-size: 1.1rem;
         font-weight: 700;
@@ -721,7 +903,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         text-transform: capitalize;
         text-align: center;
     }
-    
+
     .match-date-time {
         font-size: 0.95rem;
         color: #666;
@@ -729,15 +911,24 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .mvp-badge {
-        position: absolute; top: -10px; right: -10px;
-        background: var(--accent); color: #000;
-        font-size: 0.7rem; font-weight: 900;
-        padding: 0.2rem 0.6rem; border-radius: 20px;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-        opacity: 0; transform: scale(0); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: var(--accent);
+        color: #000;
+        font-size: 0.7rem;
+        font-weight: 900;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .mvp-chip.selected .mvp-badge { opacity: 1; transform: scale(1); }
-
+    .mvp-chip.selected .mvp-badge {
+        opacity: 1;
+        transform: scale(1);
+    }
 
     /* Cards Grid */
     .players-ratings-grid {
@@ -758,13 +949,13 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         border: 1px solid #eee;
         border-radius: 12px;
         padding: 0.8rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         transition: box-shadow 0.2s;
         border-left: 4px solid var(--accent);
         min-width: 0;
     }
-    .rating-card:hover { 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+    .rating-card:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
     /* NEW VERSION - v2 */
@@ -777,34 +968,50 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         border: 1px solid #eee;
         border-radius: 12px;
         padding: 0.8rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         transition: box-shadow 0.2s;
         min-width: 0;
     }
-    .rating-card-v2:hover { 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
+    .rating-card-v2:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
-    .rating-player-info { display: contents; }
-    
+    .rating-player-info {
+        display: contents;
+    }
+
     .rating-img-wrapper {
-        width: 50px; height: 50px; border-radius: 50%; overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         grid-column: 1;
     }
-    .rating-img-wrapper img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
-    
+    .rating-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+    }
+
     .rating-text {
         grid-column: 2;
-        display: flex; flex-direction: column; gap: 0.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
         min-width: 0;
         /* Removed overflow: hidden to allow full height expansion */
     }
-    .r-number { color: #888; font-size: 0.75rem; font-weight: 700; }
-    .r-name { 
-        font-size: 0.95rem; 
-        font-weight: 800; 
-        text-transform: uppercase; 
+    .r-number {
+        color: #888;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .r-name {
+        font-size: 0.95rem;
+        font-weight: 800;
+        text-transform: uppercase;
         color: #333;
         white-space: normal;
         word-break: break-word;
@@ -813,11 +1020,15 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     /* NEW TEXT CLASSES */
-    .player-number-text { color: #888; font-size: 0.75rem; font-weight: 700; }
-    .player-name-text { 
-        font-size: 0.95rem !important; 
-        font-weight: 800 !important; 
-        text-transform: uppercase; 
+    .player-number-text {
+        color: #888;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .player-name-text {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        text-transform: uppercase;
         color: #333;
         white-space: normal !important;
         word-break: break-word !important;
@@ -847,7 +1058,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         width: max-content;
         transition: opacity 0.3s;
     }
-    
+
     .rating-control-wrapper.disabled {
         opacity: 0.3;
         pointer-events: none;
@@ -865,12 +1076,12 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         transition: all 0.2s;
         height: 32px;
     }
-    
-    .sc-btn:hover { 
+
+    .sc-btn:hover {
         background: #ef5350;
         color: white;
     }
-    
+
     .sc-btn.active {
         background: #ef5350;
         color: white;
@@ -881,39 +1092,48 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     .rating-card.pending {
         border-left: 4px solid #f0f0f0;
     }
-    
+
     .rating-card.ready {
         border-left: 4px solid var(--accent);
         background: #fffcf0;
     }
 
     .rate-btn {
-        width: 32px; height: 32px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         border: none;
         background: white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         color: var(--primary);
         font-weight: 800;
         font-size: 1.2rem;
         cursor: pointer;
         transition: all 0.2s;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    .rate-btn:hover { background: var(--accent); }
-    .rate-btn:active { transform: scale(0.9); }
+    .rate-btn:hover {
+        background: var(--accent);
+    }
+    .rate-btn:active {
+        transform: scale(0.9);
+    }
 
     .rating-input {
         width: 40px;
         text-align: center;
         border: none;
         background: transparent;
-        font-family: 'Archivo Black', sans-serif;
+        font-family: "Archivo Black", sans-serif;
         font-size: 1.3rem;
         color: var(--primary);
         padding: 0;
     }
-    .rating-input:focus { outline: none; }
+    .rating-input:focus {
+        outline: none;
+    }
 
     /* LOCKED SUBMIT AREA */
     .locked-submit-area {
@@ -933,7 +1153,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .locked-text {
-        font-family: 'Bebas Neue', sans-serif;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 1.3rem;
         color: var(--primary);
         letter-spacing: 0.5px;
@@ -941,10 +1161,14 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         line-height: 1.3;
     }
 
-
     /* BUTTON STYLE */
     .submit-btn {
-        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
         color: #2b2b2b;
         border: none;
         padding: 1rem 2rem;
@@ -957,7 +1181,8 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
         width: 100%;
         max-width: 400px;
-        display: block; margin: 0 auto;
+        display: block;
+        margin: 0 auto;
     }
 
     .submit-btn:hover:not(:disabled) {
@@ -965,7 +1190,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
         color: #000;
     }
-    
+
     .submit-btn:disabled {
         background: #e0e0e0;
         color: #a0a0a0;
@@ -974,7 +1199,12 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .header-login-btn {
-        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
         color: #2b2b2b;
         border: none;
         padding: 0.8rem 2rem;
@@ -991,26 +1221,45 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(255, 222, 89, 0.5);
     }
-    
-    .feedback-msg { margin-top: 1rem; font-weight: 600; text-align: center; }
-    .feedback-msg.success { color: #2ecc71; }
-    .feedback-msg.error { color: #e74c3c; }
-    .feedback-msg.hidden { display: none; }
+
+    .feedback-msg {
+        margin-top: 1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    .feedback-msg.success {
+        color: #2ecc71;
+    }
+    .feedback-msg.error {
+        color: #e74c3c;
+    }
+    .feedback-msg.hidden {
+        display: none;
+    }
 
     .no-match-card {
-        text-align: center; padding: 4rem; background: #f9f9f9; border-radius: 12px; color: #888;
+        text-align: center;
+        padding: 4rem;
+        background: #f9f9f9;
+        border-radius: 12px;
+        color: #888;
     }
 
     /* RANKINGS ZONE */
     .section-title-global {
-        font-family: 'Bebas Neue', sans-serif;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 2.5rem;
         color: var(--primary);
         position: relative;
         display: inline-block;
     }
     .section-title-global::after {
-        content: ''; display: block; width: 100px; height: 5px; background: var(--accent); margin: 0 auto;
+        content: "";
+        display: block;
+        width: 100px;
+        height: 5px;
+        background: var(--accent);
+        margin: 0 auto;
     }
 
     .rankings-grid {
@@ -1023,7 +1272,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         background: white;
         padding: 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         border: 1px solid #f9f9f9;
     }
 
@@ -1051,48 +1300,85 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         padding-bottom: 0.5rem;
         border-bottom: 1px solid #f0f0f0;
     }
-    .ranking-item:last-child { border-bottom: none; }
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
 
     .rank-pos {
-        font-family: 'Archivo Black', sans-serif;
+        font-family: "Archivo Black", sans-serif;
         font-size: 1.2rem;
         color: #ddd;
         width: 25px;
     }
     .rank-img {
-        width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
-        border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     .rank-info {
         flex: 1;
-        display: flex; justify-content: space-between; align-items: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .rank-name {
-        font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: #444;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: #444;
     }
     .rank-val {
-        font-weight: 800; font-size: 1rem; color: var(--primary);
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--primary);
     }
-    
-    .empty-rank { text-align: center; color: #ccc; font-style: italic; font-size: 0.9rem; }
+
+    .empty-rank {
+        text-align: center;
+        color: #ccc;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+
+    .login-prompt {
+        text-align: center;
+        width: 100%;
+        display: block;
+        margin-top: 1rem;
+        font-weight: 600;
+        color: #555;
+    }
 
     @media (max-width: 600px) {
-        .players-ratings-grid { grid-template-columns: 1fr; }
-        .rankings-grid { grid-template-columns: 1fr; }
+        .players-ratings-grid {
+            grid-template-columns: 1fr;
+        }
+        .rankings-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     /* Mobile Responsive Styles for Cards */
     @media (max-width: 480px) {
         .rating-card-v2 {
-           grid-template-columns: 50px 1fr !important;
-           grid-template-rows: auto auto;
-           gap: 0.5rem 0.8rem;
-           padding: 0.6rem;
+            grid-template-columns: 50px 1fr !important;
+            grid-template-rows: auto auto;
+            gap: 0.5rem 0.8rem;
+            padding: 0.6rem;
         }
-        
-        .rating-img-wrapper { grid-column: 1; grid-row: 1; }
-        .rating-text { grid-column: 2; grid-row: 1; }
-        
+
+        .rating-img-wrapper {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .rating-text {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
         .rating-control-group {
             grid-column: 1 / -1 !important;
             grid-row: 2;
@@ -1103,9 +1389,15 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
             padding-top: 0.5rem;
             border-top: 1px solid #f5f5f5;
         }
-        
-        .rating-control-wrapper { flex-grow: 1; justify-content: center; margin-right: 0.5rem; }
-        
-        .players-ratings-grid { gap: 0.5rem; }
+
+        .rating-control-wrapper {
+            flex-grow: 1;
+            justify-content: center;
+            margin-right: 0.5rem;
+        }
+
+        .players-ratings-grid {
+            gap: 0.5rem;
+        }
     }
 </style>
