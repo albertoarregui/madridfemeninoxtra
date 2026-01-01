@@ -3,18 +3,14 @@ import { CALENDAR } from "../consts/calendar";
 
 export async function getFanRankings() {
     try {
-        // 1. Fetch Raw Data
         const ratingsResult = await turso.execute("SELECT * FROM ratings");
         const mvpResult = await turso.execute("SELECT * FROM mvp_votes");
 
         const ratings = ratingsResult.rows as any[];
         const mvpVotes = mvpResult.rows as any[];
 
-        // 2. Aggregate Data
-        // Helper maps
         const matchDates = new Map(CALENDAR.map(m => [m.id, new Date(m.date)]));
 
-        // Data structures
         const playerStats: Record<string, {
             totalRating: number,
             count: number,
@@ -22,18 +18,15 @@ export async function getFanRankings() {
             ratingsByMatch: Record<string, { total: number, count: number }>
         }> = {};
 
-        // Process Ratings
         ratings.forEach(r => {
             if (!playerStats[r.player_id]) {
                 playerStats[r.player_id] = { totalRating: 0, count: 0, mvpVotes: 0, ratingsByMatch: {} };
             }
             const p = playerStats[r.player_id];
 
-            // Global
             p.totalRating += r.rating;
             p.count++;
 
-            // Per Match
             if (!p.ratingsByMatch[r.match_id]) {
                 p.ratingsByMatch[r.match_id] = { total: 0, count: 0 };
             }
@@ -41,7 +34,6 @@ export async function getFanRankings() {
             p.ratingsByMatch[r.match_id].count++;
         });
 
-        // Process MVP Votes
         mvpVotes.forEach(v => {
             if (!playerStats[v.player_id]) {
                 playerStats[v.player_id] = { totalRating: 0, count: 0, mvpVotes: 0, ratingsByMatch: {} };
@@ -49,12 +41,10 @@ export async function getFanRankings() {
             playerStats[v.player_id].mvpVotes++;
         });
 
-        // 3. Build Rankings
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        // A. Season Rankings (Avg Rating) - Min 3 votes to appear? Let's say min 1 for now
         const seasonRankings = Object.entries(playerStats)
             .map(([id, stats]) => ({
                 id,
@@ -64,7 +54,6 @@ export async function getFanRankings() {
             .filter(p => p.avg > 0)
             .sort((a, b) => b.avg - a.avg);
 
-        // B. Month Rankings (Avg Rating in Matches of current month)
         const monthRankings = Object.entries(playerStats)
             .map(([id, stats]) => {
                 let monthTotal = 0;
@@ -87,10 +76,7 @@ export async function getFanRankings() {
             .filter(p => p.avg > 0)
             .sort((a, b) => b.avg - a.avg);
 
-        // C. Recent Match Rankings (Last match with data)
-        // Find last match ID that has ratings
         const matchesWithRatings = new Set(ratings.map(r => r.match_id));
-        // Sort matches by date descending
         const playedMatches = CALENDAR
             .filter(m => matchesWithRatings.has(m.id))
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -111,13 +97,48 @@ export async function getFanRankings() {
                 .sort((a, b) => b.avg - a.avg);
         }
 
-        // D. MVP Rankings (Total Votes)
-        const mvpRankings = Object.entries(playerStats)
-            .map(([id, stats]) => ({
+        const votesByMatch: Record<string, Record<string, number>> = {};
+        mvpVotes.forEach(v => {
+            if (!votesByMatch[v.match_id]) votesByMatch[v.match_id] = {};
+            if (!votesByMatch[v.match_id][v.player_id]) votesByMatch[v.match_id][v.player_id] = 0;
+            votesByMatch[v.match_id][v.player_id]++;
+        });
+
+        const mvpWins: Record<string, number> = {};
+
+        CALENDAR.forEach(match => {
+            const matchDate = new Date(match.date);
+            const msSince = now.getTime() - matchDate.getTime();
+            const hoursSince = msSince / (1000 * 60 * 60);
+
+            if (hoursSince > 24) {
+                const matchVotes = votesByMatch[match.id];
+                if (matchVotes) {
+                    let maxVotes = -1;
+                    let winners: string[] = [];
+
+                    Object.entries(matchVotes).forEach(([pid, count]) => {
+                        if (count > maxVotes) {
+                            maxVotes = count;
+                            winners = [pid];
+                        } else if (count === maxVotes) {
+                            winners.push(pid); // Tie
+                        }
+                    })
+
+                    winners.forEach(w => {
+                        if (!mvpWins[w]) mvpWins[w] = 0;
+                        mvpWins[w]++;
+                    });
+                }
+            }
+        });
+
+        const mvpRankings = Object.entries(mvpWins)
+            .map(([id, wins]) => ({
                 id,
-                count: stats.mvpVotes
+                count: wins
             }))
-            .filter(p => p.count > 0)
             .sort((a, b) => b.count - a.count);
 
         return {

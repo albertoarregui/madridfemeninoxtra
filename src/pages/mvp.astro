@@ -51,20 +51,11 @@ const compLogo = targetMatch
     : "";
 
 const { userId } = Astro.locals.auth();
-let existingRatings: Record<string, number> = {};
 let existingMVP: string | null = null;
 const squad: any[] = SQUAD;
 
 if (userId && targetMatch && isVotingOpen) {
     try {
-        const ratingsResult = await turso.execute({
-            sql: "SELECT player_id, rating FROM ratings WHERE user_id = ? AND match_id = ?",
-            args: [userId, targetMatch.id],
-        });
-        ratingsResult.rows.forEach((row: any) => {
-            existingRatings[row.player_id] = row.rating as number;
-        });
-
         const mvpResult = await turso.execute({
             sql: "SELECT player_id FROM mvp_votes WHERE user_id = ? AND match_id = ?",
             args: [userId, targetMatch.id],
@@ -73,7 +64,28 @@ if (userId && targetMatch && isVotingOpen) {
             existingMVP = String(mvpResult.rows[0].player_id);
         }
     } catch (e) {
-        console.error("Error fetching ratings", e);
+        console.error("Error fetching MVP vote", e);
+    }
+}
+
+let voteStats: Record<string, number> = {};
+let totalMatchVotes = 0;
+
+if (targetMatch) {
+    try {
+        const allVotesResult = await turso.execute({
+            sql: "SELECT player_id, COUNT(*) as c FROM mvp_votes WHERE match_id = ? GROUP BY player_id",
+            args: [targetMatch.id]
+        });
+        
+        allVotesResult.rows.forEach((row: any) => {
+            const pid = String(row.player_id);
+            const count = Number(row.c);
+            voteStats[pid] = count;
+            totalMatchVotes += count;
+        });
+    } catch (e) {
+        console.error("Error fetching vote stats", e);
     }
 }
 
@@ -96,14 +108,13 @@ const playerImages = import.meta.glob(
 ---
 
 <Layout title="MVP | Madrid Femenino Xtra">
-    <div class="notas-page max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6">
+    <div class="notas-page w-full max-w-[95%] mx-auto px-2 sm:px-6 lg:px-8 py-6">
         <header class="text-center mb-8 max-w-4xl mx-auto">
             <h1 class="page-title" style="color: var(--text-primary);">
-                NOTAS Y MVP
+                MVP
             </h1>
             <p class="content-h2 mx-auto" style="text-align: center;">
-                Valora el rendimiento de las jugadoras y elige a la MVP del
-                último partido.
+                Elige a la mejor jugadora del partido.
             </p>
             <div class="auth-controls mt-6 flex justify-center">
                 <SignedOut>
@@ -121,168 +132,220 @@ const playerImages = import.meta.glob(
             </div>
         </header>
 
-        {
-            targetMatch ? (
-                <div class="content-container" data-match-id={targetMatch.id}>
-                    <section class="match-card mb-12">
-                        <div class="card-title-overlay">
-                            {isVotingOpen
-                                ? "PARTIDO PARA VALORAR"
-                                : "PRÓXIMO PARTIDO"}
-                        </div>
-
-                        <div class="match-info-simple">
-                            {compLogo && (
-                                <img
-                                    src={compLogo}
-                                    alt={targetMatch.competition}
-                                    class="comp-logo-center"
-                                />
-                            )}
-
-                            <div class="match-date-display">
-                                <span class="date-text">
-                                    {new Date(
-                                        targetMatch.date,
-                                    ).toLocaleDateString("es-ES", {
-                                        weekday: "long",
-                                        day: "numeric",
-                                        month: "long",
-                                    })}
-                                </span>
-                                <span class="time-text">
-                                    {targetMatch.time}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="teams-simple">
-                            <div class="team-item">
-                                {homeShield && (
-                                    <img
-                                        src={homeShield}
-                                        alt={targetMatch.team1}
-                                        class="shield-simple"
-                                    />
-                                )}
-                                <span class="team-label">
-                                    {targetMatch.team1}
-                                </span>
-                            </div>
-                            <div class="vs-divider">VS</div>
-                            <div class="team-item">
-                                {awayShield && (
-                                    <img
-                                        src={awayShield}
-                                        alt={targetMatch.team2}
-                                        class="shield-simple"
-                                    />
-                                )}
-                                <span class="team-label">
-                                    {targetMatch.team2}
-                                </span>
-                            </div>
-                        </div>
-                    </section>
-
-                    <form id="ratings-form">
-                        <div class="voting-layout-grid">
-                            <section
-                                class="mvp-section ranking-col"
-                                style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;"
-                            >
-                                <div class="card-title-overlay">
-                                    ELIGE TU MVP
-                                </div>
-
-                                <div class="mvp-grid">
-                                    {squadWithImages.map((player) => (
-                                        <div
-                                            class={`mvp-chip ${existingMVP === player.id ? "selected" : ""}`}
-                                            data-player-id={player.id}
-                                            onclick="selectMvp(this)"
-                                            title={player.name}
-                                        >
-                                            <div class="chip-image-container">
-                                                <img
-                                                    src={player.image}
-                                                    alt={player.name}
-                                                    class="chip-img"
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                            <div class="chip-info">
-                                                <span class="player-num">
-                                                    #{player.number}
-                                                </span>
-                                                <span class="player-name-chip">
-                                                    {player.name}
-                                                </span>
-                                            </div>
-                                            <div class="mvp-badge">MVP</div>
+        <div class="mvp-page-grid">
+            <div class="main-column">
+                {
+                    targetMatch ? (
+                        <div class="voting-wrapper" data-match-id={targetMatch.id}>
+                            <form id="ratings-form">
+                                <section class="unified-card">
+                                    <!-- MATCH HEADER (Inside unified card) -->
+                                    <div class="unified-match-info">
+                                         <div class="card-title-overlay">
+                                            ELIGE TU MVP
                                         </div>
-                                    ))}
-                                </div>
-                                <input
-                                    type="hidden"
-                                    id="mvp-input"
-                                    value={existingMVP || ""}
-                                />
-                            </section>
-                        </div>
+                                        
+                                        <div class="match-info-simple">
+                                            {compLogo && (
+                                                <img
+                                                    src={compLogo}
+                                                    alt={targetMatch.competition}
+                                                    class="comp-logo-center"
+                                                />
+                                            )}
 
-                        <div class="actions mt-12">
-                            {!userId ? (
-                                <p class="login-prompt">
-                                    Inicia sesión para enviar tus notas
-                                </p>
-                            ) : !isVotingOpen ? (
-                                <div class="locked-submit-area">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="32"
-                                        height="32"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="lock-icon-btn"
-                                    >
-                                        <path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"
+                                            <div class="match-date-display">
+                                                <span class="date-text">
+                                                    {new Date(
+                                                        targetMatch.date,
+                                                    ).toLocaleDateString("es-ES", {
+                                                        weekday: "long",
+                                                        day: "numeric",
+                                                        month: "long",
+                                                    })}
+                                                </span>
+                                                <span class="time-text">
+                                                    {targetMatch.time}
+                                                </span>
+                                            </div>
+
+                                            <div class="teams-simple">
+                                                <div class="team-item">
+                                                    {homeShield && (
+                                                        <img
+                                                            src={homeShield}
+                                                            alt={targetMatch.team1}
+                                                            class="shield-simple"
+                                                        />
+                                                    )}
+                                                    <span class="team-label">
+                                                        {targetMatch.team1}
+                                                    </span>
+                                                </div>
+                                                <div class="vs-divider">VS</div>
+                                                <div class="team-item">
+                                                    {awayShield && (
+                                                        <img
+                                                            src={awayShield}
+                                                            alt={targetMatch.team2}
+                                                            class="shield-simple"
+                                                        />
+                                                    )}
+                                                    <span class="team-label">
+                                                        {targetMatch.team2}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- DIVIDER REMOVED -->
+
+
+                                    <!-- VOTING SECTION -->
+                                    <div class="mvp-voting-area">
+                                        <div class="mvp-grid">
+                                            {squadWithImages.map((player) => {
+                                                const pVotes = voteStats[player.id] || 0;
+                                                const percent = totalMatchVotes > 0 ? ((pVotes / totalMatchVotes) * 100).toFixed(1) : "0";
+                                                const showPercent = !!existingMVP; 
+                                                return (
+                                                <div
+                                                    class={`mvp-chip ${existingMVP === player.id ? "selected" : ""}`}
+                                                    data-player-id={player.id}
+                                                    onclick="selectMvp(this)"
+                                                    title={player.name}
+                                                >
+                                                    <div class="chip-image-container">
+                                                        <img
+                                                            src={player.image}
+                                                            alt={player.name}
+                                                            class="chip-img"
+                                                            loading="lazy"
+                                                        />
+                                                    </div>
+                                                    <div class="chip-info">
+                                                        <span class="player-num">
+                                                            #{player.number}
+                                                        </span>
+                                                        <span class="player-name-chip">
+                                                            {player.name}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {showPercent && (
+                                                        <div class="vote-percent-bar">
+                                                            <div class="percent-text">{percent}%</div>
+                                                            <div class="percent-fill" style={`width:${percent}%`}></div>
+                                                        </div>
+                                                    )}
+
+                                                    <div class="mvp-badge">MVP</div>
+                                                </div>
+                                            )})}
+                                        </div>
+                                        <input
+                                            type="hidden"
+                                            id="mvp-input"
+                                            value={existingMVP || ""}
                                         />
-                                        <path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" />
-                                        <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
-                                        <path d="M8 11v-4a4 4 0 1 1 8 0v4" />
-                                    </svg>
-                                    <p class="locked-text">
-                                        La votación se abrirá 2 horas después
-                                        del inicio del partido
-                                    </p>
-                                </div>
-                            ) : (
-                                <button
-                                    type="submit"
-                                    id="submit-ratings"
-                                    class="submit-btn"
-                                >
-                                    ENVIAR VALORACIONES
-                                </button>
-                            )}
-                            <p id="form-feedback" class="feedback-msg hidden" />
+                                    </div>
+
+                                    <!-- ACTIONS FOOTER -->
+                                    <div class="actions mt-8 pb-4">
+                                        {!userId ? (
+                                            <p class="login-prompt">
+                                                Inicia sesión para enviar tu voto
+                                            </p>
+                                        ) : !isVotingOpen ? (
+                                            <div class="locked-submit-area">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="32"
+                                                    height="32"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="lock-icon-btn"
+                                                >
+                                                    <path
+                                                        stroke="none"
+                                                        d="M0 0h24v24H0z"
+                                                        fill="none"
+                                                        stroke-width="0"
+                                                    />
+                                                    <path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" />
+                                                    <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+                                                    <path d="M8 11v-4a4 4 0 1 1 8 0v4" />
+                                                </svg>
+                                                <p class="locked-text">
+                                                    La votación se abrirá 2 horas después
+                                                    del inicio del partido
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="submit"
+                                                id="submit-ratings"
+                                                class="submit-btn"
+                                            >
+                                                ENVIAR VOTO MVP
+                                            </button>
+                                        )}
+                                        <p id="form-feedback" class="feedback-msg hidden" />
+                                    </div>
+                                </section>
+                            </form>
                         </div>
-                    </form>
+                    ) : (
+                        <div class="no-match-card">
+                            <p>No hay partidos recientes para valorar.</p>
+                        </div>
+                    )
+                }
+            </div>
+
+            <aside class="sidebar-column">
+                <div class="leaderboard-card">
+                    <div class="card-title-overlay small">
+                        CLASIFICACIÓN
+                    </div>
+                    
+                    <div class="leaderboard-list">
+                         {fanRankings.mvp && fanRankings.mvp.length > 0 ? (
+                            fanRankings.mvp.map((player: any, index: number) => {
+                                const pInfo = squadWithImages.find(p => p.id === player.id);
+                                return (
+                                    <div class="leaderboard-item">
+                                        <div class="rank-number">{index + 1}</div>
+                                        <div class="lb-player-img">
+                                             <img 
+                                                src={pInfo?.image || "/img/players/default-player.webp"} 
+                                                alt={pInfo?.name || player.id}
+                                                loading="lazy"
+                                                onerror="this.src='/img/players/default-player.webp'"
+                                            />
+                                        </div>
+                                        <div class="lb-player-info">
+                                            <span class="lb-name" title={pInfo?.name || player.id}>{pInfo?.name || `ID: ${player.id}`}</span>
+                                            <span class="lb-votes">{player.count} MVP{player.count !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div class="empty-lb">
+                                <p>Aún no hay votos registrados esta temporada.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            ) : (
-                <div class="no-match-card">
-                    <p>No hay partidos recientes para valorar.</p>
-                </div>
-            )
-        }
+            </aside>
+        </div>
+
     </div>
 </Layout>
 
@@ -307,7 +370,6 @@ const playerImages = import.meta.glob(
         submitBtn.classList.remove("disabled-btn");
     }
 
-    // Initialize state
     document.addEventListener("DOMContentLoaded", () => {
         validateForm();
     });
@@ -335,10 +397,9 @@ const playerImages = import.meta.glob(
                 ) as HTMLInputElement;
                 const mvp = mvpInput ? mvpInput.value : "";
 
-                // Send to API
                 try {
                     const matchId = document
-                        .querySelector(".content-container")
+                        .querySelector(".voting-wrapper")
                         ?.getAttribute("data-match-id");
                     const feedbackMsg =
                         document.getElementById("form-feedback");
@@ -349,7 +410,7 @@ const playerImages = import.meta.glob(
                         body: JSON.stringify({
                             match_id: matchId,
                             mvp_vote: mvp,
-                            ratings: [], // No ratings anymore
+                            ratings: [], 
                         }),
                     });
 
@@ -390,12 +451,48 @@ const playerImages = import.meta.glob(
         --accent: #ffde59;
         --text-primary: #2b2b2b;
     }
+ 
+    .vote-percent-bar {
+        width: 100%;
+        margin-top: auto;
+        background: #f0f0f0;
+        border-radius: 4px;
+        height: 20px;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .percent-fill {
+        background: var(--accent);
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    .percent-text {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 18px;
+        z-index: 2;
+        color: #2b2b2b;
+    }
+
+    .match-info-simple {
+        gap: 0.8rem; 
+        padding: 1.5rem 1rem 1rem; 
+    }
+    .unified-match-info {
+        padding-top: 0.5rem;
+    }
 
     .notas-page {
         font-family: "Poppins", sans-serif;
     }
 
-    /* MATCH CARD */
     .match-card {
         position: relative;
         background: white;
@@ -509,14 +606,12 @@ const playerImages = import.meta.glob(
         margin: 4rem 0;
     }
 
-    /* VOTING LAYOUT */
     .voting-layout-grid {
         display: flex;
         flex-direction: column;
         gap: 3rem;
     }
 
-    /* SIMPLIFIED MATCH CARD */
     .match-info-simple {
         display: flex;
         flex-direction: column;
@@ -588,12 +683,156 @@ const playerImages = import.meta.glob(
         font-weight: 700;
     }
 
-    /* MVP GRID */
+    #ratings-form {
+        margin: 0;
+        padding: 0;
+        display: block;
+    }
+
+    .mvp-page-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    @media (min-width: 1024px) {
+        .mvp-page-grid {
+            grid-template-columns: 1fr 300px; 
+            gap: 1.5rem; 
+            align-items: start;
+        }
+    }
+
+    .unified-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 3.5rem 1.5rem 2.5rem 1.5rem; 
+        position: relative;
+    }
+
+    .section-divider-internal {
+        height: 1px;
+        background: #f0f0f0;
+        margin: 2rem 0;
+        width: 100%;
+    }
+
+    .subsection-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .subsection-header h2 {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 2rem;
+        color: var(--primary);
+        letter-spacing: 1px;
+    }
+
+    .sidebar-column {
+    }
+
+    .leaderboard-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 3rem 1.5rem 1.5rem 1.5rem;
+        position: relative;
+    }
+
+    .card-title-overlay.small {
+        font-size: 1.6rem;
+        padding: 0.5rem 1.5rem;
+        left: 30px; 
+        transform: skew(-10deg);
+        top: -18px; 
+        white-space: nowrap;
+    }
+
+    .leaderboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.8rem;
+        border-radius: 8px;
+        background: #f9f9f9;
+        transition: transform 0.2s;
+    }
+    .leaderboard-item:hover {
+        transform: translateX(3px);
+        background: #fffdf5;
+         border: 1px solid var(--accent);
+    }
+
+    .rank-number {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.5rem;
+        color: #ddd;
+        width: 20px;
+        text-align: center;
+    }
+    .leaderboard-item:nth-child(1) .rank-number { color: #ffd700; }
+    .leaderboard-item:nth-child(2) .rank-number { color: #c0c0c0; }
+    .leaderboard-item:nth-child(3) .rank-number { color: #cd7f32; }
+
+    .lb-player-img {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px; 
+        overflow: hidden;
+        border: 2px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+    .lb-player-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center; 
+    }
+
+    .lb-player-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+        flex: 1;
+        min-width: 0;
+    }
+    .lb-name {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--primary);
+        white-space: normal; 
+        overflow: visible; 
+        display: block;
+    }
+    .lb-votes {
+        font-size: 0.8rem;
+        color: #888;
+    }
+
+    .empty-lb {
+        text-align: center;
+        padding: 2rem 0;
+        color: #999;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
     .mvp-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 1.2rem;
-        padding: 1rem;
+        padding: 0; 
         justify-items: center;
     }
 
@@ -602,7 +841,7 @@ const playerImages = import.meta.glob(
         flex-direction: column;
         align-items: center;
         gap: 0.8rem;
-        padding: 1rem;
+        padding: 1rem 0.5rem 0.8rem 0.5rem; 
         background: white;
         border-radius: 12px;
         cursor: pointer;
@@ -611,8 +850,9 @@ const playerImages = import.meta.glob(
         text-align: center;
         user-select: none;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        border: 2px solid transparent;
+        border: 2px solid transparent; 
         width: 100%;
+        border-color: #f0f0f0; 
     }
 
     .mvp-chip:hover {
@@ -620,7 +860,6 @@ const playerImages = import.meta.glob(
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     }
 
-    /* MVP Selector Corners */
     .mvp-chip::before,
     .mvp-chip::after {
         content: "";
@@ -633,21 +872,20 @@ const playerImages = import.meta.glob(
         pointer-events: none;
     }
     .mvp-chip::before {
-        top: -2px;
-        left: -2px;
+        top: -1px;
+        left: -1px;
         border-top-color: var(--accent);
         border-left-color: var(--accent);
         border-radius: 4px 0 0 0;
     }
     .mvp-chip::after {
-        bottom: -2px;
-        right: -2px;
+        bottom: -1px;
+        right: -1px;
         border-bottom-color: var(--accent);
         border-right-color: var(--accent);
         border-radius: 0 0 4px 0;
     }
 
-    /* Desktop-only hover effects to prevent sticky hover on mobile */
     @media (hover: hover) {
         .mvp-chip:hover::before,
         .mvp-chip:hover::after {
@@ -761,10 +999,9 @@ const playerImages = import.meta.glob(
         transform: scale(1);
     }
 
-    /* Cards Grid */
     .players-ratings-grid {
         display: grid;
-        grid-template-columns: 1fr; /* Single column layout for max name space */
+        grid-template-columns: 1fr; 
         gap: 1rem;
         padding: 0 0.5rem;
         max-width: 800px;
@@ -789,7 +1026,6 @@ const playerImages = import.meta.glob(
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
     }
 
-    /* NEW VERSION - v2 */
     .rating-card-v2 {
         display: grid;
         grid-template-columns: 50px minmax(0, 1fr) auto;
@@ -832,7 +1068,6 @@ const playerImages = import.meta.glob(
         flex-direction: column;
         gap: 0.2rem;
         min-width: 0;
-        /* Removed overflow: hidden to allow full height expansion */
     }
     .r-number {
         color: #888;
@@ -850,7 +1085,6 @@ const playerImages = import.meta.glob(
         overflow-wrap: break-word;
     }
 
-    /* NEW TEXT CLASSES */
     .player-number-text {
         color: #888;
         font-size: 0.75rem;
@@ -966,7 +1200,6 @@ const playerImages = import.meta.glob(
         outline: none;
     }
 
-    /* LOCKED SUBMIT AREA */
     .locked-submit-area {
         display: flex;
         flex-direction: column;
@@ -992,7 +1225,6 @@ const playerImages = import.meta.glob(
         line-height: 1.3;
     }
 
-    /* BUTTON STYLE */
     .submit-btn {
         background: linear-gradient(
             135deg,
@@ -1076,7 +1308,6 @@ const playerImages = import.meta.glob(
         color: #888;
     }
 
-    /* RANKINGS ZONE */
     .section-title-global {
         font-family: "Bebas Neue", sans-serif;
         font-size: 2.5rem;
@@ -1192,7 +1423,6 @@ const playerImages = import.meta.glob(
         }
     }
 
-    /* Mobile Responsive Styles for Cards */
     @media (max-width: 480px) {
         .rating-card-v2 {
             grid-template-columns: 50px 1fr !important;

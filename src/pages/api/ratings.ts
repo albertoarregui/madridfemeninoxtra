@@ -9,20 +9,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     try {
         const body = await request.json();
-        const { match_id, ratings, mvp_player_id } = body; // ratings: [{ player_id, rating }]
+        const body = await request.json();
+        const { match_id, mvp_player_id } = body;
 
         if (!match_id) {
             return new Response(JSON.stringify({ error: "Missing match_id" }), { status: 400 });
         }
 
-        // Check if already voted (MVP vote implies participation in this context, or check ratings)
-        // We allow updating votes? The user requirement implies "participation", usually one-off. 
-        // But for better UX, let's allow updating if it's the same user.
-
-        // Use a transaction if possible, or sequential writes. Turso client `transaction` might be limited in HTTP mode if not using strict transaction object.
-        // We'll do sequential writes for simplicity as concurrency per user is low.
-
-        // 1. Save MVP
         if (mvp_player_id) {
             const existingMVP = await turso.execute({
                 sql: "SELECT id FROM mvp_votes WHERE user_id = ? AND match_id = ?",
@@ -42,33 +35,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
             }
         }
 
-        // 2. Save Ratings
-        if (Array.isArray(ratings)) {
-            for (const r of ratings) {
-                const { player_id, rating } = r;
-                const existingRating = await turso.execute({
-                    sql: "SELECT id FROM ratings WHERE user_id = ? AND match_id = ? AND player_id = ?",
-                    args: [userId, match_id, player_id],
-                });
-
-                if (existingRating.rows.length > 0) {
-                    await turso.execute({
-                        sql: "UPDATE ratings SET rating = ? WHERE user_id = ? AND match_id = ? AND player_id = ?",
-                        args: [rating, userId, match_id, player_id],
-                    });
-                } else {
-                    await turso.execute({
-                        sql: "INSERT INTO ratings (user_id, match_id, player_id, rating) VALUES (?, ?, ?, ?)",
-                        args: [userId, match_id, player_id, rating],
-                    });
-                }
-            }
-        }
-
         return new Response(JSON.stringify({ success: true }), { status: 200 });
 
     } catch (e) {
-        console.error("Error saving ratings:", e);
+        console.error("Error saving MVP vote:", e);
         return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
     }
 };
