@@ -9,7 +9,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     try {
         const body = await request.json();
-        const body = await request.json();
         const { match_id, mvp_player_id } = body;
 
         if (!match_id) {
