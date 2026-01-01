@@ -100,6 +100,48 @@ if (isAuthenticated) {
                 </div>
             ) : (
                 <div class="dashboard">
+                    </div>
+
+                    <!-- PRONÓSTICOS SECTION -->
+                    <div class="predictions-section">
+                        <h2 class="section-title">⚽ CALCULAR PUNTOS DE PRONÓSTICOS</h2>
+                        <div class="predictions-card">
+                            <p class="instructions">
+                                Cuando un partido finalice, actualiza el resultado en la base de datos y luego calcula los puntos aquí.
+                            </p>
+                            
+                            <div class="calc-form">
+                                <div class="form-group">
+                                    <label>ID del Calendario (match_calendar_id)</label>
+                                    <input 
+                                        type="text" 
+                                        id="match_calendar_id" 
+                                        placeholder="real-madrid-vs-sevilla"
+                                    />
+                                    <small>Ejemplo: "real-madrid-vs-sevilla"</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>ID del Partido en BD (partido_id)</label>
+                                    <input 
+                                        type="number" 
+                                        id="partido_id" 
+                                        placeholder="123"
+                                    />
+                                    <small>ID numérico del partido en la tabla partidos</small>
+                                </div>
+
+                                <button id="calc-points-btn" class="calc-btn">
+                                    CALCULAR PUNTOS
+                                </button>
+
+                                <div id="calc-result" class="calc-result"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PREMIOS SECTION -->
+                    <h2 class="section-title">🏆 RESULTADOS DE PREMIOS</h2>
                     <div class="summary-card">
                         <h3>Total Votos Registrados: <span class="highlight">{totalVotes}</span></h3>
                         <form method="POST" action="/api/logout-admin"> <!-- or just clear cookie button logic -->
@@ -154,6 +196,64 @@ if (isAuthenticated) {
         </div>
     </div>
 </Layout>
+
+
+{isAuthenticated && (
+<script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+        const calcBtn = document.getElementById('calc-points-btn');
+        const resultDiv = document.getElementById('calc-result');
+        
+        if (calcBtn) {
+            calcBtn.addEventListener('click', async () => {
+                const matchCalendarId = document.getElementById('match_calendar_id').value.trim();
+                const partidoId = document.getElementById('partido_id').value.trim();
+                
+                if (!matchCalendarId || !partidoId) {
+                    resultDiv.innerHTML = '<p class="error">⚠️ Debes completar ambos campos</p>';
+                    return;
+                }
+                
+                calcBtn.disabled = true;
+                calcBtn.textContent = 'CALCULANDO...';
+                resultDiv.innerHTML = '<p class="loading">⏳ Procesando predicciones...</p>';
+                
+                try {
+                    const response = await fetch('/api/calculate-points', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            match_calendar_id: matchCalendarId,
+                            partido_id: parseInt(partidoId)
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        resultDiv.innerHTML = `
+                            <p class="success">✅ ¡Puntos calculados correctamente!</p>
+                            <div class="result-details">
+                                <p><strong>Partido:</strong> ${data.match_id}</p>
+                                <p><strong>Resultado:</strong> ${data.actual_result}</p>
+                                <p><strong>Predicciones procesadas:</strong> ${data.predictions_processed}</p>
+                                <p><strong>Goleadoras:</strong> ${data.actual_scorers.length} jugadoras</p>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error || 'Error desconocido'}</p>`;
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<p class="error">❌ Error de red: ${error.message}</p>`;
+                }
+                
+                calcBtn.disabled = false;
+                calcBtn.textContent = 'CALCULAR PUNTOS';
+            });
+        }
+    });
+</script>
+)}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -364,6 +464,149 @@ if (isAuthenticated) {
         font-size: 2.5rem;
         margin-left: 1rem;
         text-shadow: 0 2px 10px rgba(255, 222, 89, 0.2);
+    }
+
+    /* Predictions Section */
+    .predictions-section {
+        margin-bottom: 4rem;
+    }
+    
+    .section-title {
+        color: #ffde59;
+        font-family: 'Archivo Black', sans-serif;
+        font-size: 1.6rem;
+        margin-bottom: 1.5rem;
+        text-transform: uppercase;
+        text-align: center;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+    }
+
+    .predictions-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(5px);
+        padding: 2.5rem;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .instructions {
+        text-align: center;
+        color: #8892b0;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .calc-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .form-group input {
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 12px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #ffde59;
+        box-shadow: 0 0 15px rgba(255, 222, 89, 0.1);
+    }
+
+    .form-group small {
+        color: #8892b0;
+        font-size: 0.85rem;
+    }
+
+    .calc-btn {
+        padding: 1.2rem;
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #000;
+        font-weight: 800;
+        font-family: 'Archivo Black', sans-serif;
+        text-transform: uppercase;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        transition: all 0.3s ease;
+        letter-spacing: 1px;
+        margin-top: 1rem;
+    }
+
+    .calc-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    }
+
+    .calc-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .calc-result {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        border-radius: 12px;
+        min-height: 50px;
+    }
+
+    .calc-result .success {
+        color: #4ade80;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .calc-result .error {
+        color: #ff6b6b;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .calc-result .loading {
+        color: #ffde59;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .result-details {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #4ade80;
+    }
+
+    .result-details p {
+        margin: 0.5rem 0;
+        color: #ccc;
+        font-size: 0.95rem;
+    }
+
+    .result-details strong {
+        color: white;
     }
 
     .charts-grid {
