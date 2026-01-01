@@ -10,10 +10,12 @@ import { createClient } from "@libsql/client";
 export const POST: APIRoute = async ({ request }) => {
     try {
         const body = await request.json();
-        const { match_calendar_id } = body;
+        const { match_calendar_id, partido_id } = body;
 
-        if (!match_calendar_id) {
-            return new Response(JSON.stringify({ error: "Missing match_calendar_id" }), { status: 400 });
+        if (!match_calendar_id || !partido_id) {
+            return new Response(JSON.stringify({
+                error: "Missing required fields: match_calendar_id and partido_id"
+            }), { status: 400 });
         }
 
         // 1. Connect to MAIN database (has actual match results)
@@ -36,60 +38,44 @@ export const POST: APIRoute = async ({ request }) => {
 
         const predsDb = createClient({ url: predsDbUrl, authToken: predsDbToken });
 
-        // 3. Get actual match result from main DB using the calendar ID
-        // We need to search by team names and date from match_calendar_id
-        // For now, we'll need to map calendar IDs to actual partido slugs or search by teams
-        
-        // NOTE: The calendar ID (e.g., "real-madrid-vs-sevilla") needs to map to a partido
-        // This requires either:
-        // A) Storing calendar_id in partidos table, OR
-        // B) Parsing the calendar_id to extract teams and date, then searching
-
-        // Let's use approach B for now
-        const idParts = match_calendar_id.split('-vs-');
-        if (idParts.length !== 2) {
-            return new Response(JSON.stringify({ error: "Invalid calendar ID format" }), { status: 400 });
-        }
-
-        // Search for the match in partidos
-        // This is a simplified search - in production, you'd want exact matching
+        // 3. Get actual match result from main DB using partido_id
         const matchQuery = `
-            SELECT 
+            SELECT
                 p.id_partido,
                 p.goles_rm,
                 p.goles_rival,
-                p.fecha,
-                cl.nombre_club as club_local,
-                cv.nombre_club as club_visitante
+                p.fecha
             FROM partidos p
-            LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
-            LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-            WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL
-            ORDER BY p.fecha DESC
-            LIMIT 1
+            WHERE p.id_partido = ?
         `;
-        
-        const matchResult = await mainDb.execute(matchQuery);
-        
+
+        const matchResult = await mainDb.execute({
+            sql: matchQuery,
+            args: [partido_id]
+        });
+
         if (matchResult.rows.length === 0) {
-            return new Response(JSON.stringify({ error: "Match not found or result not available" }), { status: 404 });
+            return new Response(JSON.stringify({ error: "Match not found" }), { status: 404 });
         }
 
         const actualMatch = matchResult.rows[0];
         const actualHomeScore = Number(actualMatch.goles_rm);
         const actualAwayScore = Number(actualMatch.goles_rival);
-        const partidoId = actualMatch.id_partido;
+
+        if (actualHomeScore === null || actualAwayScore === null) {
+            return new Response(JSON.stringify({ error: "Match result not available yet" }), { status: 400 });
+        }
 
         // 4. Get actual scorers for this match
         const scorersQuery = `
-            SELECT DISTINCT id_jugadora 
-            FROM goles_y_asistencias 
+            SELECT DISTINCT id_jugadora
+            FROM goles_y_asistencias
             WHERE id_partido = ? AND tipo = 'gol'
         `;
-        
+
         const scorersResult = await mainDb.execute({
             sql: scorersQuery,
-            args: [partidoId]
+            args: [partido_id]
         });
 
         const actualScorers = scorersResult.rows.map(row => String(row.id_jugadora));
@@ -101,9 +87,9 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         if (predictionsResult.rows.length === 0) {
-            return new Response(JSON.stringify({ 
+            return new Response(JSON.stringify({
                 message: "No predictions found for this match",
-                processed: 0 
+                processed: 0
             }), { status: 200 });
         }
 
@@ -115,7 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
             const predHomeScore = Number(pred.home_score);
             const predAwayScore = Number(pred.away_score);
             let predScorers: string[] = [];
-            
+
             try {
                 if (pred.scorers && typeof pred.scorers === 'string') {
                     predScorers = JSON.parse(pred.scorers);
@@ -132,12 +118,12 @@ export const POST: APIRoute = async ({ request }) => {
             const exactScore = (predHomeScore === actualHomeScore && predAwayScore === actualAwayScore);
             if (exactScore) {
                 points += 3;
-            } 
+            }
             // Rule 2: Correct outcome (winner/draw) - only if NOT exact score (1 point)
             else {
                 const predOutcome = getOutcome(predHomeScore, predAwayScore);
                 const actualOutcome = getOutcome(actualHomeScore, actualAwayScore);
-                
+
                 if (predOutcome === actualOutcome) {
                     points += 1;
                 }
@@ -165,7 +151,7 @@ export const POST: APIRoute = async ({ request }) => {
             });
         }
 
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
             success: true,
             match_id: match_calendar_id,
             actual_result: `${actualHomeScore}-${actualAwayScore}`,
