@@ -9,7 +9,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     try {
         const body = await request.json();
-        const { match_id, mvp_player_id } = body;
+        const { match_id } = body;
+        const mvp_player_id = body.mvp_player_id || body.mvp_vote;
 
         if (!match_id) {
             return new Response(JSON.stringify({ error: "Missing match_id" }), { status: 400 });
