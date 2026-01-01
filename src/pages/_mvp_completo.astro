@@ -229,6 +229,78 @@ const playerImages = import.meta.glob(
                                     value={existingMVP || ""}
                                 />
                             </section>
+
+                            <section
+                                class="ratings-section ranking-col"
+                                style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;"
+                            >
+                                <div class="card-title-overlay">
+                                    PON NOTA (1-10)
+                                </div>
+
+                                <div class="players-ratings-grid">
+                                    {squadWithImages.map((player) => (
+                                        <div class="rating-card-v2">
+                                            <div class="rating-img-wrapper">
+                                                <img
+                                                    src={player.image}
+                                                    alt={player.name}
+                                                />
+                                            </div>
+                                            <div class="rating-text">
+                                                <span class="player-number-text">
+                                                    #{player.number}
+                                                </span>
+                                                <span class="player-name-text">
+                                                    {player.name}
+                                                </span>
+                                            </div>
+
+                                            <div class="rating-control-group">
+                                                <div class="rating-control-wrapper">
+                                                    <button
+                                                        type="button"
+                                                        class="rate-btn minus"
+                                                        onclick={`adjustRating('${player.id}', -1)`}
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <input
+                                                        type="text"
+                                                        id={`rating-${player.id}`}
+                                                        class="rating-input"
+                                                        value={
+                                                            existingRatings[
+                                                                player.id
+                                                            ] || "5"
+                                                        }
+                                                        readonly
+                                                        data-player-id={
+                                                            player.id
+                                                        }
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        class="rate-btn plus"
+                                                        onclick={`adjustRating('${player.id}', 1)`}
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="sc-btn"
+                                                    id={`sc-${player.id}`}
+                                                    onclick={`toggleSC('${player.id}')`}
+                                                    title="No Valorable"
+                                                >
+                                                    N/V
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
                         </div>
 
                         <div class="actions mt-12">
@@ -303,12 +375,86 @@ const playerImages = import.meta.glob(
         if (!submitBtn) return;
 
         submitBtn.disabled = false;
-        submitBtn.innerHTML = "ENVIAR VOTO MVP";
+        submitBtn.innerHTML = "ENVIAR VALORACIONES";
         submitBtn.classList.remove("disabled-btn");
+    }
+
+    function adjustRating(playerId, delta) {
+        const input = document.getElementById(`rating-${playerId}`);
+        if (!input) return;
+
+        const scBtn = document.getElementById(`sc-${playerId}`);
+        if (scBtn && scBtn.classList.contains("active")) {
+            toggleSC(playerId);
+            return;
+        }
+
+        let val = parseInt(input.value);
+        if (isNaN(val) || val === 0) {
+            val = 5;
+        } else {
+            val += delta;
+        }
+
+        if (val < 1) val = 1;
+        if (val > 10) val = 10;
+
+        input.value = val;
+        updateCardState(playerId);
+        validateForm();
+    }
+
+    function toggleSC(playerId) {
+        const btn = document.getElementById(`sc-${playerId}`);
+        const input = document.getElementById(`rating-${playerId}`);
+        const wrapper = input.parentElement; // rating-control-wrapper
+
+        if (!btn || !input) return;
+
+        const isActive = btn.classList.toggle("active");
+
+        if (isActive) {
+            input.value = "0"; // 0 represents S/C
+            wrapper.classList.add("disabled");
+        } else {
+            input.value = "5"; // Reset to default 5
+            wrapper.classList.remove("disabled");
+        }
+
+        updateCardState(playerId);
+        validateForm();
+    }
+
+    function updateCardState(playerId) {
+        const input = document.getElementById(`rating-${playerId}`);
+        const card = input.closest(".rating-card");
+        const val = input.value;
+
+        // Remove states
+        card.classList.remove("pending", "ready", "sc-active");
+
+        if (val === "0") {
+            card.classList.add("ready", "sc-active");
+        } else {
+            card.classList.add("ready");
+        }
     }
 
     // Initialize state
     document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".rating-input").forEach((input) => {
+            const pid = input.dataset.playerId;
+            const val = input.value;
+
+            if (val === "0") {
+                const scBtn = document.getElementById(`sc-${pid}`);
+                if (scBtn) scBtn.classList.add("active");
+                const wrapper = input.parentElement;
+                if (wrapper) wrapper.classList.add("disabled");
+            }
+            // Ensure visual state matches
+            updateCardState(pid);
+        });
         validateForm();
     });
 </script>
@@ -335,6 +481,20 @@ const playerImages = import.meta.glob(
                 ) as HTMLInputElement;
                 const mvp = mvpInput ? mvpInput.value : "";
 
+                const ratings = [];
+                document.querySelectorAll(".rating-input").forEach((input) => {
+                    const pid = input.getAttribute("data-player-id");
+                    const val = input.value;
+
+                    // Push if valid number (including 0 for S/C)
+                    if (pid && val !== "" && val !== null) {
+                        ratings.push({
+                            player_id: pid,
+                            rating: parseInt(val),
+                        });
+                    }
+                });
+
                 // Send to API
                 try {
                     const matchId = document
@@ -349,7 +509,7 @@ const playerImages = import.meta.glob(
                         body: JSON.stringify({
                             match_id: matchId,
                             mvp_vote: mvp,
-                            ratings: [], // No ratings anymore
+                            ratings: ratings,
                         }),
                     });
 
@@ -357,7 +517,7 @@ const playerImages = import.meta.glob(
                         btn.textContent = "¡GUARDADO!";
                         if (feedbackMsg) {
                             feedbackMsg.textContent =
-                                "¡Voto enviado correctamente! Gracias por participar.";
+                                "¡Votaciones enviadas correctamente! Gracias por participar.";
                             feedbackMsg.className = "feedback-msg success";
                             feedbackMsg.classList.remove("hidden");
                         }
