@@ -139,7 +139,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     <main class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-6 pronosticos-page">
         <header class="text-center mb-12 w-full mx-auto">
             <!-- Using global page-title style, forcing visible color -->
-            <h1 class="page-title" style="color: var(--text-primary);"> PRONÓSTICOS v3</h1>
+            <h1 class="page-title" style="color: var(--text-primary);"> PRONÓSTICOS</h1>
              <p class="content-h2 mx-auto" style="text-align: center;">
                 Pronostica el resultado y goleadoras del próximo partido y gana puntos para subir en la clasificación.
             </p>
@@ -157,8 +157,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
              <!-- RULES SECTION (MOVED HERE) -->
              <!-- RULES SECTION (Styles as Card) -->
              <!-- RULES SECTION (Styles as Card matching Match Card) -->
-             <!-- Added mt-20 to prevent overlap with button above -->
-             <div class="header-rules-card mt-20 mx-auto relative pt-12 pb-8 px-8 bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.05)] text-left w-full">
+             <div class="header-rules-card mt-12 mx-auto relative pt-12 pb-8 px-8 bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.05)] text-left w-full">
                  <div class="card-title-overlay">SISTEMA DE PUNTUACIÓN</div>
                  <ul class="rules-list-bullets">
                      <li>
@@ -349,13 +348,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     function toggleScorer(element) {
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
-        
-        // Explicit toggle logic
-        if (element.classList.contains('selected')) {
-            element.classList.remove('selected');
-        } else {
-            element.classList.add('selected');
-        }
+        element.classList.toggle('selected');
     }
 
     function adjustScore(inputId, delta) {
@@ -390,7 +383,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
             // Collect selected scorers
             const selectedScorers = [];
-            document.querySelectorAll('.scorer-chip-v2.selected').forEach(chip => {
+            document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
                 const pid = chip.dataset.playerId;
                 if(pid) selectedScorers.push(pid);
             });
@@ -803,8 +796,8 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     
     .scorers-select-container {
         display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        gap: 1.5rem;
         max-height: 500px; 
         overflow-y: auto; 
         padding: 1rem 0.5rem;
@@ -828,21 +821,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     /* Hover effect */
-    /* Hover effect - Desktop only */
-    @media (hover: hover) {
-        .scorer-chip:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-        }
-        
-        .scorer-chip:hover::before,
-        .scorer-chip:hover::after {
-            opacity: 1;
-        }
-        
-        .scorer-chip:hover .chip-image-container {
-            transform: scale(1.05);
-        }
+    .scorer-chip:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
     }
 
     /* CORNER BORDERS (SELECTOR) - ADAPTED FROM SQUAD */
@@ -856,16 +837,29 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         transition: all 0.3s ease;
         opacity: 0;
         pointer-events: none;
-        z-index: 20; /* Ensure above content */
     }
 
-    /* ... skipped ... */
+    .scorer-chip::before {
+        top: -2px; 
+        left: -2px;
+        border-top-color: var(--accent);
+        border-left-color: var(--accent);
+        border-radius: 4px 0 0 0;
+    }
 
+    .scorer-chip::after {
+        bottom: -2px; 
+        right: -2px;
+        border-bottom-color: var(--accent);
+        border-right-color: var(--accent);
+        border-radius: 0 0 4px 0;
+    }
+
+    .scorer-chip:hover::before,
+    .scorer-chip:hover::after,
     .scorer-chip.selected::before,
     .scorer-chip.selected::after {
-        opacity: 1 !important; /* Force visibility */
-        border-width: 4px;
-        border-color: var(--accent); /* Ensure color */
+        opacity: 1;
     }
     
     .scorer-chip.selected::before,
@@ -1111,19 +1105,15 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     /* Mobile fixes for full width */
     @media (max-width: 640px) {
         .match-card, .leaderboard-container, .rules-container, .header-rules-card {
-            padding: 2.5rem 1.5rem !important; /* Increased padding inside card */
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem 1rem !important; /* Drastically reduce padding */
+            border-radius: 0; /* Optional: remove radius for true edge-to-edge feel, or keep small */
+            box-shadow: none; /* Flatten for mobile if desired, or keep */
+            border-left: none;
+            border-right: none;
         }
         
+        /* Ensure container touches edges */
         .pronosticos-page {
-            overflow-x: hidden;
-            padding-left: 0.75rem !important; /* Visual gap from screen edge */
-            padding-right: 0.75rem !important;
             padding-top: 1rem;
         }
 
@@ -1134,40 +1124,8 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
         /* Adjust grid gap */
         .grid-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem !important; /* Restore larger gap to prevent overlap */
+            gap: 1.5rem;
             margin-top: 1rem;
-            width: 100%;
-            padding-bottom: 2rem; /* Add bottom padding to grid to clear button */
-        }
-        
-        .rules-container {
-             margin-bottom: 3rem !important; /* Force space below rules */
-        }
-        
-        .prediction-column, .leaderboard-column {
-            width: 100%;
-        }
-        
-        /* Fix cramped rules */
-        .rules-list-bullets {
-            gap: 1.5rem !important;
-        }
-        .rules-list-bullets li {
-            padding-bottom: 1rem !important;
-        }
-
-        /* Fix Shield Cutoff */
-        .team-shield {
-            width: 70px !important;
-            height: 70px !important;
-        }
-        .teams-container {
-            gap: 0.5rem !important;
-        }
-        .team {
-            gap: 0.5rem;
         }
     }
 

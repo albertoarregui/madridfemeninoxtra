@@ -169,7 +169,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                             <div class="mvp-grid">
                                 {squadWithImages.map(player => (
                                     <div 
-                                        class={`mvp-chip-v2 ${existingMVP === player.id ? 'selected' : ''}`}
+                                        class={`mvp-chip ${existingMVP === player.id ? 'selected' : ''}`}
                                         data-player-id={player.id}
                                         onclick="selectMvp(this)"
                                         title={player.name}
@@ -256,23 +256,12 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 <script is:inline>
     // Global functions for inline handlers
     function selectMvp(element) {
-        const isAlreadySelected = element.classList.contains('selected');
-        
-        // Remove 'selected' from ALL chips first (exclusive selection)
-        document.querySelectorAll('.mvp-chip-v2').forEach(el => el.classList.remove('selected'));
-        
+        document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        const pid = element.dataset.playerId;
         const input = document.getElementById('mvp-input');
-        
-        if (isAlreadySelected) {
-            // If it was selected, we leave it deselected (already removed above) and clear input
-            if(input) input.value = "";
-        } else {
-            // If it was NEW, select it
-            element.classList.add('selected');
-            const pid = element.dataset.playerId;
-            if(input) input.value = pid;
-        }
-        
+        if(input) input.value = pid;
+        // MVP is selected, so form might be valid now if ratings are blocked
         validateForm();
     }
 
@@ -642,8 +631,8 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     /* MVP GRID */
     .mvp-grid {
         display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        gap: 1.2rem;
         padding: 1rem;
         justify-items: center;
     }
@@ -667,12 +656,16 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     }
 
     .mvp-chip:hover { transform: none; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-    
-    @media (hover: hover) {
-         .mvp-chip:hover::before, .mvp-chip:hover::after { opacity: 1; }
-         .mvp-chip:hover .chip-image-container { transform: scale(1.05); }
+
+    /* MVP Selector Corners */
+    .mvp-chip::before, .mvp-chip::after {
+        content: ""; position: absolute; width: 15px; height: 15px; border: 3px solid transparent;
+        transition: all 0.3s ease; opacity: 0; pointer-events: none;
     }
+    .mvp-chip::before { top: -2px; left: -2px; border-top-color: var(--accent); border-left-color: var(--accent); border-radius: 4px 0 0 0; }
+    .mvp-chip::after { bottom: -2px; right: -2px; border-bottom-color: var(--accent); border-right-color: var(--accent); border-radius: 0 0 4px 0; }
     
+    .mvp-chip:hover::before, .mvp-chip:hover::after,
     .mvp-chip.selected::before, .mvp-chip.selected::after { opacity: 1; }
     .mvp-chip.selected::before, .mvp-chip.selected::after { border-width: 4px; }
     
@@ -705,8 +698,8 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         overflow-wrap: break-word;
         width: 100%;
     }
-    .mvp-chip-v2.selected .player-name-chip { color: var(--primary); }
-    .mvp-chip-v2.selected .player-num { color: var(--accent); }
+    .mvp-chip.selected .player-name-chip { color: var(--primary); }
+    .mvp-chip.selected .player-num { color: var(--accent); }
 
     .match-date-container {
         display: flex;
@@ -738,7 +731,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
         opacity: 0; transform: scale(0); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .mvp-chip-v2.selected .mvp-badge { opacity: 1; transform: scale(1); }
+    .mvp-chip.selected .mvp-badge { opacity: 1; transform: scale(1); }
 
 
     /* Cards Grid */
