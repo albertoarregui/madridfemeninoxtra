@@ -820,10 +820,21 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border: 2px solid transparent; /* Placeholder for layout stability */
     }
 
-    /* Hover effect */
-    .scorer-chip:hover { 
-        transform: translateY(-5px); 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+    /* Hover effect - Desktop only to prevent sticky hover on mobile */
+    @media (hover: hover) {
+        .scorer-chip:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+        }
+        
+        .scorer-chip:hover::before,
+        .scorer-chip:hover::after {
+            opacity: 1;
+        }
+        
+        .scorer-chip:hover .chip-image-container {
+            transform: scale(1.05);
+        }
     }
 
     /* CORNER BORDERS (SELECTOR) - ADAPTED FROM SQUAD */
@@ -855,8 +866,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border-radius: 0 0 4px 0;
     }
 
-    .scorer-chip:hover::before,
-    .scorer-chip:hover::after,
     .scorer-chip.selected::before,
     .scorer-chip.selected::after {
         opacity: 1;
@@ -883,9 +892,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         transition: transform 0.3s ease;
     }
     
-    .scorer-chip:hover .chip-image-container {
-        transform: scale(1.05);
-    }
+
     
     .chip-img { 
         width: 100%; 
@@ -1105,16 +1112,16 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     /* Mobile fixes for full width */
     @media (max-width: 640px) {
         .match-card, .leaderboard-container, .rules-container, .header-rules-card {
-            padding: 1.5rem 1rem !important; /* Drastically reduce padding */
-            border-radius: 0; /* Optional: remove radius for true edge-to-edge feel, or keep small */
-            box-shadow: none; /* Flatten for mobile if desired, or keep */
+            padding: 1.5rem 1rem !important;
+            border-radius: 0;
+            box-shadow: none;
             border-left: none;
             border-right: none;
         }
         
-        /* Ensure container touches edges */
         .pronosticos-page {
             padding-top: 1rem;
+            overflow-x: hidden;
         }
 
         /* Fix centering */
@@ -1124,8 +1131,23 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
         /* Adjust grid gap */
         .grid-layout {
-            gap: 1.5rem;
+            gap: 2rem !important;
             margin-top: 1rem;
+        }
+        
+        /* Prevent shield cutoff on small screens */
+        .team-shield {
+            width: 80px !important;
+            height: 80px !important;
+        }
+        
+        .teams-container {
+            gap: 0.75rem !important;
+        }
+        
+        /* Add spacing to prevent overlap */
+        .rules-container {
+            margin-bottom: 2rem !important;
         }
     }
 
