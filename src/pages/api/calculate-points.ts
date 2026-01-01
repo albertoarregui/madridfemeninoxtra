@@ -1,11 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@libsql/client";
 
-/**
- * API endpoint to calculate points for predictions of a completed match
- * POST /api/calculate-points
- * Body: { match_calendar_id: string }  // The ID from CALENDAR (e.g., "real-madrid-vs-sevilla")
- */
+
 
 export const POST: APIRoute = async ({ request }) => {
     try {
@@ -18,7 +14,7 @@ export const POST: APIRoute = async ({ request }) => {
             }), { status: 400 });
         }
 
-        // 1. Connect to MAIN database (has actual match results)
+
         const mainDbUrl = import.meta.env.TURSO_DATABASE_URL;
         const mainDbToken = import.meta.env.TURSO_AUTH_TOKEN;
 
@@ -28,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         const mainDb = createClient({ url: mainDbUrl, authToken: mainDbToken });
 
-        // 2. Connect to PREDICTIONS database
+
         const predsDbUrl = import.meta.env.TURSO_DATABASE_URL_2;
         const predsDbToken = import.meta.env.TURSO_AUTH_TOKEN_2;
 
@@ -38,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         const predsDb = createClient({ url: predsDbUrl, authToken: predsDbToken });
 
-        // 3. Get actual match result from main DB using partido_id
+
         const matchQuery = `
             SELECT
                 p.id_partido,
@@ -66,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
             return new Response(JSON.stringify({ error: "Match result not available yet" }), { status: 400 });
         }
 
-        // 4. Get actual scorers for this match
+
         const scorersQuery = `
             SELECT DISTINCT id_jugadora
             FROM goles_y_asistencias
@@ -80,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         const actualScorers = scorersResult.rows.map(row => String(row.id_jugadora));
 
-        // 5. Get all predictions for this match from predictions DB
+
         const predictionsResult = await predsDb.execute({
             sql: "SELECT id, user_id, home_score, away_score, scorers FROM predictions WHERE match_id = ?",
             args: [match_calendar_id],
@@ -93,7 +89,7 @@ export const POST: APIRoute = async ({ request }) => {
             }), { status: 200 });
         }
 
-        // 6. Calculate points for each prediction
+
         let processed = 0;
         const results = [];
 
@@ -114,12 +110,10 @@ export const POST: APIRoute = async ({ request }) => {
 
             let points = 0;
 
-            // Rule 1: Exact score (3 points)
             const exactScore = (predHomeScore === actualHomeScore && predAwayScore === actualAwayScore);
             if (exactScore) {
                 points += 3;
             }
-            // Rule 2: Correct outcome (winner/draw) - only if NOT exact score (1 point)
             else {
                 const predOutcome = getOutcome(predHomeScore, predAwayScore);
                 const actualOutcome = getOutcome(actualHomeScore, actualAwayScore);
@@ -129,14 +123,14 @@ export const POST: APIRoute = async ({ request }) => {
                 }
             }
 
-            // Rule 3: Correct scorers (1 point per correct scorer)
+
             for (const scorerId of predScorers) {
                 if (actualScorers.includes(scorerId)) {
                     points += 1;
                 }
             }
 
-            // 7. Update points_earned in predictions table
+
             await predsDb.execute({
                 sql: "UPDATE predictions SET points_earned = ? WHERE id = ?",
                 args: [points, pred.id],
