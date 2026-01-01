@@ -112,7 +112,6 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     <div class="notas-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <header class="text-center mb-12 max-w-4xl mx-auto">
             <h1 class="page-title" style="color: var(--text-primary);">NOTAS DEL PARTIDO</h1>
-            <!-- v2.1.1 -->
             <p class="content-h2 mx-auto" style="text-align: center;">
                 Valora el rendimiento de las jugadoras y elige a la MVP del último partido.
             </p>
@@ -192,21 +191,15 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
                         <section class="ratings-section ranking-col" style="padding-top: 3.5rem; position: relative; border-radius: 12px; background: white;">
                              <div class="card-title-overlay">PON NOTA (1-10)</div>
 
-
                             <div class="players-ratings-grid">
                                 {squadWithImages.map((player) => (
-                                    <div 
-                                        class="rating-card" 
-                                        style="background: white !important; border-left: 1px solid #eee !important; transform: none !important; display: grid; grid-template-columns: 50px minmax(120px, 2fr) auto;"
-                                        onmouseenter="this.style.transform = 'none'; this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.08)'"
-                                        onmouseleave="this.style.transform = 'none'; this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)'"
-                                    >
+                                    <div class="rating-card">
                                         <div class="rating-img-wrapper">
                                             <img src={player.image} alt={player.name} />
                                         </div>
-                                        <div class="rating-text" style="overflow: visible !important;">
+                                        <div class="rating-text">
                                             <span class="r-number">#{player.number}</span>
-                                            <span class="r-name" style="white-space: normal !important; word-break: normal !important; overflow: visible !important; text-overflow: clip !important; max-width: none !important;">{player.name}</span>
+                                            <span class="r-name">{player.name}</span>
                                         </div>
                                         
                                         <div class="rating-control-group">
@@ -637,7 +630,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     /* MVP GRID */
     .mvp-grid {
         display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
         gap: 1.2rem;
         padding: 1rem;
         justify-items: center;
@@ -652,7 +645,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         background: white; 
         border-radius: 12px; 
         cursor: pointer; 
-        transition: box-shadow 0.3s ease;
+        transition: all 0.3s ease;
         position: relative;
         text-align: center; 
         user-select: none;
@@ -661,10 +654,7 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         width: 100%;
     }
 
-    .mvp-chip:hover { 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-        transform: none !important;
-    }
+    .mvp-chip:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
 
     /* MVP Selector Corners */
     .mvp-chip::before, .mvp-chip::after {
@@ -678,27 +668,33 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     .mvp-chip.selected::before, .mvp-chip.selected::after { opacity: 1; }
     .mvp-chip.selected::before, .mvp-chip.selected::after { border-width: 4px; }
     
-    .mvp-chip.selected { background: white !important; }
+    .mvp-chip.selected { background: #fffdf5; }
 
     .chip-image-container {
         width: 70px; height: 70px; border-radius: 50%; overflow: hidden; 
         background: #f0f0f0; border: 3px solid white; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-        /* Removed scale transition */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;
     }
-    /* Removed hover scale */
-    
+    .mvp-chip:hover .chip-image-container { transform: scale(1.05); }
     .chip-img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
     
-    .chip-info { display: flex; flex-direction: column; line-height: 1.2; gap: 0.3rem; width: 100%; overflow: hidden; }
+    .chip-info { 
+        display: flex; 
+        flex-direction: column; 
+        line-height: 1.2; 
+        gap: 0.3rem;
+        width: 100%;
+        overflow: hidden;
+    }
     .player-num { font-size: 0.8rem; font-weight: 800; color: #ccc; }
     .player-name-chip { 
-        font-size: 0.9rem; 
+        font-size: 0.85rem; 
         font-weight: 700; 
         color: #444;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.2;
+        overflow-wrap: break-word;
         width: 100%;
     }
     .mvp-chip.selected .player-name-chip { color: var(--primary); }
@@ -745,24 +741,22 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
         padding: 0 0.5rem;
     }
 
-    .players-ratings-grid .rating-card {
+    .rating-card {
         display: grid;
-        grid-template-columns: 50px 1fr auto;
+        grid-template-columns: 50px minmax(0, 1fr) auto; /* minmax(0, 1fr) prevents overflow */
         align-items: center;
         gap: 0.8rem;
-        background: white !important;
+        background: #fff;
         border: 1px solid #eee;
         border-radius: 12px;
         padding: 0.8rem;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         transition: box-shadow 0.2s;
-        border-left: 4px solid #e0e0e0 !important;
+        border-left: 4px solid var(--accent);
         min-width: 0;
-        transform: none !important; /* Force no transform by default */
     }
-    .players-ratings-grid .rating-card:hover { 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important; 
-        transform: none !important; /* Force no transform on hover */
+    .rating-card:hover { 
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
     }
 
     .rating-player-info { display: contents; }
@@ -777,21 +771,19 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
     .rating-text {
         grid-column: 2;
         display: flex; flex-direction: column; gap: 0.2rem;
-        min-width: 0;
-        overflow: visible !important; /* Allow overflow for wrapping */
+        min-width: 0; /* Critical for text truncation */
+        overflow: hidden;
     }
     .r-number { color: #888; font-size: 0.75rem; font-weight: 700; }
-    .players-ratings-grid .r-name { 
-        font-size: 0.95rem !important; 
-        font-weight: 800 !important; 
+    .r-name { 
+        font-size: 0.95rem; 
+        font-weight: 800; 
         text-transform: uppercase; 
         color: #333;
-        white-space: normal !important; /* Force wrapping */
-        word-break: break-word !important; /* Break long words */
-        overflow: visible !important;
-        line-height: 1.2 !important;
-        padding-right: 0.5rem;
-        max-width: none !important; /* No width limit */
+        white-space: normal; /* Allow wrapping */
+        word-break: break-word; /* Break long words */
+        line-height: 1.2;
+        overflow-wrap: break-word; /* Additional break support */
     }
 
     .rating-control-group {
