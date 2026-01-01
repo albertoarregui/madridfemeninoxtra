@@ -3,16 +3,22 @@ import Layout from "../layouts/Layout.astro";
 import { turso } from "../lib/turso";
 import { CALENDAR } from "../consts/calendar";
 import { SQUAD } from "../consts/squad";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/astro/components";
-import { getPlayerImage, getShield, getCompetitionLogo } from "../lib/assetHelpers";
+import {
+    SignInButton,
+    SignedIn,
+    SignedOut,
+    UserButton,
+} from "@clerk/astro/components";
+import {
+    getPlayerImage,
+    getShield,
+    getCompetitionLogo,
+} from "../lib/assetHelpers";
 
-// 1. Find Current/Next Match (Visible until 2 hours after start)
 const now = new Date();
 const nextMatchIndex = CALENDAR.findIndex((m) => {
     const mDate = new Date(m.date);
-    // Match is considered "active/next" until 2 hours after it starts
-    const mEnd = new Date(mDate.getTime() + 2 * 60 * 60 * 1000); 
-    return mEnd > now;
+    const mEnd = new Date(mDate.getTime() + 2 * 60 * 60 * 1000);
 });
 
 const nextMatch = nextMatchIndex !== -1 ? CALENDAR[nextMatchIndex] : null;
@@ -23,8 +29,7 @@ let isMatchOpen = false;
 if (nextMatch) {
     const matchDate = new Date(nextMatch.date);
     const msUntilMatch = matchDate.getTime() - now.getTime();
-    
-    // Lock 5 minutes before match starts
+
     if (msUntilMatch > 300000) {
         isMatchOpen = true;
     } else {
@@ -32,7 +37,6 @@ if (nextMatch) {
     }
 }
 
-// Helpers
 interface LeaderboardEntry {
     user_id: string;
     total_points: number;
@@ -44,7 +48,6 @@ interface UserPrediction {
     scorers: string[];
 }
 
-// 2. Fetch Data
 import { clerkClient } from "@clerk/astro/server";
 
 const { userId } = Astro.locals.auth();
@@ -61,7 +64,7 @@ if (userId && nextMatch) {
             const row = result.rows[0];
             let parsedScorers: string[] = [];
 
-            if (typeof row.scorers === 'string') {
+            if (typeof row.scorers === "string") {
                 try {
                     parsedScorers = JSON.parse(row.scorers);
                 } catch (e) {
@@ -70,11 +73,11 @@ if (userId && nextMatch) {
             } else if (Array.isArray(row.scorers)) {
                 parsedScorers = row.scorers as string[];
             }
-            
+
             userPrediction = {
                 home_score: Number(row.home_score),
                 away_score: Number(row.away_score),
-                scorers: parsedScorers
+                scorers: parsedScorers,
             };
         }
     } catch (e) {
@@ -87,65 +90,78 @@ try {
         sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id HAVING total_points > 0 ORDER BY total_points DESC LIMIT 20",
         args: [],
     });
-    
+
     const plainLeaderboard = result.rows.map((row: any) => ({
         user_id: String(row.user_id),
-        total_points: Number(row.total_points)
+        total_points: Number(row.total_points),
     }));
 
     if (plainLeaderboard.length > 0) {
-        const userIds = plainLeaderboard.map(u => u.user_id);
+        const userIds = plainLeaderboard.map((u) => u.user_id);
         try {
             const client = clerkClient(Astro);
-            const users = await client.users.getUserList({ userId: userIds, limit: 20 });
-            
-            leaderboard = plainLeaderboard.map(entry => {
-                const user = users.data.find(u => u.id === entry.user_id);
+            const users = await client.users.getUserList({
+                userId: userIds,
+                limit: 20,
+            });
+
+            leaderboard = plainLeaderboard.map((entry) => {
+                const user = users.data.find((u) => u.id === entry.user_id);
                 return {
                     ...entry,
                     username: user?.username || user?.firstName || "Anónimo",
-                    imageUrl: user?.imageUrl
+                    imageUrl: user?.imageUrl,
                 };
             });
         } catch (error) {
             console.error("Error fetching Clerk users", error);
-            leaderboard = plainLeaderboard; // Fallback
+            leaderboard = plainLeaderboard;
         }
     } else {
         leaderboard = [];
     }
-
-} catch(e) {
+} catch (e) {
     console.error("Error fetching leaderboard", e);
 }
 
- 
 const matchDate = nextMatch ? new Date(nextMatch.date) : new Date();
-const formattedDate = matchDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+const formattedDate = matchDate.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+});
 
-// Prepare assets
-const playersWithImages = await Promise.all(SQUAD.sort((a, b) => a.number - b.number).map(async (p) => ({
-    ...p,
-    image: await getPlayerImage(p.id)
-})));
+const playersWithImages = await Promise.all(
+    SQUAD.sort((a, b) => a.number - b.number).map(async (p) => ({
+        ...p,
+        image: await getPlayerImage(p.id),
+    })),
+);
 
-const homeShield = nextMatch ? await getShield(nextMatch.team1) : '';
-const awayShield = nextMatch ? await getShield(nextMatch.team2) : '';
-const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '';
-
+const homeShield = nextMatch ? await getShield(nextMatch.team1) : "";
+const awayShield = nextMatch ? await getShield(nextMatch.team2) : "";
+const compLogo = nextMatch
+    ? await getCompetitionLogo(nextMatch.competition)
+    : "";
 ---
 
 <Layout title="Pronósticos | Madrid Femenino Xtra">
     <main class="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-6 pronosticos-page">
         <header class="text-center mb-12 w-full mx-auto">
-            <!-- Using global page-title style, forcing visible color -->
-            <h1 class="page-title" style="color: var(--text-primary);"> PRONÓSTICOS</h1>
-             <p class="content-h2 mx-auto" style="text-align: center;">
-                Pronostica el resultado y goleadoras del próximo partido y gana puntos para subir en la clasificación.
+            <h1 class="page-title" style="color: var(--text-primary);">
+                PRONÓSTICOS
+            </h1>
+            <p class="content-h2 mx-auto" style="text-align: center;">
+                Pronostica el resultado y goleadoras del próximo partido y gana
+                puntos para subir en la clasificación.
             </p>
-             <div class="auth-controls mt-6 flex justify-center">
+            <div class="auth-controls mt-6 flex justify-center">
                 <SignedOut>
-                    <SignInButton mode="modal" as="button" class="header-login-btn">
+                    <SignInButton
+                        mode="modal"
+                        as="button"
+                        class="header-login-btn"
+                    >
                         INICIAR SESIÓN
                     </SignInButton>
                 </SignedOut>
@@ -154,150 +170,314 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                 </SignedIn>
             </div>
 
-             <!-- RULES SECTION (MOVED HERE) -->
-             <!-- RULES SECTION (Styles as Card) -->
-             <!-- RULES SECTION (Styles as Card matching Match Card) -->
-             <div class="header-rules-card mt-12 mx-auto relative pt-16 pb-8 px-8 bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.05)] text-left w-full">
-                 <div class="card-title-overlay">SISTEMA DE PUNTUACIÓN</div>
-                 <ul class="rules-list-bullets">
-                     <li>
+            <div
+                class="header-rules-card mt-12 mx-auto relative pt-16 pb-8 px-8 bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-[rgba(0,0,0,0.05)] text-left w-full"
+            >
+                <div class="card-title-overlay">SISTEMA DE PUNTUACIÓN</div>
+                <ul class="rules-list-bullets">
+                    <li>
                         <span class="rule-points">3 PUNTOS</span>
                         <span class="rule-desc">Resultado Exacto</span>
-                     </li>
-                     <li>
+                    </li>
+                    <li>
                         <span class="rule-points">1 PUNTO</span>
                         <span class="rule-desc">Ganador / Empate</span>
-                     </li>
-                     <li>
+                    </li>
+                    <li>
                         <span class="rule-points">1 PUNTO</span>
                         <span class="rule-desc">Goleadora</span>
-                     </li>
-                 </ul>
-                 <p class="rules-footnote text-center mt-6 text-sm text-gray-500 italic">* Los puntos se suman al finalizar el partido.</p>
-             </div>
+                    </li>
+                </ul>
+                <p
+                    class="rules-footnote text-center mt-6 text-sm text-gray-500 italic"
+                >
+                    * Los puntos se suman al finalizar el partido.
+                </p>
+            </div>
         </header>
 
         <div class="grid-layout expanded-layout">
-            <!-- LEFT COLUMN: PREDICTION CARD -->
             <section class="prediction-column">
-                {nextMatch ? (
-                    <div class="match-card">
-                        <div class="card-title-overlay">PRÓXIMO PARTIDO</div>
-                        
-                         <div class="match-header">
-                            {compLogo ? (
-                                <img src={compLogo} alt={nextMatch.competition} class="comp-logo" />
-                            ) : (
-                                <span class="competition-text">{nextMatch.competition}</span>
-                            )}
-                            <div class="date-container">
-                                <span class="match-date-day">{formattedDate}</span>
-                                <span class="match-date-time">{nextMatch.time}</span>
+                {
+                    nextMatch ? (
+                        <div class="match-card">
+                            <div class="card-title-overlay">
+                                PRÓXIMO PARTIDO
                             </div>
-                        </div>
-                        
-                        <div class="teams-container" data-match-id={nextMatch.id}>
-                            <div class="team home">
-                                {homeShield && <img src={homeShield} alt={nextMatch.team1} class="team-shield" />}
-                                <span class="team-name">{nextMatch.team1}</span>
-                            </div>
-                            
-                            <!-- Score inputs with hover container ref -->
-                            <div class="score-board-container">
-                                <div class="score-input-wrapper">
-                                    <input 
-                                        type="number" 
-                                        id="home-score" 
-                                        min="0" 
-                                        max="20" 
-                                        value={userPrediction ? userPrediction.home_score : ''}
-                                        placeholder="" 
-                                        disabled={!userId || !isMatchOpen}
+
+                            <div class="match-header">
+                                {compLogo ? (
+                                    <img
+                                        src={compLogo}
+                                        alt={nextMatch.competition}
+                                        class="comp-logo"
                                     />
-                                    <div class="custom-spinners">
-                                        <button class="spinner-btn up" onclick="adjustScore('home-score', 1)" disabled={!userId || !isMatchOpen}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 15l6 -6l6 6" /></svg>
-                                        </button>
-                                        <button class="spinner-btn down" onclick="adjustScore('home-score', -1)" disabled={!userId || !isMatchOpen}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <span class="score-separator">:</span>
-                                <div class="score-input-wrapper">
-                                    <input 
-                                        type="number" 
-                                        id="away-score" 
-                                        min="0" 
-                                        max="20" 
-                                        value={userPrediction ? userPrediction.away_score : ''}
-                                        placeholder=""
-                                        disabled={!userId || !isMatchOpen}
-                                    />
-                                    <div class="custom-spinners">
-                                        <button class="spinner-btn up" onclick="adjustScore('away-score', 1)" disabled={!userId || !isMatchOpen}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 15l6 -6l6 6" /></svg>
-                                        </button>
-                                        <button class="spinner-btn down" onclick="adjustScore('away-score', -1)" disabled={!userId || !isMatchOpen}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
-                                        </button>
-                                    </div>
+                                ) : (
+                                    <span class="competition-text">
+                                        {nextMatch.competition}
+                                    </span>
+                                )}
+                                <div class="date-container">
+                                    <span class="match-date-day">
+                                        {formattedDate}
+                                    </span>
+                                    <span class="match-date-time">
+                                        {nextMatch.time}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div class="team away">
-                                {awayShield && <img src={awayShield} alt={nextMatch.team2} class="team-shield" />}
-                                <span class="team-name">{nextMatch.team2}</span>
-                            </div>
-                        </div>
+                            <div
+                                class="teams-container"
+                                data-match-id={nextMatch.id}
+                            >
+                                <div class="team home">
+                                    {homeShield && (
+                                        <img
+                                            src={homeShield}
+                                            alt={nextMatch.team1}
+                                            class="team-shield"
+                                        />
+                                    )}
+                                    <span class="team-name">
+                                        {nextMatch.team1}
+                                    </span>
+                                </div>
 
-                        <!-- GOALSCORERS SECTION -->
-                        <div class="scorers-section">
-                            <h3 class="scorers-title">¿QUIÉN MARCARÁ?</h3>
-                            
+                                <div class="score-board-container">
+                                    <div class="score-input-wrapper">
+                                        <input
+                                            type="number"
+                                            id="home-score"
+                                            min="0"
+                                            max="20"
+                                            value={
+                                                userPrediction
+                                                    ? userPrediction.home_score
+                                                    : ""
+                                            }
+                                            placeholder=""
+                                            disabled={!userId || !isMatchOpen}
+                                        />
+                                        <div class="custom-spinners">
+                                            <button
+                                                class="spinner-btn up"
+                                                onclick="adjustScore('home-score', 1)"
+                                                disabled={
+                                                    !userId || !isMatchOpen
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"
+                                                >
+                                                    <>
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 15l6 -6l6 6" />
+                                                    </>
+                                                </svg>
+                                            </button>
+                                            <button
+                                                class="spinner-btn down"
+                                                onclick="adjustScore('home-score', -1)"
+                                                disabled={
+                                                    !userId || !isMatchOpen
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"
+                                                >
+                                                    <>
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 9l6 6l6 -6" />
+                                                    </>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span class="score-separator">:</span>
+                                    <div class="score-input-wrapper">
+                                        <input
+                                            type="number"
+                                            id="away-score"
+                                            min="0"
+                                            max="20"
+                                            value={
+                                                userPrediction
+                                                    ? userPrediction.away_score
+                                                    : ""
+                                            }
+                                            placeholder=""
+                                            disabled={!userId || !isMatchOpen}
+                                        />
+                                        <div class="custom-spinners">
+                                            <button
+                                                class="spinner-btn up"
+                                                onclick="adjustScore('away-score', 1)"
+                                                disabled={
+                                                    !userId || !isMatchOpen
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-up"
+                                                >
+                                                    <>
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 15l6 -6l6 6" />
+                                                    </>
+                                                </svg>
+                                            </button>
+                                            <button
+                                                class="spinner-btn down"
+                                                onclick="adjustScore('away-score', -1)"
+                                                disabled={
+                                                    !userId || !isMatchOpen
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"
+                                                >
+                                                    <>
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 9l6 6l6 -6" />
+                                                    </>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="team away">
+                                    {awayShield && (
+                                        <img
+                                            src={awayShield}
+                                            alt={nextMatch.team2}
+                                            class="team-shield"
+                                        />
+                                    )}
+                                    <span class="team-name">
+                                        {nextMatch.team2}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="scorers-section">
+                                <h3 class="scorers-title">¿QUIÉN MARCARÁ?</h3>
+
                                 <div class="scorers-select-container">
-                                {playersWithImages.map(player => (
-                                    <div 
-                                        class={`scorer-chip ${userPrediction && userPrediction.scorers && Array.isArray(userPrediction.scorers) && userPrediction.scorers.includes(player.id) ? 'selected' : ''}`}
-                                        data-player-id={player.id}
-                                        onclick="toggleScorer(this)"
-                                        title={player.name}
+                                    {playersWithImages.map((player) => (
+                                        <div
+                                            class={`scorer-chip ${userPrediction && userPrediction.scorers && Array.isArray(userPrediction.scorers) && userPrediction.scorers.includes(player.id) ? "selected" : ""}`}
+                                            data-player-id={player.id}
+                                            onclick="toggleScorer(this)"
+                                            title={player.name}
+                                        >
+                                            <div class="chip-image-container">
+                                                <img
+                                                    src={player.image}
+                                                    alt={player.name}
+                                                    class="chip-img"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div class="chip-info">
+                                                <span class="player-num">
+                                                    #{player.number}
+                                                </span>
+                                                <span class="player-name-chip">
+                                                    {player.name}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div class="action-area">
+                                {!userId ? (
+                                    <p class="login-prompt">
+                                        Debes iniciar sesión para participar
+                                    </p>
+                                ) : (
+                                    <button
+                                        id="submit-prediction"
+                                        class="submit-btn"
+                                        disabled={!isMatchOpen}
                                     >
-                                        <div class="chip-image-container">
-                                             <img src={player.image} alt={player.name} class="chip-img" loading="lazy" />
-                                        </div>
-                                        <div class="chip-info">
-                                            <span class="player-num">#{player.number}</span>
-                                            <span class="player-name-chip">{player.name}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                        {userPrediction
+                                            ? "ACTUALIZAR PRONÓSTICO"
+                                            : "ENVIAR PRONÓSTICO"}
+                                    </button>
+                                )}
+                                <p
+                                    id="feedback-msg"
+                                    class="feedback-msg hidden"
+                                />
                             </div>
                         </div>
-
-                        <div class="action-area">
-                             {!userId ? (
-                                <p class="login-prompt">Debes iniciar sesión para participar</p>
-                            ) : (
-                                <button id="submit-prediction" class="submit-btn" disabled={!isMatchOpen}>
-                                    {userPrediction ? "ACTUALIZAR PRONÓSTICO" : "ENVIAR PRONÓSTICO"}
-                                </button>
-                            )}
-                             <p id="feedback-msg" class="feedback-msg hidden"></p>
+                    ) : (
+                        <div class="no-match-card">
+                            <p>No hay partidos próximos programados.</p>
                         </div>
-                    </div>
-                ) : (
-                    <div class="no-match-card">
-                        <p>No hay partidos próximos programados.</p>
-                    </div>
-                )}
+                    )
+                }
             </section>
 
-            <!-- RIGHT COLUMN: LEADERBOARD -->
             <section class="leaderboard-column">
                 <div class="leaderboard-container">
                     <div class="card-title-overlay">CLASIFICACIÓN</div>
-                    
+
                     <div class="leaderboard-table-wrapper">
                         <table class="leaderboard-table">
                             <thead>
@@ -308,91 +488,117 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
                                 </tr>
                             </thead>
                             <tbody>
-                                {leaderboard.length > 0 ? leaderboard.map((user, index) => (
-                                    <tr class={`leaderboard-row ${index < 3 ? 'top-3' : ''}`}>
-                                        <td class="td-pos">{index + 1}</td>
-                                        <td class="td-user">
-                                            <div class="user-cell">
-                                                {user.imageUrl ? (
-                                                    <img src={user.imageUrl} alt={user.username} class="user-avatar" />
-                                                ) : (
-                                                    <div class="user-avatar-placeholder">{user.username ? user.username.slice(0, 1).toUpperCase() : 'A'}</div>
-                                                )}
-                                                <span class="user-id">{user.username || 'Anónimo'}</span>
-                                            </div>
-                                        </td>
-                                        <td class="td-pts">
-                                            <span class="pts-badge">{user.total_points || 0}</span>
-                                        </td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colspan="3" class="empty-state">
-                                            ¡Aún no hay puntuaciones! Sé el primero.
-                                        </td>
-                                    </tr>
-                                )}
+                                {
+                                    leaderboard.length > 0 ? (
+                                        leaderboard.map((user, index) => (
+                                            <tr
+                                                class={`leaderboard-row ${index < 3 ? "top-3" : ""}`}
+                                            >
+                                                <td class="td-pos">
+                                                    {index + 1}
+                                                </td>
+                                                <td class="td-user">
+                                                    <div class="user-cell">
+                                                        {user.imageUrl ? (
+                                                            <img
+                                                                src={
+                                                                    user.imageUrl
+                                                                }
+                                                                alt={
+                                                                    user.username
+                                                                }
+                                                                class="user-avatar"
+                                                            />
+                                                        ) : (
+                                                            <div class="user-avatar-placeholder">
+                                                                {user.username
+                                                                    ? user.username
+                                                                          .slice(
+                                                                              0,
+                                                                              1,
+                                                                          )
+                                                                          .toUpperCase()
+                                                                    : "A"}
+                                                            </div>
+                                                        )}
+                                                        <span class="user-id">
+                                                            {user.username ||
+                                                                "Anónimo"}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="td-pts">
+                                                    <span class="pts-badge">
+                                                        {user.total_points || 0}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colspan="3" class="empty-state">
+                                                ¡Aún no hay puntuaciones! Sé el
+                                                primero.
+                                            </td>
+                                        </tr>
+                                    )
+                                }
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
-
             </section>
         </div>
     </main>
 </Layout>
 
 <script is:inline>
-    /* Global function */
     function toggleScorer(element) {
-        // Always allow visual togglescorer (feedback is important even if not auth)
-        // Actual submission is still blocked if !userId (submit button is disabled)
-        element.classList.toggle('selected');
+        element.classList.toggle("selected");
     }
 
     function adjustScore(inputId, delta) {
         const input = document.getElementById(inputId);
         if (!input || input.disabled) return;
-        
-        // If empty, treat as 0
+
         let val = parseInt(input.value);
         if (isNaN(val)) val = 0;
         else val += delta;
-        
-        // Bounds
+
         if (val < 0) val = 0;
-        if (val > 20) val = 20; // Arbitrary max
-        
+        if (val > 20) val = 20;
+
         input.value = val;
     }
 </script>
 
 <script>
-    const submitBtn = document.getElementById('submit-prediction');
-    const homeInput = document.getElementById('home-score');
-    const awayInput = document.getElementById('away-score');
-    const feedbackMsg = document.getElementById('feedback-msg');
-    const container = document.querySelector('.teams-container');
+    const submitBtn = document.getElementById("submit-prediction");
+    const homeInput = document.getElementById("home-score");
+    const awayInput = document.getElementById("away-score");
+    const feedbackMsg = document.getElementById("feedback-msg");
+    const container = document.querySelector(".teams-container");
 
     if (submitBtn && container) {
-        submitBtn.addEventListener('click', async () => {
+        submitBtn.addEventListener("click", async () => {
             const matchId = container.dataset.matchId;
-            const homeScore = parseInt(homeInput.value); 
+            const homeScore = parseInt(homeInput.value);
             const awayScore = parseInt(awayInput.value);
 
-            // Collect selected scorers
             const selectedScorers = [];
-            document.querySelectorAll('.scorer-chip.selected').forEach(chip => {
-                const pid = chip.dataset.playerId;
-                if(pid) selectedScorers.push(pid);
-            });
+            document
+                .querySelectorAll(".scorer-chip.selected")
+                .forEach((chip) => {
+                    const pid = chip.dataset.playerId;
+                    if (pid) selectedScorers.push(pid);
+                });
 
             if (isNaN(homeScore) || isNaN(awayScore)) {
-                if(feedbackMsg) {
-                    feedbackMsg.textContent = "Por favor, introduce un marcador válido.";
-                    feedbackMsg.className = 'feedback-msg error';
-                    feedbackMsg.classList.remove('hidden');
+                if (feedbackMsg) {
+                    feedbackMsg.textContent =
+                        "Por favor, introduce un marcador válido.";
+                    feedbackMsg.className = "feedback-msg error";
+                    feedbackMsg.classList.remove("hidden");
                 }
                 return;
             }
@@ -401,23 +607,24 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             submitBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/predictions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        match_id: matchId, 
-                        home_score: homeScore, 
+                const response = await fetch("/api/predictions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        match_id: matchId,
+                        home_score: homeScore,
                         away_score: awayScore,
-                        scorers: selectedScorers
-                    })
+                        scorers: selectedScorers,
+                    }),
                 });
 
                 if (response.ok) {
                     submitBtn.textContent = "¡GUARDADO!";
-                    if(feedbackMsg) {
-                        feedbackMsg.textContent = "Pronóstico guardado correctamente.";
-                        feedbackMsg.className = 'feedback-msg success';
-                        feedbackMsg.classList.remove('hidden');
+                    if (feedbackMsg) {
+                        feedbackMsg.textContent =
+                            "Pronóstico guardado correctamente.";
+                        feedbackMsg.className = "feedback-msg success";
+                        feedbackMsg.classList.remove("hidden");
                     }
                     setTimeout(() => {
                         submitBtn.textContent = "ACTUALIZAR PRONÓSTICO";
@@ -429,11 +636,12 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             } catch (error) {
                 console.error(error);
                 submitBtn.textContent = "ERROR";
-                 submitBtn.disabled = false;
-                 if(feedbackMsg) {
-                    feedbackMsg.textContent = "Ha ocurrido un error. Inténtalo de nuevo.";
-                    feedbackMsg.className = 'feedback-msg error';
-                    feedbackMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                if (feedbackMsg) {
+                    feedbackMsg.textContent =
+                        "Ha ocurrido un error. Inténtalo de nuevo.";
+                    feedbackMsg.className = "feedback-msg error";
+                    feedbackMsg.classList.remove("hidden");
                 }
             }
         });
@@ -448,10 +656,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     .pronosticos-page {
-        font-family: 'Poppins', sans-serif;
+        font-family: "Poppins", sans-serif;
     }
 
-    /* GRID LAYOUT FOR DESKTOP */
     .grid-layout {
         display: grid;
         grid-template-columns: 1fr;
@@ -461,26 +668,27 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
     @media (min-width: 1200px) {
         .expanded-layout {
-            grid-template-columns: 1.2fr 0.8fr; /* Match Card wider, Leaderboard narrower */
+            grid-template-columns: 1.2fr 0.8fr;
         }
     }
     @media (min-width: 1024px) {
         .expanded-layout {
-             grid-template-columns: 1.5fr 1fr;
+            grid-template-columns: 1.5fr 1fr;
         }
     }
 
-    /* CARD STYLING */
-    .match-card, .leaderboard-container, .rules-container {
+    .match-card,
+    .leaderboard-container,
+    .rules-container {
         position: relative;
         background: white;
         border-radius: 12px;
         padding: 3.5rem 2rem 2.5rem 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         color: var(--text-primary);
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
-    
+
     .card-title-overlay {
         position: absolute;
         top: -18px;
@@ -488,17 +696,16 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         background: var(--accent);
         color: #2b2b2b;
         padding: 0.5rem 1.5rem;
-        font-family: 'Bebas Neue', sans-serif;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 1.6rem;
         font-weight: 700;
         letter-spacing: 1px;
         transform: skew(-10deg);
-        box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
         z-index: 10;
         line-height: 1;
     }
 
-    /* HEADER RULES ITEMS */
     .rules-list-bullets {
         list-style: none;
         padding: 0;
@@ -507,11 +714,11 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         flex-direction: column;
         gap: 0.8rem;
     }
-    
+
     .rules-list-bullets li {
         display: flex;
         align-items: center;
-        justify-content: space-between; /* Points on left, description on right */
+        justify-content: space-between;
         gap: 1rem;
         padding-bottom: 0.8rem;
         border-bottom: 1px solid #f0f0f0;
@@ -521,7 +728,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border-bottom: none;
         padding-bottom: 0;
     }
-    
+
     .rule-points {
         background: var(--primary);
         color: var(--accent);
@@ -532,7 +739,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         min-width: 90px;
         text-align: center;
         letter-spacing: 0.5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .rule-desc {
@@ -549,12 +756,11 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         display: block;
     }
     .card-title-overlay::after {
-        content: ''; 
+        content: "";
         display: block;
         transform: skew(10deg);
     }
 
-    /* COMPONENT STYLES */
     .match-header {
         display: flex;
         flex-direction: column;
@@ -565,14 +771,36 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         gap: 1rem;
     }
 
-    .comp-logo { height: 60px; width: auto; object-fit: contain; }
-    .competition-text { font-weight: 700; font-size: 1.2rem; text-transform: uppercase; color: var(--primary); }
+    .comp-logo {
+        height: 60px;
+        width: auto;
+        object-fit: contain;
+    }
+    .competition-text {
+        font-weight: 700;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        color: var(--primary);
+    }
 
-    .date-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .match-date-day { color: var(--primary); font-size: 1.1rem; text-transform: capitalize; font-weight: 600; }
-    .match-date-time { color: #888; font-size: 1rem; font-weight: 500; }
+    .date-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .match-date-day {
+        color: var(--primary);
+        font-size: 1.1rem;
+        text-transform: capitalize;
+        font-weight: 600;
+    }
+    .match-date-time {
+        color: #888;
+        font-size: 1rem;
+        font-weight: 500;
+    }
 
-    /* TEAMS & SCORE */
     .teams-container {
         display: flex;
         justify-content: space-between;
@@ -589,15 +817,15 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         gap: 1rem;
         text-align: center;
     }
-    
+
     .team-shield {
         width: 120px;
         height: 120px;
         object-fit: contain;
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
         transition: transform 0.3s;
     }
-    
+
     .team-name {
         font-weight: 900;
         font-size: 1.1rem;
@@ -607,7 +835,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         max-width: 150px;
     }
 
-    /* SCORE INPUTS STYLE */
     .score-board-container {
         display: flex;
         align-items: center;
@@ -625,25 +852,24 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         justify-content: center;
         width: 80px;
         height: 80px;
-        position: relative; /* For absolute spinners */
+        position: relative;
     }
-    
+
     .score-input-wrapper:hover {
         border-color: var(--accent);
     }
-    
+
     .score-input-wrapper:focus-within {
         border-color: var(--accent);
         box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
-    /* Hide Default Spinners */
     .score-board-container input::-webkit-outer-spin-button,
     .score-board-container input::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
-    .score-board-container input[type=number] {
+    .score-board-container input[type="number"] {
         -moz-appearance: textfield;
     }
 
@@ -656,18 +882,19 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         color: var(--primary);
         font-size: 3rem;
         font-weight: 800;
-        padding: 0; /* Remove right padding needed for padding-right 20px */
-        padding-right: 15px; /* Space for spinners */
-        font-family: 'Archivo Black', sans-serif;
+        padding: 0;
+        padding-right: 15px;
+        font-family: "Archivo Black", sans-serif;
         line-height: normal;
     }
-    
+
     .score-board-container input:focus {
         outline: none;
     }
-    .score-board-container input::placeholder { color: #eee; }
+    .score-board-container input::placeholder {
+        color: #eee;
+    }
 
-    /* Custom Spinners */
     .custom-spinners {
         position: absolute;
         right: 4px;
@@ -678,7 +905,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         justify-content: space-between;
         width: 20px;
     }
-    
+
     .spinner-btn {
         background: transparent;
         border: none;
@@ -691,32 +918,36 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         transition: color 0.2s;
         height: 45%;
     }
-    
+
     .spinner-btn:hover:not(:disabled) {
         color: var(--primary);
-        background: rgba(0,0,0,0.05);
+        background: rgba(0, 0, 0, 0.05);
         border-radius: 4px;
     }
-    
+
     .spinner-btn:disabled {
         cursor: not-allowed;
         opacity: 0.5;
     }
-    
+
     .spinner-btn svg {
         width: 16px;
         height: 16px;
     }
-    
+
     .score-separator {
         font-size: 3rem;
         font-weight: 700;
         color: #ddd;
     }
 
-    /* BUTTON STYLE */
     .submit-btn {
-        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
         color: #2b2b2b;
         border: none;
         padding: 1rem 2rem;
@@ -728,7 +959,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         text-transform: uppercase;
         box-shadow: 0 4px 15px rgba(255, 222, 89, 0.4);
         width: 100%;
-        margin-top: 3rem; /* Increased padding as requested */
+        margin-top: 3rem;
     }
 
     .submit-btn:hover:not(:disabled) {
@@ -736,16 +967,21 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         box-shadow: 0 6px 20px rgba(255, 222, 89, 0.6);
         color: #000;
     }
-    
+
     .submit-btn:disabled {
         background: #e0e0e0;
         color: #a0a0a0;
         cursor: not-allowed;
         box-shadow: none;
     }
-    
+
     .header-login-btn {
-        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
         color: #2b2b2b;
         border: none;
         padding: 0.8rem 2rem;
@@ -763,20 +999,19 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         box-shadow: 0 6px 15px rgba(255, 222, 89, 0.5);
     }
 
-    /* SCORERS - REVERTED STYLE BUT WITH SELECTOR CORNERS */
     .scorers-section {
         margin-top: 2rem;
         border-top: 1px solid #f0f0f0;
         padding-top: 2rem;
     }
-    
+
     .scorers-title {
-        font-size: 1.2rem; 
-        font-weight: 800; 
-        text-transform: uppercase; 
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-transform: uppercase;
         margin-bottom: 2rem;
-        color: var(--primary); 
-        text-align: center; 
+        color: var(--primary);
+        text-align: center;
         letter-spacing: 1px;
         position: relative;
         display: inline-block;
@@ -784,46 +1019,45 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         transform: translateX(-50%);
     }
 
-    /* Yellow bar under title */
     .scorers-title::after {
-        content: '';
+        content: "";
         display: block;
-        width: 150px; /* Wider as requested */
+        width: 150px;
         height: 4px;
         background: var(--accent);
         margin: 10px auto 0;
         border-radius: 2px;
     }
-    
+
     .scorers-select-container {
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 1.5rem;
-        max-height: 500px; 
-        overflow-y: auto; 
+        max-height: 500px;
+        overflow-y: auto;
         padding: 1rem 0.5rem;
     }
 
     .scorer-chip {
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        gap: 0.8rem; 
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8rem;
         padding: 1rem;
-        background: white; 
-        border-radius: 12px; 
-        cursor: pointer; 
+        background: white;
+        border-radius: 12px;
+        cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
-        text-align: center; 
+        text-align: center;
         user-select: none;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* Softer shadow */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Softer shadow */
         border: 2px solid transparent; /* Placeholder for layout stability */
     }
 
     /* Hover effect - Desktop only to prevent sticky hover on mobile */
     /* UNIFIED SELECTOR LOGIC */
-    
+
     /* 1. BASE: Corners exist but hidden */
     .scorer-chip::before,
     .scorer-chip::after {
@@ -839,14 +1073,16 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     .scorer-chip::before {
-        top: -2px; left: -2px;
+        top: -2px;
+        left: -2px;
         border-top-color: var(--accent);
         border-left-color: var(--accent);
         border-radius: 4px 0 0 0;
     }
 
     .scorer-chip::after {
-        bottom: -2px; right: -2px;
+        bottom: -2px;
+        right: -2px;
         border-bottom-color: var(--accent);
         border-right-color: var(--accent);
         border-radius: 0 0 4px 0;
@@ -854,9 +1090,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
     /* 2. DESKTOP ONLY: Hover effects */
     @media (hover: hover) {
-        .scorer-chip:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+        .scorer-chip:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
         }
         .scorer-chip:hover::before,
         .scorer-chip:hover::after {
@@ -873,57 +1109,53 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         opacity: 1 !important;
         border-width: 4px !important;
     }
-    
-    .scorer-chip.selected { 
-        background: #fffdf5; 
+
+    .scorer-chip.selected {
+        background: #fffdf5;
     }
 
-
-
     /* Selected State BG */
-    .scorer-chip.selected { 
+    .scorer-chip.selected {
         background: #fffdf5; /* Very subtle yellow tint */
     }
 
     .chip-image-container {
-        width: 70px; 
-        height: 70px; 
-        border-radius: 50%; 
-        overflow: hidden; 
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        overflow: hidden;
         background: #f0f0f0;
-        border: 3px solid white; 
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border: 3px solid white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s ease;
     }
-    
 
-    
-    .chip-img { 
-        width: 100%; 
-        height: 100%; 
-        object-fit: cover; 
-        object-position: top center; 
+    .chip-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
     }
-    
-    .chip-info { 
-        display: flex; 
-        flex-direction: column; 
-        line-height: 1.2; 
-        gap: 0.3rem; 
+
+    .chip-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+        gap: 0.3rem;
     }
-    .player-num { 
-        font-size: 0.8rem; 
-        font-weight: 800; 
-        color: #ccc; 
+    .player-num {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #ccc;
     }
-    .player-name-chip { 
-        font-size: 0.9rem; 
-        font-weight: 700; 
-        color: #444; 
+    .player-name-chip {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #444;
     }
-    
-    .scorer-chip.selected .player-name-chip { 
-        color: var(--primary); 
+
+    .scorer-chip.selected .player-name-chip {
+        color: var(--primary);
     }
     .scorer-chip.selected .player-num {
         color: var(--accent);
@@ -952,44 +1184,106 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border-bottom: 1px solid #f5f5f5;
         vertical-align: middle;
     }
-    .leaderboard-table tr:last-child td { border-bottom: none; }
-    
+    .leaderboard-table tr:last-child td {
+        border-bottom: none;
+    }
+
     .leaderboard-table tr:hover {
         background-color: #fafafa;
     }
 
-    .th-pos, .td-pos { width: 50px; text-align: center; }
-    .th-pts, .td-pts { width: 80px; text-align: center; }
-    
+    .th-pos,
     .td-pos {
-        font-weight: 700; color: #ccc;
+        width: 50px;
+        text-align: center;
     }
-    .top-3 .td-pos { color: #d4af37; font-size: 1.2rem; font-weight: 900; }
-    .top-3 { background-color: #fffdf5; }
+    .th-pts,
+    .td-pts {
+        width: 80px;
+        text-align: center;
+    }
 
-    .user-cell { display: flex; align-items: center; gap: 0.8rem; }
+    .td-pos {
+        font-weight: 700;
+        color: #ccc;
+    }
+    .top-3 .td-pos {
+        color: #d4af37;
+        font-size: 1.2rem;
+        font-weight: 900;
+    }
+    .top-3 {
+        background-color: #fffdf5;
+    }
+
+    .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
     .user-avatar-placeholder {
-        width: 32px; height: 32px; background: #eee; color: #555;
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 0.8rem; font-weight: 800; flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        background: #eee;
+        color: #555;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 800;
+        flex-shrink: 0;
     }
-    .top-3 .user-avatar-placeholder { background: var(--accent); color: var(--primary); }
-    .user-id { font-weight: 600; font-size: 0.95rem; color: var(--primary); }
-    
+    .top-3 .user-avatar-placeholder {
+        background: var(--accent);
+        color: var(--primary);
+    }
+    .user-id {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--primary);
+    }
+
     .pts-badge {
-        background: #f0f0f0; color: #333; padding: 0.3rem 0.6rem;
-        border-radius: 6px; font-weight: 800; font-size: 0.9rem;
+        background: #f0f0f0;
+        color: #333;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 800;
+        font-size: 0.9rem;
     }
-    .top-3 .pts-badge { background: var(--accent); color: var(--primary); }
+    .top-3 .pts-badge {
+        background: var(--accent);
+        color: var(--primary);
+    }
 
-    .empty-state { text-align: center; padding: 2rem; color: #999; font-style: italic; }
-    .feedback-msg { margin-top: 1rem; font-weight: 600; text-align: center; }
-    .feedback-msg.success { color: #2ecc71; }
-    .feedback-msg.success { color: #2ecc71; }
-    .feedback-msg.error { color: #e74c3c; }
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+        font-style: italic;
+    }
+    .feedback-msg {
+        margin-top: 1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    .feedback-msg.success {
+        color: #2ecc71;
+    }
+    .feedback-msg.success {
+        color: #2ecc71;
+    }
+    .feedback-msg.error {
+        color: #e74c3c;
+    }
 
-    .feedback-msg.success { color: #2ecc71; }
-    .feedback-msg.error { color: #e74c3c; }
+    .feedback-msg.success {
+        color: #2ecc71;
+    }
+    .feedback-msg.error {
+        color: #e74c3c;
+    }
 
     /* HORIZONTAL RULES BANNER */
     .rules-banner {
@@ -1002,15 +1296,15 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         background: white;
         border-radius: 12px;
         padding: 1.5rem 2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 1rem;
     }
     .rules-title-horizontal {
-        font-family: 'Archivo Black', sans-serif;
+        font-family: "Archivo Black", sans-serif;
         color: var(--primary);
         font-size: 1.1rem;
         text-transform: uppercase;
@@ -1018,10 +1312,10 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         position: relative;
         margin-bottom: 5px; /* Space for the line */
     }
-    
+
     /* Yellow bar */
     .rules-title-horizontal::after {
-        content: '';
+        content: "";
         display: block;
         width: 40px;
         height: 4px;
@@ -1045,7 +1339,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     .rule-badge {
         background: var(--primary);
         color: var(--accent);
-        font-family: 'Archivo Black', sans-serif;
+        font-family: "Archivo Black", sans-serif;
         padding: 0.4rem 0.8rem;
         border-radius: 6px;
         font-size: 1rem;
@@ -1082,12 +1376,14 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border-bottom: 1px solid #f9f9f9;
         padding-bottom: 1rem;
     }
-    .rule-row:last-of-type { border-bottom: none; }
-    
+    .rule-row:last-of-type {
+        border-bottom: none;
+    }
+
     .rule-points {
         background: var(--primary);
         color: var(--accent);
-        font-family: 'Archivo Black', sans-serif;
+        font-family: "Archivo Black", sans-serif;
         padding: 0.5rem 0.8rem;
         border-radius: 8px;
         font-size: 1.1rem;
@@ -1117,9 +1413,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         }
 
         /* Full width cards with standardized padding */
-        .match-card, 
-        .leaderboard-container, 
-        .rules-container, 
+        .match-card,
+        .leaderboard-container,
+        .rules-container,
         .header-rules-card {
             padding: 2rem 1rem !important;
             border-radius: 12px; /* Ensure rounded corners */
@@ -1163,13 +1459,21 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
             grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
             gap: 1rem;
         }
-        
+
         /* Typography adjustments */
-        .team-name { font-size: 0.9rem; }
-        .match-date-day { font-size: 1rem; }
-        .match-date-time { font-size: 0.9rem; }
-        .competition-text { font-size: 1rem; }
-        
+        .team-name {
+            font-size: 0.9rem;
+        }
+        .match-date-day {
+            font-size: 1rem;
+        }
+        .match-date-time {
+            font-size: 0.9rem;
+        }
+        .competition-text {
+            font-size: 1rem;
+        }
+
         /* Auth Prompt */
         .login-prompt {
             text-align: center;
