@@ -821,23 +821,9 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     /* Hover effect - Desktop only to prevent sticky hover on mobile */
-    @media (hover: hover) {
-        .scorer-chip:hover { 
-            transform: translateY(-5px); 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-        }
-        
-        .scorer-chip:hover::before,
-        .scorer-chip:hover::after {
-            opacity: 1;
-        }
-        
-        .scorer-chip:hover .chip-image-container {
-            transform: scale(1.05);
-        }
-    }
-
-    /* CORNER BORDERS (SELECTOR) - ADAPTED FROM SQUAD */
+    /* UNIFIED SELECTOR LOGIC */
+    
+    /* 1. BASE: Corners exist but hidden */
     .scorer-chip::before,
     .scorer-chip::after {
         content: "";
@@ -848,30 +834,50 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         transition: all 0.3s ease;
         opacity: 0;
         pointer-events: none;
-        z-index: 20; /* Ensure visibility */
+        z-index: 20;
     }
 
     .scorer-chip::before {
-        top: -2px; 
-        left: -2px;
+        top: -2px; left: -2px;
         border-top-color: var(--accent);
         border-left-color: var(--accent);
         border-radius: 4px 0 0 0;
     }
 
     .scorer-chip::after {
-        bottom: -2px; 
-        right: -2px;
+        bottom: -2px; right: -2px;
         border-bottom-color: var(--accent);
         border-right-color: var(--accent);
         border-radius: 0 0 4px 0;
     }
 
+    /* 2. DESKTOP ONLY: Hover effects */
+    @media (hover: hover) {
+        .scorer-chip:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+        }
+        .scorer-chip:hover::before,
+        .scorer-chip:hover::after {
+            opacity: 1;
+        }
+        .scorer-chip:hover .chip-image-container {
+            transform: scale(1.05);
+        }
+    }
+
+    /* 3. ACTIVE STATE: Always visible (Override everything) */
     .scorer-chip.selected::before,
     .scorer-chip.selected::after {
         opacity: 1 !important;
         border-width: 4px !important;
     }
+    
+    .scorer-chip.selected { 
+        background: #fffdf5; 
+    }
+
+
 
     /* Selected State BG */
     .scorer-chip.selected { 
@@ -1102,69 +1108,71 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         text-align: center;
     }
 
+    /* CLEAN MOBILE LAYOUT REWRITE */
     @media (max-width: 768px) {
-        .score-board-container input { width: 50px; font-size: 2.8rem; }
-    }
-
-    /* Mobile fixes for full width */
-    @media (max-width: 640px) {
-        .match-card, .leaderboard-container, .rules-container, .header-rules-card {
-            padding: 1.5rem 1rem !important;
-            border-radius: 0;
-            box-shadow: none;
-            border-left: none;
-            border-right: none;
-        }
-        
         .pronosticos-page {
             padding-top: 1rem;
             overflow-x: hidden;
         }
 
-        /* Fix centering */
-        .match-header, .teams-container, .scorers-section {
+        /* Full width cards with standardized padding */
+        .match-card, 
+        .leaderboard-container, 
+        .rules-container, 
+        .header-rules-card {
+            padding: 2rem 1rem !important;
+            border-radius: 12px; /* Ensure rounded corners */
             width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 2rem;
         }
 
-        /* Adjust grid gap */
+        /* Adjust Header Rules specific spacing */
+        .header-rules-card {
+            padding-top: 3.5rem !important; /* Space for title */
+            margin-top: 3rem !important;
+        }
+
+        /* Layout Grid */
         .grid-layout {
             gap: 2rem !important;
             margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
         }
-        
-        /* Prevent shield cutoff on small screens */
+
+        /* Teams Section - Safe Spacing */
+        .teams-container {
+            gap: 1rem !important;
+            width: 100%;
+            justify-content: center;
+            padding: 0.5rem; /* Safe breathing room */
+            box-sizing: border-box;
+        }
+
+        /* Shields - Optimal Mobile Size */
         .team-shield {
             width: 80px !important;
             height: 80px !important;
         }
-        
-        .teams-container {
-            gap: 0.8rem !important; /* Slightly more gap */
-            width: 100%;
-            justify-content: center;
-            padding: 0 0.5rem; /* Ensure chips don't touch edges */
-        }
-        
-        /* Add spacing to prevent overlap */
-        .rules-container {
-            margin-bottom: 2rem !important;
-        }
-        
-        /* Extra padding for title overlay on mobile */
-        .header-rules-card {
-            padding-top: 3.5rem !important;
-        }
-        
-        /* Ensure scorers grid is properly spaced */
+
+        /* Scorers Grid - Responsive Columns */
         .scorers-select-container {
-            gap: 1.2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 1rem;
         }
         
-        /* Center and space login prompt */
+        /* Typography adjustments */
+        .team-name { font-size: 0.9rem; }
+        .match-date-day { font-size: 1rem; }
+        .match-date-time { font-size: 0.9rem; }
+        .competition-text { font-size: 1rem; }
+        
+        /* Auth Prompt */
         .login-prompt {
             text-align: center;
             margin: 2rem auto !important;
-            padding: 1rem;
         }
     }
 
