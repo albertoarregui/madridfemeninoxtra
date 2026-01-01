@@ -84,7 +84,7 @@ if (userId && nextMatch) {
 
 try {
     const result = await turso.execute({
-        sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id ORDER BY total_points DESC LIMIT 20",
+        sql: "SELECT user_id, SUM(points_earned) as total_points FROM predictions GROUP BY user_id HAVING total_points > 0 ORDER BY total_points DESC LIMIT 20",
         args: [],
     });
     
@@ -511,6 +511,7 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     .rules-list-bullets li {
         display: flex;
         align-items: center;
+        justify-content: space-between; /* Points on left, description on right */
         gap: 1rem;
         padding-bottom: 0.8rem;
         border-bottom: 1px solid #f0f0f0;
