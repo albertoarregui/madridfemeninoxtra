@@ -827,9 +827,21 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     /* Hover effect */
-    .scorer-chip:hover { 
-        transform: translateY(-5px); 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+    /* Hover effect - Desktop only */
+    @media (hover: hover) {
+        .scorer-chip:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+        }
+        
+        .scorer-chip:hover::before,
+        .scorer-chip:hover::after {
+            opacity: 1;
+        }
+        
+        .scorer-chip:hover .chip-image-container {
+            transform: scale(1.05);
+        }
     }
 
     /* CORNER BORDERS (SELECTOR) - ADAPTED FROM SQUAD */
@@ -861,8 +873,6 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         border-radius: 0 0 4px 0;
     }
 
-    .scorer-chip:hover::before,
-    .scorer-chip:hover::after,
     .scorer-chip.selected::before,
     .scorer-chip.selected::after {
         opacity: 1;
@@ -1109,28 +1119,22 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     /* Mobile fixes for full width */
-    /* Mobile fixes for full width */
     @media (max-width: 640px) {
         .match-card, .leaderboard-container, .rules-container, .header-rules-card {
-            padding: 1.5rem 1rem !important;
-            border-radius: 0;
-            box-shadow: none;
-            border-left: none;
-            border-right: none;
-            width: 100vw !important; /* Force viewport width */
-            max-width: 100vw !important;
-            margin-left: -1rem !important; /* Counteract any parent padding if present */
-            margin-right: -1rem !important;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            transform: translateX(-50%);
+            padding: 2.5rem 1.5rem !important; /* Increased padding inside card */
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
         }
         
         .pronosticos-page {
-            overflow-x: hidden; /* Prevent scrollbar from 100vw */
-            padding-left: 0 !important;
-            padding-right: 0 !important;
+            overflow-x: hidden;
+            padding-left: 0.75rem !important; /* Visual gap from screen edge */
+            padding-right: 0.75rem !important;
+            padding-top: 1rem;
         }
 
         /* Fix centering */
@@ -1142,13 +1146,21 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
         .grid-layout {
             display: flex;
             flex-direction: column;
-            gap: 2rem !important; /* Ensure vertical separation */
+            gap: 1.5rem !important;
             margin-top: 1rem;
             width: 100%;
         }
         
         .prediction-column, .leaderboard-column {
             width: 100%;
+        }
+        
+        /* Fix cramped rules */
+        .rules-list-bullets {
+            gap: 1.5rem !important;
+        }
+        .rules-list-bullets li {
+            padding-bottom: 1rem !important;
         }
     }
 
