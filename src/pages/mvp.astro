@@ -256,12 +256,23 @@ const playerImages = import.meta.glob('/src/assets/jugadoras/*.{png,jpg,jpeg,web
 <script is:inline>
     // Global functions for inline handlers
     function selectMvp(element) {
+        const isAlreadySelected = element.classList.contains('selected');
+        
+        // Remove 'selected' from ALL chips first (exclusive selection)
         document.querySelectorAll('.mvp-chip').forEach(el => el.classList.remove('selected'));
-        element.classList.add('selected');
-        const pid = element.dataset.playerId;
+        
         const input = document.getElementById('mvp-input');
-        if(input) input.value = pid;
-        // MVP is selected, so form might be valid now if ratings are blocked
+        
+        if (isAlreadySelected) {
+            // If it was selected, we leave it deselected (already removed above) and clear input
+            if(input) input.value = "";
+        } else {
+            // If it was NEW, select it
+            element.classList.add('selected');
+            const pid = element.dataset.playerId;
+            if(input) input.value = pid;
+        }
+        
         validateForm();
     }
 

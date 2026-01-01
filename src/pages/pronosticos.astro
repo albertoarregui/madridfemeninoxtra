@@ -348,7 +348,13 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     function toggleScorer(element) {
         const submitBtn = document.getElementById('submit-prediction');
         if (!submitBtn) return; // Not auth
-        element.classList.toggle('selected');
+        
+        // Explicit toggle logic
+        if (element.classList.contains('selected')) {
+            element.classList.remove('selected');
+        } else {
+            element.classList.add('selected');
+        }
     }
 
     function adjustScore(inputId, delta) {
@@ -1103,26 +1109,28 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
     }
 
     /* Mobile fixes for full width */
+    /* Mobile fixes for full width */
     @media (max-width: 640px) {
         .match-card, .leaderboard-container, .rules-container, .header-rules-card {
-            padding: 1.5rem 1rem !important; /* Drastically reduce padding */
-            border-radius: 0; 
-            box-shadow: none; 
+            padding: 1.5rem 1rem !important;
+            border-radius: 0;
+            box-shadow: none;
             border-left: none;
             border-right: none;
-            width: 100% !important;
-            margin: 0 !important;
-            max-width: none !important;
+            width: 100vw !important; /* Force viewport width */
+            max-width: 100vw !important;
+            margin-left: -1rem !important; /* Counteract any parent padding if present */
+            margin-right: -1rem !important;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            transform: translateX(-50%);
         }
         
-        /* Ensure container touches edges */
         .pronosticos-page {
-            padding-top: 1rem;
-            width: 100% !important;
+            overflow-x: hidden; /* Prevent scrollbar from 100vw */
             padding-left: 0 !important;
             padding-right: 0 !important;
-            margin: 0 !important;
-            max-width: none !important;
         }
 
         /* Fix centering */
@@ -1132,19 +1140,15 @@ const compLogo = nextMatch ? await getCompetitionLogo(nextMatch.competition) : '
 
         /* Adjust grid gap */
         .grid-layout {
-            gap: 1.5rem;
-            margin-top: 1rem;
-            width: 100% !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
             display: flex;
             flex-direction: column;
+            gap: 2rem !important; /* Ensure vertical separation */
+            margin-top: 1rem;
+            width: 100%;
         }
-
+        
         .prediction-column, .leaderboard-column {
-             width: 100% !important;
-             margin: 0 !important;
-             padding: 0 !important;
+            width: 100%;
         }
     }
 
