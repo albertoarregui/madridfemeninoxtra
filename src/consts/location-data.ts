@@ -144,7 +144,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "bayerncampus": { lat: 48.2192, lng: 11.5796, label: "FC Bayern Campus", imageUrl: "/assets/estadios/fc_bayern_campus.png" },
     "elvivero": { lat: 38.8924, lng: -6.9922, label: "IDM El Vivero", imageUrl: "/assets/estadios/idm_el_vivero.png" },
     "tajonar": { lat: 42.7768, lng: -1.6366, label: "Instalaciones de Tajonar", imageUrl: "/assets/estadios/instalaciones_de_tajonar.png" },
-    "unbe": { lat: 43.1873, lng: -2.4828, label: "Instalaciones de Unbe", imageUrl: "/assets/estadios/instalaciones_de_unbe.png" },
+    "unbe": { lat: 43.1873, lng: -2.4828, label: "Instalaciones de Uribe", imageUrl: "/assets/estadios/instalaciones_de_unbe.png" },
     "miniestadi": { lat: 39.9531, lng: -0.1044, label: "Mini Estadi (Villarreal) - C.D. José Manuel Llaneza", imageUrl: "/assets/estadios/mini_estadi.png" },
     "camporealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 11 Ciudad Real Madrid", imageUrl: "/assets/estadios/campo_11_ciudad_real_madrid.png" },
     "puentecastro": { lat: 42.5847, lng: -5.5458, label: "Campo de Fútbol de Puente Castro", imageUrl: "/assets/estadios/campo_de_futbol_de_puente_castro.png" },
@@ -299,6 +299,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
 
     // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"
     const stripped = normalized
+        .replace('estadi', '') // NEW: Add support for "Estadi"
         .replace('estadio', '')
         .replace('municipal', '')
         .replace('campo', '')
