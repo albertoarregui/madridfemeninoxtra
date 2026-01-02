@@ -125,19 +125,19 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Temporada</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Viajes</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kilómetros</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horas (Est.)</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Temporada</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Viajes</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kilómetros</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Horas (Est.)</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {stats.seasonBreakdown.map((row) => (
                                 <tr key={row.season} className="hover:bg-gray-50 transaction-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-[#151e42]">{row.season}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.trips}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">{Math.round(row.km).toLocaleString()} km</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{Math.round(row.hours)}h</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-[#151e42] text-center">{row.season}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{row.trips}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono text-center">{Math.round(row.km).toLocaleString()} km</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{Math.round(row.hours)}h</td>
                                 </tr>
                             ))}
                         </tbody>
