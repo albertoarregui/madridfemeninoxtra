@@ -15,12 +15,36 @@ interface PlayerMapWrapperProps {
     players: Player[];
 }
 
+// Manual overrides for players with missing/incorrect DB data
+const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
+    'linda-caicedo': 'candelaria',
+    'kenti-robles': 'mexico',
+    'oihane-hernandez': 'sopelana',
+    'andrea-alonso': 'alcorcon',
+    'amaya-garcia': 'pozuelo',
+    'antonia-silva': 'paudosferros',
+    'lotte-keukelaar': 'vleuten',
+    'irune-dorado': 'pozuelo',
+    'sara-holmgaard': 'ikast',
+    'chioma-ubogagu': 'london',
+    'chi-obogagu': 'london',
+    'mylene-chavas': 'saintecolombe',
+    'bella-andersson': 'stockholm',
+    'oihane-san-martin': 'pamplona',
+};
+
 const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
     const markers = useMemo(() => {
         const markerMap = new Map<string, MapMarker>();
 
         players.forEach(player => {
-            const locationName = player.lugar_nacimiento || player.pais_origen;
+            let locationName = player.lugar_nacimiento || player.pais_origen;
+
+            // Check for manual override
+            if (PLAYER_LOCATION_OVERRIDES[player.slug]) {
+                locationName = PLAYER_LOCATION_OVERRIDES[player.slug];
+            }
+
             if (!locationName) return;
 
             const coords = getCoordinates(locationName, 'city');
