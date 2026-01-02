@@ -53,6 +53,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                             <div className="w-14 h-14 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-110 transition-transform">
                                 <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover object-top" />
                             </div>
+                        ) : marker.type === 'rival-city' ? (
+                            // Flag marker for rivals - Circular with flag
+                            <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform flex items-center justify-center">
+                                <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover" />
+                            </div>
                         ) : (
                             <div className="hover:scale-110 transition-transform">
                                 <MapPin
@@ -73,7 +78,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     return (
         <div style={{ height: height, width: '100%', borderRadius: '0.75rem', overflow: 'hidden', position: 'relative' }}>
-            {/* Global overrides for this map's popups */}
+            {/* ... styles ... */}
             <style>{`
                 .custom-popup .maplibregl-popup-content {
                     padding: 0 !important;
@@ -88,6 +93,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             `}</style>
 
             <Map
+                // ... props ...
                 initialViewState={{
                     longitude: center.lng,
                     latitude: center.lat,
@@ -127,9 +133,53 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                             </button>
 
+                            {/* RIVAL CITY POPUP */}
+                            {popupInfo.type === 'rival-city' && (
+                                <div>
+                                    <div className="bg-gray-100 p-4 border-b border-gray-200 flex items-center gap-3">
+                                        {/* Big Flag */}
+                                        <img src={popupInfo.imageUrl} alt={popupInfo.label} className="w-12 h-auto rounded shadow-sm border border-white" />
+                                        <div>
+                                            <h3 className="font-bebas text-2xl leading-none text-[#151e42]">{popupInfo.label}</h3>
+                                            <span className="text-xs uppercase tracking-wider text-gray-500 font-bold">Resumen de rivales</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        <div className="flex flex-col gap-3">
+                                            {popupInfo.data?.teams && popupInfo.data.teams.map((team: any, idx: number) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Team Shield */}
+                                                        <img
+                                                            src={`/assets/escudos/${team.id.replace(/-/g, '_')}.png`}
+                                                            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'; }}
+                                                            alt={team.name}
+                                                            className="w-10 h-10 object-contain"
+                                                        />
+                                                        <div>
+                                                            <span className="block font-bold text-sm text-[#151e42] leading-tight">{team.name}</span>
+                                                            <span className="text-[10px] text-gray-400 font-medium">{team.matches} partidos</span>
+                                                        </div>
+                                                    </div>
+                                                    <a
+                                                        href={`/rivales/${team.id}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-bold text-[#151e42] bg-[#ffde59] hover:bg-[#ffe57f] px-3 py-1.5 rounded-full transition-colors"
+                                                    >
+                                                        VER
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* PLAYER POPUP */}
                             {popupInfo.type === 'player' && (
                                 <div className="flex flex-col">
+                                    {/* ... existing player popup code ... */}
                                     <div className="w-full h-64 bg-gray-200 relative items-end justify-center flex overflow-hidden">
                                         {/* Contain image so it's not cut off, aligned bottom */}
                                         <img

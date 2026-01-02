@@ -184,6 +184,8 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "munich": { lat: 48.1351, lng: 11.5820, label: "Múnich, Alemania" },
     "campo7": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
     "campo7ciudadrealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
+    "estadiouniversitario": { lat: 25.7247, lng: -100.3113, label: "Estadio Universitario, Monterrey", imageUrl: "/assets/estadios/estadio_universitario.png" },
+    "universitario": { lat: 25.7247, lng: -100.3113, label: "Estadio Universitario, Monterrey", imageUrl: "/assets/estadios/estadio_universitario.png" },
 
     "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" },
     "sopelana": { lat: 43.3808, lng: -2.9806, label: "Sopelana, Vizcaya" },

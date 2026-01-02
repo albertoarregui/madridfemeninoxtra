@@ -1,0 +1,277 @@
+---
+import { TEAMS } from "../../public/consts/rivals";
+import { COUNTRIES } from "../../public/consts/countries";
+
+interface Props {
+    matches: any[];
+}
+
+const { matches } = Astro.props;
+
+// --- Data Processing ---
+
+// 1. Identify unique rivals and map to country
+const rivalMap = new Map<
+    string,
+    { count: number; country: string; wins: number }
+>();
+const countryStats = new Map<
+    string,
+    { matches: number; wins: number; name: string }
+>();
+
+// Helper to find country for a rival name
+const getCountryCode = (rivalName: string) => {
+    const team = TEAMS.find(
+        (t) =>
+            t.name === rivalName ||
+            t.id === rivalName.toLowerCase().replace(/ /g, "-"),
+    );
+    return team ? team.country : null;
+};
+
+// Filter out practice matches or internal ones if necessary?
+// Assuming all matches in DB are valid competitive/friendly matches against external teams.
+
+matches.forEach((m) => {
+    const isHome =
+        m.club_local === "Real Madrid" || m.club_local === "CD Tacón";
+    const rivalName = isHome ? m.club_visitante : m.club_local;
+
+    if (!rivalName || rivalName === "Real Madrid") return;
+
+    const goalsRM = isHome ? m.goles_rm : m.goles_rival;
+    const goalsRival = isHome ? m.goles_rival : m.goles_rm;
+    const isWin = Number(goalsRM) > Number(goalsRival);
+
+    // Rival Stats
+    const currentRival = rivalMap.get(rivalName) || {
+        count: 0,
+        country: "",
+        wins: 0,
+    };
+
+    if (!currentRival.country) {
+        currentRival.country = getCountryCode(rivalName) || "unknown";
+    }
+
+    currentRival.count += 1;
+    if (isWin) currentRival.wins += 1;
+
+    rivalMap.set(rivalName, currentRival);
+
+    // Country Stats (exclude Spain for "Destinations")
+    const countryCode = currentRival.country;
+    if (countryCode && countryCode !== "unknown") {
+        const currentCountry = countryStats.get(countryCode) || {
+            matches: 0,
+            wins: 0,
+            name:
+                COUNTRIES[countryCode as keyof typeof COUNTRIES]?.name ||
+                countryCode,
+        };
+        currentCountry.matches += 1;
+        if (isWin) currentCountry.wins += 1;
+        countryStats.set(countryCode, currentCountry);
+    }
+});
+
+// 2. Calculate displayed metrics
+const totalRivals = rivalMap.size;
+const totalCountries = countryStats.size;
+
+// Most Played Rival
+let maxPlayed = 0;
+let mostPlayedRivalName = "-";
+rivalMap.forEach((data, name) => {
+    if (data.count > maxPlayed) {
+        maxPlayed = data.count;
+        mostPlayedRivalName = name;
+    }
+});
+
+// Top 3 Countries (Destinations - excluding Spain 'es')
+const sortedByMatches = Array.from(countryStats.entries())
+    .filter(([code]) => code !== "es")
+    .sort((a, b) => b[1].matches - a[1].matches)
+    .slice(0, 3);
+
+// Top 3 Countries (Wins - global, or excluding Spain? Usually "Conquests" usually implies away/international, but let's include all for "Wins" or better stick to International to be interesting?)
+// User said: "top 3 países donde más ha ganado". Usually Spain will dominate.
+// Let's assume user implies "International Context" given the map theme, BUT technically Spain is a country.
+// However, seeing "Spain" #1 is boring. Let's filter 'es' for "Top 3 países donde más ha ganado" too to show international success.
+const sortedByWins = Array.from(countryStats.entries())
+    .filter(([code]) => code !== "es")
+    .sort((a, b) => b[1].wins - a[1].wins)
+    .slice(0, 3);
+---
+
+<div class="max-w-7xl mx-auto mb-12 animate-fade-in-up">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- CARD 1: TOTAL RIVALS -->
+        <div
+            class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-[#ffde59] relative overflow-hidden group hover:scale-[1.02] transition-transform"
+        >
+            <div
+                class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+                    ></path><circle cx="9" cy="7" r="4"></circle><path
+                        d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path
+                        d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg
+                >
+            </div>
+            <h3 class="font-bebas text-xl text-gray-500 mb-2 tracking-wider">
+                TOTAL RIVALES
+            </h3>
+            <div class="flex items-baseline gap-2">
+                <span class="text-5xl font-black text-[#151e42] counter-anim"
+                    >{totalRivals}</span
+                >
+                <span class="text-sm font-semibold text-gray-400 uppercase"
+                    >Equipos</span
+                >
+            </div>
+            <p class="text-xs text-gray-400 mt-2 font-medium">
+                Rivales distintos en la historia
+            </p>
+        </div>
+
+        <!-- CARD 2: RIVAL MÁS FRECUENTE -->
+        <div
+            class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-[#ffde59] relative overflow-hidden group hover:scale-[1.02] transition-transform"
+        >
+            <div
+                class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path
+                        d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path
+                        d="M4 22h16"></path><path
+                        d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"
+                    ></path><path
+                        d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"
+                    ></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg
+                >
+            </div>
+            <h3 class="font-bebas text-xl text-gray-500 mb-2 tracking-wider">
+                RIVAL HISTÓRICO
+            </h3>
+            <div class="flex flex-col">
+                <span
+                    class="text-2xl font-black text-[#151e42] leading-tight line-clamp-1"
+                    title={mostPlayedRivalName}>{mostPlayedRivalName}</span
+                >
+                <span class="text-sm font-bold text-[#ffde59] uppercase"
+                    >{maxPlayed} partidos jugados</span
+                >
+            </div>
+            <p class="text-xs text-gray-400 mt-2 font-medium">
+                El enfrentamiento más repetido
+            </p>
+        </div>
+
+        <!-- CARD 3: PAÍSES VISITADOS -->
+        <div
+            class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-[#ffde59] relative overflow-hidden group hover:scale-[1.02] transition-transform"
+        >
+            <div
+                class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"
+                    ></path><path
+                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                    ></path></svg
+                >
+            </div>
+            <h3 class="font-bebas text-xl text-gray-500 mb-2 tracking-wider">
+                MAPA GLOBAL
+            </h3>
+            <div class="flex items-baseline gap-2">
+                <span class="text-5xl font-black text-[#151e42] counter-anim"
+                    >{totalCountries}</span
+                >
+                <span class="text-sm font-semibold text-gray-400 uppercase"
+                    >Países</span
+                >
+            </div>
+            <p class="text-xs text-gray-400 mt-2 font-medium">
+                Huella internacional del club
+            </p>
+        </div>
+
+        <!-- CARD 4: TOP DESTINOS (Mini List) -->
+        <div
+            class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-[#ffde59] relative overflow-hidden group hover:scale-[1.02] transition-transform flex flex-col justify-center"
+        >
+            <h3
+                class="font-bebas text-xl text-gray-500 mb-3 tracking-wider border-b border-gray-100 pb-1"
+            >
+                TOP DESTINOS INTERNACIONALES
+            </h3>
+            <div class="space-y-2">
+                {
+                    sortedByMatches.map(([code, data], idx) => (
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="flex items-center gap-2">
+                                <img
+                                    src={`https://flagcdn.com/w20/${code}.png`}
+                                    alt={data.name}
+                                    class="w-5 h-auto rounded-sm shadow-sm"
+                                />
+                                <span class="font-bold text-[#151e42] truncate max-w-[120px]">
+                                    {data.name}
+                                </span>
+                            </div>
+                            <span class="font-mono font-bold text-gray-400 text-xs">
+                                {data.matches} part.
+                            </span>
+                        </div>
+                    ))
+                }
+                {
+                    sortedByMatches.length === 0 && (
+                        <span class="text-xs text-gray-400 italic">
+                            Sin partidos internacionales aún.
+                        </span>
+                    )
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .counter-anim {
+        /* Potential for count-up animation */
+    }
+</style>

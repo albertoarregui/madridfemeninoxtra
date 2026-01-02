@@ -37,9 +37,14 @@ const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
     'nahikari-garcia': 'urnieta',
     'carla-camacho': 'rivasvaciamadrid',
     'paula-partido': 'madrid',
-    'maria-valle': 'lospalaciosyvillafranca',
     'andrea-tellez': 'alcorcon',
-    'marina-salas': 'madrid', // Assume Madrid for now if missing
+    'marina-salas': 'madrid',
+    'belen-de-gracia': 'madrid', // Assume Madrid
+    'andrea-rodriguez': 'madrid', // Assume Madrid
+    'dana-benitez': 'madrid', // Assume Madrid
+    'clara-villanueva': 'madrid',
+    'maria-portoles': 'madrid',
+    'noe-llamas': 'jarandilladelavera', // Mapped earlier via fuzzy, but enforcing here
 };
 
 const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
