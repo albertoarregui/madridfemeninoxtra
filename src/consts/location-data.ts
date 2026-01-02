@@ -189,6 +189,9 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "sopelana": { lat: 43.3808, lng: -2.9806, label: "Sopelana, Vizcaya" },
     "pozuelo": { lat: 40.4478, lng: -3.8128, label: "Pozuelo de Alarcón, Madrid" },
     "alcorcon": { lat: 40.3458, lng: -3.8249, label: "Alcorcón, Madrid" },
+    "urnieta": { lat: 43.2458, lng: -1.9906, label: "Urnieta, Guipúzcoa" },
+    "rivasvaciamadrid": { lat: 40.3524, lng: -3.5375, label: "Rivas-Vaciamadrid, Madrid" },
+    "lospalaciosyvillafranca": { lat: 37.1623, lng: -5.9242, label: "Los Palacios y Villafranca, Sevilla" },
 
     // Missing Player Birthplaces Added
     "uberlandia": { lat: -18.9186, lng: -48.2772, label: "Uberlândia, Brasil" }, // Daiane Limeira
@@ -385,6 +388,13 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('irune') && normalized.includes('dorado')) return KNOWN_LOCATIONS['pozuelo'];
     if (normalized.includes('antonia') && normalized.includes('silva')) return KNOWN_LOCATIONS['paudosferros']; // Already added pau dos ferros, ensure matching
     if (normalized.includes('lotte')) return KNOWN_LOCATIONS['vleuten']; // Already added vleuten
+
+    if (normalized.includes('nahikari')) return KNOWN_LOCATIONS['urnieta'];
+    if (normalized.includes('misa')) return KNOWN_LOCATIONS['laspalmas'];
+    if (normalized.includes('sara') && normalized.includes('lopez')) return KNOWN_LOCATIONS['laspalmas'];
+    if (normalized.includes('carla') && normalized.includes('camacho')) return KNOWN_LOCATIONS['rivasvaciamadrid'];
+    if (normalized.includes('paula') && normalized.includes('partido')) return KNOWN_LOCATIONS['madrid'];
+    if (normalized.includes('maria') && normalized.includes('valle')) return KNOWN_LOCATIONS['lospalaciosyvillafranca'];
 
     // Specific logic for Valencia to prefer stadium if it's a match context match
     if (normalized === 'valenciacf' || normalized === 'valencia fem' || (normalized.includes('valencia') && type === 'stadium')) {

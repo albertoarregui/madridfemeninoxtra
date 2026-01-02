@@ -149,7 +149,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                             </div>
                                             <div>
                                                 <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Nacimiento</span>
-                                                <span className="font-semibold text-sm">{popupInfo.data?.fecha_nacimiento || '-'}</span>
+                                                <span className="font-semibold text-sm">
+                                                    {(() => {
+                                                        const dateStr = popupInfo.data?.fecha_nacimiento;
+                                                        if (!dateStr) return '-';
+                                                        // Assume YYYY-MM-DD from DB
+                                                        const parts = dateStr.split('-');
+                                                        if (parts.length === 3) {
+                                                            const [year, month, day] = parts;
+                                                            return `${day}/${month}/${year.slice(-2)}`;
+                                                        }
+                                                        return dateStr;
+                                                    })()}
+                                                </span>
                                             </div>
                                             <div className="col-span-2">
                                                 <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Origen</span>
