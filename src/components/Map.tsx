@@ -219,11 +219,23 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                         </div>
 
                                                         <div className="text-center mb-4">
-                                                            <span className={`font-mono font-bold text-lg text-[#151e42] px-6 py-1.5 rounded-lg ${Number(m.goles_rm) > Number(m.goles_rival) ? 'bg-green-100/80 text-green-900' :
-                                                                    Number(m.goles_rm) < Number(m.goles_rival) ? 'bg-red-100/80 text-red-900' : 'bg-yellow-100/80 text-yellow-900'
-                                                                }`}>
-                                                                {m.goles_rm} - {m.goles_rival}
-                                                            </span>
+                                                            {(() => {
+                                                                const isRMAway = m.club_visitante === 'Real Madrid' || m.club_visitante === 'CD Tacón';
+                                                                const scoreHome = isRMAway ? m.goles_rival : m.goles_rm;
+                                                                const scoreAway = isRMAway ? m.goles_rm : m.goles_rival;
+
+                                                                // Color logic remains based on RM result (Win = Green, etc.)
+                                                                const isWin = Number(m.goles_rm) > Number(m.goles_rival);
+                                                                const isLoss = Number(m.goles_rm) < Number(m.goles_rival);
+
+                                                                return (
+                                                                    <span className={`font-mono font-bold text-lg text-[#151e42] px-6 py-1.5 rounded-lg ${isWin ? 'bg-green-100/80 text-green-900' :
+                                                                            isLoss ? 'bg-red-100/80 text-red-900' : 'bg-yellow-100/80 text-yellow-900'
+                                                                        }`}>
+                                                                        {scoreHome} - {scoreAway}
+                                                                    </span>
+                                                                );
+                                                            })()}
                                                         </div>
 
                                                         {/* Styled "Ver detalles" button - Full Width Yellow */}
