@@ -295,6 +295,20 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('brentanobad')) return KNOWN_LOCATIONS['brentanobad'];
     if (normalized.includes('grolsch') || normalized.includes('twente')) return KNOWN_LOCATIONS['twente'];
     if (normalized.includes('aurelio pereira') || (normalized.includes('lisboa') && type === 'stadium')) return KNOWN_LOCATIONS['lisboa'];
+    if (normalized.includes('tigres')) return KNOWN_LOCATIONS['universitario'];
+    if (normalized.includes('america') && normalized.includes('club')) return KNOWN_LOCATIONS['azteca'];
+    if (normalized.includes('america') && normalized.includes('mexico')) return KNOWN_LOCATIONS['azteca'];
+    // Fallback for "Club América" if normalized just to "america" might be risky if "america" matches other things, but usually safe in this context.
+    if (normalized === 'america') return KNOWN_LOCATIONS['azteca'];
+
+    // Specific logic for Valencia to prefer stadium if it's a match context match
+    if (normalized === 'valenciacf' || normalized === 'valencia fem' || (normalized.includes('valencia') && type === 'stadium')) {
+        return KNOWN_LOCATIONS['antoniopuchades']; // Or Ciudat de Valencia if distinct? Usually Valencia CF Femenino plays at Puchades. Levante plays at Ciutat.
+        // Let's check KNOWN_LOCATIONS.
+        // 'antoniopuchades' is { lat: 39.5463, lng: -0.4631, label: "Estadio Antonio Puchades", ... }
+        // 'ciudaddelvalencia' is { lat: 39.4950, lng: -0.3644, label: "Estadi Ciutat de València", ... }
+        // Use Puchades for Valencia CF.
+    }
 
 
     // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"

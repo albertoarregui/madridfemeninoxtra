@@ -30,23 +30,27 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                 seasonStats[season] = { trips: 0, km: 0, hours: 0 };
             }
 
-            // Logic: A match counts as a "Trip" if Real Madrid is NOT the local team
-            // AND we can find the location of the local team.
-            // Assumption: match.club_local is the host city/stadium name or maps to it.
-            const isHomeGame = normalizeLocationName(m.club_local).includes('realmadrid') ||
-                normalizeLocationName(m.club_local).includes('alfredo') ||
-                normalizeLocationName(m.club_local) === 'madrid'; // Simplistic check
+            // Logic: A match counts as a "Trip" if Real Madrid is NOT the local team (or playing at home venue)
+            const localNameNormalized = normalizeLocationName(m.club_local);
+            const stadiumNameNormalized = m.estadio ? normalizeLocationName(m.estadio) : '';
+
+            const isHomeGame = localNameNormalized.includes('realmadrid') ||
+                localNameNormalized.includes('tacon') ||
+                localNameNormalized.includes('alfredo') ||
+                stadiumNameNormalized.includes('alfredo') ||
+                stadiumNameNormalized.includes('ciudadrealmadrid');
 
             if (!isHomeGame) {
-                const hostCoords = getCoordinates(m.club_local, 'city'); // Try as city/stadium
+                // Priority: Stadium -> City -> Club Name (Host)
+                const locationName = m.estadio || m.ciudad || m.club_local;
+
+                const hostCoords = getCoordinates(locationName, 'stadium');
+
                 if (hostCoords) {
                     const oneWayKm = calculateDistance(
                         MADRID_COORDS.lat, MADRID_COORDS.lng,
                         hostCoords.lat, hostCoords.lng
                     );
-
-                    // Filter out "local" away games (e.g. against Atletico or Madrid CFF if they are close)
-                    // Let's count them as trips but very short distance.
 
                     const roundTripKm = oneWayKm * 2;
                     const tripHours = estimateTravelTime(oneWayKm) * 2; // Round trip time
@@ -58,6 +62,8 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                     totalTrips += 1;
                     totalKm += roundTripKm;
                     totalHours += tripHours;
+                } else {
+                    console.warn(`[MatchStats] Missing location for away match: "${locationName}" (Club: ${m.club_local}, Season: ${season})`);
                 }
             }
         });

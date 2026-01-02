@@ -28,6 +28,7 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
             lat: number;
             lng: number;
             label: string;
+            imageUrl?: string;
             count: number;
             lastMatch: string;
             matches: Match[];
@@ -56,6 +57,7 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
                         lat: coords.lat,
                         lng: coords.lng,
                         label: coords.label || locationName,
+                        imageUrl: coords.imageUrl,
                         count: 0,
                         lastMatch: '',
                         matches: []
@@ -82,19 +84,13 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
                 logo_competicion: getCompetitionLogo(m.competicion_nombre)
             }));
 
-            // Get image url from location data (it was in coords)
-            // But we didn't save it in locationMap values.
-            // Let's re-retrieve or better yet save it in locationMap value
-            const coords = getCoordinates(loc.matches[0].estadio || loc.matches[0].ciudad || '', 'stadium');
-            const imageUrl = coords?.imageUrl;
-
             return {
                 lat: loc.lat,
                 lng: loc.lng,
                 label: loc.label,
                 description: `Se han jugado ${loc.count} partidos aquí.`,
                 type: 'match' as const,
-                imageUrl: imageUrl, // Pass it here
+                imageUrl: loc.imageUrl,
                 data: {
                     count: loc.count,
                     matches: matchesWithLogos
