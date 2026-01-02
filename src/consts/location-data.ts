@@ -207,7 +207,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
 
     if (KNOWN_LOCATIONS[stripped]) return KNOWN_LOCATIONS[stripped];
 
-    // console.warn(`[MAPS] Ubicación desconocida: ${name} (normalized: ${normalized})`);
+    console.warn(`[MAPS] Ubicación desconocida: ${name} (normalized: ${normalized})`);
     return null;
 }
 
