@@ -161,16 +161,16 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "rosenborg": { lat: 63.4305, lng: 10.3951, label: "Trondheim, Noruega" },
     "trondheim": { lat: 63.4305, lng: 10.3951, label: "Trondheim, Noruega" },
     "mancity": { lat: 53.4831, lng: -2.2004, label: "Manchester, Inglaterra" },
-    "manchestercity": { lat: 53.4831, lng: -2.2004, label: "Manchester, Inglaterra" },
+
     "arsenal": { lat: 51.5549, lng: -0.1084, label: "Londres, Inglaterra" },
     "celtic": { lat: 55.8497, lng: -4.2055, label: "Glasgow, Escocia" },
     "spartapraga": { lat: 50.0993, lng: 14.4172, label: "Praga, República Checa" },
     "frankfurt": { lat: 50.1109, lng: 8.6821, label: "Frankfurt, Alemania" },
     "ingolstadt": { lat: 48.7665, lng: 11.4258, label: "Ingolstadt, Alemania" },
     "granadilla": { lat: 28.0772, lng: -16.7328, label: "Granadilla de Abona, España" },
-    "huelva": { lat: 37.2614, lng: -6.9447, label: "Huelva, España" },
+
     "alhama": { lat: 37.8498, lng: -1.4253, label: "Alhama de Murcia, España" },
-    "villarreal": { lat: 39.9388, lng: -0.1017, label: "Vila-real, España" },
+
     "madridcff": { lat: 40.5404, lng: -3.6334, label: "San Sebastián de los Reyes, España" },
     "atletico": { lat: 40.4362, lng: -3.5995, label: "Alcalá de Henares / Madrid" },
     "cdtacon": { lat: 40.4761, lng: -3.6197, label: "Madrid, España" },
@@ -184,17 +184,19 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "munich": { lat: 48.1351, lng: 11.5820, label: "Múnich, Alemania" },
     "campo7": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
     "campo7ciudadrealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
-    "ipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" }, // Ensure normalized 'ipurua' vs 'ipurúa'
+
     "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" }
 
+};
+
 export function normalizeLocationName(name: string | null | undefined): string {
-        if (!name) return 'desconocido';
-return name.toString().toLowerCase()
-    .trim()
-    .replace(/ø/g, 'o')
-    .replace(/ö/g, 'o')
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, '');
+    if (!name) return 'desconocido';
+    return name.toString().toLowerCase()
+        .trim()
+        .replace(/ø/g, 'o')
+        .replace(/ö/g, 'o')
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '');
 }
 
 export interface Coordinates {
