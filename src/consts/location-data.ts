@@ -232,7 +232,47 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('charlety')) return KNOWN_LOCATIONS['stadesty'];
 
     // Generic "Madrid" fallbacks for Valdebebas/Ciudad Real Madrid
-    if (normalized.includes('ciudad real madrid') || normalized.includes('valdebebas')) return KNOWN_LOCATIONS['alfredodistefano']; // Or separate entry
+    if (normalized.includes('ciudad real madrid') || normalized.includes('valdebebas')) return KNOWN_LOCATIONS['alfredodistefano'];
+
+    // Specific Fix for Alcalá de Henares Stadium
+    if (normalized.includes('alcala') && normalized.includes('henares') && (normalized.includes('centro') || normalized.includes('wanda') || type === 'stadium')) {
+        return KNOWN_LOCATIONS['alcaladehenares_estadio'];
+    }
+    if (normalized.includes('matapinonera')) return KNOWN_LOCATIONS['matanapiñeiro'];
+    if (normalized.includes('fernando torres')) return KNOWN_LOCATIONS['fernandotorres'];
+    if (normalized.includes('antonio puchades')) return KNOWN_LOCATIONS['antoniopuchades'];
+    if (normalized.includes('dani jarque')) return KNOWN_LOCATIONS['danijarque'];
+    if (normalized.includes('jesus navas')) return KNOWN_LOCATIONS['jesusnavas'];
+    if (normalized.includes('nuevos los carmenes') || normalized.includes('loscarmenes')) return KNOWN_LOCATIONS['loscarmenes'];
+    if (normalized.includes('colombino')) return KNOWN_LOCATIONS['nuevocolombino'];
+    if (normalized.includes('lamiya')) return KNOWN_LOCATIONS['lorden'];
+    if (normalized.includes('adeje')) return KNOWN_LOCATIONS['adeje'];
+    if (normalized.includes('heliodoro')) return KNOWN_LOCATIONS['helidoro'];
+    if (normalized.includes('palmera')) return KNOWN_LOCATIONS['palmer'];
+    if (normalized.includes('bunol')) return KNOWN_LOCATIONS['buñol'];
+    if (normalized.includes('luis del sol')) return KNOWN_LOCATIONS['betis'];
+    if (normalized.includes('villanovense')) return KNOWN_LOCATIONS['villanovense'];
+    if (normalized.includes('badalona')) return KNOWN_LOCATIONS['badalona'];
+    if (normalized.includes('les planes')) return KNOWN_LOCATIONS['lesplanes'];
+    if (normalized.includes('canodromo')) return KNOWN_LOCATIONS['antiguocanodromo'];
+    if (normalized.includes('granada cf')) return KNOWN_LOCATIONS['granadacf'];
+    if (normalized.includes('andres iniesta')) return KNOWN_LOCATIONS['andresiniesta'];
+    if (normalized.includes('abegondo')) return KNOWN_LOCATIONS['abegondo_stadium'];
+    if (normalized.includes('las rozas')) return KNOWN_LOCATIONS['lasrozas'];
+    if (normalized.includes('jose luis companon')) return KNOWN_LOCATIONS['joseluiscompanon'];
+    if (normalized.includes('rayo vallecano')) return KNOWN_LOCATIONS['rayovallecano'];
+    if (normalized.includes('guadalentin')) return KNOWN_LOCATIONS['guadalentin'];
+    if (normalized.includes('donawitz')) return KNOWN_LOCATIONS['donawitz'];
+    if (normalized.includes('santo domingo')) return KNOWN_LOCATIONS['santodomingo'];
+    if (normalized.includes('riazor')) return KNOWN_LOCATIONS['riazor'];
+    if (normalized.includes('toledo sanchez')) return KNOWN_LOCATIONS['toledosanchez'];
+    if (normalized.includes('loro borici')) return KNOWN_LOCATIONS['loroborici'];
+    if (normalized.includes('butarque')) return KNOWN_LOCATIONS['butarque'];
+    if (normalized.includes('ipurua')) return KNOWN_LOCATIONS['ipurua'];
+    if (normalized.includes('las gaunas')) return KNOWN_LOCATIONS['lasgaunas'];
+    if (normalized.includes('los cuartos')) return KNOWN_LOCATIONS['loscuartos'];
+    if (normalized.includes('romano') || normalized.includes('merida')) return KNOWN_LOCATIONS['romanofouto'];
+
 
     // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"
     const stripped = normalized
