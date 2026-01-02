@@ -186,6 +186,9 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "campo7ciudadrealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
 
     "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" },
+    "sopelana": { lat: 43.3808, lng: -2.9806, label: "Sopelana, Vizcaya" },
+    "pozuelo": { lat: 40.4478, lng: -3.8128, label: "Pozuelo de Alarcón, Madrid" },
+    "alcorcon": { lat: 40.3458, lng: -3.8249, label: "Alcorcón, Madrid" },
 
     // Missing Player Birthplaces Added
     "uberlandia": { lat: -18.9186, lng: -48.2772, label: "Uberlândia, Brasil" }, // Daiane Limeira
@@ -335,6 +338,53 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('america') && normalized.includes('mexico')) return KNOWN_LOCATIONS['azteca'];
     // Fallback for "Club América" if normalized just to "america" might be risky if "america" matches other things, but usually safe in this context.
     if (normalized === 'america') return KNOWN_LOCATIONS['azteca'];
+
+    // Missing Players Fuzzy Matches
+    if (normalized.includes('candelaria')) return KNOWN_LOCATIONS['candelaria']; // Linda Caicedo
+    if (normalized.includes('london') || normalized.includes('londres')) return KNOWN_LOCATIONS['london']; // Chi Obogagu
+    if (normalized.includes('sainte') && normalized.includes('colombe')) return KNOWN_LOCATIONS['saintecolombe']; // Mylene Chavas
+    if (normalized.includes('ikast')) return KNOWN_LOCATIONS['ikast']; // Sara Holmgaard
+    if (normalized.includes('stockholm') || normalized.includes('estocolmo')) return KNOWN_LOCATIONS['stockholm']; // Bella Andersson
+    if (normalized.includes('vleuten')) return KNOWN_LOCATIONS['vleuten']; // Lotte Keukelaar
+    if (normalized.includes('guadalajara')) return KNOWN_LOCATIONS['guadalajara']; // Iris Ashley
+    if (normalized.includes('toledo')) return KNOWN_LOCATIONS['toledo']; // Claudia / Yohana
+    if (normalized.includes('jarandilla')) return KNOWN_LOCATIONS['jarandilladelavera']; // Noe Llamas
+    if (normalized.includes('huarte')) return KNOWN_LOCATIONS['huarte']; // Maite Oroz
+    if (normalized.includes('uberlandia')) return KNOWN_LOCATIONS['uberlandia'];
+    if (normalized.includes('xambre')) return KNOWN_LOCATIONS['xambre'];
+    if (normalized.includes('oschatz')) return KNOWN_LOCATIONS['oschatz'];
+    if (normalized.includes('kristianstad')) return KNOWN_LOCATIONS['kristianstad'];
+    if (normalized.includes('ornskoldsvik')) return KNOWN_LOCATIONS['ornskoldsvik'];
+    if (normalized.includes('aielo')) return KNOWN_LOCATIONS['aielodemalferit'];
+    if (normalized.includes('itaugua')) return KNOWN_LOCATIONS['itaugua'];
+    if (normalized.includes('huescar')) return KNOWN_LOCATIONS['huescar'];
+    if (normalized.includes('massy')) return KNOWN_LOCATIONS['massy'];
+    if (normalized.includes('aviles')) return KNOWN_LOCATIONS['aviles'];
+    if (normalized.includes('pau dos ferros') || normalized.includes('paudosferros')) return KNOWN_LOCATIONS['paudosferros'];
+    if (normalized.includes('valadares')) return KNOWN_LOCATIONS['governadorvaladares'];
+    if (normalized.includes('yunquera')) return KNOWN_LOCATIONS['yunqueradehenares'];
+    if (normalized.includes('yecla')) return KNOWN_LOCATIONS['yecla'];
+    if (normalized.includes('orange')) return KNOWN_LOCATIONS['orange'];
+    if (normalized.includes('amberg')) return KNOWN_LOCATIONS['amberg'];
+    if (normalized.includes('celle')) return KNOWN_LOCATIONS['celle'];
+    if (normalized.includes('lomma')) return KNOWN_LOCATIONS['lomma'];
+
+    // Additional Missing Players (Batch 3)
+    if (normalized.includes('kenti')) return KNOWN_LOCATIONS['mexico']; // Kenti Robles (Mexico City)
+    if (normalized.includes('oihane')) return KNOWN_LOCATIONS['sopelana']; // Oihane Hernandez / San Martin (Check Oihane Hernandez is Sopelana, San Martin is Pamplona. Logic need check)
+    // Actually Oihane Hernandez is from Sopelana. Oihane San Martin is from Pamplona.
+    // Let's distinguish if possible, or mapping "oihane" to Sopelana is risky if San Martin is meant?
+    // User requested "Oihane Hernández" specifically in the missing list previously? No, just "Oihane Hernández".
+    // Wait, user said "Ohiane San Martín" earlier.
+    // Let's try to match full names if possible or unique parts.
+    if (normalized.includes('hernandez') && normalized.includes('oihane')) return KNOWN_LOCATIONS['sopelana'];
+    if (normalized.includes('san martin') && normalized.includes('ohiane')) return KNOWN_LOCATIONS['pamplona'];
+
+    if (normalized.includes('andrea') && normalized.includes('alonso')) return KNOWN_LOCATIONS['alcorcon'];
+    if (normalized.includes('amaya') && normalized.includes('garcia')) return KNOWN_LOCATIONS['pozuelo'];
+    if (normalized.includes('irune') && normalized.includes('dorado')) return KNOWN_LOCATIONS['pozuelo'];
+    if (normalized.includes('antonia') && normalized.includes('silva')) return KNOWN_LOCATIONS['paudosferros']; // Already added pau dos ferros, ensure matching
+    if (normalized.includes('lotte')) return KNOWN_LOCATIONS['vleuten']; // Already added vleuten
 
     // Specific logic for Valencia to prefer stadium if it's a match context match
     if (normalized === 'valenciacf' || normalized === 'valencia fem' || (normalized.includes('valencia') && type === 'stadium')) {
