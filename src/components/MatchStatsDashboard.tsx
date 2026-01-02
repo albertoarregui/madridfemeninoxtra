@@ -55,11 +55,16 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                     const roundTripKm = oneWayKm * 2;
                     const tripHours = estimateTravelTime(oneWayKm) * 2; // Round trip time
 
-                    seasonStats[season].trips += 1;
+                    // Only count as a "Trip" if it's significant distance (e.g. > 70km)
+                    // This filters out local Madrid derbies from the "viajes" count, making it more meaningful.
+                    if (oneWayKm > 70) {
+                        seasonStats[season].trips += 1;
+                        totalTrips += 1;
+                    }
+
                     seasonStats[season].km += roundTripKm;
                     seasonStats[season].hours += tripHours;
 
-                    totalTrips += 1;
                     totalKm += roundTripKm;
                     totalHours += tripHours;
                 } else {
@@ -134,7 +139,7 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Temporada</th>
                                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Viajes</th>
                                 <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kilómetros</th>
-                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Horas (Est.)</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Horas (Est.) *</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -148,6 +153,10 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                             ))}
                         </tbody>
                     </table>
+                </div>
+                <div className="bg-white rounded-lg px-4 py-3 border-t border-gray-200 text-xs text-gray-500 italic space-y-1">
+                    <p>* Estimación: &lt;300km en autobús (80km/h), &gt;300km en avión (800km/h + 2.5h gestión).</p>
+                    <p>** "Viajes" excluye desplazamientos locales (&lt;70km), pero sus km y horas se suman al total.</p>
                 </div>
             </div>
         </div>

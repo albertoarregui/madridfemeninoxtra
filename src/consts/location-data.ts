@@ -185,7 +185,42 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "campo7": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
     "campo7ciudadrealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
 
-    "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" }
+    "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" },
+
+    // Missing Player Birthplaces Added
+    "uberlandia": { lat: -18.9186, lng: -48.2772, label: "Uberlândia, Brasil" }, // Daiane Limeira
+    "xambre": { lat: -23.7380, lng: -53.4752, label: "Xambrê, Brasil" }, // Thaisa Moreno
+    "oschatz": { lat: 51.3000, lng: 13.1167, label: "Oschatz, Alemania" }, // Babett Peter
+    "lyon": { lat: 45.7640, lng: 4.8357, label: "Lyon, Francia" }, // Aurelie Kaci
+    "kristianstad": { lat: 56.0294, lng: 14.1567, label: "Kristianstad, Suecia" }, // Kosovare Asllani
+    "ornskoldsvik": { lat: 63.2905, lng: 18.7130, label: "Örnsköldsvik, Suecia" }, // Sofia Jakobsson
+    "aielodemalferit": { lat: 38.8778, lng: -0.5906, label: "Aielo de Malferit, Valencia" }, // Ivana Andrés
+    "pontevedra": { lat: 42.4299, lng: -8.6446, label: "Pontevedra, España" }, // Teresa Abelleira
+    "terrassa": { lat: 41.5693, lng: 2.0089, label: "Terrassa, Barcelona" }, // Marta Corredera
+    "itaugua": { lat: -25.3850, lng: -57.3400, label: "Itauguá, Paraguay" }, // Jessica Martínez
+    "huescar": { lat: 37.8105, lng: -2.5401, label: "Huéscar, Granada" }, // Esther González
+    "massy": { lat: 48.7297, lng: 2.2741, label: "Massy, Francia" }, // Meline Gerard
+    "orebro": { lat: 59.2753, lng: 15.2134, label: "Örebro, Suecia" }, // Freja Siri
+    "villanuevadelosinfantes": { lat: 38.7347, lng: -3.0163, label: "Villanueva de los Infantes, Ciudad Real" }, // Bea Ortiz
+    "saintecolombe": { lat: 45.5266, lng: 4.8697, label: "Sainte-Colombe, Francia" }, // Mylene Chavas
+    "aviles": { lat: 43.5547, lng: -5.9248, label: "Avilés, Asturias" }, // Olaya
+    "paudosferros": { lat: -6.1118, lng: -38.2045, label: "Pau dos Ferros, Brasil" }, // Antonia Silva
+    "governadorvaladares": { lat: -18.8512, lng: -41.9470, label: "Governador Valadares, Brasil" }, // Yasmim
+    "oviedo": { lat: 43.3619, lng: -5.8494, label: "Oviedo, España" }, // María Méndez
+    "yunqueradehenares": { lat: 40.7389, lng: -3.1672, label: "Yunquera de Henares, Guadalajara" }, // Sheila García
+    "yecla": { lat: 38.6117, lng: -1.1147, label: "Yecla, Murcia" }, // Eva Navarro
+    "orange": { lat: 44.1381, lng: 4.8075, label: "Orange, Francia" }, // Maelle Lakrar
+    "amberg": { lat: 49.4447, lng: 11.8596, label: "Amberg, Alemania" }, // Sara Dabritz
+    "celle": { lat: 52.6074, lng: 10.0817, label: "Celle, Alemania" }, // Merle Frohms
+    "lomma": { lat: 55.6728, lng: 13.0675, label: "Lomma, Suecia" }, // Hanna Bennison
+    "ikast": { lat: 56.1364, lng: 9.1558, label: "Ikast, Dinamarca" }, // Sara Holmgaard (check)
+    "stockholm": { lat: 59.3293, lng: 18.0686, label: "Estocolmo, Suecia" }, // Bella Andersson
+    "guadalajara": { lat: 40.6324, lng: -3.1633, label: "Guadalajara, España" }, // Iris Ashley
+    "vleuten": { lat: 52.1070, lng: 5.0133, label: "Vleuten, Países Bajos" }, // Lotte Keukelaar
+    "toledo": { lat: 39.8628, lng: -4.0273, label: "Toledo, España" }, // Claudia / Yohana
+    "sanpablodelosmontes": { lat: 39.5447, lng: -4.3314, label: "San Pablo de los Montes, Toledo" }, // Yohana
+    "jarandilladelavera": { lat: 40.1264, lng: -5.6606, label: "Jarandilla de la Vera, Cáceres" }, // Noe Llamas
+    "huarte": { lat: 42.8290, lng: -1.5976, label: "Huarte, Navarra" }, // Maite Oroz (likely)
 
 };
 
