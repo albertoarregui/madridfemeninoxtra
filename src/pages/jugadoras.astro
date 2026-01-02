@@ -3,8 +3,11 @@ import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import { fetchPlayersDirectly } from "../utils/players";
 import Players from "../sections/Players.astro";
+import PlayerMapWrapper from "../components/PlayerMapWrapper";
+import PlayerStatsDashboard from "../components/PlayerStatsDashboard";
 
 const playersData = await fetchPlayersDirectly();
+
 const uniqueCountries = [
     ...new Set(playersData.map((p) => p.pais_origin).filter((c) => c)),
 ].sort();
@@ -29,5 +32,9 @@ const uniquePositions = [
         </section>
 
         <Players />
+
+        <PlayerMapWrapper players={playersData} client:only="react" />
+
+        <PlayerStatsDashboard players={playersData} client:visible />
     </main>
 </Layout>

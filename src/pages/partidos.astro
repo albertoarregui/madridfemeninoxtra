@@ -3,6 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import { fetchGamesDirectly } from "../utils/partidos";
 import MatchList from "../components/MatchList.astro";
+import MatchMapWrapper from "../components/MatchMapWrapper";
+import MatchStatsDashboard from "../components/MatchStatsDashboard";
 
 const gamesData = await fetchGamesDirectly();
 const uniqueSeasons = [
@@ -28,15 +30,18 @@ const uniqueCompetitions = [
 
         {
             gamesData.length > 0 ? (
-                <MatchList
-                    matches={gamesData}
-                    seasons={uniqueSeasons}
-                    competitions={uniqueCompetitions}
-                />
+                <>
+                    <MatchMapWrapper matches={gamesData} client:only="react" />
+                    <MatchStatsDashboard matches={gamesData} client:visible />
+                    <MatchList
+                        matches={gamesData}
+                        seasons={uniqueSeasons}
+                        competitions={uniqueCompetitions}
+                    />
+                </>
             ) : (
                 <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">
                     Error al cargar datos o no se encontraron partidos.
-                    Comprueba la conexión a Turso o tu API endpoint.
                 </p>
             )
         }
