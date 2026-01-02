@@ -24,8 +24,9 @@ function getFlagSrc(countryName: string): string {
     if (!countryName) return '';
     const normalize = (str: string) => str.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .replace(/ñ/g, "n"); // "España" -> "espana"
+        .replace(/\s+/g, "_") // Default to underscore based on file list, will check later
+        .replace(/-/g, "_") // Handle if input has hyphens
+        .replace(/ñ/g, "n");
 
     const filename = normalize(countryName);
 
@@ -39,7 +40,7 @@ function getFlagSrc(countryName: string): string {
     };
 
     const finalName = map[filename] || filename;
-    return `/src/assets/banderas/${finalName}.svg`;
+    return `/assets/banderas/${finalName}.svg`; // Point to public folder
 }
 
 const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) => {

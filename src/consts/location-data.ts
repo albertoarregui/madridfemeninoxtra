@@ -169,22 +169,21 @@ export interface Coordinates {
 }
 
 export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'): Coordinates | null {
-    const normalized = normalizeLocationName(name);
+    if (!name) return null;
+    let normalized = normalizeLocationName(name);
 
     // Direct match
     if (KNOWN_LOCATIONS[normalized]) {
         return KNOWN_LOCATIONS[normalized];
     }
 
-    // Robust Heuristics
-    // ... (Keep existing complex heuristics if needed, or rely on mapping coverage)
-    // Adding just a few key ones to ensure coverage for abbreviations
+    // Common variations / Fuzzy matching
     if (normalized.includes('stefano')) return KNOWN_LOCATIONS['alfredodistefano'];
-    if (normalized.includes('johan')) return KNOWN_LOCATIONS['johancruyff'];
+    if (normalized.includes('johan') || normalized.includes('cruyff')) return KNOWN_LOCATIONS['johancruyff'];
     if (normalized.includes('puchades')) return KNOWN_LOCATIONS['antoniopuchades'];
     if (normalized.includes('dani jarque') || normalized.includes('danijarque')) return KNOWN_LOCATIONS['danijarque'];
     if (normalized.includes('jesus navas') || normalized.includes('jesusnavas')) return KNOWN_LOCATIONS['jesusnavas'];
-    if (normalized.includes('camp nou')) return KNOWN_LOCATIONS['campnou'];
+    if (normalized.includes('camp nou') || normalized.includes('campnou')) return KNOWN_LOCATIONS['campnou'];
     if (normalized.includes('montjuic')) return KNOWN_LOCATIONS['montjuic'];
     if (normalized.includes('stamford')) return KNOWN_LOCATIONS['stamfordbridge'];
     if (normalized.includes('lerkendal')) return KNOWN_LOCATIONS['lerkendal'];
@@ -194,10 +193,21 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('paris') || normalized.includes('princes')) return KNOWN_LOCATIONS['parcdesprinces'];
     if (normalized.includes('charlety')) return KNOWN_LOCATIONS['stadesty'];
 
-    // City fallbacks for Stadiums (if stadium not found but city is)
-    // ...
+    // Generic "Madrid" fallbacks for Valdebebas/Ciudad Real Madrid
+    if (normalized.includes('ciudad real madrid') || normalized.includes('valdebebas')) return KNOWN_LOCATIONS['alfredodistefano']; // Or separate entry
 
-    console.warn(`[MAPS] Ubicación desconocida: ${name} (normalized: ${normalized})`);
+    // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"
+    const stripped = normalized
+        .replace('estadio', '')
+        .replace('municipal', '')
+        .replace('campo', '')
+        .replace('ciudaddeportiva', '')
+        .replace('clubdeportivo', '')
+        .replace('complejodeportivo', '');
+
+    if (KNOWN_LOCATIONS[stripped]) return KNOWN_LOCATIONS[stripped];
+
+    // console.warn(`[MAPS] Ubicación desconocida: ${name} (normalized: ${normalized})`);
     return null;
 }
 
