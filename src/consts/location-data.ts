@@ -145,7 +145,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "elvivero": { lat: 38.8924, lng: -6.9922, label: "IDM El Vivero", imageUrl: "/assets/estadios/idm_el_vivero.png" },
     "tajonar": { lat: 42.7768, lng: -1.6366, label: "Instalaciones de Tajonar", imageUrl: "/assets/estadios/instalaciones_de_tajonar.png" },
     "unbe": { lat: 43.1873, lng: -2.4828, label: "Instalaciones de Unbe", imageUrl: "/assets/estadios/instalaciones_de_unbe.png" },
-    "miniestadi": { lat: 41.3805, lng: 2.1198, label: "Mini Estadi", imageUrl: "/assets/estadios/mini_estadi.png" },
+    "miniestadi": { lat: 39.9531, lng: -0.1044, label: "Mini Estadi (Villarreal) - C.D. José Manuel Llaneza", imageUrl: "/assets/estadios/mini_estadi.png" },
     "camporealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 11 Ciudad Real Madrid", imageUrl: "/assets/estadios/campo_11_ciudad_real_madrid.png" },
     "puentecastro": { lat: 42.5847, lng: -5.5458, label: "Campo de Fútbol de Puente Castro", imageUrl: "/assets/estadios/campo_de_futbol_de_puente_castro.png" },
     "campuspsg": { lat: 48.9189, lng: 2.0628, label: "Campus PSG", imageUrl: "/assets/estadios/campus_psg.png" },
@@ -176,8 +176,8 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "cdtacon": { lat: 40.4761, lng: -3.6197, label: "Madrid, España" },
     "fcbetis": { lat: 37.3364, lng: -5.9869, label: "Sevilla, España" }, // Proxy for Real Betis
     "sportinghuelva": { lat: 37.2614, lng: -6.9447, label: "Huelva, España" },
-    "azteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México" },
-    "estadioazteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México" },
+    "azteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México", imageUrl: "/assets/estadios/estadio_azteca.png" },
+    "estadioazteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México", imageUrl: "/assets/estadios/estadio_azteca.png" },
     "fuenlabrada": { lat: 40.2853, lng: -3.7950, label: "Fuenlabrada, España" },
     "santjoandespi": { lat: 41.3653, lng: 2.0560, label: "Sant Joan Despí, España" },
     "berlin": { lat: 52.5200, lng: 13.4050, label: "Berlín, Alemania" },
@@ -241,7 +241,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('matapinonera')) return KNOWN_LOCATIONS['matanapiñeiro'];
     if (normalized.includes('fernando torres')) return KNOWN_LOCATIONS['fernandotorres'];
     if (normalized.includes('antonio puchades')) return KNOWN_LOCATIONS['antoniopuchades'];
-    if (normalized.includes('dani jarque')) return KNOWN_LOCATIONS['danijarque'];
+    if (normalized.includes('dani jarque') || normalized.includes('jarque')) return KNOWN_LOCATIONS['danijarque'];
     if (normalized.includes('jesus navas')) return KNOWN_LOCATIONS['jesusnavas'];
     if (normalized.includes('nuevos los carmenes') || normalized.includes('loscarmenes')) return KNOWN_LOCATIONS['loscarmenes'];
     if (normalized.includes('colombino')) return KNOWN_LOCATIONS['nuevocolombino'];
@@ -249,7 +249,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('adeje')) return KNOWN_LOCATIONS['adeje'];
     if (normalized.includes('heliodoro')) return KNOWN_LOCATIONS['helidoro'];
     if (normalized.includes('palmera')) return KNOWN_LOCATIONS['palmer'];
-    if (normalized.includes('bunol')) return KNOWN_LOCATIONS['buñol'];
+    if (normalized.includes('bunol') || normalized.includes('buñol')) return KNOWN_LOCATIONS['buñol'];
     if (normalized.includes('luis del sol')) return KNOWN_LOCATIONS['betis'];
     if (normalized.includes('villanovense')) return KNOWN_LOCATIONS['villanovense'];
     if (normalized.includes('badalona')) return KNOWN_LOCATIONS['badalona'];
@@ -268,10 +268,33 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('toledo sanchez')) return KNOWN_LOCATIONS['toledosanchez'];
     if (normalized.includes('loro borici')) return KNOWN_LOCATIONS['loroborici'];
     if (normalized.includes('butarque')) return KNOWN_LOCATIONS['butarque'];
-    if (normalized.includes('ipurua')) return KNOWN_LOCATIONS['ipurua'];
+    if (normalized.includes('ipurua') || normalized.includes('ipurúa')) return KNOWN_LOCATIONS['ipurua'];
     if (normalized.includes('las gaunas')) return KNOWN_LOCATIONS['lasgaunas'];
     if (normalized.includes('los cuartos')) return KNOWN_LOCATIONS['loscuartos'];
     if (normalized.includes('romano') || normalized.includes('merida')) return KNOWN_LOCATIONS['romanofouto'];
+    if (normalized.includes('valencia') && normalized.includes('ciutat')) return KNOWN_LOCATIONS['ciudaddelvalencia'];
+    if (normalized.includes('campo 11') || normalized.includes('campo 11 ciudad')) return KNOWN_LOCATIONS['camporealmadrid'];
+    if (normalized.includes('campo 7') || normalized.includes('campo 7 ciudad')) return KNOWN_LOCATIONS['campo7'];
+    if (normalized.includes('uribe') || normalized.includes('unbe')) return KNOWN_LOCATIONS['unbe']; // Fix typo
+    if (normalized.includes('zubieta')) return KNOWN_LOCATIONS['zubieta'];
+    if (normalized.includes('lezama')) return KNOWN_LOCATIONS['lezama'];
+    if (normalized.includes('vivero') || normalized.includes('elvivero')) return KNOWN_LOCATIONS['elvivero'];
+    if (normalized.includes('puente castro')) return KNOWN_LOCATIONS['puentecastro'];
+    if (normalized.includes('joie') || normalized.includes('manchester city')) return KNOWN_LOCATIONS['manchestercity'];
+    if (normalized.includes('metalist')) return KNOWN_LOCATIONS['kahrkiv'];
+    if (normalized.includes('kahrkiv')) return KNOWN_LOCATIONS['kahrkiv'];
+    if (normalized.includes('parque de los principes') || normalized.includes('parc des princes')) return KNOWN_LOCATIONS['parcdesprinces'];
+    if (normalized.includes('kopavogsvollur')) return KNOWN_LOCATIONS['breidablik'];
+    if (normalized.includes('kingmeadow') || normalized.includes('kingsmeadow')) return KNOWN_LOCATIONS['kingsmeadow'];
+    if (normalized.includes('tajonar')) return KNOWN_LOCATIONS['tajonar'];
+    if (normalized.includes('prosek')) return KNOWN_LOCATIONS['skprosek'];
+    if (normalized.includes('intility') || normalized.includes('valerenga')) return KNOWN_LOCATIONS['valerenga'];
+    if (normalized.includes('bravida') || normalized.includes('hacken')) return KNOWN_LOCATIONS['häcken'];
+    if (normalized.includes('emirates')) return KNOWN_LOCATIONS['emirates'];
+    if (normalized.includes('alten forsterei') || normalized.includes('alten försterei')) return KNOWN_LOCATIONS['altenforsterei'];
+    if (normalized.includes('brentanobad')) return KNOWN_LOCATIONS['brentanobad'];
+    if (normalized.includes('grolsch') || normalized.includes('twente')) return KNOWN_LOCATIONS['twente'];
+    if (normalized.includes('aurelio pereira') || (normalized.includes('lisboa') && type === 'stadium')) return KNOWN_LOCATIONS['lisboa'];
 
 
     // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"
