@@ -38,6 +38,8 @@ const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
     'carla-camacho': 'rivasvaciamadrid',
     'paula-partido': 'madrid',
     'maria-valle': 'lospalaciosyvillafranca',
+    'andrea-tellez': 'alcorcon',
+    'marina-salas': 'madrid', // Assume Madrid for now if missing
 };
 
 const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
