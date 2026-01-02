@@ -159,6 +159,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
                                         <a
                                             href={popupInfo.slug}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             className="block w-full text-center bg-[#ffde59] hover:bg-[#ffe57f] text-[#151e42] font-bold py-3 rounded shadow-sm hover:shadow-md transition-all uppercase tracking-wide text-xs"
                                         >
                                             Ver Ficha Completa
@@ -230,7 +232,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
                                                                 return (
                                                                     <span className={`font-mono font-bold text-lg text-[#151e42] px-6 py-1.5 rounded-lg ${isWin ? 'bg-green-100/80 text-green-900' :
-                                                                            isLoss ? 'bg-red-100/80 text-red-900' : 'bg-yellow-100/80 text-yellow-900'
+                                                                        isLoss ? 'bg-red-100/80 text-red-900' : 'bg-yellow-100/80 text-yellow-900'
                                                                         }`}>
                                                                         {scoreHome} - {scoreAway}
                                                                     </span>
@@ -241,6 +243,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                         {/* Styled "Ver detalles" button - Full Width Yellow */}
                                                         <a
                                                             href={`/partidos/${m.slug}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
                                                             className="block w-full text-center bg-[#ffde59] hover:bg-[#ffe57f] text-[#151e42] font-bold py-2 rounded shadow-sm hover:shadow-md transition-all uppercase tracking-wide text-[10px]"
                                                         >
                                                             Ver detalles
