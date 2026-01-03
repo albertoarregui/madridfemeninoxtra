@@ -39,18 +39,19 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             const stats = teamStats.get(rivalName) || { wins: 0, draws: 0, losses: 0, matches: 0 };
             stats.matches += 1;
 
-            const goalsRM = Number(isHome ? m.goles_rm : m.goles_rival);
-            const goalsRival = Number(isHome ? m.goles_rival : m.goles_rm);
+            const goalsRM = parseInt(isHome ? m.goles_rm : m.goles_rival) || 0;
+            const goalsRival = parseInt(isHome ? m.goles_rival : m.goles_rm) || 0;
 
             if (goalsRM > goalsRival) {
                 stats.wins += 1;
             } else if (goalsRM < goalsRival) {
                 stats.losses += 1;
             } else {
-                const pen = m.penaltis;
-                if ((pen === '1' || pen === 1) && goalsRM === goalsRival) {
+                // Draw in regular time, check penalties
+                const penalties = m.penaltis;
+                if (penalties === 1 || penalties === '1') {
                     stats.wins += 1;
-                } else if ((pen === '0' || pen === 0) && goalsRM === goalsRival) {
+                } else if (penalties === 0 || penalties === '0') {
                     stats.losses += 1;
                 } else {
                     stats.draws += 1;

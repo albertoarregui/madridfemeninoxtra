@@ -35,10 +35,27 @@ matches.forEach((m) => {
 
     if (!rivalName || rivalName === "Real Madrid") return;
 
-    const goalsRM = Number(isHome ? m.goles_rm : m.goles_rival);
-    const goalsRival = Number(isHome ? m.goles_rival : m.goles_rm);
-    const isWin = goalsRM > goalsRival;
-    const isDraw = goalsRM === goalsRival;
+    const goalsRM = parseInt(isHome ? m.goles_rm : m.goles_rival) || 0;
+    const goalsRival = parseInt(isHome ? m.goles_rival : m.goles_rm) || 0;
+
+    let isWin = false;
+    let isDraw = false;
+
+    if (goalsRM > goalsRival) {
+        isWin = true;
+    } else if (goalsRM < goalsRival) {
+        isWin = false;
+    } else {
+        // Draw in regular time, check penalties
+        const penalties = m.penaltis;
+        if (penalties === 1 || penalties === "1") {
+            isWin = true;
+        } else if (penalties === 0 || penalties === "0") {
+            isWin = false;
+        } else {
+            isDraw = true;
+        }
+    }
 
     const currentRival = rivalMap.get(rivalName) || {
         count: 0,
@@ -51,7 +68,7 @@ matches.forEach((m) => {
     }
 
     currentRival.count += 1;
-    if (isWin && !isDraw) currentRival.wins += 1;
+    if (isWin) currentRival.wins += 1;
 
     rivalMap.set(rivalName, currentRival);
 
@@ -65,7 +82,7 @@ matches.forEach((m) => {
                 countryCode,
         };
         currentCountry.matches += 1;
-        if (isWin && !isDraw) currentCountry.wins += 1;
+        if (isWin) currentCountry.wins += 1;
         countryStats.set(countryCode, currentCountry);
     }
 });
@@ -152,36 +169,47 @@ const sortedByWins = Array.from(countryStats.entries())
         <div
             class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group"
         >
+            <div class="bg-purple-50 p-3 rounded-full text-purple-600 mb-3">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                    <path d="M4 22h16"></path>
+                    <path
+                        d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"
+                    ></path>
+                    <path
+                        d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"
+                    ></path>
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                </svg>
+            </div>
             <div class="flex flex-col items-center w-full">
                 <p
-                    class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors"
+                    class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-3 group-hover:text-[#ffde59] transition-colors"
                 >
                     Rival Histórico
                 </p>
-                <div class="bg-purple-50 p-3 rounded-full text-purple-600 mb-3">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="32"
-                        height="32"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-                        <path d="M4 22h16"></path>
-                        <path
-                            d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"
-                        ></path>
-                        <path
-                            d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"
-                        ></path>
-                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-                    </svg>
-                </div>
+                {
+                    mostPlayedRivalShield && (
+                        <div class="w-16 h-16 mb-2 flex items-center justify-center">
+                            <img
+                                src={mostPlayedRivalShield}
+                                alt={mostPlayedRivalName}
+                                class="w-full h-full object-contain drop-shadow-sm"
+                            />
+                        </div>
+                    )
+                }
                 <p
                     class="text-lg md:text-xl font-black text-[#151e42] leading-tight mb-1 group-hover:text-[#ffde59] transition-colors"
                     title={mostPlayedRivalName}
