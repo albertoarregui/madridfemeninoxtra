@@ -499,13 +499,13 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                     <span className="font-bold">{bucket.count}</span> goles <span className="opacity-75">({bucket.sharePercent}%)</span>
                                 </div>
 
-                                <div className="w-full bg-blue-50 rounded-t-sm relative h-full flex items-end overflow-hidden group-hover:bg-blue-100 transition-colors">
+                                <div className="w-full relative h-full flex items-end">
                                     <div
-                                        className="w-full bg-[#151e42] opacity-80 group-hover:opacity-100 transition-all duration-500 ease-out"
+                                        className="w-full bg-[#ffde59] group-hover:bg-[#ffd700] transition-all duration-300 ease-out rounded-t-sm"
                                         style={{ height: `${bucket.heightPercent || 0}%` }}
                                     ></div>
                                 </div>
-                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none transform -rotate-90 md:rotate-0 origin-center mt-3 md:mt-2 ${bucket.label.includes('+') ? 'text-[#151e42] font-black' : 'text-gray-400 font-medium'}`}>{bucket.label}</span>
+                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 ${bucket.label.includes('+') ? 'text-[#151e42] font-black' : 'text-gray-400 font-medium'}`}>{bucket.label}</span>
                             </div>
                         ))}
                     </div>
