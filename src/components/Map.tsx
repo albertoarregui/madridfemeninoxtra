@@ -279,61 +279,60 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
                             {/* RIVAL CITY POPUP */}
                             {popupInfo.type === 'rival-city' && (
-                                <div className="p-0 min-w-[260px]">
-                                    <div className="bg-[#ffde59] text-[#151e42] p-3 pr-10 rounded-t-lg relative flex items-center justify-center gap-3">
-                                        <img src={popupInfo.imageUrl} className="w-6 h-auto rounded shadow-sm" alt={popupInfo.label} />
-                                        <h3 className="font-bebas text-xl font-bold tracking-wide">{popupInfo.label}</h3>
+                                <div className="p-0 min-w-[280px]">
+                                    <div className="bg-[#ffde59] text-[#151e42] p-4 pr-10 rounded-t-lg relative flex items-center justify-center gap-3">
+                                        <img src={popupInfo.imageUrl} className="w-8 h-auto rounded shadow-sm" alt={popupInfo.label} />
+                                        <h3 className="font-bebas text-2xl font-bold tracking-wide">{popupInfo.label}</h3>
                                     </div>
-                                    <div className="p-3 bg-white max-h-[300px] overflow-y-auto custom-scrollbar">
+                                    <div className="p-4 bg-white max-h-[350px] overflow-y-auto custom-scrollbar">
                                         {popupInfo.data?.teams?.map((team: any, idx: number) => (
-                                            <div key={idx} className="mb-3 last:mb-0 bg-white rounded-lg border border-gray-100 shadow-sm p-3 hover:shadow-md transition-shadow">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                                            <div key={idx} className="mb-4 last:mb-0 bg-white rounded-xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-all group">
+                                                <div className="flex items-center gap-3 mb-4 border-b border-gray-50 pb-3">
+                                                    <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-gray-50 rounded-full p-1">
                                                         {team.shieldUrl ? (
-                                                            <img src={team.shieldUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-sm" />
+                                                            <img src={team.shieldUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
                                                         ) : (
                                                             <span className="text-[8px] font-bold text-gray-300">LOGO</span>
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
-                                                        <h4 className="font-bold text-[#151e42] leading-tight text-sm">{team.name}</h4>
-                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">{team.matches} partidos</p>
+                                                        <h4 className="font-black text-[#151e42] leading-tight text-lg">{team.name}</h4>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-3 gap-0 mb-3 text-center bg-gray-50 rounded-md py-2 px-1 border border-gray-100">
+                                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                                    <div className="col-span-2">
+                                                        <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Estadio</span>
+                                                        <span className="font-bold text-[#151e42] text-xs block leading-tight">
+                                                            {team.stadium || 'Sin información'}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Partidos</span>
+                                                        <span className="font-black text-[#151e42] text-lg">{team.matches}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-0 mb-4 text-center bg-gray-50 rounded-lg py-2 px-1 border border-gray-100">
                                                     <div className="flex flex-col">
-                                                        <span className="text-green-600 font-black text-sm">{team.wins}</span>
+                                                        <span className="text-green-600 font-black text-lg">{team.wins}</span>
                                                         <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Vic</span>
                                                     </div>
                                                     <div className="flex flex-col border-l border-gray-200">
-                                                        <span className="text-yellow-600 font-black text-sm">{team.draws}</span>
+                                                        <span className="text-yellow-600 font-black text-lg">{team.draws}</span>
                                                         <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Emp</span>
                                                     </div>
                                                     <div className="flex flex-col border-l border-gray-200">
-                                                        <span className="text-red-600 font-black text-sm">{team.losses}</span>
+                                                        <span className="text-red-600 font-black text-lg">{team.losses}</span>
                                                         <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Der</span>
                                                     </div>
                                                 </div>
 
                                                 <a
                                                     href={`/rivales/${team.id || '#'}`}
-                                                    className="block w-full text-center py-3 px-4 rounded-full transition-all font-bold text-sm uppercase tracking-wide"
-                                                    style={{
-                                                        background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%)',
-                                                        color: '#000',
-                                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                                                    }}
-                                                    onMouseOver={(e) => {
-                                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-                                                    }}
-                                                    onMouseOut={(e) => {
-                                                        e.currentTarget.style.transform = 'translateY(0)';
-                                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                                                    }}
+                                                    className="block w-full text-center py-2.5 px-4 rounded-lg transition-all font-bold text-xs uppercase tracking-wider bg-[#151e42] text-white hover:bg-[#ffde59] hover:text-[#151e42]"
                                                 >
-                                                    Ver Historial
+                                                    Ver Historial Completo
                                                 </a>
                                             </div>
                                         ))}
