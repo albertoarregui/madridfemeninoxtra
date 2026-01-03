@@ -15,10 +15,35 @@ const allGoals = allGoalsDB;
 
 const uniqueSeasons = [
     ...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
-].sort();
+]
+    .sort()
+    .reverse(); // Show latest season first usually, or just sort() if user prefers asc. Default was sort().
+
+const competitionOrder = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+    "Amistosos",
+];
+
 const uniqueCompetitions = [
     ...new Set(gamesData.map((g) => g.competicion_nombre).filter((c) => c)),
-].sort();
+].sort((a, b) => {
+    const titleA = a as string;
+    const titleB = b as string;
+    const indexA = competitionOrder.indexOf(titleA);
+    const indexB = competitionOrder.indexOf(titleB);
+
+    // If both are in the list, sort by index
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    // If only A is in list, A comes first
+    if (indexA !== -1) return -1;
+    // If only B is in list, B comes first
+    if (indexB !== -1) return 1;
+    // Otherwise alphabetical
+    return titleA.localeCompare(titleB);
+});
 ---
 
 <Layout

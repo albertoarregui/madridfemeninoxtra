@@ -11,12 +11,31 @@ const uniqueSeasons = [
     ...new Set(
         rankingsData.map((g) => g.temporada).filter((s): s is string => !!s),
     ),
-].sort();
+]
+    .sort()
+    .reverse(); // Latest season first
+
+const competitionOrder = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+    "Amistosos",
+];
+
 const uniqueCompetitions = [
     ...new Set(
         rankingsData.map((g) => g.competicion).filter((c): c is string => !!c),
     ),
-].sort();
+].sort((a, b) => {
+    const indexA = competitionOrder.indexOf(a);
+    const indexB = competitionOrder.indexOf(b);
+
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b);
+});
 ---
 
 <Layout

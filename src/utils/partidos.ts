@@ -57,8 +57,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 e.ciudad,
                 e.pais,
                 e.capacidad,
-                IFNULL(p.goles_rm, 0) AS goles_rm,
-                IFNULL(p.goles_rival, 0) AS goles_rival,
+                p.goles_rm,
+                p.goles_rival,
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
                 
@@ -704,9 +704,9 @@ export async function fetchAllGoals(): Promise<any[]> {
                 c.competicion
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
-            JOIN temporadas t ON p.id_temporada = t.id_temporada
-            JOIN competiciones c ON p.id_competicion = c.id_competicion
-            WHERE g.goleadora IS NOT NULL OR g.tipo = 'penalti' 
+            LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
+            LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+            WHERE 1=1 
         `;
 
         // Note: The above query might capture own goals if we tracked them as specific types, 
