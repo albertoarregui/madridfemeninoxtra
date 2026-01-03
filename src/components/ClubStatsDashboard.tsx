@@ -345,7 +345,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all cursor-default">
                     <div>
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Partidos</p>
-                        <p className="text-4xl font-black text-[#151e42] leading-none">{stats.played}</p>
+                        <p className="text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.played}</p>
                     </div>
                     <div className="bg-gray-100 p-3 rounded-full text-gray-600 group-hover:text-gray-600 transition-colors">
                         <Monitor size={24} />
@@ -357,7 +357,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <div>
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Puntos</p>
                         <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-black text-[#151e42] leading-none">{stats.points}</p>
+                            <p className="text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.points}</p>
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ppg}/partido)</span>
                         </div>
                     </div>
@@ -371,7 +371,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <div>
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Goles a Favor</p>
                         <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-black text-[#151e42] leading-none">{stats.gf}</p>
+                            <p className="text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.gf}</p>
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.gf90}/partido)</span>
                         </div>
                     </div>
@@ -385,7 +385,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <div>
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Goles en Contra</p>
                         <div className="flex items-baseline gap-2">
-                            <p className="text-4xl font-black text-[#151e42] leading-none">{stats.ga}</p>
+                            <p className="text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.ga}</p>
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ga90}/partido)</span>
                         </div>
                     </div>

@@ -203,7 +203,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "campo7": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
     "campo7ciudadrealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 7 Ciudad Real Madrid" },
     "estadiouniversitario": { lat: 25.7247, lng: -100.3113, label: "Estadio Universitario, Monterrey", imageUrl: "/assets/estadios/estadio_universitario.png" },
-    "universitario": { lat: 25.7247, lng: -100.3113, label: "Estadio Universitario, Monterrey", imageUrl: "/assets/estadios/estadio_universitario.png" },
+
 
     "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" },
     "sopelana": { lat: 43.3808, lng: -2.9806, label: "Sopelana, Vizcaya" },
@@ -246,6 +246,8 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "sanpablodelosmontes": { lat: 39.5447, lng: -4.3314, label: "San Pablo de los Montes, Toledo" },
     "jarandilladelavera": { lat: 40.1264, lng: -5.6606, label: "Jarandilla de la Vera, Cáceres" },
     "huarte": { lat: 42.8290, lng: -1.5976, label: "Huarte, Navarra" },
+    "rota": { lat: 36.6231, lng: -6.3582, label: "Rota, España" },
+    "potsdam": { lat: 52.3906, lng: 13.0645, label: "Potsdam, Alemania" },
 
 };
 
@@ -286,7 +288,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('bayern')) return KNOWN_LOCATIONS['bayerncampus'];
     if (normalized.includes('twente')) return KNOWN_LOCATIONS['twente'];
     if (normalized.includes('hacken') || normalized.includes('braveda')) return KNOWN_LOCATIONS['häcken'];
-    if (normalized.includes('paris') || normalized.includes('princes')) return KNOWN_LOCATIONS['parcdesprinces'];
+    if (normalized.includes('paris') || normalized.includes('princes') || normalized.includes('principes')) return KNOWN_LOCATIONS['parcdesprinces'];
     if (normalized.includes('charlety')) return KNOWN_LOCATIONS['stadesty'];
 
     if (normalized.includes('ciudad real madrid') || normalized.includes('valdebebas')) return KNOWN_LOCATIONS['alfredodistefano'];
@@ -295,47 +297,47 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
         return KNOWN_LOCATIONS['alcaladehenares_estadio'];
     }
     if (normalized.includes('matapinonera')) return KNOWN_LOCATIONS['matanapiñeiro'];
-    if (normalized.includes('fernando torres')) return KNOWN_LOCATIONS['fernandotorres'];
-    if (normalized.includes('antonio puchades')) return KNOWN_LOCATIONS['antoniopuchades'];
-    if (normalized.includes('dani jarque') || normalized.includes('jarque')) return KNOWN_LOCATIONS['danijarque'];
-    if (normalized.includes('jesus navas')) return KNOWN_LOCATIONS['jesusnavas'];
-    if (normalized.includes('nuevos los carmenes') || normalized.includes('loscarmenes')) return KNOWN_LOCATIONS['loscarmenes'];
+    if (normalized.includes('fernandotorres')) return KNOWN_LOCATIONS['fernandotorres'];
+    if (normalized.includes('antoniopuchades')) return KNOWN_LOCATIONS['antoniopuchades'];
+    if (normalized.includes('danijarque') || normalized.includes('jarque')) return KNOWN_LOCATIONS['danijarque'];
+    if (normalized.includes('jesusnavas')) return KNOWN_LOCATIONS['jesusnavas'];
+    if (normalized.includes('nuevosloscarmenes') || normalized.includes('loscarmenes')) return KNOWN_LOCATIONS['loscarmenes'];
     if (normalized.includes('colombino')) return KNOWN_LOCATIONS['nuevocolombino'];
     if (normalized.includes('lamiya')) return KNOWN_LOCATIONS['lorden'];
     if (normalized.includes('adeje')) return KNOWN_LOCATIONS['adeje'];
     if (normalized.includes('heliodoro')) return KNOWN_LOCATIONS['helidoro'];
     if (normalized.includes('palmera')) return KNOWN_LOCATIONS['palmer'];
     if (normalized.includes('bunol') || normalized.includes('buñol')) return KNOWN_LOCATIONS['buñol'];
-    if (normalized.includes('luis del sol')) return KNOWN_LOCATIONS['betis'];
+    if (normalized.includes('luisdelsol')) return KNOWN_LOCATIONS['betis'];
     if (normalized.includes('villanovense')) return KNOWN_LOCATIONS['villanovense'];
     if (normalized.includes('badalona')) return KNOWN_LOCATIONS['badalona'];
-    if (normalized.includes('les planes')) return KNOWN_LOCATIONS['lesplanes'];
+    if (normalized.includes('lesplanes')) return KNOWN_LOCATIONS['lesplanes'];
     if (normalized.includes('canodromo')) return KNOWN_LOCATIONS['antiguocanodromo'];
-    if (normalized.includes('granada cf')) return KNOWN_LOCATIONS['granadacf'];
-    if (normalized.includes('andres iniesta')) return KNOWN_LOCATIONS['andresiniesta'];
+    if (normalized.includes('granadacf')) return KNOWN_LOCATIONS['granadacf'];
+    if (normalized.includes('andresiniesta')) return KNOWN_LOCATIONS['andresiniesta'];
     if (normalized.includes('abegondo')) return KNOWN_LOCATIONS['abegondo_stadium'];
-    if (normalized.includes('las rozas')) return KNOWN_LOCATIONS['lasrozas'];
-    if (normalized.includes('jose luis companon')) return KNOWN_LOCATIONS['joseluiscompanon'];
-    if (normalized.includes('rayo vallecano')) return KNOWN_LOCATIONS['rayovallecano'];
+    if (normalized.includes('lasrozas')) return KNOWN_LOCATIONS['lasrozas'];
+    if (normalized.includes('joseluiscompanon')) return KNOWN_LOCATIONS['joseluiscompanon'];
+    if (normalized.includes('rayovallecano')) return KNOWN_LOCATIONS['rayovallecano'];
     if (normalized.includes('guadalentin')) return KNOWN_LOCATIONS['guadalentin'];
     if (normalized.includes('donawitz')) return KNOWN_LOCATIONS['donawitz'];
-    if (normalized.includes('santo domingo')) return KNOWN_LOCATIONS['santodomingo'];
+    if (normalized.includes('santodomingo')) return KNOWN_LOCATIONS['santodomingo'];
     if (normalized.includes('riazor')) return KNOWN_LOCATIONS['riazor'];
-    if (normalized.includes('toledo sanchez')) return KNOWN_LOCATIONS['toledosanchez'];
-    if (normalized.includes('loro borici')) return KNOWN_LOCATIONS['loroborici'];
+    if (normalized.includes('toledosanchez')) return KNOWN_LOCATIONS['toledosanchez'];
+    if (normalized.includes('loroborici')) return KNOWN_LOCATIONS['loroborici'];
     if (normalized.includes('butarque')) return KNOWN_LOCATIONS['butarque'];
     if (normalized.includes('ipurua') || normalized.includes('ipurúa')) return KNOWN_LOCATIONS['ipurua'];
-    if (normalized.includes('las gaunas')) return KNOWN_LOCATIONS['lasgaunas'];
-    if (normalized.includes('los cuartos')) return KNOWN_LOCATIONS['loscuartos'];
+    if (normalized.includes('lasgaunas')) return KNOWN_LOCATIONS['lasgaunas'];
+    if (normalized.includes('loscuartos')) return KNOWN_LOCATIONS['loscuartos'];
     if (normalized.includes('romano') || normalized.includes('merida')) return KNOWN_LOCATIONS['romanofouto'];
     if (normalized.includes('valencia') && normalized.includes('ciutat')) return KNOWN_LOCATIONS['ciudaddelvalencia'];
-    if (normalized.includes('campo 11') || normalized.includes('campo 11 ciudad')) return KNOWN_LOCATIONS['camporealmadrid'];
-    if (normalized.includes('campo 7') || normalized.includes('campo 7 ciudad')) return KNOWN_LOCATIONS['campo7'];
+    if (normalized.includes('campo11') || normalized.includes('campo11ciudad')) return KNOWN_LOCATIONS['camporealmadrid'];
+    if (normalized.includes('campo7') || normalized.includes('campo7ciudad')) return KNOWN_LOCATIONS['campo7'];
     if (normalized.includes('uribe') || normalized.includes('unbe')) return KNOWN_LOCATIONS['unbe'];
     if (normalized.includes('zubieta')) return KNOWN_LOCATIONS['zubieta'];
     if (normalized.includes('lezama')) return KNOWN_LOCATIONS['lezama'];
     if (normalized.includes('vivero') || normalized.includes('elvivero')) return KNOWN_LOCATIONS['elvivero'];
-    if (normalized.includes('puente castro')) return KNOWN_LOCATIONS['puentecastro'];
+    if (normalized.includes('puentecastro')) return KNOWN_LOCATIONS['puentecastro'];
     if (normalized.includes('joie') || normalized.includes('manchester city')) return KNOWN_LOCATIONS['manchestercity'];
     if (normalized.includes('metalist')) return KNOWN_LOCATIONS['kahrkiv'];
     if (normalized.includes('kahrkiv')) return KNOWN_LOCATIONS['kahrkiv'];
@@ -347,10 +349,10 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('intility') || normalized.includes('valerenga')) return KNOWN_LOCATIONS['valerenga'];
     if (normalized.includes('bravida') || normalized.includes('hacken')) return KNOWN_LOCATIONS['häcken'];
     if (normalized.includes('emirates')) return KNOWN_LOCATIONS['emirates'];
-    if (normalized.includes('alten forsterei') || normalized.includes('alten försterei')) return KNOWN_LOCATIONS['altenforsterei'];
+    if (normalized.includes('altenforsterei') || normalized.includes('altenforsterei')) return KNOWN_LOCATIONS['altenforsterei'];
     if (normalized.includes('brentanobad')) return KNOWN_LOCATIONS['brentanobad'];
     if (normalized.includes('grolsch') || normalized.includes('twente')) return KNOWN_LOCATIONS['twente'];
-    if (normalized.includes('aurelio pereira') || (normalized.includes('lisboa') && type === 'stadium')) return KNOWN_LOCATIONS['lisboa'];
+    if (normalized.includes('aureliopereira') || (normalized.includes('lisboa') && type === 'stadium')) return KNOWN_LOCATIONS['lisboa'];
     if (normalized.includes('tigres')) return KNOWN_LOCATIONS['universitario'];
     if (normalized.includes('america') && normalized.includes('club')) return KNOWN_LOCATIONS['azteca'];
     if (normalized.includes('america') && normalized.includes('mexico')) return KNOWN_LOCATIONS['azteca'];
@@ -397,6 +399,8 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('antonia') && normalized.includes('silva')) return KNOWN_LOCATIONS['paudosferros'];
     if (normalized.includes('lotte')) return KNOWN_LOCATIONS['vleuten'];
 
+    if (normalized.includes('rota')) return KNOWN_LOCATIONS['rota'];
+    if (normalized.includes('potsdam') || normalized.includes('turbine')) return KNOWN_LOCATIONS['potsdam'];
     if (normalized.includes('nahikari')) return KNOWN_LOCATIONS['urnieta'];
     if (normalized.includes('misa')) return KNOWN_LOCATIONS['laspalmas'];
     if (normalized.includes('sara') && normalized.includes('lopez')) return KNOWN_LOCATIONS['laspalmas'];
