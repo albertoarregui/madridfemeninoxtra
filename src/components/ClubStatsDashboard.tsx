@@ -347,7 +347,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Partidos</p>
                         <p className="text-4xl font-black text-[#151e42] leading-none">{stats.played}</p>
                     </div>
-                    <div className="bg-gray-100 p-3 rounded-full text-gray-600 transition-colors">
+                    <div className="bg-gray-100 p-3 rounded-full text-gray-600 group-hover:text-gray-600 transition-colors">
                         <Monitor size={24} />
                     </div>
                 </div>
@@ -361,7 +361,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ppg}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-yellow-50 p-3 rounded-full text-yellow-600 transition-colors">
+                    <div className="bg-yellow-50 p-3 rounded-full text-yellow-600 group-hover:text-yellow-600 transition-colors">
                         <Trophy size={24} />
                     </div>
                 </div>
@@ -375,7 +375,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.gf90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-green-50 p-3 rounded-full text-green-600 transition-colors">
+                    <div className="bg-green-50 p-3 rounded-full text-green-600 group-hover:text-green-600 transition-colors">
                         <Target size={24} />
                     </div>
                 </div>
@@ -389,7 +389,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ga90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-red-50 p-3 rounded-full text-red-600 transition-colors">
+                    <div className="bg-red-50 p-3 rounded-full text-red-600 group-hover:text-red-600 transition-colors">
                         <Shield size={24} />
                     </div>
                 </div>
