@@ -1,19 +1,11 @@
 export async function fetchRivalRecords(rivalId: string | number): Promise<any> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const db = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!db) {
             return null;
         }
-
-        const db = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         console.log('Fetching rival records for rival ID:', rivalId);
 
@@ -152,20 +144,12 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
 
 export async function fetchRivalTopPlayers(rivalId: string | number): Promise<any> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const db = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!db) {
             return { topScorers: [], topAssisters: [], topContributors: [] };
         }
-
-        const db = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         console.log('Fetching rival top players for rival ID:', rivalId);
 
@@ -258,20 +242,12 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
 
 export async function fetchRivalMatches(rivalId: string | number): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const db = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!db) {
             return [];
         }
-
-        const db = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         console.log('========== DEBUG: Fetching matches ==========');
         console.log('Rival ID:', rivalId, 'Type:', typeof rivalId);

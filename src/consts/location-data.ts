@@ -63,6 +63,31 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "puebladelcalzada": { lat: 38.9135, lng: -6.6267, label: "Puebla de la Calzada, España" },
     "riograndedonorte": { lat: -5.7945, lng: -36.5724, label: "Rio Grande do Norte, Brasil" },
 
+    // Missing rival cities
+    "monterrey": { lat: 25.6866, lng: -100.3161, label: "Monterrey, México" },
+    "alhamademurcia": { lat: 37.8502, lng: -1.4253, label: "Alhama de Murcia, España" },
+    "caceres": { lat: 39.4753, lng: -6.3724, label: "Cáceres, España" },
+    "innsbruck": { lat: 47.2692, lng: 11.4041, label: "Innsbruck, Austria" },
+    "graz": { lat: 47.0707, lng: 15.4395, label: "Graz, Austria" },
+    "kharkiv": { lat: 49.9935, lng: 36.2304, label: "Járkov, Ucrania" },
+    "roma": { lat: 41.9028, lng: 12.4964, label: "Roma, Italia" },
+    "wolfsburgo": { lat: 52.4227, lng: 10.7873, label: "Wolfsburgo, Alemania" },
+    "londres": { lat: 51.5074, lng: -0.1278, label: "Londres, Inglaterra" },
+    "manchester": { lat: 53.4808, lng: -2.2426, label: "Manchester, Inglaterra" },
+    "portugal": { lat: 38.7223, lng: -9.1393, label: "Lisboa, Portugal" },
+
+    // Additional countries for map display
+    "austria": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
+    "vienna": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
+    "viena": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
+    "ucrania": { lat: 50.4501, lng: 30.5234, label: "Kiev, Ucrania" },
+    "kiev": { lat: 50.4501, lng: 30.5234, label: "Kiev, Ucrania" },
+    "islandia": { lat: 64.1466, lng: -21.9426, label: "Reikiavik, Islandia" },
+    "kopavogur": { lat: 64.1107, lng: -21.9056, label: "Kópavogur, Islandia" },
+    "ciudaddemexico": { lat: 19.4326, lng: -99.1332, label: "Ciudad de México, México" },
+
+
+
     // UWCL Stadiums/Cities with Images - MAPPED TO LOCAL ASSETS WHERE POSSIBLE
     "lisboa": { lat: 38.7223, lng: -9.1393, label: "Lisboa, Portugal", imageUrl: "/assets/estadios/estadio_aurelio_pereira.png" }, // Assuming Aurelio Pereira is in Lisbon/Benfica context or similar
     "london": { lat: 51.5074, lng: -0.1278, label: "Londres, Inglaterra", imageUrl: "/assets/estadios/stamford_bridge.png" },

@@ -41,20 +41,12 @@ export function getCleanCountryName(country: string | null | undefined): string 
 
 export async function fetchPlayersDirectly(): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!client) {
             return [];
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const query = `
             SELECT 
@@ -137,20 +129,12 @@ export async function fetchAndCleanPlayers(): Promise<any[]> {
 
 export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: boolean): Promise<any> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas para stats');
+        if (!client) {
             return null;
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const statsQuery = `
     WITH base_matches AS (
@@ -387,20 +371,12 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
 export async function fetchPlayerDebut(playerId: string | number): Promise<{ fecha_debut: string | null; rival: string | null } | null> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas para debut');
+        if (!client) {
             return null;
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const debutQuery = `
     SELECT 
@@ -441,20 +417,12 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
 
 export async function fetchPlayerTrajectory(playerId: string | number): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas para trayectoria');
+        if (!client) {
             return [];
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const query = `
     SELECT 

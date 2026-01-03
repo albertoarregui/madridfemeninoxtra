@@ -30,20 +30,12 @@ export const cleanApiValue = (value: any): any => {
 
 export async function fetchRivalsDirectly(): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!client) {
             return [];
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const query = `
             SELECT 

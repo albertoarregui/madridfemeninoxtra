@@ -34,21 +34,17 @@ export function formatGameDate(dateString: string | null | undefined): string {
 }
 
 export async function fetchGamesDirectly(): Promise<any[]> {
+    console.log('[fetchGamesDirectly] START');
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        console.log('[fetchGamesDirectly] getDbClient imported');
+        const client = await getDbClient();
+        console.log('[fetchGamesDirectly] client obtained:', !!client);
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!client) {
+            console.error('[fetchGamesDirectly] Client is null, returning empty array');
             return [];
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const query = `
             SELECT
@@ -85,7 +81,9 @@ export async function fetchGamesDirectly(): Promise<any[]> {
               ORDER BY p.id_partido ASC
         `;
 
+        console.log('[fetchGamesDirectly] Executing query...');
         const result = await client.execute(query);
+        console.log('[fetchGamesDirectly] Query executed, row count:', result.rows.length);
 
         return result.rows.map((game: any) => {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
@@ -96,7 +94,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
             };
         });
     } catch (error) {
-        console.error("Error al obtener partidos directamente de la DB:", error);
+        console.error("[fetchGamesDirectly] ERROR:", error);
         return [];
     }
 }
@@ -194,16 +192,13 @@ function logDebug(message: string) {
 export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
     logDebug(`Fetching lineups for matchId: ${matchId}`);
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        if (!url || !authToken) {
-            logDebug("Missing credentials");
+        if (!client) {
+            logDebug("Missing client");
             return [];
         }
-
-        const client = createClient({ url, authToken });
 
         // We try to select dorsal if it exists in alineaciones, otherwise just player info
         const query = `
@@ -291,13 +286,10 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
 
 export async function fetchMatchSubstitutions(matchId: string | number): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        if (!url || !authToken) return [];
-
-        const client = createClient({ url, authToken });
+        if (!client) return [];
 
         // Fetch players with entry or exit minutes from ALINEACIONES
         const query = `
@@ -382,13 +374,10 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
 
 export async function fetchMatchGoals(matchId: string | number): Promise<any[]> {
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        if (!url || !authToken) return [];
-
-        const client = createClient({ url, authToken });
+        if (!client) return [];
 
         const query = `
             SELECT * FROM goles_y_asistencias WHERE id_partido = ?
@@ -410,13 +399,10 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
     if (!stadiumName) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        if (!url || !authToken) return { wins: 0, draws: 0, losses: 0, total: 0 };
-
-        const client = createClient({ url, authToken });
+        if (!client) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
 
 
@@ -466,13 +452,10 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
     if (!refereeId) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        if (!url || !authToken) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
-
-        const client = createClient({ url, authToken });
+        if (!client) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
         // Query to get match results
         const matchQuery = `
@@ -544,10 +527,9 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
     try {
         const subsPromise = fetchMatchSubstitutions(matchId);
 
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-        const client = createClient({ url, authToken });
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
+        if (!client) return [];
 
         const goalsQuery = `
             SELECT g.*, j.nombre as nombre_jugadora, a.nombre as nombre_asistente

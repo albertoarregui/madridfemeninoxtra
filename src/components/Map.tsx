@@ -8,7 +8,7 @@ export interface MapMarker {
     lng: number;
     label: string;
     description?: string;
-    type?: 'player' | 'match' | 'stadium';
+    type?: 'player' | 'match' | 'stadium' | 'rival-city';
     imageUrl?: string;
     slug?: string;
     data?: any; // Holds specific data for the popup
@@ -132,49 +132,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                             </button>
-
-                            {/* RIVAL CITY POPUP */}
-                            {popupInfo.type === 'rival-city' && (
-                                <div>
-                                    <div className="bg-gray-100 p-4 border-b border-gray-200 flex items-center gap-3">
-                                        {/* Big Flag */}
-                                        <img src={popupInfo.imageUrl} alt={popupInfo.label} className="w-12 h-auto rounded shadow-sm border border-white" />
-                                        <div>
-                                            <h3 className="font-bebas text-2xl leading-none text-[#151e42]">{popupInfo.label}</h3>
-                                            <span className="text-xs uppercase tracking-wider text-gray-500 font-bold">Resumen de rivales</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                        <div className="flex flex-col gap-3">
-                                            {popupInfo.data?.teams && popupInfo.data.teams.map((team: any, idx: number) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                                                    <div className="flex items-center gap-3">
-                                                        {/* Team Shield */}
-                                                        <img
-                                                            src={`/assets/escudos/${team.id.replace(/-/g, '_')}.png`}
-                                                            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'; }}
-                                                            alt={team.name}
-                                                            className="w-10 h-10 object-contain"
-                                                        />
-                                                        <div>
-                                                            <span className="block font-bold text-sm text-[#151e42] leading-tight">{team.name}</span>
-                                                            <span className="text-[10px] text-gray-400 font-medium">{team.matches} partidos</span>
-                                                        </div>
-                                                    </div>
-                                                    <a
-                                                        href={`/rivales/${team.id}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-xs font-bold text-[#151e42] bg-[#ffde59] hover:bg-[#ffe57f] px-3 py-1.5 rounded-full transition-colors"
-                                                    >
-                                                        VER
-                                                    </a>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* PLAYER POPUP */}
                             {popupInfo.type === 'player' && (
@@ -326,8 +283,72 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
+                            {/* RIVAL CITY POPUP */}
+                            {popupInfo.type === 'rival-city' && (
+                                <div className="p-0 min-w-[260px]">
+                                    <div className="bg-[#ffde59] text-[#151e42] p-3 pr-10 rounded-t-lg relative flex items-center justify-center gap-3">
+                                        <img src={popupInfo.imageUrl} className="w-6 h-auto rounded shadow-sm" alt={popupInfo.label} />
+                                        <h3 className="font-bebas text-xl font-bold tracking-wide">{popupInfo.label}</h3>
+                                    </div>
+                                    <div className="p-3 bg-white max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        {popupInfo.data?.teams?.map((team: any, idx: number) => (
+                                            <div key={idx} className="mb-3 last:mb-0 bg-white rounded-lg border border-gray-100 shadow-sm p-3 hover:shadow-md transition-shadow">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                                                        {team.shieldUrl ? (
+                                                            <img src={team.shieldUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-sm" />
+                                                        ) : (
+                                                            <span className="text-[8px] font-bold text-gray-300">LOGO</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-bold text-[#151e42] leading-tight text-sm">{team.name}</h4>
+                                                        <p className="text-[10px] text-gray-500 font-bold uppercase">{team.matches} partidos</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-0 mb-3 text-center bg-gray-50 rounded-md py-2 px-1 border border-gray-100">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-green-600 font-black text-sm">{team.wins}</span>
+                                                        <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Vic</span>
+                                                    </div>
+                                                    <div className="flex flex-col border-l border-gray-200">
+                                                        <span className="text-yellow-600 font-black text-sm">{team.draws}</span>
+                                                        <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Emp</span>
+                                                    </div>
+                                                    <div className="flex flex-col border-l border-gray-200">
+                                                        <span className="text-red-600 font-black text-sm">{team.losses}</span>
+                                                        <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Der</span>
+                                                    </div>
+                                                </div>
+
+                                                <a
+                                                    href={`/rivales/${team.id || '#'}`}
+                                                    className="block w-full text-center py-3 px-4 rounded-full transition-all font-bold text-sm uppercase tracking-wide"
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%)',
+                                                        color: '#000',
+                                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                                                    }}
+                                                    onMouseOver={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+                                                    }}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                                                    }}
+                                                >
+                                                    Ver Historial
+                                                </a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* GENERIC FALLBACK */}
-                            {!['player', 'match'].includes(popupInfo.type || '') && (
+                            {!['player', 'match', 'rival-city'].includes(popupInfo.type || '') && (
                                 <div className="p-4">
                                     <h3 className="font-bold text-lg mb-2">{popupInfo.label}</h3>
                                     <p className="text-sm text-gray-600">{popupInfo.description}</p>
@@ -342,6 +363,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </div>
 
             <style>{`
+                .maplibregl-popup-close-button {
+                    background: transparent;
+                    border: none;
+                    font-size: 20px;
+                    padding: 5px 10px;
+                    color: #2b2b2b;
+                    right: 0;
+                    top: 0;
+                    z-index: 10;
+                    outline: none;
+                    cursor: pointer;
+                }
+                .maplibregl-popup-close-button:hover {
+                    color: #ffde59;
+                    background: transparent;
+                }
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 4px;
                 }

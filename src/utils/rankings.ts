@@ -48,20 +48,12 @@ export interface StreakData {
 
 export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('Credenciales de Turso no configuradas');
+        if (!client) {
             return [];
         }
-
-        const client = createClient({
-            url: url,
-            authToken: authToken,
-        });
 
         const query = `
             WITH 
@@ -228,14 +220,10 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
 
 export async function fetchPlayerStreaks(): Promise<StreakData[]> {
     try {
-        const { createClient } = await import('@libsql/client');
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
 
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) return [];
-
-        const client = createClient({ url, authToken });
+        if (!client) return [];
 
         // Fetch granular match data for calculation
         // We need: player, match date, season, competition, minutes_played, goals, assists
