@@ -26,6 +26,8 @@ interface ClubStatsDashboardProps {
 }
 
 const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals, seasons, competitions }) => {
+    console.log('[ClubStats] Rendering - Matches:', matches?.length, 'Goals:', goals?.length);
+
     const [selectedSeason, setSelectedSeason] = useState<string>('all');
     const [selectedCompetition, setSelectedCompetition] = useState<string>('all');
 
@@ -287,6 +289,13 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             sharePercent: (stats.gf > 0 ? (b.count / stats.gf) * 100 : 0).toFixed(1)
         }));
     }, [filteredGoals, stats.gf, stats.played]);
+
+    // Debug: Check if bars have proper height values
+    console.log('[ClubStats] GoalTiming bars:', goalTiming.slice(0, 3).map(b => ({
+        label: b.label,
+        count: b.count,
+        heightPercent: b.heightPercent
+    })));
 
 
     if (!stats.played) return null; // Or empty state
