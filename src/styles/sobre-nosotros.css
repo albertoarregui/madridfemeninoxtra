@@ -15,9 +15,53 @@
     padding: 0 2rem;
 }
 
-.proyecto-section {
-    margin-bottom: 6rem;
+.proyecto-section,
+.equipo-section,
+.galeria-section {
+    margin-bottom: 5rem;
+    position: relative;
+    max-width: 1200px;
+    /* Enforcing same width for all */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
 
+.proyecto-section {
+    text-align: center;
+    /* Center the title */
+}
+
+.proyecto-content-wrapper {
+    display: flex;
+    gap: 4rem;
+    align-items: stretch;
+    /* Both columns same height */
+    text-align: left;
+    /* Reset text align for content */
+}
+
+.project-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Center text vertically if image is taller, though unlikely with stretch logic usually text dictates height */
+}
+
+.project-image {
+    flex: 1;
+    display: flex;
+}
+
+.project-image img {
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+    border-radius: 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    object-fit: cover;
+    /* Ensures image covers the area without distortion */
 }
 
 .content p {
@@ -29,14 +73,15 @@
 }
 
 .equipo-section {
-    margin-bottom: 4rem;
+    text-align: center;
+    /* Center the title */
 }
 
 .equipo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2.5rem;
-    margin-top: 3rem;
+    margin-top: 0;
 }
 
 .team-card {
@@ -80,11 +125,196 @@
     object-fit: cover;
 }
 
+/* Gallery Styles */
+.galeria-section {
+    margin-top: 4rem;
+    /* Spacing from Equipo section */
+    margin-bottom: 6rem;
+}
+
+/* Flexbox Justified Layout */
+.galeria-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.galeria-item {
+    background: var(--dark-bg);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 300px;
+    /* Fixed height */
+    flex-grow: 1;
+    width: auto;
+
+    /* Scroll Animation Init */
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out, box-shadow 0.3s ease;
+}
+
+.galeria-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.galeria-item img {
+    width: auto;
+    height: 100%;
+    min-width: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.galeria-item:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    z-index: 2;
+}
+
+.galeria-item:hover img {
+    transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .galeria-item {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .galeria-item {
+        height: 180px;
+    }
+}
+
+/* Lightbox Styles */
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.lightbox.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lightbox-image {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    /* Show full image */
+    border-radius: 4px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 3rem;
+    cursor: pointer;
+    z-index: 10001;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.lightbox-close:hover {
+    color: var(--primary-color);
+}
+
+.lightbox-prev,
+.lightbox-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.lightbox-prev:hover,
+.lightbox-next:hover {
+    background: var(--primary-color);
+    color: #2b2b2b;
+}
+
+.lightbox-prev {
+    left: 2rem;
+}
+
+.lightbox-next {
+    right: 2rem;
+}
+
+
 .team-name {
     font-size: 1.75rem;
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 0.5rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 3rem;
+    /* Standardized spacing for all titles */
+    text-transform: uppercase;
+    color: var(--text-primary);
+    position: relative;
+    display: inline-block;
+    letter-spacing: -0.5px;
+}
+
+.page-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    /* Wider but not full width */
+    height: 4px;
+    background: var(--primary-color);
+    border-radius: 2px;
 }
 
 .team-role {
