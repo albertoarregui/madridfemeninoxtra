@@ -25,8 +25,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
                 draws: number;
                 losses: number;
                 matches: number;
-                shieldUrl?: string;
-                stadium?: string;
+                shieldUrl?: string
             }>;
         }>();
 
@@ -86,8 +85,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
                     draws: stats.draws,
                     losses: stats.losses,
                     matches: stats.matches,
-                    shieldUrl: rivalShields[team.id] || '',
-                    stadium: (team as any).stadium || '' // Cast to any temporary if TS issues, or just access if typed
+                    shieldUrl: rivalShields[team.id] || ''
                 });
 
                 cityMap.set(key, existing);

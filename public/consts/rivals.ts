@@ -4,112 +4,96 @@ export const TEAMS = [
         name: "FC Barcelona",
         city: "Barcelona",
         country: "es",
-        stadium: "Estadi Johan Cruyff"
     },
     {
         id: "valencia-cf",
         name: "Valencia CF",
         city: "Valencia",
         country: "es",
-        stadium: "Estadi Antonio Puchades"
     },
     {
         id: "rayo-vallecano",
         name: "Rayo Vallecano",
         city: "Madrid",
         country: "es",
-        stadium: "Ciudad Dep. Rayo Vallecano"
     },
     {
         id: "deportivo-abanca",
         name: "Deportivo Abanca",
         city: "La Coruña",
         country: "es",
-        stadium: "Ciudad Dep. de Abegondo"
     },
     {
         id: "sd-eibar",
         name: "SD Eibar",
         city: "Eibar",
         country: "es",
-        stadium: "Complejo Dep. de Unbe"
     },
     {
         id: "costa-adeje-tenerife",
         name: "Costa Adeje Tenerife",
         city: "Tenerife",
         country: "es",
-        stadium: "Campo Municipal de Adeje"
     },
     {
         id: "athletic-club",
         name: "Athletic Club",
         city: "Bilbao",
         country: "es",
-        stadium: "Instalaciones de Lezama"
     },
     {
         id: "real-betis",
         name: "Real Betis",
         city: "Sevilla",
         country: "es",
-        stadium: "Ciudad Dep. Luis del Sol"
     },
     {
         id: "sevilla-fc",
         name: "Sevilla FC",
         city: "Sevilla",
         country: "es",
-        stadium: "Estadio Jesús Navas"
     },
     {
         id: "levante-ud",
         name: "Levante UD",
         city: "Valencia",
         country: "es",
-        stadium: "Ciudad Dep. de Buñol"
     },
     {
         id: "espanyol",
         name: "Espanyol",
         city: "Barcelona",
         country: "es",
-        stadium: "Ciutat Esportiva Dani Jarque"
     },
     {
         id: "atletico-de-madrid",
         name: "Atlético de Madrid",
         city: "Madrid",
         country: "es",
-        stadium: "C.D. Wanda Alcalá"
     },
     {
         id: "sporting-de-huelva",
         name: "Sporting de Huelva",
         city: "Huelva",
         country: "es",
-        stadium: "Campo del CD Lamiya"
     },
     {
         id: "madrid-cff",
         name: "Madrid CFF",
         city: "Madrid",
         country: "es",
-        stadium: "Estadio Fernando Torres"
     },
     {
         id: "santa-teresa",
         name: "Santa Teresa",
         city: "Badajoz",
         country: "es",
-        stadium: "Instalaciones El Vivero"
     },
     {
         id: "real-sociedad",
         name: "Real Sociedad",
         city: "San Sebastian",
         country: "es",
-        stadium: "Instalaciones de Zubieta"
     },
     {
         id: "dux-logrono",
