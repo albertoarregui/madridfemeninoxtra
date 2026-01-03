@@ -74,19 +74,63 @@ matches.forEach((m) => {
 
     rivalMap.set(rivalName, currentRival);
 
-    const countryCode = currentRival.country;
-    // Only count stats for visited countries if the match was played AWAY (!isHome)
-    if (!isHome && countryCode && countryCode !== "unknown") {
-        const currentCountry = countryStats.get(countryCode) || {
+    // Helper to resolve country code from match location or fallback
+    const getMatchLocationCountryCode = (
+        match: any,
+        rivalCountryCode: string,
+        isHomeMatch: boolean,
+    ) => {
+        // 1. Try to get country from match.pais (database)
+        if (match.pais) {
+            const paisLower = match.pais.toLowerCase().trim();
+
+            // Direct code match?
+            if (COUNTRIES[paisLower as keyof typeof COUNTRIES])
+                return paisLower;
+
+            // Name match? (Reverse lookup)
+            const entry = Object.entries(COUNTRIES).find(
+                ([_, data]) =>
+                    data.name.toLowerCase() === paisLower ||
+                    data.name.toLowerCase().includes(paisLower) ||
+                    paisLower.includes(data.name.toLowerCase()),
+            );
+            if (entry) return entry[0];
+        }
+
+        // 2. Fallback: If no explicit country, use heuristics
+        // If playing HOME, it's Spain
+        if (isHomeMatch) return "es";
+
+        // If playing AWAY, assume it's the rival's country (good approximation if stadium is missing)
+        return rivalCountryCode;
+    };
+
+    const playedCountryCode = getMatchLocationCountryCode(
+        m,
+        currentRival.country,
+        isHome,
+    );
+
+    // Only count stats if it's NOT a home game (concept of "visiting")
+    // AND the played country is valid
+    // AND the played country is NOT Spain (we don't "visit" our own country)
+    if (
+        !isHome &&
+        playedCountryCode &&
+        playedCountryCode !== "unknown" &&
+        playedCountryCode !== "es"
+    ) {
+        const currentCountry = countryStats.get(playedCountryCode) || {
             matches: 0,
             wins: 0,
             name:
-                COUNTRIES[countryCode as keyof typeof COUNTRIES]?.name ||
-                countryCode,
+                COUNTRIES[playedCountryCode as keyof typeof COUNTRIES]?.name ||
+                playedCountryCode,
         };
         currentCountry.matches += 1;
         if (isWin) currentCountry.wins += 1;
-        countryStats.set(countryCode, currentCountry);
+        countryStats.set(playedCountryCode, currentCountry);
     }
 });
 
