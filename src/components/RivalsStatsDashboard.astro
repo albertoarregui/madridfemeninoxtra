@@ -2,6 +2,7 @@
 import { TEAMS } from "../../public/consts/rivals";
 import { COUNTRIES } from "../../public/consts/countries";
 import { getFlagCdnCode } from "../utils/flags";
+import type { ImageMetadata } from "astro";
 
 interface Props {
     matches: any[];
@@ -9,9 +10,6 @@ interface Props {
 
 const { matches } = Astro.props;
 
-// --- Data Processing ---
-
-// 1. Identify unique rivals and map to country
 const rivalMap = new Map<
     string,
     { count: number; country: string; wins: number }
@@ -21,7 +19,6 @@ const countryStats = new Map<
     { matches: number; wins: number; name: string }
 >();
 
-// Helper to find country for a rival name
 const getCountryCode = (rivalName: string) => {
     const team = TEAMS.find(
         (t) =>
@@ -31,9 +28,6 @@ const getCountryCode = (rivalName: string) => {
     return team ? team.country : null;
 };
 
-// Filter out practice matches or internal ones if necessary?
-// Assuming all matches in DB are valid competitive/friendly matches against external teams.
-
 matches.forEach((m) => {
     const isHome =
         m.club_local === "Real Madrid" || m.club_local === "CD Tacón";
@@ -41,11 +35,11 @@ matches.forEach((m) => {
 
     if (!rivalName || rivalName === "Real Madrid") return;
 
-    const goalsRM = isHome ? m.goles_rm : m.goles_rival;
-    const goalsRival = isHome ? m.goles_rival : m.goles_rm;
-    const isWin = Number(goalsRM) > Number(goalsRival);
+    const goalsRM = Number(isHome ? m.goles_rm : m.goles_rival);
+    const goalsRival = Number(isHome ? m.goles_rival : m.goles_rm);
+    const isWin = goalsRM > goalsRival;
+    const isDraw = goalsRM === goalsRival;
 
-    // Rival Stats
     const currentRival = rivalMap.get(rivalName) || {
         count: 0,
         country: "",
@@ -57,11 +51,10 @@ matches.forEach((m) => {
     }
 
     currentRival.count += 1;
-    if (isWin) currentRival.wins += 1;
+    if (isWin && !isDraw) currentRival.wins += 1;
 
     rivalMap.set(rivalName, currentRival);
 
-    // Country Stats (exclude Spain for "Destinations")
     const countryCode = currentRival.country;
     if (countryCode && countryCode !== "unknown") {
         const currentCountry = countryStats.get(countryCode) || {
@@ -72,16 +65,14 @@ matches.forEach((m) => {
                 countryCode,
         };
         currentCountry.matches += 1;
-        if (isWin) currentCountry.wins += 1;
+        if (isWin && !isDraw) currentCountry.wins += 1;
         countryStats.set(countryCode, currentCountry);
     }
 });
 
-// 2. Calculate displayed metrics
 const totalRivals = rivalMap.size;
 const totalCountries = countryStats.size;
 
-// Most Played Rival
 let maxPlayed = 0;
 let mostPlayedRivalName = "-";
 rivalMap.forEach((data, name) => {
@@ -91,27 +82,34 @@ rivalMap.forEach((data, name) => {
     }
 });
 
-// Top 3 Countries (Destinations - excluding Spain 'es')
+// Get shield for most played rival
+const rivalLogos = import.meta.glob<{ default: ImageMetadata }>(
+    "../assets/escudos/*.png",
+    { eager: true },
+);
+
+function getRivalLogoSrc(rivalName: string) {
+    const team = TEAMS.find((t) => t.name === rivalName);
+    if (!team) return null;
+    const imageId = team.id.replace(/-/g, "_");
+    const imagePath = `../assets/escudos/${imageId}.png`;
+    return rivalLogos[imagePath]?.default?.src;
+}
+
+const mostPlayedRivalShield = getRivalLogoSrc(mostPlayedRivalName);
+
 const sortedByMatches = Array.from(countryStats.entries())
     .filter(([code]) => code !== "es")
     .sort((a, b) => b[1].matches - a[1].matches)
     .slice(0, 3);
 
-// Top 3 Countries (Wins - global, or excluding Spain? Usually "Conquests" usually implies away/international, but let's include all for "Wins" or better stick to International to be interesting?)
-// User said: "top 3 países donde más ha ganado". Usually Spain will dominate.
-// Let's assume user implies "International Context" given the map theme, BUT technically Spain is a country.
-// However, seeing "Spain" #1 is boring. Let's filter 'es' for "Top 3 países donde más ha ganado" too to show international success.
-// Helper for FlagCDN codes (ISO 2-letter usually, but we have 3-letter in DB)
-// Local helper removed, using shared utility
-
-// Top 3 Countries (Wins - excluding Spain)
 const sortedByWins = Array.from(countryStats.entries())
     .filter(([code]) => code !== "es")
     .sort((a, b) => b[1].wins - a[1].wins)
     .slice(0, 3);
 ---
 
-<div class="max-w-7xl mx-auto mb-12 animate-fade-in-up">
+<div class="w-full mx-auto mb-12 animate-fade-in-up">
     <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4"
     >
@@ -154,40 +152,54 @@ const sortedByWins = Array.from(countryStats.entries())
         <div
             class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group"
         >
-            <div class="bg-purple-50 p-3 rounded-full text-purple-600 mb-3">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    ><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path
-                        d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path
-                        d="M4 22h16"></path><path
-                        d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"
-                    ></path><path
-                        d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"
-                    ></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg
-                >
-            </div>
             <div class="flex flex-col items-center w-full">
                 <p
-                    class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors"
+                    class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-3 group-hover:text-[#ffde59] transition-colors"
                 >
                     Rival Histórico
                 </p>
+                {
+                    mostPlayedRivalShield ? (
+                        <div class="w-20 h-20 mb-3 flex items-center justify-center">
+                            <img
+                                src={mostPlayedRivalShield}
+                                alt={mostPlayedRivalName}
+                                class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform"
+                            />
+                        </div>
+                    ) : (
+                        <div class="bg-purple-50 p-3 rounded-full text-purple-600 mb-3">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <>
+                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                                    <path d="M4 22h16" />
+                                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                                </>
+                            </svg>
+                        </div>
+                    )
+                }
                 <p
-                    class="text-xl md:text-2xl font-black text-[#151e42] leading-tight line-clamp-1 group-hover:text-[#ffde59] transition-colors"
+                    class="text-lg md:text-xl font-black text-[#151e42] leading-tight mb-1 group-hover:text-[#ffde59] transition-colors"
                     title={mostPlayedRivalName}
                 >
                     {mostPlayedRivalName}
                 </p>
                 <p
-                    class="text-xs text-gray-400 font-bold mt-1 uppercase group-hover:text-[#ffde59] transition-colors"
+                    class="text-xs text-gray-400 font-bold uppercase group-hover:text-[#ffde59] transition-colors"
                 >
                     {maxPlayed} partidos
                 </p>
@@ -258,16 +270,16 @@ const sortedByWins = Array.from(countryStats.entries())
                 <div class="flex items-center justify-center gap-3 w-full">
                     {
                         sortedByMatches.map(([code, data], idx) => (
-                            <div class="flex flex-col items-center">
+                            <div class="flex flex-col items-center flex-1">
                                 <img
                                     src={`https://flagcdn.com/w40/${getFlagCdnCode(code)}.png`}
                                     alt={data.name}
-                                    class="w-6 h-auto rounded-sm shadow-sm mb-1"
+                                    class="w-8 h-auto rounded-sm shadow-sm mb-1"
                                 />
-                                <span class="text-[10px] font-black text-[#151e42] uppercase truncate max-w-[50px]">
-                                    {getFlagCdnCode(code).toUpperCase()}
+                                <span class="text-xs font-black text-[#151e42] text-center leading-tight">
+                                    {data.name}
                                 </span>
-                                <span class="text-[9px] font-bold text-gray-400">
+                                <span class="text-[10px] font-bold text-gray-400">
                                     {data.matches} p.
                                 </span>
                             </div>
@@ -317,16 +329,16 @@ const sortedByWins = Array.from(countryStats.entries())
                 <div class="flex items-center justify-center gap-3 w-full">
                     {
                         sortedByWins.map(([code, data], idx) => (
-                            <div class="flex flex-col items-center">
+                            <div class="flex flex-col items-center flex-1">
                                 <img
                                     src={`https://flagcdn.com/w40/${getFlagCdnCode(code)}.png`}
                                     alt={data.name}
-                                    class="w-6 h-auto rounded-sm shadow-sm mb-1"
+                                    class="w-8 h-auto rounded-sm shadow-sm mb-1"
                                 />
-                                <span class="text-[10px] font-black text-[#151e42] uppercase truncate max-w-[50px]">
-                                    {getFlagCdnCode(code).toUpperCase()}
+                                <span class="text-xs font-black text-[#151e42] text-center leading-tight">
+                                    {data.name}
                                 </span>
-                                <span class="text-[9px] font-bold text-gray-400">
+                                <span class="text-[10px] font-bold text-gray-400">
                                     {data.wins} v.
                                 </span>
                             </div>
@@ -347,6 +359,5 @@ const sortedByWins = Array.from(countryStats.entries())
 
 <style>
     .counter-anim {
-        /* Potential for count-up animation */
     }
 </style>

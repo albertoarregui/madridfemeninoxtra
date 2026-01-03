@@ -12,7 +12,7 @@ export const getFlagCdnCode = (code: string | undefined): string => {
         'nor': 'no',
         'sui': 'ch',
         'swe': 'se',
-        'eng': 'gb-eng', // England often uses gb-eng or gb
+        'eng': 'gb-eng',
         'sco': 'gb-sct',
         'wal': 'gb-wls',
         'nir': 'gb-nir',
@@ -20,9 +20,8 @@ export const getFlagCdnCode = (code: string | undefined): string => {
         'den': 'dk',
         'ned': 'nl',
         'por': 'pt',
-        'prt': 'pt', // Portugal
-        'ita': 'it', // Italy
-        // Add others as needed
+        'prt': 'pt',
+        'ita': 'it',
     };
     return map[c] || c;
 };

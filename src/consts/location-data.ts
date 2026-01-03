@@ -6,11 +6,10 @@ export interface Location {
 }
 
 export const KNOWN_LOCATIONS: Record<string, Location> = {
-    // Ciudades de España
     "madrid": { lat: 40.4168, lng: -3.7038, label: "Madrid, España" },
     "alcaladehenares": { lat: 40.4818, lng: -3.3643, label: "Alcalá de Henares, Madrid" },
     "zaragoza": { lat: 41.6488, lng: -0.8891, label: "Zaragoza, España" },
-    "legames": { lat: 40.3281, lng: -3.7635, label: "Leganés, España" }, // Typo handling
+    "legames": { lat: 40.3281, lng: -3.7635, label: "Leganés, España" },
     "leganes": { lat: 40.3281, lng: -3.7635, label: "Leganés, España" },
     "sevilla": { lat: 37.3891, lng: -5.9845, label: "Sevilla, España" },
     "valencia": { lat: 39.4699, lng: -0.3763, label: "Valencia, España" },
@@ -24,7 +23,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "tenerife": { lat: 28.4636, lng: -16.2518, label: "Santa Cruz de Tenerife, España" },
     "laspalmas": { lat: 28.1235, lng: -15.4363, label: "Las Palmas de Gran Canaria, España" },
     "badajoz": { lat: 38.8794, lng: -6.9707, label: "Badajoz, España" },
-    "levante": { lat: 39.4699, lng: -0.3763, label: "Valencia (Levante), España" }, // Mapped to Valencia usually
+    "levante": { lat: 39.4699, lng: -0.3763, label: "Valencia (Levante), España" },
     "villarreal": { lat: 39.9366, lng: -0.1009, label: "Villarreal, España" },
     "murcia": { lat: 37.9922, lng: -1.1307, label: "Murcia, España" },
     "logrono": { lat: 42.4627, lng: -2.4450, label: "Logroño, España" },
@@ -32,7 +31,6 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "lacoruna": { lat: 43.3623, lng: -8.4115, label: "A Coruña, España" },
     "abegondo": { lat: 43.2263, lng: -8.2882, label: "Abegondo, España" },
 
-    // Internacionales (Jugadoras actuales/recientes y rivales UWCL)
     "glasgow": { lat: 55.8642, lng: -4.2518, label: "Glasgow, Escocia" },
     "dunfermline": { lat: 56.0719, lng: -3.4522, label: "Dunfermline, Escocia" },
     "caledonia": { lat: 42.9234, lng: -85.8369, label: "Caledonia, MI, USA" },
@@ -63,7 +61,6 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "puebladelcalzada": { lat: 38.9135, lng: -6.6267, label: "Puebla de la Calzada, España" },
     "riograndedonorte": { lat: -5.7945, lng: -36.5724, label: "Rio Grande do Norte, Brasil" },
 
-    // Missing rival cities
     "monterrey": { lat: 25.6866, lng: -100.3161, label: "Monterrey, México" },
     "alhamademurcia": { lat: 37.8502, lng: -1.4253, label: "Alhama de Murcia, España" },
     "caceres": { lat: 39.4753, lng: -6.3724, label: "Cáceres, España" },
@@ -76,7 +73,6 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "manchester": { lat: 53.4808, lng: -2.2426, label: "Manchester, Inglaterra" },
     "portugal": { lat: 38.7223, lng: -9.1393, label: "Lisboa, Portugal" },
 
-    // Additional countries for map display
     "austria": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
     "vienna": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
     "viena": { lat: 48.2082, lng: 16.3738, label: "Viena, Austria" },
@@ -88,8 +84,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
 
 
 
-    // UWCL Stadiums/Cities with Images - MAPPED TO LOCAL ASSETS WHERE POSSIBLE
-    "lisboa": { lat: 38.7223, lng: -9.1393, label: "Lisboa, Portugal", imageUrl: "/assets/estadios/estadio_aurelio_pereira.png" }, // Assuming Aurelio Pereira is in Lisbon/Benfica context or similar
+    "lisboa": { lat: 38.7223, lng: -9.1393, label: "Lisboa, Portugal", imageUrl: "/assets/estadios/estadio_aurelio_pereira.png" },
     "london": { lat: 51.5074, lng: -0.1278, label: "Londres, Inglaterra", imageUrl: "/assets/estadios/stamford_bridge.png" },
     "stamfordbridge": { lat: 51.4817, lng: -0.1910, label: "Stamford Bridge, Londres", imageUrl: "/assets/estadios/stamford_bridge.png" },
     "kingsmeadow": { lat: 51.4057, lng: -0.2818, label: "Kingsmeadow, Londres", imageUrl: "/assets/estadios/kingmeadow.png" },
@@ -113,7 +108,6 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "brentanobad": { lat: 50.1264, lng: 8.6256, label: "Stadion am Brentanobad", imageUrl: "/assets/estadios/stadion_am_brentanobad.png" },
     "altenforsterei": { lat: 52.4572, lng: 13.5678, label: "Stadion An der Alten Försterei", imageUrl: "/assets/estadios/stadion_an_der_alten_forsterei.png" },
 
-    // Estadios comunes España with Images
     "alfredodistefano": {
         lat: 40.4761,
         lng: -3.6197,
@@ -123,7 +117,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "ciudaddelvalencia": { lat: 39.4950, lng: -0.3644, label: "Estadi Ciutat de València", imageUrl: "/assets/estadios/ciutat_de_valencia.png" },
     "johancruyff": { lat: 41.3809, lng: 2.0625, label: "Estadi Johan Cruyff", imageUrl: "/assets/estadios/estadio_johan_cruyff.png" },
     "campnou": { lat: 41.3809, lng: 2.1228, label: "Spotify Camp Nou", imageUrl: "/assets/estadios/spotify_camp_nou.png" },
-    "mestalla": { lat: 39.4746, lng: -0.3582, label: "Mestalla" }, // Missing explicit image, maybe add later
+    "mestalla": { lat: 39.4746, lng: -0.3582, label: "Mestalla" },
     "realearena": { lat: 43.3013, lng: -1.9737, label: "Reale Arena" },
     "zubieta": { lat: 43.2662, lng: -2.0238, label: "Instalaciones de Zubieta", imageUrl: "/assets/estadios/ciudad_deportiva_de_zubieta.png" },
     "lezama": { lat: 43.2721, lng: -2.8398, label: "Instalaciones de Lezama", imageUrl: "/assets/estadios/ciudad_deportiva_de_lezama.png" },
@@ -175,10 +169,9 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "puentecastro": { lat: 42.5847, lng: -5.5458, label: "Campo de Fútbol de Puente Castro", imageUrl: "/assets/estadios/campo_de_futbol_de_puente_castro.png" },
     "campuspsg": { lat: 48.9189, lng: 2.0628, label: "Campus PSG", imageUrl: "/assets/estadios/campus_psg.png" },
 
-    // Missing Locations Added
     "australia": { lat: -25.2744, lng: 133.7751, label: "Australia" },
     "costarica": { lat: 9.7489, lng: -83.7534, label: "Costa Rica" },
-    "vllaznia": { lat: 42.0683, lng: 19.5126, label: "Shkodër, Albania" }, // Club name -> City
+    "vllaznia": { lat: 42.0683, lng: 19.5126, label: "Shkodër, Albania" },
     "shkoder": { lat: 42.0683, lng: 19.5126, label: "Shkodër, Albania" },
     "chelsea": { lat: 51.4816, lng: -0.1910, label: "Londres, Inglaterra" },
     "slaviapraga": { lat: 50.0678, lng: 14.4711, label: "Praga, República Checa" },
@@ -199,7 +192,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "madridcff": { lat: 40.5404, lng: -3.6334, label: "San Sebastián de los Reyes, España" },
     "atletico": { lat: 40.4362, lng: -3.5995, label: "Alcalá de Henares / Madrid" },
     "cdtacon": { lat: 40.4761, lng: -3.6197, label: "Madrid, España" },
-    "fcbetis": { lat: 37.3364, lng: -5.9869, label: "Sevilla, España" }, // Proxy for Real Betis
+    "fcbetis": { lat: 37.3364, lng: -5.9869, label: "Sevilla, España" },
     "sportinghuelva": { lat: 37.2614, lng: -6.9447, label: "Huelva, España" },
     "azteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México", imageUrl: "/assets/estadios/estadio_azteca.png" },
     "estadioazteca": { lat: 19.3029, lng: -99.1505, label: "Estadio Azteca, México", imageUrl: "/assets/estadios/estadio_azteca.png" },
@@ -220,40 +213,39 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "rivasvaciamadrid": { lat: 40.3524, lng: -3.5375, label: "Rivas-Vaciamadrid, Madrid" },
     "lospalaciosyvillafranca": { lat: 37.1623, lng: -5.9242, label: "Los Palacios y Villafranca, Sevilla" },
 
-    // Missing Player Birthplaces Added
-    "uberlandia": { lat: -18.9186, lng: -48.2772, label: "Uberlândia, Brasil" }, // Daiane Limeira
-    "xambre": { lat: -23.7380, lng: -53.4752, label: "Xambrê, Brasil" }, // Thaisa Moreno
-    "oschatz": { lat: 51.3000, lng: 13.1167, label: "Oschatz, Alemania" }, // Babett Peter
-    "lyon": { lat: 45.7640, lng: 4.8357, label: "Lyon, Francia" }, // Aurelie Kaci
-    "kristianstad": { lat: 56.0294, lng: 14.1567, label: "Kristianstad, Suecia" }, // Kosovare Asllani
-    "ornskoldsvik": { lat: 63.2905, lng: 18.7130, label: "Örnsköldsvik, Suecia" }, // Sofia Jakobsson
-    "aielodemalferit": { lat: 38.8778, lng: -0.5906, label: "Aielo de Malferit, Valencia" }, // Ivana Andrés
-    "pontevedra": { lat: 42.4299, lng: -8.6446, label: "Pontevedra, España" }, // Teresa Abelleira
-    "terrassa": { lat: 41.5693, lng: 2.0089, label: "Terrassa, Barcelona" }, // Marta Corredera
-    "itaugua": { lat: -25.3850, lng: -57.3400, label: "Itauguá, Paraguay" }, // Jessica Martínez
-    "huescar": { lat: 37.8105, lng: -2.5401, label: "Huéscar, Granada" }, // Esther González
-    "massy": { lat: 48.7297, lng: 2.2741, label: "Massy, Francia" }, // Meline Gerard
-    "orebro": { lat: 59.2753, lng: 15.2134, label: "Örebro, Suecia" }, // Freja Siri
-    "villanuevadelosinfantes": { lat: 38.7347, lng: -3.0163, label: "Villanueva de los Infantes, Ciudad Real" }, // Bea Ortiz
-    "saintecolombe": { lat: 45.5266, lng: 4.8697, label: "Sainte-Colombe, Francia" }, // Mylene Chavas
-    "aviles": { lat: 43.5547, lng: -5.9248, label: "Avilés, Asturias" }, // Olaya
-    "paudosferros": { lat: -6.1118, lng: -38.2045, label: "Pau dos Ferros, Brasil" }, // Antonia Silva
-    "governadorvaladares": { lat: -18.8512, lng: -41.9470, label: "Governador Valadares, Brasil" }, // Yasmim
-    "oviedo": { lat: 43.3619, lng: -5.8494, label: "Oviedo, España" }, // María Méndez
-    "yunqueradehenares": { lat: 40.7389, lng: -3.1672, label: "Yunquera de Henares, Guadalajara" }, // Sheila García
-    "yecla": { lat: 38.6117, lng: -1.1147, label: "Yecla, Murcia" }, // Eva Navarro
-    "orange": { lat: 44.1381, lng: 4.8075, label: "Orange, Francia" }, // Maelle Lakrar
-    "amberg": { lat: 49.4447, lng: 11.8596, label: "Amberg, Alemania" }, // Sara Dabritz
-    "celle": { lat: 52.6074, lng: 10.0817, label: "Celle, Alemania" }, // Merle Frohms
-    "lomma": { lat: 55.6728, lng: 13.0675, label: "Lomma, Suecia" }, // Hanna Bennison
-    "ikast": { lat: 56.1364, lng: 9.1558, label: "Ikast, Dinamarca" }, // Sara Holmgaard (check)
-    "stockholm": { lat: 59.3293, lng: 18.0686, label: "Estocolmo, Suecia" }, // Bella Andersson
-    "guadalajara": { lat: 40.6324, lng: -3.1633, label: "Guadalajara, España" }, // Iris Ashley
-    "vleuten": { lat: 52.1070, lng: 5.0133, label: "Vleuten, Países Bajos" }, // Lotte Keukelaar
-    "toledo": { lat: 39.8628, lng: -4.0273, label: "Toledo, España" }, // Claudia / Yohana
-    "sanpablodelosmontes": { lat: 39.5447, lng: -4.3314, label: "San Pablo de los Montes, Toledo" }, // Yohana
-    "jarandilladelavera": { lat: 40.1264, lng: -5.6606, label: "Jarandilla de la Vera, Cáceres" }, // Noe Llamas
-    "huarte": { lat: 42.8290, lng: -1.5976, label: "Huarte, Navarra" }, // Maite Oroz (likely)
+    "uberlandia": { lat: -18.9186, lng: -48.2772, label: "Uberlândia, Brasil" },
+    "xambre": { lat: -23.7380, lng: -53.4752, label: "Xambrê, Brasil" },
+    "oschatz": { lat: 51.3000, lng: 13.1167, label: "Oschatz, Alemania" },
+    "lyon": { lat: 45.7640, lng: 4.8357, label: "Lyon, Francia" },
+    "kristianstad": { lat: 56.0294, lng: 14.1567, label: "Kristianstad, Suecia" },
+    "ornskoldsvik": { lat: 63.2905, lng: 18.7130, label: "Örnsköldsvik, Suecia" },
+    "aielodemalferit": { lat: 38.8778, lng: -0.5906, label: "Aielo de Malferit, Valencia" },
+    "pontevedra": { lat: 42.4299, lng: -8.6446, label: "Pontevedra, España" },
+    "terrassa": { lat: 41.5693, lng: 2.0089, label: "Terrassa, Barcelona" },
+    "itaugua": { lat: -25.3850, lng: -57.3400, label: "Itauguá, Paraguay" },
+    "huescar": { lat: 37.8105, lng: -2.5401, label: "Huéscar, Granada" },
+    "massy": { lat: 48.7297, lng: 2.2741, label: "Massy, Francia" },
+    "orebro": { lat: 59.2753, lng: 15.2134, label: "Örebro, Suecia" },
+    "villanuevadelosinfantes": { lat: 38.7347, lng: -3.0163, label: "Villanueva de los Infantes, Ciudad Real" },
+    "saintecolombe": { lat: 45.5266, lng: 4.8697, label: "Sainte-Colombe, Francia" },
+    "aviles": { lat: 43.5547, lng: -5.9248, label: "Avilés, Asturias" },
+    "paudosferros": { lat: -6.1118, lng: -38.2045, label: "Pau dos Ferros, Brasil" },
+    "governadorvaladares": { lat: -18.8512, lng: -41.9470, label: "Governador Valadares, Brasil" },
+    "oviedo": { lat: 43.3619, lng: -5.8494, label: "Oviedo, España" },
+    "yunqueradehenares": { lat: 40.7389, lng: -3.1672, label: "Yunquera de Henares, Guadalajara" },
+    "yecla": { lat: 38.6117, lng: -1.1147, label: "Yecla, Murcia" },
+    "orange": { lat: 44.1381, lng: 4.8075, label: "Orange, Francia" },
+    "amberg": { lat: 49.4447, lng: 11.8596, label: "Amberg, Alemania" },
+    "celle": { lat: 52.6074, lng: 10.0817, label: "Celle, Alemania" },
+    "lomma": { lat: 55.6728, lng: 13.0675, label: "Lomma, Suecia" },
+    "ikast": { lat: 56.1364, lng: 9.1558, label: "Ikast, Dinamarca" },
+    "stockholm": { lat: 59.3293, lng: 18.0686, label: "Estocolmo, Suecia" },
+    "guadalajara": { lat: 40.6324, lng: -3.1633, label: "Guadalajara, España" },
+    "vleuten": { lat: 52.1070, lng: 5.0133, label: "Vleuten, Países Bajos" },
+    "toledo": { lat: 39.8628, lng: -4.0273, label: "Toledo, España" },
+    "sanpablodelosmontes": { lat: 39.5447, lng: -4.3314, label: "San Pablo de los Montes, Toledo" },
+    "jarandilladelavera": { lat: 40.1264, lng: -5.6606, label: "Jarandilla de la Vera, Cáceres" },
+    "huarte": { lat: 42.8290, lng: -1.5976, label: "Huarte, Navarra" },
 
 };
 
@@ -278,12 +270,10 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (!name) return null;
     let normalized = normalizeLocationName(name);
 
-    // Direct match
     if (KNOWN_LOCATIONS[normalized]) {
         return KNOWN_LOCATIONS[normalized];
     }
 
-    // Common variations / Fuzzy matching
     if (normalized.includes('stefano')) return KNOWN_LOCATIONS['alfredodistefano'];
     if (normalized.includes('johan') || normalized.includes('cruyff')) return KNOWN_LOCATIONS['johancruyff'];
     if (normalized.includes('puchades')) return KNOWN_LOCATIONS['antoniopuchades'];
@@ -299,10 +289,8 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('paris') || normalized.includes('princes')) return KNOWN_LOCATIONS['parcdesprinces'];
     if (normalized.includes('charlety')) return KNOWN_LOCATIONS['stadesty'];
 
-    // Generic "Madrid" fallbacks for Valdebebas/Ciudad Real Madrid
     if (normalized.includes('ciudad real madrid') || normalized.includes('valdebebas')) return KNOWN_LOCATIONS['alfredodistefano'];
 
-    // Specific Fix for Alcalá de Henares Stadium
     if (normalized.includes('alcala') && normalized.includes('henares') && (normalized.includes('centro') || normalized.includes('wanda') || type === 'stadium')) {
         return KNOWN_LOCATIONS['alcaladehenares_estadio'];
     }
@@ -343,7 +331,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('valencia') && normalized.includes('ciutat')) return KNOWN_LOCATIONS['ciudaddelvalencia'];
     if (normalized.includes('campo 11') || normalized.includes('campo 11 ciudad')) return KNOWN_LOCATIONS['camporealmadrid'];
     if (normalized.includes('campo 7') || normalized.includes('campo 7 ciudad')) return KNOWN_LOCATIONS['campo7'];
-    if (normalized.includes('uribe') || normalized.includes('unbe')) return KNOWN_LOCATIONS['unbe']; // Fix typo
+    if (normalized.includes('uribe') || normalized.includes('unbe')) return KNOWN_LOCATIONS['unbe'];
     if (normalized.includes('zubieta')) return KNOWN_LOCATIONS['zubieta'];
     if (normalized.includes('lezama')) return KNOWN_LOCATIONS['lezama'];
     if (normalized.includes('vivero') || normalized.includes('elvivero')) return KNOWN_LOCATIONS['elvivero'];
@@ -366,20 +354,18 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('tigres')) return KNOWN_LOCATIONS['universitario'];
     if (normalized.includes('america') && normalized.includes('club')) return KNOWN_LOCATIONS['azteca'];
     if (normalized.includes('america') && normalized.includes('mexico')) return KNOWN_LOCATIONS['azteca'];
-    // Fallback for "Club América" if normalized just to "america" might be risky if "america" matches other things, but usually safe in this context.
     if (normalized === 'america') return KNOWN_LOCATIONS['azteca'];
 
-    // Missing Players Fuzzy Matches
-    if (normalized.includes('candelaria')) return KNOWN_LOCATIONS['candelaria']; // Linda Caicedo
-    if (normalized.includes('london') || normalized.includes('londres')) return KNOWN_LOCATIONS['london']; // Chi Obogagu
-    if (normalized.includes('sainte') && normalized.includes('colombe')) return KNOWN_LOCATIONS['saintecolombe']; // Mylene Chavas
-    if (normalized.includes('ikast')) return KNOWN_LOCATIONS['ikast']; // Sara Holmgaard
-    if (normalized.includes('stockholm') || normalized.includes('estocolmo')) return KNOWN_LOCATIONS['stockholm']; // Bella Andersson
-    if (normalized.includes('vleuten')) return KNOWN_LOCATIONS['vleuten']; // Lotte Keukelaar
-    if (normalized.includes('guadalajara')) return KNOWN_LOCATIONS['guadalajara']; // Iris Ashley
-    if (normalized.includes('toledo')) return KNOWN_LOCATIONS['toledo']; // Claudia / Yohana
-    if (normalized.includes('jarandilla')) return KNOWN_LOCATIONS['jarandilladelavera']; // Noe Llamas
-    if (normalized.includes('huarte')) return KNOWN_LOCATIONS['huarte']; // Maite Oroz
+    if (normalized.includes('candelaria')) return KNOWN_LOCATIONS['candelaria'];
+    if (normalized.includes('london') || normalized.includes('londres')) return KNOWN_LOCATIONS['london'];
+    if (normalized.includes('sainte') && normalized.includes('colombe')) return KNOWN_LOCATIONS['saintecolombe'];
+    if (normalized.includes('ikast')) return KNOWN_LOCATIONS['ikast'];
+    if (normalized.includes('stockholm') || normalized.includes('estocolmo')) return KNOWN_LOCATIONS['stockholm'];
+    if (normalized.includes('vleuten')) return KNOWN_LOCATIONS['vleuten'];
+    if (normalized.includes('guadalajara')) return KNOWN_LOCATIONS['guadalajara'];
+    if (normalized.includes('toledo')) return KNOWN_LOCATIONS['toledo'];
+    if (normalized.includes('jarandilla')) return KNOWN_LOCATIONS['jarandilladelavera'];
+    if (normalized.includes('huarte')) return KNOWN_LOCATIONS['huarte'];
     if (normalized.includes('uberlandia')) return KNOWN_LOCATIONS['uberlandia'];
     if (normalized.includes('xambre')) return KNOWN_LOCATIONS['xambre'];
     if (normalized.includes('oschatz')) return KNOWN_LOCATIONS['oschatz'];
@@ -399,22 +385,17 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('celle')) return KNOWN_LOCATIONS['celle'];
     if (normalized.includes('lomma')) return KNOWN_LOCATIONS['lomma'];
 
-    // Additional Missing Players (Batch 3)
-    if (normalized.includes('kenti')) return KNOWN_LOCATIONS['mexico']; // Kenti Robles (Mexico City)
-    if (normalized.includes('oihane')) return KNOWN_LOCATIONS['sopelana']; // Oihane Hernandez / San Martin (Check Oihane Hernandez is Sopelana, San Martin is Pamplona. Logic need check)
-    // Actually Oihane Hernandez is from Sopelana. Oihane San Martin is from Pamplona.
-    // Let's distinguish if possible, or mapping "oihane" to Sopelana is risky if San Martin is meant?
-    // User requested "Oihane Hernández" specifically in the missing list previously? No, just "Oihane Hernández".
-    // Wait, user said "Ohiane San Martín" earlier.
-    // Let's try to match full names if possible or unique parts.
+    if (normalized.includes('kenti')) return KNOWN_LOCATIONS['mexico'];
+    if (normalized.includes('oihane')) return KNOWN_LOCATIONS['sopelana'];
+
     if (normalized.includes('hernandez') && normalized.includes('oihane')) return KNOWN_LOCATIONS['sopelana'];
     if (normalized.includes('san martin') && normalized.includes('ohiane')) return KNOWN_LOCATIONS['pamplona'];
 
     if (normalized.includes('andrea') && normalized.includes('alonso')) return KNOWN_LOCATIONS['alcorcon'];
     if (normalized.includes('amaya') && normalized.includes('garcia')) return KNOWN_LOCATIONS['pozuelo'];
     if (normalized.includes('irune') && normalized.includes('dorado')) return KNOWN_LOCATIONS['pozuelo'];
-    if (normalized.includes('antonia') && normalized.includes('silva')) return KNOWN_LOCATIONS['paudosferros']; // Already added pau dos ferros, ensure matching
-    if (normalized.includes('lotte')) return KNOWN_LOCATIONS['vleuten']; // Already added vleuten
+    if (normalized.includes('antonia') && normalized.includes('silva')) return KNOWN_LOCATIONS['paudosferros'];
+    if (normalized.includes('lotte')) return KNOWN_LOCATIONS['vleuten'];
 
     if (normalized.includes('nahikari')) return KNOWN_LOCATIONS['urnieta'];
     if (normalized.includes('misa')) return KNOWN_LOCATIONS['laspalmas'];
@@ -423,19 +404,12 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('paula') && normalized.includes('partido')) return KNOWN_LOCATIONS['madrid'];
     if (normalized.includes('maria') && normalized.includes('valle')) return KNOWN_LOCATIONS['lospalaciosyvillafranca'];
 
-    // Specific logic for Valencia to prefer stadium if it's a match context match
     if (normalized === 'valenciacf' || normalized === 'valencia fem' || (normalized.includes('valencia') && type === 'stadium')) {
-        return KNOWN_LOCATIONS['antoniopuchades']; // Or Ciudat de Valencia if distinct? Usually Valencia CF Femenino plays at Puchades. Levante plays at Ciutat.
-        // Let's check KNOWN_LOCATIONS.
-        // 'antoniopuchades' is { lat: 39.5463, lng: -0.4631, label: "Estadio Antonio Puchades", ... }
-        // 'ciudaddelvalencia' is { lat: 39.4950, lng: -0.3644, label: "Estadi Ciutat de València", ... }
-        // Use Puchades for Valencia CF.
+        return KNOWN_LOCATIONS['antoniopuchades'];
     }
 
-
-    // Try stripping "estadio", "municipal", "campo", "ciudad deportiva"
     const stripped = normalized
-        .replace('estadi', '') // NEW: Add support for "Estadi"
+        .replace('estadi', '')
         .replace('estadio', '')
         .replace('municipal', '')
         .replace('campo', '')

@@ -11,7 +11,7 @@ export interface MapMarker {
     type?: 'player' | 'match' | 'stadium' | 'rival-city';
     imageUrl?: string;
     slug?: string;
-    data?: any; // Holds specific data for the popup
+    data?: any;
 }
 
 interface InteractiveMapProps {
@@ -23,7 +23,7 @@ interface InteractiveMapProps {
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
     markers,
-    center = { lat: 40.4168, lng: -3.7038 }, // Madrid default
+    center = { lat: 40.4168, lng: -3.7038 },
     zoom = 3,
     height = "500px"
 }) => {
@@ -44,17 +44,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 >
                     <div className="cursor-pointer group relative">
                         {marker.type === 'match' && marker.imageUrl ? (
-                            // Rectangular marker for stadiums with image
                             <div className="w-16 h-12 rounded border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-110 transition-transform">
                                 <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover" />
                             </div>
                         ) : marker.imageUrl ? (
-                            // Round marker for players - Larger and top aligned
                             <div className="w-14 h-14 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-110 transition-transform">
                                 <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover object-top" />
                             </div>
                         ) : marker.type === 'rival-city' ? (
-                            // Flag marker for rivals - Circular with flag
                             <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform flex items-center justify-center">
                                 <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover" />
                             </div>
@@ -93,7 +90,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             `}</style>
 
             <Map
-                // ... props ...
                 initialViewState={{
                     longitude: center.lng,
                     latitude: center.lat,
@@ -116,7 +112,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                         latitude={popupInfo.lat}
                         onClose={() => setPopupInfo(null)}
                         closeOnClick={false}
-                        closeButton={false} // Disable default close button
+                        closeButton={false}
                         className="custom-popup"
                         maxWidth="320px"
                     >
@@ -160,7 +156,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                     {(() => {
                                                         const dateStr = popupInfo.data?.fecha_nacimiento;
                                                         if (!dateStr) return '-';
-                                                        // Assume YYYY-MM-DD from DB
                                                         const parts = dateStr.split('-');
                                                         if (parts.length === 3) {
                                                             const [year, month, day] = parts;
@@ -245,7 +240,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                                 const scoreHome = isRMAway ? m.goles_rival : m.goles_rm;
                                                                 const scoreAway = isRMAway ? m.goles_rm : m.goles_rival;
 
-                                                                // Color logic remains based on RM result (Win = Green, etc.)
                                                                 const isWin = Number(m.goles_rm) > Number(m.goles_rival);
                                                                 const isLoss = Number(m.goles_rm) < Number(m.goles_rival);
 

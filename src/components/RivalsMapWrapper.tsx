@@ -111,7 +111,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             <InteractiveMap
                 markers={markers}
                 height="600px"
-                center={{ lat: 48, lng: 10 }} // Europe focus
+                center={{ lat: 48, lng: 10 }}
                 zoom={3.5}
             />
         </div>
