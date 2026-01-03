@@ -39,8 +39,10 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             const stats = teamStats.get(rivalName) || { wins: 0, draws: 0, losses: 0, matches: 0 };
             stats.matches += 1;
 
-            const goalsRM = parseInt(isHome ? m.goles_rm : m.goles_rival) || 0;
-            const goalsRival = parseInt(isHome ? m.goles_rival : m.goles_rm) || 0;
+            // goles_rm and goles_rival are ALREADY correct in the database
+            // No need to swap based on isHome
+            const goalsRM = parseInt(m.goles_rm) || 0;
+            const goalsRival = parseInt(m.goles_rival) || 0;
 
             if (goalsRM > goalsRival) {
                 stats.wins += 1;
