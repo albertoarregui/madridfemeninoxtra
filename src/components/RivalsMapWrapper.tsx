@@ -32,7 +32,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
         const teamStats = new Map<string, { wins: number; draws: number; losses: number; matches: number }>();
 
         matches.forEach(m => {
-            const isHome = m.club_local === 'Real Madrid' || m.club_local === 'CD Tacón';
+            const isHome = m.club_local === 'Real Madrid' || m.club_local === 'Real Madrid Femenino' || m.club_local === 'CD Tacón';
             const rivalName = isHome ? m.club_visitante : m.club_local;
             if (!rivalName || rivalName === 'Real Madrid') return;
 
