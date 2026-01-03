@@ -494,16 +494,23 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <div className="flex items-end justify-between h-40 gap-1 w-full">
                         {goalTiming.map((bucket, i) => (
                             <div key={i} className="flex-1 flex flex-col items-center group relative h-full">
-                                {/* Tooltip on hover */}
+                                {/* Tooltip on hover con porcentaje */}
                                 <div className="absolute -top-12 bg-[#151e42] text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                     <span className="font-bold">{bucket.count}</span> goles <span className="opacity-75">({bucket.sharePercent}%)</span>
                                 </div>
 
                                 <div className="w-full relative h-full flex items-end">
                                     <div
-                                        className="w-full bg-[#ffde59] group-hover:bg-[#ffd700] transition-all duration-300 ease-out rounded-t-sm"
+                                        className="w-full bg-[#ffde59] group-hover:bg-[#ffd700] transition-all duration-300 ease-out rounded-t-sm relative flex items-center justify-center"
                                         style={{ height: `${bucket.heightPercent || 0}%` }}
-                                    ></div>
+                                    >
+                                        {/* Número dentro de la barra - solo si hay espacio */}
+                                        {bucket.count > 0 && bucket.heightPercent > 15 && (
+                                            <span className="text-[#151e42] font-black text-[10px] opacity-60 group-hover:opacity-80 transition-opacity">
+                                                {bucket.count}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 ${bucket.label.includes('+') ? 'text-[#151e42] font-black' : 'text-gray-400 font-medium'}`}>{bucket.label}</span>
                             </div>
