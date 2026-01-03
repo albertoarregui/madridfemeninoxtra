@@ -346,7 +346,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Partidos</p>
                         <p className="text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.played}</p>
                     </div>
-                    <div className="bg-gray-100 p-3 rounded-full text-gray-600 group-hover:bg-[#ffde59]/10 group-hover:text-[#ffde59] transition-colors">
+                    <div className="bg-gray-100 p-3 rounded-full text-gray-600 group-hover:bg-[#ffde59]/20 group-hover:text-[#ffde59] transition-colors">
                         <Monitor size={24} />
                     </div>
                 </div>
@@ -360,7 +360,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ppg}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-yellow-50 p-3 rounded-full text-yellow-600 group-hover:bg-[#ffde59]/10 group-hover:text-[#ffde59] transition-colors">
+                    <div className="bg-yellow-50 p-3 rounded-full text-yellow-600 group-hover:bg-[#ffde59]/20 group-hover:text-[#ffde59] transition-colors">
                         <Trophy size={24} />
                     </div>
                 </div>
@@ -374,7 +374,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.gf90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-green-50 p-3 rounded-full text-green-600 group-hover:bg-[#ffde59]/10 group-hover:text-[#ffde59] transition-colors">
+                    <div className="bg-green-50 p-3 rounded-full text-green-600 group-hover:bg-[#ffde59]/20 group-hover:text-[#ffde59] transition-colors">
                         <Target size={24} />
                     </div>
                 </div>
@@ -388,7 +388,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <span className="text-sm text-gray-400 font-mono group-hover:text-[#ffde59]/80 transition-colors">({stats.ga90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-red-50 p-3 rounded-full text-red-600 group-hover:bg-[#ffde59]/10 group-hover:text-[#ffde59] transition-colors">
+                    <div className="bg-red-50 p-3 rounded-full text-red-600 group-hover:bg-[#ffde59]/20 group-hover:text-[#ffde59] transition-colors">
                         <Shield size={24} />
                     </div>
                 </div>
@@ -402,22 +402,22 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 group-hover:text-[#ffde59] transition-colors">Balance de Resultados</h3>
                     <div className="flex items-end justify-between text-center divide-x divide-gray-100">
                         <div className="flex-1 px-2">
-                            <div className="text-green-600 mb-2 flex justify-center group-hover:text-[#ffde59] transition-colors"><ArrowUpRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.wins}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1 group-hover:text-[#ffde59] transition-colors">Victorias</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1 group-hover:text-[#ffde59]/80 transition-colors">{((stats.wins / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-green-600 mb-2 flex justify-center"><ArrowUpRight size={28} /></div>
+                            <p className="text-3xl font-black text-[#151e42]">{stats.wins}</p>
+                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Victorias</p>
+                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.wins / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
-                            <div className="text-yellow-600 mb-2 flex justify-center group-hover:text-[#ffde59] transition-colors"><Minus size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.draws}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1 group-hover:text-[#ffde59] transition-colors">Empates</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1 group-hover:text-[#ffde59]/80 transition-colors">{((stats.draws / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-yellow-600 mb-2 flex justify-center"><Minus size={28} /></div>
+                            <p className="text-3xl font-black text-[#151e42]">{stats.draws}</p>
+                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Empates</p>
+                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.draws / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
-                            <div className="text-red-500 mb-2 flex justify-center group-hover:text-[#ffde59] transition-colors"><ArrowDownRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.losses}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1 group-hover:text-[#ffde59] transition-colors">Derrotas</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1 group-hover:text-[#ffde59]/80 transition-colors">{((stats.losses / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-red-500 mb-2 flex justify-center"><ArrowDownRight size={28} /></div>
+                            <p className="text-3xl font-black text-[#151e42]">{stats.losses}</p>
+                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Derrotas</p>
+                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.losses / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                     </div>
                 </div>
@@ -426,14 +426,14 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Marcadores Frecuentes</h3>
-                        <Hash size={16} className="text-gray-300 group-hover:text-[#ffde59] transition-colors" />
+                        <Hash size={16} className="text-gray-300" />
                     </div>
                     <div className="space-y-3">
                         {stats.topScores.map((s, idx) => (
                             <div key={s.score} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-gray-400 w-4 group-hover:text-[#ffde59] transition-colors">{idx + 1}.</span>
-                                    <span className="font-mono font-bold text-[#151e42] bg-gray-100 px-2 py-1 rounded text-sm group-hover:text-[#ffde59] group-hover:bg-[#ffde59]/10 transition-colors">{s.score}</span>
+                                    <span className="text-xs font-bold text-gray-400 w-4">{idx + 1}.</span>
+                                    <span className="font-mono font-bold text-[#151e42] bg-gray-100 px-2 py-1 rounded text-sm">{s.score}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="h-2 w-32 bg-gray-100 rounded-full overflow-hidden">
@@ -442,7 +442,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                             style={{ width: `${(s.count / stats.played) * 100}%` }}
                                         ></div>
                                     </div>
-                                    <span className="text-xs text-gray-500 font-medium w-8 text-right group-hover:text-[#ffde59] transition-colors">{s.count}</span>
+                                    <span className="text-xs text-gray-500 font-medium w-8 text-right">{s.count}</span>
                                 </div>
                             </div>
                         ))}
@@ -451,21 +451,21 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
 
                 {/* Advanced metrics */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center gap-6 group hover:shadow-md transition-all cursor-default">
-                    <div className="flex items-center justify-between">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center gap-6 hover:shadow-md transition-all cursor-default">
+                    <div className="flex items-center justify-between group">
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Diferencia de Goles</p>
                             <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-600' : 'text-red-500'} group-hover:text-[#ffde59] transition-colors`}>{stats.gd}</p>
                         </div>
                         <TrendingUp size={24} className="text-gray-300 group-hover:text-[#ffde59] transition-colors" />
                     </div>
-                    <div className="w-full h-px bg-gray-100 group-hover:bg-[#ffde59]/20 transition-colors"></div>
+                    <div className="w-full h-px bg-gray-100"></div>
                     <div className="flex items-center justify-between">
-                        <div>
+                        <div className="group">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Porterías a Cero</p>
                             <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.cleanSheets}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right group">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">% Imbatibilidad</p>
                             <p className="text-lg font-bold text-gray-600 group-hover:text-[#ffde59] transition-colors">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
                         </div>
@@ -474,9 +474,9 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             </div>
 
             {/* Goal Timing Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Distribución de Goles (Minutos)</h3>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Distribución de Goles (Minutos)</h3>
                     <Clock size={16} className="text-gray-300" />
                 </div>
 
