@@ -493,7 +493,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 <div className="w-full">
                     <div className="flex items-end justify-between h-40 gap-1 w-full">
                         {goalTiming.map((bucket, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center group relative">
+                            <div key={i} className="flex-1 flex flex-col items-center group relative h-full">
                                 {/* Tooltip on hover */}
                                 <div className="absolute -top-12 bg-[#151e42] text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                     <span className="font-bold">{bucket.count}</span> goles <span className="opacity-75">({bucket.sharePercent}%)</span>
