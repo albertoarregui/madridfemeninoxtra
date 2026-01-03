@@ -1,12 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
-import { fetchGamesDirectly } from "../utils/partidos";
+import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
 import MatchList from "../components/MatchList.astro";
 import MatchMapWrapper from "../components/MatchMapWrapper";
 import MatchStatsDashboard from "../components/MatchStatsDashboard";
+import ClubStatsDashboard from "../components/ClubStatsDashboard";
 
-const gamesData = await fetchGamesDirectly();
+const gamesDataDB = await fetchGamesDirectly();
+const allGoalsDB = await fetchAllGoals();
+
+const gamesData = gamesDataDB;
+const allGoals = allGoalsDB;
+
 const uniqueSeasons = [
     ...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
 ].sort();
@@ -31,6 +37,14 @@ const uniqueCompetitions = [
         {
             gamesData.length > 0 ? (
                 <>
+                    <ClubStatsDashboard
+                        matches={gamesData}
+                        goals={allGoals}
+                        seasons={uniqueSeasons}
+                        competitions={uniqueCompetitions}
+                        client:visible
+                    />
+
                     <MatchStatsDashboard matches={gamesData} client:visible />
 
                     <MatchMapWrapper matches={gamesData} client:only="react" />

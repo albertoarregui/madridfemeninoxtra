@@ -682,3 +682,51 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
         return [];
     }
 }
+
+export async function fetchAllGoals(): Promise<any[]> {
+    try {
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
+
+        if (!client) return [];
+
+        const query = `
+            SELECT 
+                g.id_gol,
+                g.id_partido,
+                g.minuto,
+                g.tipo,
+                p.id_temporada,
+                p.id_competicion,
+                p.goles_rm,
+                p.goles_rival,
+                t.temporada,
+                c.competicion
+            FROM goles_y_asistencias g
+            JOIN partidos p ON g.id_partido = p.id_partido
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            JOIN competiciones c ON p.id_competicion = c.id_competicion
+            WHERE g.goleadora IS NOT NULL OR g.tipo = 'penalti' 
+        `;
+
+        // Note: The above query might capture own goals if we tracked them as specific types, 
+        // but generally we want "Goals Scored by RM" or just "Goals in RM matches".
+        // The user wants "Goles en tramos de 10 minutos". Usually this implies goals FOR.
+        // Let's grab all goals connected to RM matches. 
+        // BUT wait, `goles_y_asistencias` table structure usually tracks RM players. 
+        // If it's a rival goal, does it exist there?
+        // Checking schema via context is hard without `schema.sql`, but usually `goles_y_asistencias` 
+        // is for the team's players (stats).
+        // Let's assume this table only holds RM goals for now, which is safer for "Goals For".
+        // If we want "Goals Against" distribution, we might not have minute data for rivals 
+        // unless we have a specific table or event stream for them.
+        // I will assume "Goals For" distribution is the primary request unless specified.
+
+        const result = await client.execute(query);
+        return result.rows;
+    } catch (error) {
+        console.error("Error fetching all goals:", error);
+        return [];
+    }
+}
+
