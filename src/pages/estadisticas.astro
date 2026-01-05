@@ -1,0 +1,94 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { StatsExplorer } from "../components/stats/StatsExplorer";
+import { getPlayerImageSlugs } from "../utils/player-images";
+
+const playerImageMap = await getPlayerImageSlugs();
+---
+
+<Layout
+    title="Estadísticas Avanzadas | Madrid Femenino Xtra"
+    description="Análisis estadístico completo del Real Madrid Femenino: gráficas de rendimiento, comparativas entre jugadoras, distribuciones de pases y más."
+>
+    <main class="stats-page">
+        <div class="stats-container">
+            <h1 class="page-title">ESTADÍSTICAS AVANZADAS</h1>
+            <p class="page-description">
+                Análisis detallado del rendimiento de las jugadoras del Real
+                Madrid Femenino con gráficas interactivas y métricas avanzadas.
+            </p>
+
+            <StatsExplorer
+                client:only="react"
+                playerImageMap={playerImageMap}
+            />
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .stats-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .stats-container {
+        width: 100%;
+    }
+
+    .page-title {
+        font-size: clamp(1.75rem, 5vw, 2.5rem);
+        font-weight: 900;
+        color: #151e42;
+        text-align: center;
+        margin-bottom: 1rem;
+        letter-spacing: 0.05em;
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .page-title::after {
+        content: "";
+        display: block;
+        width: 80px;
+        height: 4px;
+        background: #ffde59;
+        margin: 0.75rem auto 0;
+        border-radius: 2px;
+    }
+
+    .page-description {
+        font-size: clamp(0.95rem, 2vw, 1.1rem);
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 2.5rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .stats-page {
+            padding: 1.5rem 0.75rem;
+        }
+
+        .page-description {
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-page {
+            padding: 1rem 0.5rem;
+        }
+
+        .page-title::after {
+            width: 60px;
+            height: 3px;
+        }
+    }
+</style>
