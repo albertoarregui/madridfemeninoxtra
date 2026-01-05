@@ -298,7 +298,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                                 <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} hide />
                                 {/* Custom Tick with Image */}
                                 <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
-                                <Tooltip cursor={false} content={<CustomTooltip playerImageMap={playerImageMap} />} />
+                                <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="g" stackId="a" fill="#151e42" name="Goles" radius={[0, 4, 4, 0]} />
                                 <Bar dataKey="a" stackId="a" fill="#ffde59" name="Asistencias" radius={[0, 4, 4, 0]} />
                             </BarChart>
@@ -313,7 +313,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                 <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} hide />
                                 <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
-                                <Tooltip cursor={false} content={<CustomTooltip playerImageMap={playerImageMap} />} />
+                                <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="carries" stackId="a" fill="#3b82f6" name="Conducciones" radius={[0, 4, 4, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -377,7 +377,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                     <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                     <XAxis type="number" hide />
-                                    <Tooltip content={<CustomTooltip playerImageMap={playerImageMap} />} />
+                                    <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                     <Bar dataKey="minutes" name="Minutos" fill="#151e42" radius={[0, 4, 4, 0]} barSize={20} />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -429,7 +429,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                 <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                 <XAxis type="number" hide />
-                                <Tooltip cursor={false} content={<CustomTooltip playerImageMap={playerImageMap} />} />
+                                <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="sca" name="SCA" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={20} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -465,7 +465,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                     </div>
 
                     {/* 2. ESTILO DE PASE (Barras Apiladas 100%) */}
-                    <div className="h-[800px] w-full"> {/* Adjusted height for 15 players */}
+                    <div className="h-[800px] md:h-[800px] w-full overflow-x-auto">
                         {(() => {
                             const passStyleData = data
                                 .filter(p => p.minutes > 100 && p.player)
@@ -531,11 +531,11 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                             return (
                                 <>
                                     <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider hover:text-[#ffde59] transition-colors cursor-pointer">Estilo de Pase ({passStyleData.length === 0 ? 'Cargando datos...' : 'Distribución de tipos de pase'})</h4>
-                                    <ResponsiveContainer width="100%" height="100%">
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={400}>
                                         <BarChart
                                             data={passStyleData}
                                             layout="vertical"
-                                            margin={{ top: 20, right: 30, left: 140, bottom: 20 }}
+                                            margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
                                         >
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                             <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} tickFormatter={(value) => `${value}%`} domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
