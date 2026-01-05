@@ -1,9 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { StatsExplorer } from "../components/stats/StatsExplorer";
-import { getPlayerImageSlugs } from "../utils/player-images";
 
-const playerImageMap = await getPlayerImageSlugs();
+const playerImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+const playerImageMap = Object.fromEntries(
+    Object.entries(playerImages).map(([path, mod]) => {
+        const fileName = path.split("/").pop()?.split(".")[0];
+        return [fileName, mod.default.src];
+    }),
+);
 ---
 
 <Layout
