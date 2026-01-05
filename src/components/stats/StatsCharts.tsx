@@ -271,7 +271,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                 <ChartSectionHeader title="Rendimiento Ofensivo" icon={Target} />
 
                 {/* Changed to 1 col or 2 cols for visibility */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
                     {/* Scatter: Goles vs xG - FULL WIDTH */}
                     <div className="h-[400px] w-full lg:col-span-2">
@@ -293,11 +293,11 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                     <div className="h-[500px] w-full"> {/* Increased Height for bars */}
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Producción (Goles + Asist.)</h4>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barGA} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}> {/* Increased bottom margin */}
+                            <BarChart data={barGA} layout="vertical" margin={{ top: 20, right: 20, left: 10, bottom: 20 }}> {/* Increased bottom margin */}
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                 <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} hide />
                                 {/* Custom Tick with Image */}
-                                <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
+                                <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                 <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="g" stackId="a" fill="#151e42" name="Goles" radius={[0, 4, 4, 0]} />
                                 <Bar dataKey="a" stackId="a" fill="#ffde59" name="Asistencias" radius={[0, 4, 4, 0]} />
@@ -309,10 +309,10 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                     <div className="h-[500px] w-full"> {/* Increased Height */}
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Progresión</h4>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barProg} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}> {/* Increased bottom margin */}
+                            <BarChart data={barProg} layout="vertical" margin={{ top: 20, right: 20, left: 10, bottom: 20 }}> {/* Increased bottom margin */}
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                 <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} hide />
-                                <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
+                                <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                 <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="carries" stackId="a" fill="#3b82f6" name="Conducciones" radius={[0, 4, 4, 0]} />
                             </BarChart>
@@ -364,7 +364,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
             )}
 
             {/* 3. PORTERAS & USO */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
                 {/* SQ. Usage */}
                 <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
@@ -373,9 +373,9 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         <div className="h-[400px]">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Minutos (Top 10)</h4>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={barMinutes.slice(0, 10)} layout="vertical" margin={{ top: 20, right: 0, left: 40, bottom: 20 }}>
+                                <BarChart data={barMinutes.slice(0, 10)} layout="vertical" margin={{ top: 20, right: 0, left: 10, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                                    <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
+                                    <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                     <XAxis type="number" hide />
                                     <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                     <Bar dataKey="minutes" name="Minutos" fill="#151e42" radius={[0, 4, 4, 0]} barSize={20} />
@@ -406,7 +406,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
             {/* CREATION (Restored to separate card) */}
             <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
                 <ChartSectionHeader title="Creación" icon={Activity} />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                     {/* Scatter: Asist vs xA - FULL WIDTH */}
                     <div className="h-[400px] w-full lg:col-span-2">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Asist. vs xA</h4>
@@ -425,9 +425,9 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                     <div className="h-[500px] w-full lg:col-span-2">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">SCA (Tiros Generados)</h4>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barSCA} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 20 }}>
+                            <BarChart data={barSCA} layout="vertical" margin={{ top: 20, right: 20, left: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-                                <YAxis dataKey="name" type="category" width={150} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
+                                <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
                                 <XAxis type="number" hide />
                                 <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                 <Bar dataKey="sca" name="SCA" fill="#ec4899" radius={[0, 4, 4, 0]} barSize={20} />
@@ -465,7 +465,7 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                     </div>
 
                     {/* 2. ESTILO DE PASE (Barras Apiladas 100%) */}
-                    <div className="h-[800px] md:h-[800px] w-full overflow-x-auto">
+                    <div className="h-[800px] md:h-[800px] w-full">
                         {(() => {
                             const passStyleData = data
                                 .filter(p => p.minutes > 100 && p.player)
@@ -531,16 +531,16 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                             return (
                                 <>
                                     <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider hover:text-[#ffde59] transition-colors cursor-pointer">Estilo de Pase ({passStyleData.length === 0 ? 'Cargando datos...' : 'Distribución de tipos de pase'})</h4>
-                                    <ResponsiveContainer width="100%" height="100%" minWidth={400}>
+                                    <ResponsiveContainer width="100%" height="100%">
                                         <BarChart
                                             data={passStyleData}
                                             layout="vertical"
-                                            margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+                                            margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
                                         >
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                             <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} tickFormatter={(value) => `${value}%`} domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
-                                            <YAxis dataKey="name" type="category" width={140} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
-                                            <Tooltip cursor={false} content={<CustomTooltip playerImageMap={playerImageMap} />} />
+                                            <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
+                                            <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip playerImageMap={playerImageMap} />} />
                                             <Bar dataKey="short_dist" stackId="a" fill="#10b981" name="Cortos" radius={[0, 0, 0, 0]} />
                                             <Bar dataKey="medium_dist" stackId="a" fill="#f59e0b" name="Medios" radius={[0, 0, 0, 0]} />
                                             <Bar dataKey="long_dist" stackId="a" fill="#ef4444" name="Largos" radius={[0, 4, 4, 0]} />
