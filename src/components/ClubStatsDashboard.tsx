@@ -310,7 +310,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 <div className="flex flex-wrap gap-4 justify-center w-full md:w-auto">
                     <div className="relative">
                         <select
-                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer"
+                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
                             value={selectedSeason}
                             onChange={(e) => setSelectedSeason(e.target.value)}
                         >
@@ -327,7 +327,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
 
                     <div className="relative">
                         <select
-                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer"
+                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
                             value={selectedCompetition}
                             onChange={(e) => setSelectedCompetition(e.target.value)}
                         >
