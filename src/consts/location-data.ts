@@ -205,7 +205,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "estadiouniversitario": { lat: 25.7247, lng: -100.3113, label: "Estadio Universitario, Monterrey", imageUrl: "/assets/estadios/estadio_universitario.png" },
 
 
-    "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua" },
+    "estadiomunicipaldeipurua": { lat: 43.1819, lng: -2.4756, label: "Estadio Municipal de Ipurua", imageUrl: "/assets/estadios/estadio_municipal_de_ipurua.png" },
     "sopelana": { lat: 43.3808, lng: -2.9806, label: "Sopelana, Vizcaya" },
     "pozuelo": { lat: 40.4478, lng: -3.8128, label: "Pozuelo de Alarcón, Madrid" },
     "alcorcon": { lat: 40.3458, lng: -3.8249, label: "Alcorcón, Madrid" },
