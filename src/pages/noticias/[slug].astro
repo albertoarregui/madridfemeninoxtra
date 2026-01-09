@@ -4,7 +4,7 @@ import "../../styles/global.css";
 
 const { slug } = Astro.params;
 
-let post;
+let post: any;
 try {
     const response = await fetch(
         `https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?slug=${slug}&_embed=true`,
@@ -54,7 +54,7 @@ function processNewsContent(content: string) {
     });
 }
 
-const content = processNewsContent(post.content.rendered);
+const processedContent = processNewsContent(post.content.rendered);
 const date = formatDate(post.date);
 const featuredImage = post._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
 const featuredImageAlt =
@@ -292,7 +292,7 @@ const schema = {
                 <span class="article-author">Madrid Femenino Xtra</span>
             </div>
 
-            <div class="article-content" set:html={content} />
+            <div class="article-content" set:html={processedContent} />
             <a href="/noticias" class="article-footer">← Más noticias</a>
         </article>
     </main>
