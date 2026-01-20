@@ -45,7 +45,7 @@ export const CALENDAR = [
         matchday: "Semifinal",
         competition: "Supercopa de España",
         stadium: 'Estadio SkyFi Castalia',
-        tv: 'Teledeporte',
+        tv: 'La 2',
     },
     {
         id: "deportivo-vs-real-madrid",
