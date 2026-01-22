@@ -57,7 +57,7 @@ export const CALENDAR = [
         matchday: "Final",
         competition: "Supercopa de España",
         stadium: 'Estadio SkyFi Castalia',
-        tv: 'La 1',
+        tv: 'La 2',
     },
     {
         id: "deportivo-vs-real-madrid",
