@@ -20,11 +20,6 @@ interface PlayersGridProps {
 }
 
 const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
-    console.log('PlayersGrid received:', players.length, 'players');
-    if (players.length > 0) {
-        console.log('First player sample:', players[0]);
-    }
-
     const [selectedPosition, setSelectedPosition] = useState<string>('Todas');
     const [selectedCountry, setSelectedCountry] = useState<string>('Todos');
     const [selectedSeason, setSelectedSeason] = useState<string>('Todas');
@@ -108,7 +103,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         });
 
         // Sort by position then dorsal
-        return filtered.sort((a, b) => {
+        const sorted = filtered.sort((a, b) => {
             const orderA = POSITION_ORDER[a.posicion] || 99;
             const orderB = POSITION_ORDER[b.posicion] || 99;
 
@@ -120,6 +115,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
             return dorsalA - dorsalB;
         });
+
+        return sorted;
     }, [players, selectedPosition, selectedCountry, selectedSeason]);
 
     const getFlagSrc = (country: string) => {

@@ -91,13 +91,11 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             }
 
             const player = playersMap.get(id);
-            if (row.temporada) {
+            if (row.temporada && row.dorsal !== null && row.dorsal !== undefined) {
                 if (!player.temporadas.includes(row.temporada)) {
                     player.temporadas.push(row.temporada);
                 }
-                if (row.dorsal !== null && row.dorsal !== undefined) {
-                    player.dorsales[row.temporada] = Number(row.dorsal);
-                }
+                player.dorsales[row.temporada] = Number(row.dorsal);
             }
         });
 
