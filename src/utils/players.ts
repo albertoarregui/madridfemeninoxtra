@@ -19,18 +19,23 @@ export const cleanApiValue = (value: any): any => {
 };
 
 export function getPlayerImageUrl(player: any): string {
-    let fileName = player.foto_url;
-
-    if (!fileName && player.nombre) {
-        let nameSlug = slugify(player.nombre).replace(/-/g, '_');
-        const parts = nameSlug.split('_').filter(p => p.length > 0);
-        let nameForFile = parts.slice(0, 4).join('_');
-        fileName = `${nameForFile}.png`;
-    } else if (fileName && !fileName.includes('.')) {
-        fileName += '.png';
+    // If database has a specific URL/filename, use it
+    if (player.foto_url) {
+        return `/assets/jugadoras/${player.foto_url}`;
     }
 
-    return `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`;
+    // Otherwise generate from name: "Misa Rodríguez" -> "misa_rodriguez.png"
+    if (player.nombre) {
+        let normalized = player.nombre.toString().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+            .trim()
+            .replace(/\s+/g, '_') // Replace spaces with underscore
+            .replace(/[^a-z0-9_]/g, ''); // Remove special chars just in case
+
+        return `/assets/jugadoras/${normalized}.png`;
+    }
+
+    return '/assets/jugadoras/placeholder.png';
 }
 
 export function getCleanCountryName(country: string | null | undefined): string {
@@ -41,33 +46,64 @@ export function getCleanCountryName(country: string | null | undefined): string 
 
 export async function fetchPlayersDirectly(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];
         }
 
+        // Fetch flat list to avoid complex GROUP_CONCAT issues
         const query = `
             SELECT 
-                id_jugadora, 
-                nombre, 
-                fecha_nacimiento,
-                lugar_nacimiento, 
-                pais_origen, 
-                altura, 
-                peso, 
-                posicion
+                j.id_jugadora, 
+                j.nombre, 
+                j.fecha_nacimiento,
+                j.lugar_nacimiento, 
+                j.pais_origen, 
+                j.altura, 
+                j.peso, 
+                j.posicion,
+                t.temporada,
+                d.dorsal
             FROM 
-                jugadoras
+                jugadoras j
+            LEFT JOIN
+                dorsales d ON j.id_jugadora = d.id_jugadora
+            LEFT JOIN
+                temporadas t ON d.id_temporada = t.id_temporada
             ORDER BY 
-                nombre ASC
+                j.nombre ASC
         `;
 
         const result = await client.execute(query);
 
-        return result.rows.map((player: any) => {
+        const playersMap = new Map<number | string, any>();
+
+        result.rows.forEach((row: any) => {
+            const id = row.id_jugadora;
+            if (!playersMap.has(id)) {
+                playersMap.set(id, {
+                    ...row,
+                    temporadas: [],
+                    dorsales: {}
+                });
+            }
+
+            const player = playersMap.get(id);
+            if (row.temporada) {
+                if (!player.temporadas.includes(row.temporada)) {
+                    player.temporadas.push(row.temporada);
+                }
+                if (row.dorsal !== null && row.dorsal !== undefined) {
+                    player.dorsales[row.temporada] = Number(row.dorsal);
+                }
+            }
+        });
+
+        return Array.from(playersMap.values()).map((player: any) => {
             const cleanPaisOrigin = cleanApiValue(player.pais_origen);
+            const temporadas = player.temporadas || [];
 
             return {
                 ...player,
@@ -79,6 +115,9 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 peso: cleanApiValue(player.peso) || null,
                 fecha_nacimiento: cleanApiValue(player.fecha_nacimiento) || '',
                 lugar_nacimiento: cleanApiValue(player.lugar_nacimiento) || null,
+                temporadas: temporadas,
+                dorsales: player.dorsales || {},
+                rm_career: temporadas.length > 0 ? temporadas.join('-') : 'Actualidad'
             };
         });
     } catch (error) {
@@ -129,8 +168,8 @@ export async function fetchAndCleanPlayers(): Promise<any[]> {
 
 export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: boolean): Promise<any> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return null;
@@ -371,8 +410,8 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
 export async function fetchPlayerDebut(playerId: string | number): Promise<{ fecha_debut: string | null; rival: string | null } | null> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return null;
@@ -417,8 +456,8 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
 
 export async function fetchPlayerTrajectory(playerId: string | number): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];

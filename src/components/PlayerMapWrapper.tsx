@@ -32,6 +32,7 @@ const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
     'bella-andersson': 'stockholm',
     'oihane-san-martin': 'pamplona',
     'misa-rodriguez': 'laspalmas',
+    'maria-isabel-rodriguez': 'laspalmas',
     'misa': 'laspalmas',
     'sara-lopez': 'laspalmas',
     'nahikari-garcia': 'urnieta',
