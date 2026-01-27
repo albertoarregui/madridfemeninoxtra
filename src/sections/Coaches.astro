@@ -21,604 +21,70 @@ function getCoachImageSrc(coachId: string) {
     const imagePath = `/src/assets/entrenadores/${imageId}.png`;
     return coachImages[imagePath]?.default;
 }
-
-function calculateAge(birthDateString: string): number {
-    const birthDate = new Date(birthDateString);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
-    return age;
-}
 ---
 
-<section class="coach-selector">
-    <div class="coach-container">
-        <div class="main-coach-display">
-            <div class="coach-main-image-container">
-                <img
-                    id="coach-main-image"
-                    src={getCoachImageSrc(listofCoaches[0].id)?.src}
-                    alt={listofCoaches[0].name}
-                    class="coach-main-image"
-                />
-            </div>
-
-            <h2 class="coach-name" id="coach-name">
-                {listofCoaches[0].name}
-            </h2>
-
-            <div class="coach-country">
-                <img
-                    id="coach-flag"
-                    src={`https://flagcdn.com/w40/${listofCoaches[0].country}.png`}
-                    alt={listofCoaches[0].countryName}
-                    class="country-flag"
-                />
-            </div>
-
-            <div class="coach-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Edad</span>
-                    <span class="stat-value" id="coach-age"
-                        >{calculateAge(listofCoaches[0].date_birth)}</span
+<section class="max-w-[1600px] mx-auto px-4 py-8">
+    <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-10 pt-4"
+    >
+        {
+            listofCoaches.map((coach) => {
+                const coachImgSrc = getCoachImageSrc(coach.id)?.src;
+                return (
+                    <a
+                        href={`/entrenadores/${coach.id}`}
+                        class="group relative flex flex-col items-center transition-all duration-300 hover:-translate-y-1"
                     >
-                </div>
-            </div>
+                        {/* Card Background */}
+                        <div class="absolute inset-x-0 bottom-0 top-6 bg-gradient-to-br from-[#1d274e] to-[#151e42] rounded-2xl shadow-lg border border-white/5 group-hover:border-[#ffde59]/50 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(255,222,89,0.15)] z-0 overflow-hidden" />
 
-            <div class="coach-actions">
-                <a
-                    href={`/entrenadores/${listofCoaches[0].id}`}
-                    id="coach-profile-link"
-                    class="btn-profile"
-                >
-                    Ver perfil
-                </a>
-            </div>
-        </div>
+                        {/* Image Container */}
+                        <div class="w-full h-72 relative z-10 px-4 -mb-12">
+                            <div class="w-full h-full relative flex items-end justify-center">
+                                <img
+                                    src={coachImgSrc}
+                                    alt={coach.name}
+                                    class="w-full h-full object-cover object-top transform origin-bottom transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2 rounded-t-2xl"
+                                />
+                            </div>
+                        </div>
 
-        <div class="coach-thumbnails-container">
-            <button
-                class="carousel-arrow left"
-                id="carousel-prev"
-                aria-label="Previous coach"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    ><path d="m15 18-6-6 6-6"></path></svg
-                >
-            </button>
+                        {/* Info Container */}
+                        <div class="w-full p-5 relative z-20 mt-12">
+                            {/* Position Badge */}
+                            <div class="absolute -top-6 left-6 z-20">
+                                <span class="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold uppercase tracking-wider text-white group-hover:bg-[#ffde59] group-hover:text-black transition-colors">
+                                    Entrenador
+                                </span>
+                            </div>
 
-            <div class="coach-thumbnails-wrapper">
-                <div class="coach-thumbnails" id="coach-thumbnails-track">
-                    {
-                        listofCoaches.map((coach, index) => {
-                            const coachImgSrc = getCoachImageSrc(coach.id)?.src;
-                            return (
-                                <button
-                                    class={`coach-thumbnail ${index === 0 ? "active" : ""}`}
-                                    data-coach-id={coach.id}
-                                    data-coach-index={index}
-                                    data-coach-image={coachImgSrc}
-                                    aria-label={`Select ${coach.name}`}
-                                >
-                                    <div class="thumbnail-image-wrapper">
-                                        <img
-                                            src={coachImgSrc}
-                                            alt={coach.name}
-                                            class="thumbnail-image"
-                                        />
-                                    </div>
-                                </button>
-                            );
-                        })
-                    }
-                </div>
-            </div>
+                            <div class="flex items-start justify-between mb-2 mt-2">
+                                <h3 class="text-xl font-black font-bebas text-white uppercase tracking-wide group-hover:text-[#ffde59] transition-colors leading-none truncate w-full">
+                                    {coach.name}
+                                </h3>
+                            </div>
 
-            <button
-                class="carousel-arrow right"
-                id="carousel-next"
-                aria-label="Next coach"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg
-                >
-            </button>
-        </div>
+                            <div class="flex items-center gap-2 text-gray-400 text-sm font-medium">
+                                <img
+                                    src={`https://flagcdn.com/w40/${coach.country}.png`}
+                                    alt={coach.countryName}
+                                    class="w-5 h-5 rounded-full object-cover shadow-sm"
+                                />
+                                <span class="uppercase">
+                                    {coach.countryName}
+                                </span>
+                            </div>
+
+                            {/* View Profile Button */}
+                            <div class="mt-4 pt-4 border-t border-white/10 flex justify-end">
+                                <span class="text-xs font-bold uppercase tracking-wider text-[#ffde59] flex items-center gap-1 transition-colors group-hover:text-white">
+                                    Ver Perfil <span class="text-lg">→</span>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                );
+            })
+        }
     </div>
 </section>
-
-<script define:vars={{ coaches: listofCoaches }}>
-    function calculateAge(birthDateString) {
-        const birthDate = new Date(birthDateString);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (
-            monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < birthDate.getDate())
-        ) {
-            age--;
-        }
-        return age;
-    }
-
-    let selectedIndex = 0;
-
-    function updateCoachDisplay(index, isSelection = false) {
-        const coach = coaches[index];
-        if (!coach) return;
-
-        if (isSelection) {
-            selectedIndex = index;
-        }
-
-        const setContent = (id, text) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = text;
-        };
-
-        setContent("coach-name", coach.name);
-        setContent("coach-city", coach.city);
-        setContent("coach-age", calculateAge(coach.date_birth));
-
-        const flag = document.getElementById("coach-flag");
-        if (flag) {
-            flag.src = `https://flagcdn.com/w40/${coach.country}.png`;
-            flag.alt = coach.countryName;
-        }
-
-        const imgElement = document.getElementById("coach-main-image");
-        if (imgElement) {
-            const thumbButton = document.querySelector(
-                `button[data-coach-id="${coach.id}"]`,
-            );
-            if (thumbButton && thumbButton.dataset.coachImage) {
-                imgElement.src = thumbButton.dataset.coachImage;
-            }
-            imgElement.alt = coach.name;
-        }
-
-        const link = document.getElementById("coach-profile-link");
-        if (link) {
-            link.href = `/entrenadores/${coach.id}`;
-        }
-
-        document.querySelectorAll(".coach-thumbnail").forEach((thumb) => {
-            const thumbIndex = parseInt(thumb.dataset.coachIndex || "-1");
-            thumb.classList.toggle("active", thumbIndex === selectedIndex);
-        });
-    }
-
-    const wrapper = document.querySelector(".coach-thumbnails-wrapper");
-    const prevBtn = document.getElementById("carousel-prev");
-    const nextBtn = document.getElementById("carousel-next");
-
-    function scrollCarousel(direction) {
-        if (!wrapper) return;
-
-        const itemSize = 120 + 16;
-        const scrollAmount = direction * itemSize;
-
-        wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-
-    if (prevBtn) {
-        prevBtn.addEventListener("click", () => scrollCarousel(-1));
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener("click", () => scrollCarousel(1));
-    }
-
-    document.querySelectorAll(".coach-thumbnail").forEach((thumb) => {
-        thumb.addEventListener("mouseenter", (e) => {
-            if (window.innerWidth > 768) {
-                const target = e.currentTarget;
-                if (target && target.dataset.coachIndex) {
-                    const index = parseInt(target.dataset.coachIndex);
-                    updateCoachDisplay(index, false);
-                }
-            }
-        });
-
-        thumb.addEventListener("click", (e) => {
-            const target = e.currentTarget;
-            if (target && target.dataset.coachIndex) {
-                const index = parseInt(target.dataset.coachIndex);
-                updateCoachDisplay(index, true);
-            }
-        });
-    });
-
-    if (wrapper) {
-        wrapper.addEventListener("mouseleave", () => {
-            if (window.innerWidth > 768) {
-                updateCoachDisplay(selectedIndex, false);
-            }
-        });
-    }
-</script>
-
-<style>
-    .coach-selector {
-        padding: 3rem 2rem;
-        max-width: 98vw;
-        margin: 0 auto;
-    }
-
-    @media (max-width: 768px) {
-        .coach-selector {
-            padding: 1rem 0;
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-    }
-
-    .coach-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 3rem;
-    }
-
-    .main-coach-display {
-        position: relative;
-        padding: 2rem 1rem;
-        max-width: 600px;
-        width: 100%;
-    }
-
-    .coach-country {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-
-    .country-flag {
-        width: 64px;
-        height: auto;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .coach-main-image-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 400px;
-        margin: 0 auto 2rem;
-        position: relative;
-    }
-
-    .coach-main-image-container::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 120px;
-        background: linear-gradient(
-            to top,
-            #ffffff 0%,
-            rgba(255, 255, 255, 0.8) 30%,
-            transparent 100%
-        );
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .coach-main-image {
-        max-height: 100%;
-        height: 400px;
-        width: 300px;
-        object-fit: contain;
-        transition: transform 0.3s ease;
-        position: relative;
-        z-index: 0;
-    }
-
-    .coach-name {
-        text-align: center;
-        font-size: 4rem;
-        font-weight: 900;
-        font-family: "Permanent Marker", cursive;
-        margin: 0 0 0.5rem;
-        text-transform: uppercase;
-        background: linear-gradient(135deg, #ffd700, #ffa500);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        letter-spacing: 2px;
-        min-height: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1.1;
-    }
-
-    .coach-stats {
-        display: flex;
-        justify-content: center;
-        gap: 3rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 120px;
-    }
-
-    .stat-label {
-        font-size: 1.2rem;
-        font-family: "Permanent Marker", cursive;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #2b2b2b;
-        text-align: center;
-    }
-
-    .stat-value {
-        font-size: 2.9rem;
-        font-weight: bold;
-        font-family: "Poppins", sans-serif;
-        color: #ffd700;
-        text-align: center;
-        width: 100%;
-    }
-
-    .coach-actions {
-        display: flex;
-        justify-content: center;
-    }
-
-    .btn-profile {
-        padding: 0.75rem 2rem;
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        color: #000;
-        text-decoration: none;
-        border-radius: 25px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn-profile:hover {
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        color: #000;
-    }
-
-    .coach-thumbnails-container {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .coach-thumbnails-wrapper {
-        width: 100%;
-        max-width: 1200px;
-    }
-
-    .coach-thumbnails {
-        display: flex;
-        gap: 2rem;
-        justify-content: center;
-        flex-wrap: wrap;
-        width: 100%;
-    }
-
-    .carousel-arrow {
-        display: none;
-        color: #2b2b2b;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        flex-shrink: 0;
-        border: none;
-        background: transparent;
-    }
-
-    .carousel-arrow:hover {
-        color: #ffde59;
-        transform: scale(1.1);
-    }
-
-    .coach-thumbnail {
-        width: 150px;
-        height: 180px;
-        background: rgba(255, 255, 255, 0.05);
-        border: none;
-        border-radius: 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        overflow: visible;
-        padding: 0;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .coach-thumbnail::before,
-    .coach-thumbnail::after {
-        content: "";
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        border: 3px solid transparent;
-        transition: all 0.3s ease;
-        opacity: 0;
-    }
-
-    .coach-thumbnail::before {
-        top: -3px;
-        left: -3px;
-        border-top-color: #ffd700;
-        border-left-color: #ffd700;
-    }
-
-    .coach-thumbnail::after {
-        bottom: -3px;
-        right: -3px;
-        border-bottom-color: #ffd700;
-        border-right-color: #ffd700;
-    }
-    .coach-thumbnail:hover::before,
-    .coach-thumbnail:hover::after {
-        opacity: 1;
-    }
-
-    .coach-thumbnail.active::before,
-    .coach-thumbnail.active::after {
-        opacity: 1;
-        border-width: 5px;
-    }
-
-    .coach-thumbnail:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.1);
-        z-index: 10;
-    }
-
-    .coach-thumbnail.active {
-        background: rgba(255, 215, 0, 0.1);
-        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-        z-index: 5;
-    }
-
-    .thumbnail-image-wrapper {
-        width: 100%;
-        height: 100%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .thumbnail-image {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        filter: grayscale(50%);
-        transition: filter 0.3s ease;
-        pointer-events: none;
-    }
-
-    .coach-thumbnail.active .thumbnail-image,
-    .coach-thumbnail:hover .thumbnail-image {
-        filter: grayscale(0%);
-    }
-
-    @media (max-width: 768px) {
-        .coach-name {
-            font-size: 2.5rem;
-            min-height: 80px;
-        }
-
-        .coach-main-image-container {
-            height: 300px;
-        }
-
-        .coach-main-image {
-            height: 300px;
-            width: 225px;
-        }
-
-        .coach-stats {
-            gap: 1.5rem;
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-        }
-
-        .coach-thumbnails-container {
-            padding: 0;
-            gap: 0.5rem;
-        }
-
-        .coach-thumbnails-wrapper {
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            padding: 1rem 0;
-            width: 100%;
-        }
-
-        .coach-thumbnails-wrapper::-webkit-scrollbar {
-            display: none;
-        }
-
-        .coach-thumbnails {
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            gap: 1rem;
-            width: max-content;
-            padding: 0;
-        }
-
-        .carousel-arrow {
-            display: flex;
-        }
-
-        .coach-thumbnail {
-            width: 120px;
-            height: 140px;
-        }
-
-        .coach-thumbnail:hover {
-            transform: none;
-        }
-    }
-</style>
