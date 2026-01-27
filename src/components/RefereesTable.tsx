@@ -84,32 +84,32 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
     return (
         <div className="w-full max-w-7xl mx-auto overflow-hidden rounded-xl border border-gray-200 shadow-xl bg-white mb-10">
             <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse text-left min-w-[1000px]">
+                <table className="w-full border-collapse text-left min-w-[800px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
-                            <th className="sticky left-0 bg-gray-50 z-20 py-4 px-4 text-center w-12 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <th className="sticky left-0 bg-gray-50 z-20 py-3 px-2 text-center w-10 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Árbitra"
-                                className="sticky left-12 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
+                                className="sticky left-10 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
                                 align="left"
                             />
 
-                            <SortableHeader sortKey="stats.played" label="Partidos" />
+                            <SortableHeader sortKey="stats.played" label="PJ" />
 
-                            <SortableHeader sortKey="stats.wins" label="Victorias" className="text-green-600 bg-green-50/50" />
-                            <SortableHeader sortKey="stats.winPct" label="% Vic" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.wins" label="V" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.winPct" label="% V" className="text-green-600 bg-green-50/50" />
 
-                            <SortableHeader sortKey="stats.draws" label="Empates" className="text-gray-600 bg-gray-50/50" />
-                            <SortableHeader sortKey="stats.drawPct" label="% Emp" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.draws" label="E" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.drawPct" label="% E" className="text-gray-600 bg-gray-50/50" />
 
-                            <SortableHeader sortKey="stats.losses" label="Derrotas" className="text-red-500 bg-red-50/50" />
-                            <SortableHeader sortKey="stats.lossPct" label="% Der" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.losses" label="D" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.lossPct" label="% D" className="text-red-500 bg-red-50/50" />
 
-                            <SortableHeader sortKey="stats.yellowCards" label="Amarillas" className="text-yellow-600" />
-                            <SortableHeader sortKey="stats.redCards" label="Rojas" className="text-red-600" />
+                            <SortableHeader sortKey="stats.yellowCards" label="TA" className="text-yellow-600" />
+                            <SortableHeader sortKey="stats.redCards" label="TR" className="text-red-600" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -118,42 +118,42 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 key={referee.id_arbitra}
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-4 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-12 bg-white group-hover:bg-gray-50 z-10 py-3 px-6 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-10 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={referee.nombre}>
                                     {referee.nombre}
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-gray-900 bg-gray-50/50">
+                                <td className="py-3 px-2 text-center font-bold text-gray-900 bg-gray-50/50">
                                     {referee.stats.played}
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-green-600 bg-green-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-green-600 bg-green-50/30">
                                     {referee.stats.wins}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-green-700 bg-green-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-green-700 bg-green-50/30">
                                     {referee.stats.winPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-gray-500 bg-gray-50/30">
                                     {referee.stats.draws}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-gray-500 bg-gray-50/30">
                                     {referee.stats.drawPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-red-500 bg-red-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-red-500 bg-red-50/30">
                                     {referee.stats.losses}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-red-600 bg-red-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-red-600 bg-red-50/30">
                                     {referee.stats.lossPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-yellow-600">
+                                <td className="py-3 px-2 text-center font-bold text-yellow-600">
                                     {referee.stats.yellowCards}
                                 </td>
-                                <td className="py-3 px-4 text-center font-bold text-red-600">
+                                <td className="py-3 px-2 text-center font-bold text-red-600">
                                     {referee.stats.redCards}
                                 </td>
                             </tr>

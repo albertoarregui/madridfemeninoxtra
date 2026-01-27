@@ -1,11 +1,14 @@
 
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+puppeteer.use(StealthPlugin());
 
 const TEAM_ID = '54582b93';
 const TEAM_NAME = 'Real-Madrid-Women-Stats';
@@ -22,7 +25,7 @@ const SEASONS = [
 const OUTPUT_FILE = path.join(__dirname, '../src/consts/fbref-data.json');
 
 async function fetchStats() {
-  console.log('🚀 Starting FBref scrape with Puppeteer...');
+  console.log('🚀 Starting FBref scrape with Puppeteer (Stealth Mode)...');
   const allData = {};
 
   const browser = await puppeteer.launch({
