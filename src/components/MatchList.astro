@@ -23,11 +23,6 @@ interface Props {
 
 const { matches, seasons = [], competitions = [] } = Astro.props;
 
-const teamLogos = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/escudos/*.png",
-    { eager: true },
-);
-
 const competitionLogos = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/competiciones/*.png",
     { eager: true },
@@ -99,9 +94,9 @@ function getTeamLogo(teamName: string) {
     };
 
     const mappedName = teamNameMap[normalizedName] || normalizedName;
-    const logoPath = `/src/assets/escudos/${mappedName}.png`;
 
-    return teamLogos[logoPath]?.default;
+    // Using public assets path
+    return { src: `/assets/escudos/${mappedName}.png` };
 }
 ---
 

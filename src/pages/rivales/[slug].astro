@@ -39,11 +39,9 @@ if (!rival) {
     return Astro.redirect("/404");
 }
 
-let shieldImage: ImageMetadata | undefined;
+let shieldImage: { src: string } | undefined;
 try {
-    const images = import.meta.glob<{ default: ImageMetadata }>(
-        "../../assets/escudos/*.png",
-    );
+    // Removed glob import for escudos
     let fileSlug = rival.slug.replace(/-/g, "_");
 
     const normalizeName = (name: string) =>
@@ -64,13 +62,8 @@ try {
         fileSlug = "wolfsburgo";
     }
 
-    const imagePath = `../../assets/escudos/${fileSlug}.png`;
-
-    if (images[imagePath]) {
-        shieldImage = (await images[imagePath]()).default;
-    } else {
-        // console.log("Shield not found");
-    }
+    // Direct public path
+    shieldImage = { src: `/assets/escudos/${fileSlug}.png` };
 } catch (error) {
     // console.error(`Error loading shield for ${rival.nombre}:`, error);
 }

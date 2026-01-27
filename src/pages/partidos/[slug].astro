@@ -67,10 +67,6 @@ if (game.estadio) {
     }
 }
 
-const shieldImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
-);
-
 const getShieldSrc = async (teamName: string) => {
     if (!teamName) return null;
     const slug = teamName
@@ -80,12 +76,7 @@ const getShieldSrc = async (teamName: string) => {
         .replace(/ /g, "_")
         .replace(/\./g, "");
 
-    const key = Object.keys(shieldImages).find((k) => k.includes(slug));
-    if (key) {
-        const mod = await shieldImages[key]();
-        return mod.default.src;
-    }
-    return null;
+    return `/assets/escudos/${slug}.png`;
 };
 
 const localShield =

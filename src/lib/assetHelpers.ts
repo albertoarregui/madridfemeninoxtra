@@ -2,7 +2,6 @@ import type { ImageMetadata } from 'astro';
 
 // Import assets
 const playerImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/jugadoras/*.{png,jpg,jpeg,webp}');
-const teamShields = import.meta.glob<{ default: ImageMetadata }>('/src/assets/escudos/*.{png,jpg,jpeg,webp}');
 const competitionLogos = import.meta.glob<{ default: ImageMetadata }>('/src/assets/competiciones/*.{png,jpg,jpeg,webp}');
 
 const slugify = (text: string): string => {
@@ -21,23 +20,8 @@ export async function getPlayerImage(id: string): Promise<string> {
 
 export async function getShield(teamName: string): Promise<string> {
     const slug = slugify(teamName);
-
-    let path = `/src/assets/escudos/${slug}.png`;
-    let loader = teamShields[path];
-    if (loader) {
-        const mod = await loader();
-        return mod.default.src;
-    }
-
-    path = `/src/assets/escudos/${slug.replace(/_/g, '-')}.png`;
-    loader = teamShields[path];
-    if (loader) {
-        const mod = await loader();
-        return mod.default.src;
-    }
-
-    if (slug.includes('madrid')) return '/assets/escudos/real_madrid.png';
-    return '';
+    // Since images are now in public/assets/escudos, we return the direct path
+    return `/assets/escudos/${slug}.png`;
 }
 
 export async function getCompetitionLogo(compName: string): Promise<string> {

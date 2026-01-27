@@ -38,14 +38,18 @@ if (query) {
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
 );
-const rivalImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/escudos/*.{png,jpg,jpeg,webp}",
-);
+// rivalImages removed since we use public path
 const coachImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/entrenadores/*.{png,jpg,jpeg,webp}",
 );
 
 async function getImage(result: SearchResult) {
+    if (result.type === "rival") {
+        const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
+        // Assuming PNG as per previous standards and file listing
+        return { src: `/assets/escudos/${slugUnderscored}.png` };
+    }
+
     let imagesRecord: Record<
         string,
         () => Promise<{ default: ImageMetadata }>
@@ -55,9 +59,6 @@ async function getImage(result: SearchResult) {
     if (result.type === "player") {
         imagesRecord = playerImages;
         folderName = "jugadoras";
-    } else if (result.type === "rival") {
-        imagesRecord = rivalImages;
-        folderName = "escudos";
     } else if (result.type === "coach") {
         imagesRecord = coachImages;
         folderName = "entrenadores";

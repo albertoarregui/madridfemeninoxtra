@@ -5,8 +5,8 @@ import irisGoal from "../assets/awards/iris_goal.png";
 import lindaGoal from "../assets/awards/linda_goal.png";
 import matchEintracht from "../assets/awards/match_eintracht.png";
 import matchWolfsburg from "../assets/awards/match_wolfsburg.png";
-import eintrachtShield from "../assets/escudos/eintracht_de_frankfurt.png";
-import wolfsburgShield from "../assets/escudos/wolfsburgo.png";
+const eintrachtShield = "/assets/escudos/eintracht_de_frankfurt.png";
+const wolfsburgShield = "/assets/escudos/wolfsburgo.png";
 
 // Voting Window Configuration
 export const VOTING_START = new Date("2026-05-25T10:00:00");
