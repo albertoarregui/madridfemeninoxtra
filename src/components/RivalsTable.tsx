@@ -83,7 +83,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
 
     const SortableHeader = ({ label, sortKey, align = 'center', className = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string }) => (
         <th
-            className={`py-4 px-4 font-bold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none lowercase ${className}`}
+            className={`py-4 px-4 font-bold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none ${className}`}
             onClick={() => requestSort(sortKey)}
         >
             <div className={`flex items-center ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'}`}>
@@ -134,36 +134,36 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 #
                             </th>
                             <th className="sticky left-12 bg-gray-50 z-20 py-4 px-4 w-16 border-r border-gray-100 text-center">
-                                escudo
+                                Escudo
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
-                                label="rival"
+                                label="Rival"
                                 className="sticky left-28 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
                                 align="left"
                             />
 
                             {/* Scrollable Columns */}
-                            <SortableHeader sortKey="ciudad" label="ciudad" />
-                            <th className="py-4 px-4 text-center lowercase">país</th>
-                            <SortableHeader sortKey="estadio" label="estadio" />
-                            <SortableHeader sortKey="capacidad" label="capacidad" />
+                            <SortableHeader sortKey="ciudad" label="Ciudad" />
+                            <th className="py-4 px-4 text-center">País</th>
+                            <SortableHeader sortKey="estadio" label="Estadio" />
+                            <SortableHeader sortKey="capacidad" label="Capacidad" />
 
-                            <SortableHeader sortKey="stats.played" label="pj" />
+                            <SortableHeader sortKey="stats.played" label="Partidos" />
 
-                            <SortableHeader sortKey="stats.wins" label="v" className="text-green-600 bg-green-50/50" />
-                            <SortableHeader sortKey="stats.winPct" label="% v" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.wins" label="Victorias" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.winPct" label="% Vic" className="text-green-600 bg-green-50/50" />
 
-                            <SortableHeader sortKey="stats.draws" label="e" className="text-gray-600 bg-gray-50/50" />
-                            <SortableHeader sortKey="stats.drawPct" label="% e" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.draws" label="Empates" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.drawPct" label="% Emp" className="text-gray-600 bg-gray-50/50" />
 
-                            <SortableHeader sortKey="stats.losses" label="d" className="text-red-500 bg-red-50/50" />
-                            <SortableHeader sortKey="stats.lossPct" label="% d" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.losses" label="Derrotas" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.lossPct" label="% Der" className="text-red-500 bg-red-50/50" />
 
-                            <SortableHeader sortKey="stats.gf" label="gf" />
-                            <SortableHeader sortKey="stats.ga" label="gc" />
-                            <SortableHeader sortKey="stats.gd" label="dif" />
-                            <SortableHeader sortKey="stats.cleanSheets" label="porterías a cero" />
+                            <SortableHeader sortKey="stats.gf" label="Goles Favor" />
+                            <SortableHeader sortKey="stats.ga" label="Goles Contra" />
+                            <SortableHeader sortKey="stats.gd" label="Diferencia" />
+                            <SortableHeader sortKey="stats.cleanSheets" label="Porterías a cero" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -200,7 +200,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                         title={rival.pais}
                                     />
                                 </td>
-                                <td className="py-3 px-4 truncate max-w-[180px] text-gray-500" title={rival.estadio}>
+                                <td className="py-3 px-4 text-gray-500 whitespace-nowrap" title={rival.estadio}>
                                     {rival.estadio || '-'}
                                 </td>
                                 <td className="py-3 px-4 text-center font-mono text-xs text-gray-400">

@@ -70,9 +70,13 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 estadios e ON c.estadio = e.id_estadio
             LEFT JOIN
                 partidos p ON (p.id_club_local = c.id_club OR p.id_club_visitante = c.id_club)
+            LEFT JOIN
+                competiciones comp ON p.id_competicion = comp.id_competicion
             WHERE
                 c.nombre != 'Real Madrid Femenino'
+                AND c.nombre != 'Real Madrid'
                 AND p.goles_rm IS NOT NULL
+                AND comp.competicion NOT LIKE '%Amistoso%'
             GROUP BY
                 c.id_club
             ORDER BY 
