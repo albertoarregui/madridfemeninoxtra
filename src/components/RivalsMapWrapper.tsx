@@ -108,9 +108,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
 
     return (
         <div className="w-full my-12 pt-8 border-t border-gray-100">
-            <h2 className="text-2xl font-bold mb-6 font-bebas text-[#151e42] border-l-4 border-[#ffde59] pl-3 uppercase tracking-wider">
-                Mapa de Rivales
-            </h2>
+
             <InteractiveMap
                 markers={markers}
                 height="600px"
