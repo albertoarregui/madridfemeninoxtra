@@ -186,7 +186,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                     />
                                 </td>
                                 <td className="sticky left-28 bg-white group-hover:bg-gray-50 z-10 py-3 px-6 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)]">
-                                    <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
+                                    <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                         {rival.nombre}
                                     </a>
                                 </td>
@@ -203,7 +203,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 </td>
                                 <td className="py-3 px-4 text-gray-500 whitespace-nowrap" title={rival.estadio}>
                                     {rival.estadio ? (
-                                        <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
+                                        <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                             {rival.estadio}
                                         </a>
                                     ) : '-'}
