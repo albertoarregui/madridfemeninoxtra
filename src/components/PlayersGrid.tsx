@@ -93,9 +93,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             if (selectedSeason !== 'Todas') {
                 if (Array.isArray(player.temporadas) && player.temporadas.length > 0) {
                     matchesSeason = player.temporadas.includes(selectedSeason);
-                } else if (player.rm_career) {
-                    matchesSeason = player.rm_career.includes(selectedSeason.split('-')[0]) || player.rm_career.includes('Actualidad');
                 } else {
+                    // If no seasons are registered, don't show info for specific seasons
                     matchesSeason = false;
                 }
             }

@@ -27,6 +27,8 @@ export function getPlayerImageUrl(player: any): string {
     // Otherwise generate from name: "Misa Rodríguez" -> "misa_rodriguez.png"
     if (player.nombre) {
         let normalized = player.nombre.toString().toLowerCase()
+            .replace(/ø/g, 'o').replace(/Ø/g, 'o')
+            .replace(/ö/g, 'o').replace(/Ö/g, 'o')
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
             .trim()
             .replace(/\s+/g, '_') // Replace spaces with underscore
