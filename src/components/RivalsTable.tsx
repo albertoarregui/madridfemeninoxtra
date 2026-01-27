@@ -127,44 +127,44 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
     return (
         <div className="w-full max-w-[1600px] mx-auto overflow-hidden rounded-xl border border-gray-200 shadow-xl bg-white mb-10">
             <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full border-collapse text-left min-w-[1200px]">
+                <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
                             {/* Sticky Columns */}
-                            <th className="sticky left-0 bg-gray-50 z-20 py-4 px-4 text-center w-12 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <th className="sticky left-0 bg-gray-50 z-20 py-3 px-2 text-center w-10 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
-                            <th className="sticky left-12 bg-gray-50 z-20 py-4 px-4 w-16 border-r border-gray-100 text-center">
+                            <th className="sticky left-10 bg-gray-50 z-20 py-3 px-2 w-14 border-r border-gray-100 text-center">
                                 Escudo
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Rival"
-                                className="sticky left-28 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
+                                className="sticky left-24 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
                                 align="left"
                             />
 
                             {/* Scrollable Columns */}
                             <SortableHeader sortKey="ciudad" label="Ciudad" />
-                            <th className="py-4 px-4 text-center">País</th>
+                            <th className="py-3 px-2 text-center">País</th>
                             <SortableHeader sortKey="estadio" label="Estadio" />
-                            <SortableHeader sortKey="capacidad" label="Capacidad" />
+                            <SortableHeader sortKey="capacidad" label="Cap" />
 
-                            <SortableHeader sortKey="stats.played" label="Partidos" />
+                            <SortableHeader sortKey="stats.played" label="PJ" />
 
-                            <SortableHeader sortKey="stats.wins" label="Victorias" className="text-green-600 bg-green-50/50" />
-                            <SortableHeader sortKey="stats.winPct" label="% Vic" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.wins" label="V" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.winPct" label="% V" className="text-green-600 bg-green-50/50" />
 
-                            <SortableHeader sortKey="stats.draws" label="Empates" className="text-gray-600 bg-gray-50/50" />
-                            <SortableHeader sortKey="stats.drawPct" label="% Emp" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.draws" label="E" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.drawPct" label="% E" className="text-gray-600 bg-gray-50/50" />
 
-                            <SortableHeader sortKey="stats.losses" label="Derrotas" className="text-red-500 bg-red-50/50" />
-                            <SortableHeader sortKey="stats.lossPct" label="% Der" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.losses" label="D" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.lossPct" label="% D" className="text-red-500 bg-red-50/50" />
 
-                            <SortableHeader sortKey="stats.gf" label="Goles Favor" />
-                            <SortableHeader sortKey="stats.ga" label="Goles Contra" />
-                            <SortableHeader sortKey="stats.gd" label="Diferencia" />
-                            <SortableHeader sortKey="stats.cleanSheets" label="Porterías a cero" />
+                            <SortableHeader sortKey="stats.gf" label="GF" />
+                            <SortableHeader sortKey="stats.ga" label="GC" />
+                            <SortableHeader sortKey="stats.gd" label="Dif" />
+                            <SortableHeader sortKey="stats.cleanSheets" label="PaC" title="Porterías a cero" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -174,10 +174,10 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
                                 {/* Sticky Columns */}
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-4 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-12 bg-white group-hover:bg-gray-50 z-10 py-3 px-4 border-r border-gray-100 text-center">
+                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 border-r border-gray-100 text-center">
                                     <img
                                         src={rival.shieldUrl}
                                         alt={rival.nombre}
@@ -185,15 +185,15 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                         onError={(e) => (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'}
                                     />
                                 </td>
-                                <td className="sticky left-28 bg-white group-hover:bg-gray-50 z-10 py-3 px-6 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-24 bg-white group-hover:bg-gray-50 z-10 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={rival.nombre}>
                                     <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                         {rival.nombre}
                                     </a>
                                 </td>
 
                                 {/* Scrollable Columns */}
-                                <td className="py-3 px-4 text-gray-600">{rival.ciudad}</td>
-                                <td className="py-3 px-4 text-center">
+                                <td className="py-3 px-2 text-gray-600 truncate max-w-[120px]" title={rival.ciudad}>{rival.ciudad}</td>
+                                <td className="py-3 px-2 text-center">
                                     <img
                                         src={getFlagSrc(rival.pais)}
                                         alt={rival.pais}
@@ -201,48 +201,48 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                         title={rival.pais}
                                     />
                                 </td>
-                                <td className="py-3 px-4 text-gray-500 whitespace-nowrap" title={rival.estadio}>
+                                <td className="py-3 px-2 text-gray-500 whitespace-nowrap truncate max-w-[150px]" title={rival.estadio}>
                                     {rival.estadio ? (
                                         <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                             {rival.estadio}
                                         </a>
                                     ) : '-'}
                                 </td>
-                                <td className="py-3 px-4 text-center font-mono text-xs text-gray-400">
+                                <td className="py-3 px-2 text-center font-mono text-xs text-gray-400">
                                     {rival.capacidad !== 0 ? Number(rival.capacidad).toLocaleString() : '-'}
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-gray-900 bg-gray-50/50">
+                                <td className="py-3 px-2 text-center font-bold text-gray-900 bg-gray-50/50">
                                     {rival.stats.played}
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-green-600 bg-green-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-green-600 bg-green-50/30">
                                     {rival.stats.wins}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-green-700 bg-green-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-green-700 bg-green-50/30">
                                     {rival.stats.winPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-gray-500 bg-gray-50/30">
                                     {rival.stats.draws}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-gray-500 bg-gray-50/30">
                                     {rival.stats.drawPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-bold text-red-500 bg-red-50/30">
+                                <td className="py-3 px-2 text-center font-bold text-red-500 bg-red-50/30">
                                     {rival.stats.losses}
                                 </td>
-                                <td className="py-3 px-4 text-center text-xs font-mono text-red-600 bg-red-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono text-red-600 bg-red-50/30">
                                     {rival.stats.lossPct}%
                                 </td>
 
-                                <td className="py-3 px-4 text-center font-mono text-gray-600">{rival.stats.gf}</td>
-                                <td className="py-3 px-4 text-center font-mono text-gray-600">{rival.stats.ga}</td>
-                                <td className="py-3 px-4 text-center font-mono font-bold text-gray-900">
+                                <td className="py-3 px-2 text-center font-mono text-gray-600">{rival.stats.gf}</td>
+                                <td className="py-3 px-2 text-center font-mono text-gray-600">{rival.stats.ga}</td>
+                                <td className="py-3 px-2 text-center font-mono font-bold text-gray-900">
                                     {rival.stats.gd > 0 ? `+${rival.stats.gd}` : rival.stats.gd}
                                 </td>
-                                <td className="py-3 px-4 text-center font-bold text-blue-500">
+                                <td className="py-3 px-2 text-center font-bold text-blue-500">
                                     {rival.stats.cleanSheets}
                                 </td>
                             </tr>
