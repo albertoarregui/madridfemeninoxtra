@@ -81,10 +81,11 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
             : <ArrowDown className="w-3 h-3 ml-1 text-[#151e42]" />;
     };
 
-    const SortableHeader = ({ label, sortKey, align = 'center', className = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string }) => (
+    const SortableHeader = ({ label, sortKey, align = 'center', className = '', title = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string, title?: string }) => (
         <th
             className={`py-4 px-4 font-bold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none ${className}`}
             onClick={() => requestSort(sortKey)}
+            title={title}
         >
             <div className={`flex items-center ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'}`}>
                 {label}
@@ -131,16 +132,16 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
                             {/* Sticky Columns */}
-                            <th className="sticky left-0 bg-gray-50 z-20 py-3 px-2 text-center w-10 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-10 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
-                            <th className="sticky left-10 bg-gray-50 z-20 py-3 px-2 w-14 border-r border-gray-100 text-center">
+                            <th className="sticky left-10 bg-gray-50 z-30 py-3 px-2 w-14 border-r border-gray-200 text-center">
                                 Escudo
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Rival"
-                                className="sticky left-24 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
+                                className="sticky left-24 bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
                                 align="left"
                             />
 
@@ -174,10 +175,10 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
                                 {/* Sticky Columns */}
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 border-r border-gray-100 text-center">
+                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-200 text-center">
                                     <img
                                         src={rival.shieldUrl}
                                         alt={rival.nombre}
@@ -185,7 +186,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                         onError={(e) => (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'}
                                     />
                                 </td>
-                                <td className="sticky left-24 bg-white group-hover:bg-gray-50 z-10 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={rival.nombre}>
+                                <td className="sticky left-24 bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={rival.nombre}>
                                     <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                         {rival.nombre}
                                     </a>
