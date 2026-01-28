@@ -348,7 +348,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 fecha: match.fecha,
                 competicion: match.competicion || '-',
                 esLocal: esLocal,
-                ubicacion: esLocal ? 'Local' : 'Visitante',
+                ubicacion: esLocal ? 'Visitante' : 'Local',
                 resultado: `${statsLocal}-${statsVisitor}`,
                 golesRM: match.goles_rm,
                 golesRival: match.goles_rival,
