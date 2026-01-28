@@ -152,8 +152,8 @@ const getSeason = (dateStr: string) => {
 const officialMatches = rivalMatches.filter(
     (m) => m.competicion !== "Amistoso",
 );
-const homeMatches = officialMatches.filter((m) => m.esLocal);
-const awayMatches = officialMatches.filter((m) => !m.esLocal);
+const homeMatches = officialMatches.filter((m) => !m.esLocal);
+const awayMatches = officialMatches.filter((m) => m.esLocal);
 
 const streaksTotal = calculateStreaks(officialMatches);
 const streaksHome = calculateStreaks(homeMatches);
@@ -335,29 +335,6 @@ const isRealMadrid =
                             <tbody>
                                 <tr>
                                     <td>LOCAL</td>
-                                    <td>{rivalStats.home.pj}</td>
-                                    <td>{rivalStats.home.pg}</td>
-                                    <td>{rivalStats.home.percPG}%</td>
-                                    <td>{rivalStats.home.pe}</td>
-                                    <td>{rivalStats.home.percPE}%</td>
-                                    <td>{rivalStats.home.pp}</td>
-                                    <td>{rivalStats.home.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{rivalStats.home.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{rivalStats.home.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{rivalStats.home.dif > 0 ? "+" : ""}{
-                                            rivalStats.home.dif
-                                        }</td
-                                    >
-                                    <td>{rivalStats.home.avg}</td>
-                                    <td>{rivalStats.home.dif}</td>
-                                </tr>
-                                <tr>
-                                    <td>VISITANTE</td>
                                     <td>{rivalStats.away.pj}</td>
                                     <td>{rivalStats.away.pg}</td>
                                     <td>{rivalStats.away.percPG}%</td>
@@ -378,6 +355,29 @@ const isRealMadrid =
                                     >
                                     <td>{rivalStats.away.avg}</td>
                                     <td>{rivalStats.away.dif}</td>
+                                </tr>
+                                <tr>
+                                    <td>VISITANTE</td>
+                                    <td>{rivalStats.home.pj}</td>
+                                    <td>{rivalStats.home.pg}</td>
+                                    <td>{rivalStats.home.percPG}%</td>
+                                    <td>{rivalStats.home.pe}</td>
+                                    <td>{rivalStats.home.percPE}%</td>
+                                    <td>{rivalStats.home.pp}</td>
+                                    <td>{rivalStats.home.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{rivalStats.home.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{rivalStats.home.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{rivalStats.home.dif > 0 ? "+" : ""}{
+                                            rivalStats.home.dif
+                                        }</td
+                                    >
+                                    <td>{rivalStats.home.avg}</td>
+                                    <td>{rivalStats.home.dif}</td>
                                 </tr>
 
                                 <tr class="total-row">
@@ -1368,8 +1368,8 @@ const isRealMadrid =
             `;
 
         table.innerHTML = `
-                <tr>${getRowHtml("LOCAL", stats.home)}</tr>
-                <tr>${getRowHtml("VISITANTE", stats.away)}</tr>
+                <tr>${getRowHtml("LOCAL", stats.away)}</tr>
+                <tr>${getRowHtml("VISITANTE", stats.home)}</tr>
                 <tr class="total-row">${getRowHtml("<strong>TOTAL</strong>", stats.total)}</tr>
             `;
     }
@@ -1403,9 +1403,9 @@ const isRealMadrid =
 
             let locationMatch = true;
             if (selectedLocation === "local") {
-                locationMatch = m.esLocal === true;
-            } else if (selectedLocation === "visitor") {
                 locationMatch = m.esLocal === false;
+            } else if (selectedLocation === "visitor") {
+                locationMatch = m.esLocal === true;
             }
 
             return compMatch && seasonMatch && locationMatch;
