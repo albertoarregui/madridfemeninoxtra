@@ -10,6 +10,7 @@ import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://www.madridfemeninoxtra.com',
+  compressHTML: true,
   output: 'server',
   adapter: vercel({
     imageService: true,
