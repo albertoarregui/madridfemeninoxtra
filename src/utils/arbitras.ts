@@ -95,7 +95,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
         return [];
     }
 }
-}
+
 
 export async function fetchMatchesByReferee(refereeName: string): Promise<any[]> {
     try {
