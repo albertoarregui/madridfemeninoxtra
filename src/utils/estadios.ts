@@ -8,6 +8,7 @@ export interface StadiumSummary {
     imageUrl?: string;
     slug: string;
     coordinates?: { lat: number, lng: number };
+    capacity?: string | number;
 }
 
 export function getAllStadiums(): StadiumSummary[] {
