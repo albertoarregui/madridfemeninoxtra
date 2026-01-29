@@ -2,285 +2,1148 @@
 import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 import { getAllStadiums, fetchMatchesByStadium } from "../../utils/estadios";
-import { fetchStadiumStats } from "../../utils/partidos";
-import { Image } from "astro:assets";
-import { getCoordinates } from "../../consts/location-data";
-import InteractiveMap from "../../components/Map";
-
-export const prerender = true;
-
-export async function getStaticPaths() {
-    const stadiums = getAllStadiums();
-    return stadiums.map((stadium) => ({
-        params: { slug: stadium.slug },
-    }));
-}
+import { generateSlug } from "../../utils/url-helper";
 
 const { slug } = Astro.params;
-const stadiums = getAllStadiums();
-const stadium = stadiums.find((s) => s.slug === slug);
+
+const allStadiums = getAllStadiums();
+const stadium = allStadiums.find((s) => s.slug === slug);
 
 if (!stadium) {
     return Astro.redirect("/404");
 }
 
-const stats = await fetchStadiumStats(stadium.name);
-const matches = await fetchMatchesByStadium(stadium.name);
+const rawMatches = await fetchMatchesByStadium(stadium.name);
 
-// Calculate percentages
-const total = stats.total || 1;
-const winPct = ((stats.wins / total) * 100).toFixed(1);
-const drawPct = ((stats.draws / total) * 100).toFixed(1);
-const lossPct = ((stats.losses / total) * 100).toFixed(1);
+// Process matches for statistics
+const matches = rawMatches.map((m) => {
+    const isLocal =
+        m.club_local.toLowerCase().trim().includes("real madrid") ||
+        m.club_local.toLowerCase().trim() === "real madrid cf";
 
-// Map marker
-const marker = stadium.coordinates
-    ? [
-          {
-              lat: stadium.coordinates.lat,
-              lng: stadium.coordinates.lng,
-              label: stadium.name,
-              imageUrl: stadium.imageUrl,
-              type: "stadium" as const,
-              description: `${stadium.name} - ${stadium.city || ""}`,
-          },
-      ]
-    : [];
+    // Determine season from date
+    const d = new Date(m.fecha);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const startYear = month >= 8 ? year : year - 1;
+    const endYear = startYear + 1;
+    const season = `${startYear}/${endYear.toString().slice(-2)}`;
+
+    return {
+        ...m,
+        esLocal: isLocal,
+        golesRM: m.goles_rm,
+        golesRival: m.goles_rival,
+        season,
+        competicion: m.competicion,
+        resultado: (() => {
+            const rm = parseInt(m.goles_rm) || 0;
+            const rival = parseInt(m.goles_rival) || 0;
+            if (rm > rival) return "V";
+            if (rm < rival) return "D";
+            // Check penalties if draw
+            if (m.penaltis === 1 || m.penaltis === "1") return "V";
+            if (m.penaltis === 0 || m.penaltis === "0") return "D";
+            return "E";
+        })(),
+    };
+});
+
+// Calculate Stats (Server Side)
+const calculateStats = (matchList: any[]) => {
+    const stats = {
+        home: {
+            pj: 0,
+            pg: 0,
+            pe: 0,
+            pp: 0,
+            gf: 0,
+            gc: 0,
+            cleanSheets: 0,
+            conceded: 0,
+            yellowCards: 0,
+            redCards: 0,
+        },
+        away: {
+            pj: 0,
+            pg: 0,
+            pe: 0,
+            pp: 0,
+            gf: 0,
+            gc: 0,
+            cleanSheets: 0,
+            conceded: 0,
+            yellowCards: 0,
+            redCards: 0,
+        },
+        total: {
+            pj: 0,
+            pg: 0,
+            pe: 0,
+            pp: 0,
+            gf: 0,
+            gc: 0,
+            cleanSheets: 0,
+            conceded: 0,
+            yellowCards: 0,
+            redCards: 0,
+        },
+    };
+
+    matchList.forEach((match) => {
+        const golesRM = parseInt(match.golesRM) || 0;
+        const golesRival = parseInt(match.golesRival) || 0;
+        const isHome = match.esLocal; // This logic depends on RM perspective
+        // WARN: In Rival page, 'home' means RM played as LOCAL against that rival.
+        // Here, 'home' means RM played as LOCAL at this stadium.
+        // If the stadium is NOT Di Stefano, RM usually plays as visitor (away).
+        // Exceptions: Finals played at neutral stadiums where RM might be 'local' administratively.
+
+        const location = isHome ? stats.home : stats.away;
+
+        location.pj++;
+        location.gf += golesRM;
+        location.gc += golesRival;
+
+        if (golesRival === 0) location.cleanSheets++;
+        else location.conceded++;
+
+        if (golesRM > golesRival) location.pg++;
+        else if (golesRM < golesRival) location.pp++;
+        else {
+            // Check penalties if draw (simplified for now without full penaltis data in some queries)
+            if (match.penaltis === 1 || match.penaltis === "1") location.pg++;
+            else if (match.penaltis === 0 || match.penaltis === "0")
+                location.pp++;
+            else location.pe++;
+        }
+    });
+
+    // Aggregation
+    const keys = [
+        "pj",
+        "pg",
+        "pe",
+        "pp",
+        "gf",
+        "gc",
+        "cleanSheets",
+        "conceded",
+        "yellowCards",
+        "redCards",
+    ] as const;
+    keys.forEach((key) => {
+        stats.total[key] = stats.home[key] + stats.away[key];
+    });
+
+    const addFields = (obj: any) => ({
+        ...obj,
+        percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
+        percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
+        percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
+        avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
+        dif: obj.gf - obj.gc,
+    });
+
+    return {
+        home: addFields(stats.home),
+        away: addFields(stats.away),
+        total: addFields(stats.total),
+    };
+};
+
+const stadiumStats = calculateStats(matches);
+
+// Filters Setup
+const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
+    .sort()
+    .reverse();
+const uniqueCompetitions = [
+    ...new Set(matches.map((m) => m.competicion)),
+].sort();
+
+// Arc Calculations for Server Render
+const circumference = 220;
+const totalMatches = stadiumStats.total.pj;
+const winsArc =
+    totalMatches > 0
+        ? Math.round((stadiumStats.total.pg / totalMatches) * circumference)
+        : 0;
+const drawsArc =
+    totalMatches > 0
+        ? Math.round((stadiumStats.total.pe / totalMatches) * circumference)
+        : 0;
+const lossesArc =
+    totalMatches > 0
+        ? Math.round((stadiumStats.total.pp / totalMatches) * circumference)
+        : 0;
+
+const totalGoals = stadiumStats.total.gf + stadiumStats.total.gc;
+const goalsForArc =
+    totalGoals > 0
+        ? Math.round((stadiumStats.total.gf / totalGoals) * circumference)
+        : 0;
+const goalsAgainstArc =
+    totalGoals > 0
+        ? Math.round((stadiumStats.total.gc / totalGoals) * circumference)
+        : 0;
+
+const cleanSheetsArc =
+    totalMatches > 0
+        ? Math.round(
+              (stadiumStats.total.cleanSheets / totalMatches) * circumference,
+          )
+        : 0;
+const concededArc =
+    totalMatches > 0
+        ? Math.round(
+              (stadiumStats.total.conceded / totalMatches) * circumference,
+          )
+        : 0;
+
+export const prerender = true;
 ---
 
 <Layout
-    title={`${stadium.name} | Estadísticas Real Madrid Femenino`}
-    description={`Historial de partidos, balance de victorias y estadísticas del Real Madrid Femenino en el estadio ${stadium.name}.`}
+    title={`${stadium.name} | Madrid Femenino Xtra`}
+    description={`Estadísticas e historial de partidos del Real Madrid Femenino en el estadio ${stadium.name}.`}
 >
-    <main class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <a
-            href="/rivales/estadios"
-            class="inline-flex items-center text-gray-500 hover:text-[#151e42] mb-6 transition-colors"
-        >
+    <main class="rival-details-page">
+        <a href="/rivales/estadios" class="back-link">
             <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 mr-2"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
             >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
             Volver a Estadios
         </a>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Info & Stats */}
-            <div class="lg:col-span-1 space-y-8">
-                <div
-                    class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100"
-                >
+        <div class="rival-grid">
+            <div class="left-column">
+                <section class="rival-card">
+                    <h2 class="section-header">FICHA DE ESTADIO</h2>
+                    <div class="rival-info">
+                        <div class="rival-shield">
+                            {
+                                stadium.imageUrl ? (
+                                    <img
+                                        src={stadium.imageUrl}
+                                        alt={stadium.name}
+                                        class="object-cover w-full h-full rounded-md"
+                                    />
+                                ) : (
+                                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                        <span>Sin imagen</span>
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <div class="rival-details">
+                            <div class="info-row">
+                                <span class="label">Nombre:</span>
+                                <span class="value">{stadium.name}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Ciudad:</span>
+                                <span class="value">{stadium.city}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Capacidad:</span>
+                                <span class="value"
+                                    >{
+                                        stadium.capacity
+                                            ? Number(
+                                                  stadium.capacity,
+                                              ).toLocaleString()
+                                            : "-"
+                                    }</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="stats-table-card">
+                    <h3 class="section-subheader">
+                        ESTADÍSTICAS EN ESTE ESTADIO
+                    </h3>
+                    <div class="table-wrapper">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>C. LECHERA</th>
+                                    <th>PJ</th>
+                                    <th>PG</th>
+                                    <th>%PG</th>
+                                    <th>PE</th>
+                                    <th>%PE</th>
+                                    <th>PP</th>
+                                    <th>%PP</th>
+                                    <th class="highlight-yellow">⚽</th>
+                                    <th class="highlight-red">⚽</th>
+                                    <th class="highlight-blue">📊</th>
+                                    <th>Avg.</th>
+                                    <th>Dif.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>LOCAL</td>
+                                    <td>{stadiumStats.home.pj}</td>
+                                    <td>{stadiumStats.home.pg}</td>
+                                    <td>{stadiumStats.home.percPG}%</td>
+                                    <td>{stadiumStats.home.pe}</td>
+                                    <td>{stadiumStats.home.percPE}%</td>
+                                    <td>{stadiumStats.home.pp}</td>
+                                    <td>{stadiumStats.home.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{stadiumStats.home.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{stadiumStats.home.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{stadiumStats.home.dif > 0 ? "+" : ""}{
+                                            stadiumStats.home.dif
+                                        }</td
+                                    >
+                                    <td>{stadiumStats.home.avg}</td>
+                                    <td>{stadiumStats.home.dif}</td>
+                                </tr>
+                                <tr>
+                                    <td>VISITANTE</td>
+                                    <td>{stadiumStats.away.pj}</td>
+                                    <td>{stadiumStats.away.pg}</td>
+                                    <td>{stadiumStats.away.percPG}%</td>
+                                    <td>{stadiumStats.away.pe}</td>
+                                    <td>{stadiumStats.away.percPE}%</td>
+                                    <td>{stadiumStats.away.pp}</td>
+                                    <td>{stadiumStats.away.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{stadiumStats.away.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{stadiumStats.away.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{stadiumStats.away.dif > 0 ? "+" : ""}{
+                                            stadiumStats.away.dif
+                                        }</td
+                                    >
+                                    <td>{stadiumStats.away.avg}</td>
+                                    <td>{stadiumStats.away.dif}</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>TOTAL</strong></td>
+                                    <td>{stadiumStats.total.pj}</td>
+                                    <td>{stadiumStats.total.pg}</td>
+                                    <td>{stadiumStats.total.percPG}%</td>
+                                    <td>{stadiumStats.total.pe}</td>
+                                    <td>{stadiumStats.total.percPE}%</td>
+                                    <td>{stadiumStats.total.pp}</td>
+                                    <td>{stadiumStats.total.percPP}%</td>
+                                    <td class="highlight-yellow"
+                                        >{stadiumStats.total.gf}</td
+                                    >
+                                    <td class="highlight-red"
+                                        >{stadiumStats.total.gc}</td
+                                    >
+                                    <td class="highlight-blue"
+                                        >{
+                                            stadiumStats.total.dif > 0
+                                                ? "+"
+                                                : ""
+                                        }{stadiumStats.total.dif}</td
+                                    >
+                                    <td>{stadiumStats.total.avg}</td>
+                                    <td>{stadiumStats.total.dif}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="charts-card">
+                    <h2 class="section-header">GRÁFICAS</h2>
+                    <div class="filters-container">
+                        <div class="filter-wrapper">
+                            <select id="season-filter">
+                                <option value="all">Todas las Temporadas</option
+                                >
+                                {
+                                    uniqueSeasons.map((season) => (
+                                        <option value={season}>{season}</option>
+                                    ))
+                                }
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
+                        </div>
+                    </div>
+                    <div class="charts-row">
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="results-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#c8e6c9"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#fff9c4"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
+                                    stroke-dashoffset={-winsArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
+                                    stroke-dashoffset={-(winsArc + drawsArc)}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="results-legend">
+                                <div>
+                                    <span class="dot green"></span> Ganados ({
+                                        stadiumStats.total.pg
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot orange"></span> Empatados ({
+                                        stadiumStats.total.pe
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> Perdidos ({
+                                        stadiumStats.total.pp
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="goals-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#c8e6c9"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${goalsForArc} ${circumference - goalsForArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${goalsAgainstArc} ${circumference - goalsAgainstArc}`}
+                                    stroke-dashoffset={-goalsForArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="goals-legend">
+                                <div>
+                                    <span class="dot green"></span> A favor ({
+                                        stadiumStats.total.gf
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> En contra ({
+                                        stadiumStats.total.gc
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-item">
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="clean-sheets-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#c8e6c9"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${cleanSheetsArc} ${circumference - cleanSheetsArc}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${concededArc} ${circumference - concededArc}`}
+                                    stroke-dashoffset={-cleanSheetsArc}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="clean-sheets-legend">
+                                <div>
+                                    <span class="dot green"></span> P. a cero ({
+                                        stadiumStats.total.cleanSheets
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> Con gol ({
+                                        stadiumStats.total.conceded
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="matches-card">
+                    <h3 class="section-subheader">PARTIDOS DISPUTADOS</h3>
+                    <div class="table-wrapper">
+                        <table class="matches-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Competición</th>
+                                    <th>Local</th>
+                                    <th>Res.</th>
+                                    <th>Visitante</th>
+                                    <th>Árbitra</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {
+                                    matches.map((match, index) => (
+                                        <tr
+                                            class={`match-row ${index >= 10 ? "hidden-match" : ""}`}
+                                            style={
+                                                index >= 10
+                                                    ? "display: none;"
+                                                    : ""
+                                            }
+                                        >
+                                            <td>
+                                                {new Date(
+                                                    match.fecha,
+                                                ).toLocaleDateString("es-ES")}
+                                            </td>
+                                            <td>{match.competicion}</td>
+                                            <td
+                                                class={
+                                                    match.club_local
+                                                        .toLowerCase()
+                                                        .includes("real madrid")
+                                                        ? "font-bold"
+                                                        : ""
+                                                }
+                                            >
+                                                {match.club_local}
+                                            </td>
+                                            <td
+                                                class={`font-bold ${
+                                                    match.resultado === "V"
+                                                        ? "text-green-600"
+                                                        : match.resultado ===
+                                                            "E"
+                                                          ? "text-orange-500"
+                                                          : "text-red-500"
+                                                }`}
+                                            >
+                                                {match.goles_rm} -{" "}
+                                                {match.goles_rival}
+                                            </td>
+                                            <td
+                                                class={
+                                                    match.club_visitante
+                                                        .toLowerCase()
+                                                        .includes("real madrid")
+                                                        ? "font-bold"
+                                                        : ""
+                                                }
+                                            >
+                                                {match.club_visitante}
+                                            </td>
+                                            <td>
+                                                {match.arbitra_nombre && (
+                                                    <a
+                                                        href={`/arbitras/${generateSlug(match.arbitra_nombre)}`}
+                                                        class="hover:text-[#ffde59] transition-colors"
+                                                    >
+                                                        {match.arbitra_nombre}
+                                                    </a>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                     {
-                        stadium.imageUrl ? (
-                            <img
-                                src={stadium.imageUrl}
-                                alt={stadium.name}
-                                class="w-full h-64 object-cover"
-                            />
-                        ) : (
-                            <div class="w-full h-64 flex items-center justify-center bg-gray-100 text-gray-400">
-                                Sin imagen disponible
+                        matches.length > 10 && (
+                            <div class="matches-footer">
+                                <button id="show-more-matches" class="btn-more">
+                                    Ver todos los partidos ({matches.length})
+                                </button>
                             </div>
                         )
                     }
-                    <div class="p-6">
-                        <h1
-                            class="text-3xl font-bebas text-[#151e42] leading-none mb-2"
-                        >
-                            {stadium.name}
-                        </h1>
-                        {
-                            stadium.city && (
-                                <p class="text-gray-500 flex items-center gap-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4 text-[#151e42]"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path d="M20 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z" />
-                                        <circle cx="12" cy="10" r="3" />
-                                    </svg>
-                                    {stadium.city}
-                                </p>
-                            )
-                        }
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
-                >
-                    <h2
-                        class="text-xl font-bold text-[#151e42] mb-4 border-l-4 border-[#ffde59] pl-3"
-                    >
-                        BALANCE
-                    </h2>
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <div class="p-3 bg-green-50 rounded-lg">
-                            <span
-                                class="block text-2xl font-bold text-green-600"
-                                >{stats.wins}</span
-                            >
-                            <span class="text-xs text-uppercase text-green-800"
-                                >Victorias</span
-                            >
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded-lg">
-                            <span class="block text-2xl font-bold text-gray-600"
-                                >{stats.draws}</span
-                            >
-                            <span class="text-xs text-uppercase text-gray-800"
-                                >Empates</span
-                            >
-                        </div>
-                        <div class="p-3 bg-red-50 rounded-lg">
-                            <span class="block text-2xl font-bold text-red-600"
-                                >{stats.losses}</span
-                            >
-                            <span class="text-xs text-uppercase text-red-800"
-                                >Derrotas</span
-                            >
-                        </div>
-                    </div>
-
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <div
-                            class="flex items-center justify-between text-sm text-gray-600 mb-2"
-                        >
-                            <span>Efectividad</span>
-                            <span class="font-bold">{winPct}%</span>
-                        </div>
-                        <div
-                            class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden flex"
-                        >
-                            <div
-                                class="bg-green-500 h-2.5"
-                                style={`width: ${winPct}%`}
-                            >
-                            </div>
-                            <div
-                                class="bg-gray-400 h-2.5"
-                                style={`width: ${drawPct}%`}
-                            >
-                            </div>
-                            <div
-                                class="bg-red-500 h-2.5"
-                                style={`width: ${lossPct}%`}
-                            >
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {
-                    marker.length > 0 && (
-                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100 h-[300px] overflow-hidden">
-                            <InteractiveMap
-                                client:only="react"
-                                @ts-ignore
-                                markers={marker}
-                                center={{
-                                    lat: stadium.coordinates?.lat || 40,
-                                    lng: stadium.coordinates?.lng || -3,
-                                }}
-                                zoom={13}
-                                height="100%"
-                            />
-                        </div>
-                    )
-                }
+                </section>
             </div>
 
-            {/* Right Column: Match History */}
-            <div class="lg:col-span-2">
-                <h2 class="section-title mb-6">HISTORIAL DE PARTIDOS</h2>
-
-                {
-                    matches.length > 0 ? (
-                        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-                                        <tr>
-                                            <th class="px-6 py-3">Fecha</th>
-                                            <th class="px-6 py-3">
-                                                Competición
-                                            </th>
-                                            <th class="px-6 py-3 text-right">
-                                                Local
-                                            </th>
-                                            <th class="px-6 py-3 text-center">
-                                                Res.
-                                            </th>
-                                            <th class="px-6 py-3">Visitante</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {matches.map((match) => (
-                                            <tr
-                                                class="bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer"
-                                                onclick={`window.location.href='/partidos/${match.slug}'`}
-                                            >
-                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                                    {match.fecha_formateada}
-                                                </td>
-                                                <td class="px-6 py-4">
-                                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs">
-                                                        {match.competicion ||
-                                                            match.temporada}
-                                                    </span>
-                                                </td>
-                                                <td class="px-6 py-4 text-right font-bold text-[#151e42]">
-                                                    {match.club_local}
-                                                </td>
-                                                <td class="px-6 py-4 text-center">
-                                                    <span class="font-bold text-lg bg-[#151e42] text-white px-3 py-1 rounded-md">
-                                                        {match.goles_rm !== null
-                                                            ? match.goles_rm
-                                                            : "-"}{" "}
-                                                        -{" "}
-                                                        {match.goles_rival !==
-                                                        null
-                                                            ? match.goles_rival
-                                                            : "-"}
-                                                    </span>
-                                                    {match.penaltis &&
-                                                        match.penaltis !==
-                                                            "0" &&
-                                                        match.penaltis !==
-                                                            0 && (
-                                                            <div class="text-xs text-gray-500 mt-1">
-                                                                (Pen.)
-                                                            </div>
-                                                        )}
-                                                </td>
-                                                <td class="px-6 py-4 font-bold text-[#151e42]">
-                                                    {match.club_visitante}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+            <div class="right-column">
+                <section class="stadium-card">
+                    <h2 class="section-header">MAPA</h2>
+                    {
+                        stadium.coordinates ? (
+                            <div
+                                class="map-placeholder bg-gray-100 p-4 rounded text-center"
+                                style="height: 300px;"
+                            >
+                                {/** Interactive Map could go here if we had the component ready, for now placeholder like logic */}
+                                <iframe
+                                    width="100%"
+                                    height="100%"
+                                    frameborder="0"
+                                    scrolling="no"
+                                    marginheight="0"
+                                    marginwidth="0"
+                                    src={`https://maps.google.com/maps?q=${stadium.coordinates.lat},${stadium.coordinates.lng}&hl=es&z=14&output=embed`}
+                                />
                             </div>
-                        </div>
-                    ) : (
-                        <div class="text-center py-10 bg-white rounded-xl shadow border border-gray-100 text-gray-500">
-                            No hay registros de partidos en este estadio.
-                        </div>
-                    )
-                }
+                        ) : (
+                            <div class="p-4 text-center text-gray-500">
+                                Ubicación no disponible
+                            </div>
+                        )
+                    }
+                </section>
             </div>
         </div>
     </main>
 </Layout>
+
+<script define:vars={{ initialMatches: matches }}>
+    function calculateStatsLocal(matches) {
+        const stats = {
+            home: {
+                pj: 0,
+                pg: 0,
+                pe: 0,
+                pp: 0,
+                gf: 0,
+                gc: 0,
+                cleanSheets: 0,
+                conceded: 0,
+            },
+            away: {
+                pj: 0,
+                pg: 0,
+                pe: 0,
+                pp: 0,
+                gf: 0,
+                gc: 0,
+                cleanSheets: 0,
+                conceded: 0,
+            },
+            total: {
+                pj: 0,
+                pg: 0,
+                pe: 0,
+                pp: 0,
+                gf: 0,
+                gc: 0,
+                cleanSheets: 0,
+                conceded: 0,
+            },
+        };
+
+        matches.forEach((match) => {
+            const golesRM = parseInt(match.golesRM) || 0;
+            const golesRival = parseInt(match.golesRival) || 0;
+
+            // Check if RM was local in this match
+            const isHome = match.club_local
+                .toLowerCase()
+                .includes("real madrid");
+            const location = isHome ? stats.home : stats.away;
+
+            location.pj++;
+            location.gf += golesRM;
+            location.gc += golesRival;
+
+            if (golesRival === 0) location.cleanSheets++;
+            else location.conceded++;
+
+            if (golesRM > golesRival) location.pg++;
+            else if (golesRM < golesRival) location.pp++;
+            else {
+                if (match.penaltis === 1 || match.penaltis === "1")
+                    location.pg++;
+                else if (match.penaltis === 0 || match.penaltis === "0")
+                    location.pp++;
+                else location.pe++;
+            }
+        });
+
+        // Totals
+        const keys = [
+            "pj",
+            "pg",
+            "pe",
+            "pp",
+            "gf",
+            "gc",
+            "cleanSheets",
+            "conceded",
+        ];
+        keys.forEach((k) => (stats.total[k] = stats.home[k] + stats.away[k]));
+
+        const addFields = (obj) => ({
+            ...obj,
+            percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
+            percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
+            percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
+            avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
+            dif: obj.gf - obj.gc,
+        });
+
+        return {
+            home: addFields(stats.home),
+            away: addFields(stats.away),
+            total: addFields(stats.total),
+        };
+    }
+
+    function updateCharts(stats) {
+        const circumference = 220;
+        const totalMatches = stats.total.pj;
+        const totalGoals = stats.total.gf + stats.total.gc;
+
+        const updateCircle = (id, idx, val, total, offset = 0) => {
+            const chart = document.getElementById(id);
+            if (!chart) return;
+            const circle = chart.querySelectorAll("circle")[idx];
+            if (!circle) return;
+
+            const arc =
+                total > 0 ? Math.round((val / total) * circumference) : 0;
+            circle.setAttribute(
+                "stroke-dasharray",
+                `${arc} ${circumference - arc}`,
+            );
+            if (offset !== 0) circle.setAttribute("stroke-dashoffset", -offset);
+            return arc;
+        };
+
+        const winsArc = updateCircle(
+            "results-chart",
+            0,
+            stats.total.pg,
+            totalMatches,
+        );
+        const drawsArc = updateCircle(
+            "results-chart",
+            1,
+            stats.total.pe,
+            totalMatches,
+            winsArc,
+        );
+        updateCircle(
+            "results-chart",
+            2,
+            stats.total.pp,
+            totalMatches,
+            winsArc + drawsArc,
+        );
+
+        const gfArc = updateCircle(
+            "goals-chart",
+            0,
+            stats.total.gf,
+            totalGoals,
+        );
+        updateCircle("goals-chart", 1, stats.total.gc, totalGoals, gfArc);
+
+        const csArc = updateCircle(
+            "clean-sheets-chart",
+            0,
+            stats.total.cleanSheets,
+            totalMatches,
+        );
+        updateCircle(
+            "clean-sheets-chart",
+            1,
+            stats.total.conceded,
+            totalMatches,
+            csArc,
+        );
+
+        // Update Legends text
+        const updateLegend = (id, idx, text) => {
+            const el = document.getElementById(id);
+            if (el && el.querySelectorAll("div")[idx])
+                el.querySelectorAll("div")[idx].innerHTML = text;
+        };
+
+        updateLegend(
+            "results-legend",
+            0,
+            `<span class="dot green"></span> Ganados (${stats.total.pg})`,
+        );
+        updateLegend(
+            "results-legend",
+            1,
+            `<span class="dot orange"></span> Empatados (${stats.total.pe})`,
+        );
+        updateLegend(
+            "results-legend",
+            2,
+            `<span class="dot red"></span> Perdidos (${stats.total.pp})`,
+        );
+
+        updateLegend(
+            "goals-legend",
+            0,
+            `<span class="dot green"></span> A favor (${stats.total.gf})`,
+        );
+        updateLegend(
+            "goals-legend",
+            1,
+            `<span class="dot red"></span> En contra (${stats.total.gc})`,
+        );
+
+        updateLegend(
+            "clean-sheets-legend",
+            0,
+            `<span class="dot green"></span> P. a cero (${stats.total.cleanSheets})`,
+        );
+        updateLegend(
+            "clean-sheets-legend",
+            1,
+            `<span class="dot red"></span> Con gol (${stats.total.conceded})`,
+        );
+    }
+
+    function updateTable(stats) {
+        const table = document.querySelector(".stats-table tbody");
+        if (!table) return;
+        const row = (label, d) =>
+            `<td>${label}</td><td>${d.pj}</td><td>${d.pg}</td><td>${d.percPG}%</td><td>${d.pe}</td><td>${d.percPE}%</td><td>${d.pp}</td><td>${d.percPP}%</td><td class="highlight-yellow">${d.gf}</td><td class="highlight-red">${d.gc}</td><td class="highlight-blue">${d.dif > 0 ? "+" : ""}${d.dif}</td><td>${d.avg}</td><td>${d.dif}</td>`;
+        table.innerHTML = `<tr>${row("LOCAL", stats.home)}</tr><tr>${row("VISITANTE", stats.away)}</tr><tr class="total-row">${row("<strong>TOTAL</strong>", stats.total)}</tr>`;
+    }
+
+    const seasonFilter = document.getElementById("season-filter");
+    if (seasonFilter) {
+        seasonFilter.addEventListener("change", () => {
+            const selected = seasonFilter.value;
+            const filtered =
+                selected === "all"
+                    ? initialMatches
+                    : initialMatches.filter((m) => m.season === selected);
+            const newStats = calculateStatsLocal(filtered);
+            updateCharts(newStats);
+            updateTable(newStats);
+        });
+    }
+
+    const showMore = document.getElementById("show-more-matches");
+    if (showMore) {
+        showMore.addEventListener("click", () => {
+            document.querySelectorAll(".hidden-match").forEach((r) => {
+                r.classList.remove("hidden-match");
+                r.style.display = "table-row";
+            });
+            showMore.parentElement.style.display = "none";
+        });
+    }
+</script>
+
+<style>
+    .rival-details-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        overflow-x: hidden;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        transition: color 0.3s;
+    }
+
+    .back-link:hover {
+        color: #ffde59;
+    }
+
+    .rival-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .left-column,
+    .right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .section-header {
+        background: #ffde59;
+        color: #2b2b2b;
+        padding: 0.75rem 1rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .section-subheader {
+        background: #ffde59;
+        color: #000;
+        padding: 0.75rem 1rem;
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: bold;
+    }
+
+    .rival-card,
+    .stats-table-card,
+    .charts-card,
+    .matches-card,
+    .stadium-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .rival-info {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .rival-shield {
+        flex-shrink: 0;
+        width: 300px;
+        height: 200px;
+    }
+
+    .rival-shield img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .rival-details {
+        flex: 1;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .info-row .label {
+        font-weight: 600;
+        width: 150px;
+    }
+
+    .info-row .value {
+        flex: 1;
+        text-align: right;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .stats-table,
+    .matches-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .stats-table th,
+    .matches-table th {
+        padding: 0.75rem;
+        background: #f9f9f9;
+        font-weight: 600;
+        border-bottom: 2px solid #eee;
+    }
+
+    .stats-table td,
+    .matches-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .highlight-yellow {
+        background-color: #fffde7;
+        font-weight: bold;
+    }
+
+    .highlight-red {
+        background-color: #ffebee;
+        font-weight: bold;
+    }
+
+    .highlight-blue {
+        background-color: #e3f2fd;
+        font-weight: bold;
+    }
+
+    .total-row {
+        background-color: #f5f5f5;
+        font-weight: bold;
+    }
+
+    /* Charts */
+    .filter-wrapper {
+        display: inline-flex;
+        align-items: center;
+        background: #f5f5f5;
+        border-radius: 20px;
+        padding: 5px 10px;
+        margin: 1rem;
+    }
+
+    .filter-wrapper select {
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        outline: none;
+        padding-right: 5px;
+    }
+
+    .charts-row {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 2rem 1rem;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .chart-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pie-chart {
+        width: 150px;
+        height: 150px;
+        transform: rotate(-90deg);
+        border-radius: 50%;
+    }
+
+    .chart-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.85rem;
+    }
+
+    .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .dot.green {
+        background-color: #c8e6c9;
+    }
+    .dot.orange {
+        background-color: #fff9c4;
+    }
+    .dot.red {
+        background-color: #ffcdd2;
+    }
+    .dot.yellow {
+        background-color: #fff9c4;
+    }
+
+    .matches-footer {
+        padding: 1rem;
+        text-align: center;
+        border-top: 1px solid #eee;
+    }
+
+    .btn-more {
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-more:hover {
+        background: #e0e0e0;
+    }
+
+    @media (max-width: 1024px) {
+        .rival-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

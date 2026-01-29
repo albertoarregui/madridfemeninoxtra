@@ -1,10 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
-import { getAllStadiums } from "../../utils/estadios";
-import { Image } from "astro:assets";
+import { fetchAllStadiumsWithStats } from "../../utils/estadios";
+import StadiumsTable from "../../components/StadiumsTable";
 
-const stadiums = getAllStadiums();
+const stadiums = await fetchAllStadiumsWithStats();
 ---
 
 <Layout
@@ -12,71 +12,16 @@ const stadiums = getAllStadiums();
     description="Descubre todos los estadios donde ha jugado el Real Madrid Femenino: datos históricos, ubicación y estadísticas en cada campo."
 >
     <main class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 class="page-title">MAPA DE ESTADIOS</h1>
+        <h1 class="page-title">ESTADIOS</h1>
 
         <h2 class="content-h2 mb-12">
-            Directorio visual de todos los estadios y campos de fútbol donde el
-            Real Madrid Femenino ha disputado partidos oficiales.
+            Directorio completo y estadísticas detalladas de todos los estadios
+            y campos de fútbol donde el Real Madrid Femenino ha disputado
+            partidos oficiales a lo largo de su historia: balance de victorias,
+            empates y derrotas, porcentaje de triunfos, goles a favor y en
+            contra, y promedio de goles por partido en cada recinto.
         </h2>
 
-        <div
-            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-        >
-            {
-                stadiums.map((stadium) => (
-                    <a
-                        href={`/estadios/${stadium.slug}`}
-                        class="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex flex-col h-full"
-                    >
-                        <div class="relative h-48 overflow-hidden bg-gray-200">
-                            {/* Use HTML img for external/public folder images to ensure compatibility if path is absolute string */}
-                            {stadium.imageUrl ? (
-                                <img
-                                    src={stadium.imageUrl}
-                                    alt={stadium.name}
-                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                    loading="lazy"
-                                />
-                            ) : (
-                                <div class="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-                                    <span class="text-xs">Sin imagen</span>
-                                </div>
-                            )}
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
-
-                            <div class="absolute bottom-0 left-0 p-4 w-full">
-                                <h3 class="text-white font-bebas text-xl leading-none tracking-wide text-shadow-sm">
-                                    {stadium.name}
-                                </h3>
-                                {stadium.city && (
-                                    <p class="text-gray-300 text-xs font-sans mt-1 flex items-center gap-1">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            class="h-3 w-3"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path d="M20 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z" />
-                                            <circle cx="12" cy="10" r="3" />
-                                        </svg>
-                                        {stadium.city}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </a>
-                ))
-            }
-        </div>
+        <StadiumsTable client:load stadiums={stadiums} />
     </main>
 </Layout>
-
-<style>
-    .text-shadow-sm {
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    }
-</style>

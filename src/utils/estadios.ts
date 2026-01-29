@@ -77,3 +77,89 @@ export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]>
         return [];
     }
 }
+
+export async function fetchAllStadiumsWithStats(): Promise<any[]> {
+    try {
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
+
+        if (!client) return [];
+
+        // Get stats from DB
+        const query = `
+            SELECT 
+                e.nombre,
+                e.ciudad,
+                e.capacidad,
+                COUNT(p.id_partido) as played,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
+                    ELSE 0 
+                END) as wins,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
+                    ELSE 0 
+                END) as draws,
+                SUM(CASE 
+                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
+                    ELSE 0 
+                END) as losses,
+                SUM(CAST(p.goles_rm AS INTEGER)) as gf,
+                SUM(CAST(p.goles_rival AS INTEGER)) as ga
+            FROM estadios e
+            JOIN partidos p ON e.id_estadio = p.id_estadio
+            WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+            GROUP BY e.id_estadio, e.nombre, e.ciudad, e.capacidad
+            ORDER BY played DESC
+        `;
+
+        const result = await client.execute(query);
+        const dbStadiums = result.rows;
+
+        // Merge with KNOWN_LOCATIONS for images and better data if available
+        return dbStadiums.map((stadium: any) => {
+            const slug = generateSlug(stadium.nombre);
+
+            // Try to find in KNOWN_LOCATIONS
+            const knownLoc = Object.values(KNOWN_LOCATIONS).find(loc => {
+                const locSlug = generateSlug(loc.label);
+                return locSlug === slug || loc.label === stadium.nombre;
+            });
+
+            const played = Number(stadium.played);
+            const wins = Number(stadium.wins);
+            const draws = Number(stadium.draws);
+            const losses = Number(stadium.losses);
+
+            const winPct = played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0';
+            const drawPct = played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0';
+            const lossPct = played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0';
+
+            return {
+                name: stadium.nombre,
+                city: stadium.ciudad || (knownLoc && knownLoc.label.includes(',') ? knownLoc.label.split(',').pop()?.trim() : ''),
+                capacity: stadium.capacidad,
+                imageUrl: knownLoc?.imageUrl || null,
+                slug: slug,
+                stats: {
+                    played,
+                    wins,
+                    draws,
+                    losses,
+                    gf: Number(stadium.gf),
+                    ga: Number(stadium.ga),
+                    gd: Number(stadium.gf) - Number(stadium.ga),
+                    winPct,
+                    drawPct,
+                    lossPct
+                }
+            };
+        });
+
+    } catch (error) {
+        console.error("Error fetching all stadiums stats:", error);
+        return [];
+    }
+}
