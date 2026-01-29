@@ -200,17 +200,16 @@ const redArc =
                         FICHA DE {referee.nombre.toUpperCase()}
                     </h2>
                     <div class="rival-info">
-                        <!-- Removed generic photo placeholder as requested -->
                         <div class="rival-details w-full">
                             <div class="info-row">
                                 <span class="label">Nombre:</span>
-                                <span class="value font-bebas text-xl"
+                                <span class="value font-bebas text-4xl"
                                     >{referee.nombre}</span
                                 >
                             </div>
                             <div class="info-row">
                                 <span class="label">Partidos:</span>
-                                <span class="value font-bold"
+                                <span class="value font-bold text-2xl"
                                     >{totalStats.pj}</span
                                 >
                             </div>
@@ -218,18 +217,18 @@ const redArc =
                                 <span class="label">Total Tarjetas:</span>
                                 <span class="value gap-3">
                                     <span
-                                        class="flex items-center gap-1 text-yellow-600 font-bold"
+                                        class="flex items-center gap-2 text-yellow-600 font-bold text-2xl"
                                     >
                                         <span
-                                            class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"
+                                            class="w-5 h-7 bg-yellow-400 rounded-sm inline-block border border-yellow-500"
                                         ></span>
                                         {totalStats.ta}
                                     </span>
                                     <span
-                                        class="flex items-center gap-1 text-red-600 font-bold"
+                                        class="flex items-center gap-2 text-red-600 font-bold text-2xl"
                                     >
                                         <span
-                                            class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"
+                                            class="w-5 h-7 bg-red-600 rounded-sm inline-block border border-red-700"
                                         ></span>
                                         {totalStats.tr}
                                     </span>
@@ -252,8 +251,8 @@ const redArc =
                                             <th>PG</th>
                                             <th>PE</th>
                                             <th>PP</th>
-                                            <th class="highlight-yellow">TA</th>
-                                            <th class="highlight-red">TR</th>
+                                            <th>TA</th>
+                                            <th>TR</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -292,12 +291,12 @@ const redArc =
                                                             {season.total.pp}
                                                         </strong>
                                                     </td>
-                                                    <td class="highlight-yellow">
+                                                    <td>
                                                         <strong>
                                                             {season.total.ta}
                                                         </strong>
                                                     </td>
-                                                    <td class="highlight-red">
+                                                    <td>
                                                         <strong>
                                                             {season.total.tr}
                                                         </strong>
@@ -351,12 +350,8 @@ const redArc =
                                             <td>{totalStats.pg}</td>
                                             <td>{totalStats.pe}</td>
                                             <td>{totalStats.pp}</td>
-                                            <td class="highlight-yellow">
-                                                {totalStats.ta}
-                                            </td>
-                                            <td class="highlight-red">
-                                                {totalStats.tr}
-                                            </td>
+                                            <td>{totalStats.ta}</td>
+                                            <td>{totalStats.tr}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -371,7 +366,7 @@ const redArc =
 
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="filters-container flex justify-center gap-4">
+                    <div class="filters-container">
                         <div class="filter-wrapper">
                             <select id="season-filter">
                                 <option value="all">Todas las Temporadas</option
@@ -602,13 +597,7 @@ const redArc =
                                                         href={`/estadios/${generateSlug(match.estadio)}`}
                                                         class="hover:text-[#ffde59] transition-colors"
                                                     >
-                                                        {match.estadio.length >
-                                                        20
-                                                            ? match.estadio.substring(
-                                                                  0,
-                                                                  20,
-                                                              ) + "..."
-                                                            : match.estadio}
+                                                        {match.estadio}
                                                     </a>
                                                 )}
                                             </td>
@@ -880,6 +869,7 @@ const redArc =
         display: flex;
         padding: 0.5rem 0;
         border-bottom: 1px solid #eee;
+        align-items: center;
     }
 
     .info-row .label {
@@ -938,7 +928,6 @@ const redArc =
     .competition-logo {
         width: 20px;
         height: 20px;
-        main-aspect-ratio: 1/1;
         object-fit: contain;
         margin-right: 8px;
         vertical-align: middle;
@@ -958,18 +947,6 @@ const redArc =
         border-top: 2px solid #dde1e5;
     }
 
-    .highlight-yellow {
-        background-color: #fffde7;
-    }
-    .highlight-red {
-        background-color: #ffebee;
-    }
-    .highlight-blue {
-        background-color: #e3f2fd;
-        font-weight: bold;
-        color: #1565c0;
-    }
-
     .toggle-icon {
         font-size: 0.7rem;
         margin-left: 0.5rem;
@@ -977,12 +954,70 @@ const redArc =
     }
 
     /* Charts */
+    .filters-container {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 1.5rem;
+    }
+
+    .filter-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 240px;
+    }
+
+    .filter-icon {
+        position: absolute;
+        right: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #6b7280;
+        width: 18px;
+        height: 18px;
+        z-index: 2;
+    }
+
+    .filters-container select {
+        width: 100%;
+        padding: 0.875rem 3rem 0.875rem 1.5rem;
+        background: #ffffff;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+        border-radius: 9999px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        text-align: center;
+    }
+
+    .filters-container select:hover {
+        border-color: #fbbf24;
+        background: #fffdf5;
+    }
+
+    .filters-container select:focus {
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+        background: #ffffff;
+    }
+
     .charts-row {
         display: flex;
         flex-wrap: wrap;
         padding: 1.5rem;
         gap: 2rem;
-        justify-content: space-around;
+        justify-content: center;
         align-items: flex-start;
     }
 
@@ -1034,50 +1069,6 @@ const redArc =
         background-color: #fff176;
     }
 
-    /* Filters */
-    .filters-container {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        padding: 1rem 1rem 0;
-        flex-wrap: wrap;
-    }
-    .filter-wrapper {
-        position: relative;
-        display: inline-block;
-    }
-    .filter-wrapper select {
-        appearance: none;
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 0.5rem 2.5rem 0.5rem 1rem;
-        font-size: 0.9rem;
-        font-family: inherit;
-        color: #333;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .filter-wrapper select:hover {
-        border-color: #bbb;
-    }
-    .filter-wrapper select:focus {
-        outline: none;
-        border-color: #151e42;
-        box-shadow: 0 0 0 2px rgba(21, 30, 66, 0.1);
-    }
-    .filter-icon {
-        position: absolute;
-        right: 0.8rem;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: #666;
-        width: 16px;
-        height: 16px;
-    }
-
     /* Matches Table */
     .matches-table {
         width: 100%;
@@ -1106,23 +1097,51 @@ const redArc =
     }
 
     .btn-more {
-        background: white;
-        border: 1px solid #ddd;
-        padding: 0.5rem 1.5rem;
-        border-radius: 20px;
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        color: #2b2b2b;
+        font-weight: 700;
+        text-decoration: none;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.9rem;
         cursor: pointer;
-        font-weight: 600;
-        color: #666;
-        transition: all 0.3s;
+        border: none;
     }
 
     .btn-more:hover {
-        background: #ffde59;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         color: #000;
-        border-color: #ffde59;
     }
 
     .hidden-match {
         display: none;
+    }
+
+    @media (max-width: 768px) {
+        .filters-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        .filter-wrapper {
+            width: 100%;
+        }
     }
 </style>

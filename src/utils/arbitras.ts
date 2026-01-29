@@ -112,7 +112,26 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                 cv.nombre as club_visitante,
                 t.temporada,
                 e.nombre as estadio,
-                e.ciudad
+                e.ciudad,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas tr 
+                    WHERE tr.id_partido = p.id_partido 
+                      AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%')
+                      AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%'
+                      AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOUBLE%'
+                ) as amarillas,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas tr 
+                    WHERE tr.id_partido = p.id_partido 
+                      AND (
+                          UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' 
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%RED%'
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%'
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%DOUBLE%'
+                      )
+                ) as rojas
             FROM partidos p
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion

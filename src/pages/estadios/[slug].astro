@@ -283,8 +283,8 @@ const concededArc =
                                             <th>PG</th>
                                             <th>PE</th>
                                             <th>PP</th>
-                                            <th class="highlight-yellow">GF</th>
-                                            <th class="highlight-red">GC</th>
+                                            <th>GF</th>
+                                            <th>GC</th>
                                             <th>Dif</th>
                                         </tr>
                                     </thead>
@@ -324,12 +324,12 @@ const concededArc =
                                                             {season.total.pp}
                                                         </strong>
                                                     </td>
-                                                    <td class="highlight-yellow">
+                                                    <td>
                                                         <strong>
                                                             {season.total.gf}
                                                         </strong>
                                                     </td>
-                                                    <td class="highlight-red">
+                                                    <td>
                                                         <strong>
                                                             {season.total.gc}
                                                         </strong>
@@ -393,12 +393,8 @@ const concededArc =
                                             <td>{totalStats.pg}</td>
                                             <td>{totalStats.pe}</td>
                                             <td>{totalStats.pp}</td>
-                                            <td class="highlight-yellow">
-                                                {totalStats.gf}
-                                            </td>
-                                            <td class="highlight-red">
-                                                {totalStats.gc}
-                                            </td>
+                                            <td>{totalStats.gf}</td>
+                                            <td>{totalStats.gc}</td>
                                             <td>
                                                 {totalStats.gf - totalStats.gc}
                                             </td>
@@ -416,7 +412,7 @@ const concededArc =
 
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="filters-container flex justify-center gap-4">
+                    <div class="filters-container">
                         <div class="filter-wrapper">
                             <select id="season-filter">
                                 <option value="all">Todas las Temporadas</option
@@ -715,22 +711,12 @@ const concededArc =
             <div class="right-column">
                 <section class="stadium-card">
                     <h2 class="section-header">MAPA</h2>
-                    {
-                        stadium.imageUrl && (
-                            <div class="mb-4 rounded-md overflow-hidden shadow-md">
-                                <img
-                                    src={stadium.imageUrl}
-                                    alt={stadium.name}
-                                    class="w-full h-auto object-cover"
-                                />
-                            </div>
-                        )
-                    }
+                    {/* Removed circular photo above map as requested */}
                     {
                         stadium.coordinates ? (
                             <div
-                                class="map-placeholder bg-gray-100 p-4 rounded text-center"
-                                style="height: 300px;"
+                                class="map-placeholder bg-gray-100 rounded text-center overflow-hidden"
+                                style="height: 300px; width: 100%;"
                             >
                                 <iframe
                                     width="100%"
@@ -796,23 +782,19 @@ const concededArc =
             stats.gf += golesRM;
             stats.gc += golesRival;
 
-            if (match.cleanSheet)
-                stats.cleanSheets++; // server side prop
-            else if (parseInt(match.golesRival) === 0) stats.cleanSheets++;
+            if (match.cleanSheet) stats.cleanSheets++;
             else stats.conceded++;
 
             if (match.resultado === "V") stats.pg++;
             else if (match.resultado === "E") stats.pe++;
             else stats.pp++;
         });
-
         return stats;
     }
 
     function updateCharts(stats) {
         const circumference = 220;
         const totalMatches = stats.pj;
-        const totalGoals = stats.gf + stats.gc;
 
         const updateCircle = (id, idx, val, total, offset = 0) => {
             const chart = document.getElementById(id);
@@ -830,7 +812,7 @@ const concededArc =
             return arc;
         };
 
-        // Results Chart
+        // Results
         const winsArc = updateCircle(
             "results-chart",
             0,
@@ -852,26 +834,6 @@ const concededArc =
             winsArc + drawsArc,
         );
 
-        // Goals Chart
-        const gForArc = updateCircle("goals-chart", 0, stats.gf, totalGoals);
-        updateCircle("goals-chart", 1, stats.gc, totalGoals, gForArc);
-
-        // Clean Sheets Chart
-        const csArc = updateCircle(
-            "clean-sheets-chart",
-            0,
-            stats.cleanSheets,
-            totalMatches,
-        );
-        updateCircle(
-            "clean-sheets-chart",
-            1,
-            stats.conceded,
-            totalMatches,
-            csArc,
-        );
-
-        // Update Legends
         document.querySelector(
             "#results-legend div:nth-child(1) .dot",
         ).nextSibling.textContent = ` Ganados (${stats.pg})`;
@@ -882,12 +844,37 @@ const concededArc =
             "#results-legend div:nth-child(3) .dot",
         ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
+        // Goals
+        const totalGoals = stats.gf + stats.gc;
+        const goalsForArc = updateCircle(
+            "goals-chart",
+            0,
+            stats.gf,
+            totalGoals,
+        );
+        updateCircle("goals-chart", 1, stats.gc, totalGoals, goalsForArc);
+
         document.querySelector(
             "#goals-legend div:nth-child(1) .dot",
         ).nextSibling.textContent = ` A favor (${stats.gf})`;
         document.querySelector(
             "#goals-legend div:nth-child(2) .dot",
         ).nextSibling.textContent = ` En contra (${stats.gc})`;
+
+        // Clean Sheets
+        const cleanSheetsArc = updateCircle(
+            "clean-sheets-chart",
+            0,
+            stats.cleanSheets,
+            totalMatches,
+        );
+        updateCircle(
+            "clean-sheets-chart",
+            1,
+            stats.conceded,
+            totalMatches,
+            cleanSheetsArc,
+        );
 
         document.querySelector(
             "#clean-sheets-legend div:nth-child(1) .dot",
@@ -899,13 +886,11 @@ const concededArc =
 
     const seasonFilter = document.getElementById("season-filter");
     const competitionFilter = document.getElementById("competition-filter");
-    const allMatches = initialMatches;
+    const allMatches = initialMatches; // from define:vars
 
     function applyFilters() {
-        const selectedSeason = seasonFilter ? seasonFilter.value : "all";
-        const selectedComp = competitionFilter
-            ? competitionFilter.value
-            : "all";
+        const selectedSeason = seasonFilter.value;
+        const selectedComp = competitionFilter.value;
 
         let filtered = allMatches;
 
@@ -924,14 +909,14 @@ const concededArc =
     if (competitionFilter)
         competitionFilter.addEventListener("change", applyFilters);
 
-    const showMore = document.getElementById("show-more-matches");
-    if (showMore) {
-        showMore.addEventListener("click", () => {
-            document.querySelectorAll(".hidden-match").forEach((r) => {
-                r.classList.remove("hidden-match");
-                r.style.display = "table-row";
+    const showMoreBtn = document.getElementById("show-more-matches");
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener("click", () => {
+            document.querySelectorAll(".hidden-match").forEach((row) => {
+                row.style.display = "table-row";
+                row.classList.remove("hidden-match");
             });
-            showMore.parentElement.style.display = "none";
+            showMoreBtn.style.display = "none";
         });
     }
 </script>
@@ -972,6 +957,12 @@ const concededArc =
         gap: 1.5rem;
         width: 100%;
         overflow-x: hidden;
+    }
+
+    @media (max-width: 1024px) {
+        .rival-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .section-header {
@@ -1053,12 +1044,17 @@ const concededArc =
         text-align: center;
     }
 
-    .stats-table th,
-    .matches-table th {
-        padding: 0.75rem;
-        background: #f9f9f9;
-        font-weight: 600;
-        border-bottom: 2px solid #eee;
+    .detailed-table th {
+        background-color: #f8f9fa;
+        color: #151e42;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+    }
+    .detailed-table th:first-child {
+        text-align: left;
     }
 
     .stats-table td,
@@ -1067,42 +1063,104 @@ const concededArc =
         border-bottom: 1px solid #eee;
     }
 
-    .highlight-yellow {
-        background-color: #fffde7;
-        font-weight: bold;
+    .detailed-table td:first-child {
+        text-align: left;
     }
 
-    .highlight-red {
-        background-color: #ffebee;
-        font-weight: bold;
+    .competition-row {
+        background-color: #fcfcfc;
+    }
+    .competition-row td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.85rem;
+        color: #555;
+    }
+    .competition-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        margin-right: 8px;
+        vertical-align: middle;
+        display: inline-block;
     }
 
-    .highlight-blue {
-        background-color: #e3f2fd;
-        font-weight: bold;
+    .season-total-row {
+        background-color: #fff;
     }
-
-    .total-row {
+    .season-total-row:hover {
         background-color: #f5f5f5;
+    }
+
+    .career-total-row {
+        background-color: #eef2f7;
         font-weight: bold;
+        border-top: 2px solid #dde1e5;
+    }
+
+    .toggle-icon {
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+        color: #999;
     }
 
     /* Charts */
-    .filter-wrapper {
-        display: inline-flex;
-        align-items: center;
-        background: #f5f5f5;
-        border-radius: 20px;
-        padding: 5px 10px;
-        margin: 1rem;
+    .filters-container {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 1.5rem;
     }
 
-    .filter-wrapper select {
-        border: none;
-        background: transparent;
-        font-size: 0.9rem;
+    .filter-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 240px;
+    }
+
+    .filter-icon {
+        position: absolute;
+        right: 1.25rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #6b7280;
+        width: 18px;
+        height: 18px;
+        z-index: 2;
+    }
+
+    .filters-container select {
+        width: 100%;
+        padding: 0.875rem 3rem 0.875rem 1.5rem;
+        background: #ffffff;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+        border-radius: 9999px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         outline: none;
-        padding-right: 5px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        text-align: center;
+    }
+
+    .filters-container select:hover {
+        border-color: #fbbf24;
+        background: #fffdf5;
+    }
+
+    .filters-container select:focus {
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+        background: #ffffff;
     }
 
     .charts-row {
@@ -1119,6 +1177,12 @@ const concededArc =
         flex-direction: column;
         align-items: center;
         gap: 1rem;
+    }
+
+    .chart-label {
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: #333;
     }
 
     .pie-chart {
@@ -1163,17 +1227,42 @@ const concededArc =
     }
 
     .btn-more {
-        background: #f5f5f5;
-        border: 1px solid #ddd;
-        padding: 0.5rem 1.5rem;
-        border-radius: 20px;
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        color: #2b2b2b;
+        font-weight: 700;
+        text-decoration: none;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.9rem;
         cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
+        border: none;
     }
 
     .btn-more:hover {
-        background: #e0e0e0;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #000;
+    }
+
+    .hidden-match {
+        display: none;
     }
 
     @media (max-width: 1024px) {
@@ -1181,54 +1270,14 @@ const concededArc =
             grid-template-columns: 1fr;
         }
     }
-    /* Detailed Table */
-    .detailed-table th {
-        background-color: #f8f9fa;
-        color: #151e42;
-        font-weight: 800;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        text-align: center;
-        padding: 0.75rem 0.5rem;
-    }
-    .detailed-table th:first-child {
-        text-align: left;
-    }
-    .detailed-table td {
-        text-align: center;
-    }
-    .detailed-table td:first-child {
-        text-align: left;
-    }
 
-    .competition-row {
-        background-color: #fcfcfc;
-    }
-    .competition-row td {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-        font-size: 0.85rem;
-        color: #555;
-    }
-    .competition-logo {
-        width: 20px;
-        height: 20px;
-        object-fit: contain;
-        margin-right: 8px;
-        vertical-align: middle;
-        display: inline-block;
-    }
-
-    .season-total-row {
-        background-color: #fff;
-    }
-    .season-total-row:hover {
-        background-color: #f5f5f5;
-    }
-
-    .toggle-icon {
-        font-size: 0.7rem;
-        margin-left: 0.5rem;
-        color: #999;
+    @media (max-width: 768px) {
+        .filters-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        .filter-wrapper {
+            width: 100%;
+        }
     }
 </style>
