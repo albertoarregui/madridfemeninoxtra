@@ -39,9 +39,16 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                 let aValue = getValue(a, sortConfig.key);
                 let bValue = getValue(b, sortConfig.key);
 
+                // Handle percentage strings
                 if (typeof aValue === 'string' && sortConfig.key.includes('Pct')) {
                     aValue = parseFloat(aValue);
                     bValue = parseFloat(bValue);
+                }
+
+                // Handle capacity field - convert to number for proper sorting
+                if (sortConfig.key === 'capacity') {
+                    aValue = typeof aValue === 'string' ? parseInt(aValue.replace(/\D/g, '')) || 0 : Number(aValue) || 0;
+                    bValue = typeof bValue === 'string' ? parseInt(bValue.replace(/\D/g, '')) || 0 : Number(bValue) || 0;
                 }
 
                 if (aValue < bValue) {
