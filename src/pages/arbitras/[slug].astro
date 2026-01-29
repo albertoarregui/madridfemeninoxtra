@@ -270,7 +270,7 @@ const redArc =
                     <h3 class="section-subheader">ESTADÍSTICAS</h3>
                     <div class="table-wrapper">
                         {
-                            refereeDeepStats.length > 0 ? (
+                            totalStats.pj > 0 ? (
                                 <table class="stats-table detailed-table">
                                     <thead>
                                         <tr>
@@ -284,95 +284,9 @@ const redArc =
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {refereeDeepStats.map((season) => (
-                                            <>
-                                                <tr
-                                                    class="season-total-row"
-                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
-                                                    style="cursor: pointer;"
-                                                >
-                                                    <td>
-                                                        <strong>
-                                                            {season.temporada}
-                                                        </strong>
-                                                        <span class="toggle-icon">
-                                                            ▼
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pj}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pg}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pe}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pp}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.ta}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.tr}
-                                                        </strong>
-                                                    </td>
-                                                </tr>
-                                                {season.competiciones.map(
-                                                    (comp) => (
-                                                        <tr
-                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
-                                                            style="display: none;"
-                                                        >
-                                                            <td class="competition-name">
-                                                                {competitionLogos[
-                                                                    comp
-                                                                        .competicion
-                                                                ] && (
-                                                                    <img
-                                                                        src={
-                                                                            competitionLogos[
-                                                                                comp
-                                                                                    .competicion
-                                                                            ]
-                                                                                .src
-                                                                        }
-                                                                        alt={
-                                                                            comp.competicion
-                                                                        }
-                                                                        class="competition-logo"
-                                                                    />
-                                                                )}
-                                                                {
-                                                                    comp.competicion
-                                                                }
-                                                            </td>
-                                                            <td>{comp.pj}</td>
-                                                            <td>{comp.pg}</td>
-                                                            <td>{comp.pe}</td>
-                                                            <td>{comp.pp}</td>
-                                                            <td>{comp.ta}</td>
-                                                            <td>{comp.tr}</td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                            </>
-                                        ))}
-                                        <tr class="total-row career-total-row">
+                                        <tr class="total-row">
                                             <td>
-                                                <strong>TOTAL HISTÓRICO</strong>
+                                                <strong>TOTAL</strong>
                                             </td>
                                             <td>{totalStats.pj}</td>
                                             <td>{totalStats.pg}</td>
@@ -620,13 +534,13 @@ const redArc =
                                                 {match.club_local}
                                             </td>
                                             <td
-                                                class={`font-bold ${
+                                                class={`${
                                                     match.resultado === "V"
-                                                        ? "text-green-600"
+                                                        ? "resultado-victoria"
                                                         : match.resultado ===
                                                             "E"
-                                                          ? "text-orange-500"
-                                                          : "text-red-500"
+                                                          ? "resultado-empate"
+                                                          : "resultado-derrota"
                                                 }`}
                                             >
                                                 {match.goles_rm} -{" "}
@@ -1029,6 +943,18 @@ const redArc =
         border-top: 2px solid #333;
     }
 
+    /* Total row styling - yellow background like rival page */
+    .detailed-table tr.total-row td {
+        background: #ffde59 !important;
+        font-weight: 800;
+        color: #111827;
+        border-top: 2px solid #333;
+    }
+
+    .detailed-table .total-row td:first-child {
+        background: #ffffff !important;
+    }
+
     .toggle-icon {
         font-size: 0.7rem;
         margin-left: 0.5rem;
@@ -1198,6 +1124,23 @@ const redArc =
         object-fit: contain;
         display: inline-block;
         vertical-align: middle;
+    }
+
+    /* Result column pastel colors */
+    .matches-table .resultado-victoria {
+        background-color: #c8e6c9 !important;
+        color: #000000 !important;
+        font-weight: 700;
+    }
+    .matches-table .resultado-empate {
+        background-color: #fff9c4 !important;
+        color: #000000 !important;
+        font-weight: 700;
+    }
+    .matches-table .resultado-derrota {
+        background-color: #ffcdd2 !important;
+        color: #000000 !important;
+        font-weight: 700;
     }
 
     .matches-footer {

@@ -51,13 +51,15 @@ export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]>
                 c.competicion,
                 cl.nombre as club_local,
                 cv.nombre as club_visitante,
-                t.temporada
+                t.temporada,
+                a.nombre as arbitra_nombre
             FROM partidos p
             LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
             LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
             LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
+            LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             WHERE e.nombre = ?
             ORDER BY p.fecha DESC
         `;
