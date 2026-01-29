@@ -95,13 +95,11 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                             <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-10 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
-                            <th className="sticky left-10 bg-gray-50 z-30 py-3 px-2 w-14 border-r border-gray-200 text-center">
-                                Foto
-                            </th>
+
                             <SortableHeader
                                 sortKey="name"
                                 label="Estadio"
-                                className="sticky left-24 bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
+                                className="sticky left-10 bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
                                 align="left"
                             />
 
@@ -133,23 +131,8 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                                 <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-200 text-center">
-                                    <div className="w-8 h-8 mx-auto rounded overflow-hidden">
-                                        {stadium.imageUrl ? (
-                                            <img
-                                                src={stadium.imageUrl}
-                                                alt={stadium.name}
-                                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform"
-                                                onError={(e) => (e.target as HTMLImageElement).src = '/assets/estadios/placeholder.png'} // Fallback if image missing
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400">
-                                                N/A
-                                            </div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="sticky left-24 bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={stadium.name}>
+
+                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={stadium.name}>
                                     <a href={`/estadios/${stadium.slug}`} className="hover:text-[#ffde59] transition-colors">
                                         {stadium.name}
                                     </a>
