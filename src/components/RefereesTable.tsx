@@ -122,7 +122,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                     {index + 1}
                                 </td>
                                 <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-10 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={referee.nombre}>
-                                    <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-purple-600 transition-colors">
+                                    <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-[#ffde59] transition-colors">
                                         {referee.nombre}
                                     </a>
                                 </td>

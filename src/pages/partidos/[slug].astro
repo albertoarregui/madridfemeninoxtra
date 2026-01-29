@@ -8,6 +8,7 @@ import {
     fetchRefereeStats,
     fetchMatchEvents,
 } from "../../utils/partidos";
+import { generateSlug } from "../../utils/url-helper";
 
 const { slug } = Astro.params;
 
@@ -191,11 +192,9 @@ const refereeStats = game.id_arbitra
                     <div class="match-metadata-bottom">
                         {
                             game.arbitra_nombre ? (
-                                <button
-                                    class="referee-btn"
-                                    data-stats={JSON.stringify(refereeStats)}
-                                    data-name={game.arbitra_nombre}
-                                    onclick="openRefereeModal(this)"
+                                <a
+                                    href={`/arbitras/${generateSlug(game.arbitra_nombre)}`}
+                                    class="referee-btn hover:text-[#ffde59] transition-colors decoration-none"
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
@@ -218,7 +217,7 @@ const refereeStats = game.id_arbitra
                                         <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
                                     </svg>
                                     {game.arbitra_nombre}
-                                </button>
+                                </a>
                             ) : (
                                 <span class="referee-text">
                                     Árbitra no disponible
@@ -245,7 +244,12 @@ const refereeStats = game.id_arbitra
                     </div>
                     <div class="stadium-info">
                         <p class="stadium-name-large">
-                            {game.estadio || "Estadio"}
+                            <a
+                                href={`/estadios/${generateSlug(game.estadio)}`}
+                                class="hover:text-[#ffde59] transition-colors decoration-none"
+                            >
+                                {game.estadio || "Estadio"}
+                            </a>
                         </p>
                         <div class="stadium-meta">
                             <p>
