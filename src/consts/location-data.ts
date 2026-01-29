@@ -168,6 +168,7 @@ export const KNOWN_LOCATIONS: Record<string, Location> = {
     "camporealmadrid": { lat: 40.4761, lng: -3.6197, label: "Campo 11 Ciudad Real Madrid", imageUrl: "/assets/estadios/campo_11_ciudad_real_madrid.png" },
     "puentecastro": { lat: 42.5847, lng: -5.5458, label: "Campo de Fútbol de Puente Castro", imageUrl: "/assets/estadios/campo_de_futbol_de_puente_castro.png" },
     "campuspsg": { lat: 48.9189, lng: 2.0628, label: "Campus PSG", imageUrl: "/assets/estadios/campus_psg.png" },
+    "castalia": { lat: 39.9961, lng: -0.0378, label: "Estadio SkyFi Castalia", imageUrl: "/assets/estadios/estadio_castalia.png" },
 
     "australia": { lat: -25.2744, lng: 133.7751, label: "Australia" },
     "costarica": { lat: 9.7489, lng: -83.7534, label: "Costa Rica" },
@@ -300,6 +301,7 @@ export function getCoordinates(name: string, type: 'city' | 'stadium' = 'city'):
     if (normalized.includes('fernandotorres')) return KNOWN_LOCATIONS['fernandotorres'];
     if (normalized.includes('antoniopuchades')) return KNOWN_LOCATIONS['antoniopuchades'];
     if (normalized.includes('danijarque') || normalized.includes('jarque')) return KNOWN_LOCATIONS['danijarque'];
+    if (normalized.includes('castalia') || normalized.includes('skyfi')) return KNOWN_LOCATIONS['castalia'];
     if (normalized.includes('jesusnavas')) return KNOWN_LOCATIONS['jesusnavas'];
     if (normalized.includes('nuevosloscarmenes') || normalized.includes('loscarmenes')) return KNOWN_LOCATIONS['loscarmenes'];
     if (normalized.includes('colombino')) return KNOWN_LOCATIONS['nuevocolombino'];
