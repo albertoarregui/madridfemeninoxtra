@@ -433,7 +433,7 @@ export function getCompetitionLogo(name: string): string | null {
     const normalized = normalizeLocationName(name);
     if (normalized.includes('liga')) return '/assets/competiciones/liga_f.png';
     if (normalized.includes('uwcl') || normalized.includes('champions')) return '/assets/competiciones/uwcl.png';
-    if (normalized.includes('copa')) return '/assets/competiciones/copa_de_la_reina.png';
     if (normalized.includes('supercopa')) return '/assets/competiciones/supercopa_de_espana.png';
+    if (normalized.includes('copa')) return '/assets/competiciones/copa_de_la_reina.png';
     return null;
 }
