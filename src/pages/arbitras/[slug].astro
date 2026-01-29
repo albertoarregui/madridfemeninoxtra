@@ -1,0 +1,240 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
+import {
+    fetchRefereesDirectly,
+    fetchMatchesByReferee,
+} from "../../utils/arbitras";
+import { generateSlug } from "../../utils/url-helper";
+
+export async function getStaticPaths() {
+    const referees = await fetchRefereesDirectly();
+    return referees.map((ref) => ({
+        params: { slug: generateSlug(ref.nombre) },
+    }));
+}
+
+const { slug } = Astro.params;
+const referees = await fetchRefereesDirectly();
+const referee = referees.find((r) => generateSlug(r.nombre) === slug);
+
+if (!referee) {
+    return Astro.redirect("/404");
+}
+
+const matches = await fetchMatchesByReferee(referee.nombre);
+const stats = referee.stats;
+---
+
+<Layout
+    title={`${referee.nombre} | Estadísticas Real Madrid Femenino`}
+    description={`Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino: balance de victorias, tarjetas y lista de partidos dirigidos.`}
+>
+    <main class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <a
+            href="/arbitras"
+            class="inline-flex items-center text-gray-500 hover:text-[#151e42] mb-6 transition-colors"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 mr-2"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
+            >
+            Volver a Árbitras
+        </a>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Info & Stats */}
+            <div class="lg:col-span-1 space-y-8">
+                <div
+                    class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 p-8 text-center"
+                >
+                    <div
+                        class="w-32 h-32 bg-gray-100 rounded-full mx-auto flex items-center justify-center mb-4 text-[#151e42]"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-16 w-16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"
+                            ></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bebas text-[#151e42] leading-none">
+                        {referee.nombre}
+                    </h1>
+                    <p class="text-gray-500 text-sm mt-2">Árbitra</p>
+                </div>
+
+                <div
+                    class="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+                >
+                    <h2
+                        class="text-xl font-bold text-[#151e42] mb-4 border-l-4 border-[#ffde59] pl-3"
+                    >
+                        BALANCE
+                    </h2>
+                    <div class="grid grid-cols-3 gap-4 text-center mb-6">
+                        <div class="p-3 bg-green-50 rounded-lg">
+                            <span
+                                class="block text-2xl font-bold text-green-600"
+                                >{stats.wins}</span
+                            >
+                            <span class="text-xs text-uppercase text-green-800"
+                                >Victorias</span
+                            >
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <span class="block text-2xl font-bold text-gray-600"
+                                >{stats.draws}</span
+                            >
+                            <span class="text-xs text-uppercase text-gray-800"
+                                >Empates</span
+                            >
+                        </div>
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <span class="block text-2xl font-bold text-red-600"
+                                >{stats.losses}</span
+                            >
+                            <span class="text-xs text-uppercase text-red-800"
+                                >Derrotas</span
+                            >
+                        </div>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-gray-500 mb-3 uppercase">
+                        Tarjetas
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div
+                            class="p-4 bg-yellow-50 rounded-lg border border-yellow-100"
+                        >
+                            <span
+                                class="block text-3xl font-bold text-yellow-600"
+                                >{stats.yellowCards}</span
+                            >
+                            <span class="text-xs font-bold text-yellow-800"
+                                >AMARILLAS</span
+                            >
+                            <span class="block text-xs text-gray-500 mt-1"
+                                >{
+                                    (
+                                        stats.yellowCards / (stats.played || 1)
+                                    ).toFixed(2)
+                                } p/p</span
+                            >
+                        </div>
+                        <div
+                            class="p-4 bg-red-50 rounded-lg border border-red-100"
+                        >
+                            <span class="block text-3xl font-bold text-red-600"
+                                >{stats.redCards}</span
+                            >
+                            <span class="text-xs font-bold text-red-800"
+                                >ROJAS</span
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Column: Match History */}
+            <div class="lg:col-span-2">
+                <h2 class="section-title mb-6">HISTORIAL DE PARTIDOS</h2>
+
+                {
+                    matches.length > 0 ? (
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                                        <tr>
+                                            <th class="px-6 py-3">Fecha</th>
+                                            <th class="px-6 py-3">
+                                                Competición
+                                            </th>
+                                            <th class="px-6 py-3 text-right">
+                                                Local
+                                            </th>
+                                            <th class="px-6 py-3 text-center">
+                                                Res.
+                                            </th>
+                                            <th class="px-6 py-3">Visitante</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matches.map((match) => (
+                                            <tr
+                                                class="bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                                                onclick={`window.location.href='/partidos/${match.slug}'`}
+                                            >
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                                    {match.fecha_formateada}
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs block w-fit mb-1">
+                                                        {match.competicion ||
+                                                            match.temporada}
+                                                    </span>
+                                                    {match.estadio && (
+                                                        <span class="text-xs text-gray-400">
+                                                            📍 {match.estadio}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td class="px-6 py-4 text-right font-bold text-[#151e42]">
+                                                    {match.club_local}
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <span class="font-bold text-lg bg-[#151e42] text-white px-3 py-1 rounded-md">
+                                                        {match.goles_rm !== null
+                                                            ? match.goles_rm
+                                                            : "-"}{" "}
+                                                        -{" "}
+                                                        {match.goles_rival !==
+                                                        null
+                                                            ? match.goles_rival
+                                                            : "-"}
+                                                    </span>
+                                                    {match.penaltis &&
+                                                        match.penaltis !==
+                                                            "0" &&
+                                                        match.penaltis !==
+                                                            0 && (
+                                                            <div class="text-xs text-gray-500 mt-1">
+                                                                (Pen.)
+                                                            </div>
+                                                        )}
+                                                </td>
+                                                <td class="px-6 py-4 font-bold text-[#151e42]">
+                                                    {match.club_visitante}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ) : (
+                        <div class="text-center py-10 bg-white rounded-xl shadow border border-gray-100 text-gray-500">
+                            No hay registros de partidos dirigidos por esta
+                            árbitra.
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+    </main>
+</Layout>

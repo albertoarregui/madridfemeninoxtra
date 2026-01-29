@@ -1,0 +1,284 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
+import { getAllStadiums, fetchMatchesByStadium } from "../../utils/estadios";
+import { fetchStadiumStats } from "../../utils/partidos";
+import { Image } from "astro:assets";
+import { getCoordinates } from "../../consts/location-data";
+import InteractiveMap from "../../components/Map";
+
+export async function getStaticPaths() {
+    const stadiums = getAllStadiums();
+    return stadiums.map((stadium) => ({
+        params: { slug: stadium.slug },
+    }));
+}
+
+const { slug } = Astro.params;
+const stadiums = getAllStadiums();
+const stadium = stadiums.find((s) => s.slug === slug);
+
+if (!stadium) {
+    return Astro.redirect("/404");
+}
+
+const stats = await fetchStadiumStats(stadium.name);
+const matches = await fetchMatchesByStadium(stadium.name);
+
+// Calculate percentages
+const total = stats.total || 1;
+const winPct = ((stats.wins / total) * 100).toFixed(1);
+const drawPct = ((stats.draws / total) * 100).toFixed(1);
+const lossPct = ((stats.losses / total) * 100).toFixed(1);
+
+// Map marker
+const marker = stadium.coordinates
+    ? [
+          {
+              lat: stadium.coordinates.lat,
+              lng: stadium.coordinates.lng,
+              label: stadium.name,
+              imageUrl: stadium.imageUrl,
+              type: "stadium",
+              description: `${stadium.name} - ${stadium.city || ""}`,
+          },
+      ]
+    : [];
+---
+
+<Layout
+    title={`${stadium.name} | Estadísticas Real Madrid Femenino`}
+    description={`Historial de partidos, balance de victorias y estadísticas del Real Madrid Femenino en el estadio ${stadium.name}.`}
+>
+    <main class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <a
+            href="/rivales/estadios"
+            class="inline-flex items-center text-gray-500 hover:text-[#151e42] mb-6 transition-colors"
+        >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 mr-2"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
+            >
+            Volver a Estadios
+        </a>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Info & Stats */}
+            <div class="lg:col-span-1 space-y-8">
+                <div
+                    class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100"
+                >
+                    {
+                        stadium.imageUrl ? (
+                            <img
+                                src={stadium.imageUrl}
+                                alt={stadium.name}
+                                class="w-full h-64 object-cover"
+                            />
+                        ) : (
+                            <div class="w-full h-64 flex items-center justify-center bg-gray-100 text-gray-400">
+                                Sin imagen disponible
+                            </div>
+                        )
+                    }
+                    <div class="p-6">
+                        <h1
+                            class="text-3xl font-bebas text-[#151e42] leading-none mb-2"
+                        >
+                            {stadium.name}
+                        </h1>
+                        {
+                            stadium.city && (
+                                <p class="text-gray-500 flex items-center gap-2">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-4 w-4 text-[#151e42]"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="M20 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z" />
+                                        <circle cx="12" cy="10" r="3" />
+                                    </svg>
+                                    {stadium.city}
+                                </p>
+                            )
+                        }
+                    </div>
+                </div>
+
+                <div
+                    class="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+                >
+                    <h2
+                        class="text-xl font-bold text-[#151e42] mb-4 border-l-4 border-[#ffde59] pl-3"
+                    >
+                        BALANCE
+                    </h2>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="p-3 bg-green-50 rounded-lg">
+                            <span
+                                class="block text-2xl font-bold text-green-600"
+                                >{stats.wins}</span
+                            >
+                            <span class="text-xs text-uppercase text-green-800"
+                                >Victorias</span
+                            >
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <span class="block text-2xl font-bold text-gray-600"
+                                >{stats.draws}</span
+                            >
+                            <span class="text-xs text-uppercase text-gray-800"
+                                >Empates</span
+                            >
+                        </div>
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <span class="block text-2xl font-bold text-red-600"
+                                >{stats.losses}</span
+                            >
+                            <span class="text-xs text-uppercase text-red-800"
+                                >Derrotas</span
+                            >
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div
+                            class="flex items-center justify-between text-sm text-gray-600 mb-2"
+                        >
+                            <span>Efectividad</span>
+                            <span class="font-bold">{winPct}%</span>
+                        </div>
+                        <div
+                            class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden flex"
+                        >
+                            <div
+                                class="bg-green-500 h-2.5"
+                                style={`width: ${winPct}%`}
+                            >
+                            </div>
+                            <div
+                                class="bg-gray-400 h-2.5"
+                                style={`width: ${drawPct}%`}
+                            >
+                            </div>
+                            <div
+                                class="bg-red-500 h-2.5"
+                                style={`width: ${lossPct}%`}
+                            >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {
+                    marker.length > 0 && (
+                        <div class="bg-white rounded-xl shadow-lg p-1 border border-gray-100 h-[300px] overflow-hidden">
+                            <InteractiveMap
+                                client:only="react"
+                                @ts-ignore
+                                markers={marker}
+                                center={{
+                                    lat: stadium.coordinates?.lat || 40,
+                                    lng: stadium.coordinates?.lng || -3,
+                                }}
+                                zoom={13}
+                                height="100%"
+                            />
+                        </div>
+                    )
+                }
+            </div>
+
+            {/* Right Column: Match History */}
+            <div class="lg:col-span-2">
+                <h2 class="section-title mb-6">HISTORIAL DE PARTIDOS</h2>
+
+                {
+                    matches.length > 0 ? (
+                        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                                        <tr>
+                                            <th class="px-6 py-3">Fecha</th>
+                                            <th class="px-6 py-3">
+                                                Competición
+                                            </th>
+                                            <th class="px-6 py-3 text-right">
+                                                Local
+                                            </th>
+                                            <th class="px-6 py-3 text-center">
+                                                Res.
+                                            </th>
+                                            <th class="px-6 py-3">Visitante</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matches.map((match) => (
+                                            <tr
+                                                class="bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                                                onclick={`window.location.href='/partidos/${match.slug}'`}
+                                            >
+                                                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                                    {match.fecha_formateada}
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-2 py-1 bg-gray-100 rounded text-xs">
+                                                        {match.competicion ||
+                                                            match.temporada}
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 text-right font-bold text-[#151e42]">
+                                                    {match.club_local}
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <span class="font-bold text-lg bg-[#151e42] text-white px-3 py-1 rounded-md">
+                                                        {match.goles_rm !== null
+                                                            ? match.goles_rm
+                                                            : "-"}{" "}
+                                                        -{" "}
+                                                        {match.goles_rival !==
+                                                        null
+                                                            ? match.goles_rival
+                                                            : "-"}
+                                                    </span>
+                                                    {match.penaltis &&
+                                                        match.penaltis !==
+                                                            "0" &&
+                                                        match.penaltis !==
+                                                            0 && (
+                                                            <div class="text-xs text-gray-500 mt-1">
+                                                                (Pen.)
+                                                            </div>
+                                                        )}
+                                                </td>
+                                                <td class="px-6 py-4 font-bold text-[#151e42]">
+                                                    {match.club_visitante}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ) : (
+                        <div class="text-center py-10 bg-white rounded-xl shadow border border-gray-100 text-gray-500">
+                            No hay registros de partidos en este estadio.
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+    </main>
+</Layout>

@@ -1,5 +1,6 @@
 
 import { cleanApiValue } from "./partidos";
+import { generateSlug } from "./url-helper";
 
 export async function fetchRefereesDirectly(): Promise<any[]> {
     try {
@@ -91,6 +92,51 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
         });
     } catch (error) {
         console.error("Error fetching referees directly:", error);
+        return [];
+    }
+}
+}
+
+export async function fetchMatchesByReferee(refereeName: string): Promise<any[]> {
+    try {
+        const { getDbClient } = await import('../db/client');
+        const client = await getDbClient();
+
+        if (!client) return [];
+
+        const query = `
+            SELECT 
+                p.id_partido, p.fecha, p.hora, p.jornada, p.goles_rm, p.goles_rival, p.penaltis,
+                c.competicion,
+                cl.nombre as club_local,
+                cv.nombre as club_visitante,
+                t.temporada,
+                e.nombre as estadio,
+                e.ciudad
+            FROM partidos p
+            LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
+            LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+            LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+            LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
+            LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
+            LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+            WHERE a.nombre = ?
+            ORDER BY p.fecha DESC
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [refereeName]
+        });
+
+        return result.rows.map((row: any) => ({
+            ...row,
+            fecha_formateada: row.fecha ? new Date(row.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+            slug: `${generateSlug(row.club_local)}-vs-${generateSlug(row.club_visitante)}-${row.fecha ? new Date(row.fecha).toISOString().split('T')[0] : 'fecha'}`
+        }));
+
+    } catch (error) {
+        console.error("Error fetching matches by referee:", error);
         return [];
     }
 }
