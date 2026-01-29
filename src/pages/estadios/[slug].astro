@@ -1,13 +1,28 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
-import { getAllStadiums, fetchMatchesByStadium } from "../../utils/estadios";
+import {
+    fetchAllStadiumsWithStats,
+    fetchMatchesByStadium,
+} from "../../utils/estadios";
 import { generateSlug } from "../../utils/url-helper";
+
+import ligaFLogo from "../../assets/competiciones/liga_f.png";
+import uwclLogo from "../../assets/competiciones/uwcl.png";
+import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
+import supercopaLogo from "../../assets/competiciones/supercopa_de_espana.png";
+
+const competitionLogos: Record<string, any> = {
+    "Liga F": ligaFLogo,
+    UWCL: uwclLogo,
+    "Copa de la Reina": copaLogo,
+    "Supercopa de España": supercopaLogo,
+};
 
 export const prerender = true;
 
-export function getStaticPaths() {
-    const stadiums = getAllStadiums();
+export async function getStaticPaths() {
+    const stadiums = await fetchAllStadiumsWithStats();
     return stadiums.map((s) => ({
         params: { slug: s.slug },
     }));
@@ -15,7 +30,7 @@ export function getStaticPaths() {
 
 const { slug } = Astro.params;
 
-const allStadiums = getAllStadiums();
+const allStadiums = await fetchAllStadiumsWithStats();
 const stadium = allStadiums.find((s) => s.slug === slug);
 
 if (!stadium) {
@@ -55,113 +70,90 @@ const matches = rawMatches.map((m) => {
             if (m.penaltis === 0 || m.penaltis === "0") return "D";
             return "E";
         })(),
+        cleanSheet: (parseInt(m.goles_rival) || 0) === 0,
+        conceded: (parseInt(m.goles_rival) || 0) > 0,
     };
 });
 
-// Calculate Stats (Server Side)
-const calculateStats = (matchList: any[]) => {
-    const stats = {
-        home: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-        away: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-        total: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-    };
+// Calculate Detailed Stats (Season > Competition)
+interface StatBlock {
+    pj: number;
+    pg: number;
+    pe: number;
+    pp: number;
+    gf: number;
+    gc: number;
+    cleanSheets: number;
+    conceded: number;
+}
 
-    matchList.forEach((match) => {
-        const golesRM = parseInt(match.golesRM) || 0;
-        const golesRival = parseInt(match.golesRival) || 0;
-        const isHome = match.esLocal; // This logic depends on RM perspective
-        // WARN: In Rival page, 'home' means RM played as LOCAL against that rival.
-        // Here, 'home' means RM played as LOCAL at this stadium.
-        // If the stadium is NOT Di Stefano, RM usually plays as visitor (away).
-        // Exceptions: Finals played at neutral stadiums where RM might be 'local' administratively.
+const initialStatBlock = (): StatBlock => ({
+    pj: 0,
+    pg: 0,
+    pe: 0,
+    pp: 0,
+    gf: 0,
+    gc: 0,
+    cleanSheets: 0,
+    conceded: 0,
+});
 
-        const location = isHome ? stats.home : stats.away;
+const calculateBlock = (block: StatBlock, m: any) => {
+    block.pj++;
+    block.gf += parseInt(m.golesRM) || 0;
+    block.gc += parseInt(m.golesRival) || 0;
+    if (m.resultado === "V") block.pg++;
+    else if (m.resultado === "E") block.pe++;
+    else block.pp++;
 
-        location.pj++;
-        location.gf += golesRM;
-        location.gc += golesRival;
-
-        if (golesRival === 0) location.cleanSheets++;
-        else location.conceded++;
-
-        if (golesRM > golesRival) location.pg++;
-        else if (golesRM < golesRival) location.pp++;
-        else {
-            // Check penalties if draw (simplified for now without full penaltis data in some queries)
-            if (match.penaltis === 1 || match.penaltis === "1") location.pg++;
-            else if (match.penaltis === 0 || match.penaltis === "0")
-                location.pp++;
-            else location.pe++;
-        }
-    });
-
-    // Aggregation
-    const keys = [
-        "pj",
-        "pg",
-        "pe",
-        "pp",
-        "gf",
-        "gc",
-        "cleanSheets",
-        "conceded",
-        "yellowCards",
-        "redCards",
-    ] as const;
-    keys.forEach((key) => {
-        stats.total[key] = stats.home[key] + stats.away[key];
-    });
-
-    const addFields = (obj: any) => ({
-        ...obj,
-        percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
-        percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
-        percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
-        avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
-        dif: obj.gf - obj.gc,
-    });
-
-    return {
-        home: addFields(stats.home),
-        away: addFields(stats.away),
-        total: addFields(stats.total),
-    };
+    if (m.cleanSheet) block.cleanSheets++;
+    else block.conceded++;
 };
 
-const stadiumStats = calculateStats(matches);
+const seasonsMap = new Map<string, any>();
+
+matches.forEach((m) => {
+    if (!seasonsMap.has(m.season)) {
+        seasonsMap.set(m.season, {
+            temporada: m.season,
+            total: initialStatBlock(),
+            competiciones: new Map<string, any>(),
+        });
+    }
+    const seasonData = seasonsMap.get(m.season);
+    calculateBlock(seasonData.total, m);
+
+    if (!seasonData.competiciones.has(m.competicion)) {
+        seasonData.competiciones.set(m.competicion, {
+            competicion: m.competicion,
+            ...initialStatBlock(),
+        });
+    }
+    calculateBlock(seasonData.competiciones.get(m.competicion), m);
+});
+
+// Convert Map to Array for rendering
+const stadiumDeepStats = Array.from(seasonsMap.values())
+    .map((s) => ({
+        ...s,
+        competiciones: Array.from(s.competiciones.values()),
+    }))
+    .sort((a, b) => (a.temporada < b.temporada ? 1 : -1)); // Newest first
+
+// Total All Time for simple calc if needed
+const totalStats = initialStatBlock();
+matches.forEach((m) => calculateBlock(totalStats, m));
+
+const addPercents = (s: StatBlock) => ({
+    ...s,
+    percPG: s.pj > 0 ? ((s.pg / s.pj) * 100).toFixed(1) : "0.0",
+    percPE: s.pj > 0 ? ((s.pe / s.pj) * 100).toFixed(1) : "0.0",
+    percPP: s.pj > 0 ? ((s.pp / s.pj) * 100).toFixed(1) : "0.0",
+    avg: s.pj > 0 ? (s.gf / s.pj).toFixed(2) : "0.00",
+    dif: s.gf - s.gc,
+});
+
+const totalStatsEnhanced = addPercents(totalStats);
 
 // Filters Setup
 const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
@@ -171,43 +163,39 @@ const uniqueCompetitions = [
     ...new Set(matches.map((m) => m.competicion)),
 ].sort();
 
-// Arc Calculations for Server Render
+// Arc Calculations for Server Render (Initial view uses Total)
 const circumference = 220;
-const totalMatches = stadiumStats.total.pj;
+const totalMatches = totalStats.pj;
 const winsArc =
     totalMatches > 0
-        ? Math.round((stadiumStats.total.pg / totalMatches) * circumference)
+        ? Math.round((totalStats.pg / totalMatches) * circumference)
         : 0;
 const drawsArc =
     totalMatches > 0
-        ? Math.round((stadiumStats.total.pe / totalMatches) * circumference)
+        ? Math.round((totalStats.pe / totalMatches) * circumference)
         : 0;
 const lossesArc =
     totalMatches > 0
-        ? Math.round((stadiumStats.total.pp / totalMatches) * circumference)
+        ? Math.round((totalStats.pp / totalMatches) * circumference)
         : 0;
 
-const totalGoals = stadiumStats.total.gf + stadiumStats.total.gc;
+const totalGoals = totalStats.gf + totalStats.gc;
 const goalsForArc =
     totalGoals > 0
-        ? Math.round((stadiumStats.total.gf / totalGoals) * circumference)
+        ? Math.round((totalStats.gf / totalGoals) * circumference)
         : 0;
 const goalsAgainstArc =
     totalGoals > 0
-        ? Math.round((stadiumStats.total.gc / totalGoals) * circumference)
+        ? Math.round((totalStats.gc / totalGoals) * circumference)
         : 0;
 
 const cleanSheetsArc =
     totalMatches > 0
-        ? Math.round(
-              (stadiumStats.total.cleanSheets / totalMatches) * circumference,
-          )
+        ? Math.round((totalStats.cleanSheets / totalMatches) * circumference)
         : 0;
 const concededArc =
     totalMatches > 0
-        ? Math.round(
-              (stadiumStats.total.conceded / totalMatches) * circumference,
-          )
+        ? Math.round((totalStats.conceded / totalMatches) * circumference)
         : 0;
 ---
 
@@ -236,7 +224,9 @@ const concededArc =
         <div class="rival-grid">
             <div class="left-column">
                 <section class="rival-card">
-                    <h2 class="section-header">FICHA DE ESTADIO</h2>
+                    <h2 class="section-header">
+                        FICHA DEL {stadium.name.toUpperCase()}
+                    </h2>
                     <div class="rival-info">
                         <div class="rival-shield">
                             {
@@ -280,107 +270,153 @@ const concededArc =
 
                 <section class="stats-table-card">
                     <h3 class="section-subheader">
-                        ESTADÍSTICAS EN ESTE ESTADIO
+                        ESTADÍSTICAS EN {stadium.name.toUpperCase()}
                     </h3>
                     <div class="table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>C. LECHERA</th>
-                                    <th>PJ</th>
-                                    <th>PG</th>
-                                    <th>%PG</th>
-                                    <th>PE</th>
-                                    <th>%PE</th>
-                                    <th>PP</th>
-                                    <th>%PP</th>
-                                    <th class="highlight-yellow">⚽</th>
-                                    <th class="highlight-red">⚽</th>
-                                    <th class="highlight-blue">📊</th>
-                                    <th>Avg.</th>
-                                    <th>Dif.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>LOCAL</td>
-                                    <td>{stadiumStats.home.pj}</td>
-                                    <td>{stadiumStats.home.pg}</td>
-                                    <td>{stadiumStats.home.percPG}%</td>
-                                    <td>{stadiumStats.home.pe}</td>
-                                    <td>{stadiumStats.home.percPE}%</td>
-                                    <td>{stadiumStats.home.pp}</td>
-                                    <td>{stadiumStats.home.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{stadiumStats.home.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{stadiumStats.home.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{stadiumStats.home.dif > 0 ? "+" : ""}{
-                                            stadiumStats.home.dif
-                                        }</td
-                                    >
-                                    <td>{stadiumStats.home.avg}</td>
-                                    <td>{stadiumStats.home.dif}</td>
-                                </tr>
-                                <tr>
-                                    <td>VISITANTE</td>
-                                    <td>{stadiumStats.away.pj}</td>
-                                    <td>{stadiumStats.away.pg}</td>
-                                    <td>{stadiumStats.away.percPG}%</td>
-                                    <td>{stadiumStats.away.pe}</td>
-                                    <td>{stadiumStats.away.percPE}%</td>
-                                    <td>{stadiumStats.away.pp}</td>
-                                    <td>{stadiumStats.away.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{stadiumStats.away.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{stadiumStats.away.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{stadiumStats.away.dif > 0 ? "+" : ""}{
-                                            stadiumStats.away.dif
-                                        }</td
-                                    >
-                                    <td>{stadiumStats.away.avg}</td>
-                                    <td>{stadiumStats.away.dif}</td>
-                                </tr>
-                                <tr class="total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td>{stadiumStats.total.pj}</td>
-                                    <td>{stadiumStats.total.pg}</td>
-                                    <td>{stadiumStats.total.percPG}%</td>
-                                    <td>{stadiumStats.total.pe}</td>
-                                    <td>{stadiumStats.total.percPE}%</td>
-                                    <td>{stadiumStats.total.pp}</td>
-                                    <td>{stadiumStats.total.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{stadiumStats.total.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{stadiumStats.total.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{
-                                            stadiumStats.total.dif > 0
-                                                ? "+"
-                                                : ""
-                                        }{stadiumStats.total.dif}</td
-                                    >
-                                    <td>{stadiumStats.total.avg}</td>
-                                    <td>{stadiumStats.total.dif}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        {
+                            stadiumDeepStats.length > 0 ? (
+                                <table class="stats-table detailed-table">
+                                    <thead>
+                                        <tr>
+                                            <th>TEMPORADA</th>
+                                            <th>PJ</th>
+                                            <th>PG</th>
+                                            <th>PE</th>
+                                            <th>PP</th>
+                                            <th class="highlight-yellow">GF</th>
+                                            <th class="highlight-red">GC</th>
+                                            <th>Dif</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {stadiumDeepStats.map((season) => (
+                                            <>
+                                                <tr
+                                                    class="season-total-row"
+                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                                    style="cursor: pointer;"
+                                                >
+                                                    <td>
+                                                        <strong>
+                                                            {season.temporada}
+                                                        </strong>
+                                                        <span class="toggle-icon">
+                                                            ▼
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pj}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pg}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pe}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pp}
+                                                        </strong>
+                                                    </td>
+                                                    <td class="highlight-yellow">
+                                                        <strong>
+                                                            {season.total.gf}
+                                                        </strong>
+                                                    </td>
+                                                    <td class="highlight-red">
+                                                        <strong>
+                                                            {season.total.gc}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.gf -
+                                                                season.total.gc}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                                {season.competiciones.map(
+                                                    (comp) => (
+                                                        <tr
+                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
+                                                            style="display: none;"
+                                                        >
+                                                            <td class="competition-name">
+                                                                {competitionLogos[
+                                                                    comp
+                                                                        .competicion
+                                                                ] && (
+                                                                    <img
+                                                                        src={
+                                                                            competitionLogos[
+                                                                                comp
+                                                                                    .competicion
+                                                                            ]
+                                                                                .src
+                                                                        }
+                                                                        alt={
+                                                                            comp.competicion
+                                                                        }
+                                                                        class="competition-logo"
+                                                                    />
+                                                                )}
+                                                                {
+                                                                    comp.competicion
+                                                                }
+                                                            </td>
+                                                            <td>{comp.pj}</td>
+                                                            <td>{comp.pg}</td>
+                                                            <td>{comp.pe}</td>
+                                                            <td>{comp.pp}</td>
+                                                            <td>{comp.gf}</td>
+                                                            <td>{comp.gc}</td>
+                                                            <td>
+                                                                {comp.gf -
+                                                                    comp.gc}
+                                                            </td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                            </>
+                                        ))}
+                                        <tr class="total-row career-total-row">
+                                            <td>
+                                                <strong>TOTAL HISTÓRICO</strong>
+                                            </td>
+                                            <td>{totalStats.pj}</td>
+                                            <td>{totalStats.pg}</td>
+                                            <td>{totalStats.pe}</td>
+                                            <td>{totalStats.pp}</td>
+                                            <td class="highlight-yellow">
+                                                {totalStats.gf}
+                                            </td>
+                                            <td class="highlight-red">
+                                                {totalStats.gc}
+                                            </td>
+                                            <td>
+                                                {totalStats.gf - totalStats.gc}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div class="p-4 text-center text-gray-500">
+                                    No hay estadísticas disponibles
+                                </div>
+                            )
+                        }
                     </div>
                 </section>
 
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="filters-container">
+                    <div class="filters-container flex justify-center gap-4">
                         <div class="filter-wrapper">
                             <select id="season-filter">
                                 <option value="all">Todas las Temporadas</option
@@ -409,9 +445,41 @@ const concededArc =
                                 ></path></svg
                             >
                         </div>
+                        <div class="filter-wrapper">
+                            <select id="competition-filter">
+                                <option value="all"
+                                    >Todas las Competiciones</option
+                                >
+                                {
+                                    uniqueCompetitions.map((comp) => (
+                                        <option value={comp}>{comp}</option>
+                                    ))
+                                }
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
+                        </div>
                     </div>
                     <div class="charts-row">
                         <div class="chart-item">
+                            <div class="chart-label">
+                                Victorias / Empates / Derrotas
+                            </div>
                             <svg
                                 viewBox="0 0 100 100"
                                 class="pie-chart"
@@ -450,22 +518,23 @@ const concededArc =
                             <div class="chart-legend" id="results-legend">
                                 <div>
                                     <span class="dot green"></span> Ganados ({
-                                        stadiumStats.total.pg
+                                        totalStats.pg
                                     })
                                 </div>
                                 <div>
                                     <span class="dot orange"></span> Empatados ({
-                                        stadiumStats.total.pe
+                                        totalStats.pe
                                     })
                                 </div>
                                 <div>
                                     <span class="dot red"></span> Perdidos ({
-                                        stadiumStats.total.pp
+                                        totalStats.pp
                                     })
                                 </div>
                             </div>
                         </div>
                         <div class="chart-item">
+                            <div class="chart-label">Goles</div>
                             <svg
                                 viewBox="0 0 100 100"
                                 class="pie-chart"
@@ -494,17 +563,18 @@ const concededArc =
                             <div class="chart-legend" id="goals-legend">
                                 <div>
                                     <span class="dot green"></span> A favor ({
-                                        stadiumStats.total.gf
+                                        totalStats.gf
                                     })
                                 </div>
                                 <div>
                                     <span class="dot red"></span> En contra ({
-                                        stadiumStats.total.gc
+                                        totalStats.gc
                                     })
                                 </div>
                             </div>
                         </div>
                         <div class="chart-item">
+                            <div class="chart-label">Portería a Cero</div>
                             <svg
                                 viewBox="0 0 100 100"
                                 class="pie-chart"
@@ -533,12 +603,12 @@ const concededArc =
                             <div class="chart-legend" id="clean-sheets-legend">
                                 <div>
                                     <span class="dot green"></span> P. a cero ({
-                                        stadiumStats.total.cleanSheets
+                                        totalStats.cleanSheets
                                     })
                                 </div>
                                 <div>
                                     <span class="dot red"></span> Con gol ({
-                                        stadiumStats.total.conceded
+                                        totalStats.conceded
                                     })
                                 </div>
                             </div>
@@ -547,7 +617,9 @@ const concededArc =
                 </section>
 
                 <section class="matches-card">
-                    <h3 class="section-subheader">PARTIDOS DISPUTADOS</h3>
+                    <h3 class="section-subheader">
+                        PARTIDOS EN {stadium.name.toUpperCase()}
+                    </h3>
                     <div class="table-wrapper">
                         <table class="matches-table">
                             <thead>
@@ -644,12 +716,22 @@ const concededArc =
                 <section class="stadium-card">
                     <h2 class="section-header">MAPA</h2>
                     {
+                        stadium.imageUrl && (
+                            <div class="mb-4 rounded-md overflow-hidden shadow-md">
+                                <img
+                                    src={stadium.imageUrl}
+                                    alt={stadium.name}
+                                    class="w-full h-auto object-cover"
+                                />
+                            </div>
+                        )
+                    }
+                    {
                         stadium.coordinates ? (
                             <div
                                 class="map-placeholder bg-gray-100 p-4 rounded text-center"
                                 style="height: 300px;"
                             >
-                                {/** Interactive Map could go here if we had the component ready, for now placeholder like logic */}
                                 <iframe
                                     width="100%"
                                     height="100%"
@@ -662,7 +744,7 @@ const concededArc =
                             </div>
                         ) : (
                             <div class="p-4 text-center text-gray-500">
-                                Ubicación no disponible
+                                Ubicación de mapa no disponible
                             </div>
                         )
                     }
@@ -673,101 +755,64 @@ const concededArc =
 </Layout>
 
 <script define:vars={{ initialMatches: matches }}>
-    function calculateStatsLocal(matches) {
+    // Toggle Season Logic
+    window.toggleSeason = function (season) {
+        const rows = document.querySelectorAll(
+            `.competition-row.season-${season}`,
+        );
+        const icon = document.querySelector(
+            `.season-total-row[onclick*="${season}"] .toggle-icon`,
+        );
+
+        rows.forEach((row) => {
+            if (row.style.display === "none") {
+                row.style.display = "table-row";
+                if (icon) icon.textContent = "▲";
+            } else {
+                row.style.display = "none";
+                if (icon) icon.textContent = "▼";
+            }
+        });
+    };
+
+    // Filters and Charts Logic
+    function calculateStatsDoubleFilter(matches) {
         const stats = {
-            home: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-            },
-            away: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-            },
-            total: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-            },
+            pj: 0,
+            pg: 0,
+            pe: 0,
+            pp: 0,
+            gf: 0,
+            gc: 0,
+            cleanSheets: 0,
+            conceded: 0,
         };
 
         matches.forEach((match) => {
             const golesRM = parseInt(match.golesRM) || 0;
             const golesRival = parseInt(match.golesRival) || 0;
 
-            // Check if RM was local in this match
-            const isHome = match.club_local
-                .toLowerCase()
-                .includes("real madrid");
-            const location = isHome ? stats.home : stats.away;
+            stats.pj++;
+            stats.gf += golesRM;
+            stats.gc += golesRival;
 
-            location.pj++;
-            location.gf += golesRM;
-            location.gc += golesRival;
+            if (match.cleanSheet)
+                stats.cleanSheets++; // server side prop
+            else if (parseInt(match.golesRival) === 0) stats.cleanSheets++;
+            else stats.conceded++;
 
-            if (golesRival === 0) location.cleanSheets++;
-            else location.conceded++;
-
-            if (golesRM > golesRival) location.pg++;
-            else if (golesRM < golesRival) location.pp++;
-            else {
-                if (match.penaltis === 1 || match.penaltis === "1")
-                    location.pg++;
-                else if (match.penaltis === 0 || match.penaltis === "0")
-                    location.pp++;
-                else location.pe++;
-            }
+            if (match.resultado === "V") stats.pg++;
+            else if (match.resultado === "E") stats.pe++;
+            else stats.pp++;
         });
 
-        // Totals
-        const keys = [
-            "pj",
-            "pg",
-            "pe",
-            "pp",
-            "gf",
-            "gc",
-            "cleanSheets",
-            "conceded",
-        ];
-        keys.forEach((k) => (stats.total[k] = stats.home[k] + stats.away[k]));
-
-        const addFields = (obj) => ({
-            ...obj,
-            percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
-            percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
-            percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
-            avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
-            dif: obj.gf - obj.gc,
-        });
-
-        return {
-            home: addFields(stats.home),
-            away: addFields(stats.away),
-            total: addFields(stats.total),
-        };
+        return stats;
     }
 
     function updateCharts(stats) {
         const circumference = 220;
-        const totalMatches = stats.total.pj;
-        const totalGoals = stats.total.gf + stats.total.gc;
+        const totalMatches = stats.pj;
+        const totalGoals = stats.gf + stats.gc;
 
         const updateCircle = (id, idx, val, total, offset = 0) => {
             const chart = document.getElementById(id);
@@ -785,116 +830,99 @@ const concededArc =
             return arc;
         };
 
+        // Results Chart
         const winsArc = updateCircle(
             "results-chart",
             0,
-            stats.total.pg,
+            stats.pg,
             totalMatches,
         );
         const drawsArc = updateCircle(
             "results-chart",
             1,
-            stats.total.pe,
+            stats.pe,
             totalMatches,
             winsArc,
         );
         updateCircle(
             "results-chart",
             2,
-            stats.total.pp,
+            stats.pp,
             totalMatches,
             winsArc + drawsArc,
         );
 
-        const gfArc = updateCircle(
-            "goals-chart",
-            0,
-            stats.total.gf,
-            totalGoals,
-        );
-        updateCircle("goals-chart", 1, stats.total.gc, totalGoals, gfArc);
+        // Goals Chart
+        const gForArc = updateCircle("goals-chart", 0, stats.gf, totalGoals);
+        updateCircle("goals-chart", 1, stats.gc, totalGoals, gForArc);
 
+        // Clean Sheets Chart
         const csArc = updateCircle(
             "clean-sheets-chart",
             0,
-            stats.total.cleanSheets,
+            stats.cleanSheets,
             totalMatches,
         );
         updateCircle(
             "clean-sheets-chart",
             1,
-            stats.total.conceded,
+            stats.conceded,
             totalMatches,
             csArc,
         );
 
-        // Update Legends text
-        const updateLegend = (id, idx, text) => {
-            const el = document.getElementById(id);
-            if (el && el.querySelectorAll("div")[idx])
-                el.querySelectorAll("div")[idx].innerHTML = text;
-        };
+        // Update Legends
+        document.querySelector(
+            "#results-legend div:nth-child(1) .dot",
+        ).nextSibling.textContent = ` Ganados (${stats.pg})`;
+        document.querySelector(
+            "#results-legend div:nth-child(2) .dot",
+        ).nextSibling.textContent = ` Empatados (${stats.pe})`;
+        document.querySelector(
+            "#results-legend div:nth-child(3) .dot",
+        ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
-        updateLegend(
-            "results-legend",
-            0,
-            `<span class="dot green"></span> Ganados (${stats.total.pg})`,
-        );
-        updateLegend(
-            "results-legend",
-            1,
-            `<span class="dot orange"></span> Empatados (${stats.total.pe})`,
-        );
-        updateLegend(
-            "results-legend",
-            2,
-            `<span class="dot red"></span> Perdidos (${stats.total.pp})`,
-        );
+        document.querySelector(
+            "#goals-legend div:nth-child(1) .dot",
+        ).nextSibling.textContent = ` A favor (${stats.gf})`;
+        document.querySelector(
+            "#goals-legend div:nth-child(2) .dot",
+        ).nextSibling.textContent = ` En contra (${stats.gc})`;
 
-        updateLegend(
-            "goals-legend",
-            0,
-            `<span class="dot green"></span> A favor (${stats.total.gf})`,
-        );
-        updateLegend(
-            "goals-legend",
-            1,
-            `<span class="dot red"></span> En contra (${stats.total.gc})`,
-        );
-
-        updateLegend(
-            "clean-sheets-legend",
-            0,
-            `<span class="dot green"></span> P. a cero (${stats.total.cleanSheets})`,
-        );
-        updateLegend(
-            "clean-sheets-legend",
-            1,
-            `<span class="dot red"></span> Con gol (${stats.total.conceded})`,
-        );
-    }
-
-    function updateTable(stats) {
-        const table = document.querySelector(".stats-table tbody");
-        if (!table) return;
-        const row = (label, d) =>
-            `<td>${label}</td><td>${d.pj}</td><td>${d.pg}</td><td>${d.percPG}%</td><td>${d.pe}</td><td>${d.percPE}%</td><td>${d.pp}</td><td>${d.percPP}%</td><td class="highlight-yellow">${d.gf}</td><td class="highlight-red">${d.gc}</td><td class="highlight-blue">${d.dif > 0 ? "+" : ""}${d.dif}</td><td>${d.avg}</td><td>${d.dif}</td>`;
-        table.innerHTML = `<tr>${row("LOCAL", stats.home)}</tr><tr>${row("VISITANTE", stats.away)}</tr><tr class="total-row">${row("<strong>TOTAL</strong>", stats.total)}</tr>`;
+        document.querySelector(
+            "#clean-sheets-legend div:nth-child(1) .dot",
+        ).nextSibling.textContent = ` P. a cero (${stats.cleanSheets})`;
+        document.querySelector(
+            "#clean-sheets-legend div:nth-child(2) .dot",
+        ).nextSibling.textContent = ` Con gol (${stats.conceded})`;
     }
 
     const seasonFilter = document.getElementById("season-filter");
-    if (seasonFilter) {
-        seasonFilter.addEventListener("change", () => {
-            const selected = seasonFilter.value;
-            const filtered =
-                selected === "all"
-                    ? initialMatches
-                    : initialMatches.filter((m) => m.season === selected);
-            const newStats = calculateStatsLocal(filtered);
-            updateCharts(newStats);
-            updateTable(newStats);
-        });
+    const competitionFilter = document.getElementById("competition-filter");
+    const allMatches = initialMatches;
+
+    function applyFilters() {
+        const selectedSeason = seasonFilter ? seasonFilter.value : "all";
+        const selectedComp = competitionFilter
+            ? competitionFilter.value
+            : "all";
+
+        let filtered = allMatches;
+
+        if (selectedSeason !== "all") {
+            filtered = filtered.filter((m) => m.season === selectedSeason);
+        }
+        if (selectedComp !== "all") {
+            filtered = filtered.filter((m) => m.competicion === selectedComp);
+        }
+
+        const stats = calculateStatsDoubleFilter(filtered);
+        updateCharts(stats);
     }
+
+    if (seasonFilter) seasonFilter.addEventListener("change", applyFilters);
+    if (competitionFilter)
+        competitionFilter.addEventListener("change", applyFilters);
 
     const showMore = document.getElementById("show-more-matches");
     if (showMore) {
@@ -1152,5 +1180,55 @@ const concededArc =
         .rival-grid {
             grid-template-columns: 1fr;
         }
+    }
+    /* Detailed Table */
+    .detailed-table th {
+        background-color: #f8f9fa;
+        color: #151e42;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+    }
+    .detailed-table th:first-child {
+        text-align: left;
+    }
+    .detailed-table td {
+        text-align: center;
+    }
+    .detailed-table td:first-child {
+        text-align: left;
+    }
+
+    .competition-row {
+        background-color: #fcfcfc;
+    }
+    .competition-row td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.85rem;
+        color: #555;
+    }
+    .competition-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        margin-right: 8px;
+        vertical-align: middle;
+        display: inline-block;
+    }
+
+    .season-total-row {
+        background-color: #fff;
+    }
+    .season-total-row:hover {
+        background-color: #f5f5f5;
+    }
+
+    .toggle-icon {
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+        color: #999;
     }
 </style>

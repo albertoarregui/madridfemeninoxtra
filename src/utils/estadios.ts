@@ -143,6 +143,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                 city: stadium.ciudad || (knownLoc && knownLoc.label.includes(',') ? knownLoc.label.split(',').pop()?.trim() : ''),
                 capacity: stadium.capacidad,
                 imageUrl: knownLoc?.imageUrl || null,
+                coordinates: knownLoc ? { lat: knownLoc.lat, lng: knownLoc.lng } : undefined,
                 slug: slug,
                 stats: {
                     played,

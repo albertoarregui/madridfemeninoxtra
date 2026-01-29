@@ -7,6 +7,18 @@ import {
 } from "../../utils/arbitras";
 import { generateSlug } from "../../utils/url-helper";
 
+import ligaFLogo from "../../assets/competiciones/liga_f.png";
+import uwclLogo from "../../assets/competiciones/uwcl.png";
+import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
+import supercopaLogo from "../../assets/competiciones/supercopa_de_espana.png";
+
+const competitionLogos: Record<string, any> = {
+    "Liga F": ligaFLogo,
+    UWCL: uwclLogo,
+    "Copa de la Reina": copaLogo,
+    "Supercopa de España": supercopaLogo,
+};
+
 export const prerender = true;
 
 export async function getStaticPaths() {
@@ -28,17 +40,10 @@ const rawMatches = await fetchMatchesByReferee(referee.nombre);
 
 // Process matches for statistics
 const matches = rawMatches.map((m) => {
-    // RM Perspective: Usually matches data comes with RM goals and Rival goals.
-    // If we fetched using fetchMatchesByReferee, we assume the data structure
-    // from get_filtered_matches which has 'goles_rm', 'goles_rival', 'club_local', 'club_visitante'
-
-    // Determine if RM is home or away is needed for "Home/Away" stats split?
-    // Usually Stats are "RM Home" vs "RM Away" no matter who the referee is.
     const isLocal =
         m.club_local.toLowerCase().trim().includes("real madrid") ||
         m.club_local.toLowerCase().trim() === "real madrid cf";
 
-    // Comp stats
     const d = new Date(m.fecha);
     const year = d.getFullYear();
     const month = d.getMonth() + 1;
@@ -49,177 +54,126 @@ const matches = rawMatches.map((m) => {
     return {
         ...m,
         esLocal: isLocal,
-        // Ensure numbers
         golesRM: parseInt(m.goles_rm) || 0,
         golesRival: parseInt(m.goles_rival) || 0,
+        yellowCards: parseInt(m.amarillas) || 0,
+        redCards: parseInt(m.rojas) || 0,
         season,
         resultado: (() => {
             const rm = parseInt(m.goles_rm) || 0;
             const rival = parseInt(m.goles_rival) || 0;
             if (rm > rival) return "V";
             if (rm < rival) return "D";
-            // Check penalties if draw
             if (m.penaltis === 1 || m.penaltis === "1") return "V";
             if (m.penaltis === 0 || m.penaltis === "0") return "D";
             return "E";
         })(),
+        cleanSheet: (parseInt(m.goles_rival) || 0) === 0,
+        conceded: (parseInt(m.goles_rival) || 0) > 0,
     };
 });
 
-// Calculate Stats (Server Side)
-const calculateStats = (matchList: any[]) => {
-    const stats = {
-        home: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-        away: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-        total: {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            gf: 0,
-            gc: 0,
-            cleanSheets: 0,
-            conceded: 0,
-            yellowCards: 0,
-            redCards: 0,
-        },
-    };
+// Calculate Detailed Stats (Season > Competition)
+interface StatBlock {
+    pj: number;
+    pg: number;
+    pe: number;
+    pp: number;
+    ta: number;
+    tr: number;
+}
 
-    matchList.forEach((match) => {
-        const golesRM = match.golesRM;
-        const golesRival = match.golesRival;
-        const isHome = match.esLocal;
+const initialStatBlock = (): StatBlock => ({
+    pj: 0,
+    pg: 0,
+    pe: 0,
+    pp: 0,
+    ta: 0,
+    tr: 0,
+});
 
-        const location = isHome ? stats.home : stats.away;
+const calculateBlock = (block: StatBlock, m: any) => {
+    block.pj++;
+    block.ta += m.yellowCards;
+    block.tr += m.redCards;
 
-        location.pj++;
-        location.gf += golesRM;
-        location.gc += golesRival;
-
-        // Cards logic - assuming match object has 'amarillas' and 'rojas' total for the match?
-        // Or specific to RM? Usually referee stats count ALL cards shown in the match.
-        // But our dataset might only have cards for RM or total?
-        // Let's assume 'tarjetas' field exists or we use what we have.
-        // Looking at arbitras stats normally, it shows "Cards shown".
-        // The fetchMatchesByReferee might not return card details per match unless we modify query.
-        // For now, let's try to use 'amarillas' and 'rojas' if available, otherwise 0.
-        // The generic match query might not have these.
-        // We will trust what is available.
-
-        // Actually the `referee.stats` object already has aggregated stats from the DB helper `fetchRefereesDirectly`.
-        // However, if we want dynamic filtering (by season/home/away), we need to recalculate from matches.
-        // If matches don't have card data, we can't recalculate cards dynamically.
-        // Let's check `fetchMatchesByReferee`: It selects `p.*` and joins.
-        // Does `partidos` table have `amarillas` / `rojas`?
-        // Assuming yes or similar columns. If not, we skip cards in dynamic stats or use defaults.
-
-        location.yellowCards += parseInt(match.amarillas) || 0;
-        location.redCards += parseInt(match.rojas) || 0;
-
-        if (golesRival === 0) location.cleanSheets++;
-        else location.conceded++;
-
-        if (golesRM > golesRival) location.pg++;
-        else if (golesRM < golesRival) location.pp++;
-        else {
-            if (match.penaltis === 1 || match.penaltis === "1") location.pg++;
-            else if (match.penaltis === 0 || match.penaltis === "0")
-                location.pp++;
-            else location.pe++;
-        }
-    });
-
-    const keys = [
-        "pj",
-        "pg",
-        "pe",
-        "pp",
-        "gf",
-        "gc",
-        "cleanSheets",
-        "conceded",
-        "yellowCards",
-        "redCards",
-    ] as const;
-    keys.forEach((key) => {
-        stats.total[key] = stats.home[key] + stats.away[key];
-    });
-
-    const addFields = (obj: any) => ({
-        ...obj,
-        percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
-        percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
-        percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
-        avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
-        dif: obj.gf - obj.gc,
-    });
-
-    return {
-        home: addFields(stats.home),
-        away: addFields(stats.away),
-        total: addFields(stats.total),
-    };
+    if (m.resultado === "V") block.pg++;
+    else if (m.resultado === "E") block.pe++;
+    else block.pp++;
 };
 
-const refereeStats = calculateStats(matches);
+const seasonsMap = new Map<string, any>();
+
+matches.forEach((m) => {
+    if (!seasonsMap.has(m.season)) {
+        seasonsMap.set(m.season, {
+            temporada: m.season,
+            total: initialStatBlock(),
+            competiciones: new Map<string, any>(),
+        });
+    }
+    const seasonData = seasonsMap.get(m.season);
+    calculateBlock(seasonData.total, m);
+
+    if (!seasonData.competiciones.has(m.competicion)) {
+        seasonData.competiciones.set(m.competicion, {
+            competicion: m.competicion,
+            ...initialStatBlock(),
+        });
+    }
+    calculateBlock(seasonData.competiciones.get(m.competicion), m);
+});
+
+// Convert Map to Array for rendering
+const refereeDeepStats = Array.from(seasonsMap.values())
+    .map((s) => ({
+        ...s,
+        competiciones: Array.from(s.competiciones.values()),
+    }))
+    .sort((a, b) => (a.temporada < b.temporada ? 1 : -1));
+
+// Total All Time
+const totalStats = initialStatBlock();
+matches.forEach((m) => calculateBlock(totalStats, m));
+
+// Filter lists
 const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
     .sort()
     .reverse();
+const uniqueCompetitions = [
+    ...new Set(matches.map((m) => m.competicion)),
+].sort();
 
-// Charts Data
+// Charts Initial Data
 const circumference = 220;
-const totalMatches = refereeStats.total.pj;
+const totalMatches = totalStats.pj;
 const winsArc =
     totalMatches > 0
-        ? Math.round((refereeStats.total.pg / totalMatches) * circumference)
+        ? Math.round((totalStats.pg / totalMatches) * circumference)
         : 0;
 const drawsArc =
     totalMatches > 0
-        ? Math.round((refereeStats.total.pe / totalMatches) * circumference)
+        ? Math.round((totalStats.pe / totalMatches) * circumference)
         : 0;
 const lossesArc =
     totalMatches > 0
-        ? Math.round((refereeStats.total.pp / totalMatches) * circumference)
+        ? Math.round((totalStats.pp / totalMatches) * circumference)
         : 0;
 
-const totalCards = refereeStats.total.yellowCards + refereeStats.total.redCards;
+const totalCards = totalStats.ta + totalStats.tr;
 const yellowArc =
     totalCards > 0
-        ? Math.round(
-              (refereeStats.total.yellowCards / totalCards) * circumference,
-          )
+        ? Math.round((totalStats.ta / totalCards) * circumference)
         : 0;
 const redArc =
     totalCards > 0
-        ? Math.round((refereeStats.total.redCards / totalCards) * circumference)
+        ? Math.round((totalStats.tr / totalCards) * circumference)
         : 0;
 ---
 
 <Layout
-    title={`${referee.nombre} | Madrid Femenino Xtra`}
-    description={`Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino: balance de victorias, tarjetas y lista de partidos dirigidos.`}
+    title={`Ficha de ${referee.nombre} | Madrid Femenino Xtra`}
+    description={`Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`}
 >
     <main class="rival-details-page">
         <a href="/arbitras" class="back-link">
@@ -242,56 +196,43 @@ const redArc =
         <div class="rival-grid">
             <div class="left-column">
                 <section class="rival-card">
-                    <h2 class="section-header">FICHA DE ÁRBITRA</h2>
+                    <h2 class="section-header">
+                        FICHA DE {referee.nombre.toUpperCase()}
+                    </h2>
                     <div class="rival-info">
-                        <div
-                            class="rival-shield flex items-center justify-center bg-gray-50 rounded-lg"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-32 h-32 text-[#151e42] opacity-80"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"
-                                ></path>
-                            </svg>
-                        </div>
-                        <div class="rival-details">
+                        <!-- Removed generic photo placeholder as requested -->
+                        <div class="rival-details w-full">
                             <div class="info-row">
                                 <span class="label">Nombre:</span>
-                                <span class="value font-bebas text-2xl"
+                                <span class="value font-bebas text-xl"
                                     >{referee.nombre}</span
                                 >
                             </div>
                             <div class="info-row">
                                 <span class="label">Partidos:</span>
-                                <span class="value"
-                                    >{refereeStats.total.pj}</span
+                                <span class="value font-bold"
+                                    >{totalStats.pj}</span
                                 >
                             </div>
                             <div class="info-row">
-                                <span class="label">Tarjetas:</span>
+                                <span class="label">Total Tarjetas:</span>
                                 <span class="value gap-3">
                                     <span
                                         class="flex items-center gap-1 text-yellow-600 font-bold"
-                                        ><span
+                                    >
+                                        <span
                                             class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"
                                         ></span>
-                                        {refereeStats.total.yellowCards}</span
-                                    >
+                                        {totalStats.ta}
+                                    </span>
                                     <span
                                         class="flex items-center gap-1 text-red-600 font-bold"
-                                        ><span
+                                    >
+                                        <span
                                             class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"
                                         ></span>
-                                        {refereeStats.total.redCards}</span
-                                    >
+                                        {totalStats.tr}
+                                    </span>
                                 </span>
                             </div>
                         </div>
@@ -299,102 +240,138 @@ const redArc =
                 </section>
 
                 <section class="stats-table-card">
-                    <h3 class="section-subheader">BALANCE DE RESULTADOS</h3>
+                    <h3 class="section-subheader">ESTADÍSTICAS</h3>
                     <div class="table-wrapper">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>C. LECHERA</th>
-                                    <th>PJ</th>
-                                    <th>PG</th>
-                                    <th>%PG</th>
-                                    <th>PE</th>
-                                    <th>%PE</th>
-                                    <th>PP</th>
-                                    <th>%PP</th>
-                                    <th class="highlight-yellow">⚽</th>
-                                    <th class="highlight-red">⚽</th>
-                                    <th class="highlight-blue">📊</th>
-                                    <th>Avg.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>LOCAL</td>
-                                    <td>{refereeStats.home.pj}</td>
-                                    <td>{refereeStats.home.pg}</td>
-                                    <td>{refereeStats.home.percPG}%</td>
-                                    <td>{refereeStats.home.pe}</td>
-                                    <td>{refereeStats.home.percPE}%</td>
-                                    <td>{refereeStats.home.pp}</td>
-                                    <td>{refereeStats.home.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{refereeStats.home.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{refereeStats.home.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{refereeStats.home.dif > 0 ? "+" : ""}{
-                                            refereeStats.home.dif
-                                        }</td
-                                    >
-                                    <td>{refereeStats.home.avg}</td>
-                                </tr>
-                                <tr>
-                                    <td>VISITANTE</td>
-                                    <td>{refereeStats.away.pj}</td>
-                                    <td>{refereeStats.away.pg}</td>
-                                    <td>{refereeStats.away.percPG}%</td>
-                                    <td>{refereeStats.away.pe}</td>
-                                    <td>{refereeStats.away.percPE}%</td>
-                                    <td>{refereeStats.away.pp}</td>
-                                    <td>{refereeStats.away.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{refereeStats.away.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{refereeStats.away.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{refereeStats.away.dif > 0 ? "+" : ""}{
-                                            refereeStats.away.dif
-                                        }</td
-                                    >
-                                    <td>{refereeStats.away.avg}</td>
-                                </tr>
-                                <tr class="total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td>{refereeStats.total.pj}</td>
-                                    <td>{refereeStats.total.pg}</td>
-                                    <td>{refereeStats.total.percPG}%</td>
-                                    <td>{refereeStats.total.pe}</td>
-                                    <td>{refereeStats.total.percPE}%</td>
-                                    <td>{refereeStats.total.pp}</td>
-                                    <td>{refereeStats.total.percPP}%</td>
-                                    <td class="highlight-yellow"
-                                        >{refereeStats.total.gf}</td
-                                    >
-                                    <td class="highlight-red"
-                                        >{refereeStats.total.gc}</td
-                                    >
-                                    <td class="highlight-blue"
-                                        >{
-                                            refereeStats.total.dif > 0
-                                                ? "+"
-                                                : ""
-                                        }{refereeStats.total.dif}</td
-                                    >
-                                    <td>{refereeStats.total.avg}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        {
+                            refereeDeepStats.length > 0 ? (
+                                <table class="stats-table detailed-table">
+                                    <thead>
+                                        <tr>
+                                            <th>TEMPORADA</th>
+                                            <th>PJ</th>
+                                            <th>PG</th>
+                                            <th>PE</th>
+                                            <th>PP</th>
+                                            <th class="highlight-yellow">TA</th>
+                                            <th class="highlight-red">TR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {refereeDeepStats.map((season) => (
+                                            <>
+                                                <tr
+                                                    class="season-total-row"
+                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                                    style="cursor: pointer;"
+                                                >
+                                                    <td>
+                                                        <strong>
+                                                            {season.temporada}
+                                                        </strong>
+                                                        <span class="toggle-icon">
+                                                            ▼
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pj}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pg}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pe}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong>
+                                                            {season.total.pp}
+                                                        </strong>
+                                                    </td>
+                                                    <td class="highlight-yellow">
+                                                        <strong>
+                                                            {season.total.ta}
+                                                        </strong>
+                                                    </td>
+                                                    <td class="highlight-red">
+                                                        <strong>
+                                                            {season.total.tr}
+                                                        </strong>
+                                                    </td>
+                                                </tr>
+                                                {season.competiciones.map(
+                                                    (comp) => (
+                                                        <tr
+                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
+                                                            style="display: none;"
+                                                        >
+                                                            <td class="competition-name">
+                                                                {competitionLogos[
+                                                                    comp
+                                                                        .competicion
+                                                                ] && (
+                                                                    <img
+                                                                        src={
+                                                                            competitionLogos[
+                                                                                comp
+                                                                                    .competicion
+                                                                            ]
+                                                                                .src
+                                                                        }
+                                                                        alt={
+                                                                            comp.competicion
+                                                                        }
+                                                                        class="competition-logo"
+                                                                    />
+                                                                )}
+                                                                {
+                                                                    comp.competicion
+                                                                }
+                                                            </td>
+                                                            <td>{comp.pj}</td>
+                                                            <td>{comp.pg}</td>
+                                                            <td>{comp.pe}</td>
+                                                            <td>{comp.pp}</td>
+                                                            <td>{comp.ta}</td>
+                                                            <td>{comp.tr}</td>
+                                                        </tr>
+                                                    ),
+                                                )}
+                                            </>
+                                        ))}
+                                        <tr class="total-row career-total-row">
+                                            <td>
+                                                <strong>TOTAL HISTÓRICO</strong>
+                                            </td>
+                                            <td>{totalStats.pj}</td>
+                                            <td>{totalStats.pg}</td>
+                                            <td>{totalStats.pe}</td>
+                                            <td>{totalStats.pp}</td>
+                                            <td class="highlight-yellow">
+                                                {totalStats.ta}
+                                            </td>
+                                            <td class="highlight-red">
+                                                {totalStats.tr}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div class="p-4 text-center text-gray-500">
+                                    No hay estadísticas disponibles
+                                </div>
+                            )
+                        }
                     </div>
                 </section>
 
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="filters-container">
+                    <div class="filters-container flex justify-center gap-4">
                         <div class="filter-wrapper">
                             <select id="season-filter">
                                 <option value="all">Todas las Temporadas</option
@@ -402,6 +379,35 @@ const redArc =
                                 {
                                     uniqueSeasons.map((season) => (
                                         <option value={season}>{season}</option>
+                                    ))
+                                }
+                            </select>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="filter-icon"
+                                ><path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"></path><path d="M6 9l6 6l6 -6"
+                                ></path></svg
+                            >
+                        </div>
+                        <div class="filter-wrapper">
+                            <select id="competition-filter">
+                                <option value="all"
+                                    >Todas las Competiciones</option
+                                >
+                                {
+                                    uniqueCompetitions.map((comp) => (
+                                        <option value={comp}>{comp}</option>
                                     ))
                                 }
                             </select>
@@ -465,17 +471,17 @@ const redArc =
                             <div class="chart-legend" id="results-legend">
                                 <div>
                                     <span class="dot green"></span> Ganados ({
-                                        refereeStats.total.pg
+                                        totalStats.pg
                                     })
                                 </div>
                                 <div>
                                     <span class="dot orange"></span> Empatados ({
-                                        refereeStats.total.pe
+                                        totalStats.pe
                                     })
                                 </div>
                                 <div>
                                     <span class="dot red"></span> Perdidos ({
-                                        refereeStats.total.pp
+                                        totalStats.pp
                                     })
                                 </div>
                             </div>
@@ -511,12 +517,12 @@ const redArc =
                             <div class="chart-legend" id="cards-legend">
                                 <div>
                                     <span class="dot yellow"></span> Amarillas ({
-                                        refereeStats.total.yellowCards
+                                        totalStats.ta
                                     })
                                 </div>
                                 <div>
                                     <span class="dot red"></span> Rojas ({
-                                        refereeStats.total.redCards
+                                        totalStats.tr
                                     })
                                 </div>
                             </div>
@@ -623,147 +629,56 @@ const redArc =
                     }
                 </section>
             </div>
-
-            <div class="right-column">
-                <!-- Placeholder for future right column content or we can remove the grid columns if empty -->
-                <section class="stadium-card">
-                    <h2 class="section-header">DATOS RÁPIDOS</h2>
-                    <div class="p-6 text-center space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="text-3xl font-bold text-[#151e42]">
-                                {refereeStats.total.pj}
-                            </div>
-                            <div
-                                class="text-xs text-gray-500 uppercase font-bold mt-1"
-                            >
-                                Partidos
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="text-3xl font-bold text-green-600">
-                                {refereeStats.total.pg}
-                            </div>
-                            <div
-                                class="text-xs text-gray-500 uppercase font-bold mt-1"
-                            >
-                                Victorias RM
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="text-3xl font-bold text-yellow-600">
-                                {refereeStats.total.yellowCards}
-                            </div>
-                            <div
-                                class="text-xs text-gray-500 uppercase font-bold mt-1"
-                            >
-                                Amarillas
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
         </div>
     </main>
 </Layout>
 
 <script define:vars={{ initialMatches: matches }}>
-    function calculateStatsLocal(matches) {
-        const stats = {
-            home: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-                yellowCards: 0,
-                redCards: 0,
-            },
-            away: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-                yellowCards: 0,
-                redCards: 0,
-            },
-            total: {
-                pj: 0,
-                pg: 0,
-                pe: 0,
-                pp: 0,
-                gf: 0,
-                gc: 0,
-                cleanSheets: 0,
-                conceded: 0,
-                yellowCards: 0,
-                redCards: 0,
-            },
-        };
+    // Toggle Season Logic
+    window.toggleSeason = function (season) {
+        const rows = document.querySelectorAll(
+            `.competition-row.season-${season}`,
+        );
+        const icon = document.querySelector(
+            `.season-total-row[onclick*="${season}"] .toggle-icon`,
+        );
 
-        matches.forEach((match) => {
-            const golesRM = parseInt(match.golesRM) || 0;
-            const golesRival = parseInt(match.golesRival) || 0;
-            const isHome = match.club_local
-                .toLowerCase()
-                .includes("real madrid");
-            const location = isHome ? stats.home : stats.away;
-
-            location.pj++;
-            location.gf += golesRM;
-            location.gc += golesRival;
-
-            location.yellowCards += parseInt(match.amarillas) || 0;
-            location.redCards += parseInt(match.rojas) || 0;
-
-            if (golesRM > golesRival) location.pg++;
-            else if (golesRM < golesRival) location.pp++;
-            else {
-                if (match.penaltis === 1 || match.penaltis === "1")
-                    location.pg++;
-                else if (match.penaltis === 0 || match.penaltis === "0")
-                    location.pp++;
-                else location.pe++;
+        rows.forEach((row) => {
+            if (row.style.display === "none") {
+                row.style.display = "table-row";
+                if (icon) icon.textContent = "▲";
+            } else {
+                row.style.display = "none";
+                if (icon) icon.textContent = "▼";
             }
         });
+    };
 
-        const keys = [
-            "pj",
-            "pg",
-            "pe",
-            "pp",
-            "gf",
-            "gc",
-            "yellowCards",
-            "redCards",
-        ];
-        keys.forEach((k) => (stats.total[k] = stats.home[k] + stats.away[k]));
-
-        const addFields = (obj) => ({
-            ...obj,
-            percPG: obj.pj > 0 ? ((obj.pg / obj.pj) * 100).toFixed(1) : "0.0",
-            percPE: obj.pj > 0 ? ((obj.pe / obj.pj) * 100).toFixed(1) : "0.0",
-            percPP: obj.pj > 0 ? ((obj.pp / obj.pj) * 100).toFixed(1) : "0.0",
-            avg: obj.pj > 0 ? (obj.gf / obj.pj).toFixed(2) : "0.00",
-            dif: obj.gf - obj.gc,
-        });
-
-        return {
-            home: addFields(stats.home),
-            away: addFields(stats.away),
-            total: addFields(stats.total),
+    function calculateStatsDoubleFilter(matches) {
+        const stats = {
+            pj: 0,
+            pg: 0,
+            pe: 0,
+            pp: 0,
+            ta: 0,
+            tr: 0,
         };
+
+        matches.forEach((m) => {
+            stats.pj++;
+            stats.ta += parseInt(m.yellowCards) || 0;
+            stats.tr += parseInt(m.redCards) || 0;
+
+            if (m.resultado === "V") stats.pg++;
+            else if (m.resultado === "E") stats.pe++;
+            else stats.pp++;
+        });
+        return stats;
     }
 
     function updateCharts(stats) {
         const circumference = 220;
-        const totalMatches = stats.total.pj;
+        const totalMatches = stats.pj;
 
         const updateCircle = (id, idx, val, total, offset = 0) => {
             const chart = document.getElementById(id);
@@ -784,98 +699,83 @@ const redArc =
         const winsArc = updateCircle(
             "results-chart",
             0,
-            stats.total.pg,
+            stats.pg,
             totalMatches,
         );
         const drawsArc = updateCircle(
             "results-chart",
             1,
-            stats.total.pe,
+            stats.pe,
             totalMatches,
             winsArc,
         );
         updateCircle(
             "results-chart",
             2,
-            stats.total.pp,
+            stats.pp,
             totalMatches,
             winsArc + drawsArc,
         );
 
-        const totalCards = stats.total.yellowCards + stats.total.redCards;
-        const yArc = updateCircle(
-            "cards-chart",
-            0,
-            stats.total.yellowCards,
-            totalCards,
-        );
-        updateCircle("cards-chart", 1, stats.total.redCards, totalCards, yArc);
-
         // Legends
-        const updateLegend = (id, idx, text) => {
-            const el = document.getElementById(id);
-            if (el && el.querySelectorAll("div")[idx])
-                el.querySelectorAll("div")[idx].innerHTML = text;
-        };
+        document.querySelector(
+            "#results-legend div:nth-child(1) .dot",
+        ).nextSibling.textContent = ` Ganados (${stats.pg})`;
+        document.querySelector(
+            "#results-legend div:nth-child(2) .dot",
+        ).nextSibling.textContent = ` Empatados (${stats.pe})`;
+        document.querySelector(
+            "#results-legend div:nth-child(3) .dot",
+        ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
-        updateLegend(
-            "results-legend",
-            0,
-            `<span class="dot green"></span> Ganados (${stats.total.pg})`,
-        );
-        updateLegend(
-            "results-legend",
-            1,
-            `<span class="dot orange"></span> Empatados (${stats.total.pe})`,
-        );
-        updateLegend(
-            "results-legend",
-            2,
-            `<span class="dot red"></span> Perdidos (${stats.total.pp})`,
-        );
+        // Cards
+        const totalCards = stats.ta + stats.tr;
+        const yellowArc = updateCircle("cards-chart", 0, stats.ta, totalCards);
+        updateCircle("cards-chart", 1, stats.tr, totalCards, yellowArc);
 
-        updateLegend(
-            "cards-legend",
-            0,
-            `<span class="dot yellow"></span> Amarillas (${stats.total.yellowCards})`,
-        );
-        updateLegend(
-            "cards-legend",
-            1,
-            `<span class="dot red"></span> Rojas (${stats.total.redCards})`,
-        );
+        document.querySelector(
+            "#cards-legend div:nth-child(1) .dot",
+        ).nextSibling.textContent = ` Amarillas (${stats.ta})`;
+        document.querySelector(
+            "#cards-legend div:nth-child(2) .dot",
+        ).nextSibling.textContent = ` Rojas (${stats.tr})`;
     }
 
-    function updateTable(stats) {
-        const table = document.querySelector(".stats-table tbody");
-        if (!table) return;
-        const row = (label, d) =>
-            `<td>${label}</td><td>${d.pj}</td><td>${d.pg}</td><td>${d.percPG}%</td><td>${d.pe}</td><td>${d.percPE}%</td><td>${d.pp}</td><td>${d.percPP}%</td><td class="highlight-yellow">${d.gf}</td><td class="highlight-red">${d.gc}</td><td class="highlight-blue">${d.dif > 0 ? "+" : ""}${d.dif}</td><td>${d.avg}</td>`;
-        table.innerHTML = `<tr>${row("LOCAL", stats.home)}</tr><tr>${row("VISITANTE", stats.away)}</tr><tr class="total-row">${row("<strong>TOTAL</strong>", stats.total)}</tr>`;
-    }
-
+    // Event Listeners for filters
     const seasonFilter = document.getElementById("season-filter");
-    if (seasonFilter) {
-        seasonFilter.addEventListener("change", () => {
-            const selected = seasonFilter.value;
-            const filtered =
-                selected === "all"
-                    ? initialMatches
-                    : initialMatches.filter((m) => m.season === selected);
-            const newStats = calculateStatsLocal(filtered);
-            updateCharts(newStats);
-            updateTable(newStats);
-        });
+    const competitionFilter = document.getElementById("competition-filter");
+
+    const allMatches = initialMatches; // from define:vars
+
+    function applyFilters() {
+        const selectedSeason = seasonFilter.value;
+        const selectedComp = competitionFilter.value;
+
+        let filtered = allMatches;
+
+        if (selectedSeason !== "all") {
+            filtered = filtered.filter((m) => m.season === selectedSeason);
+        }
+        if (selectedComp !== "all") {
+            filtered = filtered.filter((m) => m.competicion === selectedComp);
+        }
+
+        const stats = calculateStatsDoubleFilter(filtered);
+        updateCharts(stats);
     }
 
-    const showMore = document.getElementById("show-more-matches");
-    if (showMore) {
-        showMore.addEventListener("click", () => {
-            document.querySelectorAll(".hidden-match").forEach((r) => {
-                r.classList.remove("hidden-match");
-                r.style.display = "table-row";
+    if (seasonFilter) seasonFilter.addEventListener("change", applyFilters);
+    if (competitionFilter)
+        competitionFilter.addEventListener("change", applyFilters);
+
+    const showMoreBtn = document.getElementById("show-more-matches");
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener("click", () => {
+            document.querySelectorAll(".hidden-match").forEach((row) => {
+                row.style.display = "table-row";
+                row.classList.remove("hidden-match");
             });
-            showMore.parentElement.style.display = "none";
+            showMoreBtn.style.display = "none";
         });
     }
 </script>
@@ -918,6 +818,17 @@ const redArc =
         overflow-x: hidden;
     }
 
+    /* Remove grid if right column is empty or let it handle responsive */
+    .right-column:empty {
+        display: none;
+    }
+
+    @media (max-width: 1024px) {
+        .rival-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .section-header {
         background: #ffde59;
         color: #2b2b2b;
@@ -953,20 +864,16 @@ const redArc =
         gap: 1.5rem;
     }
 
-    .rival-shield {
-        flex-shrink: 0;
-        width: 150px;
-        height: 150px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
     .rival-details {
         flex: 1;
         display: flex;
         flex-direction: column;
         justify-content: center;
+    }
+
+    .rival-details.w-full {
+        width: 100%;
+        max-width: 100%;
     }
 
     .info-row {
@@ -987,105 +894,131 @@ const redArc =
         justify-content: flex-end;
     }
 
+    /* Detailed Table Styles */
     .table-wrapper {
         overflow-x: auto;
     }
 
-    .stats-table,
-    .matches-table {
+    .stats-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
+    }
+
+    .detailed-table th {
+        background-color: #f8f9fa;
+        color: #151e42;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+    }
+    .detailed-table th:first-child {
+        text-align: left;
+    }
+    .detailed-table td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid #eee;
         text-align: center;
     }
-
-    .stats-table th,
-    .matches-table th {
-        padding: 0.75rem;
-        background: #f9f9f9;
-        font-weight: 600;
-        border-bottom: 2px solid #eee;
+    .detailed-table td:first-child {
+        text-align: left;
     }
 
-    .stats-table td,
-    .matches-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #eee;
+    .competition-row {
+        background-color: #fcfcfc;
+    }
+    .competition-row td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.85rem;
+        color: #555;
+    }
+    .competition-logo {
+        width: 20px;
+        height: 20px;
+        main-aspect-ratio: 1/1;
+        object-fit: contain;
+        margin-right: 8px;
+        vertical-align: middle;
+        display: inline-block;
+    }
+
+    .season-total-row {
+        background-color: #fff;
+    }
+    .season-total-row:hover {
+        background-color: #f5f5f5;
+    }
+
+    .career-total-row {
+        background-color: #eef2f7;
+        font-weight: bold;
+        border-top: 2px solid #dde1e5;
     }
 
     .highlight-yellow {
         background-color: #fffde7;
-        font-weight: bold;
     }
-
     .highlight-red {
         background-color: #ffebee;
-        font-weight: bold;
     }
-
     .highlight-blue {
         background-color: #e3f2fd;
         font-weight: bold;
+        color: #1565c0;
     }
 
-    .total-row {
-        background-color: #f5f5f5;
-        font-weight: bold;
+    .toggle-icon {
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+        color: #999;
     }
 
-    .filter-wrapper {
-        display: inline-flex;
-        align-items: center;
-        background: #f5f5f5;
-        border-radius: 20px;
-        padding: 5px 10px;
-        margin: 1rem;
-    }
-
-    .filter-wrapper select {
-        border: none;
-        background: transparent;
-        font-size: 0.9rem;
-        outline: none;
-        padding-right: 5px;
-    }
-
+    /* Charts */
     .charts-row {
         display: flex;
-        justify-content: space-around;
-        align-items: center;
-        padding: 2rem 1rem;
         flex-wrap: wrap;
+        padding: 1.5rem;
         gap: 2rem;
+        justify-content: space-around;
+        align-items: flex-start;
     }
 
     .chart-item {
+        flex: 1;
+        min-width: 250px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1rem;
+        text-align: center;
     }
 
     .pie-chart {
         width: 150px;
         height: 150px;
         transform: rotate(-90deg);
-        border-radius: 50%;
     }
 
     .chart-legend {
+        margin-top: 1rem;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .chart-legend div {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        font-size: 0.85rem;
+        align-items: center;
+        margin-bottom: 0.25rem;
     }
 
     .dot {
-        display: inline-block;
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        margin-right: 5px;
+        display: inline-block;
+        margin-right: 0.5rem;
     }
 
     .dot.green {
@@ -1101,29 +1034,95 @@ const redArc =
         background-color: #fff176;
     }
 
+    /* Filters */
+    .filters-container {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 1rem 1rem 0;
+        flex-wrap: wrap;
+    }
+    .filter-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .filter-wrapper select {
+        appearance: none;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 0.5rem 2.5rem 0.5rem 1rem;
+        font-size: 0.9rem;
+        font-family: inherit;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .filter-wrapper select:hover {
+        border-color: #bbb;
+    }
+    .filter-wrapper select:focus {
+        outline: none;
+        border-color: #151e42;
+        box-shadow: 0 0 0 2px rgba(21, 30, 66, 0.1);
+    }
+    .filter-icon {
+        position: absolute;
+        right: 0.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #666;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Matches Table */
+    .matches-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .matches-table th {
+        background: #f8f9fa;
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #666;
+    }
+
+    .matches-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+    }
+
     .matches-footer {
         padding: 1rem;
         text-align: center;
+        background: #f8f9fa;
         border-top: 1px solid #eee;
     }
 
     .btn-more {
-        background: #f5f5f5;
+        background: white;
         border: 1px solid #ddd;
         padding: 0.5rem 1.5rem;
         border-radius: 20px;
         cursor: pointer;
         font-weight: 600;
-        transition: all 0.2s;
+        color: #666;
+        transition: all 0.3s;
     }
 
     .btn-more:hover {
-        background: #e0e0e0;
+        background: #ffde59;
+        color: #000;
+        border-color: #ffde59;
     }
 
-    @media (max-width: 1024px) {
-        .rival-grid {
-            grid-template-columns: 1fr;
-        }
+    .hidden-match {
+        display: none;
     }
 </style>
