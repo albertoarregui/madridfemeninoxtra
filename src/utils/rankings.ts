@@ -31,6 +31,7 @@ export interface RankingStat {
     goles_victoria: number;
     goles_empate: number;
     goles_abrelatas: number;
+    penaltis: number;
 }
 
 export interface StreakData {
@@ -126,6 +127,17 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 WHERE asistente IS NOT NULL
                 GROUP BY asistente, p.id_temporada, p.id_competicion
             ),
+            penalty_data AS (
+                SELECT 
+                    id_jugadora,
+                    p.id_temporada,
+                    p.id_competicion,
+                    COUNT(*) as penaltis
+                FROM penaltis pen
+                JOIN partidos p ON pen.id_partido = p.id_partido
+                WHERE id_jugadora IS NOT NULL AND (resultado = 'Gol' OR resultado = 'G' OR resultado = 'Marcado')
+                GROUP BY id_jugadora, p.id_temporada, p.id_competicion
+            ),
             card_data AS (
                 SELECT 
                     t.id_jugadora,
@@ -166,6 +178,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(agd.goles_victoria, 0) as goles_victoria,
                 COALESCE(agd.goles_empate, 0) as goles_empate,
                 COALESCE(agd.goles_abrelatas, 0) as goles_abrelatas,
+                COALESCE(pd.penaltis, 0) as penaltis,
                 COALESCE(a.asistencias, 0) as asistencias,
                 COALESCE(cd.tarjetas_amarillas, 0) as tarjetas_amarillas,
                 COALESCE(cd.tarjetas_rojas, 0) as tarjetas_rojas,
@@ -177,10 +190,11 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             LEFT JOIN goal_data g ON j.id_jugadora = g.id_jugadora AND t.id_temporada = g.id_temporada AND c.id_competicion = g.id_competicion
             LEFT JOIN advanced_goal_data agd ON j.id_jugadora = agd.id_jugadora AND t.id_temporada = agd.id_temporada AND c.id_competicion = agd.id_competicion
             LEFT JOIN assist_data a ON j.id_jugadora = a.id_jugadora AND t.id_temporada = a.id_temporada AND c.id_competicion = a.id_competicion
+            LEFT JOIN penalty_data pd ON j.id_jugadora = pd.id_jugadora AND t.id_temporada = pd.id_temporada AND c.id_competicion = pd.id_competicion
             LEFT JOIN card_data cd ON j.id_jugadora = cd.id_jugadora AND t.id_temporada = cd.id_temporada AND c.id_competicion = cd.id_competicion
             LEFT JOIN u_captain_data cp ON j.id_jugadora = cp.id_jugadora AND t.id_temporada = cp.id_temporada AND c.id_competicion = cp.id_competicion
             WHERE 
-                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0
+                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0
             ORDER BY j.nombre
         `;
 
@@ -197,6 +211,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             goles_victoria: Number(row.goles_victoria),
             goles_empate: Number(row.goles_empate),
             goles_abrelatas: Number(row.goles_abrelatas),
+            penaltis: Number(row.penaltis),
             asistencias: Number(row.asistencias),
             goles_generados: Number(row.goles) + Number(row.asistencias),
             convocatorias: Number(row.convocatorias),

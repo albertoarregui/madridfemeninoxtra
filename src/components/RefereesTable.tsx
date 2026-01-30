@@ -12,6 +12,8 @@ interface Referee {
         winPct: string;
         drawPct: string;
         lossPct: string;
+        penaltiesFor: number;
+        penaltiesAgainst: number;
         yellowCards: number;
         redCards: number;
     };
@@ -108,6 +110,9 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             <SortableHeader sortKey="stats.losses" label="D" className="text-red-500 bg-red-50/50" />
                             <SortableHeader sortKey="stats.lossPct" label="% D" className="text-red-500 bg-red-50/50" />
 
+                            <SortableHeader sortKey="stats.penaltiesFor" label="P. Fav" className="text-blue-600" />
+                            <SortableHeader sortKey="stats.penaltiesAgainst" label="P. Con" className="text-orange-600" />
+
                             <SortableHeader sortKey="stats.yellowCards" label="TA" className="text-yellow-600" />
                             <SortableHeader sortKey="stats.redCards" label="TR" className="text-red-600" />
                         </tr>
@@ -150,6 +155,13 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 </td>
                                 <td className="py-3 px-2 text-center text-xs font-mono text-red-600 bg-red-50/30">
                                     {referee.stats.lossPct}%
+                                </td>
+
+                                <td className="py-3 px-2 text-center font-bold text-blue-600">
+                                    {referee.stats.penaltiesFor}
+                                </td>
+                                <td className="py-3 px-2 text-center font-bold text-orange-600">
+                                    {referee.stats.penaltiesAgainst}
                                 </td>
 
                                 <td className="py-3 px-2 text-center font-bold text-yellow-600">

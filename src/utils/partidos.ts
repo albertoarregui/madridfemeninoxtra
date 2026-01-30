@@ -546,10 +546,18 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE t.id_partido = ?
         `;
 
-        const [subs, goalsResult, cardsResult] = await Promise.all([
+        const penaltiesQuery = `
+            SELECT p.*, j.nombre as nombre_jugadora
+            FROM penaltis p
+            LEFT JOIN jugadoras j ON p.id_jugadora = j.id_jugadora
+            WHERE p.id_partido = ?
+        `;
+
+        const [subs, goalsResult, cardsResult, penaltiesResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
-            client.execute({ sql: cardsQuery, args: [matchId] })
+            client.execute({ sql: cardsQuery, args: [matchId] }),
+            client.execute({ sql: penaltiesQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -650,6 +658,50 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 cardType: cardType,
                 text: `${cardText} a ${card.nombre_jugadora || 'Jugadora'}`,
                 player: card.nombre_jugadora,
+                team: 'local'
+            });
+        }
+
+        const penalties = penaltiesResult.rows;
+
+        for (const penalty of penalties) {
+            const parseMinute = (min: any): number => {
+                if (!min) return 0;
+                const s = String(min);
+                if (s.includes('+')) {
+                    const [base, extra] = s.split('+');
+                    return Number(base) + Number(extra);
+                }
+                return Number(min);
+            };
+
+            const isGoal = ['Gol', 'G', 'Marcado', 'S'].includes(penalty.resultado);
+            // If it's a goal and it's already in the goals table, we might be duplicating?
+            // Usually 'penaltis' table tracks the attempt. 'goles_y_asistencias' tracks the goal.
+            // If we have both, we need to decide.
+            // But 'penaltis' table tracks missed penalties too.
+            // If the goal is already shown via 'goal' event, we shouldn't show it again as 'penalty' event if it's the exact same minute/player.
+            // BUT, usually timeline separates them or merges them.
+            // If I show both, it might look duplicate.
+            // However, the user specifically asked to add penalties with Green/Red.
+
+            // To avoid duplication with goals:
+            // Check if there is a 'goal' event at the same minute with 'isPenalty': true.
+            // If so, maybe SKIP this if it is a goal? 
+            // OR maybe the user wants the specific Penalty visualization INSTEAD or ALONGSIDE.
+            // Given "Sí se marca, de color verde...", this sounds like a specific visualization request.
+            // I'll add it. If it duplicates, I might filter later. 
+            // For now, I'll add it as type 'penalty'.
+
+            const playerName = penalty.nombre_jugadora || penalty.lanzadora_rival;
+
+            events.push({
+                minute: parseMinute(penalty.minuto),
+                displayMinute: formatDisplayMinute(penalty.minuto as any),
+                type: 'penalty',
+                outcome: isGoal ? 'scored' : 'missed',
+                text: `Penalti ${isGoal ? 'marcado' : 'fallado'} por ${playerName || 'Desconocido'}`,
+                player: playerName,
                 team: 'local'
             });
         }

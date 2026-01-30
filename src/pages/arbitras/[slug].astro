@@ -58,6 +58,8 @@ const matches = rawMatches.map((m) => {
         golesRival: parseInt(m.goles_rival) || 0,
         yellowCards: parseInt(m.amarillas) || 0,
         redCards: parseInt(m.rojas) || 0,
+        penaltiesFor: parseInt(m.penalties_for) || 0,
+        penaltiesAgainst: parseInt(m.penalties_against) || 0,
         season,
         resultado: (() => {
             const rm = parseInt(m.goles_rm) || 0;
@@ -81,6 +83,8 @@ interface StatBlock {
     pp: number;
     ta: number;
     tr: number;
+    pf: number;
+    pc: number;
 }
 
 const initialStatBlock = (): StatBlock => ({
@@ -90,12 +94,16 @@ const initialStatBlock = (): StatBlock => ({
     pp: 0,
     ta: 0,
     tr: 0,
+    pf: 0,
+    pc: 0,
 });
 
 const calculateBlock = (block: StatBlock, m: any) => {
     block.pj++;
     block.ta += m.yellowCards;
     block.tr += m.redCards;
+    block.pf += m.penaltiesFor;
+    block.pc += m.penaltiesAgainst;
 
     if (m.resultado === "V") block.pg++;
     else if (m.resultado === "E") block.pe++;
@@ -281,6 +289,8 @@ const redArc =
                                             <th>PP</th>
                                             <th>TA</th>
                                             <th>TR</th>
+                                            <th>PF</th>
+                                            <th>PC</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -329,6 +339,16 @@ const redArc =
                                                             {season.total.tr}
                                                         </strong>
                                                     </td>
+                                                    <td>
+                                                        <strong class="text-blue-600">
+                                                            {season.total.pf}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-orange-600">
+                                                            {season.total.pc}
+                                                        </strong>
+                                                    </td>
                                                 </tr>
                                                 {season.competiciones.map(
                                                     (comp: any) => (
@@ -365,6 +385,12 @@ const redArc =
                                                             <td>{comp.pp}</td>
                                                             <td>{comp.ta}</td>
                                                             <td>{comp.tr}</td>
+                                                            <td class="text-blue-600">
+                                                                {comp.pf}
+                                                            </td>
+                                                            <td class="text-orange-600">
+                                                                {comp.pc}
+                                                            </td>
                                                         </tr>
                                                     ),
                                                 )}
@@ -380,6 +406,12 @@ const redArc =
                                             <td>{totalStats.pp}</td>
                                             <td>{totalStats.ta}</td>
                                             <td>{totalStats.tr}</td>
+                                            <td class="text-blue-600 font-bold">
+                                                {totalStats.pf}
+                                            </td>
+                                            <td class="text-orange-600 font-bold">
+                                                {totalStats.pc}
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -703,12 +735,16 @@ const redArc =
             pp: 0,
             ta: 0,
             tr: 0,
+            pf: 0,
+            pc: 0,
         };
 
         matches.forEach((m) => {
             stats.pj++;
             stats.ta += parseInt(m.yellowCards) || 0;
             stats.tr += parseInt(m.redCards) || 0;
+            stats.pf += parseInt(m.penaltiesFor) || 0;
+            stats.pc += parseInt(m.penaltiesAgainst) || 0;
 
             if (m.resultado === "V") stats.pg++;
             else if (m.resultado === "E") stats.pe++;

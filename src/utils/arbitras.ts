@@ -52,7 +52,21 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                           OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%'
                           OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
                       )
-                ) as red_cards
+                ) as red_cards,
+                (
+                    SELECT COUNT(*)
+                    FROM penaltis pen
+                    JOIN partidos p2 ON pen.id_partido = p2.id_partido
+                    WHERE p2.id_arbitra = a.id_arbitra
+                    AND pen.id_jugadora IS NOT NULL
+                ) as penalties_for,
+                (
+                    SELECT COUNT(*)
+                    FROM penaltis pen
+                    JOIN partidos p2 ON pen.id_partido = p2.id_partido
+                    WHERE p2.id_arbitra = a.id_arbitra
+                    AND pen.lanzadora_rival IS NOT NULL
+                ) as penalties_against
 
             FROM 
                 arbitras a
@@ -84,6 +98,8 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     losses,
                     yellowCards: Number(ref.yellow_cards || 0),
                     redCards: Number(ref.red_cards || 0),
+                    penaltiesFor: Number(ref.penalties_for || 0),
+                    penaltiesAgainst: Number(ref.penalties_against || 0),
                     winPct: played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0',
                     drawPct: played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0',
                     lossPct: played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0'
@@ -131,7 +147,19 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                           OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%'
                           OR UPPER(tr.tipo_tarjeta) LIKE '%DOUBLE%'
                       )
-                ) as rojas
+                ) as rojas,
+                (
+                    SELECT COUNT(*)
+                    FROM penaltis pen
+                    WHERE pen.id_partido = p.id_partido
+                    AND pen.id_jugadora IS NOT NULL
+                ) as penalties_for,
+                (
+                    SELECT COUNT(*)
+                    FROM penaltis pen
+                    WHERE pen.id_partido = p.id_partido
+                    AND pen.lanzadora_rival IS NOT NULL
+                ) as penalties_against
             FROM partidos p
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
