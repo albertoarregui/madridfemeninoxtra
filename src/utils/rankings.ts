@@ -135,7 +135,10 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     COUNT(*) as penaltis
                 FROM penaltis pen
                 JOIN partidos p ON pen.id_partido = p.id_partido
-                WHERE id_jugadora IS NOT NULL AND (resultado = 'Gol' OR resultado = 'G' OR resultado = 'Marcado')
+                WHERE id_jugadora IS NOT NULL 
+                AND (
+                    LOWER(resultado) IN ('gol', 'g', 'marcado', 's', 'goal', 'anotado')
+                )
                 GROUP BY id_jugadora, p.id_temporada, p.id_competicion
             ),
             card_data AS (

@@ -675,7 +675,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
-            const isGoal = ['Gol', 'G', 'Marcado', 'S'].includes(penalty.resultado);
+            const res = String(penalty.resultado || '').toLowerCase().trim();
+            const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado'].includes(res);
             // If it's a goal and it's already in the goals table, we might be duplicating?
             // Usually 'penaltis' table tracks the attempt. 'goles_y_asistencias' tracks the goal.
             // If we have both, we need to decide.

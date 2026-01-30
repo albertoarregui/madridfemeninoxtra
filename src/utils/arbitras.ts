@@ -65,7 +65,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     FROM penaltis pen
                     JOIN partidos p2 ON pen.id_partido = p2.id_partido
                     WHERE p2.id_arbitra = a.id_arbitra
-                    AND pen.lanzadora_rival IS NOT NULL
+                    AND (pen.lanzadora_rival IS NOT NULL AND pen.lanzadora_rival != '')
                 ) as penalties_against
 
             FROM 
@@ -158,7 +158,7 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                     SELECT COUNT(*)
                     FROM penaltis pen
                     WHERE pen.id_partido = p.id_partido
-                    AND pen.lanzadora_rival IS NOT NULL
+                    AND (pen.lanzadora_rival IS NOT NULL AND pen.lanzadora_rival != '')
                 ) as penalties_against
             FROM partidos p
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
