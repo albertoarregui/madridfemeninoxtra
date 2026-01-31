@@ -122,14 +122,11 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             <SortableHeader sortKey="stats.yellowCards" label="TA F" className="text-yellow-600" />
                             <SortableHeader sortKey="stats.yellowCardsAgainst" label="TA C" className="text-orange-400" />
 
-                            <SortableHeader sortKey="stats.redCards" label="TR F" className="text-red-600" />
-                            <SortableHeader sortKey="stats.redCardsAgainst" label="TR C" className="text-red-800" />
+                            <SortableHeader sortKey="stats.redCards" label="TR F" />
+                            <SortableHeader sortKey="stats.redCardsAgainst" label="TR C" />
 
-                            <SortableHeader sortKey="stats.foulsCommitted" label="FC" className="text-purple-600" />
-                            <SortableHeader sortKey="stats.foulsCommittedAvg" label="FC/PJ" className="text-purple-500" />
-
-                            <SortableHeader sortKey="stats.foulsReceived" label="FR" className="text-indigo-600" />
-                            <SortableHeader sortKey="stats.foulsReceivedAvg" label="FR/PJ" className="text-indigo-500" />
+                            <SortableHeader sortKey="stats.foulsCommittedAvg" label="FC/PJ" />
+                            <SortableHeader sortKey="stats.foulsReceivedAvg" label="FR/PJ" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -186,24 +183,17 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                     {referee.stats.yellowCardsAgainst}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-red-600">
+                                <td className="py-3 px-2 text-center font-bold">
                                     {referee.stats.redCards}
                                 </td>
-                                <td className="py-3 px-2 text-center font-bold text-red-800">
+                                <td className="py-3 px-2 text-center font-bold">
                                     {referee.stats.redCardsAgainst}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-purple-600">
-                                    {referee.stats.foulsCommitted}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono text-purple-500">
+                                <td className="py-3 px-2 text-center text-xs font-mono">
                                     {referee.stats.foulsCommittedAvg}
                                 </td>
-
-                                <td className="py-3 px-2 text-center font-bold text-indigo-600">
-                                    {referee.stats.foulsReceived}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono text-indigo-500">
+                                <td className="py-3 px-2 text-center text-xs font-mono">
                                     {referee.stats.foulsReceivedAvg}
                                 </td>
                             </tr>
