@@ -50,12 +50,14 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 let mvpPlayer = null;
 if (game.mvp) {
     let playerId = String(game.mvp).trim();
-    // Automatic mapping by searching ID (slug), number (dorsal) or db_id
+    // Automatic mapping: prioritize matching name from DB, fallback to ID/slug or Number
     let playerInfo = SQUAD.find(
         (p: any) =>
+            (game.mvp_nombre &&
+                p.name.toLowerCase() ===
+                    String(game.mvp_nombre).toLowerCase()) ||
             String(p.id).trim() === playerId ||
-            String(p.number).trim() === playerId ||
-            (p.db_id && String(p.db_id).trim() === playerId),
+            String(p.number).trim() === playerId,
     );
 
     if (playerInfo) {
