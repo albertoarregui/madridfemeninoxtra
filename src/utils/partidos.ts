@@ -583,13 +583,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
         const validGoals = (matchScore === 0) ? [] : goalsResult.rows;
 
         const formatDisplayMinute = (min: any): string => {
-            const s = String(min);
-            if (s.includes('+')) return s;
-            const val = Number(min);
-            if (!isNaN(val) && val > 90) {
-                return `90+${val - 90}`;
-            }
-            return s;
+            return String(min);
         };
 
         for (const goal of validGoals) {
