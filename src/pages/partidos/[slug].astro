@@ -47,33 +47,14 @@ const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm);
 const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
-let mvpPlayer = null;
-if (game.mvp) {
-    let playerId = String(game.mvp).trim();
-    // Automatic mapping: prioritize matching name from DB, fallback to ID/slug or Number
-    let playerInfo = SQUAD.find(
-        (p: any) =>
-            (p.id_jugadora && String(p.id_jugadora) === playerId) ||
-            (game.mvp_nombre &&
-                p.name.toLowerCase() ===
-                    String(game.mvp_nombre).toLowerCase()) ||
-            String(p.id).trim() === playerId,
-    );
-
-    if (playerInfo) {
-        mvpPlayer = {
-            ...playerInfo,
-            image: await getPlayerImage(playerInfo.id),
-        };
-    } else {
-        mvpPlayer = {
-            name: `MVP #${playerId}`,
-            image: "/assets/img/default-player.png",
-            number: parseInt(playerId) || 0,
-            id: "unknown",
-        };
-    }
-}
+let mvpPlayer;
+mvpPlayer = {
+    name: game.mvp_nombre || `MVP #${game.mvp}`,
+    image: game.mvp
+        ? await getPlayerImage(String(game.mvp))
+        : "/assets/img/default-player.png",
+    id: game.mvp ? String(game.mvp) : "unknown",
+};
 
 const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/estadios/*.{jpeg,jpg,png,webp}",
@@ -1090,20 +1071,6 @@ const refereeStats = game.id_arbitra
                                                         >
                                                             {event.player}
                                                         </span>
-                                                        <span style="font-size: 0.85rem; color: #666; font-style: italic;">
-                                                            (
-                                                            {event.outcome ===
-                                                            "scored"
-                                                                ? "Gol"
-                                                                : "Fallo"}
-                                                            )
-                                                        </span>
-                                                        {event.team ===
-                                                            "rival" && (
-                                                            <span style="font-size: 0.7rem; background: #f0f0f0; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #888;">
-                                                                RIVAL
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 ) : event.type === "penalty" ? (
                                                     <span style="font-weight: 600;">
