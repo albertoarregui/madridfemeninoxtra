@@ -36,9 +36,9 @@ export function formatGameDate(dateString: string | null | undefined): string {
 export async function fetchGamesDirectly(): Promise<any[]> {
     console.log('[fetchGamesDirectly] START');
     try {
-        const { getDbClient } = await import('../db/client');
+        const { getPlayersDbClient } = await import('../db/client');
         console.log('[fetchGamesDirectly] getDbClient imported');
-        const client = await getDbClient();
+        const client = await getPlayersDbClient();
         console.log('[fetchGamesDirectly] client obtained:', !!client);
 
         if (!client) {
@@ -192,8 +192,8 @@ function logDebug(message: string) {
 export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
     logDebug(`Fetching lineups for matchId: ${matchId}`);
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             logDebug("Missing client");
@@ -286,8 +286,8 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
 
 export async function fetchMatchSubstitutions(matchId: string | number): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 
@@ -374,8 +374,8 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
 
 export async function fetchMatchGoals(matchId: string | number): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 
@@ -399,8 +399,8 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
     if (!stadiumName) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
@@ -452,8 +452,8 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
     if (!refereeId) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
@@ -527,8 +527,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
     try {
         const subsPromise = fetchMatchSubstitutions(matchId);
 
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
         if (!client) return [];
 
         const goalsQuery = `
@@ -738,8 +738,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
 export async function fetchAllGoals(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 
