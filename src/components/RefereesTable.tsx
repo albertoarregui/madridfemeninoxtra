@@ -18,6 +18,10 @@ interface Referee {
         redCards: number;
         yellowCardsAgainst: number;
         redCardsAgainst: number;
+        foulsCommitted: number;
+        foulsReceived: number;
+        foulsCommittedAvg: string;
+        foulsReceivedAvg: string;
     };
 }
 
@@ -120,6 +124,12 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
 
                             <SortableHeader sortKey="stats.redCards" label="TR F" className="text-red-600" />
                             <SortableHeader sortKey="stats.redCardsAgainst" label="TR C" className="text-red-800" />
+
+                            <SortableHeader sortKey="stats.foulsCommitted" label="FC" className="text-purple-600" />
+                            <SortableHeader sortKey="stats.foulsCommittedAvg" label="FC/PJ" className="text-purple-500" />
+
+                            <SortableHeader sortKey="stats.foulsReceived" label="FR" className="text-indigo-600" />
+                            <SortableHeader sortKey="stats.foulsReceivedAvg" label="FR/PJ" className="text-indigo-500" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -181,6 +191,20 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 </td>
                                 <td className="py-3 px-2 text-center font-bold text-red-800">
                                     {referee.stats.redCardsAgainst}
+                                </td>
+
+                                <td className="py-3 px-2 text-center font-bold text-purple-600">
+                                    {referee.stats.foulsCommitted}
+                                </td>
+                                <td className="py-3 px-2 text-center text-xs font-mono text-purple-500">
+                                    {referee.stats.foulsCommittedAvg}
+                                </td>
+
+                                <td className="py-3 px-2 text-center font-bold text-indigo-600">
+                                    {referee.stats.foulsReceived}
+                                </td>
+                                <td className="py-3 px-2 text-center text-xs font-mono text-indigo-500">
+                                    {referee.stats.foulsReceivedAvg}
                                 </td>
                             </tr>
                         ))}
