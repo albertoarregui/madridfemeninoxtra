@@ -50,18 +50,13 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 let mvpPlayer = null;
 if (game.mvp) {
     let playerId = String(game.mvp).trim();
-    // Improved search for player
+    // Automatic mapping by searching ID (slug), number (dorsal) or db_id
     let playerInfo = SQUAD.find(
-        (p) =>
+        (p: any) =>
             String(p.id).trim() === playerId ||
-            String(p.number).trim() === playerId,
+            String(p.number).trim() === playerId ||
+            (p.db_id && String(p.db_id).trim() === playerId),
     );
-
-    // Specific mapping for ID 46 -> Linda Caicedo
-    if (playerId === "46") {
-        const linda = SQUAD.find((p) => p.id === "linda_caicedo");
-        if (linda) playerInfo = linda;
-    }
 
     if (playerInfo) {
         mvpPlayer = {
@@ -859,24 +854,6 @@ const refereeStats = game.id_arbitra
                         <section class="mvp-card" style="margin-bottom: 2rem;">
                             <h2 class="section-header">MVP DEL PARTIDO</h2>
                             <div class="mvp-content-inner">
-                                <div class="mvp-icon-side">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="100"
-                                        height="100"
-                                        viewBox="0 0 24 24"
-                                        fill="#ffde59"
-                                        class="icon icon-tabler icons-tabler-filled icon-tabler-star"
-                                        style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); transform: rotate(15deg);"
-                                    >
-                                        <path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"
-                                        />
-                                        <path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z" />
-                                    </svg>
-                                </div>
                                 <div class="mvp-player-side">
                                     <div class="mvp-img-wrap">
                                         <img
@@ -2294,10 +2271,11 @@ const refereeStats = game.id_arbitra
         }
 
         .mvp-photo-clean {
-            width: 120px; /* Slightly larger */
+            width: 120px;
             height: 120px;
-            border-radius: 0; /* Square as requested */
+            border-radius: 0;
             object-fit: cover;
+            object-position: top; /* Ensure head is not cut off */
         }
 
         .mvp-content-inner {

@@ -229,6 +229,7 @@ export const SQUAD = [
         height: 1.63,
         weight: 54,
         number: 18,
+        db_id: 46,
     },
     {
         id: "eva_navarro",
