@@ -48,10 +48,18 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer;
+const slugify = (text: string): string => {
+    return text
+        .toLowerCase()
+        .replace(/ /g, "_")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+};
+
 mvpPlayer = {
     name: game.mvp_nombre || `MVP #${game.mvp}`,
-    image: game.mvp
-        ? await getPlayerImage(String(game.mvp))
+    image: game.mvp_nombre
+        ? await getPlayerImage(slugify(game.mvp_nombre))
         : "/assets/img/default-player.png",
     id: game.mvp ? String(game.mvp) : "unknown",
 };
@@ -908,8 +916,8 @@ const refereeStats = game.id_arbitra
                                                         style={`color: ${
                                                             event.outcome ===
                                                             "scored"
-                                                                ? "#22c55e"
-                                                                : "#ef4444"
+                                                                ? "#77dd77"
+                                                                : "#ff6b6b"
                                                         }`}
                                                     >
                                                         <g fill="currentColor">
@@ -1067,13 +1075,15 @@ const refereeStats = game.id_arbitra
                                                   "shootout" ? (
                                                     <div style="display: flex; align-items: center; gap: 8px;">
                                                         <span
-                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#22c55e" : "#ef4444"}`}
+                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
                                                         >
                                                             {event.player}
                                                         </span>
                                                     </div>
                                                 ) : event.type === "penalty" ? (
-                                                    <span style="font-weight: 600;">
+                                                    <span
+                                                        style={`font-weight: 600; color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
+                                                    >
                                                         {event.outcome ===
                                                         "scored"
                                                             ? "Penalti marcado"
