@@ -570,12 +570,20 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             ORDER BY pt.orden ASC
         `;
 
-        const [subs, goalsResult, cardsResult, penaltiesResult, shootoutResult] = await Promise.all([
+        const ownGoalsQuery = `
+            SELECT og.*, j.nombre as nombre_jugadora
+            FROM goles_propia og
+            LEFT JOIN jugadoras j ON og.id_jugadora = j.id_jugadora
+            WHERE og.id_partido = ?
+        `;
+
+        const [subs, goalsResult, cardsResult, penaltiesResult, shootoutResult, ownGoalsResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
             client.execute({ sql: cardsQuery, args: [matchId] }),
             client.execute({ sql: penaltiesQuery, args: [matchId] }),
-            client.execute({ sql: penaltyShootoutQuery, args: [matchId] })
+            client.execute({ sql: penaltyShootoutQuery, args: [matchId] }),
+            client.execute({ sql: ownGoalsQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -714,6 +722,29 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 type: 'penalty',
                 outcome: isGoal ? 'scored' : 'missed',
                 text: `Penalti ${isGoal ? 'marcado' : 'fallado'} por ${playerName || 'Desconocido'}`,
+                player: playerName,
+                team: 'local'
+            });
+        }
+
+        for (const og of ownGoalsResult.rows) {
+            const parseMinute = (min: any): number => {
+                if (!min) return 0;
+                const s = String(min);
+                if (s.includes('+')) {
+                    const [base, extra] = s.split('+');
+                    return Number(base) + Number(extra);
+                }
+                return Number(min);
+            };
+
+            const playerName = og.nombre_jugadora || og.rival_nombre;
+
+            events.push({
+                minute: parseMinute(og.minuto),
+                displayMinute: formatDisplayMinute(og.minuto),
+                type: 'own_goal',
+                text: `Gol en propia puerta de ${playerName || 'Desconocido'}`,
                 player: playerName,
                 team: 'local'
             });
