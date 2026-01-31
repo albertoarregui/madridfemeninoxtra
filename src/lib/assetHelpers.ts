@@ -15,7 +15,7 @@ export async function getPlayerImage(id: string): Promise<string> {
         const mod = await imageLoader();
         return mod.default.src;
     }
-    return '/assets/img/default-player.png';
+    return '/assets/escudos/real_madrid.png';
 }
 
 export async function getShield(teamName: string): Promise<string> {

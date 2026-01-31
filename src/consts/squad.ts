@@ -266,5 +266,6 @@ export const SQUAD = [
     { id: "irune_dorado", name: "Irune Dorado", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 28 },
     { id: "silvia_cristobal", name: "Silvia Cristóbal", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 29 },
     { id: "iris_ashley_santiago", name: "Iris Ashley", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 43 },
-    { id: "canterana_32", name: "Canterana", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 32 }
+    { id: "canterana_32", name: "Canterana", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 32 },
+    { id: "canterana_46", name: "Canterana 46", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 46 }
 ]
