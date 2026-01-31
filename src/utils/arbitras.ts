@@ -66,7 +66,30 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     JOIN partidos p2 ON pen.id_partido = p2.id_partido
                     WHERE p2.id_arbitra = a.id_arbitra
                     AND pen.id_jugadora IS NULL
-                ) as penalties_against
+                ) as penalties_against,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas t 
+                    JOIN partidos p2 ON t.id_partido = p2.id_partido 
+                    WHERE p2.id_arbitra = a.id_arbitra 
+                      AND t.id_jugadora IS NULL
+                      AND (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%')
+                      AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
+                      AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
+                ) as yellow_cards_against,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas t 
+                    JOIN partidos p2 ON t.id_partido = p2.id_partido 
+                    WHERE p2.id_arbitra = a.id_arbitra 
+                      AND t.id_jugadora IS NULL
+                      AND (
+                          UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
+                          OR UPPER(t.tipo_tarjeta) LIKE '%RED%'
+                          OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%'
+                          OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
+                      )
+                ) as red_cards_against
 
             FROM 
                 arbitras a
@@ -100,6 +123,8 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     redCards: Number(ref.red_cards || 0),
                     penaltiesFor: Number(ref.penalties_for || 0),
                     penaltiesAgainst: Number(ref.penalties_against || 0),
+                    yellowCardsAgainst: Number(ref.yellow_cards_against || 0),
+                    redCardsAgainst: Number(ref.red_cards_against || 0),
                     winPct: played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0',
                     drawPct: played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0',
                     lossPct: played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0'
@@ -159,7 +184,28 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                     FROM penaltis pen
                     WHERE pen.id_partido = p.id_partido
                     AND pen.id_jugadora IS NULL
-                ) as penalties_against
+                ) as penalties_against,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas tr 
+                    WHERE tr.id_partido = p.id_partido 
+                      AND tr.id_jugadora IS NULL
+                      AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%')
+                      AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%'
+                      AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOUBLE%'
+                ) as yellow_cards_against,
+                (
+                    SELECT COUNT(*) 
+                    FROM tarjetas tr 
+                    WHERE tr.id_partido = p.id_partido 
+                      AND tr.id_jugadora IS NULL
+                      AND (
+                          UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' 
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%RED%'
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%'
+                          OR UPPER(tr.tipo_tarjeta) LIKE '%DOUBLE%'
+                      )
+                ) as red_cards_against
             FROM partidos p
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion

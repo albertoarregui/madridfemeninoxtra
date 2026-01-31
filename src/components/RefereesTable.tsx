@@ -16,6 +16,8 @@ interface Referee {
         penaltiesAgainst: number;
         yellowCards: number;
         redCards: number;
+        yellowCardsAgainst: number;
+        redCardsAgainst: number;
     };
 }
 
@@ -113,8 +115,11 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             <SortableHeader sortKey="stats.penaltiesFor" label="P. Fav" className="text-blue-600" />
                             <SortableHeader sortKey="stats.penaltiesAgainst" label="P. Con" className="text-orange-600" />
 
-                            <SortableHeader sortKey="stats.yellowCards" label="TA" className="text-yellow-600" />
-                            <SortableHeader sortKey="stats.redCards" label="TR" className="text-red-600" />
+                            <SortableHeader sortKey="stats.yellowCards" label="TA F" className="text-yellow-600" />
+                            <SortableHeader sortKey="stats.yellowCardsAgainst" label="TA C" className="text-orange-400" />
+
+                            <SortableHeader sortKey="stats.redCards" label="TR F" className="text-red-600" />
+                            <SortableHeader sortKey="stats.redCardsAgainst" label="TR C" className="text-red-800" />
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -167,8 +172,15 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 <td className="py-3 px-2 text-center font-bold text-yellow-600">
                                     {referee.stats.yellowCards}
                                 </td>
+                                <td className="py-3 px-2 text-center font-bold text-orange-400">
+                                    {referee.stats.yellowCardsAgainst}
+                                </td>
+
                                 <td className="py-3 px-2 text-center font-bold text-red-600">
                                     {referee.stats.redCards}
+                                </td>
+                                <td className="py-3 px-2 text-center font-bold text-red-800">
+                                    {referee.stats.redCardsAgainst}
                                 </td>
                             </tr>
                         ))}

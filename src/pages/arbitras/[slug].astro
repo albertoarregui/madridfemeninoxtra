@@ -60,6 +60,8 @@ const matches = rawMatches.map((m) => {
         redCards: parseInt(m.rojas) || 0,
         penaltiesFor: parseInt(m.penalties_for) || 0,
         penaltiesAgainst: parseInt(m.penalties_against) || 0,
+        yellowCardsAgainst: parseInt(m.yellow_cards_against) || 0,
+        redCardsAgainst: parseInt(m.red_cards_against) || 0,
         season,
         resultado: (() => {
             const rm = parseInt(m.goles_rm) || 0;
@@ -85,6 +87,8 @@ interface StatBlock {
     tr: number;
     pf: number;
     pc: number;
+    ta_c: number;
+    tr_c: number;
 }
 
 const initialStatBlock = (): StatBlock => ({
@@ -96,6 +100,8 @@ const initialStatBlock = (): StatBlock => ({
     tr: 0,
     pf: 0,
     pc: 0,
+    ta_c: 0,
+    tr_c: 0,
 });
 
 const calculateBlock = (block: StatBlock, m: any) => {
@@ -104,6 +110,8 @@ const calculateBlock = (block: StatBlock, m: any) => {
     block.tr += m.redCards;
     block.pf += m.penaltiesFor;
     block.pc += m.penaltiesAgainst;
+    block.ta_c += m.yellowCardsAgainst;
+    block.tr_c += m.redCardsAgainst;
 
     if (m.resultado === "V") block.pg++;
     else if (m.resultado === "E") block.pe++;
@@ -291,6 +299,10 @@ const redArc =
                                             <th>TR</th>
                                             <th>PF</th>
                                             <th>PC</th>
+                                            <th>TA (F)</th>
+                                            <th>TR (F)</th>
+                                            <th>TA (C)</th>
+                                            <th>TR (C)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -349,6 +361,26 @@ const redArc =
                                                             {season.total.pc}
                                                         </strong>
                                                     </td>
+                                                    <td>
+                                                        <strong class="text-yellow-600">
+                                                            {season.total.ta}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-red-600">
+                                                            {season.total.tr}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-yellow-700">
+                                                            {season.total.ta_c}
+                                                        </strong>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-red-800">
+                                                            {season.total.tr_c}
+                                                        </strong>
+                                                    </td>
                                                 </tr>
                                                 {season.competiciones.map(
                                                     (comp: any) => (
@@ -391,6 +423,18 @@ const redArc =
                                                             <td class="text-orange-600">
                                                                 {comp.pc}
                                                             </td>
+                                                            <td class="text-yellow-600">
+                                                                {comp.ta}
+                                                            </td>
+                                                            <td class="text-red-600">
+                                                                {comp.tr}
+                                                            </td>
+                                                            <td class="text-yellow-700">
+                                                                {comp.ta_c}
+                                                            </td>
+                                                            <td class="text-red-800">
+                                                                {comp.tr_c}
+                                                            </td>
                                                         </tr>
                                                     ),
                                                 )}
@@ -411,6 +455,18 @@ const redArc =
                                             </td>
                                             <td class="text-orange-600 font-bold">
                                                 {totalStats.pc}
+                                            </td>
+                                            <td class="text-yellow-600 font-bold">
+                                                {totalStats.ta}
+                                            </td>
+                                            <td class="text-red-600 font-bold">
+                                                {totalStats.tr}
+                                            </td>
+                                            <td class="text-yellow-700 font-bold">
+                                                {totalStats.ta_c}
+                                            </td>
+                                            <td class="text-red-800 font-bold">
+                                                {totalStats.tr_c}
                                             </td>
                                         </tr>
                                     </tbody>
@@ -737,6 +793,8 @@ const redArc =
             tr: 0,
             pf: 0,
             pc: 0,
+            ta_c: 0,
+            tr_c: 0,
         };
 
         matches.forEach((m) => {
@@ -745,6 +803,8 @@ const redArc =
             stats.tr += parseInt(m.redCards) || 0;
             stats.pf += parseInt(m.penaltiesFor) || 0;
             stats.pc += parseInt(m.penaltiesAgainst) || 0;
+            stats.ta_c += parseInt(m.yellowCardsAgainst) || 0;
+            stats.tr_c += parseInt(m.redCardsAgainst) || 0;
 
             if (m.resultado === "V") stats.pg++;
             else if (m.resultado === "E") stats.pe++;
