@@ -9,7 +9,6 @@ import {
     fetchMatchEvents,
 } from "../../utils/partidos";
 import { generateSlug } from "../../utils/url-helper";
-import { turso } from "../../lib/turso";
 import { SQUAD } from "../../consts/squad";
 import { getPlayerImage } from "../../lib/assetHelpers";
 
@@ -49,25 +48,15 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer = null;
-try {
-    const mvpResult = await turso.execute({
-        sql: "SELECT player_id, COUNT(*) as c FROM mvp_votes WHERE match_id = ? GROUP BY player_id ORDER BY c DESC LIMIT 1",
-        args: [game.id_partido],
-    });
-
-    if (mvpResult.rows.length > 0) {
-        const playerId = String(mvpResult.rows[0].player_id);
-        const playerInfo = SQUAD.find((p) => p.id === playerId);
-        if (playerInfo) {
-            mvpPlayer = {
-                ...playerInfo,
-                image: await getPlayerImage(playerId),
-                votes: Number(mvpResult.rows[0].c),
-            };
-        }
+if (game.mvp) {
+    const playerId = String(game.mvp);
+    const playerInfo = SQUAD.find((p) => p.id === playerId);
+    if (playerInfo) {
+        mvpPlayer = {
+            ...playerInfo,
+            image: await getPlayerImage(playerId),
+        };
     }
-} catch (e) {
-    console.error("Error fetching MVP:", e);
 }
 
 const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
