@@ -564,7 +564,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         const penaltyShootoutQuery = `
             SELECT pt.*, j.nombre as nombre_jugadora
-            FROM penalti_tanda pt
+            FROM penaltis_tanda pt
             LEFT JOIN jugadoras j ON pt.id_jugadora = j.id_jugadora
             WHERE pt.id_partido = ?
             ORDER BY pt.orden ASC
@@ -753,7 +753,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             const playerName = pt.nombre_jugadora || pt.nombre_rival;
 
             events.push({
-                minute: 200 + (pt.orden || 0), // At the very end
+                minute: 200 + Number(pt.orden || 0), // At the very end
                 displayMinute: 'P',
                 type: 'shootout',
                 outcome: isGoal ? 'scored' : 'missed',
