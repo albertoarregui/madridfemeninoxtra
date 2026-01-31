@@ -48,15 +48,20 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer = null;
-console.log("DEBUG MVP - game.mvp:", game.mvp); // Debug log
 if (game.mvp) {
-    const playerId = String(game.mvp);
-    const playerInfo = SQUAD.find((p) => p.id === playerId);
-    console.log("DEBUG MVP - Found player:", playerInfo?.name); // Debug log
+    let playerId = String(game.mvp).trim();
+    let playerInfo = SQUAD.find((p) => p.id === playerId);
+
+    // If not found by ID, try finding by Number (dorsal)
+    if (!playerInfo && !isNaN(parseInt(playerId))) {
+        const dorsal = parseInt(playerId);
+        playerInfo = SQUAD.find((p) => p.number === dorsal);
+    }
+
     if (playerInfo) {
         mvpPlayer = {
             ...playerInfo,
-            image: await getPlayerImage(playerId),
+            image: await getPlayerImage(playerInfo.id),
         };
     }
 }
@@ -838,7 +843,7 @@ const refereeStats = game.id_arbitra
 
             <div class="right-column">
                 {
-                    mvpPlayer ? (
+                    mvpPlayer && (
                         <section class="mvp-card" style="margin-bottom: 2rem;">
                             <h2 class="section-header">MVP DEL PARTIDO</h2>
                             <div class="mvp-content-inner">
@@ -874,16 +879,6 @@ const refereeStats = game.id_arbitra
                                 </div>
                             </div>
                         </section>
-                    ) : (
-                        game.mvp && (
-                            <div style="background: #fee2e2; color: #991b1b; padding: 1rem; margin-bottom: 2rem; border-radius: 8px; border: 1px solid #fca5a5; font-size: 0.9rem;">
-                                <strong>MVP DEBUG:</strong> Value="
-                                {String(game.mvp)}" | Found=
-                                {SQUAD.find((p) => p.id === String(game.mvp))
-                                    ? "YES"
-                                    : "NO"}
-                            </div>
-                        )
                     )
                 }
 
