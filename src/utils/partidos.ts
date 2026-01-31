@@ -61,6 +61,12 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 p.goles_rival,
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
+                ep.posesion_rm,
+                ep.posesion_rival,
+                ep.xg_a_favor,
+                ep.xg_en_contra,
+                ep.faltas_cometidas,
+                ep.faltas_recibidas,
                 
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
@@ -78,6 +84,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
               LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
               LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
               LEFT JOIN entrenadores en ON p.id_entrenador = en.id_entrenador
+              LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
               ORDER BY p.id_partido ASC
         `;
 
