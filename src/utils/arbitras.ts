@@ -4,8 +4,8 @@ import { generateSlug } from "./url-helper";
 
 export async function fetchRefereesDirectly(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];
@@ -89,12 +89,17 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                           OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%'
                           OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
                       )
-                ) as red_cards_against
+                ) as red_cards_against,
+                
+                SUM(COALESCE(ep.faltas_cometidas, 0)) as fouls_committed,
+                SUM(COALESCE(ep.faltas_recibidas, 0)) as fouls_received
 
             FROM 
                 arbitras a
             JOIN
                 partidos p ON p.id_arbitra = a.id_arbitra
+            LEFT JOIN
+                estadisticas_partidos ep ON p.id_partido = ep.id_partido
             WHERE
                 p.goles_rm IS NOT NULL
             GROUP BY
@@ -125,6 +130,10 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     penaltiesAgainst: Number(ref.penalties_against || 0),
                     yellowCardsAgainst: Number(ref.yellow_cards_against || 0),
                     redCardsAgainst: Number(ref.red_cards_against || 0),
+                    foulsCommitted: Number(ref.fouls_committed || 0),
+                    foulsReceived: Number(ref.fouls_received || 0),
+                    foulsCommittedAvg: played > 0 ? (Number(ref.fouls_committed || 0) / played).toFixed(1) : '0.0',
+                    foulsReceivedAvg: played > 0 ? (Number(ref.fouls_received || 0) / played).toFixed(1) : '0.0',
                     winPct: played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0',
                     drawPct: played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0',
                     lossPct: played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0'
@@ -140,8 +149,8 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
 
 export async function fetchMatchesByReferee(refereeName: string): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 
@@ -205,7 +214,9 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                           OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%'
                           OR UPPER(tr.tipo_tarjeta) LIKE '%DOUBLE%'
                       )
-                ) as red_cards_against
+                ) as red_cards_against,
+                ep.faltas_cometidas,
+                ep.faltas_recibidas
             FROM partidos p
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
@@ -213,6 +224,7 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
             LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
             LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+            LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
             WHERE a.nombre = ?
             ORDER BY p.fecha DESC
         `;
