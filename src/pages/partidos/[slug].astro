@@ -50,13 +50,12 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 let mvpPlayer = null;
 if (game.mvp) {
     let playerId = String(game.mvp).trim();
-    let playerInfo = SQUAD.find((p) => p.id === playerId);
-
-    // If not found by ID, try finding by Number (dorsal)
-    if (!playerInfo && !isNaN(parseInt(playerId))) {
-        const dorsal = parseInt(playerId);
-        playerInfo = SQUAD.find((p) => p.number === dorsal);
-    }
+    // Improved search for player
+    let playerInfo = SQUAD.find(
+        (p) =>
+            String(p.id).trim() === playerId ||
+            String(p.number).trim() === playerId,
+    );
 
     if (playerInfo) {
         mvpPlayer = {
@@ -876,7 +875,7 @@ const refereeStats = game.id_arbitra
                                     <div class="mvp-img-wrap">
                                         <img
                                             src={mvpPlayer.image}
-                                            alt={mvpPlayer.name}
+                                            alt=""
                                             class="mvp-photo-clean"
                                         />
                                     </div>
@@ -1458,20 +1457,7 @@ const refereeStats = game.id_arbitra
             }
         }
 
-        /* MVP CARD */
-        .mvp-content-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.5rem;
-        }
-
-        .mvp-player-side {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        /* Consolidated MVP/Subs area */
 
         /* MVP Old Styles Removed */
 
@@ -2286,6 +2272,21 @@ const refereeStats = game.id_arbitra
         }
 
         /* MVP Clean Styles Refined */
+        .sub-player-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .sub-img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
         .mvp-photo-clean {
             width: 100px;
             height: 100px;
@@ -2300,13 +2301,22 @@ const refereeStats = game.id_arbitra
             justify-content: center;
             gap: 2rem;
             padding: 1.5rem;
+            width: 100%;
         }
 
         .mvp-player-side {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 0.25rem;
+        }
+
+        .sub-movement {
+            display: flex;
+            flex-direction: row !important; /* Force side-by-side in desktop */
+            align-items: center;
             gap: 0.5rem;
+            flex: 1;
         }
 
         @media (max-width: 768px) {
@@ -2341,65 +2351,49 @@ const refereeStats = game.id_arbitra
                 font-size: 1.25rem;
             }
 
-            /* Fix Subs wrapping on mobile: Stack Vertical */
-            .sub-row {
-                flex-direction: column;
-                align-items: center;
-                gap: 0.5rem;
-                text-align: center;
-            }
-
-            .sub-movement {
-                flex-direction: row; /* Keep arrow side-by-side */
-                width: 100%;
-                justify-content: center;
-                gap: 1rem;
-            }
-
-            .sub-time {
-                margin-bottom: 0.25rem;
-                min-width: auto;
-                padding: 0.25rem 0.75rem;
-            }
-
-            /* Full width for structure on mobile */
             .match-details-page {
                 padding: 1rem 0;
             }
 
+            /* Stack sections edge-to-edge */
             .lineup-card,
             .subs-card,
             .timeline-card,
             .metrics-card,
             .mvp-card,
             .stadium-card,
-            .rival-card,
-            .records-card,
             .match-card-new {
                 border-radius: 0;
                 border-left: none;
                 border-right: none;
             }
-        }
 
-        @media (max-width: 768px) {
+            .sub-row {
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 0.75rem;
+                padding: 1.5rem 1rem;
+            }
+
+            .sub-movement {
+                flex-direction: row !important;
+                width: 100%;
+                justify-content: center !important;
+                gap: 1.5rem;
+            }
+
             .timeline-container {
                 padding: 1.5rem 1rem 1.5rem 4rem;
             }
             .timeline-track {
-                padding-left: 1.5rem; /* Track line at 0 relative. Content at 1.5rem. */
+                padding-left: 1.5rem;
             }
             .event-time {
-                right: auto;
-                /* Center on line (which is at -1.5rem relative to content). */
-                /* Badge width 3rem. Center of badge at 1.5rem. */
-                /* Left = -1.5rem - 1.5rem = -3rem. */
                 left: -3rem;
                 width: 3rem;
                 text-align: center;
             }
             .event-icon {
-                /* Right of line? */
                 left: -1.25rem;
             }
         }
