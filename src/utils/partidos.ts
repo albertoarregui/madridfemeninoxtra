@@ -562,11 +562,20 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE p.id_partido = ?
         `;
 
-        const [subs, goalsResult, cardsResult, penaltiesResult] = await Promise.all([
+        const penaltyShootoutQuery = `
+            SELECT pt.*, j.nombre as nombre_jugadora
+            FROM penalti_tanda pt
+            LEFT JOIN jugadoras j ON pt.id_jugadora = j.id_jugadora
+            WHERE pt.id_partido = ?
+            ORDER BY pt.orden ASC
+        `;
+
+        const [subs, goalsResult, cardsResult, penaltiesResult, shootoutResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
             client.execute({ sql: cardsQuery, args: [matchId] }),
-            client.execute({ sql: penaltiesQuery, args: [matchId] })
+            client.execute({ sql: penaltiesQuery, args: [matchId] }),
+            client.execute({ sql: penaltyShootoutQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -734,6 +743,24 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 playerIn: sub.playerIn.name,
                 playerOut: sub.playerOut.name,
                 team: 'local'
+            });
+        }
+
+
+        for (const pt of shootoutResult.rows) {
+            const res = String(pt.resultado || '').toLowerCase().trim();
+            const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
+            const playerName = pt.nombre_jugadora || pt.nombre_rival;
+
+            events.push({
+                minute: 200 + (pt.orden || 0), // At the very end
+                displayMinute: 'P',
+                type: 'shootout',
+                outcome: isGoal ? 'scored' : 'missed',
+                text: `Tanda: ${isGoal ? 'Gol' : 'Fallo'} de ${playerName || 'Desconocido'}`,
+                player: playerName,
+                team: pt.id_jugadora ? 'local' : 'rival',
+                order: pt.orden
             });
         }
 

@@ -882,7 +882,10 @@ const refereeStats = game.id_arbitra
                                     <div class="timeline-event">
                                         <div class="event-time">
                                             <span class="minute-badge">
-                                                {event.displayMinute}'
+                                                {event.displayMinute}
+                                                {event.displayMinute !== "P"
+                                                    ? "'"
+                                                    : ""}
                                             </span>
                                         </div>
                                         <div class="event-content">
@@ -911,7 +914,8 @@ const refereeStats = game.id_arbitra
                                                         <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
                                                         <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
                                                     </svg>
-                                                ) : event.type === "penalty" ? (
+                                                ) : event.type === "penalty" ||
+                                                  event.type === "shootout" ? (
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
                                                         width="24"
@@ -920,13 +924,12 @@ const refereeStats = game.id_arbitra
                                                         fill="none"
                                                         stroke="currentColor"
                                                         stroke-width="0"
-                                                        style={{
-                                                            color:
-                                                                event.outcome ===
-                                                                "scored"
-                                                                    ? "#22c55e"
-                                                                    : "#ef4444",
-                                                        }}
+                                                        style={`color: ${
+                                                            event.outcome ===
+                                                            "scored"
+                                                                ? "#22c55e"
+                                                                : "#ef4444"
+                                                        }`}
                                                     >
                                                         <g fill="currentColor">
                                                             <rect
@@ -1076,6 +1079,29 @@ const refereeStats = game.id_arbitra
                                                                         event.assistant
                                                                     }
                                                                 </span>
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : event.type ===
+                                                  "shootout" ? (
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <span
+                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#22c55e" : "#ef4444"}`}
+                                                        >
+                                                            {event.player}
+                                                        </span>
+                                                        <span style="font-size: 0.85rem; color: #666; font-style: italic;">
+                                                            (
+                                                            {event.outcome ===
+                                                            "scored"
+                                                                ? "Gol"
+                                                                : "Fallo"}
+                                                            )
+                                                        </span>
+                                                        {event.team ===
+                                                            "rival" && (
+                                                            <span style="font-size: 0.7rem; background: #f0f0f0; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #888;">
+                                                                RIVAL
                                                             </span>
                                                         )}
                                                     </div>
