@@ -9,6 +9,9 @@ import {
     fetchMatchEvents,
 } from "../../utils/partidos";
 import { generateSlug } from "../../utils/url-helper";
+import { turso } from "../../lib/turso";
+import { SQUAD } from "../../consts/squad";
+import { getPlayerImage } from "../../lib/assetHelpers";
 
 const { slug } = Astro.params;
 
@@ -43,6 +46,29 @@ const lineup = await fetchMatchLineups(game.id_partido);
 const subs = await fetchMatchSubstitutions(game.id_partido);
 const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm);
 const stadiumStats = await fetchStadiumStats(game.estadio);
+
+// Fetch MVP
+let mvpPlayer = null;
+try {
+    const mvpResult = await turso.execute({
+        sql: "SELECT player_id, COUNT(*) as c FROM mvp_votes WHERE match_id = ? GROUP BY player_id ORDER BY c DESC LIMIT 1",
+        args: [game.id_partido],
+    });
+
+    if (mvpResult.rows.length > 0) {
+        const playerId = String(mvpResult.rows[0].player_id);
+        const playerInfo = SQUAD.find((p) => p.id === playerId);
+        if (playerInfo) {
+            mvpPlayer = {
+                ...playerInfo,
+                image: await getPlayerImage(playerId),
+                votes: Number(mvpResult.rows[0].c),
+            };
+        }
+    }
+} catch (e) {
+    console.error("Error fetching MVP:", e);
+}
 
 const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/estadios/*.{jpeg,jpg,png,webp}",
@@ -820,6 +846,29 @@ const refereeStats = game.id_arbitra
             <!-- Close Left Column -->
 
             <div class="right-column">
+                {
+                    mvpPlayer && (
+                        <section class="mvp-card" style="margin-bottom: 2rem;">
+                            <div class="mvp-label">MVP DEL PARTIDO</div>
+                            <div class="mvp-content">
+                                <img
+                                    src={mvpPlayer.image}
+                                    alt={mvpPlayer.name}
+                                    class="mvp-img"
+                                />
+                                <div class="mvp-info">
+                                    <span class="mvp-name">
+                                        {mvpPlayer.name}
+                                    </span>
+                                    <span class="mvp-number">
+                                        #{mvpPlayer.number}
+                                    </span>
+                                </div>
+                            </div>
+                        </section>
+                    )
+                }
+
                 <section class="timeline-card">
                     <h2 class="section-header">Timeline</h2>
                     <div class="timeline-container">
@@ -1399,6 +1448,60 @@ const refereeStats = game.id_arbitra
             .sub-row {
                 align-items: flex-start; /* Align top for wrapped text */
             }
+        }
+
+        /* MVP CARD */
+        .mvp-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2b2b2b 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .mvp-label {
+            font-family: "Bebas Neue", sans-serif;
+            font-size: 1.5rem;
+            color: #ffde59;
+            line-height: 1;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .mvp-content {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .mvp-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #ffde59;
+            object-fit: cover;
+            background: #fff;
+        }
+
+        .mvp-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mvp-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .mvp-number {
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 600;
         }
 
         .lineup-card,
