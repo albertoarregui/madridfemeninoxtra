@@ -584,8 +584,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
-            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || goal.tipo === 'propia' || goal.tipo === 'own_goal';
-            if (isOwnGoalInGolesTable) continue;
+            const shouldSkipGoal = !goal.goleadora || goal.tipo === 'propia' || goal.tipo === 'own_goal';
+            if (shouldSkipGoal) continue;
 
 
 
