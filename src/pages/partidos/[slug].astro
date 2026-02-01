@@ -57,10 +57,13 @@ const slugify = (text: string): string => {
 };
 
 mvpPlayer = {
-    name: game.mvp_nombre || `MVP #${game.mvp}`,
-    image: game.mvp_nombre
-        ? await getPlayerImage(slugify(game.mvp_nombre))
-        : "/assets/img/default-player.png",
+    name: game.mvp
+        ? game.mvp_nombre || `MVP #${game.mvp}`
+        : "MVP no disponible",
+    image:
+        game.mvp && game.mvp_nombre
+            ? await getPlayerImage(slugify(game.mvp_nombre))
+            : "/assets/img/default-player.png",
     id: game.mvp ? String(game.mvp) : "unknown",
 };
 
@@ -1152,7 +1155,6 @@ const refereeStats = game.id_arbitra
                 <section class="metrics-card" style="margin-top: 2rem;">
                     <h2 class="section-header">Métricas</h2>
                     <div class="metrics-content" style="padding: 1.5rem;">
-                        <!-- Possession -->
                         <div
                             class="metric-group"
                             style="margin-bottom: 1.5rem;"
@@ -1194,7 +1196,6 @@ const refereeStats = game.id_arbitra
                             </div>
                         </div>
 
-                        <!-- xG -->
                         <div class="metric-group">
                             <div
                                 class="metric-header"
@@ -1223,9 +1224,7 @@ const refereeStats = game.id_arbitra
                     </div>
                 </section>
             </div>
-            <!-- Close Right Column -->
         </div>
-        <!-- Close Match Grid -->
     </main>
 
     <script is:inline>
@@ -1249,7 +1248,6 @@ const refereeStats = game.id_arbitra
                 const modal = document.getElementById("referee-modal");
                 modal.style.display = "flex";
 
-                // Close when clicking outside
                 modal.onclick = function (e) {
                     if (e.target === modal) {
                         closeRefereeModal();
@@ -1478,10 +1476,6 @@ const refereeStats = game.id_arbitra
             }
         }
 
-        /* Consolidated MVP/Subs area */
-
-        /* MVP Old Styles Removed */
-
         .mvp-name-dark {
             font-weight: 700;
             font-size: 1rem;
@@ -1695,7 +1689,6 @@ const refereeStats = game.id_arbitra
             text-align: center;
         }
 
-        /* TIMELINE */
         .timeline-container {
             position: relative;
             display: flex;

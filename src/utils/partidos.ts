@@ -34,15 +34,11 @@ export function formatGameDate(dateString: string | null | undefined): string {
 }
 
 export async function fetchGamesDirectly(): Promise<any[]> {
-    console.log('[fetchGamesDirectly] START');
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        console.log('[fetchGamesDirectly] getDbClient imported');
         const client = await getPlayersDbClient();
-        console.log('[fetchGamesDirectly] client obtained:', !!client);
 
         if (!client) {
-            console.error('[fetchGamesDirectly] Client is null, returning empty array');
             return [];
         }
 
@@ -90,9 +86,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
               ORDER BY p.id_partido ASC
         `;
 
-        console.log('[fetchGamesDirectly] Executing query...');
         const result = await client.execute(query);
-        console.log('[fetchGamesDirectly] Query executed, row count:', result.rows.length);
 
         return result.rows.map((game: any) => {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
@@ -185,27 +179,14 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
     return stats;
 }
 
-// Helper to log to file
-function logDebug(message: string) {
-    try {
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = path.resolve(process.cwd(), 'debug_ssr_log.txt');
-        const timestamp = new Date().toISOString();
-        fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
-    } catch (e) {
-        // ignore
-    }
-}
+
 
 export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
-    logDebug(`Fetching lineups for matchId: ${matchId}`);
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
 
         if (!client) {
-            logDebug("Missing client");
             return [];
         }
 
@@ -254,8 +235,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             args: [matchId]
         });
 
-        logDebug(`Lineups found: ${result.rows.length}`);
-
         return result.rows.map((row: any) => {
             // Helper for image 
             let fileName: string | null = null;
@@ -287,7 +266,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             };
         });
     } catch (error) {
-        logDebug(`Error fetching lineups: ${error}`);
         console.error("Error fetching lineups:", error);
         return [];
     }
@@ -595,34 +573,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
         };
 
         for (const goal of validGoals) {
-            let playerName = goal.nombre_jugadora;
-
-            if (!playerName) {
-                playerName = goal.goleadora;
-            }
-
-            let goalText = "";
-            if (!playerName && !goal.goleadora) {
-                goalText = "En propia puerta";
-            } else {
-
-                if (!playerName) playerName = "En propia puerta";
-                goalText = `Gol de ${playerName}`;
-            }
-
-            let assistantName = goal.nombre_asistente;
-            if (!assistantName && goal.asistente) {
-                assistantName = goal.asistente;
-            }
-
-            if (assistantName) {
-                goalText += ` (Asis. ${assistantName})`;
-            }
-
-            if (goal.tipo === 'penalti') {
-                goalText += ' (P)';
-            }
-
             const parseMinute = (min: any): number => {
                 if (!min) return 0;
                 const s = String(min);
@@ -633,6 +583,33 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
+            const isOwnGoal = (!goal.nombre_jugadora && goal.goleadora);
+
+            if (isOwnGoal) {
+                const playerName = goal.goleadora;
+                events.push({
+                    minute: parseMinute(goal.minuto),
+                    displayMinute: formatDisplayMinute(goal.minuto),
+                    type: 'own_goal',
+                    text: `${playerName} (propia puerta)`,
+                    player: playerName,
+                    team: 'local'
+                });
+                continue;
+            }
+
+            let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
+            let goalText = `Gol de ${playerName}`;
+
+            let assistantName = goal.nombre_asistente || goal.asistente;
+            if (assistantName) {
+                goalText += ` (Asis. ${assistantName})`;
+            }
+
+            if (goal.tipo === 'penalti') {
+                goalText += ' (P)';
+            }
+
             events.push({
                 minute: parseMinute(goal.minuto),
                 displayMinute: formatDisplayMinute(goal.minuto),
@@ -641,7 +618,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 scorer: playerName,
                 assistant: assistantName,
                 isPenalty: goal.tipo === 'penalti',
-                isOwnGoal: (!goal.nombre_jugadora && !goal.goleadora),
+                isOwnGoal: false,
                 team: 'local'
             });
         }
@@ -697,22 +674,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             const res = String(penalty.resultado || '').toLowerCase().trim();
             const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado'].includes(res);
-            // If it's a goal and it's already in the goals table, we might be duplicating?
-            // Usually 'penaltis' table tracks the attempt. 'goles_y_asistencias' tracks the goal.
-            // If we have both, we need to decide.
-            // But 'penaltis' table tracks missed penalties too.
-            // If the goal is already shown via 'goal' event, we shouldn't show it again as 'penalty' event if it's the exact same minute/player.
-            // BUT, usually timeline separates them or merges them.
-            // If I show both, it might look duplicate.
-            // However, the user specifically asked to add penalties with Green/Red.
-
-            // To avoid duplication with goals:
-            // Check if there is a 'goal' event at the same minute with 'isPenalty': true.
-            // If so, maybe SKIP this if it is a goal? 
-            // OR maybe the user wants the specific Penalty visualization INSTEAD or ALONGSIDE.
-            // Given "Sí se marca, de color verde...", this sounds like a specific visualization request.
-            // I'll add it. If it duplicates, I might filter later. 
-            // For now, I'll add it as type 'penalty'.
 
             const playerName = penalty.nombre_jugadora || penalty.lanzadora_rival;
 
@@ -744,7 +705,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 minute: parseMinute(og.minuto),
                 displayMinute: formatDisplayMinute(og.minuto),
                 type: 'own_goal',
-                text: `Gol en propia puerta de ${playerName || 'Desconocido'}`,
+                text: `${playerName} (propia puerta)`,
                 player: playerName,
                 team: 'local'
             });
@@ -771,14 +732,13 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-
         for (const pt of shootoutResult.rows) {
             const res = String(pt.resultado || '').toLowerCase().trim();
             const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
             const playerName = pt.nombre_jugadora || pt.nombre_rival;
 
             events.push({
-                minute: 200 + Number(pt.orden || 0), // At the very end
+                minute: 200 + Number(pt.orden || 0),
                 displayMinute: 'P',
                 type: 'shootout',
                 outcome: isGoal ? 'scored' : 'missed',
