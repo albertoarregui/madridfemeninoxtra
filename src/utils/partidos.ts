@@ -584,8 +584,12 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
-            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || goal.tipo === 'propia' || goal.tipo === 'own_goal';
-            if (isOwnGoalInGolesTable || goal.tipo === 'penalti') continue;
+            const tipoLower = String(goal.tipo || '').toLowerCase().trim();
+            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || tipoLower === 'propia' || tipoLower === 'own_goal' || tipoLower === 'p.p.';
+            const isPenaltyInGolesTable = tipoLower === 'penalti' || tipoLower === 'p' || goal.tipo === 1 || String(goal.penalti) === '1';
+
+            if (isOwnGoalInGolesTable || isPenaltyInGolesTable) continue;
+
 
             if (!goal.goleadora && !goal.nombre_jugadora) continue;
 
@@ -668,11 +672,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 events.push({
                     minute: parseMinute(penalty.minuto),
                     displayMinute: formatDisplayMinute(penalty.minuto as any),
-                    type: 'goal',
+                    type: 'penalty',
+                    outcome: 'scored',
                     text: `${playerName} (penalti)`,
-                    scorer: playerName,
-                    isPenalty: true,
-                    isOwnGoal: false,
+                    player: playerName,
                     team: 'local'
                 });
             } else {
