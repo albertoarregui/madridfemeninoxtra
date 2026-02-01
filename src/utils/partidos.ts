@@ -584,10 +584,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
-            const shouldSkipGoal = !goal.goleadora || goal.tipo === 'propia' || goal.tipo === 'own_goal';
-            if (shouldSkipGoal) continue;
+            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || goal.tipo === 'propia' || goal.tipo === 'own_goal';
+            if (isOwnGoalInGolesTable || goal.tipo === 'penalti') continue;
 
-
+            if (!goal.goleadora && !goal.nombre_jugadora) continue;
 
             let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
             let goalText = `Gol de ${playerName}`;
@@ -595,10 +595,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             let assistantName = goal.nombre_asistente || goal.asistente;
             if (assistantName) {
                 goalText += ` (Asis. ${assistantName})`;
-            }
-
-            if (goal.tipo === 'penalti') {
-                goalText += ' (P)';
             }
 
             events.push({
@@ -668,15 +664,28 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             const playerName = penalty.nombre_jugadora || penalty.lanzadora_rival;
 
-            events.push({
-                minute: parseMinute(penalty.minuto),
-                displayMinute: formatDisplayMinute(penalty.minuto as any),
-                type: 'penalty',
-                outcome: isGoal ? 'scored' : 'missed',
-                text: `Penalti ${isGoal ? 'marcado' : 'fallado'} por ${playerName || 'Desconocido'}`,
-                player: playerName,
-                team: 'local'
-            });
+            if (isGoal) {
+                events.push({
+                    minute: parseMinute(penalty.minuto),
+                    displayMinute: formatDisplayMinute(penalty.minuto as any),
+                    type: 'goal',
+                    text: `${playerName} (penalti)`,
+                    scorer: playerName,
+                    isPenalty: true,
+                    isOwnGoal: false,
+                    team: 'local'
+                });
+            } else {
+                events.push({
+                    minute: parseMinute(penalty.minuto),
+                    displayMinute: formatDisplayMinute(penalty.minuto as any),
+                    type: 'penalty',
+                    outcome: 'missed',
+                    text: `Penalti fallado por ${playerName || 'Desconocido'}`,
+                    player: playerName,
+                    team: 'local'
+                });
+            }
         }
 
         for (const og of ownGoalsResult.rows) {

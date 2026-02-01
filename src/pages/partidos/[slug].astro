@@ -110,6 +110,21 @@ const visitorShield = await getShieldSrc(game.club_visitante);
 const refereeStats = game.id_arbitra
     ? await fetchRefereeStats(game.id_arbitra)
     : null;
+
+const isLocalRM = game.club_local.toLowerCase().includes("real madrid");
+
+const allGalleryImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/galerias/*/*.{jpg,jpeg,png,webp}",
+);
+const matchGalleryImages = Object.keys(allGalleryImages)
+    .filter((key) => key.includes(`/${game.id_partido}/`))
+    .map((key) => allGalleryImages[key]);
+
+let galleryImages: string[] = [];
+if (matchGalleryImages.length > 0) {
+    const modules = await Promise.all(matchGalleryImages.map((fn) => fn()));
+    galleryImages = modules.map((m) => m.default.src);
+}
 ---
 
 <Layout
@@ -1082,7 +1097,7 @@ const refereeStats = game.id_arbitra
                                                         </span>
                                                         {event.isPenalty && (
                                                             <span style="font-size: 0.8em; color: #555;">
-                                                                (P)
+                                                                (penalti)
                                                             </span>
                                                         )}
                                                         {event.isOwnGoal && (
@@ -1168,6 +1183,7 @@ const refereeStats = game.id_arbitra
                 <section class="metrics-card" style="margin-top: 2rem;">
                     <h2 class="section-header">Métricas</h2>
                     <div class="metrics-content" style="padding: 1.5rem;">
+                        <!-- Possession -->
                         <div
                             class="metric-group"
                             style="margin-bottom: 1.5rem;"
@@ -1176,66 +1192,154 @@ const refereeStats = game.id_arbitra
                                 class="metric-header"
                                 style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;"
                             >
-                                <span
-                                    >{
-                                        game.posesion_rm
-                                            ? `${game.posesion_rm}%`
-                                            : "-"
-                                    }</span
-                                >
+                                <span>
+                                    {
+                                        isLocalRM
+                                            ? game.posesion_rm
+                                                ? `${game.posesion_rm}%`
+                                                : "-"
+                                            : game.posesion_rival
+                                              ? `${game.posesion_rival}%`
+                                              : "-"
+                                    }
+                                </span>
                                 <span
                                     style="color: #777; text-transform: uppercase; font-size: 0.9rem;"
                                     >Posesión</span
                                 >
-                                <span
-                                    >{
-                                        game.posesion_rival
-                                            ? `${game.posesion_rival}%`
-                                            : "-"
-                                    }</span
-                                >
+                                <span>
+                                    {
+                                        isLocalRM
+                                            ? game.posesion_rival
+                                                ? `${game.posesion_rival}%`
+                                                : "-"
+                                            : game.posesion_rm
+                                              ? `${game.posesion_rm}%`
+                                              : "-"
+                                    }
+                                </span>
                             </div>
                             <div
                                 style="height: 8px; background: #eee; border-radius: 4px; overflow: hidden; display: flex;"
                             >
                                 <div
-                                    style={`width: ${game.posesion_rm || 50}%; background: #151e42; height: 100%;`}
+                                    style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%; background: #151e42; height: 100%;`}
                                 >
                                 </div>
                                 <div
-                                    style={`width: ${game.posesion_rival || 50}%; background: #ccc; height: 100%;`}
+                                    style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%; background: #ccc; height: 100%;`}
                                 >
                                 </div>
                             </div>
                         </div>
 
+                        <!-- xG -->
                         <div class="metric-group">
                             <div
                                 class="metric-header"
                                 style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;"
                             >
-                                <span>{game.xg_a_favor || "-"}</span>
+                                <span
+                                    >{
+                                        isLocalRM
+                                            ? game.xg_a_favor || "-"
+                                            : game.xg_en_contra || "-"
+                                    }</span
+                                >
                                 <span
                                     style="color: #777; text-transform: uppercase; font-size: 0.9rem;"
                                     >xG Expected Goals</span
                                 >
-                                <span>{game.xg_en_contra || "-"}</span>
+                                <span
+                                    >{
+                                        isLocalRM
+                                            ? game.xg_en_contra || "-"
+                                            : game.xg_a_favor || "-"
+                                    }</span
+                                >
                             </div>
                             <div
                                 style="height: 8px; background: #eee; border-radius: 4px; overflow: hidden; display: flex;"
                             >
                                 <div
-                                    style={`width: ${(parseFloat(game.xg_a_favor || 0) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100}%; background: #151e42; height: 100%;`}
+                                    style={`width: ${
+                                        isLocalRM
+                                            ? (parseFloat(
+                                                  game.xg_a_favor || 0,
+                                              ) /
+                                                  (parseFloat(
+                                                      game.xg_a_favor || 1,
+                                                  ) +
+                                                      parseFloat(
+                                                          game.xg_en_contra ||
+                                                              1,
+                                                      ))) *
+                                              100
+                                            : (parseFloat(
+                                                  game.xg_en_contra || 0,
+                                              ) /
+                                                  (parseFloat(
+                                                      game.xg_a_favor || 1,
+                                                  ) +
+                                                      parseFloat(
+                                                          game.xg_en_contra ||
+                                                              1,
+                                                      ))) *
+                                              100
+                                    }%; background: #151e42; height: 100%;`}
                                 >
                                 </div>
                                 <div
-                                    style={`width: ${(parseFloat(game.xg_en_contra || 0) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100}%; background: #ccc; height: 100%;`}
+                                    style={`width: ${
+                                        isLocalRM
+                                            ? (parseFloat(
+                                                  game.xg_en_contra || 0,
+                                              ) /
+                                                  (parseFloat(
+                                                      game.xg_a_favor || 1,
+                                                  ) +
+                                                      parseFloat(
+                                                          game.xg_en_contra ||
+                                                              1,
+                                                      ))) *
+                                              100
+                                            : (parseFloat(
+                                                  game.xg_a_favor || 1,
+                                              ) /
+                                                  (parseFloat(
+                                                      game.xg_a_favor || 1,
+                                                  ) +
+                                                      parseFloat(
+                                                          game.xg_en_contra ||
+                                                              1,
+                                                      ))) *
+                                              100
+                                    }%; background: #ccc; height: 100%;`}
                                 >
                                 </div>
                             </div>
                         </div>
                     </div>
                 </section>
+
+                {
+                    galleryImages.length > 0 && (
+                        <section class="gallery-card" style="margin-top: 2rem;">
+                            <h2 class="section-header">Galería de imágenes</h2>
+                            <div class="gallery-grid-simple">
+                                {galleryImages.map((src) => (
+                                    <div class="gallery-item-simple">
+                                        <img
+                                            src={src}
+                                            alt="Imagen del partido"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )
+                }
             </div>
         </div>
     </main>
@@ -2421,6 +2525,39 @@ const refereeStats = game.id_arbitra
             }
             .event-icon {
                 left: -1.25rem;
+            }
+        }
+        .gallery-grid-simple {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+
+        .gallery-item-simple {
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #eee;
+            cursor: pointer;
+        }
+
+        .gallery-item-simple img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item-simple:hover img {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .gallery-grid-simple {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+                padding: 1rem;
             }
         }
     </style>
