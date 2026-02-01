@@ -72,6 +72,18 @@ export const CALENDAR = [
         tv: 'DAZN',
     },
     {
+        id: "real-madrid-vs-fc-barcelona",
+        team1: "Real Madrid",
+        team2: "FC Barcelona",
+        homeaway: "home",
+        date: "2026-02-05",
+        time: "21:00",
+        matchday: "Cuartos de Final",
+        competition: "Copa de la Reina",
+        stadium: 'Estadio Alfredo Di Stefano',
+        tv: 'Teledeporte',
+    },
+    {
         id: "real-madrid-vs-espanyol",
         team1: "Real Madrid",
         team2: "Espanyol",
