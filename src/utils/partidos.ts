@@ -92,6 +92,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
             return {
                 ...game,
+                mvp: cleanApiValue(game.mvp),
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
             };
@@ -583,20 +584,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 return Number(min);
             };
 
-            const isOwnGoal = (!goal.nombre_jugadora && goal.goleadora);
+            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || goal.tipo === 'propia' || goal.tipo === 'own_goal';
+            if (isOwnGoalInGolesTable) continue;
 
-            if (isOwnGoal) {
-                const playerName = goal.goleadora;
-                events.push({
-                    minute: parseMinute(goal.minuto),
-                    displayMinute: formatDisplayMinute(goal.minuto),
-                    type: 'own_goal',
-                    text: `${playerName} (propia puerta)`,
-                    player: playerName,
-                    team: 'local'
-                });
-                continue;
-            }
+
 
             let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
             let goalText = `Gol de ${playerName}`;
@@ -705,7 +696,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 minute: parseMinute(og.minuto),
                 displayMinute: formatDisplayMinute(og.minuto),
                 type: 'own_goal',
-                text: `${playerName} (propia puerta)`,
+                text: `${playerName} (P.P.)`,
                 player: playerName,
                 team: 'local'
             });
