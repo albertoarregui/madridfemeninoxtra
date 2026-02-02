@@ -28,14 +28,21 @@ export function groupAwardsByType(awards: AwardData[]): {
 /**
  * Format award date for display
  */
-export function formatAwardDate(dateString: string): string {
+export function formatAwardDate(dateString: string | Date): string {
+    if (!dateString) return "";
     try {
         const date = new Date(dateString);
-        return date.toLocaleDateString("es-ES", {
+        // Check if date is valid
+        if (isNaN(date.getTime())) return String(dateString);
+
+        const formatted = date.toLocaleDateString("es-ES", {
             month: "long",
             year: "numeric",
         });
+
+        // Return capitalized: "Octubre 2024"
+        return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     } catch {
-        return dateString;
+        return String(dateString);
     }
 }
