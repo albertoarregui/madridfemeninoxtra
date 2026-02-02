@@ -25,11 +25,39 @@ function getAwardImage(awardId: number) {
 
 // Map to widget format
 const awards = allAwards.map((award) => {
+    // Debug log
+    if (import.meta.env.DEV) {
+        console.log(
+            `[AwardWidget] ID: ${award.id_premio}, FechaRaw: '${award.fecha}'`,
+        );
+    }
+
     let date = new Date(award.fecha);
+
+    // Custom parser for DD/MM/YYYY or DD-MM-YYYY if standard fails
+    if (isNaN(date.getTime()) && typeof award.fecha === "string") {
+        const parts = award.fecha.split(/[-/]/);
+        if (parts.length === 3) {
+            // Assume DD-MM-YYYY -> Convert to YYYY-MM-DD
+            // But check if year is first or last. If first part > 31, it's YYYY.
+            if (parseInt(parts[0]) > 31) {
+                // YYYY-MM-DD already? Then why failed? Maybe spaces?
+                date = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+            } else {
+                // DD-MM-YYYY -> YYYY-MM-DD
+                date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+            }
+        }
+    }
+
     let monthName = "";
     let year: number | string = "----";
 
-    if (!award.fecha || isNaN(date.getTime())) {
+    if (isNaN(date.getTime())) {
+        console.warn(
+            `[AwardWidget] Date parsing failed completely for: ${award.fecha}`,
+        );
+        // Fallback: Try to guess from text? or just leave CONSULTAR
         monthName = "CONSULTAR";
         year = "----";
     } else {
