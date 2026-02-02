@@ -1,14 +1,17 @@
 ---
 import type { RankingStat, StreakData } from "../utils/rankings";
+import type { AwardData } from "../utils/awards";
 
 interface Props {
     rankingsData: RankingStat[];
     streaksData: StreakData[];
+    awardsData: AwardData[];
     seasons: string[];
     competitions: string[];
 }
 
-const { rankingsData, streaksData, seasons, competitions } = Astro.props;
+const { rankingsData, streaksData, awardsData, seasons, competitions } =
+    Astro.props;
 
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
@@ -58,6 +61,10 @@ const playerImageMap = Object.fromEntries(
                 >
                 <option value="streak_clean_sheet"
                     >Porterías a cero consecutivas</option
+                >
+                <option value="award_monthly">Mejor Jugadora del Mes</option>
+                <option value="award_season"
+                    >Mejor Jugadora de la Temporada</option
                 >
             </select>
             <svg
@@ -141,7 +148,7 @@ const playerImageMap = Object.fromEntries(
     </div>
 </div>
 
-<script define:vars={{ rankingsData, streaksData, playerImageMap }}>
+<script define:vars={{ rankingsData, streaksData, awardsData, playerImageMap }}>
     const typeSelect = document.getElementById("filtro-tipo");
     const seasonSelect = document.getElementById("filtro-temporada");
     const competitionSelect = document.getElementById("filtro-competicion");
@@ -286,6 +293,22 @@ const playerImageMap = Object.fromEntries(
             primaryKey: "streak_clean_sheet",
             isStreak: true,
         },
+        award_monthly: {
+            title: "Mejor Jugadora del Mes",
+            headers: ["Pos", "Jugadora", "Premios", "Meses"],
+            dataKeys: ["award_count"],
+            primaryKey: "award_count",
+            isAward: true,
+            awardType: "mes",
+        },
+        award_season: {
+            title: "Mejor Jugadora de la Temporada",
+            headers: ["Pos", "Jugadora", "Premios", "Temporadas"],
+            dataKeys: ["award_count"],
+            primaryKey: "award_count",
+            isAward: true,
+            awardType: "temporada",
+        },
     };
 
     function getPlayerImage(slug) {
@@ -361,6 +384,57 @@ const playerImageMap = Object.fromEntries(
                         Number(b[config.primaryKey]) -
                         Number(a[config.primaryKey]),
                 );
+        } else if (config.isAward) {
+            // Filter awards by type and season
+            const filteredAwards = awardsData.filter((award) => {
+                // Filter by award type
+                if (award.tipo !== config.awardType) return false;
+
+                // Filter by season
+                if (
+                    selectedSeason !== "todos" &&
+                    award.temporada !== selectedSeason
+                ) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Group by player
+            const playerMap = {};
+            filteredAwards.forEach((award) => {
+                if (!playerMap[award.id_jugadora]) {
+                    playerMap[award.id_jugadora] = {
+                        nombre: award.nombre,
+                        slug: award.slug,
+                        award_count: 0,
+                        periods: [], // To store months or seasons
+                    };
+                }
+                playerMap[award.id_jugadora].award_count++;
+
+                // Add period (month or season)
+                const period =
+                    config.awardType === "mes" ? award.mes : award.temporada;
+                if (
+                    period &&
+                    !playerMap[award.id_jugadora].periods.includes(period)
+                ) {
+                    playerMap[award.id_jugadora].periods.push(period);
+                }
+            });
+
+            // Convert to array and add periods string
+            sortedPlayers = Object.values(playerMap)
+                .filter((p) => p.award_count > 0)
+                .map((p) => ({
+                    ...p,
+                    periods_text:
+                        p.periods.slice(0, 3).join(", ") +
+                        (p.periods.length > 3 ? "..." : ""),
+                }))
+                .sort((a, b) => b.award_count - a.award_count);
         } else {
             const playerMap = {};
 
@@ -429,6 +503,13 @@ const playerImageMap = Object.fromEntries(
                         )
                         .join("");
 
+                    // Add periods column for awards
+                    const periodsCell = config.isAward
+                        ? `
+                    <td class="stat-cell text-center" style="${extraStyle}">${player.periods_text || ""}</td>
+                    `
+                        : "";
+
                     return `
                     <tr>
                         <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
@@ -447,6 +528,7 @@ const playerImageMap = Object.fromEntries(
                             </a>
                         </td>
                         ${valueCells}
+                        ${periodsCell}
                     </tr>
                 `;
                 })

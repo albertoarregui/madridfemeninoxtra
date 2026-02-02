@@ -6,6 +6,12 @@ import {
     fetchPlayerDebut,
     fetchPlayerTrajectory,
 } from "../../utils/players";
+import { fetchPlayerAwards } from "../../utils/awards";
+import {
+    getPlayerAwards,
+    groupAwardsByType,
+    formatAwardDate,
+} from "../../utils/playerAwards";
 import ligaFLogo from "../../assets/competiciones/liga_f.png";
 import uwclLogo from "../../assets/competiciones/uwcl.png";
 import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
@@ -148,6 +154,32 @@ const debutDisplay =
           }`
         : "-";
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
+
+// Fetch player awards
+const allAwards = await fetchPlayerAwards();
+const playerAwards = getPlayerAwards(allAwards, player.id_jugadora);
+const groupedAwards = groupAwardsByType(playerAwards);
+
+// Import award images dynamically
+const awardMonthlyImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadora_del_mes/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+const awardSeasonImages = import.meta.glob<{ default: ImageMetadata }>(
+    "/src/assets/jugadora_de_la_temporada/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+function getAwardImage(awardId: number, awardType: string) {
+    const images = awardType === "mes" ? awardMonthlyImages : awardSeasonImages;
+    const matchingPath = Object.keys(images).find(
+        (path) =>
+            path.includes(`/${awardId}.`) ||
+            path.includes(`/award_${awardId}.`),
+    );
+    return matchingPath ? images[matchingPath].default.src : null;
+}
+
 const getPlayerCoordinates = (pos: string) => {
     const p = pos.toLowerCase();
     let left = "50%";
@@ -398,6 +430,109 @@ ${player.pais_origin}`}
                     </div>
                 </div>
             </section>
+
+            {/* Awards Section */}
+            {
+                playerAwards && playerAwards.length > 0 && (
+                    <section class="awards-section">
+                        <h2 class="section-header">
+                            🏆 PREMIOS Y RECONOCIMIENTOS
+                        </h2>
+                        <div class="awards-content">
+                            {/* Monthly Awards */}
+                            {groupedAwards.monthly.length > 0 && (
+                                <div class="award-category">
+                                    <h3 class="award-category-title">
+                                        Mejor Jugadora del Mes (
+                                        {groupedAwards.monthly.length})
+                                    </h3>
+                                    <div class="awards-grid">
+                                        {groupedAwards.monthly.map((award) => {
+                                            const awardImage = getAwardImage(
+                                                award.id_premio,
+                                                award.tipo,
+                                            );
+                                            return (
+                                                <div class="award-card monthly">
+                                                    {awardImage && (
+                                                        <div
+                                                            class="award-image-bg"
+                                                            style={`background-image: url(${awardImage});`}
+                                                        />
+                                                    )}
+                                                    <div class="award-overlay" />
+                                                    <div class="award-content">
+                                                        <div class="award-icon">
+                                                            🏅
+                                                        </div>
+                                                        <div class="award-details">
+                                                            <div class="award-period">
+                                                                {formatAwardDate(
+                                                                    award.fecha,
+                                                                )}
+                                                            </div>
+                                                            <div class="award-title">
+                                                                {award.titulo ||
+                                                                    "Mejor Jugadora del Mes"}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Seasonal Awards */}
+                            {groupedAwards.seasonal.length > 0 && (
+                                <div class="award-category">
+                                    <h3 class="award-category-title">
+                                        Mejor Jugadora de la Temporada (
+                                        {groupedAwards.seasonal.length})
+                                    </h3>
+                                    <div class="awards-grid">
+                                        {groupedAwards.seasonal.map((award) => {
+                                            const awardImage = getAwardImage(
+                                                award.id_premio,
+                                                award.tipo,
+                                            );
+                                            return (
+                                                <div class="award-card seasonal">
+                                                    {awardImage && (
+                                                        <div
+                                                            class="award-image-bg"
+                                                            style={`background-image: url(${awardImage});`}
+                                                        />
+                                                    )}
+                                                    <div class="award-overlay" />
+                                                    <div class="award-content">
+                                                        <div class="award-icon">
+                                                            🏆
+                                                        </div>
+                                                        <div class="award-details">
+                                                            <div class="award-period">
+                                                                {
+                                                                    award.temporada
+                                                                }
+                                                            </div>
+                                                            <div class="award-title">
+                                                                {award.titulo ||
+                                                                    "Mejor Jugadora de la Temporada"}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )
+            }
+
             <section class="teams-section">
                 <h2 class="section-header">TRAYECTORIA</h2>
                 <div class="teams-content">
@@ -1222,6 +1357,197 @@ Asistencias"
         }
         .stats-table table {
             min-width: 600px;
+        }
+    }
+
+    /* Awards Section Styles */
+    .awards-section {
+        grid-column: 1 / -1;
+        background: white;
+        border-radius: 0;
+        overflow: hidden;
+    }
+
+    .awards-content {
+        padding: 1.5rem;
+    }
+
+    .award-category {
+        margin-bottom: 2.5rem;
+    }
+
+    .award-category:last-child {
+        margin-bottom: 0;
+    }
+
+    .award-category-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #fbbf24;
+        text-transform: none;
+    }
+
+    .awards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
+
+    .award-card {
+        position: relative;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        aspect-ratio: 3 / 4;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+    }
+
+    .award-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .award-card.monthly {
+        border: 3px solid #fbbf24;
+    }
+
+    .award-card.monthly:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 12px 24px rgba(251, 191, 36, 0.3);
+    }
+
+    .award-card.seasonal {
+        border: 3px solid #ef4444;
+    }
+
+    .award-card.seasonal:hover {
+        border-color: #dc2626;
+        box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
+    }
+
+    .award-image-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 1;
+    }
+
+    .award-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.1) 0%,
+            rgba(0, 0, 0, 0.3) 50%,
+            rgba(0, 0, 0, 0.7) 100%
+        );
+        z-index: 2;
+    }
+
+    .award-card.monthly .award-overlay {
+        background: linear-gradient(
+            to bottom,
+            rgba(251, 191, 36, 0.1) 0%,
+            rgba(251, 191, 36, 0.3) 50%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
+    }
+
+    .award-card.seasonal .award-overlay {
+        background: linear-gradient(
+            to bottom,
+            rgba(239, 68, 68, 0.1) 0%,
+            rgba(239, 68, 68, 0.3) 50%,
+            rgba(0, 0, 0, 0.8) 100%
+        );
+    }
+
+    .award-content {
+        position: relative;
+        z-index: 3;
+        height: 100%;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .award-icon {
+        font-size: 3rem;
+        line-height: 1;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        margin-bottom: 0.5rem;
+    }
+
+    .award-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .award-period {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #ffffff;
+        text-transform: uppercase;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        letter-spacing: 0.5px;
+    }
+
+    .award-title {
+        font-size: 0.95rem;
+        color: #f0f0f0;
+        line-height: 1.4;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .awards-section {
+            grid-row: auto;
+        }
+
+        .awards-content {
+            padding: 1rem;
+        }
+
+        .awards-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .award-card {
+            aspect-ratio: 5 / 3;
+        }
+
+        .award-icon {
+            font-size: 2.5rem;
+        }
+
+        .award-period {
+            font-size: 1.1rem;
+        }
+
+        .award-title {
+            font-size: 0.85rem;
         }
     }
 </style>
