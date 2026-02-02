@@ -20,8 +20,8 @@ export function groupAwardsByType(awards: AwardData[]): {
     seasonal: AwardData[];
 } {
     return {
-        monthly: awards.filter((award) => award.tipo === "mes"),
-        seasonal: awards.filter((award) => award.tipo === "temporada"),
+        monthly: awards.filter((award) => award.tipo === "MVP_MES"),
+        seasonal: awards.filter((award) => award.tipo === "MVP_TEMPORADA"),
     };
 }
 
