@@ -6,12 +6,7 @@ import {
     fetchPlayerDebut,
     fetchPlayerTrajectory,
 } from "../../utils/players";
-import { fetchPlayerAwards } from "../../utils/awards";
-import {
-    getPlayerAwards,
-    groupAwardsByType,
-    formatAwardDate,
-} from "../../utils/playerAwards";
+
 import ligaFLogo from "../../assets/competiciones/liga_f.png";
 import uwclLogo from "../../assets/competiciones/uwcl.png";
 import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
@@ -154,34 +149,6 @@ const debutDisplay =
           }`
         : "-";
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
-
-// Fetch player awards
-const allAwards = await fetchPlayerAwards();
-const playerAwards = getPlayerAwards(allAwards, player.id_jugadora);
-const groupedAwards = groupAwardsByType(playerAwards);
-console.log(`[DEBUG] Awards for ${player.nombre}:`, playerAwards.length);
-if (playerAwards.length > 0) console.log(JSON.stringify(playerAwards, null, 2));
-
-// Import award images dynamically
-const awardMonthlyImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadora_del_mes/*.{png,jpg,jpeg,webp}",
-    { eager: true },
-);
-const awardSeasonImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadora_de_la_temporada/*.{png,jpg,jpeg,webp}",
-    { eager: true },
-);
-
-function getAwardImage(awardId: number, awardType: string) {
-    const images =
-        awardType === "MVP_MES" ? awardMonthlyImages : awardSeasonImages;
-    const matchingPath = Object.keys(images).find(
-        (path) =>
-            path.includes(`/${awardId}.`) ||
-            path.includes(`/award_${awardId}.`),
-    );
-    return matchingPath ? images[matchingPath].default.src : null;
-}
 
 const getPlayerCoordinates = (pos: string) => {
     const p = pos.toLowerCase();
@@ -462,111 +429,6 @@ ${player.pais_origin}`}
                         </div>
                     ) : (
                         <p class="no-data">Sin datos disponibles</p>
-                    )
-                }
-            </div>
-        </section>
-        <section
-            class="awards-section"
-            style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-top: 2rem;"
-        >
-            <h2 class="section-header">PREMIOS Y RECONOCIMIENTOS</h2>
-            <div class="awards-content p-6">
-                {/* Monthly Awards */}
-                {
-                    groupedAwards.monthly.length > 0 && (
-                        <div class="award-category mb-8">
-                            <h3 class="text-lg font-bold text-[#1d274e] mb-4 uppercase tracking-wide flex items-center gap-3 border-l-4 border-[#ffde59] pl-4">
-                                Mejor Jugadora del Mes{" "}
-                                <span class="text-gray-500 text-sm">
-                                    ({groupedAwards.monthly.length})
-                                </span>
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {groupedAwards.monthly.map((award) => {
-                                    const awardImage = getAwardImage(
-                                        award.id_premio,
-                                        award.tipo,
-                                    );
-                                    return (
-                                        <div class="group relative overflow-hidden rounded-[25px] bg-[#151e42] shadow-lg border border-white/5 hover:border-[#ffde59]/50 transition-all duration-300 hover:-translate-y-2 aspect-[3/4]">
-                                            {/* Background Image */}
-                                            {awardImage && (
-                                                <div class="absolute inset-0 z-0">
-                                                    <img
-                                                        src={awardImage}
-                                                        alt={award.titulo}
-                                                        class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
-                                                    />
-                                                    <div class="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#1d274e]/30 to-transparent" />
-                                                </div>
-                                            )}
-
-                                            {/* Content */}
-                                            <div class="relative z-10 p-6 flex flex-col h-full justify-end items-center text-center">
-                                                <p class="text-[#ffde59] text-[10px] font-black uppercase tracking-[0.2em] mb-1 drop-shadow-md">
-                                                    MEJOR JUGADORA
-                                                </p>
-
-                                                <h3 class="text-2xl font-black text-white uppercase tracking-wide leading-none drop-shadow-xl">
-                                                    {formatAwardDate(
-                                                        award.fecha,
-                                                    )}
-                                                </h3>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )
-                }
-
-                {/* Seasonal Awards */}
-                {
-                    groupedAwards.seasonal.length > 0 && (
-                        <div class="award-category">
-                            <h3 class="text-lg font-bold text-[#1d274e] mb-4 uppercase tracking-wide flex items-center gap-3 border-l-4 border-[#ef4444] pl-4">
-                                Mejor Jugadora de la Temporada{" "}
-                                <span class="text-gray-500 text-sm">
-                                    ({groupedAwards.seasonal.length})
-                                </span>
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {groupedAwards.seasonal.map((award) => {
-                                    const awardImage = getAwardImage(
-                                        award.id_premio,
-                                        award.tipo,
-                                    );
-                                    return (
-                                        <div class="group relative overflow-hidden rounded-[25px] bg-[#2e0b0b] shadow-lg border border-white/5 hover:border-[#ef4444]/50 transition-all duration-300 hover:-translate-y-2 aspect-[3/4]">
-                                            {/* Background Image */}
-                                            {awardImage && (
-                                                <div class="absolute inset-0 z-0">
-                                                    <img
-                                                        src={awardImage}
-                                                        alt={award.titulo}
-                                                        class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
-                                                    />
-                                                    <div class="absolute inset-0 bg-gradient-to-t from-[#1a0505] via-[#450a0a]/30 to-transparent" />
-                                                </div>
-                                            )}
-
-                                            {/* Content */}
-                                            <div class="relative z-10 p-6 flex flex-col h-full justify-end items-center text-center">
-                                                <p class="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mb-1 drop-shadow-md">
-                                                    MEJOR JUGADORA
-                                                </p>
-
-                                                <h3 class="text-2xl font-black text-white uppercase tracking-wide leading-none drop-shadow-xl">
-                                                    {award.temporada}
-                                                </h3>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
                     )
                 }
             </div>
