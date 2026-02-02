@@ -159,6 +159,8 @@ const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 const allAwards = await fetchPlayerAwards();
 const playerAwards = getPlayerAwards(allAwards, player.id_jugadora);
 const groupedAwards = groupAwardsByType(playerAwards);
+console.log(`[DEBUG] Awards for ${player.nombre}:`, playerAwards.length);
+if (playerAwards.length > 0) console.log(JSON.stringify(playerAwards, null, 2));
 
 // Import award images dynamically
 const awardMonthlyImages = import.meta.glob<{ default: ImageMetadata }>(
@@ -430,1124 +432,1077 @@ ${player.pais_origin}`}
                     </div>
                 </div>
             </section>
+        </div>
 
-            {/* Awards Section */}
-            {
-                playerAwards && playerAwards.length > 0 && (
-                    <section class="awards-section">
-                        <h2 class="section-header">
-                            🏆 PREMIOS Y RECONOCIMIENTOS
-                        </h2>
-                        <div class="awards-content">
-                            {/* Monthly Awards */}
-                            {groupedAwards.monthly.length > 0 && (
-                                <div class="award-category">
-                                    <h3 class="award-category-title">
-                                        Mejor Jugadora del Mes (
-                                        {groupedAwards.monthly.length})
-                                    </h3>
-                                    <div class="awards-grid">
-                                        {groupedAwards.monthly.map((award) => {
-                                            const awardImage = getAwardImage(
-                                                award.id_premio,
-                                                award.tipo,
-                                            );
-                                            return (
-                                                <div class="award-card monthly">
-                                                    {awardImage && (
-                                                        <div
-                                                            class="award-image-bg"
-                                                            style={`background-image: url(${awardImage});`}
+        {/* Awards Section */}
+        {
+            playerAwards && playerAwards.length > 0 && (
+                <section class="awards-section mb-12">
+                    <h2 class="section-header">PREMIOS Y RECONOCIMIENTOS</h2>
+                    <div class="awards-content pt-6">
+                        {/* Monthly Awards */}
+                        {groupedAwards.monthly.length > 0 && (
+                            <div class="award-category mb-8">
+                                <h3 class="text-xl font-bold text-[#1d274e] mb-4 uppercase tracking-wide border-b-2 border-[#ffde59] pb-2 inline-block">
+                                    Mejor Jugadora del Mes (
+                                    {groupedAwards.monthly.length})
+                                </h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                    {groupedAwards.monthly.map((award) => {
+                                        const awardImage = getAwardImage(
+                                            award.id_premio,
+                                            award.tipo,
+                                        );
+                                        return (
+                                            <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1d274e] to-[#151e42] shadow-lg border border-white/5 hover:border-[#ffde59]/50 transition-all duration-300 hover:-translate-y-1 aspect-[3/4]">
+                                                {/* Background Image */}
+                                                {awardImage && (
+                                                    <div class="absolute inset-0 z-0">
+                                                        <img
+                                                            src={awardImage}
+                                                            alt={award.titulo}
+                                                            class="w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-500"
                                                         />
-                                                    )}
-                                                    <div class="award-overlay" />
-                                                    <div class="award-content">
-                                                        <div class="award-icon">
-                                                            🏅
-                                                        </div>
-                                                        <div class="award-details">
-                                                            <div class="award-period">
-                                                                {formatAwardDate(
-                                                                    award.fecha,
-                                                                )}
-                                                            </div>
-                                                            <div class="award-title">
-                                                                {award.titulo ||
-                                                                    "Mejor Jugadora del Mes"}
-                                                            </div>
-                                                        </div>
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-[#151e42] via-[#1d274e]/40 to-transparent" />
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+                                                )}
 
-                            {/* Seasonal Awards */}
-                            {groupedAwards.seasonal.length > 0 && (
-                                <div class="award-category">
-                                    <h3 class="award-category-title">
-                                        Mejor Jugadora de la Temporada (
-                                        {groupedAwards.seasonal.length})
-                                    </h3>
-                                    <div class="awards-grid">
-                                        {groupedAwards.seasonal.map((award) => {
-                                            const awardImage = getAwardImage(
-                                                award.id_premio,
-                                                award.tipo,
-                                            );
-                                            return (
-                                                <div class="award-card seasonal">
-                                                    {awardImage && (
-                                                        <div
-                                                            class="award-image-bg"
-                                                            style={`background-image: url(${awardImage});`}
-                                                        />
-                                                    )}
-                                                    <div class="award-overlay" />
-                                                    <div class="award-content">
-                                                        <div class="award-icon">
-                                                            🏆
-                                                        </div>
-                                                        <div class="award-details">
-                                                            <div class="award-period">
-                                                                {
-                                                                    award.temporada
-                                                                }
-                                                            </div>
-                                                            <div class="award-title">
-                                                                {award.titulo ||
-                                                                    "Mejor Jugadora de la Temporada"}
-                                                            </div>
-                                                        </div>
+                                                {/* Content */}
+                                                <div class="relative z-10 p-6 flex flex-col h-full justify-end items-center text-center">
+                                                    <div class="mb-3">
+                                                        <span class="px-3 py-1 bg-[#ffde59] text-[#1d274e] text-xs font-bold uppercase rounded-full tracking-wider shadow-sm">
+                                                            MES
+                                                        </span>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-                )
-            }
 
-            <section class="teams-section">
-                <h2 class="section-header">TRAYECTORIA</h2>
-                <div class="teams-content">
-                    {
-                        trajectory && trajectory.length > 0 ? (
-                            <div class="trajectory-timeline">
-                                {" "}
-                                {trajectory.map((item) => (
-                                    <div class="timeline-item">
-                                        {" "}
-                                        <div class="timeline-marker" />{" "}
-                                        <div class="timeline-content">
-                                            {" "}
-                                            <div class="timeline-years">
-                                                {" "}
-                                                {item.anio_inicio} -
-                                                {item.anio_fin || "Act."}{" "}
-                                            </div>{" "}
-                                            <div class="timeline-club">
-                                                {item.club}
+                                                    <h3 class="text-2xl font-black text-white uppercase tracking-wide mb-1 leading-tight">
+                                                        {formatAwardDate(
+                                                            award.fecha,
+                                                        )}
+                                                    </h3>
+
+                                                    <p class="text-gray-300 text-sm font-medium uppercase tracking-wider">
+                                                        {award.titulo ||
+                                                            "Mejor Jugadora"}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>{" "}
-                                    </div>
-                                ))}{" "}
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        ) : (
-                            <p class="no-data">Sin datos disponibles</p>
-                        )
-                    }
-                </div>
-            </section>
-            <section class="stats-section">
-                <h2 class="section-header">ESTADÍSTICAS</h2>
+                        )}
+
+                        {/* Seasonal Awards */}
+                        {groupedAwards.seasonal.length > 0 && (
+                            <div class="award-category">
+                                <h3 class="text-xl font-bold text-[#1d274e] mb-4 uppercase tracking-wide border-b-2 border-[#ef4444] pb-2 inline-block">
+                                    Mejor Jugadora de la Temporada (
+                                    {groupedAwards.seasonal.length})
+                                </h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                    {groupedAwards.seasonal.map((award) => {
+                                        const awardImage = getAwardImage(
+                                            award.id_premio,
+                                            award.tipo,
+                                        );
+                                        return (
+                                            <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#7f1d1d] to-[#450a0a] shadow-lg border border-white/5 hover:border-[#ef4444]/50 transition-all duration-300 hover:-translate-y-1 aspect-[3/4]">
+                                                {/* Background Image */}
+                                                {awardImage && (
+                                                    <div class="absolute inset-0 z-0">
+                                                        <img
+                                                            src={awardImage}
+                                                            alt={award.titulo}
+                                                            class="w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-500"
+                                                        />
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-[#450a0a] via-[#7f1d1d]/40 to-transparent" />
+                                                    </div>
+                                                )}
+
+                                                {/* Content */}
+                                                <div class="relative z-10 p-6 flex flex-col h-full justify-end items-center text-center">
+                                                    <div class="mb-3">
+                                                        <span class="px-3 py-1 bg-white text-[#b91c1c] text-xs font-bold uppercase rounded-full tracking-wider shadow-sm">
+                                                            TEMPORADA
+                                                        </span>
+                                                    </div>
+
+                                                    <h3 class="text-2xl font-black text-white uppercase tracking-wide mb-1 leading-tight">
+                                                        {award.temporada}
+                                                    </h3>
+
+                                                    <p class="text-gray-200 text-sm font-medium uppercase tracking-wider">
+                                                        {award.titulo ||
+                                                            "Mejor Jugadora"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )
+        }
+
+        <section class="teams-section">
+            <h2 class="section-header">TRAYECTORIA</h2>
+            <div class="teams-content">
                 {
-                    playerStats ? (
-                        <table class="stats-table">
+                    trajectory && trajectory.length > 0 ? (
+                        <div class="trajectory-timeline">
                             {" "}
-                            <thead>
+                            {trajectory.map((item) => (
+                                <div class="timeline-item">
+                                    {" "}
+                                    <div class="timeline-marker" />{" "}
+                                    <div class="timeline-content">
+                                        {" "}
+                                        <div class="timeline-years">
+                                            {" "}
+                                            {item.anio_inicio} -
+                                            {item.anio_fin || "Act."}{" "}
+                                        </div>{" "}
+                                        <div class="timeline-club">
+                                            {item.club}
+                                        </div>
+                                    </div>{" "}
+                                </div>
+                            ))}{" "}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )
+                }
+            </div>
+        </section>
+        <section class="stats-section">
+            <h2 class="section-header">ESTADÍSTICAS</h2>
+            {
+                playerStats ? (
+                    <table class="stats-table">
+                        {" "}
+                        <thead>
+                            {" "}
+                            <tr>
                                 {" "}
-                                <tr>
-                                    {" "}
-                                    <th>Temporada</th>{" "}
-                                    <th title="Convocatorias">Conv.</th>{" "}
-                                    <th title="Partidos">Part.</th>{" "}
-                                    <th title="Titularidades">Tit.</th>{" "}
-                                    <th title="Minutos">Min.</th>{" "}
-                                    <th
-                                        title="Cambio
+                                <th>Temporada</th>{" "}
+                                <th title="Convocatorias">Conv.</th>{" "}
+                                <th title="Partidos">Part.</th>{" "}
+                                <th title="Titularidades">Tit.</th>{" "}
+                                <th title="Minutos">Min.</th>{" "}
+                                <th
+                                    title="Cambio
 Entrada"
-                                    >
-                                        Ent.
-                                    </th>{" "}
-                                    <th title="Cambio Salida">Sal.</th>{" "}
-                                    <th title="Goles">Goles</th>{" "}
-                                    <th title="Asistencias">Asist.</th>{" "}
-                                    <th
-                                        title="Goles +
+                                >
+                                    Ent.
+                                </th>{" "}
+                                <th title="Cambio Salida">Sal.</th>{" "}
+                                <th title="Goles">Goles</th>{" "}
+                                <th title="Asistencias">Asist.</th>{" "}
+                                <th
+                                    title="Goles +
 Asistencias"
-                                    >
-                                        G+A
-                                    </th>{" "}
-                                    <th title="Victorias">Vict.</th>
-                                    {playerStats.jugadora.es_portera && (
-                                        <th title="Porterías a cero">P.0</th>
-                                    )}
-                                    <th title="Tarjetas Amarillas">TA</th>{" "}
-                                    <th title="Tarjetas Rojas">TR</th>{" "}
-                                    <th title="Capitanías">Cap.</th>{" "}
-                                </tr>{" "}
-                            </thead>{" "}
-                            <tbody>
-                                {playerStats.estadisticas.map((season: any) => (
-                                    <>
-                                        {" "}
-                                        <tr
-                                            class="season-total-row"
-                                            onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
-                                            style="cursor: pointer;"
-                                        >
-                                            {" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.temporada}{" "}
-                                                </strong>{" "}
-                                                <span class="toggle-icon">
-                                                    {" "}
-                                                    ▼{" "}
-                                                </span>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.convocatorias}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.partidos}{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                <strong>
-                                                    {" "}
-                                                    {
-                                                        season.total
-                                                            .titularidades
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {season.total.minutos}{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {
-                                                        season.total
-                                                            .cambio_entrada
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.cambio_salida}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.goles}{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {
-                                                        season.total.asistencias
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {
-                                                        season.total
-                                                            .goles_asistencias
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.victorias}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            {playerStats.jugadora
-                                                .es_portera && (
-                                                <td>
-                                                    {" "}
-                                                    <strong>
-                                                        {" "}
-                                                        {
-                                                            season.total
-                                                                .porterias_cero
-                                                        }{" "}
-                                                    </strong>{" "}
-                                                </td>
-                                            )}{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {
-                                                        season.total
-                                                            .tarjetas_amarillas
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {
-                                                        season.total
-                                                            .tarjetas_rojas
-                                                    }{" "}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                            <td>
-                                                {" "}
-                                                <strong>
-                                                    {" "}
-                                                    {season.total.capitanias}
-                                                </strong>{" "}
-                                            </td>{" "}
-                                        </tr>{" "}
-                                        {season.competiciones.map(
-                                            (comp: any) => (
-                                                <tr
-                                                    class={`competition-row season-${season.temporada.replace(
-                                                        /\//g,
-                                                        "-",
-                                                    )}`}
-                                                    style="display: none;"
-                                                >
-                                                    {" "}
-                                                    <td class="competition-name">
-                                                        {" "}
-                                                        {competitionLogos[
-                                                            comp.competicion
-                                                        ] && (
-                                                            <img
-                                                                src={
-                                                                    competitionLogos[
-                                                                        comp
-                                                                            .competicion
-                                                                    ].src
-                                                                }
-                                                                alt={
-                                                                    comp.competicion
-                                                                }
-                                                                class="competition-logo"
-                                                            />
-                                                        )}{" "}
-                                                        {comp.competicion}{" "}
-                                                    </td>
-                                                    <td>
-                                                        {" "}
-                                                        {
-                                                            comp.convocatorias
-                                                        }{" "}
-                                                    </td>{" "}
-                                                    <td>{comp.partidos}</td>{" "}
-                                                    <td>
-                                                        {
-                                                            comp.titularidades
-                                                        }{" "}
-                                                    </td>{" "}
-                                                    <td>{comp.minutos}</td>{" "}
-                                                    <td>
-                                                        {" "}
-                                                        {comp.cambio_entrada}
-                                                    </td>{" "}
-                                                    <td>
-                                                        {" "}
-                                                        {
-                                                            comp.cambio_salida
-                                                        }{" "}
-                                                    </td>{" "}
-                                                    <td>{comp.goles}</td>
-                                                    <td>
-                                                        {comp.asistencias}
-                                                    </td>{" "}
-                                                    <td>
-                                                        {" "}
-                                                        {
-                                                            comp.goles_asistencias
-                                                        }{" "}
-                                                    </td>
-                                                    <td>{comp.victorias}</td>{" "}
-                                                    {playerStats.jugadora
-                                                        .es_portera && (
-                                                        <td>
-                                                            {" "}
-                                                            {
-                                                                comp.porterias_cero
-                                                            }{" "}
-                                                        </td>
-                                                    )}{" "}
-                                                    <td>
-                                                        {" "}
-                                                        {
-                                                            comp.tarjetas_amarillas
-                                                        }{" "}
-                                                    </td>{" "}
-                                                    <td>
-                                                        {
-                                                            comp.tarjetas_rojas
-                                                        }{" "}
-                                                    </td>{" "}
-                                                    <td>
-                                                        {comp.capitanias}
-                                                    </td>{" "}
-                                                </tr>
-                                            ),
-                                        )}{" "}
-                                    </>
-                                ))}{" "}
-                                <tr class="career-total-row">
+                                >
+                                    G+A
+                                </th>{" "}
+                                <th title="Victorias">Vict.</th>
+                                {playerStats.jugadora.es_portera && (
+                                    <th title="Porterías a cero">P.0</th>
+                                )}
+                                <th title="Tarjetas Amarillas">TA</th>{" "}
+                                <th title="Tarjetas Rojas">TR</th>{" "}
+                                <th title="Capitanías">Cap.</th>{" "}
+                            </tr>{" "}
+                        </thead>{" "}
+                        <tbody>
+                            {playerStats.estadisticas.map((season: any) => (
+                                <>
                                     {" "}
-                                    <td>
+                                    <tr
+                                        class="season-total-row"
+                                        onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                        style="cursor: pointer;"
+                                    >
                                         {" "}
-                                        <strong>TOTAL</strong>{" "}
-                                    </td>
-                                    <td>
-                                        {" "}
-                                        <strong>
+                                        <td>
                                             {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .convocatorias
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        <strong>
+                                            <strong>
+                                                {" "}
+                                                {season.temporada}{" "}
+                                            </strong>{" "}
+                                            <span class="toggle-icon">
+                                                {" "}
+                                                ▼{" "}
+                                            </span>{" "}
+                                        </td>{" "}
+                                        <td>
                                             {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .partidos
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
+                                            <strong>
+                                                {" "}
+                                                {season.total.convocatorias}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
                                             {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .titularidades
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {
-                                                playerStats.total_carrera
-                                                    .minutos
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
+                                            <strong>
+                                                {" "}
+                                                {season.total.partidos}{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            <strong>
+                                                {" "}
+                                                {
+                                                    season.total.titularidades
+                                                }{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
                                             {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .cambio_entrada
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .cambio_salida
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {
-                                                playerStats.total_carrera.goles
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .asistencias
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .goles_asistencias
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
-                                        {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .victorias
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>
-                                    {playerStats.jugadora.es_portera && (
+                                            <strong>
+                                                {season.total.minutos}{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
                                         <td>
                                             {" "}
                                             <strong>
                                                 {" "}
                                                 {
-                                                    playerStats.total_carrera
-                                                        .porterias_cero
+                                                    season.total.cambio_entrada
                                                 }{" "}
                                             </strong>{" "}
-                                        </td>
-                                    )}{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {season.total.cambio_salida}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {season.total.goles}{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {season.total.asistencias}{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {
+                                                    season.total
+                                                        .goles_asistencias
+                                                }{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {season.total.victorias}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        {playerStats.jugadora.es_portera && (
+                                            <td>
+                                                {" "}
+                                                <strong>
+                                                    {" "}
+                                                    {
+                                                        season.total
+                                                            .porterias_cero
+                                                    }{" "}
+                                                </strong>{" "}
+                                            </td>
+                                        )}{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {
+                                                    season.total
+                                                        .tarjetas_amarillas
+                                                }{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {
+                                                    season.total.tarjetas_rojas
+                                                }{" "}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                        <td>
+                                            {" "}
+                                            <strong>
+                                                {" "}
+                                                {season.total.capitanias}
+                                            </strong>{" "}
+                                        </td>{" "}
+                                    </tr>{" "}
+                                    {season.competiciones.map((comp: any) => (
+                                        <tr
+                                            class={`competition-row season-${season.temporada.replace(
+                                                /\//g,
+                                                "-",
+                                            )}`}
+                                            style="display: none;"
+                                        >
+                                            {" "}
+                                            <td class="competition-name">
+                                                {" "}
+                                                {competitionLogos[
+                                                    comp.competicion
+                                                ] && (
+                                                    <img
+                                                        src={
+                                                            competitionLogos[
+                                                                comp.competicion
+                                                            ].src
+                                                        }
+                                                        alt={comp.competicion}
+                                                        class="competition-logo"
+                                                    />
+                                                )}{" "}
+                                                {comp.competicion}{" "}
+                                            </td>
+                                            <td> {comp.convocatorias} </td>{" "}
+                                            <td>{comp.partidos}</td>{" "}
+                                            <td>{comp.titularidades} </td>{" "}
+                                            <td>{comp.minutos}</td>{" "}
+                                            <td> {comp.cambio_entrada}</td>{" "}
+                                            <td> {comp.cambio_salida} </td>{" "}
+                                            <td>{comp.goles}</td>
+                                            <td>{comp.asistencias}</td>{" "}
+                                            <td> {comp.goles_asistencias} </td>
+                                            <td>{comp.victorias}</td>{" "}
+                                            {playerStats.jugadora
+                                                .es_portera && (
+                                                <td> {comp.porterias_cero} </td>
+                                            )}{" "}
+                                            <td> {comp.tarjetas_amarillas} </td>{" "}
+                                            <td>{comp.tarjetas_rojas} </td>{" "}
+                                            <td>{comp.capitanias}</td>{" "}
+                                        </tr>
+                                    ))}{" "}
+                                </>
+                            ))}{" "}
+                            <tr class="career-total-row">
+                                {" "}
+                                <td>
+                                    {" "}
+                                    <strong>TOTAL</strong>{" "}
+                                </td>
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .convocatorias
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera.partidos
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .titularidades
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {playerStats.total_carrera.minutos}{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .cambio_entrada
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .cambio_salida
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {playerStats.total_carrera.goles}{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .asistencias
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera
+                                                .goles_asistencias
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera.victorias
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>
+                                {playerStats.jugadora.es_portera && (
                                     <td>
                                         {" "}
                                         <strong>
                                             {" "}
                                             {
                                                 playerStats.total_carrera
-                                                    .tarjetas_amarillas
+                                                    .porterias_cero
                                             }{" "}
                                         </strong>{" "}
-                                    </td>{" "}
-                                    <td>
+                                    </td>
+                                )}{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
                                         {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .tarjetas_rojas
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                    <td>
+                                        {
+                                            playerStats.total_carrera
+                                                .tarjetas_amarillas
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
                                         {" "}
-                                        <strong>
-                                            {" "}
-                                            {
-                                                playerStats.total_carrera
-                                                    .capitanias
-                                            }{" "}
-                                        </strong>{" "}
-                                    </td>{" "}
-                                </tr>{" "}
-                            </tbody>{" "}
-                        </table>
-                    ) : (
-                        <p class="no-data">
-                            No hay estadísticas disponibles para esta
-                            jugadora.{" "}
-                        </p>
-                    )
-                }
-            </section>
-        </div>
-    </main>
-</Layout>
-<script is:inline>
-    function toggleSeason(season) {
-        const rows = document.querySelectorAll(
-            `.competition-row.season-${season}`,
-        );
-        const icon = document.querySelector(
-            `.season-total-row[onclick*="${season}"] .toggle-icon`,
-        );
-        rows.forEach((row) => {
-            if (row.style.display === "none") {
-                row.style.display = "table-row";
-                if (icon) icon.textContent = "▲";
-            } else {
-                row.style.display = "none";
-                if (icon) icon.textContent = "▼";
+                                        {
+                                            playerStats.total_carrera
+                                                .tarjetas_rojas
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                                <td>
+                                    {" "}
+                                    <strong>
+                                        {" "}
+                                        {
+                                            playerStats.total_carrera.capitanias
+                                        }{" "}
+                                    </strong>{" "}
+                                </td>{" "}
+                            </tr>{" "}
+                        </tbody>{" "}
+                    </table>
+                ) : (
+                    <p class="no-data">
+                        No hay estadísticas disponibles para esta jugadora.{" "}
+                    </p>
+                )
             }
-        });
-    }
-</script>
-<style>
-    .player-profile-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-    }
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        text-decoration: none;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        transition: color 0.3s;
-    }
-    .back-link:hover {
-        color: #ffde59;
-    }
-    .profile-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-    }
-    .section-header {
-        background: #ffde59;
-        color: #2b2b2b;
-        padding: 0.75rem 1rem;
-        margin: 0;
-        font-size: 1rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    .ficha-section {
-        grid-column: 1 / -1;
-        grid-row: 1;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .ficha-content {
-        padding: 1.5rem;
-        display: flex;
-        gap: 1.5rem;
-        align-items: stretch;
-    }
-    .player-photo-container {
-        margin-bottom: 0;
-        text-align: center;
-        flex-shrink: 0;
-        display: flex;
-    }
-    .player-photo {
-        max-width: 280px;
-        height: 100%;
-        width: auto;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    .player-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        flex: 1;
-    }
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
-    }
-    .info-label {
-        font-weight: 600;
-        color: #333;
-    }
-    .info-value {
-        color: #666;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .flag-icon {
-        width: 20px;
-        height: auto;
-    }
-    .position-section {
-        grid-column: 1;
-        grid-row: 2;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .field-diagram {
-        position: relative;
-        padding: 1.5rem;
-        min-height: 300px;
-    }
-    .field-svg {
-        width: 100%;
-        height: auto;
-        border-radius: 4px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
-    .player-marker {
-        position: absolute;
-        transform: translate(-50%, -50%);
-    }
-    .marker-icon {
-        width: 30px;
-        height: 30px;
-        background: white;
-        border: 3px solid #ffde59;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-    .teams-section {
-        grid-column: 2;
-        grid-row: 2;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .teams-content {
-        padding: 1.5rem;
-    }
-    .records-section {
-        grid-column: 1 / -1;
-        grid-row: 4;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .records-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        padding: 1.5rem;
-    }
-    .record-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.75rem;
-        background: #f9f9f9;
-        border-radius: 4px;
-    }
-    .record-label {
-        font-weight: 600;
-        color: #333;
-    }
-    .record-value {
-        color: #ffde59;
-        font-weight: bold;
-    }
-    .stats-section {
-        grid-column: 1 / -1;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .stats-loading,
-    .stats-error {
-        padding: 2rem;
-        text-align: center;
-        color: #666;
-    }
-    .stats-error {
-        color: #d32f2f;
-    }
-    .stats-table-container {
-        overflow-x: auto;
-        padding: 1.5rem;
-    }
-    .stats-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 800px;
-    }
-    .stats-table th,
-    .stats-table td {
-        padding: 0.75rem;
-        text-align: center;
-        border: 1px solid #ddd;
-    }
-    .stats-table th {
-        background: #333;
-        color: white;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    .stats-table th:first-child,
-    .stats-table td:first-child {
-        text-align: left;
-        position: sticky;
-        left: 0;
-        background: white;
-        z-index: 5;
-    }
-    .stats-table th:first-child {
-        background: #333;
-        z-index: 15;
-    }
-    .stats-table th.highlight {
-        background: #ffde59;
-        color: #333;
-    }
-    .stats-table .season-total-row {
-        background: #f0f0f0;
-        font-weight: bold;
-        border-top: 2px solid #333;
-    }
-    .stats-table .season-total-row:hover {
-        background: #e8e8e8;
-    }
-    .toggle-icon {
-        display: inline-block;
-        width: 1.5em;
-        text-align: center;
-        font-size: 0.8em;
-        color: #666;
-    }
-    .stats-table .career-total-row {
-        background: #ffde59;
-        font-weight: bold;
-        border-top: 3px solid #333;
-    }
-    .stats-table .career-total-row:hover {
-        background: #ffde59;
-    }
-    .stats-table td.highlight {
-        background: #fff8dc;
-    }
-    .competition-logo {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
-        margin-right: 8px;
-        vertical-align: middle;
-    }
-    .competition-name {
-        display: flex;
-        align-items: center;
-    }
-    .no-data {
-        color: #999;
-        font-style: italic;
-        text-align: center;
-        padding: 2rem;
-    }
-    .trajectory-timeline {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        position: relative;
-        padding-left: 1.5rem;
-        border-left: 2px solid #eee;
-    }
-    .timeline-item {
-        position: relative;
-    }
-    .timeline-marker {
-        position: absolute;
-        left: -1.85rem;
-        top: 0.4rem;
-        width: 0.7rem;
-        height: 0.7rem;
-        background: #ffde59;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 0 0 1px #eee;
-    }
-    .timeline-content {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-    }
-    .timeline-years {
-        font-size: 0.9rem;
-        color: #666;
-        font-weight: 500;
-    }
-    .timeline-club {
-        font-weight: 700;
-        font-size: 1rem;
-        color: #333;
-    }
-    @media (max-width: 768px) {
-        .profile-grid {
-            grid-template-columns: 1fr;
+        </section>
+    </main>
+
+    <script is:inline>
+        function toggleSeason(season) {
+            const rows = document.querySelectorAll(
+                `.competition-row.season-${season}`,
+            );
+            const icon = document.querySelector(
+                `.season-total-row[onclick*="${season}"] .toggle-icon`,
+            );
+            rows.forEach((row) => {
+                if (row.style.display === "none") {
+                    row.style.display = "table-row";
+                    if (icon) icon.textContent = "▲";
+                } else {
+                    row.style.display = "none";
+                    if (icon) icon.textContent = "▼";
+                }
+            });
         }
-        .ficha-content {
-            flex-direction: column;
+    </script>
+    <style>
+        .player-profile-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .back-link {
+            display: inline-flex;
             align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
         }
-        .ficha-section,
-        .position-section,
-        .teams-section,
-        .biography-section,
-        .records-section,
-        .stats-section {
-            grid-column: 1;
+        .back-link:hover {
+            color: #ffde59;
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .section-header {
+            background: #ffde59;
+            color: #2b2b2b;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
         }
         .ficha-section {
+            grid-column: 1 / -1;
             grid-row: 1;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .position-section {
-            grid-row: 2;
-        }
-        .teams-section {
-            grid-row: 3;
-        }
-        .biography-section {
-            grid-row: 4;
-        }
-        .records-section {
-            grid-row: 5;
-        }
-        .stats-section {
-            grid-row: auto;
-        }
-        .stats-controls {
-            flex-direction: column;
+        .ficha-content {
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
             align-items: stretch;
         }
-        .control-group {
+        .player-photo-container {
+            margin-bottom: 0;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+        }
+        .player-photo {
+            max-width: 280px;
+            height: 100%;
+            width: auto;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .player-info {
+            display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            gap: 0.75rem;
+            flex: 1;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .info-value {
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .flag-icon {
+            width: 20px;
+            height: auto;
+        }
+        .position-section {
+            grid-column: 1;
+            grid-row: 2;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .field-diagram {
+            position: relative;
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+        .field-svg {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .player-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+        .marker-icon {
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 3px solid #ffde59;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .teams-section {
+            grid-column: 2;
+            grid-row: 2;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .teams-content {
+            padding: 1.5rem;
+        }
+        .records-section {
+            grid-column: 1 / -1;
+            grid-row: 4;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .record-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .record-value {
+            color: #ffde59;
+            font-weight: bold;
+        }
+        .stats-section {
+            grid-column: 1 / -1;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .stats-loading,
+        .stats-error {
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+        }
+        .stats-error {
+            color: #d32f2f;
+        }
+        .stats-table-container {
+            overflow-x: auto;
+            padding: 1.5rem;
         }
         .stats-table {
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            min-width: 100%;
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
         }
-        .stats-table table {
-            min-width: 600px;
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #ddd;
         }
-    }
+        .stats-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .stats-table th:first-child,
+        .stats-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+        .stats-table th:first-child {
+            background: #333;
+            z-index: 15;
+        }
+        .stats-table th.highlight {
+            background: #ffde59;
+            color: #333;
+        }
+        .stats-table .season-total-row {
+            background: #f0f0f0;
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+        .stats-table .season-total-row:hover {
+            background: #e8e8e8;
+        }
+        .toggle-icon {
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
+            font-size: 0.8em;
+            color: #666;
+        }
+        .stats-table .career-total-row {
+            background: #ffde59;
+            font-weight: bold;
+            border-top: 3px solid #333;
+        }
+        .stats-table .career-total-row:hover {
+            background: #ffde59;
+        }
+        .stats-table td.highlight {
+            background: #fff8dc;
+        }
+        .competition-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .competition-name {
+            display: flex;
+            align-items: center;
+        }
+        .no-data {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 2rem;
+        }
+        .trajectory-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            padding-left: 1.5rem;
+            border-left: 2px solid #eee;
+        }
+        .timeline-item {
+            position: relative;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: -1.85rem;
+            top: 0.4rem;
+            width: 0.7rem;
+            height: 0.7rem;
+            background: #ffde59;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #eee;
+        }
+        .timeline-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .timeline-years {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+        }
+        .timeline-club {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            .ficha-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            .ficha-section,
+            .position-section,
+            .teams-section,
+            .biography-section,
+            .records-section,
+            .stats-section {
+                grid-column: 1;
+            }
+            .ficha-section {
+                grid-row: 1;
+            }
+            .position-section {
+                grid-row: 2;
+            }
+            .teams-section {
+                grid-row: 3;
+            }
+            .biography-section {
+                grid-row: 4;
+            }
+            .records-section {
+                grid-row: 5;
+            }
+            .stats-section {
+                grid-row: auto;
+            }
+            .stats-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .control-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .stats-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                min-width: 100%;
+            }
+            .stats-table table {
+                min-width: 600px;
+            }
+        }
 
-    /* Awards Section Styles */
-    .awards-section {
-        grid-column: 1 / -1;
-        background: white;
-        border-radius: 0;
-        overflow: hidden;
-    }
-
-    .awards-content {
-        padding: 1.5rem;
-    }
-
-    .award-category {
-        margin-bottom: 2.5rem;
-    }
-
-    .award-category:last-child {
-        margin-bottom: 0;
-    }
-
-    .award-category-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 1.2rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #fbbf24;
-        text-transform: none;
-    }
-
-    .awards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.25rem;
-        margin-top: 1rem;
-    }
-
-    .award-card {
-        position: relative;
-        background: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        aspect-ratio: 3 / 4;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-    }
-
-    .award-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    .award-card.monthly {
-        border: 3px solid #fbbf24;
-    }
-
-    .award-card.monthly:hover {
-        border-color: #f59e0b;
-        box-shadow: 0 12px 24px rgba(251, 191, 36, 0.3);
-    }
-
-    .award-card.seasonal {
-        border: 3px solid #ef4444;
-    }
-
-    .award-card.seasonal:hover {
-        border-color: #dc2626;
-        box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
-    }
-
-    .award-image-bg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        z-index: 1;
-    }
-
-    .award-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.1) 0%,
-            rgba(0, 0, 0, 0.3) 50%,
-            rgba(0, 0, 0, 0.7) 100%
-        );
-        z-index: 2;
-    }
-
-    .award-card.monthly .award-overlay {
-        background: linear-gradient(
-            to bottom,
-            rgba(251, 191, 36, 0.1) 0%,
-            rgba(251, 191, 36, 0.3) 50%,
-            rgba(0, 0, 0, 0.8) 100%
-        );
-    }
-
-    .award-card.seasonal .award-overlay {
-        background: linear-gradient(
-            to bottom,
-            rgba(239, 68, 68, 0.1) 0%,
-            rgba(239, 68, 68, 0.3) 50%,
-            rgba(0, 0, 0, 0.8) 100%
-        );
-    }
-
-    .award-content {
-        position: relative;
-        z-index: 3;
-        height: 100%;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        align-items: flex-start;
-        gap: 0.75rem;
-    }
-
-    .award-icon {
-        font-size: 3rem;
-        line-height: 1;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-        margin-bottom: 0.5rem;
-    }
-
-    .award-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
-    }
-
-    .award-period {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #ffffff;
-        text-transform: uppercase;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-        letter-spacing: 0.5px;
-    }
-
-    .award-title {
-        font-size: 0.95rem;
-        color: #f0f0f0;
-        line-height: 1.4;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
+        /* Awards Section Styles */
         .awards-section {
-            grid-row: auto;
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 0;
+            overflow: hidden;
         }
 
         .awards-content {
-            padding: 1rem;
+            padding: 1.5rem;
+        }
+
+        .award-category {
+            margin-bottom: 2.5rem;
+        }
+
+        .award-category:last-child {
+            margin-bottom: 0;
+        }
+
+        .award-category-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #fbbf24;
+            text-transform: none;
         }
 
         .awards-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1rem;
         }
 
         .award-card {
-            aspect-ratio: 5 / 3;
+            position: relative;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 3 / 4;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .award-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .award-card.monthly {
+            border: 3px solid #fbbf24;
+        }
+
+        .award-card.monthly:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 12px 24px rgba(251, 191, 36, 0.3);
+        }
+
+        .award-card.seasonal {
+            border: 3px solid #ef4444;
+        }
+
+        .award-card.seasonal:hover {
+            border-color: #dc2626;
+            box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
+        }
+
+        .award-image-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+
+        .award-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.1) 0%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.7) 100%
+            );
+            z-index: 2;
+        }
+
+        .award-card.monthly .award-overlay {
+            background: linear-gradient(
+                to bottom,
+                rgba(251, 191, 36, 0.1) 0%,
+                rgba(251, 191, 36, 0.3) 50%,
+                rgba(0, 0, 0, 0.8) 100%
+            );
+        }
+
+        .award-card.seasonal .award-overlay {
+            background: linear-gradient(
+                to bottom,
+                rgba(239, 68, 68, 0.1) 0%,
+                rgba(239, 68, 68, 0.3) 50%,
+                rgba(0, 0, 0, 0.8) 100%
+            );
+        }
+
+        .award-content {
+            position: relative;
+            z-index: 3;
+            height: 100%;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
 
         .award-icon {
-            font-size: 2.5rem;
+            font-size: 3rem;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            margin-bottom: 0.5rem;
+        }
+
+        .award-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
         }
 
         .award-period {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
         }
 
         .award-title {
-            font-size: 0.85rem;
+            font-size: 0.95rem;
+            color: #f0f0f0;
+            line-height: 1.4;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
-    }
-</style>
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .awards-section {
+                grid-row: auto;
+            }
+
+            .awards-content {
+                padding: 1rem;
+            }
+
+            .awards-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .award-card {
+                aspect-ratio: 5 / 3;
+            }
+
+            .award-icon {
+                font-size: 2.5rem;
+            }
+
+            .award-period {
+                font-size: 1.1rem;
+            }
+
+            .award-title {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</Layout>

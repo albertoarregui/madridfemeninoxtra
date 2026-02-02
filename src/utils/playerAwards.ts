@@ -5,10 +5,10 @@ import type { AwardData } from "./awards";
  */
 export function getPlayerAwards(
     awardsData: AwardData[],
-    playerId: number
+    playerId: number | string
 ): AwardData[] {
     return awardsData
-        .filter((award) => award.id_jugadora === playerId)
+        .filter((award) => String(award.id_jugadora) === String(playerId))
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 }
 
