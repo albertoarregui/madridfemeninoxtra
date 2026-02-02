@@ -25,11 +25,20 @@ function getAwardImage(awardId: number) {
 
 // Map to widget format
 const awards = allAwards.map((award) => {
-    const date = new Date(award.fecha);
-    const monthName = date
-        .toLocaleDateString("es-ES", { month: "long" })
-        .toUpperCase();
-    const year = date.getFullYear();
+    let date = new Date(award.fecha);
+    let monthName = "";
+    let year: number | string = "----";
+
+    if (!award.fecha || isNaN(date.getTime())) {
+        monthName = "CONSULTAR";
+        year = "----";
+    } else {
+        monthName = date
+            .toLocaleDateString("es-ES", { month: "long" })
+            .toUpperCase();
+        year = date.getFullYear();
+    }
+
     const image = getAwardImage(award.id_premio);
 
     return {
