@@ -38,7 +38,7 @@ export function formatAwardDate(dateString: string | Date): string {
         const formatted = date.toLocaleDateString("es-ES", {
             month: "long",
             year: "numeric",
-        });
+        }).replace(/ de /g, " "); // Remove "de" separator
 
         // Return capitalized: "Octubre 2024"
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
