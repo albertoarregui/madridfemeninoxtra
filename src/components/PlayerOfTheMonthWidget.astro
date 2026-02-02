@@ -1,22 +1,54 @@
 ---
 import { Image } from "astro:assets";
-import fellerImg from "../assets/widgets/player_month/feller_mahoudiciembre.jpg";
+import { fetchPlayerAwards } from "../utils/awards";
+// Fallback image
+import defaultFellerImg from "../assets/widgets/player_month/feller_mahoudiciembre.jpg";
 
-// Initial data based on user request (starting with the provided image)
-const awards = [
-    {
+// Fetch real data
+const allAwards = await fetchPlayerAwards();
+
+// Load dynamic images from assets/jugadora_del_mes folder
+const awardImages = import.meta.glob<{ default: ImageMetadata }>(
+    "../assets/jugadora_del_mes/*.{png,jpg,jpeg,webp}",
+    { eager: true },
+);
+
+function getAwardImage(awardId: number) {
+    const matchingPath = Object.keys(awardImages).find(
+        (path) =>
+            path.includes(`/${awardId}.`) ||
+            path.includes(`/award_${awardId}.`) ||
+            path.includes(`/${awardId}_`),
+    );
+    return matchingPath ? awardImages[matchingPath].default : null;
+}
+
+// Map to widget format
+const awards = allAwards.map((award) => {
+    const date = new Date(award.fecha);
+    const monthName = date
+        .toLocaleDateString("es-ES", { month: "long" })
+        .toUpperCase();
+    const year = date.getFullYear();
+    const image = getAwardImage(award.id_premio);
+
+    return {
+        month: monthName,
+        year: year,
+        player: award.nombre.toUpperCase(),
+        image: image || defaultFellerImg,
+    };
+});
+
+// If no awards found, use the fallback mock
+if (awards.length === 0) {
+    awards.push({
         month: "DICIEMBRE",
-        year: "2025",
+        year: 2025,
         player: "LINDA CAICEDO",
-        image: fellerImg,
-    },
-    {
-        month: "NOVIEMBRE",
-        year: "2025",
-        player: "LINDA CAICEDO",
-        image: fellerImg,
-    },
-];
+        image: defaultFellerImg,
+    });
+}
 ---
 
 <div
@@ -113,6 +145,23 @@ const awards = [
             const nextBtn = widget.querySelector(".next");
             let currentIndex = 0;
 
+            function updateButtons() {
+                if (prevBtn) {
+                    // Si estamos en el principio (índice 0), ocultar/desactivar Prev
+                    const isFirst = currentIndex === 0;
+                    prevBtn.style.opacity = isFirst ? "0.3" : "1";
+                    prevBtn.style.cursor = isFirst ? "default" : "pointer";
+                    prevBtn.style.pointerEvents = isFirst ? "none" : "auto";
+                }
+                if (nextBtn) {
+                    // Si estamos en el final, ocultar/desactivar Next
+                    const isLast = currentIndex === slides.length - 1;
+                    nextBtn.style.opacity = isLast ? "0.3" : "1";
+                    nextBtn.style.cursor = isLast ? "default" : "pointer";
+                    nextBtn.style.pointerEvents = isLast ? "none" : "auto";
+                }
+            }
+
             function showSlide(index) {
                 slides.forEach((slide, i) => {
                     if (i === index) {
@@ -123,17 +172,24 @@ const awards = [
                         slide.classList.add("opacity-0", "z-0");
                     }
                 });
+                updateButtons();
             }
 
+            // Inicializar estado botones
+            updateButtons();
+
             prevBtn?.addEventListener("click", () => {
-                currentIndex =
-                    (currentIndex - 1 + slides.length) % slides.length;
-                showSlide(currentIndex);
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    showSlide(currentIndex);
+                }
             });
 
             nextBtn?.addEventListener("click", () => {
-                currentIndex = (currentIndex + 1) % slides.length;
-                showSlide(currentIndex);
+                if (currentIndex < slides.length - 1) {
+                    currentIndex++;
+                    showSlide(currentIndex);
+                }
             });
         });
     }
