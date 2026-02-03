@@ -288,28 +288,17 @@ const milestones = [
                 function updateVisuals(scrollPos: number) {
                     if (!sc) return;
                     
-                    // The line fits within the 700vw container.
-                    // Milestone points are at: 1500, 2500, 3500, 4500, 5500.
-                    // The line is totally drawn between section 0 (500) and section 6 (6500).
-                    // Total 'drawable' horizontal distance is 6000px.
-                    
-                    // Mapping current 'viewport center' in content coordinates to dashoffset
-                    const viewportCenter = scrollPos + (sc.clientWidth / 2);
-                    const drawStart = 500;
-                    const drawEnd = 6500;
-                    
-                    // Normalized scroll percentage for the line (0 to 1)
-                    let drawPercent = (viewportCenter - drawStart) / (drawEnd - drawStart);
-                    drawPercent = Math.max(0, Math.min(1, drawPercent));
+                    const maxScroll = sc.scrollWidth - sc.clientWidth;
+                    const scrollPercent = scrollPos / maxScroll;
 
-                    // Sync SVG line "drawing"
+                    // Sync SVG line "drawing" to the FULL scroll range
                     const paths = [mainLine, glowLine];
                     paths.forEach(path => {
                         if (path) {
-                             const length = path.getTotalLength() || 6000; // fallback approx
+                             const length = path.getTotalLength() || 7000;
                              path.style.strokeDasharray = `${length}`;
-                             // Offset decreases as we draw (length -> 0)
-                             path.style.strokeDashoffset = `${length * (1 - drawPercent)}`;
+                             // Linear draw from start (100% offset) to end (0% offset)
+                             path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
                         }
                     });
 
@@ -319,6 +308,7 @@ const milestones = [
                     }
 
                     // Nexus Reveal based on viewport center proximity
+                    const viewportCenter = scrollPos + (sc.clientWidth / 2);
                     nexusPoints.forEach((dot) => {
                         if (dot instanceof HTMLElement) {
                             const section = dot.closest('section');
