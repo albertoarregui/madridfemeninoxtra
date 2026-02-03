@@ -82,15 +82,31 @@ const milestones = [
     <!-- Horizontal Scroll Container -->
     <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative no-scrollbar">
         
-        <!-- Straight Central Line (Infinite width essentially) -->
-        <div class="absolute top-1/2 left-0 h-0.5 bg-white/30 z-0 pointer-events-none" style="width: 400vw;"></div>
+        <!-- Zig-Zag (Peaks) Line SVG Background -->
+        <!-- Width needs to be long enough to cover all sections. 5 milestones + intro + outro ~ 7 screens. -->
+        <!-- We use a viewBox that allows us to draw peaks. -->
+        <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 500vw;">
+            <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 5000 1000">
+                <!-- 
+                   Coordinates Approximation:
+                   Y=500 is Center. Y=250 is Top (approx). Y=750 is Bottom.
+                   Intro (Center) -> Item 1 (Top/Bottom?) -> Item 2...
+                   Milestones alternate: Even (0) = Top (-translate-y-24), Odd (1) = Bottom.
+                   Wait, in code: index % 2 === 0 ? '-translate-y-24' (UP) : 'translate-y-24' (DOWN).
+                   So Path: Center -> Up -> Down -> Up -> Down -> Up -> Center.
+                -->
+                <path d="M 0 500 L 800 500 L 1400 250 L 2200 750 L 3000 250 L 3800 750 L 4600 250 L 5000 500" 
+                      fill="none" stroke="white" stroke-width="4" stroke-opacity="0.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+                
+                <!-- Glow Effect -->
+                <path d="M 0 500 L 800 500 L 1400 250 L 2200 750 L 3000 250 L 3800 750 L 4600 250 L 5000 500" 
+                      fill="none" stroke="#ffde59" stroke-width="8" stroke-opacity="0.2" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="blur-md" />
+            </svg>
+        </div>
 
         <!-- Section 1: Intro Title -->
         <section class="h-screen min-w-[100vw] flex items-center justify-center relative z-10 shrink-0">
              <header class="text-center opacity-0 animate-fade-in-down p-8 bg-black/30 backdrop-blur-sm rounded-3xl border border-white/5 relative bg-slate-900/50">
-                <!-- Connector to main line -->
-                <div class="absolute top-1/2 left-0 w-full h-0.5 bg-transparent border-t border-dashed border-white/20"></div>
-
                 <h1 class="text-6xl md:text-9xl font-black font-['Outfit'] tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 relative z-10">
                     HISTORIA
                 </h1>
@@ -112,16 +128,8 @@ const milestones = [
                     data-index={index}
                 >
                     
-                    <!-- Vertical Line Connector (From Center Line to Image) -->
-                    <!-- Logic: If image is up (index even, -translate-y), line goes DOWN to center. If image is down, line goes UP to center. -->
-                    <!-- We use absolute positioning relative to the container which is already translated. -->
-                    <!-- Actually easier: anchor it to the image edge closest to the center line. -->
-                    
-                    <div class={`absolute left-1/2 -translate-x-1/2 w-0.5 bg-white/50 z-0 ${index % 2 === 0 ? 'top-full h-32' : 'bottom-full h-32'} `}>
-                         <!-- Dot at intersection with main line -->
-                         <div class={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-[#ffde59] rounded-full shadow-[0_0_10px_#ffde59] ${index % 2 === 0 ? 'bottom-0' : 'top-0'}`}></div>
-                    </div>
-
+                    <!-- Line Connector Dot (At the center of the image to mark the "peak") -->
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#ffde59] rounded-full shadow-[0_0_15px_#ffde59] z-20 border-2 border-white"></div>
                     
                     <!-- Standalone Image -->
                     <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group z-10 bg-slate-900">
@@ -137,7 +145,7 @@ const milestones = [
                         </span>
                     </div>
 
-                    <!-- Text Below/Above (Depending on position?) For now keeping below image -->
+                    <!-- Text Below -->
                     <div class="text-center relative z-10 max-w-lg">
                         <div class="flex items-center justify-center gap-3 mb-2">
                              <span class="text-2xl filter drop-shadow-lg">{item.icon}</span>
