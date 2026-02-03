@@ -112,38 +112,36 @@ const milestones = [
         <!-- Milestones -->
         {milestones.map((item, index) => (
             <section class="h-screen min-w-[80vw] md:min-w-[60vw] flex items-center justify-center relative z-10 shrink-0 snap-center">
-                <div class={`flex flex-col items-center gap-8 max-w-2xl w-full p-4 transform transition-all duration-1000 opacity-50 scale-90 hover:opacity-100 hover:scale-100 slide-content ${index % 2 === 0 ? '-translate-y-24' : 'translate-y-24'}`}>
+                <!-- Added click-to-focus class and data attribute -->
+                <div 
+                    class={`flex flex-col items-center gap-6 max-w-xl w-full p-4 transform transition-all duration-1000 opacity-50 hover:opacity-100 slide-content cursor-pointer click-focus-item ${index % 2 === 0 ? '-translate-y-16' : 'translate-y-16'}`}
+                    data-index={index}
+                >
                     
-                    <!-- Line Connector Dot -->
-                    <div class={`absolute left-1/2 -translate-x-1/2 w-1 h-32 bg-gradient-to-b from-white/20 to-transparent ${index % 2 === 0 ? 'top-full' : 'bottom-full bg-gradient-to-t'}`}></div>
+                    <!-- Line Connector Dot (Kept visual) -->
+                    <div class={`absolute left-1/2 -translate-x-1/2 w-1 h-24 bg-gradient-to-b from-white/20 to-transparent ${index % 2 === 0 ? 'top-full' : 'bottom-full bg-gradient-to-t'}`}></div>
                     
-                    <!-- Content Card -->
-                    <div class="w-full rounded-2xl bg-[#1a1f35]/90 backdrop-blur-xl border border-white/10 hover:border-[#ffde59]/50 transition-colors shadow-2xl relative overflow-hidden group">
-                        
-                         <!-- Image Header -->
-                         <div class="relative h-56 md:h-72 cursor-pointer overflow-hidden border-b border-white/5">
-                            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] to-transparent z-10 opacity-60"></div>
-                            <Image 
-                                src={item.image} 
-                                alt={item.title} 
-                                class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
-                            />
-                            <!-- Date Overlay -->
-                            <span class="absolute bottom-4 left-6 z-20 text-5xl md:text-6xl font-black text-white drop-shadow-lg font-['Outfit'] tracking-tighter">
-                                {item.displayDate}
-                            </span>
-                        </div>
+                    <!-- Standalone Image -->
+                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 to-transparent z-10"></div>
+                        <Image 
+                            src={item.image} 
+                            alt={item.title} 
+                            class="w-full h-full object-cover transition-transform duration-700 ease-out"
+                        />
+                         <!-- Year Overlay on Image -->
+                         <span class="absolute bottom-6 left-8 z-20 text-5xl md:text-6xl font-black text-white drop-shadow-lg font-['Outfit'] tracking-tighter">
+                            {item.displayDate}
+                        </span>
+                    </div>
 
-                        <div class="p-8 relative z-10">
-                            <!-- Glow effect -->
-                            <div class="absolute -inset-1 bg-gradient-to-r from-[#ffde59]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity blur-xl z-[-1]"></div>
-                            
-                            <div class="flex items-center gap-4 mb-4">
-                                <span class="text-3xl">{item.icon}</span>
-                                <h3 class="text-3xl font-black text-[#ffde59] uppercase font-['Outfit'] leading-none">{item.title}</h3>
-                            </div>
-                            <p class="text-gray-300 leading-relaxed text-lg font-light">{item.description}</p>
+                    <!-- Text Below -->
+                    <div class="text-center relative z-10 max-w-lg">
+                        <div class="flex items-center justify-center gap-3 mb-2">
+                             <span class="text-2xl filter drop-shadow-lg">{item.icon}</span>
+                             <h3 class="text-4xl font-black text-[#ffde59] uppercase font-['Outfit'] leading-none drop-shadow-md">{item.title}</h3>
                         </div>
+                        <p class="text-gray-300 leading-relaxed text-lg font-light text-balance drop-shadow-md">{item.description}</p>
                     </div>
 
                 </div>
@@ -171,23 +169,43 @@ const milestones = [
             if (scrollContainer) {
                 let targetScroll = 0;
                 let currentScroll = 0;
-                const ease = 0.08; // Factor de suavizado (menor = más inercia)
+                const ease = 0.08; // Inertia factor
 
                 // Initialize
                 targetScroll = scrollContainer.scrollLeft;
                 currentScroll = targetScroll;
 
-                // Wheel Event
+                // Wheel Event (Horizontal mapping)
                 scrollContainer.addEventListener('wheel', (evt) => {
                     evt.preventDefault();
-                    // Multiplicador de velocidad para scroll vertical -> horizontal
                     const speed = 1.5; 
                     targetScroll += evt.deltaY * speed;
                     
-                    // Clamp target to bounds
+                    // Clamp
                     const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
                     targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
                 }, { passive: false });
+
+                // Click to Focus Logic
+                document.querySelectorAll('.click-focus-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        // Calculate center position of the clicked section
+                        const section = item.closest('section');
+                        if (section && section instanceof HTMLElement) {
+                            // Center the section in the viewport
+                            // Target scroll = Section Offset Left - (Viewport Width / 2) + (Section Width / 2)
+                            const viewportWidth = scrollContainer.clientWidth;
+                            const sectionLeft = section.offsetLeft;
+                            const sectionWidth = section.clientWidth;
+                            
+                            const centeredPosition = sectionLeft - (viewportWidth / 2) + (sectionWidth / 2);
+                            
+                            // Update targetScroll (clamped)
+                            const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                            targetScroll = Math.max(0, Math.min(centeredPosition, maxScroll));
+                        }
+                    });
+                });
 
                 // Animation Loop
                 function animateScroll() {
@@ -196,23 +214,21 @@ const milestones = [
                         scrollContainer.scrollLeft = currentScroll;
                         requestAnimationFrame(animateScroll);
                     } else {
-                        // Stop loop if close enough, but keep checking if wheel moves
                         currentScroll = targetScroll;
                         scrollContainer.scrollLeft = currentScroll;
                         requestAnimationFrame(animateScroll);
                     }
                 }
-                // Start animation loop
                 requestAnimationFrame(animateScroll);
             }
 
-            // Set verify flag on click
+            // Set verify flag
             const setSeen = () => localStorage.setItem('madridxtra_intro_seen', 'true');
             document.querySelectorAll('a[href="/home"]').forEach(link => {
                 link.addEventListener('click', setSeen);
             });
 
-            // Intersection Observer for Animation
+            // Intersection Observer
             const observerOptions = {
                 threshold: 0.5,
                 root: scrollContainer
@@ -223,10 +239,6 @@ const milestones = [
                     if (entry.isIntersecting) {
                         entry.target.classList.remove('opacity-50', 'scale-90');
                         entry.target.classList.add('opacity-100', 'scale-100');
-                    } else {
-                         // Optional: Fade out when leaving center
-                         // entry.target.classList.add('opacity-50', 'scale-90');
-                         // entry.target.classList.remove('opacity-100', 'scale-100');
                     }
                 });
             }, observerOptions);
