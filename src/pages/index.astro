@@ -84,9 +84,16 @@ const milestones = [
   {
     displayDate: "SEPT 2021",
     title: "EUROPA ES NUESTRA",
-    description: "Contra todo pronóstico, eliminamos al Manchester City. Claudia Zornoza marca y nos mete en la Fase de Grupos.",
+    description: "Contra todo pronóstico, eliminamos al Manchester City. Claudia Zornoza marca y nos mete en la élite.",
     icon: "🏆",
     image: cityImg
+  },
+  {
+    displayDate: "OCT 2021",
+    title: "ESTRENO DE GALA",
+    description: "Debutamos en la fase de grupos de la Champions League. El himno europeo suena por primera vez para nosotras.",
+    icon: "✨",
+    image: faseGruposImg
   },
   {
     displayDate: "NOV 2021",
@@ -98,16 +105,9 @@ const milestones = [
   {
     displayDate: "MARZO 2022",
     title: "TEMPLO BLANCO",
-    description: "Récord histórico. El Bernabéu abre sus puertas para la Champions. La afición demuestra que este equipo no camina solo.",
+    description: "Récord histórico. El Bernabéu abre sus puertas para la Champions. La afición demuestra que este equipo nunca camina solo.",
     icon: "🏟️",
     image: bernabeuImg
-  },
-  {
-    displayDate: "MAYO 2023",
-    title: "LA PRIMERA FINAL",
-    description: "Llegamos a la final de la Copa de la Reina tras un despliegue de orgullo en Butarque. Un paso más cerca del éxito.",
-    icon: "🥈",
-    image: faseGruposImg
   },
   {
     displayDate: "JULIO 2022",
@@ -133,7 +133,7 @@ const milestones = [
   {
     displayDate: "MAYO 2023",
     title: "CERCA DE LA GLORIA",
-    description: "Nuestra primera gran final. El equipo demuestra carácter y orgullo, sentando las bases de lo que está por venir.",
+    description: "Nuestra primera gran final. El equipo demuestra carácter y orgullo en la Copa de la Reina, sentando las bases del éxito.",
     icon: "🏆",
     image: finalCopaImg
   },
@@ -202,26 +202,26 @@ const milestones = [
         <!-- Logic: 21 Sections (Intro + 19 Milestones + Outro). Each is ~100vw. Total ~2100vw. -->
         <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 2100vw;">
             <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 21000 1000">
-                <!-- Main Drawing Line -->
+                <!-- Main Drawing Line (Thinner: 6px) -->
                 <path 
                     id="main-timeline-line"
                     d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 700 L 7500 300 L 8500 700 L 9500 300 L 10500 700 L 11500 300 L 12500 700 L 13500 300 L 14500 700 L 15500 300 L 16500 700 L 17500 300 L 18500 700 L 19500 300 L 20500 500" 
                     fill="none" 
                     stroke="white" 
-                    stroke-width="10" 
+                    stroke-width="6" 
                     stroke-opacity="1" 
                     stroke-linejoin="round" 
                     stroke-linecap="round"
                     vector-effect="non-scaling-stroke" 
                 />
                 
-                <!-- Glow Effect -->
+                <!-- Glow Effect (Thinner: 12px) -->
                 <path 
                     id="glow-timeline-line"
                     d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 700 L 7500 300 L 8500 700 L 9500 300 L 10500 700 L 11500 300 L 12500 700 L 13500 300 L 14500 700 L 15500 300 L 16500 700 L 17500 300 L 18500 700 L 19500 300 L 20500 500" 
                     fill="none" 
                     stroke="#ffde59" 
-                    stroke-width="25" 
+                    stroke-width="12" 
                     stroke-opacity="0.4" 
                     stroke-linejoin="round" 
                     stroke-linecap="round"
@@ -261,12 +261,12 @@ const milestones = [
                     <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#ffde59] rounded-full shadow-[0_0_25px_#ffde59] z-20 border-4 border-white animate-pulse nexus-dot transition-all duration-700 opacity-30 scale-50"></div>
                     
                     <!-- Standalone Image (Centered on Nexus) -->
-                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 border-white/20 group z-10 bg-slate-900">
+                    <div class="relative w-full aspect-video md:aspect-[16/10] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 border-white/20 group z-10 bg-slate-900/80 flex items-center justify-center">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 to-transparent z-10"></div>
                         <Image 
                             src={item.image} 
                             alt={item.title} 
-                            class="w-full h-full object-cover transition-transform duration-700 ease-out"
+                            class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-700 ease-out z-0"
                         />
                          <!-- Year Overlay on Image -->
                          <span class="absolute bottom-6 left-8 z-20 text-5xl md:text-6xl font-black text-white drop-shadow-lg font-['Outfit'] tracking-tighter">
@@ -399,9 +399,10 @@ const milestones = [
                     // viewportCenter is where the user is "looking".
                     const viewportCenter = scrollPos + (sc.clientWidth / 2);
                     
-                    // Now we map the draw percentage from the very start (0) to the very end (21000)
+                    // Now we map the draw percentage from the peak of section 0 (500) 
+                    // to the peak of the last section (20500).
                     const totalWidth = 21000;
-                    let drawPercent = viewportCenter / totalWidth;
+                    let drawPercent = (viewportCenter - 500) / (20500 - 500);
                     drawPercent = Math.max(0, Math.min(1, drawPercent));
 
                     // Update SVG lines
