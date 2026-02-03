@@ -79,28 +79,33 @@ const milestones = [
         <span class="group-hover:translate-x-1 transition-transform">→</span>
     </a>
 
+    <!-- Particle Container -->
+    <div id="particles-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+
     <!-- Horizontal Scroll Container -->
     <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative no-scrollbar">
         
-        <!-- Zig-Zag (Peaks) Line SVG Background -->
-        <!-- Width needs to be long enough to cover all sections. 5 milestones + intro + outro ~ 7 screens. -->
-        <!-- We use a viewBox that allows us to draw peaks. -->
-        <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 500vw;">
-            <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 5000 1000">
+        <!-- Zig-Zag Line SVG Background -->
+        <!-- Logic: 7 Sections (Intro + 5 Milestones + Outro). Each is ~100vw. Total ~700vw. -->
+        <!-- Y=50 (Center), Y=20 (Top), Y=80 (Bottom) in percentile coordinates 0-100 -->
+        <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 700vw;">
+            <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 7000 1000">
                 <!-- 
-                   Coordinates Approximation:
-                   Y=500 is Center. Y=250 is Top (approx). Y=750 is Bottom.
-                   Intro (Center) -> Item 1 (Top/Bottom?) -> Item 2...
-                   Milestones alternate: Even (0) = Top (-translate-y-24), Odd (1) = Bottom.
-                   Wait, in code: index % 2 === 0 ? '-translate-y-24' (UP) : 'translate-y-24' (DOWN).
-                   So Path: Center -> Up -> Down -> Up -> Down -> Up -> Center.
+                   X Coordinates (Centers of screens): 
+                   Intro: 500
+                   M1: 1500 (Up)
+                   M2: 2500 (Down)
+                   M3: 3500 (Up)
+                   M4: 4500 (Down)
+                   M5: 5500 (Up)
+                   Outro: 6500 (Center)
                 -->
-                <path d="M 0 500 L 800 500 L 1400 250 L 2200 750 L 3000 250 L 3800 750 L 4600 250 L 5000 500" 
-                      fill="none" stroke="white" stroke-width="4" stroke-opacity="0.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+                <path d="M 500 500 L 1500 200 L 2500 800 L 3500 200 L 4500 800 L 5500 200 L 6500 500" 
+                      fill="none" stroke="white" stroke-width="8" stroke-opacity="0.9" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
                 
-                <!-- Glow Effect -->
-                <path d="M 0 500 L 800 500 L 1400 250 L 2200 750 L 3000 250 L 3800 750 L 4600 250 L 5000 500" 
-                      fill="none" stroke="#ffde59" stroke-width="8" stroke-opacity="0.2" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="blur-md" />
+                <!-- Glow -->
+                <path d="M 500 500 L 1500 200 L 2500 800 L 3500 200 L 4500 800 L 5500 200 L 6500 500" 
+                      fill="none" stroke="#ffde59" stroke-width="20" stroke-opacity="0.3" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="blur-xl" />
             </svg>
         </div>
 
@@ -121,18 +126,20 @@ const milestones = [
 
         <!-- Milestones -->
         {milestones.map((item, index) => (
-            <section class="h-screen min-w-[80vw] md:min-w-[60vw] flex items-center justify-center relative z-10 shrink-0 snap-center">
-                <!-- Added click-to-focus class and data attribute -->
+            <section class="h-screen min-w-[100vw] flex items-center justify-center relative z-10 shrink-0 snap-center">
+                <!-- Layout: 100vw width to align with SVG peaks. -->
+                <!-- Translates heavily (30vh) to match Y=200/800 in SVG (Top/Bottom) -->
+                
                 <div 
-                    class={`flex flex-col items-center gap-6 max-w-xl w-full p-4 transform transition-all duration-1000 opacity-50 hover:opacity-100 slide-content cursor-pointer click-focus-item relative ${index % 2 === 0 ? '-translate-y-24' : 'translate-y-24'}`}
+                    class={`flex flex-col items-center gap-6 max-w-xl w-full p-4 transform transition-all duration-1000 opacity-50 hover:opacity-100 slide-content cursor-pointer click-focus-item relative ${index % 2 === 0 ? '-translate-y-[30vh]' : 'translate-y-[30vh]'}`}
                     data-index={index}
                 >
                     
-                    <!-- Line Connector Dot (At the center of the image to mark the "peak") -->
-                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#ffde59] rounded-full shadow-[0_0_15px_#ffde59] z-20 border-2 border-white"></div>
+                    <!-- Nexus Point (Gold Dot) -->
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#ffde59] rounded-full shadow-[0_0_25px_#ffde59] z-20 border-4 border-white animate-pulse"></div>
                     
-                    <!-- Standalone Image -->
-                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group z-10 bg-slate-900">
+                    <!-- Standalone Image (Centered on Nexus) -->
+                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 border-white/20 group z-10 bg-slate-900">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 to-transparent z-10"></div>
                         <Image 
                             src={item.image} 
@@ -143,15 +150,19 @@ const milestones = [
                          <span class="absolute bottom-6 left-8 z-20 text-5xl md:text-6xl font-black text-white drop-shadow-lg font-['Outfit'] tracking-tighter">
                             {item.displayDate}
                         </span>
+                        
+                        <!-- Icon Badge -->
+                         <div class="absolute top-4 right-4 z-20 w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                            <span class="text-2xl">{item.icon}</span>
+                         </div>
                     </div>
 
-                    <!-- Text Below -->
-                    <div class="text-center relative z-10 max-w-lg">
-                        <div class="flex items-center justify-center gap-3 mb-2">
-                             <span class="text-2xl filter drop-shadow-lg">{item.icon}</span>
-                             <h3 class="text-4xl font-black text-[#ffde59] uppercase font-['Outfit'] leading-none drop-shadow-md">{item.title}</h3>
-                        </div>
-                        <p class="text-gray-300 leading-relaxed text-lg font-light text-balance drop-shadow-md">{item.description}</p>
+                    <!-- Text Below (Dynamic Position?) -->
+                    <!-- If translateY is negative (UP), text could be below. If DOWN, text above? -->
+                    <!-- keeping consistent below for readability -->
+                    <div class={`text-center relative z-10 max-w-lg ${index % 2 === 0 ? 'mt-4' : 'mt-4'}`}>
+                         <h3 class="text-4xl font-black text-[#ffde59] uppercase font-['Outfit'] leading-none drop-shadow-md mb-2">{item.title}</h3>
+                        <p class="text-gray-300 leading-relaxed text-lg font-light text-balance drop-shadow-md bg-black/40 backdrop-blur-sm p-4 rounded-xl border border-white/5">{item.description}</p>
                     </div>
 
                 </div>
@@ -160,7 +171,10 @@ const milestones = [
 
         <!-- Section Final: CTA -->
         <section class="h-screen min-w-[100vw] flex items-center justify-center relative z-10 shrink-0">
-             <div class="text-center p-12 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10" id="final-cta">
+             <div class="text-center p-12 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10 relative" id="final-cta">
+                 <!-- Connector line end -->
+                 <div class="absolute top-1/2 left-0 w-full h-0.5 bg-transparent border-t border-dashed border-white/20 -translate-x-full"></div>
+
                 <h2 class="text-5xl font-bold mb-12">El futuro es nuestro</h2>
                 <a href="/home" class="inline-flex items-center gap-4 px-12 py-6 bg-[#ffde59] text-black font-black text-2xl tracking-widest rounded-full hover:scale-105 hover:bg-white transition-all shadow-[0_0_50px_rgba(255,222,89,0.5)]">
                     ENTRAR EN XTRA
@@ -173,25 +187,50 @@ const milestones = [
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-             // Horizontal Scroll Logic with Inertia (Lerp)
+
+            // Particle System
+            const particlesContainer = document.getElementById('particles-container');
+            if (particlesContainer) {
+                const particleCount = 40;
+                for (let i = 0; i < particleCount; i++) {
+                    const p = document.createElement('div');
+                    const size = Math.random() * 4 + 2; // 2-6px
+                    const isGold = Math.random() > 0.5;
+                    
+                    p.style.width = `${size}px`;
+                    p.style.height = `${size}px`;
+                    p.style.background = isGold ? '#ffde59' : '#ffffff';
+                    p.style.position = 'absolute';
+                    p.style.borderRadius = '50%';
+                    p.style.opacity = Math.random() * 0.5 + 0.1 + '';
+                    p.style.left = `${Math.random() * 100}vw`;
+                    p.style.top = `${Math.random() * 100}vh`;
+                    p.style.boxShadow = isGold ? '0 0 10px #ffde59' : '0 0 5px white';
+                    
+                    // Random float animation
+                    const duration = Math.random() * 10 + 10; // 10-20s
+                    p.style.animation = `float ${duration}s linear infinite`;
+                    p.style.animationDelay = `-${Math.random() * 20}s`;
+                    
+                    particlesContainer.appendChild(p);
+                }
+            }
+
+             // Horizontal Scroll Logic with Inertia (Lerp)... unchanged logic
             const scrollContainer = document.getElementById('scroll-container');
             
             if (scrollContainer) {
                 let targetScroll = 0;
                 let currentScroll = 0;
-                const ease = 0.08; // Inertia factor
+                const ease = 0.08; 
 
-                // Initialize
                 targetScroll = scrollContainer.scrollLeft;
                 currentScroll = targetScroll;
 
-                // Wheel Event (Horizontal mapping)
                 scrollContainer.addEventListener('wheel', (evt) => {
                     evt.preventDefault();
                     const speed = 1.5; 
                     targetScroll += evt.deltaY * speed;
-                    
-                    // Clamp
                     const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
                     targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
                 }, { passive: false });
@@ -199,25 +238,18 @@ const milestones = [
                 // Click to Focus Logic
                 document.querySelectorAll('.click-focus-item').forEach(item => {
                     item.addEventListener('click', () => {
-                        // Calculate center position of the clicked section
                         const section = item.closest('section');
                         if (section && section instanceof HTMLElement) {
-                            // Center the section in the viewport
-                            // Target scroll = Section Offset Left - (Viewport Width / 2) + (Section Width / 2)
                             const viewportWidth = scrollContainer.clientWidth;
                             const sectionLeft = section.offsetLeft;
                             const sectionWidth = section.clientWidth;
-                            
                             const centeredPosition = sectionLeft - (viewportWidth / 2) + (sectionWidth / 2);
-                            
-                            // Update targetScroll (clamped)
                             const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
                             targetScroll = Math.max(0, Math.min(centeredPosition, maxScroll));
                         }
                     });
                 });
 
-                // Animation Loop
                 function animateScroll() {
                     if (Math.abs(targetScroll - currentScroll) > 0.5) {
                         currentScroll += (targetScroll - currentScroll) * ease;
@@ -232,13 +264,11 @@ const milestones = [
                 requestAnimationFrame(animateScroll);
             }
 
-            // Set verify flag
             const setSeen = () => localStorage.setItem('madridxtra_intro_seen', 'true');
             document.querySelectorAll('a[href="/home"]').forEach(link => {
                 link.addEventListener('click', setSeen);
             });
 
-            // Intersection Observer
             const observerOptions = {
                 threshold: 0.5,
                 root: scrollContainer
@@ -260,32 +290,24 @@ const milestones = [
     </script>
     
     <style>
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .animate-pulse-slow {
-            animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-pulse-slow { animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse {
             0%, 100% { opacity: 0.2; transform: scale(1.1); }
             50% { opacity: 0.15; transform: scale(1); }
         }
-        .animate-fade-in-down {
-            animation: fadeInDown 1.5s ease-out forwards;
-        }
+        .animate-fade-in-down { animation: fadeInDown 1.5s ease-out forwards; }
         @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; translateY(0); }
+        }
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) translateX(50px); opacity: 0; }
         }
     </style>
 </body>
