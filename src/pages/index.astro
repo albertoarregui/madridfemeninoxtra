@@ -80,7 +80,7 @@ const milestones = [
     </a>
 
     <!-- Horizontal Scroll Container -->
-    <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative scroll-smooth no-scrollbar">
+    <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative no-scrollbar">
         
         <!-- Curved Line SVG Background (Absolute behind content) -->
         <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 400vw;">
@@ -165,15 +165,45 @@ const milestones = [
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Horizontal Scroll Logic
+             // Horizontal Scroll Logic with Inertia (Lerp)
             const scrollContainer = document.getElementById('scroll-container');
             
             if (scrollContainer) {
-                // Transform vertical scroll to horizontal
+                let targetScroll = 0;
+                let currentScroll = 0;
+                const ease = 0.08; // Factor de suavizado (menor = más inercia)
+
+                // Initialize
+                targetScroll = scrollContainer.scrollLeft;
+                currentScroll = targetScroll;
+
+                // Wheel Event
                 scrollContainer.addEventListener('wheel', (evt) => {
                     evt.preventDefault();
-                    scrollContainer.scrollLeft += evt.deltaY;
-                });
+                    // Multiplicador de velocidad para scroll vertical -> horizontal
+                    const speed = 1.5; 
+                    targetScroll += evt.deltaY * speed;
+                    
+                    // Clamp target to bounds
+                    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                    targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+                }, { passive: false });
+
+                // Animation Loop
+                function animateScroll() {
+                    if (Math.abs(targetScroll - currentScroll) > 0.5) {
+                        currentScroll += (targetScroll - currentScroll) * ease;
+                        scrollContainer.scrollLeft = currentScroll;
+                        requestAnimationFrame(animateScroll);
+                    } else {
+                        // Stop loop if close enough, but keep checking if wheel moves
+                        currentScroll = targetScroll;
+                        scrollContainer.scrollLeft = currentScroll;
+                        requestAnimationFrame(animateScroll);
+                    }
+                }
+                // Start animation loop
+                requestAnimationFrame(animateScroll);
             }
 
             // Set verify flag on click
