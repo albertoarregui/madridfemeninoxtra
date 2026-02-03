@@ -148,7 +148,7 @@ const milestones = [
                 >
                     
                     <!-- Nexus Point (Gold Dot) -->
-                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#ffde59] rounded-full shadow-[0_0_25px_#ffde59] z-20 border-4 border-white animate-pulse"></div>
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-[#ffde59] rounded-full shadow-[0_0_25px_#ffde59] z-20 border-4 border-white animate-pulse nexus-dot transition-all duration-700 opacity-30 scale-50"></div>
                     
                     <!-- Standalone Image (Centered on Nexus) -->
                     <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-2 border-white/20 group z-10 bg-slate-900">
@@ -200,10 +200,12 @@ const milestones = [
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // Particle System
+            // Particle System with Parallax
             const particlesContainer = document.getElementById('particles-container');
+            const particles = [];
+            
             if (particlesContainer) {
-                const particleCount = 60; // Increased count
+                const particleCount = 60;
                 for (let i = 0; i < particleCount; i++) {
                     const p = document.createElement('div');
                     const size = Math.random() * 4 + 2; 
@@ -215,16 +217,16 @@ const milestones = [
                     p.style.position = 'absolute';
                     p.style.borderRadius = '50%';
                     p.style.opacity = Math.random() * 0.5 + 0.1 + '';
-                    p.style.left = `${Math.random() * 100}vw`;
+                    p.style.left = `${Math.random() * 200}vw`; // Spread wider for parallax
                     p.style.top = `${Math.random() * 100}vh`;
                     p.style.boxShadow = isGold ? '0 0 10px #ffde59' : '0 0 5px white';
                     
-                    // Faster float animation (2-5s instead of 10-20s)
                     const duration = Math.random() * 3 + 2; 
                     p.style.animation = `float ${duration}s linear infinite`;
                     p.style.animationDelay = `-${Math.random() * 5}s`;
                     
                     particlesContainer.appendChild(p);
+                    particles.push(p);
                 }
             }
 
@@ -232,6 +234,7 @@ const milestones = [
             const scrollContainer = document.getElementById('scroll-container');
             const svgPath = document.querySelector('#scroll-container svg path:first-child'); 
             const glowPath = document.querySelector('#scroll-container svg path:last-child');
+            const nexusPoints = document.querySelectorAll('.nexus-dot');
             
             if (scrollContainer) {
                 const sc = scrollContainer; // Local ref for linting
@@ -265,49 +268,62 @@ const milestones = [
                     });
                 });
 
+                function updateVisuals(scrollPos) {
+                    if (!sc) return;
+                    const maxScroll = sc.scrollWidth - sc.clientWidth;
+                    const scrollPercent = scrollPos / maxScroll;
+
+                    // Update SVG line "drawing" effect
+                    [svgPath, glowPath].forEach(path => {
+                        if (path) {
+                             const length = path.getTotalLength();
+                             path.style.strokeDasharray = `${length}`;
+                             path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
+                        }
+                    });
+
+                    // Particle Parallax
+                    if (particlesContainer) {
+                        particlesContainer.style.transform = `translateX(${-scrollPos * 0.2}px)`;
+                    }
+
+                    // Nexus Dot reveal effect
+                    nexusPoints.forEach((dot, index) => {
+                        if (dot instanceof HTMLElement) {
+                            const section = dot.closest('section');
+                            if (section) {
+                                const sectionStart = section.offsetLeft;
+                                const triggerPos = sectionStart - (sc.clientWidth / 2);
+                                if (scrollPos > triggerPos) {
+                                    dot.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                                    dot.style.opacity = '1';
+                                } else {
+                                    dot.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                                    dot.style.opacity = '0.3';
+                                }
+                            }
+                        }
+                    });
+                }
+
                 function animateScroll() {
                     if (!sc) return;
 
                     if (Math.abs(targetScroll - currentScroll) > 0.5) {
                         currentScroll += (targetScroll - currentScroll) * ease;
                         sc.scrollLeft = currentScroll;
-                        
-                        // Update SVG line "drawing" effect
-                        [svgPath, glowPath].forEach(path => {
-                            if (path instanceof SVGPathElement) {
-                                 const length = path.getTotalLength();
-                                 const scrollPercent = currentScroll / (sc.scrollWidth - sc.clientWidth);
-                                 path.style.strokeDasharray = `${length}`;
-                                 path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
-                            }
-                        });
-
+                        updateVisuals(currentScroll);
                         requestAnimationFrame(animateScroll);
                     } else {
                         currentScroll = targetScroll;
                         sc.scrollLeft = currentScroll;
-                        
-                         [svgPath, glowPath].forEach(path => {
-                            if (path instanceof SVGPathElement) {
-                                 const length = path.getTotalLength();
-                                 const scrollPercent = currentScroll / (sc.scrollWidth - sc.clientWidth);
-                                 path.style.strokeDasharray = `${length}`;
-                                 path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
-                            }
-                        });
+                        updateVisuals(currentScroll);
                         requestAnimationFrame(animateScroll);
                     }
                 }
                 
-                // Initialize SVG line
-                [svgPath, glowPath].forEach(path => {
-                    if (path instanceof SVGPathElement) {
-                        const length = path.getTotalLength();
-                        path.style.strokeDasharray = `${length}`;
-                        path.style.strokeDashoffset = `${length}`;
-                    }
-                });
-
+                // Initialize
+                updateVisuals(sc.scrollLeft);
                 requestAnimationFrame(animateScroll);
             }
 
@@ -317,15 +333,18 @@ const milestones = [
             });
 
             const observerOptions = {
-                threshold: 0.5,
+                threshold: 0.2,
                 root: scrollContainer
             };
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.remove('opacity-50', 'scale-90');
-                        entry.target.classList.add('opacity-100', 'scale-100');
+                        entry.target.classList.remove('opacity-50', 'scale-90', 'blur-sm');
+                        entry.target.classList.add('opacity-100', 'scale-100', 'blur-none');
+                    } else {
+                        entry.target.classList.add('opacity-50', 'scale-90', 'blur-sm');
+                        entry.target.classList.remove('opacity-100', 'scale-100', 'blur-none');
                     }
                 });
             }, observerOptions);
