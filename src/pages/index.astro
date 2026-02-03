@@ -288,17 +288,26 @@ const milestones = [
                 function updateVisuals(scrollPos: number) {
                     if (!sc) return;
                     
-                    const maxScroll = sc.scrollWidth - sc.clientWidth;
-                    const scrollPercent = scrollPos / maxScroll;
+                    // Geometry:
+                    // SVG Path: M 500 ... L 6500
+                    // Each section is 100vw.
+                    // viewportCenter is where the user is "looking" in the content.
+                    const viewportCenter = scrollPos + (sc.clientWidth / 2);
+                    
+                    // We want the line to be 0% at X=500 and 100% at X=6500.
+                    const startX = 500;
+                    const endX = 6500;
+                    
+                    let drawPercent = (viewportCenter - startX) / (endX - startX);
+                    drawPercent = Math.max(0, Math.min(1, drawPercent));
 
-                    // Sync SVG line "drawing" to the FULL scroll range
-                    const paths = [mainLine, glowLine];
-                    paths.forEach(path => {
+                    // Update SVG lines
+                    [mainLine, glowLine].forEach(path => {
                         if (path) {
-                             const length = path.getTotalLength() || 7000;
+                             const length = path.getTotalLength();
                              path.style.strokeDasharray = `${length}`;
-                             // Linear draw from start (100% offset) to end (0% offset)
-                             path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
+                             // Perfect mapping: 1.0 percent = 0 offset (full), 0.0 percent = length offset (empty)
+                             path.style.strokeDashoffset = `${length * (1 - drawPercent)}`;
                         }
                     });
 
@@ -307,21 +316,19 @@ const milestones = [
                         particlesContainer.style.transform = `translateX(${-scrollPos * 0.3}px)`;
                     }
 
-                    // Nexus Reveal based on viewport center proximity
-                    const viewportCenter = scrollPos + (sc.clientWidth / 2);
+                    // Nexus Dots
                     nexusPoints.forEach((dot) => {
                         if (dot instanceof HTMLElement) {
                             const section = dot.closest('section');
                             if (section) {
-                                const sectionCenter = section.offsetLeft + section.clientWidth / 2;
+                                const sectionCenter = section.offsetLeft + (section.clientWidth / 2);
                                 const dist = Math.abs(viewportCenter - sectionCenter);
                                 const threshold = sc.clientWidth / 2;
                                 
                                 if (dist < threshold) {
-                                    const scale = 1 + (1 - dist / threshold) * 0.5;
-                                    const opacity = 0.3 + (1 - dist / threshold) * 0.7;
-                                    dot.style.transform = `translate(-50%, -50%) scale(${scale})`;
-                                    dot.style.opacity = `${opacity}`;
+                                    const progress = 1 - (dist / threshold);
+                                    dot.style.transform = `translate(-50%, -50%) scale(${1 + progress * 0.5})`;
+                                    dot.style.opacity = `${0.3 + progress * 0.7}`;
                                 } else {
                                     dot.style.transform = 'translate(-50%, -50%) scale(0.5)';
                                     dot.style.opacity = '0.3';
