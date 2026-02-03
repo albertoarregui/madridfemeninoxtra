@@ -98,7 +98,7 @@ const milestones = [
                 <!-- Main Drawing Line -->
                 <path 
                     id="main-timeline-line"
-                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
+                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500 L 7000 500" 
                     fill="none" 
                     stroke="white" 
                     stroke-width="10" 
@@ -111,7 +111,7 @@ const milestones = [
                 <!-- Glow Effect -->
                 <path 
                     id="glow-timeline-line"
-                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
+                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500 L 7000 500" 
                     fill="none" 
                     stroke="#ffde59" 
                     stroke-width="25" 
@@ -288,17 +288,13 @@ const milestones = [
                 function updateVisuals(scrollPos: number) {
                     if (!sc) return;
                     
-                    // Geometry:
-                    // SVG Path: M 500 ... L 6500
-                    // Each section is 100vw.
-                    // viewportCenter is where the user is "looking" in the content.
+                    // Total content width is 7000.
+                    // viewportCenter is where the user is "looking".
                     const viewportCenter = scrollPos + (sc.clientWidth / 2);
                     
-                    // We want the line to be 0% at X=500 and 100% at X=6500.
-                    const startX = 500;
-                    const endX = 6500;
-                    
-                    let drawPercent = (viewportCenter - startX) / (endX - startX);
+                    // Now we map the draw percentage from the very start (0) to the very end (7000)
+                    const totalWidth = 7000;
+                    let drawPercent = viewportCenter / totalWidth;
                     drawPercent = Math.max(0, Math.min(1, drawPercent));
 
                     // Update SVG lines
@@ -306,7 +302,6 @@ const milestones = [
                         if (path) {
                              const length = path.getTotalLength();
                              path.style.strokeDasharray = `${length}`;
-                             // Perfect mapping: 1.0 percent = 0 offset (full), 0.0 percent = length offset (empty)
                              path.style.strokeDashoffset = `${length * (1 - drawPercent)}`;
                         }
                     });
