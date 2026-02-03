@@ -287,20 +287,29 @@ const milestones = [
 
                 function updateVisuals(scrollPos: number) {
                     if (!sc) return;
-                    const maxScroll = sc.scrollWidth - sc.clientWidth;
-                    const scrollPercent = scrollPos / maxScroll;
+                    
+                    // The line fits within the 700vw container.
+                    // Milestone points are at: 1500, 2500, 3500, 4500, 5500.
+                    // The line is totally drawn between section 0 (500) and section 6 (6500).
+                    // Total 'drawable' horizontal distance is 6000px.
+                    
+                    // Mapping current 'viewport center' in content coordinates to dashoffset
+                    const viewportCenter = scrollPos + (sc.clientWidth / 2);
+                    const drawStart = 500;
+                    const drawEnd = 6500;
+                    
+                    // Normalized scroll percentage for the line (0 to 1)
+                    let drawPercent = (viewportCenter - drawStart) / (drawEnd - drawStart);
+                    drawPercent = Math.max(0, Math.min(1, drawPercent));
 
                     // Sync SVG line "drawing"
                     const paths = [mainLine, glowLine];
                     paths.forEach(path => {
                         if (path) {
-                             const length = path.getTotalLength();
-                             // Ensure dasharray is set
+                             const length = path.getTotalLength() || 6000; // fallback approx
                              path.style.strokeDasharray = `${length}`;
-                             // Offset: length = hidden, 0 = fully visible
-                             // We start drawing from the first point (500px intro)
-                             // To make it feel better, we can adjust the range
-                             path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
+                             // Offset decreases as we draw (length -> 0)
+                             path.style.strokeDashoffset = `${length * (1 - drawPercent)}`;
                         }
                     });
 
@@ -309,13 +318,13 @@ const milestones = [
                         particlesContainer.style.transform = `translateX(${-scrollPos * 0.3}px)`;
                     }
 
-                    // Nexus Reveal
+                    // Nexus Reveal based on viewport center proximity
                     nexusPoints.forEach((dot) => {
                         if (dot instanceof HTMLElement) {
                             const section = dot.closest('section');
                             if (section) {
                                 const sectionCenter = section.offsetLeft + section.clientWidth / 2;
-                                const dist = Math.abs((scrollPos + sc.clientWidth / 2) - sectionCenter);
+                                const dist = Math.abs(viewportCenter - sectionCenter);
                                 const threshold = sc.clientWidth / 2;
                                 
                                 if (dist < threshold) {
