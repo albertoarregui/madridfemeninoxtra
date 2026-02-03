@@ -2,39 +2,46 @@
 import { Image } from "astro:assets";
 import "../styles/global.css";
 import heroBg from "../assets/background/background.jpg"; 
-// Import assets for timeline
+import ascensoImg from "../assets/intro/01_ascenso.jpg";
+import comunicadoImg from "../assets/intro/02_comunicado.png";
+import asllaniImg from "../assets/intro/03_asllani.png";
 import uwclLogo from "../assets/competiciones/uwcl.png";
-import taconImg from "../assets/sidebar/mapa_partidos.png"; // Placeholder
-import bernabeuImg from "../assets/background/background.jpg";
 import currentImg from "../assets/widgets/player_month/feller_mahoudiciembre.jpg";
-import foundationImg from "../assets/sidebar/mapa_jugadoras.png"; // Placeholder
+import bernabeuImg from "../assets/background/background.jpg";
 
 const milestones = [
   {
-    displayDate: "SEPT 2019",
-    title: "EL PRÓLOGO",
-    description: "El CD Tacón viste por primera vez de blanco. Aún no somos oficiales, pero el escudo ya late en Valdebebas.",
+    displayDate: "MAYO 2019",
+    title: "EL ORIGEN",
+    description: "El CD Tacón logra el histórico ascenso a Primera Iberdrola. La semilla de lo que sería el Real Madrid Femenino.",
     icon: "🌱",
-    image: taconImg
+    image: ascensoImg
   },
   {
-    displayDate: "JULIO 2020",
-    title: "NACE LA LEYENDA",
-    description: "Comunicado Oficial: El Real Madrid Femenino es una realidad. Misa, Maite Oroz y Teresa Abelleira lideran la primera generación.",
-    icon: "🛡️",
-    image: foundationImg
+    displayDate: "JUNIO 2019",
+    title: "COMUNICADO OFICIAL",
+    description: "El Real Madrid anuncia la absorción del CD Tacón. Comienza una nueva era en la historia del club.",
+    icon: "📜",
+    image: comunicadoImg
+  },
+  {
+    displayDate: "JULIO 2019",
+    title: "LA PRIMERA GALÁCTICA",
+    description: "Kosovare Asllani se convierte en el primer gran fichaje. La sueca lideraría el proyecto en su año de transición.",
+    icon: "⭐",
+    image: asllaniImg
   },
   {
     displayDate: "SEPT 2021",
     title: "EUROPA ES NUESTRA",
     description: "Contra todo pronóstico, eliminamos al Manchester City. Claudia Zornoza marca y nos mete en la Fase de Grupos de la Champions League.",
-    icon: "⭐",
+    icon: "🏆",
     image: uwclLogo
   },
   {
     displayDate: "MARZO 2022",
-    title: "NOCHE EN EL BERNABÉU",
-    description: "Récord histórico. El templo abre sus puertas para la Champions. La afición responde y demuestra que este equipo no camina solo.",
+    title: "TEMPLO BLANCO",
+    description: "Récord histórico. El Bernabéu abre sus puertas para la Champions. La afición demuestra que este equipo no camina solo.",
     icon: "🏟️",
     image: bernabeuImg
   },
@@ -223,21 +230,23 @@ const milestones = [
 
              // Horizontal Scroll Logic with Inertia (Lerp)
             const scrollContainer = document.getElementById('scroll-container');
-            const svgLine = document.querySelector('#scroll-container svg'); // Select the SVG to animate
+            const svgPath = document.querySelector('#scroll-container svg path:first-child'); 
+            const glowPath = document.querySelector('#scroll-container svg path:last-child');
             
             if (scrollContainer) {
+                const sc = scrollContainer; // Local ref for linting
                 let targetScroll = 0;
                 let currentScroll = 0;
                 const ease = 0.08; 
 
-                targetScroll = scrollContainer.scrollLeft;
+                targetScroll = sc.scrollLeft;
                 currentScroll = targetScroll;
 
-                scrollContainer.addEventListener('wheel', (evt) => {
+                sc.addEventListener('wheel', (evt) => {
                     evt.preventDefault();
                     const speed = 1.5; 
                     targetScroll += evt.deltaY * speed;
-                    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                    const maxScroll = sc.scrollWidth - sc.clientWidth;
                     targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
                 }, { passive: false });
 
@@ -246,54 +255,59 @@ const milestones = [
                     item.addEventListener('click', () => {
                         const section = item.closest('section');
                         if (section && section instanceof HTMLElement) {
-                            const viewportWidth = scrollContainer.clientWidth;
+                            const viewportWidth = sc.clientWidth;
                             const sectionLeft = section.offsetLeft;
                             const sectionWidth = section.clientWidth;
                             const centeredPosition = sectionLeft - (viewportWidth / 2) + (sectionWidth / 2);
-                            const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+                            const maxScroll = sc.scrollWidth - sc.clientWidth;
                             targetScroll = Math.max(0, Math.min(centeredPosition, maxScroll));
                         }
                     });
                 });
 
                 function animateScroll() {
+                    if (!sc) return;
+
                     if (Math.abs(targetScroll - currentScroll) > 0.5) {
                         currentScroll += (targetScroll - currentScroll) * ease;
-                        scrollContainer.scrollLeft = currentScroll;
+                        sc.scrollLeft = currentScroll;
                         
-                        // Parallax effect for the line: Move it slightly slower than scroll to create depth/movement
-                        // modifying transform of the SVG container div
-                        if(svgLine && svgLine.parentElement) {
-                             // Effect: The line moves WITH the content but slightly shifted or static relative to viewport?
-                             // User wants: "que también pase con la línea".
-                             // Content moves left. Background usually stays. 
-                             // To make the line move, we can translate it.
-                             // Actually, since the SVG is absolute width 700vw and inside the scroll container, it SCROLLS with it by default.
-                             // But previously I set it to position: absolute left:0. 
-                             // Wait, if it is inside scroll-container, and pos absolute, it stays relative to the top-left of the CONTAINER (the visible window) or the SCROLLABLE CONTENT?
-                             // It is relative to the nearest positioned ancestor. scroll-container has relative.
-                             // So the line IS scrolling with the content 1:1. 
-                             
-                             // User says: "Me gusta el efecto de las fotos al pasar pero que también pase con la línea para que no quede raro"
-                             // Perhaps they mean the line should have a parallax effect or "draw" itself?
-                             // Or maybe they feel the line is static while photos move?
-                             // If the SVG is 700vw and inside scroll-container, it moves 1:1.
-                             
-                             // Let's add a slight parallax or distinct movement to make it dynamic.
-                             // Or maybe the opposite: Make the line fixed so content moves OVER it? 
-                             // NO, the line connects specific points (Nexus). It MUST move 1:1 with photos.
-                             
-                             // Maybe they mean the "reveal" effect? "Efecto de las fotos al pasar" might refer to the fade/scale animation.
-                             // I will add a parallax layer or verify if the line aligns perfectly.
-                        }
+                        // Update SVG line "drawing" effect
+                        [svgPath, glowPath].forEach(path => {
+                            if (path instanceof SVGPathElement) {
+                                 const length = path.getTotalLength();
+                                 const scrollPercent = currentScroll / (sc.scrollWidth - sc.clientWidth);
+                                 path.style.strokeDasharray = `${length}`;
+                                 path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
+                            }
+                        });
 
                         requestAnimationFrame(animateScroll);
                     } else {
                         currentScroll = targetScroll;
-                        scrollContainer.scrollLeft = currentScroll;
+                        sc.scrollLeft = currentScroll;
+                        
+                         [svgPath, glowPath].forEach(path => {
+                            if (path instanceof SVGPathElement) {
+                                 const length = path.getTotalLength();
+                                 const scrollPercent = currentScroll / (sc.scrollWidth - sc.clientWidth);
+                                 path.style.strokeDasharray = `${length}`;
+                                 path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
+                            }
+                        });
                         requestAnimationFrame(animateScroll);
                     }
                 }
+                
+                // Initialize SVG line
+                [svgPath, glowPath].forEach(path => {
+                    if (path instanceof SVGPathElement) {
+                        const length = path.getTotalLength();
+                        path.style.strokeDasharray = `${length}`;
+                        path.style.strokeDashoffset = `${length}`;
+                    }
+                });
+
                 requestAnimationFrame(animateScroll);
             }
 
