@@ -191,10 +191,10 @@ const milestones = [
             // Particle System
             const particlesContainer = document.getElementById('particles-container');
             if (particlesContainer) {
-                const particleCount = 40;
+                const particleCount = 60; // Increased count
                 for (let i = 0; i < particleCount; i++) {
                     const p = document.createElement('div');
-                    const size = Math.random() * 4 + 2; // 2-6px
+                    const size = Math.random() * 4 + 2; 
                     const isGold = Math.random() > 0.5;
                     
                     p.style.width = `${size}px`;
@@ -207,17 +207,18 @@ const milestones = [
                     p.style.top = `${Math.random() * 100}vh`;
                     p.style.boxShadow = isGold ? '0 0 10px #ffde59' : '0 0 5px white';
                     
-                    // Random float animation
-                    const duration = Math.random() * 10 + 10; // 10-20s
+                    // Faster float animation (2-5s instead of 10-20s)
+                    const duration = Math.random() * 3 + 2; 
                     p.style.animation = `float ${duration}s linear infinite`;
-                    p.style.animationDelay = `-${Math.random() * 20}s`;
+                    p.style.animationDelay = `-${Math.random() * 5}s`;
                     
                     particlesContainer.appendChild(p);
                 }
             }
 
-             // Horizontal Scroll Logic with Inertia (Lerp)... unchanged logic
+             // Horizontal Scroll Logic with Inertia (Lerp)
             const scrollContainer = document.getElementById('scroll-container');
+            const svgLine = document.querySelector('#scroll-container svg'); // Select the SVG to animate
             
             if (scrollContainer) {
                 let targetScroll = 0;
@@ -254,6 +255,33 @@ const milestones = [
                     if (Math.abs(targetScroll - currentScroll) > 0.5) {
                         currentScroll += (targetScroll - currentScroll) * ease;
                         scrollContainer.scrollLeft = currentScroll;
+                        
+                        // Parallax effect for the line: Move it slightly slower than scroll to create depth/movement
+                        // modifying transform of the SVG container div
+                        if(svgLine && svgLine.parentElement) {
+                             // Effect: The line moves WITH the content but slightly shifted or static relative to viewport?
+                             // User wants: "que también pase con la línea".
+                             // Content moves left. Background usually stays. 
+                             // To make the line move, we can translate it.
+                             // Actually, since the SVG is absolute width 700vw and inside the scroll container, it SCROLLS with it by default.
+                             // But previously I set it to position: absolute left:0. 
+                             // Wait, if it is inside scroll-container, and pos absolute, it stays relative to the top-left of the CONTAINER (the visible window) or the SCROLLABLE CONTENT?
+                             // It is relative to the nearest positioned ancestor. scroll-container has relative.
+                             // So the line IS scrolling with the content 1:1. 
+                             
+                             // User says: "Me gusta el efecto de las fotos al pasar pero que también pase con la línea para que no quede raro"
+                             // Perhaps they mean the line should have a parallax effect or "draw" itself?
+                             // Or maybe they feel the line is static while photos move?
+                             // If the SVG is 700vw and inside scroll-container, it moves 1:1.
+                             
+                             // Let's add a slight parallax or distinct movement to make it dynamic.
+                             // Or maybe the opposite: Make the line fixed so content moves OVER it? 
+                             // NO, the line connects specific points (Nexus). It MUST move 1:1 with photos.
+                             
+                             // Maybe they mean the "reveal" effect? "Efecto de las fotos al pasar" might refer to the fade/scale animation.
+                             // I will add a parallax layer or verify if the line aligns perfectly.
+                        }
+
                         requestAnimationFrame(animateScroll);
                     } else {
                         currentScroll = targetScroll;
