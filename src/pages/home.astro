@@ -1,0 +1,313 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Image } from "astro:assets";
+import "../styles/global.css";
+import "../styles/home.css";
+import ProximoPartido from "../components/ProximoPartido.astro";
+import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
+import Calendar from "../components/Calendar.astro";
+import Searcher from "../components/Searcher.astro";
+import YoutubeSection from "../components/YoutubeSection.astro";
+import StatsImage from "../assets/real_madrid_stats.png";
+import NewsTicker from "../components/NewsTicker.astro";
+import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
+
+import heroVideo from "../assets/intro-home.webm";
+import heroPoster from "../assets/background/background.jpg";
+import mapaJugadoras from "../assets/sidebar/mapa_jugadoras.png";
+import mapaPartidos from "../assets/sidebar/mapa_partidos.png";
+import mapaRivales from "../assets/sidebar/mapa_rivales.png";
+
+const WP_URL =
+	"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=10&_embed=true";
+
+interface Noticia {
+	id: number;
+	title: { rendered: string };
+	excerpt: { rendered: string };
+	slug: string;
+	date: string;
+	link: string;
+	_embedded?: {
+		"wp:featuredmedia"?: Array<{ source_url: string }>;
+		"wp:term"?: Array<Array<{ name: string }>>;
+	};
+}
+
+let posts: Noticia[] = [];
+let error = false;
+
+try {
+	const response = await fetch(WP_URL);
+	if (!response.ok) throw new Error("Failed to fetch");
+	posts = await response.json();
+} catch (e) {
+	console.error("Error fetching news:", e);
+	error = true;
+}
+
+function formatDate(dateString: string) {
+	const date = new Date(dateString);
+	return new Intl.DateTimeFormat("es-ES", {
+		month: "short",
+		day: "numeric",
+	}).format(date);
+}
+
+function getCategoryPriority(catName: string) {
+	const lower = catName.toLowerCase();
+	if (
+		lower.includes("previa") ||
+		lower.includes("crónica") ||
+		lower.includes("postpartido")
+	)
+		return 1;
+	if (lower.includes("primer equipo") || lower.includes("cantera")) return 2;
+	if (
+		lower.includes("liga f") ||
+		lower.includes("uwcl") ||
+		lower.includes("champions") ||
+		lower.includes("copa") ||
+		lower.includes("supercopa")
+	)
+		return 3;
+	return 4;
+}
+
+function getCategoryStyle(catName: string) {
+	const lower = catName.toLowerCase();
+	if (lower.includes("liga f"))
+		return "background-color: #00ced1; color: white;";
+	if (lower.includes("uwcl") || lower.includes("champions"))
+		return "background-color: #003399; color: white;";
+	if (lower.includes("copa de la reina"))
+		return "background-color: #ff914d; color: white;";
+	if (lower.includes("supercopa"))
+		return "background-color: #ff3333; color: white;";
+	if (lower.includes("primer equipo") || lower.includes("cantera"))
+		return "background-color: #c9a0dc; color: white;";
+	if (lower.includes("previa"))
+		return "background-color: #ffde59; color: white;";
+	if (lower.includes("postpartido") || lower.includes("crónica"))
+		return "background-color: #800080; color: white;";
+	return "background-color: #ffde59; color: white;";
+}
+
+const schema = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: "Madrid Femenino Xtra",
+	url: "https://www.madridfemeninoxtra.com",
+	potentialAction: {
+		"@type": "SearchAction",
+		target: "https://www.madridfemeninoxtra.com/search?q={search_term_string}",
+		"query-input": "required name=search_term_string",
+	},
+};
+---
+
+<Layout
+	title="Madrid Femenino Xtra | Noticias, Actualidad y Estadísticas del Real Madrid Femenino"
+	description="Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!"
+>
+	<script type="application/ld+json" set:html={JSON.stringify(schema)} />
+	<NewsTicker />
+	<link rel="preload" as="image" href={heroPoster.src} fetchpriority="high" />
+	<section class="hero">
+		<video
+			class="hero-video"
+			autoplay
+			loop
+			muted
+			playsinline
+			poster={heroPoster.src}
+			fetchpriority="high"
+		>
+			<source src={heroVideo} type="video/webm" />
+		</video>
+		<div class="hero-text">
+			<h1>MADRID FEMENINO XTRA</h1>
+			<h2>
+				El medio de referencia de la actualidad del equipo y la mayor
+				base de datos histórica del Real Madrid Femenino.
+			</h2>
+
+			<Searcher />
+
+			<ResumenEstadisticas />
+		</div>
+	</section>
+
+	<div class="content-layout">
+		<main class="welcome-area">
+			<section class="news-content">
+				<h2 class="section-title">ÚLTIMAS NOTICIAS</h2>
+				<p class="content-h2">
+					Última hora del Real Madrid Femenino en directo: actualidad,
+					próximos partidos y fichajes en Liga F, Champions League,
+					Copa de la Reina y Supercopa de España.
+				</p>
+
+				{
+					error ? (
+						<p class="no-news">
+							Error al cargar las noticias. Por favor, intenta de
+							nuevo más tarde.
+						</p>
+					) : posts.length === 0 ? (
+						<p class="no-news">
+							No hay noticias disponibles en este momento.
+						</p>
+					) : (
+						<div class="news-grid">
+							{posts.map((post) => {
+								const title = post.title.rendered;
+								const excerpt = post.excerpt.rendered;
+								const formattedDate = formatDate(post.date);
+								const featuredImage =
+									post._embedded?.["wp:featuredmedia"]?.[0]
+										?.source_url;
+								const rawCategories =
+									post._embedded?.["wp:term"]?.[0] || [];
+								let categories = rawCategories.map(
+									(cat) => cat.name,
+								);
+								const link = `/noticias/${post.slug}`;
+
+								categories.sort(
+									(a, b) =>
+										getCategoryPriority(a) -
+										getCategoryPriority(b),
+								);
+
+								return (
+									<article
+										class="news-card"
+										onclick={`window.location.href='${link}'`}
+										style="cursor: pointer;"
+									>
+										{featuredImage && (
+											<div class="news-image">
+												<img
+													src={featuredImage}
+													alt={title}
+													loading="lazy"
+												/>
+											</div>
+										)}
+										<div class="news-content-inner">
+											<div class="news-meta">
+												<time class="news-date">
+													{formattedDate}
+												</time>
+												<div
+													class="news-categories"
+													style="display: flex; gap: 6px; flex-wrap: wrap;"
+												>
+													{categories.map((cat) => (
+														<span
+															class="news-category"
+															style={getCategoryStyle(
+																cat,
+															)}
+														>
+															{cat}
+														</span>
+													))}
+												</div>
+											</div>
+											<h3 class="news-title">{title}</h3>
+											<div
+												class="news-excerpt"
+												set:html={excerpt}
+											/>
+											<a href={link} class="news-link">
+												Leer más →
+											</a>
+										</div>
+									</article>
+								);
+							})}
+						</div>
+					)
+				}
+
+				<a href="/noticias/primer-equipo" class="view-all-news">
+					Más noticias →
+				</a>
+			</section>
+
+			<YoutubeSection />
+		</main>
+
+		<aside class="proximo-partido sidebar-right">
+			<h2 class="section-title">PRÓXIMO PARTIDO</h2>
+			<ProximoPartido />
+
+			<h2 class="section-title">CALENDARIO</h2>
+			<Calendar />
+
+			<h2 class="section-title">JUGADORA DEL MES</h2>
+			<PlayerOfTheMonthWidget />
+
+			<h2 class="section-title">ESTADÍSTICAS DEL EQUIPO</h2>
+			<a href="/rivales/real-madrid" class="stats-link">
+				<img
+					src={StatsImage.src}
+					alt="Estadísticas Real Madrid"
+					class="stats-image"
+					loading="lazy"
+				/>
+			</a>
+
+			<h2 class="section-title">MAPA DE JUGADORAS</h2>
+			<a href="/jugadoras" class="stats-link">
+				<Image
+					src={mapaJugadoras}
+					alt="Mapa de Jugadoras Real Madrid Femenino"
+					class="stats-image"
+					style="height: 180px; object-fit: cover; width: 100%;"
+				/>
+			</a>
+
+			<h2 class="section-title">MAPA DE ESTADIOS</h2>
+			<a href="/partidos" class="stats-link">
+				<Image
+					src={mapaPartidos}
+					alt="Mapa de Estadios Real Madrid Femenino"
+					class="stats-image"
+					style="height: 180px; object-fit: cover; width: 100%;"
+				/>
+			</a>
+
+			<h2 class="section-title">MAPA DE RIVALES</h2>
+			<a href="/rivales" class="stats-link">
+				<Image
+					src={mapaRivales}
+					alt="Mapa de Rivales Real Madrid Femenino"
+					class="stats-image"
+					style="height: 180px; object-fit: cover; width: 100%;"
+				/>
+			</a>
+
+			<h2 class="section-title">CLASIFICACIÓN</h2>
+			<iframe
+				id="sofa-standings-embed-3739-77723"
+				src="https://widgets.sofascore.com/embed/tournament/3739/season/77723/standings/Primera%20Division%2C%20Women%2025%2F26?widgetTitle=Primera%20Division%2C%20Women%2025%2F26&showCompetitionLogo=true"
+				style="height:911px!important;max-width:768px!important;width:100%!important;"
+				frameborder="0"
+				frameborder="0"
+				scrolling="no"
+				loading="lazy"></iframe>
+			<div
+				style="font-size:12px;font-family:Arial,sans-serif;text-align:left"
+			>
+				Clasificacion ofrecida por <a
+					target="_blank"
+					href="https://www.sofascore.com/es-la/torneo/futbol/spain/liga-f/1127#id:77723"
+					>Sofascore</a
+				>
+			</div>
+		</aside>
+	</div>
+</Layout>
