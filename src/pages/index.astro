@@ -93,31 +93,34 @@ const milestones = [
     <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative no-scrollbar">
         
         <!-- Zig-Zag Line SVG Background -->
-        <!-- Logic: 7 Sections (Intro + 5 Milestones + Outro). Each is ~100vw. Total ~700vw. -->
-        <!-- Y=50 (Center), Y=30 (Top), Y=70 (Bottom) to reduce vertical spread (was 20/80) -->
         <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 700vw;">
             <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 7000 1000">
-                <!-- 
-                   X Coordinates (Centers of screens): 
-                   Intro: 500
-                   M1: 1500 (Up)
-                   M2: 2500 (Down)
-                   M3: 3500 (Up)
-                   M4: 4500 (Down)
-                   M5: 5500 (Up)
-                   Outro: 6500 (Center)
-                   
-                   Y Coordinates:
-                   Center: 500
-                   Top: 300 (was 200) -> Less amplitude
-                   Bottom: 700 (was 800) -> Less amplitude
-                -->
-                <path d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
-                      fill="none" stroke="white" stroke-width="8" stroke-opacity="0.9" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                <!-- Main Drawing Line -->
+                <path 
+                    id="main-timeline-line"
+                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
+                    fill="none" 
+                    stroke="white" 
+                    stroke-width="10" 
+                    stroke-opacity="1" 
+                    stroke-linejoin="round" 
+                    stroke-linecap="round"
+                    vector-effect="non-scaling-stroke" 
+                />
                 
-                <!-- Glow -->
-                <path d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
-                      fill="none" stroke="#ffde59" stroke-width="20" stroke-opacity="0.3" stroke-linejoin="round" vector-effect="non-scaling-stroke" class="blur-xl" />
+                <!-- Glow Effect -->
+                <path 
+                    id="glow-timeline-line"
+                    d="M 500 500 L 1500 300 L 2500 700 L 3500 300 L 4500 700 L 5500 300 L 6500 500" 
+                    fill="none" 
+                    stroke="#ffde59" 
+                    stroke-width="25" 
+                    stroke-opacity="0.4" 
+                    stroke-linejoin="round" 
+                    stroke-linecap="round"
+                    vector-effect="non-scaling-stroke" 
+                    class="blur-xl" 
+                />
             </svg>
         </div>
 
@@ -202,10 +205,8 @@ const milestones = [
 
             // Particle System with Parallax
             const particlesContainer = document.getElementById('particles-container');
-            const particles = [];
-            
             if (particlesContainer) {
-                const particleCount = 60;
+                const particleCount = 80;
                 for (let i = 0; i < particleCount; i++) {
                     const p = document.createElement('div');
                     const size = Math.random() * 4 + 2; 
@@ -216,38 +217,54 @@ const milestones = [
                     p.style.background = isGold ? '#ffde59' : '#ffffff';
                     p.style.position = 'absolute';
                     p.style.borderRadius = '50%';
-                    p.style.opacity = Math.random() * 0.5 + 0.1 + '';
-                    p.style.left = `${Math.random() * 200}vw`; // Spread wider for parallax
+                    p.style.opacity = Math.random() * 0.4 + 0.1 + '';
+                    p.style.left = `${Math.random() * 300}vw`; // Wider spread
                     p.style.top = `${Math.random() * 100}vh`;
                     p.style.boxShadow = isGold ? '0 0 10px #ffde59' : '0 0 5px white';
                     
-                    const duration = Math.random() * 3 + 2; 
+                    const duration = Math.random() * 5 + 3; 
                     p.style.animation = `float ${duration}s linear infinite`;
-                    p.style.animationDelay = `-${Math.random() * 5}s`;
+                    p.style.animationDelay = `-${Math.random() * 10}s`;
                     
                     particlesContainer.appendChild(p);
-                    particles.push(p);
                 }
             }
 
              // Horizontal Scroll Logic with Inertia (Lerp)
             const scrollContainer = document.getElementById('scroll-container');
-            const svgPath = document.querySelector('#scroll-container svg path:first-child'); 
-            const glowPath = document.querySelector('#scroll-container svg path:last-child');
+            const mainLine = document.getElementById('main-timeline-line') as any as SVGPathElement | null;
+            const glowLine = document.getElementById('glow-timeline-line') as any as SVGPathElement | null;
             const nexusPoints = document.querySelectorAll('.nexus-dot');
             
             if (scrollContainer) {
-                const sc = scrollContainer; // Local ref for linting
+                const sc = scrollContainer;
                 let targetScroll = 0;
                 let currentScroll = 0;
                 const ease = 0.08; 
+
+                // Pre-calculate path lengths if possible
+                let pathLength = 0;
+                if (mainLine) {
+                    try {
+                        pathLength = mainLine.getTotalLength();
+                        mainLine.style.strokeDasharray = `${pathLength}`;
+                        mainLine.style.strokeDashoffset = `${pathLength}`;
+                    } catch(e) {}
+                }
+                if (glowLine) {
+                    try {
+                        const len = glowLine.getTotalLength();
+                        glowLine.style.strokeDasharray = `${len}`;
+                        glowLine.style.strokeDashoffset = `${len}`;
+                    } catch(e) {}
+                }
 
                 targetScroll = sc.scrollLeft;
                 currentScroll = targetScroll;
 
                 sc.addEventListener('wheel', (evt) => {
                     evt.preventDefault();
-                    const speed = 1.5; 
+                    const speed = 1.8; 
                     targetScroll += evt.deltaY * speed;
                     const maxScroll = sc.scrollWidth - sc.clientWidth;
                     targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
@@ -268,35 +285,44 @@ const milestones = [
                     });
                 });
 
-                function updateVisuals(scrollPos) {
+                function updateVisuals(scrollPos: number) {
                     if (!sc) return;
                     const maxScroll = sc.scrollWidth - sc.clientWidth;
                     const scrollPercent = scrollPos / maxScroll;
 
-                    // Update SVG line "drawing" effect
-                    [svgPath, glowPath].forEach(path => {
+                    // Sync SVG line "drawing"
+                    const paths = [mainLine, glowLine];
+                    paths.forEach(path => {
                         if (path) {
                              const length = path.getTotalLength();
+                             // Ensure dasharray is set
                              path.style.strokeDasharray = `${length}`;
+                             // Offset: length = hidden, 0 = fully visible
+                             // We start drawing from the first point (500px intro)
+                             // To make it feel better, we can adjust the range
                              path.style.strokeDashoffset = `${length * (1 - scrollPercent)}`;
                         }
                     });
 
-                    // Particle Parallax
+                    // Background Particle Parallax
                     if (particlesContainer) {
-                        particlesContainer.style.transform = `translateX(${-scrollPos * 0.2}px)`;
+                        particlesContainer.style.transform = `translateX(${-scrollPos * 0.3}px)`;
                     }
 
-                    // Nexus Dot reveal effect
-                    nexusPoints.forEach((dot, index) => {
+                    // Nexus Reveal
+                    nexusPoints.forEach((dot) => {
                         if (dot instanceof HTMLElement) {
                             const section = dot.closest('section');
                             if (section) {
-                                const sectionStart = section.offsetLeft;
-                                const triggerPos = sectionStart - (sc.clientWidth / 2);
-                                if (scrollPos > triggerPos) {
-                                    dot.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                                    dot.style.opacity = '1';
+                                const sectionCenter = section.offsetLeft + section.clientWidth / 2;
+                                const dist = Math.abs((scrollPos + sc.clientWidth / 2) - sectionCenter);
+                                const threshold = sc.clientWidth / 2;
+                                
+                                if (dist < threshold) {
+                                    const scale = 1 + (1 - dist / threshold) * 0.5;
+                                    const opacity = 0.3 + (1 - dist / threshold) * 0.7;
+                                    dot.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                                    dot.style.opacity = `${opacity}`;
                                 } else {
                                     dot.style.transform = 'translate(-50%, -50%) scale(0.5)';
                                     dot.style.opacity = '0.3';
@@ -307,23 +333,22 @@ const milestones = [
                 }
 
                 function animateScroll() {
+                    const sc = scrollContainer;
                     if (!sc) return;
 
-                    if (Math.abs(targetScroll - currentScroll) > 0.5) {
+                    if (Math.abs(targetScroll - currentScroll) > 0.1) {
                         currentScroll += (targetScroll - currentScroll) * ease;
                         sc.scrollLeft = currentScroll;
                         updateVisuals(currentScroll);
-                        requestAnimationFrame(animateScroll);
-                    } else {
-                        currentScroll = targetScroll;
-                        sc.scrollLeft = currentScroll;
-                        updateVisuals(currentScroll);
-                        requestAnimationFrame(animateScroll);
                     }
+                    requestAnimationFrame(animateScroll);
                 }
                 
-                // Initialize
-                updateVisuals(sc.scrollLeft);
+                // Final check on lengths after everything settled
+                setTimeout(() => {
+                    updateVisuals(sc.scrollLeft);
+                }, 100);
+
                 requestAnimationFrame(animateScroll);
             }
 
@@ -333,17 +358,17 @@ const milestones = [
             });
 
             const observerOptions = {
-                threshold: 0.2,
+                threshold: 0.1,
                 root: scrollContainer
             };
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.remove('opacity-50', 'scale-90', 'blur-sm');
+                        entry.target.classList.remove('opacity-30', 'scale-90', 'blur-sm');
                         entry.target.classList.add('opacity-100', 'scale-100', 'blur-none');
                     } else {
-                        entry.target.classList.add('opacity-50', 'scale-90', 'blur-sm');
+                        entry.target.classList.add('opacity-30', 'scale-90', 'blur-sm');
                         entry.target.classList.remove('opacity-100', 'scale-100', 'blur-none');
                     }
                 });
