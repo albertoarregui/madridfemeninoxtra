@@ -82,28 +82,22 @@ const milestones = [
     <!-- Horizontal Scroll Container -->
     <div id="scroll-container" class="h-screen w-full overflow-x-auto overflow-y-hidden flex items-center relative no-scrollbar">
         
-        <!-- Curved Line SVG Background (Absolute behind content) -->
-        <div class="absolute top-0 left-0 h-full pointer-events-none z-0" style="width: 400vw;">
-            <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 4000 1000">
-                <!-- White curved line -->
-                <path d="M 0 500 C 400 500, 400 200, 800 200 S 1200 800, 1600 800 S 2000 200, 2400 200 S 2800 800, 3200 800 S 3600 500, 4000 500" 
-                      fill="none" stroke="white" stroke-width="4" stroke-opacity="0.3" vector-effect="non-scaling-stroke" />
-                <!-- Glow effect layer -->
-                <path d="M 0 500 C 400 500, 400 200, 800 200 S 1200 800, 1600 800 S 2000 200, 2400 200 S 2800 800, 3200 800 S 3600 500, 4000 500" 
-                      fill="none" stroke="#ffde59" stroke-width="10" stroke-opacity="0.1" stroke-linecap="round" vector-effect="non-scaling-stroke" class="blur-md" />
-            </svg>
-        </div>
+        <!-- Straight Central Line (Infinite width essentially) -->
+        <div class="absolute top-1/2 left-0 h-0.5 bg-white/30 z-0 pointer-events-none" style="width: 400vw;"></div>
 
         <!-- Section 1: Intro Title -->
         <section class="h-screen min-w-[100vw] flex items-center justify-center relative z-10 shrink-0">
-             <header class="text-center opacity-0 animate-fade-in-down p-8 bg-black/30 backdrop-blur-sm rounded-3xl border border-white/5">
-                <h1 class="text-6xl md:text-9xl font-black font-['Outfit'] tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500">
+             <header class="text-center opacity-0 animate-fade-in-down p-8 bg-black/30 backdrop-blur-sm rounded-3xl border border-white/5 relative bg-slate-900/50">
+                <!-- Connector to main line -->
+                <div class="absolute top-1/2 left-0 w-full h-0.5 bg-transparent border-t border-dashed border-white/20"></div>
+
+                <h1 class="text-6xl md:text-9xl font-black font-['Outfit'] tracking-tighter mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 relative z-10">
                     HISTORIA
                 </h1>
-                <p class="text-xl md:text-3xl text-[#ffde59] font-light tracking-widest uppercase">
+                <p class="text-xl md:text-3xl text-[#ffde59] font-light tracking-widest uppercase relative z-10">
                     Real Madrid Femenino
                 </p>
-                <div class="mt-8 text-gray-400 text-sm animate-bounce">
+                <div class="mt-8 text-gray-400 text-sm animate-bounce relative z-10">
                     Haz scroll para navegar →
                 </div>
             </header>
@@ -114,15 +108,23 @@ const milestones = [
             <section class="h-screen min-w-[80vw] md:min-w-[60vw] flex items-center justify-center relative z-10 shrink-0 snap-center">
                 <!-- Added click-to-focus class and data attribute -->
                 <div 
-                    class={`flex flex-col items-center gap-6 max-w-xl w-full p-4 transform transition-all duration-1000 opacity-50 hover:opacity-100 slide-content cursor-pointer click-focus-item ${index % 2 === 0 ? '-translate-y-16' : 'translate-y-16'}`}
+                    class={`flex flex-col items-center gap-6 max-w-xl w-full p-4 transform transition-all duration-1000 opacity-50 hover:opacity-100 slide-content cursor-pointer click-focus-item relative ${index % 2 === 0 ? '-translate-y-24' : 'translate-y-24'}`}
                     data-index={index}
                 >
                     
-                    <!-- Line Connector Dot (Kept visual) -->
-                    <div class={`absolute left-1/2 -translate-x-1/2 w-1 h-24 bg-gradient-to-b from-white/20 to-transparent ${index % 2 === 0 ? 'top-full' : 'bottom-full bg-gradient-to-t'}`}></div>
+                    <!-- Vertical Line Connector (From Center Line to Image) -->
+                    <!-- Logic: If image is up (index even, -translate-y), line goes DOWN to center. If image is down, line goes UP to center. -->
+                    <!-- We use absolute positioning relative to the container which is already translated. -->
+                    <!-- Actually easier: anchor it to the image edge closest to the center line. -->
+                    
+                    <div class={`absolute left-1/2 -translate-x-1/2 w-0.5 bg-white/50 z-0 ${index % 2 === 0 ? 'top-full h-32' : 'bottom-full h-32'} `}>
+                         <!-- Dot at intersection with main line -->
+                         <div class={`absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-[#ffde59] rounded-full shadow-[0_0_10px_#ffde59] ${index % 2 === 0 ? 'bottom-0' : 'top-0'}`}></div>
+                    </div>
+
                     
                     <!-- Standalone Image -->
-                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group">
+                    <div class="relative w-full aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 group z-10 bg-slate-900">
                         <div class="absolute inset-0 bg-gradient-to-t from-[#0a0f1e]/80 to-transparent z-10"></div>
                         <Image 
                             src={item.image} 
@@ -135,7 +137,7 @@ const milestones = [
                         </span>
                     </div>
 
-                    <!-- Text Below -->
+                    <!-- Text Below/Above (Depending on position?) For now keeping below image -->
                     <div class="text-center relative z-10 max-w-lg">
                         <div class="flex items-center justify-center gap-3 mb-2">
                              <span class="text-2xl filter drop-shadow-lg">{item.icon}</span>
