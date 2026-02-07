@@ -12,6 +12,7 @@ import { generateSlug } from "../../utils/url-helper";
 import { SQUAD } from "../../consts/squad";
 import { getPlayerImage } from "../../utils/player-images";
 import { v2 as cloudinary } from "cloudinary";
+import { getAssetUrl } from "../../utils/assets";
 
 cloudinary.config({
     cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
@@ -75,8 +76,6 @@ mvpPlayer = {
     id: game.mvp ? String(game.mvp) : "unknown",
 };
 
-import { getAssetUrl } from "../../utils/assets";
-
 const stadiumImageSrc = getAssetUrl("estadios", game.estadio);
 
 const getShieldSrc = (teamName: string) => {
@@ -96,7 +95,7 @@ const isLocalRM = game.club_local.toLowerCase().includes("real madrid");
 let galleryImages: string[] = [];
 try {
     const folder = `galeries/${game.id_partido}`;
-    const result = await cloudinary.api.resources({
+    const result = await (cloudinary as any).api.resources({
         type: "upload",
         prefix: folder,
         max_results: 100,
