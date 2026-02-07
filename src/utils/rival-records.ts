@@ -307,7 +307,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             const cardTeamId = Number(card.id_equipo);
             const rId = Number(rivalId);
 
-            if (cardTeamId !== rId) {
+            if (cardTeamId === rId) {
                 const matchId = card.id_partido;
                 if (cardsByMatch[matchId]) {
                     const type = (card.tipo_tarjeta || '').toUpperCase();
