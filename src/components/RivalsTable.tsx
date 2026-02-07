@@ -130,16 +130,16 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
 
-                            <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-10 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
-                            <th className="sticky left-10 bg-gray-50 z-30 py-3 px-2 w-14 border-r border-gray-200 text-center">
+                            <th className="sticky left-[50px] bg-gray-50 z-30 py-3 px-2 w-[60px] min-w-[60px] border-r border-gray-200 text-center">
                                 Escudo
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Rival"
-                                className="sticky left-24 bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
+                                className="sticky left-[110px] bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
                                 align="left"
                             />
 
@@ -172,10 +172,10 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
                                 { }
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-[50px] min-w-[50px]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-200 text-center">
+                                <td className="sticky left-[50px] bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-200 text-center w-[60px] min-w-[60px]">
                                     <img
                                         src={rival.shieldUrl}
                                         alt={rival.nombre}
@@ -183,7 +183,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                         onError={(e) => (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'}
                                     />
                                 </td>
-                                <td className="sticky left-24 bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={rival.nombre}>
+                                <td className="sticky left-[110px] bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={rival.nombre}>
                                     <a href={`/rivales/${rival.slug}`} target="_blank" rel="noopener noreferrer" className="hover:text-[#ffde59] transition-colors">
                                         {rival.nombre}
                                     </a>

@@ -449,7 +449,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default relative overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default relative">
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Distribución de Goles (Minutos)</h3>
                     <Clock size={16} className="text-gray-300" />
