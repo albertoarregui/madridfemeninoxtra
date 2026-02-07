@@ -61,11 +61,15 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     }
 
     // Try without extension if missing
-    if (!normalized.includes('.')) {
+    if (!cleanFileName.includes('.')) {
         for (const ext of ['.png', '.jpg', '.svg', '.webp']) {
-            const pathWithExt = `${normalizedPath}${ext}`;
-            if (assets[type] && assets[type][pathWithExt]) {
-                return assets[type][pathWithExt].default.src;
+            const originalPathExt = `/src/assets/${folder}/${cleanFileName}${ext}`;
+            if (assets[type] && assets[type][originalPathExt]) {
+                return assets[type][originalPathExt].default.src;
+            }
+            const normalizedPathExt = `/src/assets/${folder}/${normalized}${ext}`;
+            if (assets[type] && assets[type][normalizedPathExt]) {
+                return assets[type][normalizedPathExt].default.src;
             }
         }
     }
@@ -86,19 +90,24 @@ export function getAssetMetadata(type: AssetType, fileName: string | null | unde
     if (!fileName) return null;
 
     const normalized = normalizeName(fileName);
-    const folder = type === 'jugadorasPerfil' ? 'jugadoras-perfil' : type;
+    const folder = type === 'jugadorasPerfil' ? 'jugadoras-perfil' :
+        type === 'jugadoras' ? 'jugadoras' : type;
 
     const pathsToTry = [
         `/src/assets/${folder}/${fileName}`,
         `/src/assets/${folder}/${normalized}`,
-        `/src/assets/${folder}/${normalized}.png`,
-        `/src/assets/${folder}/${normalized}.svg`,
-        `/src/assets/${folder}/${normalized}.jpg`,
-        `/src/assets/${folder}/${normalized}.webp`,
     ];
 
+    // Add versions with extension if missing
+    if (!fileName.includes('.')) {
+        for (const ext of ['.png', '.jpg', '.webp', '.svg']) {
+            pathsToTry.push(`/src/assets/${folder}/${fileName}${ext}`);
+            pathsToTry.push(`/src/assets/${folder}/${normalized}${ext}`);
+        }
+    }
+
     for (const path of pathsToTry) {
-        if (assets[type][path]) {
+        if (assets[type] && assets[type][path]) {
             return assets[type][path].default;
         }
     }
