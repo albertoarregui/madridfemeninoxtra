@@ -1,0 +1,188 @@
+---
+import { CALENDAR } from "../consts/calendar";
+import { fetchGamesDirectly } from "../utils/partidos";
+
+const gamesData = await fetchGamesDirectly();
+
+const now = new Date();
+
+const nextMatches = CALENDAR.filter((match) => {
+    const matchDate = new Date(match.date);
+    return matchDate >= now;
+}).slice(0, 5);
+
+const latestResults = [...gamesData]
+    .filter((g) => g.goles_rm !== null && g.goles_rival !== null)
+    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+    .slice(0, 5);
+
+const tickerItems: { label: string; text: string; colorClass: string }[] = [];
+
+const maxLength = Math.max(nextMatches.length, latestResults.length);
+for (let i = 0; i < maxLength; i++) {
+    if (i < latestResults.length) {
+        const res = latestResults[i];
+        const isRmLocal = res.club_local.toLowerCase().includes("real madrid");
+        const localGoals = isRmLocal ? res.goles_rm : res.goles_rival;
+        const visitorGoals = isRmLocal ? res.goles_rival : res.goles_rm;
+
+        tickerItems.push({
+            label: "RESULTADO",
+            text: `${res.club_local} ${localGoals} - ${visitorGoals} ${res.club_visitante}`,
+            colorClass: "result-item",
+        });
+    }
+    if (i < nextMatches.length) {
+        const next = nextMatches[i];
+        const dateObj = new Date(next.date);
+        const dateStr = dateObj.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+        });
+        tickerItems.push({
+            label: "PRÓXIMO",
+            text: `${next.team1} vs ${next.team2} • ${dateStr} ${next.time ? next.time.split(" ")[0] : ""}`,
+            colorClass: "next-item",
+        });
+    }
+}
+---
+
+<div class="news-ticker">
+    <div class="ticker-label">
+        <span class="label-text">ÚLTIMA HORA</span>
+    </div>
+    <div class="ticker-overflow">
+        <div class="ticker-track">
+            {
+                tickerItems.map((item) => (
+                    <div class={`ticker-item ${item.colorClass}`}>
+                        <span class="item-tag">{item.label}</span>
+                        <span class="item-text">{item.text}</span>
+                    </div>
+                ))
+            }
+
+            {
+                tickerItems.map((item) => (
+                    <div class={`ticker-item ${item.colorClass}`}>
+                        <span class="item-tag">{item.label}</span>
+                        <span class="item-text">{item.text}</span>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .news-ticker {
+        background: #111827;
+        color: white;
+        display: flex;
+        align-items: center;
+        height: 48px;
+        overflow: hidden;
+        position: relative;
+        z-index: 50;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .ticker-label {
+        background: #ffde59;
+        color: #111827;
+        font-weight: 900;
+        text-transform: uppercase;
+        padding: 0 1.5rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        position: relative;
+        z-index: 10;
+        clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+        padding-right: 2.5rem;
+    }
+
+    .ticker-overflow {
+        flex-grow: 1;
+        overflow: hidden;
+        position: relative;
+        height: 100%;
+    }
+
+    .ticker-track {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        animation: scroll 20s linear infinite;
+        white-space: nowrap;
+    }
+
+    .ticker-track:hover {
+        animation-play-state: paused;
+    }
+
+    .ticker-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-right: 4rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }
+
+    .item-tag {
+        font-size: 0.7rem;
+        font-weight: 900;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .result-item .item-tag {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .next-item .item-tag {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .item-text {
+        color: #f3f4f6;
+        letter-spacing: 0.02em;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .news-ticker {
+            height: 40px;
+        }
+        .ticker-label {
+            padding: 0 1rem;
+            padding-right: 2rem;
+            font-size: 0.7rem;
+        }
+        .item-text {
+            font-size: 0.85rem;
+        }
+    }
+</style>

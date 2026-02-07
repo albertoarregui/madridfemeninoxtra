@@ -1,4 +1,5 @@
 ---
+import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 
 interface Match {
@@ -23,80 +24,14 @@ interface Props {
 
 const { matches, seasons = [], competitions = [] } = Astro.props;
 
-const competitionLogos = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/competiciones/*.png",
-    { eager: true },
-);
+import { getAssetMetadata } from "../utils/assets";
 
 function getCompetitionLogo(competitionName: string) {
-    const normalizedName = competitionName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .replace(/:/g, "")
-        .replace(/-/g, "_")
-        .trim();
-
-    const competitionMap: Record<string, string> = {
-        spain_liga_f_women: "liga_f",
-        liga_f: "liga_f",
-        europe_champions_league_women_league_phase: "uwcl",
-        champions_league_women: "uwcl",
-        uwcl: "uwcl",
-        copa_de_la_reina: "copa_de_la_reina",
-        supercopa_de_espana: "supercopa_de_espana",
-    };
-
-    const mappedName = competitionMap[normalizedName] || normalizedName;
-    const logoPath = `/src/assets/competiciones/${mappedName}.png`;
-
-    return competitionLogos[logoPath]?.default;
+    return getAssetMetadata("competiciones", competitionName);
 }
 
 function getTeamLogo(teamName: string) {
-    const normalizedName = teamName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .replace(/\./g, "")
-        .replace(/w$/i, "")
-        .trim();
-
-    const teamNameMap: Record<string, string> = {
-        real_madrid_: "real_madrid",
-        fc_barcelona: "fc_barcelona",
-        athletic_bilbao: "athletic_club",
-        atletico_madrid: "atletico_de_madrid",
-        deportivo_la_coruna: "deportivo_abanca",
-        levante: "levante_ud",
-        costa_adeje: "costa_adeje_tenerife",
-        eibar: "sd_eibar",
-        alaves: "alaves",
-        alhama: "alhama",
-        arsenal: "arsenal",
-        as_roma: "as_roma",
-        cacereno: "cacereno",
-        espanyol: "espanyol",
-        granada: "granada_cf",
-        madrid_cff: "madrid_cff",
-        paris_fc: "paris_fc",
-        psg: "psg",
-        rayo_vallecano: "rayo_vallecano",
-        sevilla: "sevilla_fc",
-        valencia: "valencia_cf",
-        villarreal: "villarreal_cf",
-        betis: "real_betis",
-        real_sociedad: "real_sociedad",
-        sporting_huelva: "sporting_de_huelva",
-        fundacion_albacete: "fundacion_albacete",
-    };
-
-    const mappedName = teamNameMap[normalizedName] || normalizedName;
-
-    // Using public assets path
-    return { src: `/assets/escudos/${mappedName}.png` };
+    return getAssetMetadata("escudos", teamName);
 }
 ---
 
@@ -105,7 +40,10 @@ function getTeamLogo(teamName: string) {
         {
             seasons.length > 0 && (
                 <div class="filter-wrapper">
-                    <select id="filtro-temporada">
+                    <select
+                        id="filtro-temporada"
+                        aria-label="Filtrar por temporada"
+                    >
                         <option value="todos">Todas las Temporadas</option>
                         {seasons.map((season) => (
                             <option value={season}>{season}</option>
@@ -135,7 +73,10 @@ function getTeamLogo(teamName: string) {
         {
             competitions.length > 0 && (
                 <div class="filter-wrapper">
-                    <select id="filtro-competicion">
+                    <select
+                        id="filtro-competicion"
+                        aria-label="Filtrar por competición"
+                    >
                         <option value="todos">Todas las Competiciones</option>
                         {competitions.map((comp) => (
                             <option value={comp}>{comp}</option>
@@ -222,10 +163,13 @@ function getTeamLogo(teamName: string) {
                         <div class="match-competition">
                             <div class="competition-info">
                                 {competitionLogo && (
-                                    <img
-                                        src={competitionLogo.src}
+                                    <Image
+                                        src={competitionLogo}
                                         alt={match.competicion_nombre}
                                         class="competition-logo"
+                                        width={24}
+                                        height={24}
+                                        format="webp"
                                     />
                                 )}
                                 <span class="competition-name">
@@ -248,10 +192,13 @@ function getTeamLogo(teamName: string) {
                                         {match.club_local}
                                     </span>
                                     {localLogo ? (
-                                        <img
-                                            src={localLogo.src}
+                                        <Image
+                                            src={localLogo}
                                             alt={match.club_local}
                                             class="team-shield"
+                                            width={28}
+                                            height={28}
+                                            format="webp"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />
@@ -278,10 +225,13 @@ function getTeamLogo(teamName: string) {
 
                                 <div class="team team-visitor">
                                     {visitanteLogo ? (
-                                        <img
-                                            src={visitanteLogo.src}
+                                        <Image
+                                            src={visitanteLogo}
                                             alt={match.club_visitante}
                                             class="team-shield"
+                                            width={28}
+                                            height={28}
+                                            format="webp"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />

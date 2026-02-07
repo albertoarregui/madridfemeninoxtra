@@ -1,9 +1,10 @@
 
 import React, { useMemo } from 'react';
 import InteractiveMap, { type MapMarker } from './Map';
-import { TEAMS } from '../../public/consts/rivals';
+import { TEAMS } from '../consts/rivals';
 import { getCoordinates } from '../consts/location-data';
 import { getFlagCdnCode } from '../utils/flags';
+import { getAssetUrl } from '../utils/assets';
 
 interface RivalsMapWrapperProps {
     matches: any[];
@@ -39,8 +40,6 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             const stats = teamStats.get(rivalName) || { wins: 0, draws: 0, losses: 0, matches: 0 };
             stats.matches += 1;
 
-            // goles_rm and goles_rival are ALREADY correct in the database
-            // No need to swap based on isHome
             const goalsRM = parseInt(m.goles_rm) || 0;
             const goalsRival = parseInt(m.goles_rival) || 0;
 
@@ -49,7 +48,6 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             } else if (goalsRM < goalsRival) {
                 stats.losses += 1;
             } else {
-                // Draw in regular time, check penalties
                 const penalties = m.penaltis;
                 if (penalties === 1 || penalties === '1') {
                     stats.wins += 1;
@@ -85,7 +83,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
                     draws: stats.draws,
                     losses: stats.losses,
                     matches: stats.matches,
-                    shieldUrl: rivalShields[team.id] || ''
+                    shieldUrl: getAssetUrl('escudos', team.id) || ''
                 });
 
                 cityMap.set(key, existing);

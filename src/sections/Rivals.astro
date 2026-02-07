@@ -1,11 +1,12 @@
 ---
-import { TEAMS as RIVALS } from "../../public/consts/rivals";
-import { getFlagCdnCode } from "../utils/flags";
-import { COUNTRIES } from "../../public/consts/countries";
+import { TEAMS as RIVALS } from "../consts/rivals";
+import { getFlagSrc } from "../utils/flags";
+import { COUNTRIES } from "../consts/countries";
 import type { ImageMetadata } from "astro";
 import { fetchGamesDirectly, calculateRivalStats } from "../utils/partidos";
 import RivalsStatsDashboard from "../components/RivalsStatsDashboard.astro";
 import RivalsMapWrapper from "../components/RivalsMapWrapper";
+import { getAssetUrl } from "../utils/assets";
 import "../styles/global.css";
 
 const allMatches = await fetchGamesDirectly();
@@ -18,12 +19,11 @@ const listofRivals = RIVALS.map((rival) => {
         : "";
     const stats = calculateRivalStats(allMatches, rival.name);
 
-    return { ...rival, countryName, stats };
+    return { ...rival, countryName, stats, flagUrl: getFlagSrc(country) };
 });
 
 function getRivalLogoSrc(rivalId: string) {
-    const imageId = rivalId.replace(/-/g, "_");
-    return { src: `/assets/escudos/${imageId}.png` };
+    return { src: getAssetUrl("escudos", rivalId) };
 }
 
 const rivalShieldsMap = RIVALS.reduce(
@@ -50,7 +50,7 @@ const rivalShieldsMap = RIVALS.reduce(
                 <div class="rival-country">
                     <img
                         id="rival-flag"
-                        src={`https://flagcdn.com/w40/${getFlagCdnCode(listofRivals[0].country)}.png`}
+                        src={getFlagSrc(listofRivals[0].country)}
                         alt={listofRivals[0].countryName}
                         class="country-flag"
                     />
@@ -204,27 +204,7 @@ const rivalShieldsMap = RIVALS.reduce(
 
             const flag = document.getElementById("rival-flag");
             if (flag) {
-                const getFlagCode = (c) => {
-                    const map = {
-                        cze: "cz",
-                        aut: "at",
-                        alb: "al",
-                        mex: "mx",
-                        ukr: "ua",
-                        isl: "is",
-                        nor: "no",
-                        sui: "ch",
-                        swe: "se",
-                        ger: "de",
-                        den: "dk",
-                        ned: "nl",
-                        por: "pt",
-                        prt: "pt", // Portugal
-                        ita: "it", // Italy
-                    };
-                    return map[c] || c;
-                };
-                flag.src = `https://flagcdn.com/w40/${getFlagCode(rival.country)}.png`;
+                flag.src = rival.flagUrl;
                 flag.alt = rival.countryName;
             }
 

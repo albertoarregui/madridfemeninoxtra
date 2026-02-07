@@ -8,26 +8,16 @@ import {
 import { fetchCoachRecords } from "../../utils/coach-records";
 import { fetchCoachStreaks } from "../../utils/coach-streaks";
 
-import albertoTorilPhoto from "../../assets/entrenadores/alberto_toril.png";
-import davidAznarPhoto from "../../assets/entrenadores/david_aznar.png";
-import pauQuesadaPhoto from "../../assets/entrenadores/pau_quesada.png";
-
-const coachPhotos: Record<string, any> = {
-    "Alberto Toril": albertoTorilPhoto,
-    "David Aznar": davidAznarPhoto,
-    "Pau Quesada": pauQuesadaPhoto,
-};
-
-import ligaFLogo from "../../assets/competiciones/liga_f.png";
-import uwclLogo from "../../assets/competiciones/uwcl.png";
-import copaLogo from "../../assets/competiciones/copa_de_la_reina.png";
-import supercopaLogo from "../../assets/competiciones/supercopa_de_espana.png";
+import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
 
 const competitionLogos: Record<string, any> = {
-    "Liga F": ligaFLogo,
-    UWCL: uwclLogo,
-    "Copa de la Reina": copaLogo,
-    "Supercopa de España": supercopaLogo,
+    "Liga F": getAssetMetadata("competiciones", "liga_f"),
+    UWCL: getAssetMetadata("competiciones", "uwcl"),
+    "Copa de la Reina": getAssetMetadata("competiciones", "copa_de_la_reina"),
+    "Supercopa de España": getAssetMetadata(
+        "competiciones",
+        "supercopa_de_espana",
+    ),
 };
 
 const { slug } = Astro.params;
@@ -44,24 +34,8 @@ const coachRecords = await fetchCoachRecords(coach.id_entrenador);
 const coachStreaks = await fetchCoachStreaks(coach.id_entrenador);
 const trajectory = await fetchCoachTrajectory(coach.id_entrenador);
 
-let flagImage: ImageMetadata | undefined;
-try {
-    const flags = import.meta.glob<{ default: ImageMetadata }>(
-        "/src/assets/banderas/*.svg",
-    );
-    const flagSlug = coach.pais
-        ?.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_");
-    const flagPath = `/src/assets/banderas/${flagSlug}.svg`;
-
-    if (flags[flagPath]) {
-        flagImage = (await flags[flagPath]()).default;
-    }
-} catch (error) {
-    console.error(`Error loading flag for ${coach.pais}:`, error);
-}
+const flagImageMetadata = getAssetMetadata("banderas", coach.pais);
+let flagImage = flagImageMetadata || undefined;
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -109,19 +83,28 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                 <div class="ficha-content">
                     <div class="player-photo-container">
                         {
-                            coachPhotos[coach.nombre] ? (
-                                <img
-                                    src={coachPhotos[coach.nombre].src}
-                                    alt={`Foto de ${coach.nombre}`}
-                                    class="player-photo"
-                                />
-                            ) : (
-                                <img
-                                    src="/images/placeholder.png"
-                                    alt={`Foto de ${coach.nombre}`}
-                                    class="player-photo"
-                                />
-                            )
+                            (() => {
+                                const photo = getAssetMetadata(
+                                    "entrenadores",
+                                    coach.nombre,
+                                );
+                                return photo ? (
+                                    <img
+                                        src={photo.src}
+                                        alt={`Foto de ${coach.nombre}`}
+                                        class="player-photo"
+                                    />
+                                ) : (
+                                    <img
+                                        src={getAssetUrl(
+                                            "entrenadores",
+                                            "placeholder",
+                                        )}
+                                        alt={`Foto de ${coach.nombre}`}
+                                        class="player-photo"
+                                    />
+                                );
+                            })()
                         }
                     </div>
                     <div class="player-info">

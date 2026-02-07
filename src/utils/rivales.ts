@@ -8,17 +8,11 @@ export function slugify(text: string | null | undefined): string {
         .replace(/\-\-+/g, '-');
 }
 
+import { getAssetUrl } from './assets';
+
 export function getRivalShieldUrl(rival: any): string {
-    let fileName = rival.escudo_url;
-
-    if (!fileName && rival.nombre) {
-        let nameSlug = slugify(rival.nombre).replace(/-/g, '_');
-        fileName = `${nameSlug}.png`;
-    } else if (fileName && !fileName.includes('.')) {
-        fileName += '.png';
-    }
-
-    return `/assets/escudos/${encodeURI(fileName || 'placeholder.png')}`;
+    const name = rival.escudo_url || rival.nombre;
+    return getAssetUrl('escudos', name);
 }
 
 export const cleanApiValue = (value: any): any => {

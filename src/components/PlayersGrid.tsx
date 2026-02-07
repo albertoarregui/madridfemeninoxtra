@@ -24,7 +24,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     const [selectedCountry, setSelectedCountry] = useState<string>('Todos');
     const [selectedSeason, setSelectedSeason] = useState<string>('Todas');
 
-    // Custom sorting order
     const POSITION_ORDER: Record<string, number> = {
         'Portera': 1,
         'Lateral izquierda': 2,
@@ -38,7 +37,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         'Delantera': 7
     };
 
-    // Extract unique filters
     const positions = useMemo(() => {
         const pos = new Set(players.map(p => p.posicion).filter(Boolean));
         return ['Todas', ...Array.from(pos).sort((a, b) => {
@@ -66,23 +64,18 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         return ['Todas', '2024-2025', '2023-2024', '2022-2023', '2021-2022', '2020-2021'];
     }, [players]);
 
-    // Helper to get dorsal
     const getDorsal = (player: Player, season: string) => {
         if (!player.dorsales) return 999;
 
         if (season !== 'Todas') {
             return player.dorsales[season] || 999;
         } else {
-            // Find latest season dorsal
-            // Seasons list (from global scope? or pass it?)
-            // We can just look for the known current season '2024-2025' or highest key
             const keys = Object.keys(player.dorsales).sort().reverse();
             if (keys.length > 0) return player.dorsales[keys[0]];
             return 999;
         }
     };
 
-    // Filter logic
     const filteredPlayers = useMemo(() => {
         const filtered = players.filter(player => {
             const matchesPosition = selectedPosition === 'Todas' || player.posicion === selectedPosition;
@@ -94,21 +87,18 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                 if (Array.isArray(player.temporadas) && player.temporadas.length > 0) {
                     matchesSeason = player.temporadas.includes(selectedSeason);
                 } else {
-                    // If no seasons are registered, don't show info for specific seasons
                     matchesSeason = false;
                 }
             }
             return matchesPosition && matchesCountry && matchesSeason;
         });
 
-        // Sort by position then dorsal
         const sorted = filtered.sort((a, b) => {
             const orderA = POSITION_ORDER[a.posicion] || 99;
             const orderB = POSITION_ORDER[b.posicion] || 99;
 
             if (orderA !== orderB) return orderA - orderB;
 
-            // Secondary: Dorsal
             const dorsalA = getDorsal(a, selectedSeason);
             const dorsalB = getDorsal(b, selectedSeason);
 
@@ -130,9 +120,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid">
             <div className="mb-10 flex flex-col items-center gap-6">
-                {/* Filters */}
                 <div className="flex gap-4 w-full flex-wrap justify-center">
-                    {/* Season Filter */}
                     <div className="relative inline-block">
                         <select
                             value={selectedSeason}
@@ -162,7 +150,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </svg>
                     </div>
 
-                    {/* Position Filter */}
                     <div className="relative inline-block">
                         <select
                             value={selectedPosition}
@@ -192,7 +179,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </svg>
                     </div>
 
-                    {/* Country Filter */}
                     <div className="relative inline-block">
                         <select
                             value={selectedCountry}
@@ -224,7 +210,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                 </div>
             </div>
 
-            {/* Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 gap-y-10 pt-4">
                 {filteredPlayers.map(player => (
                     <a
@@ -232,30 +217,26 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         href={`/jugadoras/${player.slug}`}
                         className="group relative flex flex-col items-center transition-all duration-300 hover:-translate-y-1"
                     >
-                        {/* Card Background (Content) */}
                         <div className="absolute inset-x-0 bottom-0 top-6 bg-gradient-to-br from-[#1d274e] to-[#151e42] rounded-2xl shadow-lg border border-white/5 group-hover:border-[#ffde59]/50 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(255,222,89,0.15)] z-0 overflow-hidden" />
 
-                        {/* Image Container - POP OUT */}
                         <div className="w-full h-72 relative z-10 px-4 -mb-12">
-                            {/* Image sits on top. We mask it or just let it be. 
-                                 To prevent "cutting" at the bottom where it meets info, we can let it slide behind info? 
-                                 Or just have it cut by its own container?
-                             */}
                             <div className="w-full h-full relative flex items-end justify-center">
                                 <img
                                     src={player.imageUrl}
                                     alt={player.nombre}
                                     className="w-full h-full object-cover object-top transform origin-bottom transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2 rounded-t-2xl"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width={400}
+                                    height={500}
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; // Fallback
+                                        (e.target as HTMLImageElement).src = '/assets/jugadoras-perfil/placeholder.png'; // Fallback
                                     }}
                                 />
                             </div>
                         </div>
 
-                        {/* Info Container - inside the card background z-index */}
                         <div className="w-full p-5 relative z-20 mt-12">
-                            {/* Position Badge */}
                             <div className="absolute -top-6 left-6 z-20">
                                 <span className="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold uppercase tracking-wider text-white group-hover:bg-[#ffde59] group-hover:text-black transition-colors">
                                     {player.posicion}
@@ -273,14 +254,17 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                     src={getFlagSrc(player.pais_origin || player.pais_origen)}
                                     alt={player.pais_origin || player.pais_origen}
                                     className="w-5 h-5 rounded-full object-cover shadow-sm"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width={20}
+                                    height={20}
                                     onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none'; // Hide if no flag found
+                                        (e.target as HTMLImageElement).style.display = 'none';
                                     }}
                                 />
                                 <span className="uppercase">{player.pais_origin || player.pais_origen}</span>
                             </div>
 
-                            {/* View Profile Button - ALWAYS VISIBLE */}
                             <div className="mt-4 pt-4 border-t border-white/10 flex justify-end">
                                 <span className="text-xs font-bold uppercase tracking-wider text-[#ffde59] flex items-center gap-1 transition-colors group-hover:text-white">
                                     Ver Perfil <span className="text-lg">→</span>

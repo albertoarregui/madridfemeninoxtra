@@ -1,3 +1,5 @@
+import { getAssetUrl } from './assets';
+
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
     return text.toString().toLowerCase()
@@ -44,7 +46,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
 
         const query = `
             SELECT
-                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp,
+                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 cl.nombre AS club_local,
@@ -64,6 +66,12 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 ep.xg_en_contra,
                 ep.faltas_cometidas,
                 ep.faltas_recibidas,
+                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rm,
+                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
+                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm,
+                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rival,
+                (SELECT COUNT(*) FROM penaltis pen WHERE pen.id_partido = p.id_partido AND pen.id_jugadora IS NOT NULL) as penaltis_rm,
+                (SELECT COUNT(*) FROM penaltis pen WHERE pen.id_partido = p.id_partido AND pen.id_jugadora IS NULL) as penaltis_rival,
                 
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
@@ -165,7 +173,6 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
         } else if (golesRm < golesRival) {
             stats.losses++;
         } else {
-            // Draw in regular time, check penalties
             const penalties = match.penaltis;
             if (penalties === 1 || penalties === '1') {
                 stats.wins++;
@@ -191,7 +198,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             return [];
         }
 
-        // We try to select dorsal if it exists in alineaciones, otherwise just player info
         const query = `
             SELECT 
                 a.id_alineacion,
@@ -237,7 +243,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
         });
 
         return result.rows.map((row: any) => {
-            // Helper for image 
+
             let fileName: string | null = null;
             if (row.nombre) {
                 const slug = slugify(row.nombre).replace(/-/g, '_');
@@ -246,7 +252,6 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 fileName = `${nameForFile}.png`;
             }
 
-            // Fallback if player not found in join
             const displayName = row.nombre || `Jugadora ID: ${row.id_jugadora}`;
             const displayPos = row.posicion || '-';
 
@@ -255,7 +260,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 name: displayName,
                 pos: displayPos,
                 number: row.dorsal || '-',
-                imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
+                imageUrl: `/assets/jugadoras-perfil/${encodeURI(fileName || 'placeholder.png')}`,
                 slug: row.nombre ? slugify(row.nombre) : '#',
                 minutes: row.minutos_jugados,
                 substituted: row.minuto_salida !== null,
@@ -279,7 +284,6 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
 
         if (!client) return [];
 
-        // Fetch players with entry or exit minutes from ALINEACIONES
         const query = `
             SELECT 
                 a.id_alineacion,
@@ -335,7 +339,7 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
-                    imageUrl: `/assets/jugadoras/${encodeURI(fileName || 'placeholder.png')}`,
+                    imageUrl: getAssetUrl('jugadoras', fileName || 'placeholder.png'),
                     slug: row.nombre ? slugify(row.nombre) : '#',
                     goals: row.goles,
                     assists: row.asistencias,
@@ -445,7 +449,6 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
-        // Query to get match results
         const matchQuery = `
              SELECT 
                 SUM(CASE 
@@ -467,9 +470,6 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
             WHERE p.id_arbitra = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
         `;
 
-        // Query to get card stats
-        // We join with the 'tarjetas' table if it exists. Based on grep, it seems to exist.
-        // We filter by match ID where referee matches.
         const cardQuery = `
             SELECT 
                 SUM(CASE 
@@ -773,31 +773,24 @@ export async function fetchAllGoals(): Promise<any[]> {
                 g.id_partido,
                 g.minuto,
                 g.tipo,
+                g.goleadora,
+                g.asistente,
                 p.id_temporada,
                 p.id_competicion,
                 p.goles_rm,
                 p.goles_rival,
                 t.temporada,
-                c.competicion
+                c.competicion,
+                j.nombre as nombre_goleadora,
+                ast.nombre as nombre_asistente
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+            LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
+            LEFT JOIN jugadoras ast ON g.asistente = ast.id_jugadora
             WHERE 1=1 
         `;
-
-        // Note: The above query might capture own goals if we tracked them as specific types, 
-        // but generally we want "Goals Scored by RM" or just "Goals in RM matches".
-        // The user wants "Goles en tramos de 10 minutos". Usually this implies goals FOR.
-        // Let's grab all goals connected to RM matches. 
-        // BUT wait, `goles_y_asistencias` table structure usually tracks RM players. 
-        // If it's a rival goal, does it exist there?
-        // Checking schema via context is hard without `schema.sql`, but usually `goles_y_asistencias` 
-        // is for the team's players (stats).
-        // Let's assume this table only holds RM goals for now, which is safer for "Goals For".
-        // If we want "Goals Against" distribution, we might not have minute data for rivals 
-        // unless we have a specific table or event stream for them.
-        // I will assume "Goals For" distribution is the primary request unless specified.
 
         const result = await client.execute(query);
         return result.rows;

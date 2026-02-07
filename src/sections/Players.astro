@@ -1,6 +1,8 @@
 ---
-import { TOTAL_PLAYERS as PLAYERS } from "../../public/consts/players";
-import { COUNTRIES } from "../../public/consts/countries";
+import { TOTAL_PLAYERS as PLAYERS } from "../consts/players";
+import { COUNTRIES } from "../consts/countries";
+import { getAssetUrl } from "../utils/assets";
+import { getFlagSrc } from "../utils/flags";
 import type { ImageMetadata } from "astro";
 import "../styles/global.css";
 
@@ -10,26 +12,12 @@ const listofPlayers = PLAYERS.map((player) => {
     return { ...player, countryName };
 });
 
-const playerImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras/*.png",
-    { eager: true },
-);
-
-const profileImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras-perfil/*.png",
-    { eager: true },
-);
-
 function getPlayerImageSrc(playerId: string) {
-    const imageId = playerId.replace(/-/g, "_");
-    const imagePath = `/src/assets/jugadoras/${imageId}.png`;
-    return playerImages[imagePath]?.default;
+    return { src: getAssetUrl('jugadoras', playerId) };
 }
 
 function getProfileImageSrc(playerId: string) {
-    const imageId = playerId.replace(/-/g, "_");
-    const imagePath = `/src/assets/jugadoras-perfil/${imageId}.png`;
-    return profileImages[imagePath]?.default;
+    return { src: getAssetUrl('jugadorasPerfil', playerId) };
 }
 
 function calculateAge(birthDateString: string): number {
@@ -63,7 +51,7 @@ function formatDate(dateString: string): string {
                 <div class="player-country">
                     <img
                         id="player-flag"
-                        src={`https://flagcdn.com/w40/${listofPlayers[0].country}.png`}
+                        src={getFlagSrc(listofPlayers[0].country)}
                         alt={listofPlayers[0].countryName}
                         class="country-flag"
                     />

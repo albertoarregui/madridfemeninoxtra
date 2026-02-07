@@ -6,7 +6,7 @@ import { Image } from "astro:assets";
 const query = Astro.url.searchParams.get("q") || "";
 
 interface SearchResult {
-    type: "player" | "rival" | "match" | "coach";
+    type: "player" | "rival" | "match" | "coach" | "referee" | "stadium";
     title: string;
     subtitle: string;
     url: string;
@@ -36,7 +36,7 @@ if (query) {
 
 // Image resolution logic
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
+    "/src/assets/jugadoras-perfil/*.{png,jpg,jpeg,webp}",
 );
 // rivalImages removed since we use public path
 const coachImages = import.meta.glob<{ default: ImageMetadata }>(
@@ -50,6 +50,18 @@ async function getImage(result: SearchResult) {
         return { src: `/assets/escudos/${slugUnderscored}.png` };
     }
 
+    if (result.type === "stadium") {
+        try {
+            const { getAllStadiums } = await import("../utils/estadios");
+            const estadios = getAllStadiums();
+            const estadio = estadios.find((e) => e.slug === result.slug);
+            if (estadio?.imageUrl) return { src: estadio.imageUrl };
+        } catch (e) {
+            console.error("Error fetching stadium image:", e);
+        }
+        return null;
+    }
+
     let imagesRecord: Record<
         string,
         () => Promise<{ default: ImageMetadata }>
@@ -58,7 +70,7 @@ async function getImage(result: SearchResult) {
 
     if (result.type === "player") {
         imagesRecord = playerImages;
-        folderName = "jugadoras";
+        folderName = "jugadoras-perfil";
     } else if (result.type === "coach") {
         imagesRecord = coachImages;
         folderName = "entrenadores";
@@ -101,11 +113,14 @@ const playerResults = results.filter((r) => r.type === "player");
 const rivalResults = results.filter((r) => r.type === "rival");
 const coachResults = results.filter((r) => r.type === "coach");
 const matchResults = results.filter((r) => r.type === "match");
+const refereeResults = results.filter((r) => r.type === "referee");
+const stadiumResults = results.filter((r) => r.type === "stadium");
 
 // Resolve images ensuring no async map in JSX
 let playerResultsWithImages: any[] = [];
 let rivalResultsWithImages: any[] = [];
 let coachResultsWithImages: any[] = [];
+let stadiumResultsWithImages: any[] = [];
 
 try {
     playerResultsWithImages = await Promise.all(
@@ -137,6 +152,16 @@ try {
             }),
         })),
     );
+
+    stadiumResultsWithImages = await Promise.all(
+        stadiumResults.map(async (r) => ({
+            ...r,
+            image: await getImage(r).catch((e) => {
+                console.error(`Error loading image for ${r.title}:`, e);
+                return null;
+            }),
+        })),
+    );
 } catch (e) {
     console.error("Critical error resolving search images:", e);
 }
@@ -149,7 +174,7 @@ try {
 >
     <div class="search-page">
         <div class="search-container">
-            <h1 class="page-title">Resultados de búsqueda</h1>
+            <h1 class="page-title">RESULTADOS DE BÚSQUEDA</h1>
 
             <div class="search-box">
                 <form action="/search" method="get" class="search-form">
@@ -157,11 +182,27 @@ try {
                         type="search"
                         name="q"
                         value={query}
-                        placeholder="Buscar jugadoras, entrenadores, rivales..."
+                        placeholder="Buscar jugadoras, partidos, estadios, árbitras..."
                         class="search-input"
                         autofocus
                     />
-                    <button type="submit" class="search-button">Buscar</button>
+                    <button type="submit" class="search-button">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        Buscar
+                    </button>
                 </form>
             </div>
 
@@ -301,6 +342,65 @@ try {
                             </section>
                         )}
 
+                        {stadiumResultsWithImages.length > 0 && (
+                            <section class="results-section">
+                                <h2 class="section-title">
+                                    Estadios ({stadiumResultsWithImages.length})
+                                </h2>
+                                <div class="results-grid">
+                                    {stadiumResultsWithImages.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card stadium-card"
+                                        >
+                                            {result.image && (
+                                                <div class="stadium-image-container">
+                                                    <img
+                                                        src={result.image.src}
+                                                        alt={result.title}
+                                                        class="stadium-image"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {refereeResults.length > 0 && (
+                            <section class="results-section">
+                                <h2 class="section-title">
+                                    Árbitras ({refereeResults.length})
+                                </h2>
+                                <div class="results-grid">
+                                    {refereeResults.map((result) => (
+                                        <a
+                                            href={result.url}
+                                            class="result-card"
+                                        >
+                                            <div class="result-info">
+                                                <h3 class="result-title">
+                                                    {result.title}
+                                                </h3>
+                                                <p class="result-subtitle">
+                                                    {result.subtitle}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         {matchResults.length > 0 && (
                             <section class="results-section">
                                 <h2 class="section-title">
@@ -369,11 +469,12 @@ try {
 
     .search-input {
         flex: 1;
-        padding: 1rem 1.5rem;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: border-color 0.3s ease;
+        padding: 0.85rem 1.75rem;
+        border: 2px solid #ffde59;
+        border-radius: 30px;
+        font-size: 1.05rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.1);
     }
 
     .search-input:focus {
@@ -382,21 +483,37 @@ try {
     }
 
     .search-button {
-        padding: 1rem 2rem;
-        background: #ffde59;
+        padding: 0.85rem 2rem;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
         color: #2b2b2b;
         border: none;
-        border-radius: 8px;
+        border-radius: 30px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s ease;
         text-transform: uppercase;
         font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        letter-spacing: 1px;
     }
 
     .search-button:hover {
-        background: #2b2b2b;
-        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #000;
+    }
+
+    .search-button svg {
+        width: 18px;
+        height: 18px;
     }
 
     .search-results {
@@ -409,10 +526,13 @@ try {
 
     .results-summary {
         margin-bottom: 2rem;
-        padding: 1rem;
+        padding: 1rem 1.5rem;
         background: #f9f9f9;
-        border-left: 4px solid #ffde59;
+        border-left: 12px solid #ffde59;
         border-radius: 4px;
+        display: inline-block;
+        max-width: 600px;
+        min-width: 400px;
     }
 
     .no-results {
@@ -517,6 +637,30 @@ try {
         font-size: 0.9rem;
         color: #666;
         margin: 0;
+    }
+
+    .stadium-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .stadium-image-container {
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        background: #f5f5f5;
+    }
+
+    .stadium-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .stadium-card .result-info {
+        padding: 1.5rem;
     }
 
     @media (max-width: 768px) {

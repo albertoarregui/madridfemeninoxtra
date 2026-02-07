@@ -38,7 +38,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
             console.error('Error fetching top scorer:', error);
         }
 
-        // Biggest win
         try {
             const biggestWinResult = await db.execute({
                 sql: `
@@ -290,9 +289,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
 
         if (rows.length === 0) return [];
 
-        // Fetch cards for these matches separately to avoid subquery issues
         const matchIds = rows.map((m: any) => m.id_partido);
-        // Create placeholders ? for the IN clause
         const placeholders = matchIds.map(() => '?').join(',');
 
         const cardsResult = await db.execute({
@@ -300,15 +297,13 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             args: matchIds
         });
 
-        // Map cards by match ID
         const cardsByMatch: Record<string, { yellow: number; red: number }> = {};
         matchIds.forEach((id: any) => {
             cardsByMatch[id] = { yellow: 0, red: 0 };
         });
 
         cardsResult.rows.forEach((card: any) => {
-            // Count card if it is NOT for the rival (so it is for RM)
-            // Logic: if id_equipo != rivalId OR id_equipo IS NULL (assuming 2 team match)
+
             const cardTeamId = Number(card.id_equipo);
             const rId = Number(rivalId);
 
@@ -316,10 +311,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 const matchId = card.id_partido;
                 if (cardsByMatch[matchId]) {
                     const type = (card.tipo_tarjeta || '').toUpperCase();
-                    // Exclude double yellow from yellow count? Logic says yes if it counts as red.
-                    // But usually:
-                    // Yellow = 'AMARILLA' or 'YELLOW' (excluding double)
-                    // Red = 'ROJA' or 'RED' or 'DOBLE'
 
                     if ((type.includes('AMARILLA') || type.includes('YELLOW')) && !type.includes('DOBLE')) {
                         cardsByMatch[matchId].yellow++;
@@ -333,13 +324,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         return rows.map((match: any) => {
             const cards = cardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
 
-            // Check if the displayed rival is the local team in this match
-            // If match.id_club_local === rivalId, then Rival is Local.
             const esLocal = Number(match.id_club_local) === Number(rivalId);
 
-            // Format result as Home-Away
-            // If Rival is Local, Home score is match.goles_rival (Rival Goals), Away score is match.goles_rm (Opponent/RM Goals).
-            // If Rival is Visitor, Home score is match.goles_rm (Opponent/RM Goals), Away score is match.goles_rival (Rival Goals).
             const statsLocal = esLocal ? match.goles_rival : match.goles_rm;
             const statsVisitor = esLocal ? match.goles_rm : match.goles_rival;
 
@@ -356,7 +342,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 estadio: match.estadio || '-',
                 amarillas: cards.yellow,
                 rojas: cards.red,
-                // Debug log for attendance
                 asistencia: match.asistencia ? match.asistencia.toString().trim() : null,
             };
         });
@@ -430,7 +415,6 @@ export function calculateRivalStats(matches: any[]) {
 }
 
 export function calculateStreaks(matches: any[]) {
-    // Sort matches by date ascending for streak calculation
     const sortedMatches = [...matches].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
 
     let currentWinStreak = 0;
@@ -455,7 +439,6 @@ export function calculateStreaks(matches: any[]) {
         const golesRM = parseInt(match.golesRM) || 0;
         const golesRival = parseInt(match.golesRival) || 0;
 
-        // Win Streak
         if (golesRM > golesRival) {
             currentWinStreak++;
         } else {
@@ -463,7 +446,6 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
 
-        // Draw Streak
         if (golesRM === golesRival) {
             currentDrawStreak++;
         } else {
@@ -471,7 +453,6 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentDrawStreak > maxDrawStreak) maxDrawStreak = currentDrawStreak;
 
-        // Loss Streak
         if (golesRM < golesRival) {
             currentLossStreak++;
         } else {
@@ -479,7 +460,6 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
 
-        // No Win Streak (Draw or Loss)
         if (golesRM <= golesRival) {
             currentNoWinStreak++;
         } else {
@@ -487,7 +467,6 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentNoWinStreak > maxNoWinStreak) maxNoWinStreak = currentNoWinStreak;
 
-        // Undefeated Streak (Win or Draw)
         if (golesRM >= golesRival) {
             currentUndefeatedStreak++;
         } else {
@@ -495,7 +474,6 @@ export function calculateStreaks(matches: any[]) {
         }
         if (currentUndefeatedStreak > maxUndefeatedStreak) maxUndefeatedStreak = currentUndefeatedStreak;
 
-        // Clean Sheet Streak
         if (golesRival === 0) {
             currentCleanSheetStreak++;
         } else {

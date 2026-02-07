@@ -4,7 +4,6 @@ import { fetchPlayersDirectly } from "../utils/players";
 import { fetchRivalsDirectly } from "../utils/rivales";
 import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
 
-// 1. Fetch data server-side
 const [partidos, jugadoras, clubes, golesData] = await Promise.all([
     fetchGamesDirectly(),
     fetchPlayersDirectly(),
@@ -12,7 +11,6 @@ const [partidos, jugadoras, clubes, golesData] = await Promise.all([
     fetchGoalsAssistsDirectly(),
 ]);
 
-// 2. Process Statistics (Server Side)
 let stats = {
     victorias: 0,
     empates: 0,
@@ -28,8 +26,6 @@ for (const p of partidos) {
     const rmGoles = Number(p.goles_rm) || 0;
     const rivalGoles = Number(p.goles_rival) || 0;
 
-    // Check penalties if defined
-    // API returns numeric 1/0 or string "1"/"0", or sometimes null
     const penaltisResultado =
         p.penaltis !== null && p.penaltis !== undefined
             ? Number(p.penaltis)
@@ -43,7 +39,6 @@ for (const p of partidos) {
     } else if (rmGoles < rivalGoles) {
         stats.derrotas++;
     } else {
-        // Draw logic
         if (isNaN(penaltisResultado)) {
             stats.empates++;
         } else if (penaltisResultado === 1) {
@@ -51,7 +46,6 @@ for (const p of partidos) {
         } else if (penaltisResultado === 0) {
             stats.derrotas++;
         } else {
-            // Fallback if penalty format is unexpected, count as draw
             stats.empates++;
         }
     }

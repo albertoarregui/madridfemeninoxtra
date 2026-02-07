@@ -1,4 +1,4 @@
----
+﻿---
 import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
 import "../styles/global.css";
@@ -8,90 +8,70 @@ import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
 import Calendar from "../components/Calendar.astro";
 import Searcher from "../components/Searcher.astro";
 import YoutubeSection from "../components/YoutubeSection.astro";
-import StatsImage from "../assets/real_madrid_stats.png";
-import NewsTicker from "../components/NewsTicker.astro";
+import MatchTicker from "../components/MatchTicker.astro";
 import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
 
-import heroVideo from "../assets/intro-home.webm";
+import heroVideo from "../assets/main/intro-home.webm";
 import heroPoster from "../assets/background/background.jpg";
 import mapaJugadoras from "../assets/sidebar/mapa_jugadoras.png";
 import mapaPartidos from "../assets/sidebar/mapa_partidos.png";
 import mapaRivales from "../assets/sidebar/mapa_rivales.png";
 
-const WP_URL =
-	"https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=10&_embed=true";
+import {
+	fetchGamesDirectly,
+	fetchAllGoals,
+	calculateRivalStats,
+} from "../utils/partidos";
+import ClubStatsDashboard from "../components/ClubStatsDashboard";
+import { CALENDAR } from "../consts/calendar";
 
-interface Noticia {
-	id: number;
-	title: { rendered: string };
-	excerpt: { rendered: string };
-	slug: string;
-	date: string;
-	link: string;
-	_embedded?: {
-		"wp:featuredmedia"?: Array<{ source_url: string }>;
-		"wp:term"?: Array<Array<{ name: string }>>;
-	};
+function parseMatchDate(dateStr: string, timeStr: string): Date {
+	const [hours, minutes] = timeStr.replace(/[^0-9:]/g, "").split(":");
+	return new Date(`${dateStr}T${hours}:${minutes}:00`);
 }
 
-let posts: Noticia[] = [];
-let error = false;
+const now = new Date();
+const twoHours = 2 * 60 * 60 * 1000;
+const nextMatch =
+	CALENDAR.find((match) => {
+		const matchDate = parseMatchDate(match.date, match.time);
+		const matchEndTime = new Date(matchDate.getTime() + twoHours);
+		return matchEndTime > now;
+	}) || CALENDAR[CALENDAR.length - 1];
 
-try {
-	const response = await fetch(WP_URL);
-	if (!response.ok) throw new Error("Failed to fetch");
-	posts = await response.json();
-} catch (e) {
-	console.error("Error fetching news:", e);
-	error = true;
-}
+const rivalName = nextMatch.team1.includes("Real Madrid")
+	? nextMatch.team2
+	: nextMatch.team1;
 
-function formatDate(dateString: string) {
-	const date = new Date(dateString);
-	return new Intl.DateTimeFormat("es-ES", {
-		month: "short",
-		day: "numeric",
-	}).format(date);
-}
+const gamesData = await fetchGamesDirectly();
+const allGoals = await fetchAllGoals();
 
-function getCategoryPriority(catName: string) {
-	const lower = catName.toLowerCase();
-	if (
-		lower.includes("previa") ||
-		lower.includes("crónica") ||
-		lower.includes("postpartido")
-	)
-		return 1;
-	if (lower.includes("primer equipo") || lower.includes("cantera")) return 2;
-	if (
-		lower.includes("liga f") ||
-		lower.includes("uwcl") ||
-		lower.includes("champions") ||
-		lower.includes("copa") ||
-		lower.includes("supercopa")
-	)
-		return 3;
-	return 4;
-}
+const rivalStats = calculateRivalStats(gamesData, rivalName);
 
-function getCategoryStyle(catName: string) {
-	const lower = catName.toLowerCase();
-	if (lower.includes("liga f"))
-		return "background-color: #00ced1; color: white;";
-	if (lower.includes("uwcl") || lower.includes("champions"))
-		return "background-color: #003399; color: white;";
-	if (lower.includes("copa de la reina"))
-		return "background-color: #ff914d; color: white;";
-	if (lower.includes("supercopa"))
-		return "background-color: #ff3333; color: white;";
-	if (lower.includes("primer equipo") || lower.includes("cantera"))
-		return "background-color: #c9a0dc; color: white;";
-	if (lower.includes("previa"))
-		return "background-color: #ffde59; color: white;";
-	if (lower.includes("postpartido") || lower.includes("crónica"))
-		return "background-color: #800080; color: white;";
-	return "background-color: #ffde59; color: white;";
-}
+const uniqueSeasons = [
+	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
+]
+	.sort()
+	.reverse();
+
+const competitionOrder = [
+	"Liga F",
+	"UWCL",
+	"Copa de la Reina",
+	"Supercopa de España",
+	"Amistosos",
+];
+
+const uniqueCompetitions = [
+	...new Set(gamesData.map((g) => g.competicion_nombre).filter((c) => c)),
+].sort((a, b) => {
+	const indexA = competitionOrder.indexOf(a as string);
+	const indexB = competitionOrder.indexOf(b as string);
+	if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+	if (indexA !== -1) return -1;
+	if (indexB !== -1) return 1;
+	return (a as string).localeCompare(b as string);
+});
 
 const schema = {
 	"@context": "https://schema.org",
@@ -111,8 +91,9 @@ const schema = {
 	description="Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!"
 >
 	<script type="application/ld+json" set:html={JSON.stringify(schema)} />
-	<NewsTicker />
+	<MatchTicker />
 	<link rel="preload" as="image" href={heroPoster.src} fetchpriority="high" />
+
 	<section class="hero">
 		<video
 			class="hero-video"
@@ -120,20 +101,16 @@ const schema = {
 			loop
 			muted
 			playsinline
-			poster={heroPoster.src}
-			fetchpriority="high"
+			preload="metadata"
 		>
 			<source src={heroVideo} type="video/webm" />
 		</video>
 		<div class="hero-text">
 			<h1>MADRID FEMENINO XTRA</h1>
 			<h2>
-				El medio de referencia de la actualidad del equipo y la mayor
-				base de datos histórica del Real Madrid Femenino.
+				La mayor base de datos de histórica del Real Madrid Femenino.
 			</h2>
-
 			<Searcher />
-
 			<ResumenEstadisticas />
 		</div>
 	</section>
@@ -141,124 +118,49 @@ const schema = {
 	<div class="content-layout">
 		<main class="welcome-area">
 			<section class="news-content">
-				<h2 class="section-title">ÚLTIMAS NOTICIAS</h2>
-				<p class="content-h2">
-					Última hora del Real Madrid Femenino en directo: actualidad,
-					próximos partidos y fichajes en Liga F, Champions League,
-					Copa de la Reina y Supercopa de España.
-				</p>
+				<div class="match-center-container mb-[4rem]">
+					<ProximoPartido
+						rivalStats={{
+							...rivalStats,
+							total:
+								rivalStats.wins +
+								rivalStats.draws +
+								rivalStats.losses,
+						}}
+					/>
+				</div>
 
-				{
-					error ? (
-						<p class="no-news">
-							Error al cargar las noticias. Por favor, intenta de
-							nuevo más tarde.
-						</p>
-					) : posts.length === 0 ? (
-						<p class="no-news">
-							No hay noticias disponibles en este momento.
-						</p>
-					) : (
-						<div class="news-grid">
-							{posts.map((post) => {
-								const title = post.title.rendered;
-								const excerpt = post.excerpt.rendered;
-								const formattedDate = formatDate(post.date);
-								const featuredImage =
-									post._embedded?.["wp:featuredmedia"]?.[0]
-										?.source_url;
-								const rawCategories =
-									post._embedded?.["wp:term"]?.[0] || [];
-								let categories = rawCategories.map(
-									(cat) => cat.name,
-								);
-								const link = `/noticias/${post.slug}`;
-
-								categories.sort(
-									(a, b) =>
-										getCategoryPriority(a) -
-										getCategoryPriority(b),
-								);
-
-								return (
-									<article
-										class="news-card"
-										onclick={`window.location.href='${link}'`}
-										style="cursor: pointer;"
-									>
-										{featuredImage && (
-											<div class="news-image">
-												<img
-													src={featuredImage}
-													alt={title}
-													loading="lazy"
-												/>
-											</div>
-										)}
-										<div class="news-content-inner">
-											<div class="news-meta">
-												<time class="news-date">
-													{formattedDate}
-												</time>
-												<div
-													class="news-categories"
-													style="display: flex; gap: 6px; flex-wrap: wrap;"
-												>
-													{categories.map((cat) => (
-														<span
-															class="news-category"
-															style={getCategoryStyle(
-																cat,
-															)}
-														>
-															{cat}
-														</span>
-													))}
-												</div>
-											</div>
-											<h3 class="news-title">{title}</h3>
-											<div
-												class="news-excerpt"
-												set:html={excerpt}
-											/>
-											<a href={link} class="news-link">
-												Leer más →
-											</a>
-										</div>
-									</article>
-								);
-							})}
-						</div>
-					)
-				}
-
-				<a href="/noticias/primer-equipo" class="view-all-news">
-					Más noticias →
-				</a>
+				<div
+					class="season-stats-section mb-[4rem] w-full"
+					id="stats-dashboard"
+				>
+					<h2 class="section-title">
+						ESTADÍSTICAS DE LA TEMPORADA {uniqueSeasons[0]}
+					</h2>
+					<ClubStatsDashboard
+						matches={gamesData.filter(
+							(g) => g.temporada_nombre === uniqueSeasons[0],
+						)}
+						goals={allGoals.filter(
+							(g) => g.temporada === uniqueSeasons[0],
+						)}
+						seasons={[uniqueSeasons[0]]}
+						competitions={uniqueCompetitions}
+						client:visible
+					/>
+				</div>
+				<div class="youtube-container mb-[4rem]">
+					<YoutubeSection />
+				</div>
 			</section>
-
-			<YoutubeSection />
 		</main>
 
 		<aside class="proximo-partido sidebar-right">
-			<h2 class="section-title">PRÓXIMO PARTIDO</h2>
-			<ProximoPartido />
-
 			<h2 class="section-title">CALENDARIO</h2>
 			<Calendar />
 
 			<h2 class="section-title">JUGADORA DEL MES</h2>
 			<PlayerOfTheMonthWidget />
-
-			<h2 class="section-title">ESTADÍSTICAS DEL EQUIPO</h2>
-			<a href="/rivales/real-madrid" class="stats-link">
-				<img
-					src={StatsImage.src}
-					alt="Estadísticas Real Madrid"
-					class="stats-image"
-					loading="lazy"
-				/>
-			</a>
 
 			<h2 class="section-title">MAPA DE JUGADORAS</h2>
 			<a href="/jugadoras" class="stats-link">
@@ -266,6 +168,9 @@ const schema = {
 					src={mapaJugadoras}
 					alt="Mapa de Jugadoras Real Madrid Femenino"
 					class="stats-image"
+					width={450}
+					height={180}
+					format="webp"
 					style="height: 180px; object-fit: cover; width: 100%;"
 				/>
 			</a>
@@ -276,6 +181,9 @@ const schema = {
 					src={mapaPartidos}
 					alt="Mapa de Estadios Real Madrid Femenino"
 					class="stats-image"
+					width={450}
+					height={180}
+					format="webp"
 					style="height: 180px; object-fit: cover; width: 100%;"
 				/>
 			</a>
@@ -286,6 +194,9 @@ const schema = {
 					src={mapaRivales}
 					alt="Mapa de Rivales Real Madrid Femenino"
 					class="stats-image"
+					width={450}
+					height={180}
+					format="webp"
 					style="height: 180px; object-fit: cover; width: 100%;"
 				/>
 			</a>
@@ -296,18 +207,169 @@ const schema = {
 				src="https://widgets.sofascore.com/embed/tournament/3739/season/77723/standings/Primera%20Division%2C%20Women%2025%2F26?widgetTitle=Primera%20Division%2C%20Women%2025%2F26&showCompetitionLogo=true"
 				style="height:911px!important;max-width:768px!important;width:100%!important;"
 				frameborder="0"
-				frameborder="0"
 				scrolling="no"
-				loading="lazy"></iframe>
+				loading="lazy"
+				title="Clasificación de Liga F"></iframe>
 			<div
 				style="font-size:12px;font-family:Arial,sans-serif;text-align:left"
 			>
-				Clasificacion ofrecida por <a
+				Clasificación ofrecida por <a
 					target="_blank"
 					href="https://www.sofascore.com/es-la/torneo/futbol/spain/liga-f/1127#id:77723"
-					>Sofascore</a
+					rel="noopener noreferrer">Estadísticas de Sofascore</a
 				>
 			</div>
 		</aside>
 	</div>
 </Layout>
+
+<style>
+	.match-center-container {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		width: 100%;
+		margin: 0 auto;
+	}
+	.next-match-section {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+	.historical-card {
+		background: linear-gradient(145deg, #ffffff, #f8f9fa);
+		border-radius: 16px;
+		padding: 25px 20px;
+		box-shadow:
+			0 4px 6px -1px rgba(0, 0, 0, 0.1),
+			0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		border: 1px solid #edf2f7;
+		transition:
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+	.historical-card:hover {
+		transform: translateY(-2px);
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	}
+	.historical-header {
+		text-align: center;
+		margin-bottom: 25px;
+	}
+	.historical-title {
+		font-size: 1.1rem;
+		font-weight: 800;
+		color: #1a202c;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 5px;
+	}
+	.rival-name {
+		color: #d97706;
+		font-size: 1.4rem;
+		font-weight: 900;
+		text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.05);
+	}
+	.historical-divider {
+		height: 3px;
+		width: 60px;
+		background: #fbbf24;
+		margin: 10px auto 0;
+		border-radius: 2px;
+	}
+	.historical-stats-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 15px;
+		margin-bottom: 25px;
+	}
+	.stat-group {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+	}
+	.stat-circle {
+		width: 60px;
+		height: 60px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: "Bebas Neue", sans-serif;
+		font-size: 2rem;
+		font-weight: 700;
+		color: white;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+	.stat-circle.win {
+		background: #10b981;
+	}
+	.stat-circle.draw {
+		background: #f59e0b;
+	}
+	.stat-circle.loss {
+		background: #ef4444;
+	}
+	.stat-label {
+		font-size: 0.7rem;
+		font-weight: 800;
+		color: #64748b;
+		letter-spacing: 0.05em;
+	}
+	.stat-separator {
+		width: 1px;
+		height: 40px;
+		background: #cbd5e1;
+	}
+	.total-matches-badge {
+		background: #e2e8f0;
+		color: #475569;
+		padding: 8px 16px;
+		border-radius: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		font-size: 0.9rem;
+		margin: 0 auto;
+		width: fit-content;
+		font-weight: 600;
+	}
+	.total-matches-badge strong {
+		color: #1e293b;
+		font-weight: 800;
+	}
+	@media (max-width: 640px) {
+		.stat-circle {
+			width: 50px;
+			height: 50px;
+			font-size: 1.6rem;
+		}
+		.historical-stats-content {
+			gap: 10px;
+		}
+	}
+	.animate-fade-in-up {
+		animation: fadeInUp 0.8s ease-out forwards;
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	@keyframes fadeInUp {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.season-stats-section {
+		margin-top: 4rem;
+		margin-bottom: 4rem;
+	}
+</style>

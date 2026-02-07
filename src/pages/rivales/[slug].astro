@@ -9,6 +9,7 @@ import {
     calculateStreaks,
 } from "../../utils/rival-records";
 import type { ImageMetadata } from "astro";
+import { getAssetUrl, getAssetMetadata } from "../../utils/assets";
 
 const { slug } = Astro.params;
 
@@ -40,78 +41,18 @@ if (!rival) {
 }
 
 let shieldImage: { src: string } | undefined;
-try {
-    // Removed glob import for escudos
-    let fileSlug = rival.slug.replace(/-/g, "_");
-
-    const normalizeName = (name: string) =>
-        name
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "");
-    const nameNorm = normalizeName(rival.nombre);
-
-    if (nameNorm.includes("cacereno")) {
-        fileSlug = "cacereno";
-    } else if (nameNorm.includes("turbine") && nameNorm.includes("potsdam")) {
-        fileSlug = "ffc_turbine_potsdam";
-    } else if (
-        nameNorm.includes("wolfsburgo") ||
-        nameNorm.includes("wolfsburg")
-    ) {
-        fileSlug = "wolfsburgo";
-    }
-
-    // Direct public path
-    shieldImage = { src: `/assets/escudos/${fileSlug}.png` };
-} catch (error) {
-    // console.error(`Error loading shield for ${rival.nombre}:`, error);
-}
-
 let flagImage: ImageMetadata | undefined;
-try {
-    const flags = import.meta.glob<{ default: ImageMetadata }>(
-        "/src/assets/banderas/*.svg",
-    );
-    const flagSlug = rival.pais
-        ?.toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_");
-    const flagPath = `/src/assets/banderas/${flagSlug}.svg`;
-
-    if (flags[flagPath]) {
-        flagImage = (await flags[flagPath]()).default;
-    } else {
-        // console.log("Flag not found");
-    }
-} catch (error) {
-    // console.error(`Error loading flag for ${rival.pais}:`, error);
-}
-
-// Stadium Images Logic
 let stadiumImage: ImageMetadata | undefined;
-try {
-    const stadiumImages = import.meta.glob<{ default: ImageMetadata }>(
-        "/src/assets/estadios/*.{png,jpg,jpeg,webp}",
-    );
-    // Try to find image by stadium name slug
-    if (rival.estadio) {
-        const stadiumSlug = slugify(rival.estadio).replace(/-/g, "_");
-        const stadiumPath = `/src/assets/estadios/${stadiumSlug}.png`;
 
-        // Find the matching key in glob result
-        const matchingKey = Object.keys(stadiumImages).find((key) => {
-            return key.includes(stadiumSlug);
-        });
+const shieldImageMetadata = getAssetMetadata("escudos", rival.nombre);
+shieldImage = shieldImageMetadata
+    ? { src: shieldImageMetadata.src }
+    : undefined;
 
-        if (matchingKey && stadiumImages[matchingKey]) {
-            stadiumImage = (await stadiumImages[matchingKey]()).default;
-        }
-    }
-} catch (error) {
-    console.error(`Error loading stadium image for ${rival.estadio}:`, error);
-}
+const flagImageMetadata = getAssetMetadata("banderas", rival.pais);
+flagImage = flagImageMetadata || undefined;
+
+stadiumImage = getAssetMetadata("estadios", rival.estadio) || undefined;
 
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
@@ -268,7 +209,7 @@ const isRealMadrid =
                                     <img
                                         src={rival.shieldUrl}
                                         alt={`Escudo de ${rival.nombre}`}
-                                        onerror="this.onerror=null; this.src='/assets/escudos/placeholder.png';"
+                                        onerror={`this.onerror=null; this.src='${getAssetUrl("escudos", "placeholder")}';`}
                                     />
                                 )
                             }

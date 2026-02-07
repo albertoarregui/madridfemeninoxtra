@@ -1,6 +1,5 @@
 
 export const STATS_TRANSLATIONS: Record<string, string> = {
-    // General
     player: "Jugadora",
     nationality: "Nacionalidad",
     position: "Posición",
@@ -11,7 +10,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     minutes: "Minutos",
     minutes_90s: "90s",
 
-    // Standard
     goals: "Goles",
     assists: "Asistencias",
     goals_assists: "G+A",
@@ -28,7 +26,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     progressive_passes: "Pases Prog.",
     progressive_passes_received: "Pases Recibidos Prog.",
 
-    // Per 90
     goals_per90: "Goles/90",
     assists_per90: "Asist./90",
     goals_assists_per90: "G+A/90",
@@ -40,7 +37,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     npxg_per90: "npxG/90",
     npxg_xg_assist_per90: "npxG+xAG/90",
 
-    // Shooting
     shots: "Tiros",
     shots_on_target: "Tiros a Puerta",
     shots_on_target_pct: "% Tiros a Puerta",
@@ -49,7 +45,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     average_shot_distance: "Distancia Media",
     shots_free_kicks: "Tiros Libre",
 
-    // Passing
     passes_completed: "Pases Completados",
     passes: "Pases Intentados",
     passes_pct: "% Pases",
@@ -72,7 +67,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     passes_into_penalty_area: "Pases Área",
     crosses_into_penalty_area: "Centros Área",
 
-    // Defense
     tackles: "Entradas",
     tackles_won: "Entradas Ganadas",
     tackles_def_3rd: "Entradas Def 1/3",
@@ -81,7 +75,7 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     dribble_tackles: "Regates Parados",
     dribble_vs: "Regates vs",
     dribble_tackles_pct: "% Regates Parados",
-    dribbled_past: "Regateada", // Dribbled past
+    dribbled_past: "Regateada",
     blocks: "Bloqueos",
     blocked_shots: "Tiros Bloq.",
     blocked_passes: "Pases Bloq.",
@@ -90,7 +84,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     clearances: "Despejes",
     errors: "Errores (Goles)",
 
-    // Possession
     touches: "Toques",
     touches_def_pen_area: "Toques Área Def",
     touches_def_3rd: "Toques Def 1/3",
@@ -105,9 +98,6 @@ export const STATS_TRANSLATIONS: Record<string, string> = {
     dispossessed: "Desposeída",
     passes_received: "Pases Recibidos",
 
-    // Goalkeeping
-
-    // Misc
     fouls: "Faltas Com.",
     fouled: "Faltas Rec.",
     offsides: "Fueras de Juego",
@@ -124,7 +114,6 @@ export const COMPETITION_NAMES: Record<string, string> = {
     "181": "UWCL",
     "106": "Mundial Femenino",
     "103": "Eurocopa Femenina",
-    // Add more as discovered
 };
 
 export const TABLE_NAMES: Record<string, string> = {
@@ -142,19 +131,13 @@ export const TABLE_NAMES: Record<string, string> = {
 };
 
 export function getCompetitionId(tableKey: string): string {
-    // Format is usually stats_TYPE_COMPETITION
-    // e.g. stats_standard_230
     const parts = tableKey.split('_');
-    const compId = parts[parts.length - 1]; // Last part
+    const compId = parts[parts.length - 1];
     return compId;
 }
 
 export function getTableType(tableKey: string): string {
-    // Format is usually stats_TYPE_COMPETITION
-    // e.g. stats_standard_230 -> standard
-    // e.g. stats_keeper_adv_230 -> keeper_adv
     const parts = tableKey.split('_');
-    // Remove "stats" (first) and the comp ID (last)
     if (parts.length < 3) return tableKey;
     return parts.slice(1, parts.length - 1).join('_');
 }

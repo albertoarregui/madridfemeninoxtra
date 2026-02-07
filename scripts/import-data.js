@@ -1,6 +1,3 @@
-// Script para importar datos desde CSV a Turso
-// Uso: node scripts/import-data.js <archivo.csv> <tabla>
-
 import { createClient } from '@libsql/client';
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
@@ -12,7 +9,6 @@ const db = createClient({
 
 async function importFromCSV(csvPath, tableName) {
     try {
-        // Leer archivo CSV
         const fileContent = fs.readFileSync(csvPath, 'utf-8');
         const records = parse(fileContent, {
             columns: true,
@@ -22,14 +18,12 @@ async function importFromCSV(csvPath, tableName) {
 
         console.log(`📊 Encontrados ${records.length} registros en ${csvPath}`);
 
-        // Obtener columnas del primer registro
         const columns = Object.keys(records[0]);
         const placeholders = columns.map(() => '?').join(', ');
         const columnNames = columns.join(', ');
 
         const insertSQL = `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`;
 
-        // Insertar en lotes de 100 para mejor rendimiento
         const batchSize = 100;
         let inserted = 0;
 
@@ -58,7 +52,6 @@ async function importFromCSV(csvPath, tableName) {
     }
 }
 
-// Uso desde línea de comandos
 const [csvPath, tableName] = process.argv.slice(2);
 
 if (!csvPath || !tableName) {

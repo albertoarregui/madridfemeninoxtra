@@ -11,19 +11,11 @@ export function slugify(text: string | null | undefined): string {
         .replace(/\-\-+/g, '-');
 }
 
+import { getAssetUrl } from './assets';
+
 export function getCoachImageUrl(coach: any): string {
-    let fileName = coach.foto_url;
-
-    if (!fileName && coach.nombre) {
-        let nameSlug = slugify(coach.nombre).replace(/-/g, '_');
-        const parts = nameSlug.split('_').filter(p => p.length > 0);
-        let nameForFile = parts.slice(0, 4).join('_');
-        fileName = `${nameForFile}.png`;
-    } else if (fileName && !fileName.includes('.')) {
-        fileName += '.png';
-    }
-
-    return `/assets/entrenadores/${encodeURI(fileName || 'placeholder.png')}`;
+    const name = coach.foto_url || coach.nombre;
+    return getAssetUrl('entrenadores', name);
 }
 
 export const cleanApiValue = (value: any): any => {

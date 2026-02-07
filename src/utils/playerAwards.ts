@@ -1,8 +1,5 @@
 import type { AwardData } from "./awards";
 
-/**
- * Filter awards data for a specific player
- */
 export function getPlayerAwards(
     awardsData: AwardData[],
     playerId: number | string
@@ -12,9 +9,6 @@ export function getPlayerAwards(
         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 }
 
-/**
- * Group awards by type for display
- */
 export function groupAwardsByType(awards: AwardData[]): {
     monthly: AwardData[];
     seasonal: AwardData[];
@@ -25,22 +19,17 @@ export function groupAwardsByType(awards: AwardData[]): {
     };
 }
 
-/**
- * Format award date for display
- */
 export function formatAwardDate(dateString: string | Date): string {
     if (!dateString) return "";
     try {
         const date = new Date(dateString);
-        // Check if date is valid
         if (isNaN(date.getTime())) return String(dateString);
 
         const formatted = date.toLocaleDateString("es-ES", {
             month: "long",
             year: "numeric",
-        }).replace(/ de /g, " "); // Remove "de" separator
+        }).replace(/ de /g, " ");
 
-        // Return capitalized: "Octubre 2024"
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
     } catch {
         return String(dateString);

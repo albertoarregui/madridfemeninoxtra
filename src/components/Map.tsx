@@ -63,7 +63,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 />
                             </div>
                         )}
-                        {/* Tooltip on hover */}
+
                         <span className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity pointer-events-none z-10">
                             {marker.label}
                         </span>
@@ -75,17 +75,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     return (
         <div style={{ height: height, width: '100%', borderRadius: '0.75rem', overflow: 'hidden', position: 'relative' }}>
-            {/* ... styles ... */}
+
             <style>{`
                 .custom-popup .maplibregl-popup-content {
                     padding: 0 !important;
                     border-radius: 0.5rem !important;
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
                     border: none !important;
-                    background: transparent !important; /* Ensure no white bg bleeds */
+                    background: transparent !important;
                 }
                 .custom-popup .maplibregl-popup-tip {
-                    border-bottom-color: white !important; /* Match card bg */
+                    border-bottom-color: white !important;
                 }
             `}</style>
 
@@ -117,7 +117,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                         maxWidth="320px"
                     >
                         <div className="relative min-w-[280px] max-w-[90vw] text-[#151e42] bg-white rounded-lg overflow-hidden font-sans shadow-none border-0 ring-0">
-                            {/* Custom Close Button */}
+
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -129,12 +129,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                             </button>
 
-                            {/* PLAYER POPUP */}
+
                             {popupInfo.type === 'player' && (
                                 <div className="flex flex-col">
-                                    {/* ... existing player popup code ... */}
+
                                     <div className="w-full h-64 bg-gray-200 relative items-end justify-center flex overflow-hidden">
-                                        {/* Contain image so it's not cut off, aligned bottom */}
+
                                         <img
                                             src={popupInfo.imageUrl}
                                             alt={popupInfo.label}
@@ -183,10 +183,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-                            {/* MATCH POPUP */}
+
+
                             {popupInfo.type === 'match' && (
                                 <div className="flex flex-col">
-                                    {/* Stadium Photo */}
+
                                     {popupInfo.imageUrl && (
                                         <div className="w-full h-40 bg-gray-200 relative">
                                             <img
@@ -196,7 +197,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                             />
                                             <div className="absolute inset-0 bg-black/40"></div>
                                             <div className="absolute bottom-2 left-3 right-3 text-white">
-                                                {/* Bold Stadium Name */}
+
                                                 <h3 className="font-bebas text-xl leading-tight drop-shadow-md font-bold">
                                                     {popupInfo.label}
                                                 </h3>
@@ -224,7 +225,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                     >
                                                         <div className="flex justify-between items-center mb-2">
                                                             <span className="text-[10px] text-gray-500 font-bold uppercase">{m.fecha_formateada}</span>
-                                                            {/* Competition Logo */}
+
                                                             {m.logo_competicion && (
                                                                 <img src={m.logo_competicion} alt={m.competicion_nombre} className="h-5 w-auto object-contain" title={m.competicion_nombre} />
                                                             )}
@@ -253,7 +254,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                             })()}
                                                         </div>
 
-                                                        {/* Styled "Ver detalles" button - Full Width Yellow */}
+
                                                         <a
                                                             href={`/partidos/${m.slug}`}
                                                             target="_blank"
@@ -277,7 +278,59 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-                            {/* RIVAL CITY POPUP */}
+
+                            {popupInfo.type === 'stadium' && (
+                                <div className="flex flex-col">
+
+                                    {popupInfo.imageUrl && (
+                                        <div className="w-full h-48 bg-gray-200 relative">
+                                            <img
+                                                src={popupInfo.imageUrl}
+                                                alt={popupInfo.label}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                                            <div className="absolute bottom-3 left-3 right-3 text-white">
+                                                <h3 className="font-bebas text-2xl leading-tight drop-shadow-lg font-bold">
+                                                    {popupInfo.label}
+                                                </h3>
+                                                {popupInfo.description && (
+                                                    <p className="text-sm opacity-90 mt-1">{popupInfo.description}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="p-4 bg-white">
+                                        {!popupInfo.imageUrl && (
+                                            <>
+                                                <h3 className="font-bebas text-2xl mb-2 font-bold text-[#151e42]">
+                                                    {popupInfo.label}
+                                                </h3>
+                                                {popupInfo.description && (
+                                                    <p className="text-sm text-gray-600 mb-3">{popupInfo.description}</p>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {popupInfo.data?.capacity && (
+                                            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                                                <span className="block text-xs text-gray-500 uppercase font-bold mb-1">Capacidad</span>
+                                                <span className="text-lg font-bold text-[#151e42]">{popupInfo.data.capacity.toLocaleString()}</span>
+                                            </div>
+                                        )}
+
+                                        <a
+                                            href={popupInfo.slug}
+                                            className="block w-full text-center bg-[#ffde59] hover:bg-[#ffe57f] text-[#151e42] font-bold py-3 rounded shadow-sm hover:shadow-md transition-all uppercase tracking-wide text-sm"
+                                        >
+                                            Ver Estadio
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+
+
                             {popupInfo.type === 'rival-city' && (
                                 <div className="p-0 min-w-[260px]">
                                     <div className="bg-[#ffde59] text-[#151e42] p-3 pr-10 rounded-t-lg relative flex items-center justify-center gap-3">
@@ -341,7 +394,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-                            {/* GENERIC FALLBACK */}
+
                             {!['player', 'match', 'rival-city'].includes(popupInfo.type || '') && (
                                 <div className="p-4">
                                     <h3 className="font-bold text-lg mb-2">{popupInfo.label}</h3>

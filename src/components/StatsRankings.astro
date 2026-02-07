@@ -8,28 +8,28 @@ interface Props {
     awardsData: AwardData[];
     seasons: string[];
     competitions: string[];
+    players?: any[];
 }
 
-const { rankingsData, streaksData, awardsData, seasons, competitions } =
-    Astro.props;
-
-const playerImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
-    { eager: true },
-);
+import { getAssetUrl } from "../utils/assets";
+const {
+    rankingsData,
+    streaksData,
+    awardsData,
+    seasons,
+    competitions,
+    players = [],
+} = Astro.props;
 
 const playerImageMap = Object.fromEntries(
-    Object.entries(playerImages).map(([path, mod]) => {
-        const fileName = path.split("/").pop()?.split(".")[0];
-        return [fileName, mod.default.src];
-    }),
+    players.map((p: any) => [p.slug, getAssetUrl("jugadoras", p.slug)]),
 );
 ---
 
 <div class="stats-rankings-ui">
     <div class="filters-container">
         <div class="filter-wrapper">
-            <select id="filtro-tipo">
+            <select id="filtro-tipo" aria-label="Tipo de ranking">
                 <option value="convocatorias">Convocatorias</option>
                 <option value="partidos">Partidos jugados</option>
                 <option value="titularidades">Titularidades</option>
@@ -78,13 +78,16 @@ const playerImageMap = Object.fromEntries(
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="filter-icon"
-                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                    d="M6 9l6 6l6 -6"></path></svg
             >
+                <>
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6 9l6 6l6 -6"></path>
+                </>
+            </svg>
         </div>
 
         <div class="filter-wrapper">
-            <select id="filtro-temporada">
+            <select id="filtro-temporada" aria-label="Filtrar por temporada">
                 <option value="todos">Todas las Temporadas</option>
                 {
                     seasons.map((season) => (
@@ -103,13 +106,19 @@ const playerImageMap = Object.fromEntries(
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="filter-icon"
-                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                    d="M6 9l6 6l6 -6"></path></svg
             >
+                <>
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6 9l6 6l6 -6"></path>
+                </>
+            </svg>
         </div>
 
         <div class="filter-wrapper">
-            <select id="filtro-competicion">
+            <select
+                id="filtro-competicion"
+                aria-label="Filtrar por competición"
+            >
                 <option value="todos">Todas las Competiciones</option>
                 <option value="oficiales">Partidos Oficiales</option>
                 <option value="Liga F">Liga F</option>
@@ -129,9 +138,12 @@ const playerImageMap = Object.fromEntries(
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 class="filter-icon"
-                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                    d="M6 9l6 6l6 -6"></path></svg
             >
+                <>
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M6 9l6 6l6 -6"></path>
+                </>
+            </svg>
         </div>
     </div>
 
@@ -313,8 +325,7 @@ const playerImageMap = Object.fromEntries(
 
     function getPlayerImage(slug) {
         if (!slug) return "";
-        const lookupSlug = slug.replace(/-/g, "_");
-        return playerImageMap[lookupSlug] || "";
+        return playerImageMap[slug] || "";
     }
 
     function isDefenderOrGK(pos) {
@@ -384,24 +395,16 @@ const playerImageMap = Object.fromEntries(
                         Number(b[config.primaryKey]) -
                         Number(a[config.primaryKey]),
                 );
-        } else if (config.isAward) {
-            // Filter awards by type and season
-            const filteredAwards = awardsData.filter((award) => {
-                // Filter by award type
-                if (award.tipo !== config.awardType) return false;
 
-                // Filter by season
-                if (
-                    selectedSeason !== "todos" &&
-                    award.temporada !== selectedSeason
-                ) {
-                    return false;
-                }
+            if (
+                selectedSeason !== "todos" &&
+                award.temporada !== selectedSeason
+            ) {
+                return false;
+            }
 
-                return true;
-            });
+            return true;
 
-            // Group by player
             const playerMap = {};
             filteredAwards.forEach((award) => {
                 if (!playerMap[award.id_jugadora]) {
@@ -409,12 +412,11 @@ const playerImageMap = Object.fromEntries(
                         nombre: award.nombre,
                         slug: award.slug,
                         award_count: 0,
-                        periods: [], // To store months or seasons
+                        periods: [],
                     };
                 }
                 playerMap[award.id_jugadora].award_count++;
 
-                // Add period (month or season)
                 const period =
                     config.awardType === "mes" ? award.mes : award.temporada;
                 if (
@@ -425,7 +427,6 @@ const playerImageMap = Object.fromEntries(
                 }
             });
 
-            // Convert to array and add periods string
             sortedPlayers = Object.values(playerMap)
                 .filter((p) => p.award_count > 0)
                 .map((p) => ({
@@ -503,7 +504,6 @@ const playerImageMap = Object.fromEntries(
                         )
                         .join("");
 
-                    // Add periods column for awards
                     const periodsCell = config.isAward
                         ? `
                     <td class="stat-cell text-center" style="${extraStyle}">${player.periods_text || ""}</td>
@@ -556,7 +556,7 @@ const playerImageMap = Object.fromEntries(
 
     .filters-container {
         display: flex;
-        gap: 1.5rem;
+        gap: 1rem;
         margin-bottom: 2rem;
         flex-wrap: wrap;
         justify-content: center;
@@ -564,60 +564,51 @@ const playerImageMap = Object.fromEntries(
 
     .filter-wrapper {
         position: relative;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 240px;
-    }
-
-    .filter-label {
-        display: none;
+        display: inline-block;
     }
 
     .filter-icon {
         position: absolute;
-        right: 1.25rem;
+        right: 1rem;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
-        color: #6b7280;
-        width: 18px;
-        height: 18px;
+        color: #2b2b2b;
+        width: 20px;
+        height: 20px;
         z-index: 2;
     }
 
     .filters-container select {
-        width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.5rem;
+        padding: 0.75rem 3rem 0.75rem 1.5rem;
         background: #ffffff;
-        color: #1f2937;
-        border: 1px solid #d1d5db;
-        border-radius: 9999px;
+        color: #2b2b2b;
+        border: 2px solid #ffde59;
+        border-radius: 25px;
         font-size: 0.95rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        width: 280px;
+        min-width: 280px;
+        max-width: 280px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
         outline: none;
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
-    }
-
-    .filters-container select {
         text-align: center;
-        padding-left: 1.5rem; /* Reset padding to match other side roughly or default */
     }
 
     .filters-container select:hover {
-        border-color: #fbbf24;
-        background: #fffdf5;
+        background: #fffef8;
+        border-color: #ffd700;
     }
 
     .filters-container select:focus {
-        border-color: #fbbf24;
-        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
-        background: #ffffff;
+        outline: none;
+        border-color: #ffd700;
+        box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
     }
 
     .ranking-cards-container {

@@ -12,9 +12,6 @@ export interface AwardData {
     mes?: string;
 }
 
-/**
- * Fetch awards from jugadora_del_mes table
- */
 export async function fetchPlayerAwards(): Promise<AwardData[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -43,8 +40,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
             const fecha = new Date(row.fecha);
             const año = fecha.getFullYear();
             const mes = fecha.toLocaleDateString('es-ES', { month: 'long' });
-            
-            // Extract season from date (Aug-Jul)
+
             const mesNumero = fecha.getMonth() + 1;
             const temporada = mesNumero >= 8 ? `${año}-${año + 1}` : `${año - 1}-${año}`;
 

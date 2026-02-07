@@ -154,7 +154,6 @@ export const StatsExplorer: React.FC<{ playerImageMap: Record<string, string> }>
 
     return (
         <div className="space-y-8">
-            {/* Filters - matching /partidos style */}
             <div className="flex flex-wrap gap-4 justify-center w-full md:w-auto" style={{ marginBottom: '2rem' }}>
                 <div className="relative">
                     <select
@@ -192,7 +191,6 @@ export const StatsExplorer: React.FC<{ playerImageMap: Record<string, string> }>
                 </div>
             </div>
 
-            {/* Charts Only */}
             <StatsCharts data={aggregatedData} matchLogs={matchLogs} season={season} playerImageMap={playerImageMap} />
         </div>
     );

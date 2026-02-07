@@ -43,7 +43,7 @@ export interface StreakData {
     competicion: string;
     streak_scoring: number;
     streak_assisting: number;
-    streak_ga: number; // Goals + Assists
+    streak_ga: number;
     streak_clean_sheet: number;
 }
 
@@ -243,9 +243,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
 
         if (!client) return [];
 
-        // Fetch granular match data for calculation
-        // We need: player, match date, season, competition, minutes_played, goals, assists
-        // Ordered by date ASC
         const query = `
             SELECT 
                 j.id_jugadora,
@@ -271,7 +268,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
         const result = await client.execute(query);
         const rows = result.rows;
 
-        // Group by player
         const playersMap: Record<number, any[]> = {};
         rows.forEach((r: any) => {
             if (!playersMap[r.id_jugadora]) playersMap[r.id_jugadora] = [];
@@ -292,24 +288,17 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 posicion: matches[0].posicion || ''
             };
 
-            // State trackers
             const currentStreaks: any = {
-                // Keyed by context key (e.g. 'all', 'temporada:X', 'competicion:Y')
-                // Value: { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 }
             };
 
             const maxStreaksMap: Record<string, any> = {};
-
-            // Initialize contexts for the player generally (though we create on fly)
 
             for (const m of matches) {
                 const season = m.temporada;
                 const competition = m.competicion;
 
-                // Contexts: Global, Season, Comp
                 const contexts = [`season:\${season}`, `comp:\${competition}`];
 
-                // Only add to global streaks if it's NOT a friendly
                 if (competition !== 'Amistoso') {
                     contexts.push('global');
                 }
@@ -318,7 +307,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 const hasAssist = Number(m.assists) > 0;
                 const hasGA = hasGoal || hasAssist;
 
-                // Detailed position check
                 const isDefensive = basePlayer.posicion && (
                     basePlayer.posicion.includes('Portera') ||
                     basePlayer.posicion.includes('Defensa') ||
@@ -330,23 +318,18 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 contexts.forEach(ctx => {
                     if (!currentStreaks[ctx]) currentStreaks[ctx] = { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 };
 
-                    // Scoring
                     if (hasGoal) currentStreaks[ctx].scoring++;
                     else currentStreaks[ctx].scoring = 0;
 
-                    // Assisting
                     if (hasAssist) currentStreaks[ctx].assisting++;
                     else currentStreaks[ctx].assisting = 0;
 
-                    // G+A
                     if (hasGA) currentStreaks[ctx].ga++;
                     else currentStreaks[ctx].ga = 0;
 
-                    // Clean Sheet
                     if (isCleanSheet) currentStreaks[ctx].clean_sheet++;
                     else currentStreaks[ctx].clean_sheet = 0;
 
-                    // Update Max
                     if (!maxStreaksMap[ctx]) {
                         maxStreaksMap[ctx] = {
                             ...basePlayer,
@@ -357,7 +340,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                             streak_ga: 0,
                             streak_clean_sheet: 0
                         };
-                        // Fix metadata for specific contexts to ensure filtered views work
                         if (ctx.startsWith('season:')) {
                             maxStreaksMap[ctx].competicion = 'all';
                         }
@@ -377,7 +359,6 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 });
             }
 
-            // Push all contexts to result
             Object.values(maxStreaksMap).forEach(val => streaks.push(val as StreakData));
         }
 

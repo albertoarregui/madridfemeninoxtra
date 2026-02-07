@@ -1,0 +1,42 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
+import { fetchRivalsDirectly } from "../../utils/rivales";
+import RivalsTable from "../../components/RivalsTable";
+import RivalsMapWrapper from "../../components/RivalsMapWrapper";
+import { fetchGamesDirectly } from "../../utils/partidos";
+
+const rivals = await fetchRivalsDirectly();
+const allMatches = await fetchGamesDirectly();
+
+const rivalShieldsMap = rivals.reduce(
+    (acc, team) => {
+        if (team.shieldUrl) {
+            acc[team.slug] = team.shieldUrl;
+        }
+        return acc;
+    },
+    {} as Record<string, string>,
+);
+---
+
+<Layout
+    title="Rivales del Real Madrid Femenino | Madrid Femenino Xtra"
+    description="Todos los rivales del Real Madrid Femenino: historial, resultados, porcentaje de victorias, goles, porterías a cero, y máximas goleadoras y asistentes."
+>
+    <main class="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 class="page-title">RIVALES</h1>
+
+        <h2 class="content-h2 mb-12">
+            Todos los rivales del Real Madrid Femenino a lo largo de su historia
+        </h2>
+
+        <RivalsMapWrapper
+            client:only="react"
+            matches={allMatches}
+            rivalShields={rivalShieldsMap}
+        />
+
+        <RivalsTable client:load rivals={rivals} />
+    </main>
+</Layout>

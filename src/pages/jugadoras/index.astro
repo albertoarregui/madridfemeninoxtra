@@ -1,0 +1,37 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
+import { fetchPlayersDirectly } from "../../utils/players";
+import PlayersGrid from "../../components/PlayersGrid";
+import PlayerMapWrapper from "../../components/PlayerMapWrapper";
+import PlayerStatsDashboard from "../../components/PlayerStatsDashboard";
+
+let playersData = await fetchPlayersDirectly();
+
+// Fallback to empty array if something goes wrong, but never use static sample data
+if (!playersData) {
+    playersData = [];
+}
+---
+
+<Layout
+    title="Jugadoras del Real Madrid Femenino | Madrid Femenino Xtra"
+    description="Todas las jugadoras del Real Madrid Femenino a lo largo de su historia: ficha técnica, posiciones, dorsales, estadísticas y trayectoria."
+>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <section class="content-container">
+            <h1 class="page-title">JUGADORAS</h1>
+
+            <p class="content-h2">
+                Todas las jugadoras del Real Madrid Femenino a lo largo de su
+                historia
+            </p>
+        </section>
+
+        <PlayerStatsDashboard players={playersData} client:visible />
+
+        <PlayerMapWrapper players={playersData} client:only="react" />
+
+        <PlayersGrid players={playersData} client:visible />
+    </main>
+</Layout>

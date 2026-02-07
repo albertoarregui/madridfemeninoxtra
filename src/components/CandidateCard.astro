@@ -1,20 +1,17 @@
 ---
-import type { ImageMetadata } from "astro";
 import { Image } from "astro:assets";
-// Import Gold Dust BG
-import goldDust from "/src/assets/background/gold_dust.png";
+import { getAssetMetadata } from "../utils/assets";
 
 interface Props {
     name: string;
-    playerId?: string; // id from squad.ts to find image
-    manualImage?: string | ImageMetadata; // fallback for non-squad players
-    country?: string; // country code for flag
-    selected?: boolean;
-    videoUrl?: string; // URL to open on click
+    playerId?: string;
+    manualImage?: ImageMetadata | null;
+    country?: string;
+    videoUrl?: string;
     imageScale?: number;
-    icon?: ImageMetadata; // Custom icon (e.g. Shield) replacing flag
-    yOffset?: number; // Vertical offset for image
-    poster?: boolean; // If true, rendering as cover/poster
+    icon?: ImageMetadata | null;
+    yOffset?: number;
+    poster?: boolean;
 }
 
 const {
@@ -22,332 +19,153 @@ const {
     playerId,
     manualImage,
     country,
-    selected = false,
-    videoUrl,
     imageScale = 1,
     icon,
     yOffset = 0,
     poster = false,
 } = Astro.props;
 
-// Dynamic Image Imports (Eager for simpler handling)
-const playerImages = import.meta.glob(
-    "/src/assets/jugadoras/*.{png,jpg,jpeg,webp}",
-    { eager: true },
-);
-const flagImages = import.meta.glob("/src/assets/banderas/*.svg", {
-    eager: true,
-});
+let imageSrc: ImageMetadata | null | undefined = manualImage;
 
-let playerImageSrc: ImageMetadata | string | undefined;
-let flagImageSrc: ImageMetadata | undefined;
-
-// Resolve Player Image
-if (playerId) {
-    const normalizedId = playerId.toLowerCase().trim();
-
-    // Glob keys are like "/src/assets/jugadoras/misa_rodriguez.png"
-    const matchingKey = Object.keys(playerImages).find((key) => {
-        const filename = key.split("/").pop()?.split(".")[0];
-        return filename === normalizedId;
-    });
-
-    if (matchingKey) {
-        playerImageSrc = (playerImages[matchingKey] as any).default;
-    }
+if (!imageSrc && playerId) {
+    imageSrc = getAssetMetadata("jugadorasPerfil", playerId);
 }
 
-// Fallback to manual if no squad image found
-if (!playerImageSrc && manualImage) {
-    playerImageSrc = manualImage;
-}
-
-const countryMap: Record<string, string> = {
-    es: "espana",
-    de: "alemania",
-    br: "brasil",
-    fr: "francia",
-    se: "suecia",
-    dk: "dinamarca",
-    "gb-sct": "escocia",
-    co: "colombia",
-    nl: "paises_bajos",
-    au: "australia",
-    mx: "mexico",
-    pt: "portugal",
-    no: "noruega",
-    it: "italia",
-    us: "usa",
-    uk: "inglaterra",
-};
-
-// Resolve Flag or Custom Icon
-if (icon) {
-    flagImageSrc = icon;
-} else if (country) {
-    let flagName = countryMap[country.toLowerCase()] || country.toLowerCase();
-
-    const matchingFlagKey = Object.keys(flagImages).find((key) => {
-        const filename = key.split("/").pop()?.split(".")[0];
-        return filename === flagName;
-    });
-
-    if (matchingFlagKey) {
-        flagImageSrc = (flagImages[matchingFlagKey] as any).default;
-    }
-}
-
-const Tag = "div";
+const flagImage = country ? getAssetMetadata("banderas", country) : null;
 ---
 
-<Tag class={`candidate-card ${selected ? "selected" : ""}`}>
-    <!-- Gold Dust Background Layer -->
-    <div class="card-background">
-        <div class="gold-dust-bg">
-            <Image src={goldDust} alt="" class="bg-image" />
-        </div>
+<article class={`candidate-card ${poster ? "poster-mode" : ""}`}>
+    <div class="card-image-container">
+        {
+            imageSrc && (
+                <Image
+                    src={imageSrc}
+                    alt={name}
+                    class="candidate-image"
+                    style={`transform: scale(${imageScale}) translateY(${yOffset}px);`}
+                    width={400}
+                />
+            )
+        }
+        {!imageSrc && <div class="placeholder-image" />}
     </div>
 
-    <!-- Content -->
-    <div class="card-content">
-        <div class="image-wrapper" style={`bottom: calc(80px + ${yOffset}px)`}>
+    <div class="card-info">
+        <div class="name-row">
             {
-                playerImageSrc &&
-                    (typeof playerImageSrc === "string" ? (
-                        <img
-                            src={playerImageSrc}
-                            alt={name}
-                            class={poster ? "video-thumbnail" : "player-photo"}
-                            loading="lazy"
-                            style={poster ? "" : `--base-scale: ${imageScale}`}
-                        />
-                    ) : (
-                        <Image
-                            src={playerImageSrc}
-                            alt={name}
-                            class={poster ? "video-thumbnail" : "player-photo"}
-                            width={200}
-                            height={200}
-                            style={poster ? "" : `--base-scale: ${imageScale}`}
-                        />
-                    ))
+                icon && (
+                    <Image
+                        src={icon}
+                        alt="Team Icon"
+                        class="team-icon"
+                        width={40}
+                        height={40}
+                    />
+                )
             }
-            {!playerImageSrc && <div class="no-photo-placeholder" />}
-        </div>
-
-        <div class="info">
-            <div class="name">{name}</div>
+            <h3>{name}</h3>
             {
-                flagImageSrc && (
-                    <div class="flag-container">
-                        <Image
-                            src={flagImageSrc}
-                            alt={country || "flag"}
-                            class="country-flag"
-                            width={24}
-                            height={16}
-                        />
-                    </div>
+                flagImage && (
+                    <Image
+                        src={flagImage}
+                        alt={country || ""}
+                        class="flag-icon"
+                        width={24}
+                        height={18}
+                    />
                 )
             }
         </div>
-
-        <div class="check-icon">✓</div>
     </div>
-</Tag>
+</article>
 
 <style>
     .candidate-card {
-        position: relative;
-        width: 220px;
-        height: 340px;
-        flex-shrink: 0;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-
-    .card-background {
-        position: absolute;
-        inset: 0;
-        border-radius: 16px;
-        background: radial-gradient(circle at center, #2e3552 0%, #1a1f3c 100%);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
         overflow: hidden;
-        border: 2px solid rgba(255, 255, 255, 0.05);
+        width: 280px;
+        height: 380px;
+        position: relative;
         transition:
-            box-shadow 0.3s ease,
-            border-color 0.3s ease;
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .candidate-card.selected .card-background {
-        border-color: #ffde59;
-        box-shadow: 0 0 20px rgba(255, 222, 89, 0.4);
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
     }
 
     .candidate-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 222, 89, 0.5);
     }
 
-    .gold-dust-bg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        opacity: 1;
-        mix-blend-mode: screen;
+    .candidate-card.selected {
+        border-color: #ffde59;
+        box-shadow:
+            0 0 0 2px #ffde59,
+            0 10px 25px rgba(255, 222, 89, 0.2);
     }
 
-    .bg-image {
+    .card-image-container {
+        height: 280px;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.5));
+    }
+
+    .candidate-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: top center;
     }
 
-    .card-content {
-        position: relative;
-        z-index: 2;
+    .card-info {
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.6);
+        flex-grow: 1;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        height: 100%;
-        padding: 1rem;
-    }
-
-    .image-wrapper {
-        position: absolute;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        height: 240px;
-        display: flex;
-        align-items: flex-end;
         justify-content: center;
+        backdrop-filter: blur(5px);
     }
 
-    .player-photo {
-        max-height: 100%;
-        max-width: 130%;
-        object-fit: contain;
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        transform-origin: bottom center;
-        transform: scale(var(--base-scale, 1));
+    .name-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
 
-    .candidate-card:hover .player-photo {
-        transform: scale(calc(var(--base-scale, 1) * 1.1));
-    }
-
-    .info {
-        margin-top: auto;
+    .name-row h3 {
+        margin: 0;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.1rem;
         text-align: center;
-        width: 100%;
-        padding-top: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 8px;
-        padding-bottom: 5px;
-        backdrop-filter: blur(4px);
-    }
-
-    .name {
-        font-family: "Poppins", sans-serif;
-        font-weight: 700;
-        color: #fff;
-        font-size: 0.95rem;
-        margin-bottom: 4px;
+        text-transform: uppercase;
+        color: white;
         line-height: 1.2;
     }
 
-    .candidate-card.selected .name {
-        color: #ffde59;
+    .team-icon {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
     }
 
-    .flag-container {
-        display: flex;
-        justify-content: center;
-        padding-bottom: 2px;
-    }
-
-    .country-flag {
-        display: block;
+    .flag-icon {
+        width: 20px;
+        height: auto;
         border-radius: 2px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
-    .check-icon {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #ffde59;
-        color: #000;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 14px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .poster-mode {
+        width: 320px;
     }
 
-    .candidate-card.selected .check-icon {
-        opacity: 1;
-        transform: scale(1);
+    .poster-mode .card-image-container {
+        height: 220px;
     }
-
-    .no-photo-placeholder {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .play-icon-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-        pointer-events: none;
-        filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
-        color: rgba(255, 255, 255, 0.9);
-        transition: all 0.3s ease;
-    }
-
-    .play-icon-overlay svg {
-        transition: transform 0.2s ease;
-    }
-
-    .candidate-card:hover .play-icon-overlay {
-        color: var(--awards-gold, #ffde59);
-        transform: translate(-50%, -50%) scale(1.1);
-    }
-
-    /* Video Thumbnail specifics */
-    .video-thumbnail {
-        width: 100%;
-        height: 100%;
-        max-width: none !important;
-        object-fit: cover;
-        border-radius: 12px;
-        transition: transform 0.3s ease;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .candidate-card:hover .video-thumbnail {
-        transform: scale(1.02);
-    }
-
-    /* Adjust image wrapper for video mode if needed, but styling usage handles it */
 </style>

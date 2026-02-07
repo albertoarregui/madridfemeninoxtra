@@ -3,11 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import { fetchRankingsDirectly, fetchPlayerStreaks } from "../utils/rankings";
 import { fetchPlayerAwards } from "../utils/awards";
+import { fetchPlayersDirectly } from "../utils/players";
 import StatsRankings from "../components/StatsRankings.astro";
 
 const rankingsData = await fetchRankingsDirectly();
 const streaksData = await fetchPlayerStreaks();
 const awardsData = await fetchPlayerAwards();
+const playersData = await fetchPlayersDirectly();
 
 const uniqueSeasons = [
     ...new Set(
@@ -15,7 +17,7 @@ const uniqueSeasons = [
     ),
 ]
     .sort()
-    .reverse(); // Latest season first
+    .reverse();
 
 const competitionOrder = [
     "Liga F",
@@ -48,8 +50,8 @@ const uniqueCompetitions = [
         <h1 class="page-title">RANKINGS</h1>
 
         <h2 class="content-h2 text-left text-pretty">
-            Consulta las líderes históricas, tanto por competición como por
-            temporada, en las diferentes estadísticas del Real Madrid Femenino.
+            Consulta las líderes históricas tanto por competición como por
+            temporada en las diferentes estadísticas del Real Madrid Femenino
         </h2>
 
         {
@@ -60,6 +62,7 @@ const uniqueCompetitions = [
                     awardsData={awardsData}
                     seasons={uniqueSeasons}
                     competitions={uniqueCompetitions}
+                    players={playersData}
                 />
             ) : (
                 <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">

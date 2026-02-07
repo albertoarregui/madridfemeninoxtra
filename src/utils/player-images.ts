@@ -1,5 +1,4 @@
 
-// Map of raw data name -> image filename
 export const IMAGE_OVERRIDES: Record<string, string> = {
     "yasmim": "yasmim_ribeiro",
     "antonia": "antonia_silva",
@@ -49,7 +48,6 @@ export const IMAGE_OVERRIDES: Record<string, string> = {
     "maria_antolin": "marisa_garcia"
 };
 
-// Map of raw data name -> Display Name
 export const NAME_OVERRIDES: Record<string, string> = {
     "yasmim": "Yasmim Ribeiro",
     "antonia": "Antonia Silva",
@@ -101,8 +99,9 @@ export const getDisplayName = (originalName: string) => {
     return originalName;
 };
 
-export const getPlayerImage = (imageSlug: string, playerImageMap: Record<string, string>) => {
-    if (!playerImageMap) return null;
+import { getAssetUrl } from "./assets";
+
+export const getPlayerImage = (imageSlug: string) => {
     let override = IMAGE_OVERRIDES[imageSlug];
 
     if (!override) {
@@ -110,8 +109,8 @@ export const getPlayerImage = (imageSlug: string, playerImageMap: Record<string,
         if (imageSlug.includes("beatriz") && imageSlug.includes("lez")) override = "bea_ortiz";
     }
 
-    if (override && playerImageMap[override]) return playerImageMap[override];
-    return playerImageMap[imageSlug];
+    const finalName = override || imageSlug;
+    return getAssetUrl("jugadorasPerfil", finalName);
 };
 
 export const getUrlSlug = (displayName: string) => {

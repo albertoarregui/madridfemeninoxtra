@@ -15,7 +15,7 @@ interface PlayerMapWrapperProps {
     players: Player[];
 }
 
-// Manual overrides for players with missing/incorrect DB data
+
 const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
     'linda-caicedo': 'candelaria',
     'kenti-robles': 'mexico',
@@ -40,12 +40,12 @@ const PLAYER_LOCATION_OVERRIDES: Record<string, string> = {
     'paula-partido': 'madrid',
     'andrea-tellez': 'alcorcon',
     'marina-salas': 'madrid',
-    'belen-de-gracia': 'madrid', // Assume Madrid
-    'andrea-rodriguez': 'madrid', // Assume Madrid
-    'dana-benitez': 'madrid', // Assume Madrid
+    'belen-de-gracia': 'madrid',
+    'andrea-rodriguez': 'madrid',
+    'dana-benitez': 'madrid',
     'clara-villanueva': 'madrid',
     'maria-portoles': 'madrid',
-    'noe-llamas': 'jarandilladelavera', // Mapped earlier via fuzzy, but enforcing here
+    'noe-llamas': 'jarandilladelavera',
 };
 
 const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
@@ -55,7 +55,7 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
         players.forEach(player => {
             let locationName = player.lugar_nacimiento || player.pais_origen;
 
-            // Check for manual override
+
             if (PLAYER_LOCATION_OVERRIDES[player.slug]) {
                 locationName = PLAYER_LOCATION_OVERRIDES[player.slug];
             }
@@ -64,16 +64,9 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
 
             const coords = getCoordinates(locationName, 'city');
             if (coords) {
-                // Creates a unique key for the marker based on location + player to allow individual pins
-                // Or we can group. Let's create individual pins but maybe slightly offset them if needed?
-                // For now, let's just make one marker per player.
 
-                // Better approach for clarity: One marker per city, popup lists players?
-                // Or just one marker per player. Let's do marker per player.
-                // If coordinates are exact same, they stack.
-                // To avoid perfect stacking, we can add a tiny random jitter.
 
-                const jitterLat = (Math.random() - 0.5) * 0.01; // Slightly increased jitter
+                const jitterLat = (Math.random() - 0.5) * 0.01;
                 const jitterLng = (Math.random() - 0.5) * 0.01;
 
                 markerMap.set(player.slug, {
@@ -87,7 +80,7 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
                     data: {
                         posicion: player.posicion,
                         pais: player.pais_origin,
-                        fecha_nacimiento: player.fecha_nacimiento // Assuming this field exists in player data
+                        fecha_nacimiento: player.fecha_nacimiento
                     }
                 });
             }
@@ -104,7 +97,7 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
             <InteractiveMap
                 markers={markers}
                 height="600px"
-                // Center on Europe roughly
+
                 center={{ lat: 48, lng: 10 }}
                 zoom={3.5}
             />

@@ -38,14 +38,8 @@ export default function ChatWidget() {
         scrollToBottom();
     }, [messages]);
 
-    // Estilos basados en global.css
-    // primary-color: #ffde59 (Amarillo)
-    // dark-bg: #2b2b2b
-    // dark-bg-secondary: #1f1f1f
-
     return (
         <div className="fixed bottom-4 right-4 z-50 font-sans">
-            {/* Botón flotante para abrir/cerrar */}
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
@@ -59,11 +53,8 @@ export default function ChatWidget() {
                 </button>
             )}
 
-            {/* Ventana del Chat */}
             {isOpen && (
                 <div className="bg-[#1f1f1f]/95 backdrop-blur-md rounded-2xl shadow-2xl w-[350px] sm:w-[400px] h-[500px] sm:h-[600px] flex flex-col border border-[#ffde59]/20 animate-in slide-in-from-bottom-10 fade-in duration-300">
-
-                    {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#2b2b2b] rounded-t-2xl">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-[#ffde59]/10 rounded-lg border border-[#ffde59]/20">
@@ -85,7 +76,6 @@ export default function ChatWidget() {
                         </button>
                     </div>
 
-                    {/* Área de Mensajes */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#1f1f1f]">
                         {messages.length === 0 && (
                             <div className="text-center py-8">
@@ -102,10 +92,8 @@ export default function ChatWidget() {
                                             onClick={() => {
                                                 const fakeEvent = { target: { value: q.text } } as any;
                                                 handleInputChange(fakeEvent);
-                                                // Trigger submission shortly after setting input is tricky with React state, 
-                                                // so we'll just call append directly
                                                 append({ role: 'user', content: q.text });
-                                                setIsOpen(true); // Ensure open
+                                                setIsOpen(true);
                                             }}
                                             className="text-left text-sm bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#ffde59]/30 text-gray-300 p-3 rounded-xl transition-all flex items-center gap-3 group"
                                         >
@@ -152,7 +140,6 @@ export default function ChatWidget() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Footer Input */}
                     <div className="p-3 border-t border-white/10 bg-[#2b2b2b]">
                         <form onSubmit={handleSubmit} className="chat-form relative flex items-center">
                             <input

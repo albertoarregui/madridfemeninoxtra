@@ -305,11 +305,10 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         </ResponsiveContainer>
                     </div>
 
-                    {/* Bar: Progression */}
-                    <div className="h-[500px] w-full"> {/* Increased Height */}
+                    <div className="h-[500px] w-full">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Progresión</h4>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barProg} layout="vertical" margin={{ top: 20, right: 20, left: 10, bottom: 20 }}> {/* Increased bottom margin */}
+                            <BarChart data={barProg} layout="vertical" margin={{ top: 20, right: 20, left: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
                                 <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 10 }} hide />
                                 <YAxis dataKey="name" type="category" width={120} tick={<CustomYAxisTick playerImageMap={playerImageMap} />} />
@@ -322,7 +321,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                 </div>
             </div>
 
-            {/* 2. EVOLUCIÓN DEL EQUIPO */}
             {trendXG.length > 2 && (
                 <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
                     <ChartSectionHeader title="Evolución del Equipo" icon={TrendingUp} />
@@ -345,7 +343,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mt-6">
-                        {/* Line: Possession */}
                         <div className="h-[300px] w-full">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Posesión (%)</h4>
                             <ResponsiveContainer width="100%" height="100%">
@@ -363,10 +360,8 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                 </div>
             )}
 
-            {/* 3. PORTERAS & USO */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
-                {/* SQ. Usage */}
                 <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
                     <ChartSectionHeader title="Uso de Plantilla" icon={Users} />
                     <div className="grid grid-cols-1 gap-8"> {/* 1 col for better fit */}
@@ -403,11 +398,9 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
 
             </div>
 
-            {/* CREATION (Restored to separate card) */}
             <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
                 <ChartSectionHeader title="Creación" icon={Activity} />
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    {/* Scatter: Asist vs xA - FULL WIDTH */}
                     <div className="h-[400px] w-full lg:col-span-2">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Asist. vs xA</h4>
                         <ResponsiveContainer width="100%" height="100%">
@@ -421,7 +414,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                             </ScatterChart>
                         </ResponsiveContainer>
                     </div>
-                    {/* Bar: SCA - FULL WIDTH */}
                     <div className="h-[500px] w-full lg:col-span-2">
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">SCA (Tiros Generados)</h4>
                         <ResponsiveContainer width="100%" height="100%">
@@ -437,15 +429,11 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                 </div>
             </div>
 
-            {/* GK REMOVED AS REQUESTED */}
-
-            {/* CREACIÓN Y JUEGO */}
             <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100 p-8">
                 <ChartSectionHeader title="Pase" icon={Swords} />
 
                 <div className="grid grid-cols-1 gap-12">
 
-                    {/* 1. EL METRÓNOMO (Volumen vs Seguridad) */}
                     <div className="h-[400px] w-full">
                         <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider hover:text-[#ffde59] transition-colors cursor-pointer">El Metrónomo (Volumen vs Seguridad)</h4>
                         <ResponsiveContainer width="100%" height="100%">
@@ -464,7 +452,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         </ResponsiveContainer>
                     </div>
 
-                    {/* 2. ESTILO DE PASE (Barras Apiladas 100%) */}
                     <div className="h-[800px] md:h-[800px] w-full">
                         {(() => {
                             const passStyleData = data
@@ -551,7 +538,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         })()}
                     </div>
 
-                    {/* 3. AMENAZA CREATIVA (xAG vs Key Passes) */}
                     <div className="h-[400px] w-full">
                         <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider hover:text-[#ffde59] transition-colors cursor-pointer">Amenaza Creativa (Calidad vs Cantidad)</h4>
                         <ResponsiveContainer width="100%" height="100%">
@@ -570,7 +556,6 @@ export const StatsCharts: React.FC<StatsChartsProps> = ({ data, matchLogs, seaso
                         </ResponsiveContainer>
                     </div>
 
-                    {/* 4. ROMPIENDO LÍNEAS (Progresión) */}
                     <div className="h-[400px] w-full">
                         <h4 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider hover:text-[#ffde59] transition-colors cursor-pointer">Rompiendo Líneas (1/3 vs Área)</h4>
                         <ResponsiveContainer width="100%" height="100%">

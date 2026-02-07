@@ -1,34 +1,23 @@
 ---
 import { SQUAD } from "../consts/squad";
-import { COUNTRIES } from "../../public/consts/countries";
+import { COUNTRIES } from "../consts/countries";
+import { getFlagSrc } from "../utils/flags";
+import { getAssetUrl, getAssetMetadata } from "../utils/assets";
 import type { ImageMetadata } from "astro";
 import "../styles/global.css";
 
 const listofPlayers = SQUAD.map((player) => {
     const { country } = player;
-    // @ts-ignore
     const countryName = COUNTRIES[country]?.name || "";
-    return { ...player, countryName };
+    return { ...player, countryName, flagUrl: getFlagSrc(country) };
 });
 
-const thumbnails = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras/*.png",
-    { eager: true },
-);
-
-const profileImages = import.meta.glob<{ default: ImageMetadata }>(
-    "/src/assets/jugadoras-perfil/*.png",
-    { eager: true },
-);
-
 function getThumbnailSrc(playerId: string) {
-    const imagePath = `/src/assets/jugadoras/${playerId}.png`;
-    return thumbnails[imagePath]?.default;
+    return getAssetMetadata("jugadoras", playerId);
 }
 
 function getProfileImageSrc(playerId: string) {
-    const imagePath = `/src/assets/jugadoras-perfil/${playerId}.png`;
-    return profileImages[imagePath]?.default;
+    return getAssetMetadata("jugadorasPerfil", playerId);
 }
 
 const rows = [
@@ -63,7 +52,7 @@ function calculateAge(birthDateString: string): number {
                 <div class="player-country">
                     <img
                         id="player-flag"
-                        src={`https://flagcdn.com/w40/${listofPlayers[0].country}.png`}
+                        src={getFlagSrc(listofPlayers[0].country)}
                         alt={listofPlayers[0].countryName}
                         class="country-flag"
                     />
@@ -253,7 +242,6 @@ function calculateAge(birthDateString: string): number {
         let selectedIndex = 0;
 
         function updatePlayerDisplay(index, isSelection = false) {
-            // @ts-ignore
             const player = players[index];
             if (!player) return;
 
@@ -276,7 +264,7 @@ function calculateAge(birthDateString: string): number {
 
             const flag = document.getElementById("player-flag");
             if (flag) {
-                flag.src = `https://flagcdn.com/w40/${player.country}.png`;
+                flag.src = player.flagUrl;
                 flag.alt = player.countryName;
             }
 

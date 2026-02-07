@@ -33,7 +33,6 @@ export async function getPlayersDbClient(): Promise<Client | null> {
 
     try {
         const { createClient } = await import('@libsql/client');
-        // Try specific stats env vars first, fallback to main if it might be the same
         const url = import.meta.env.TURSO_STATS_DATABASE_URL || import.meta.env.TURSO_DATABASE_URL;
         const authToken = import.meta.env.TURSO_STATS_AUTH_TOKEN || import.meta.env.TURSO_AUTH_TOKEN;
 

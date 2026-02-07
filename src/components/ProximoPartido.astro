@@ -1,409 +1,678 @@
----
-import vsImagen from "../assets/vs.png";
-import uwclLogo from "../assets/competiciones/uwcl.png";
-import LigaFLogo from "../assets/competiciones/liga_f.png";
-import CopadelaReinaLogo from "../assets/competiciones/copa_de_la_reina.png";
-import SupercopaLogo from "../assets/competiciones/supercopa_de_espana.png";
+﻿---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import vsImagen from "../assets/main/vs.png";
 import { CALENDAR } from "../consts/calendar";
 import { generateSlug } from "../utils/url-helper";
+import { getAssetUrl, getAssetMetadata } from "../utils/assets";
+import "@fontsource/bowlby-one-sc";
 
-// Helper to parse date string "YYYY-MM-DD" and time "HH:MM CEST" -> Date object
+interface Props {
+    rivalStats?: {
+        wins: number;
+        draws: number;
+        losses: number;
+        total: number;
+    };
+}
+
+const { rivalStats } = Astro.props;
+
 function parseMatchDate(dateStr: string, timeStr: string): Date {
     const [hours, minutes] = timeStr.replace(/[^0-9:]/g, "").split(":");
-    // Create date assuming approximate local time for simplicity, or appended logic
-    // We stick to the date string + T + HH:MM:00
-    // Note: This relies on browser/server local time or explicit offset.
-    // Given the previous hardcoded value had +01:00, we'll try to be consistent.
     return new Date(`${dateStr}T${hours}:${minutes}:00`);
 }
 
 const now = new Date();
 const twoHours = 2 * 60 * 60 * 1000;
 
-// Find the first match where (Start Time + 2 hours) is in the future
 const nextMatch = CALENDAR.find((match) => {
     const matchDate = parseMatchDate(match.date, match.time);
     const matchEndTime = new Date(matchDate.getTime() + twoHours);
     return matchEndTime > now;
 });
 
-// Default fallback or hidden state if no match found
-// We'll use the first match in calendar if "nextMatch" is undefined?
-// Or render nothing? For now, let's keep it safe and use the first one if logic fails,
-// or clean fallback vars.
-
-const activeMatch = nextMatch || CALENDAR[CALENDAR.length - 1]; // Fallback to last match or handle empty?
-
-if (!activeMatch) {
-    // Handle case with absolutely no matches
-    // For now we'll just not render the component content or render a placeholder
-}
-
+const activeMatch = nextMatch || CALENDAR[CALENDAR.length - 1];
 const LOCAL_TEAM = activeMatch.team1;
 const VISITOR_TEAM = activeMatch.team2;
-
 const activeDateObj = parseMatchDate(activeMatch.date, activeMatch.time);
-// Allow passing an ISO string for strict countdowns if available
 const MATCH_DATE = activeDateObj.toISOString();
 
 const formatDisplayDate = (dateObj: Date) => {
-    return (
-        new Intl.DateTimeFormat("es-ES", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        }).format(dateObj) +
-        " " +
-        (activeMatch.time.includes("CEST") ? "CEST" : "CET")
-    );
+    return new Intl.DateTimeFormat("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Madrid",
+    }).format(dateObj);
 };
 
 const MATCH_DATE_DISPLAY = formatDisplayDate(activeDateObj);
+const MATCH_TIME_DISPLAY = activeMatch.time.replace(/[^0-9:]/g, "");
 const STADIUM = activeMatch.stadium || "Estadio Alfredo Di Stéfano";
 const TV = activeMatch.tv || "DAZN";
 
-// Map competition names to logos
-const getCompetitionLogo = (compName: string) => {
-    if (compName.includes("Liga F")) return LigaFLogo;
-    if (compName.includes("Champions") || compName.includes("UWCL"))
-        return uwclLogo;
-    if (compName.includes("Copa")) return CopadelaReinaLogo;
-    if (compName.includes("Supercopa")) return SupercopaLogo;
-    return LigaFLogo; // Default
-};
-
-const competitionLogo = getCompetitionLogo(activeMatch.competition);
-
-const COMPETITION_INFO = {
-    name: activeMatch.competition,
-    logo: competitionLogo,
-    detail: (activeMatch as any).matchday
-        ? `| ${(activeMatch as any).matchday}`
-        : "",
-};
-
-function getShieldSrc(teamName: string) {
-    const slug = teamName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .replace(/\./g, "");
-
-    return `/assets/escudos/${slug}.png`;
+function getCompetitionLogo(competitionName: string) {
+    return getAssetMetadata("competiciones", competitionName);
 }
+
+const compLogo = getCompetitionLogo(activeMatch.competition);
+
+function getTeamLogo(teamName: string) {
+    return getAssetMetadata("escudos", teamName);
+}
+
+const localLogo = getTeamLogo(LOCAL_TEAM);
+const visitorLogo = getTeamLogo(VISITOR_TEAM);
 ---
 
-<aside class="card-proximo-partido" style={!activeMatch ? "display:none" : ""}>
-    <div class="escudos">
-        <img src={getShieldSrc(LOCAL_TEAM)} alt={LOCAL_TEAM} class="escudo" />
-        <img src={vsImagen.src} alt="Versus" class="vs-imagen" />
-        <img
-            src={getShieldSrc(VISITOR_TEAM)}
-            alt={VISITOR_TEAM}
-            class="escudo"
-        />
+<aside class="card-proximo-partido cursor-default">
+    <div class="match-header clean">
+        <h2 class="section-title">PRÓXIMO PARTIDO</h2>
+        <div class="competicion-badge interactive-capsule">
+            {
+                compLogo && (
+                    <Image
+                        src={compLogo}
+                        alt={activeMatch.competition}
+                        class="competicion-logo"
+                        width={30}
+                        height={30}
+                        format="webp"
+                    />
+                )
+            }
+            <span class="competicion-text">
+                {activeMatch.competition}
+                {
+                    (activeMatch as any).matchday
+                        ? `| ${(activeMatch as any).matchday}`
+                        : ""
+                }
+            </span>
+        </div>
     </div>
 
-    <div class="cuenta-atras" id="cuenta-atras">Cargando...</div>
+    <div class="match-card-content">
+        <div class="teams-battle">
+            <div class="team-side local">
+                {
+                    localLogo ? (
+                        <Image
+                            src={localLogo}
+                            alt={LOCAL_TEAM}
+                            class="escudo-giant"
+                            width={170}
+                            height={170}
+                            format="webp"
+                        />
+                    ) : (
+                        <div class="escudo-placeholder" />
+                    )
+                }
+                <span class="team-name-lg"
+                    >{LOCAL_TEAM.replace("Femenino", "")}</span
+                >
+            </div>
 
-    <div class="competicion-line">
-        <img
-            src={COMPETITION_INFO.logo
-                ? COMPETITION_INFO.logo.src
-                : LigaFLogo.src}
-            alt={COMPETITION_INFO.name}
-            class="competicion-logo"
-        />
-        <span id="competicion-jornada"
-            >{COMPETITION_INFO.name} {COMPETITION_INFO.detail}</span
-        >
-    </div>
+            <div class="vs-center">
+                <Image
+                    src={vsImagen}
+                    alt="VS"
+                    class="vs-img-lg"
+                    width={240}
+                    height={240}
+                    format="webp"
+                />
+            </div>
 
-    <div class="info-line">
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
-            ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path><path
-                d="M12 7v5l3 3"></path></svg
-        >
-        <span id="fecha-hora">{MATCH_DATE_DISPLAY}</span>
-    </div>
+            <div class="team-side visitor">
+                {
+                    visitorLogo ? (
+                        <Image
+                            src={visitorLogo}
+                            alt={VISITOR_TEAM}
+                            class="escudo-giant"
+                            width={170}
+                            height={170}
+                            format="webp"
+                        />
+                    ) : (
+                        <div class="escudo-placeholder" />
+                    )
+                }
+                <span class="team-name-lg"
+                    >{VISITOR_TEAM.replace("Femenino", "")}</span
+                >
+            </div>
+        </div>
 
-    <div class="info-line">
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-building-stadium"
-            ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                d="M12 12m-8 0a8 2 0 1 0 16 0a8 2 0 1 0 -16 0"></path><path
-                d="M4 12v7c0 .94 2.51 1.785 6 2v-3h4v3c3.435 -.225 6 -1.07 6 -2v-7"
-            ></path><path d="M15 6h4v-3h-4v7"></path><path d="M7 6h4v-3h-4v7"
-            ></path></svg
-        >
-        <span id="estadio">
-            <a
-                href={`/estadios/${generateSlug(STADIUM)}`}
-                class="hover:text-[#ffde59] transition-colors decoration-none"
-            >
-                {STADIUM}
-            </a>
-        </span>
-    </div>
+        <div class="meta-capsules-row">
+            <div class="info-pill">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-week"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path
+                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12"
+                    ></path><path d="M16 3v4"></path><path d="M8 3v4"
+                    ></path><path d="M4 11h16"></path><path d="M7 14h.013"
+                    ></path><path d="M10.01 14h.005"></path><path
+                        d="M13.01 14h.005"></path><path d="M16.015 14h.005"
+                    ></path><path d="M13.015 17h.005"></path><path
+                        d="M7.01 17h.005"></path><path d="M10.01 17h.005"
+                    ></path></svg
+                >
+                <span>{MATCH_DATE_DISPLAY.split(",")[0].trim()}</span>
+            </div>
+            <div class="info-pill">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-clock"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"
+                    ></path><path d="M12 7v5l3 3"></path></svg
+                >
+                <span>{MATCH_TIME_DISPLAY}</span>
+            </div>
+            <div class="info-pill">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-building-stadium"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path d="M4 12a8 2 0 1 0 16 0a8 2 0 1 0 -16 0"
+                    ></path><path
+                        d="M4 12v7c0 .94 2.51 1.785 6 2v-3h4v3c3.435 -.225 6 -1.07 6 -2v-7"
+                    ></path><path d="M15 6h4v-3h-4v7"></path><path
+                        d="M7 6h4v-3h-4v7"></path></svg
+                >
+                <a
+                    href={`/estadios/${generateSlug(STADIUM)}`}
+                    class="hover:underline">{STADIUM}</a
+                >
+            </div>
+            <div class="info-pill">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-device-tv"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path
+                        d="M3 9a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -9"
+                    ></path><path d="M16 3l-4 4l-4 -4"></path></svg
+                >
+                <span>{TV}</span>
+            </div>
+        </div>
 
-    <div class="info-line">
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-device-tv"
-            ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                d="M3 7m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"
-            ></path><path d="M16 3l-4 4l-4 -4"></path></svg
-        >
-        <span class="TV" id="TV">{TV}</span>
+        <div class="countdown-section">
+            <div id="cuenta-atras-huge">-- : -- : -- : --</div>
+        </div>
+
+        {
+            rivalStats && (
+                <div class="stats-footer">
+                    <div class="stats-header">
+                        <h4>HISTÓRICO DE ENFRENTAMIENTOS</h4>
+                        <span>{rivalStats.total} PARTIDOS</span>
+                    </div>
+                    <div class="stats-bar-wrapper">
+                        <div class="stats-bar">
+                            <div
+                                class="bar-segment win"
+                                style={`width: ${(rivalStats.wins / rivalStats.total) * 100}%`}
+                            >
+                                <div class="stat-tooltip">
+                                    <span class="val">{rivalStats.wins}</span>
+                                    <span class="lbl">Victorias</span>
+                                </div>
+                                {rivalStats.wins > 0 && (
+                                    <span class="bar-label">
+                                        {rivalStats.wins}
+                                    </span>
+                                )}
+                            </div>
+                            <div
+                                class="bar-segment draw"
+                                style={`width: ${(rivalStats.draws / rivalStats.total) * 100}%`}
+                            >
+                                <div class="stat-tooltip">
+                                    <span class="val">{rivalStats.draws}</span>
+                                    <span class="lbl">Empates</span>
+                                </div>
+                                {rivalStats.draws > 0 && (
+                                    <span class="bar-label">
+                                        {rivalStats.draws}
+                                    </span>
+                                )}
+                            </div>
+                            <div
+                                class="bar-segment loss"
+                                style={`width: ${(rivalStats.losses / rivalStats.total) * 100}%`}
+                            >
+                                <div class="stat-tooltip">
+                                    <span class="val">{rivalStats.losses}</span>
+                                    <span class="lbl">Derrotas</span>
+                                </div>
+                                {rivalStats.losses > 0 && (
+                                    <span class="bar-label">
+                                        {rivalStats.losses}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )
+        }
     </div>
 </aside>
 
 <script is:inline define:vars={{ MATCH_DATE }}>
     const fechaPartido = new Date(MATCH_DATE);
 
-    function actualizarCuentaAtras() {
+    function actualizar() {
         const ahora = new Date();
-        const diferencia = fechaPartido.getTime() - ahora.getTime();
-        // Use a 2 hour buffer to keep showing "Match Started" message or similar?
-        // User requested: "after 2 hours ... begins a new countdown".
-        // The server-side logic picks the NEW match.
-        // The client-side countdown just counts to the provided MATCH_DATE.
+        const diff = fechaPartido.getTime() - ahora.getTime();
+        const el = document.getElementById("cuenta-atras-huge");
+        if (!el) return;
 
-        if (diferencia <= 0) {
-            const elemento = document.getElementById("cuenta-atras");
-            if (elemento) {
-                // If diff is negative but less than 2 hours, it means match is in progress
-                // But since we reload page to get new match, this script just handles the CURRENT activeMatch.
-                // If activeMatch is in the future, it counts down.
-                // If activeMatch is the one "in progress" (selected by server because < 2h passed),
-                // we should show "EN JUEGO" or similar.
-
-                // Note: Logic in frontmatter: "matchEndTime > now" -> filters IN future matches.
-                // So "nextMatch" is the one that hasn't finished (started < 2h ago).
-                // If difference < 0, it means it started.
-                elemento.innerHTML =
-                    "<span style='font-weight:800; color:#d32f2f; font-size: 1.5rem;'>¡PARTIDO EN JUEGO!</span>";
-            }
+        if (diff <= 0) {
+            el.innerHTML = "<span class='live-badge'>¡PARTIDO EN JUEGO!</span>";
             return;
         }
 
-        const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
-        const horas = Math.floor(
-            (diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-        );
-        const minutos = Math.floor(
-            (diferencia % (1000 * 60 * 60)) / (1000 * 60),
-        );
-        const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-        const formatearNumero = (num) => num.toString().padStart(2, "0");
+        const pad = (n) => n.toString().padStart(2, "0");
 
-        const cuentaAtrasHTML = `
-            <div class="time-group">
-                <span class="time-value">${formatearNumero(dias)}</span>
-                <span class="time-label">DÍAS</span>
-            </div>
-            <div class="time-group">
-                <span class="time-value">${formatearNumero(horas)}</span>
-                <span class="time-label">HORAS</span>
-            </div>
-            <div class="time-group">
-                <span class="time-value">${formatearNumero(minutos)}</span>
-                <span class="time-label">MINUTOS</span>
-            </div>
-            <div class="time-group">
-                <span class="time-value">${formatearNumero(segundos)}</span>
-                <span class="time-label">SEGUNDOS</span>
-            </div>
+        el.innerHTML = `
+            <div class="cd-part"><span class="cd-num">${d}</span><span class="cd-txt">${d === 1 ? "DÍA" : "DÍAS"}</span></div>
+            <div class="cd-part"><span class="cd-num">${pad(h)}</span><span class="cd-txt">${h === 1 ? "HORA" : "HORAS"}</span></div>
+            <div class="cd-part"><span class="cd-num">${pad(m)}</span><span class="cd-txt">MIN</span></div>
+            <div class="cd-part"><span class="cd-num">${pad(s)}</span><span class="cd-txt">SEG</span></div>
         `;
-
-        const elemento = document.getElementById("cuenta-atras");
-        if (elemento) {
-            elemento.innerHTML = cuentaAtrasHTML;
-        }
     }
-
-    actualizarCuentaAtras();
-
-    setInterval(actualizarCuentaAtras, 1000);
+    actualizar();
+    setInterval(actualizar, 1000);
 </script>
 
-<style is:global>
-    /* Estilos del widget Próximo Partido */
+<style>
     .card-proximo-partido {
-        position: relative;
-        width: 100%;
-        max-width: 450px; /* Match Calendar Width */
-        margin: 0 auto 30px auto;
-        padding: 40px 20px; /* Reduced side padding slightly */
-        background: #ffffff;
+        background: #fff;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-        text-align: center;
-        box-sizing: border-box;
+        box-shadow:
+            0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 0;
+        font-family: "Inter", system-ui, sans-serif;
     }
 
-    .competicion-line {
+    .section-title {
+        font-size: 2.25rem;
+        font-weight: 800;
+        font-family: "Archivo Black", sans-serif;
+        color: #111827;
+        text-transform: uppercase;
+        margin: 0;
+        margin-bottom: 2rem;
+        position: relative;
+        display: inline-block;
+        border: none !important;
+        padding-left: 0 !important;
+    }
+
+    .section-title::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 6px;
+        background: #ffde59;
+        border-radius: 3px;
+    }
+
+    .match-header {
+        padding: 2.5rem 1rem 1rem 1rem;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 15px;
-        margin: 0 0 2rem 0;
-        font-size: 1.5rem;
-        color: #555;
-        font-weight: 800; /* Bold */
+        gap: 0.5rem;
+        background-color: transparent;
+    }
+
+    .interactive-capsule {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 9999px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .competicion-logo {
+        height: 1.8rem;
+        width: auto;
+    }
+    .competicion-text {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #111827;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
 
-    .competicion-line .competicion-logo {
-        height: 3.5rem; /* Larger logo */
-        width: auto;
-        object-fit: contain;
-    }
-
-    .escudos {
+    .match-card-content {
+        padding: 2rem;
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        gap: 2.5rem;
         align-items: center;
-        gap: 1.2rem; /* Tightened gap */
-        margin-bottom: 2rem;
-        margin-top: 20px;
     }
 
-    .escudo {
-        width: 125px; /* Larger shields */
-        height: 125px;
-        object-fit: contain;
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
-    }
-
-    .vs-imagen {
-        width: 85px; /* Larger VS */
-        height: 85px;
-        object-fit: contain;
-        opacity: 0.9;
-    }
-
-    .cuenta-atras {
+    .teams-battle {
         display: flex;
+        align-items: center;
         justify-content: center;
-        gap: 20px; /* Reduced gap slightly */
-        margin: 0 auto 30px auto;
-        padding: 5px;
-        background-color: transparent; /* No background */
-        flex-wrap: nowrap;
+        gap: 0.25rem;
+        width: 100%;
     }
-
-    .time-group {
+    .team-side {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 5px;
+        gap: 1rem;
+        flex: 1;
+        text-align: center;
+    }
+    .escudo-giant {
+        width: 170px;
+        height: 170px;
+        object-fit: contain;
+        filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.15));
     }
 
-    .time-value {
-        font-size: 3rem; /* Still very large, but 4rem violates 450px width */
-        font-weight: 900;
-        color: #000;
-        line-height: 1;
-        font-feature-settings: "tnum";
-    }
-
-    .time-label {
-        font-size: 0.9rem;
+    .team-name-lg {
+        font-size: 1.35rem;
         font-weight: 800;
-        color: #555;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
+        color: #1f2937;
+        line-height: 1.1;
+        max-width: 200px;
     }
 
-    .info-line {
+    .vs-center {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 15px;
-        margin-bottom: 15px;
-        font-size: 1.4rem;
-        color: #000;
+        flex-shrink: 0;
+        z-index: 10;
+    }
+    .vs-img-lg {
+        width: 240px;
+        height: 240px;
+        object-fit: contain;
+        opacity: 0.9;
+        margin: 0 -70px;
+        pointer-events: none;
+    }
+
+    .meta-capsules-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        width: 100%;
+    }
+    .info-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 9999px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #374151;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .countdown-section {
+        margin: 0;
+        width: 100%;
+        text-align: center;
+    }
+    #cuenta-atras-huge {
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 1rem;
+    }
+    :global(.cd-part) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 60px;
+    }
+    :global(.cd-num) {
+        font-size: 6rem;
         font-weight: 800;
+        line-height: 0.9;
+        color: #111827;
+        font-family: "Bowlby One SC", system-ui, sans-serif;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.05em;
+    }
+    :global(.cd-txt) {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #9ca3af;
+        margin-top: 0.5rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    :global(.cd-split) {
+        font-size: 2.5rem;
+        font-weight: 300;
+        color: #9ca3af;
+        line-height: 1;
+        margin-top: 1.25rem;
+        display: inline-block;
+        min-width: 1.5rem;
+        text-align: center;
+    }
+    :global(.live-badge) {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #ef4444;
     }
 
-    .info-line svg {
+    .stats-footer {
+        width: 100%;
+        margin-top: 0;
+        padding-top: 1.5rem;
+        border-top: 1px dashed #e5e7eb;
+    }
+    .stats-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 0.75rem;
+        font-family: inherit;
+    }
+    .stats-header h4 {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        margin: 0;
+        letter-spacing: 0.05em;
+    }
+    .stats-header span {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stats-bar {
+        display: flex;
+        height: 48px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #e2e8f0;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        padding-right: 1px;
+    }
+    .bar-segment {
+        height: 100%;
+        position: relative;
+        transition: width 0.5s ease-out;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bar-label {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .bar-segment.win {
+        background: #10b981;
+    }
+    .bar-segment.draw {
+        background: #f59e0b;
+    }
+    .bar-segment.loss {
+        background: #ef4444;
+    }
+
+    .stat-tooltip {
+        position: absolute;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: #1e293b;
+        color: #fff;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        z-index: 20;
+        text-align: center;
+    }
+    .stat-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+    }
+    .bar-segment:hover {
+        opacity: 0.95;
+    }
+    .bar-segment:hover .stat-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+    .stat-tooltip .val {
+        font-weight: 800;
+        font-size: 1rem;
         display: block;
-        color: #000; /* Black icons */
-        stroke-width: 2.5;
-        width: 36px; /* Larger icons */
-        height: 36px;
     }
 
-    @media (max-width: 900px) {
-        .card-proximo-partido {
-            width: 100%;
-            min-width: unset;
-            max-width: 100%;
-            padding: 25px 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    @media (max-width: 768px) {
+        .teams-battle {
+            flex-direction: column;
+            gap: 1rem;
         }
-
-        .escudo {
-            width: 80px;
-            height: 80px;
+        .vs-center {
+            transform: none;
+            margin: -10px 0;
+            z-index: 20;
         }
-
-        .vs-imagen {
-            width: 50px;
-            height: 50px;
+        .vs-img-lg {
+            width: 120px;
+            height: 120px;
+            margin: 0;
         }
-
-        .cuenta-atras {
-            gap: 15px;
-            margin: 0 auto 20px auto;
+        .escudo-giant {
+            width: 130px;
+            height: 130px;
         }
-
-        .time-value {
+        .cd-num {
             font-size: 2.5rem;
         }
-
-        .competicion-line {
-            font-size: 1.2rem;
-            flex-wrap: wrap;
+        .cd-split {
+            font-size: 2rem;
+            margin-top: 0.5rem;
+            min-width: 1.2rem;
         }
-
-        .info-line {
-            font-size: 1.2rem;
+        #cuenta-atras-huge {
+            gap: 1.5rem;
+        }
+        .meta-capsules-row {
+            gap: 0.5rem;
+        }
+        .info-pill {
+            width: auto;
+            justify-content: center;
+            flex-grow: 1;
         }
     }
 </style>

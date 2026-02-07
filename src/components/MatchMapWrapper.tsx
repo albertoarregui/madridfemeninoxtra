@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import InteractiveMap from './Map';
 import { getCoordinates, getCompetitionLogo } from '../consts/location-data';
+import { getAssetUrl } from '../utils/assets';
 
 interface Match {
     id_partido: string;
@@ -20,9 +21,7 @@ interface MatchMapWrapperProps {
 
 const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
     const markers = useMemo(() => {
-        // We want unique locations, not unique matches, because 100 matches in Di Stefano is too many pins.
-        // We want: Markers for stadiums.
-        // Popup shows: "Estadio Alfredo Di Stéfano. Partidos: 50. Último: RM vs Barça..."
+
 
         const locationMap = new Map<string, {
             lat: number;
@@ -35,14 +34,14 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
         }>();
 
         matches.forEach(match => {
-            // Priority: Stadium -> City -> Visitor Team City (heuristic)
+
             let locationName = match.estadio || match.ciudad;
 
-            // Heuristic for away games without stadium data: use home team name as location
+
             if (!locationName && match.club_visitante === 'Real Madrid') {
                 locationName = match.club_local;
             } else if (!locationName && match.club_local === 'Real Madrid') {
-                locationName = 'Madrid'; // Default to Madrid if playing home
+                locationName = 'Madrid';
             }
 
             if (!locationName) return;
@@ -57,7 +56,7 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
                         lat: coords.lat,
                         lng: coords.lng,
                         label: coords.label || locationName,
-                        imageUrl: coords.imageUrl,
+                        imageUrl: getAssetUrl('estadios', coords.imageUrl),
                         count: 0,
                         lastMatch: '',
                         matches: []
@@ -71,14 +70,14 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
         });
 
         return Array.from(locationMap.values()).map(loc => {
-            // Sort matches by date descending
+
             const sortedMatches = loc.matches.sort((a, b) => {
                 const dateA = new Date(a.fecha || 0).getTime();
                 const dateB = new Date(b.fecha || 0).getTime();
                 return dateB - dateA;
             });
 
-            // Add competition logo to each match
+
             const matchesWithLogos = sortedMatches.map(m => ({
                 ...m,
                 logo_competicion: getCompetitionLogo(m.competicion_nombre)

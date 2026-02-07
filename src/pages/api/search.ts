@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { fetchRefereesDirectly } from '../../utils/arbitras';
+import { getAllStadiums } from '../../utils/estadios';
 import { fetchPlayersDirectly } from '../../utils/players';
 import { fetchRivalsDirectly } from '../../utils/rivales';
 import { fetchGamesDirectly } from '../../utils/partidos';
@@ -16,11 +18,13 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     try {
-        const [players, clubes, partidos, entrenadores] = await Promise.all([
+        const [players, clubes, partidos, entrenadores, arbitras, estadios] = await Promise.all([
             fetchPlayersDirectly(),
             fetchRivalsDirectly(),
             fetchGamesDirectly(),
-            fetchCoachesDirectly()
+            fetchCoachesDirectly(),
+            fetchRefereesDirectly(),
+            Promise.resolve(getAllStadiums())
         ]);
 
         const results: any[] = [];
@@ -85,6 +89,44 @@ export const GET: APIRoute = async ({ url }) => {
                 });
             }
         });
+
+        arbitras.forEach((ref: any) => {
+            const name = ref.nombre?.toLowerCase() || '';
+            if (name.includes(query)) {
+                results.push({
+                    type: 'referee',
+                    title: ref.nombre,
+                    subtitle: 'Árbitra',
+                    url: `/arbitras/${generateSlug(ref.nombre)}`,
+                    slug: generateSlug(ref.nombre),
+                    relevance: name.startsWith(query) ? 9 : 4
+                });
+            }
+        });
+
+        estadios.forEach((stadium: any) => {
+            const name = stadium.name?.toLowerCase() || '';
+            if (name.includes(query)) {
+                results.push({
+                    type: 'stadium',
+                    title: stadium.name,
+                    subtitle: stadium.city || 'Estadio',
+                    url: `/estadios/${stadium.slug}`,
+                    slug: stadium.slug,
+                    relevance: name.startsWith(query) ? 9 : 4
+                });
+            }
+        });
+
+        function generateSlug(text: string): string {
+            return text.toLowerCase()
+                .trim()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^\w\s-]/g, "")
+                .replace(/[\s_-]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+        }
 
         results.sort((a, b) => b.relevance - a.relevance);
 

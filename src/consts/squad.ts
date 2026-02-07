@@ -2,7 +2,6 @@ export const SQUAD = [
     {
         id: "misa_rodriguez",
         name: "Misa Rodríguez",
-        id_jugadora: 1,
         position: "Portera",
         date_birth: "1999-07-22",
         birth_place: "Las Palmas de Gran Canaria, España",
@@ -14,7 +13,6 @@ export const SQUAD = [
     {
         id: "merle_frohms",
         name: "Merle Frohms",
-        id_jugadora: 76,
         position: "Portera",
         date_birth: "1995-01-28",
         birth_place: "Celle, Alemania",
@@ -26,8 +24,7 @@ export const SQUAD = [
     {
         id: "antonia_silva",
         name: "Antonia Silva",
-        id_jugadora: 62,
-        position: "Defensa lateral derecha",
+        position: "Lateral derecha",
         date_birth: "1994-04-26",
         birth_place: "Riacho de Santana, Brasil",
         country: "br",
@@ -38,7 +35,6 @@ export const SQUAD = [
     {
         id: "rocio_galvez",
         name: "Rocio Gálvez",
-        id_jugadora: 30,
         position: "Defensa central",
         date_birth: "1997-04-15",
         birth_place: "Córdoba, España",
@@ -50,8 +46,7 @@ export const SQUAD = [
     {
         id: "yasmim_ribeiro",
         name: "Yasmim Ribeiro",
-        id_jugadora: 64,
-        position: "Defensa lateral izquierda",
+        position: "Lateral izquierda",
         date_birth: "1996-10-28",
         birth_place: "Governador Valadares, Brasil",
         country: "br",
@@ -62,7 +57,6 @@ export const SQUAD = [
     {
         id: "maria_mendez",
         name: "María Méndez",
-        id_jugadora: 65,
         position: "Defensa central",
         date_birth: "2001-04-10",
         birth_place: "Oviedo, España",
@@ -74,8 +68,7 @@ export const SQUAD = [
     {
         id: "sheila_garcia",
         name: "Sheila García",
-        id_jugadora: 66,
-        position: "Defensa lateral derecha",
+        position: "Lateral derecha",
         date_birth: "1997-03-15",
         birth_place: "Yunquera de Henares, España",
         country: "es",
@@ -86,8 +79,7 @@ export const SQUAD = [
     {
         id: "sara_holmgaard",
         name: "Sara Holmgaard",
-        id_jugadora: 78,
-        position: "Defensa lateral izquierda",
+        position: "Lateral izquierda",
         date_birth: "1999-01-28",
         birth_place: "Bording, Dinamarca",
         country: "dk",
@@ -98,7 +90,6 @@ export const SQUAD = [
     {
         id: "bella_andersson",
         name: "Bella Andersson",
-        id_jugadora: 79,
         position: "Defensa central",
         date_birth: "2006-07-12",
         birth_place: "Estocolmo, Suecia",
@@ -110,7 +101,6 @@ export const SQUAD = [
     {
         id: "maelle_lakrar",
         name: "Maëlle Lakrar",
-        id_jugadora: 69,
         position: "Defensa central",
         date_birth: "2000-05-27",
         birth_place: "Orange, Francia",
@@ -122,7 +112,6 @@ export const SQUAD = [
     {
         id: "teresa_abelleira",
         name: "Teresa Abelleira",
-        id_jugadora: 16,
         position: "Centrocampista",
         date_birth: "2000-01-09",
         birth_place: "Pontevedra, España",
@@ -134,7 +123,6 @@ export const SQUAD = [
     {
         id: "sandie_toletti",
         name: "Sandie Toletti",
-        id_jugadora: 43,
         position: "Centrocampista",
         date_birth: "1995-07-13",
         birth_place: "Bagnols-sur-Céze, Francia",
@@ -146,7 +134,6 @@ export const SQUAD = [
     {
         id: "sara_dabritz",
         name: "Sara Däbritz",
-        id_jugadora: 75,
         position: "Centrocampista",
         date_birth: "1995-02-15",
         birth_place: "Amberg, Alemania",
@@ -158,7 +145,6 @@ export const SQUAD = [
     {
         id: "caroline_weir",
         name: "Caroline Weir",
-        id_jugadora: 44,
         position: "Centrocampista",
         date_birth: "1995-06-20",
         birth_place: "Dunfermline, Escocia",
@@ -170,7 +156,6 @@ export const SQUAD = [
     {
         id: "filippa_angeldahl",
         name: "Filippa Angeldahl",
-        id_jugadora: 68,
         position: "Centrocampista",
         date_birth: "1997-07-14",
         birth_place: "Uppsala, Suecia",
@@ -182,7 +167,6 @@ export const SQUAD = [
     {
         id: "hanna_bennison",
         name: "Hanna Bennison",
-        id_jugadora: 77,
         position: "Centrocampista",
         date_birth: "2002-10-16",
         birth_place: "Lomma, Suecia",
@@ -194,7 +178,6 @@ export const SQUAD = [
     {
         id: "paula_comendador",
         name: "Paula Comendador",
-        id_jugadora: 56,
         position: "Extremo izquierdo",
         date_birth: "2007-01-12",
         birth_place: "Madrid, España",
@@ -206,8 +189,7 @@ export const SQUAD = [
     {
         id: "athenea_del_castillo",
         name: "Athenea del Castillo",
-        id_jugadora: 32,
-        position: "Extremo derecho",
+        position: "Extremo izquierdo",
         date_birth: "2000-10-24",
         birth_place: "Solares, España",
         country: "es",
@@ -218,8 +200,7 @@ export const SQUAD = [
     {
         id: "signe_bruun",
         name: "Signe Bruun",
-        id_jugadora: 50,
-        position: "Delantera centro",
+        position: "Delantera",
         date_birth: "1998-04-06",
         birth_place: "Randers, Dinamarca",
         country: "dk",
@@ -230,8 +211,7 @@ export const SQUAD = [
     {
         id: "alba_redondo",
         name: "Alba Redondo",
-        id_jugadora: 63,
-        position: "Delantera centro",
+        position: "Delantera",
         date_birth: "1996-08-27",
         birth_place: "Albacete, España",
         country: "es",
@@ -242,7 +222,6 @@ export const SQUAD = [
     {
         id: "linda_caicedo",
         name: "Linda Caicedo",
-        id_jugadora: 46,
         position: "Extremo izquierdo",
         date_birth: "2005-02-22",
         birth_place: "Cali, Colombia",
@@ -254,7 +233,6 @@ export const SQUAD = [
     {
         id: "eva_navarro",
         name: "Eva Navarro",
-        id_jugadora: 67,
         position: "Extremo derecho",
         date_birth: "2001-01-27",
         birth_place: "Yecla, España",
@@ -266,8 +244,7 @@ export const SQUAD = [
     {
         id: "naomie_feller",
         name: "Naomie Feller",
-        id_jugadora: 47,
-        position: "Delantera centro",
+        position: "Extremo derecho",
         date_birth: "2001-11-06",
         birth_place: "París, Francia",
         country: "fr",
@@ -278,8 +255,7 @@ export const SQUAD = [
     {
         id: "lotte_keukelaar",
         name: "Lotte Keukelaar",
-        id_jugadora: 82,
-        position: "Extremo izquierdo",
+        position: "Extremo derecho",
         date_birth: "2005-09-25",
         birth_place: "Hilversum, Países Bajos",
         country: "nl",
@@ -287,8 +263,4 @@ export const SQUAD = [
         weight: 62,
         number: 24,
     },
-    { id: "irune_dorado", name: "Irune Dorado", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 28 },
-    { id: "silvia_cristobal", name: "Silvia Cristóbal", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 29 },
-    { id: "iris_ashley_santiago", name: "Iris Ashley", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 43 },
-    { id: "canterana_32", name: "Canterana", position: "Canterana", date_birth: "", birth_place: "", country: "es", height: 0, weight: 0, number: 32 }
 ]

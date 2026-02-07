@@ -11,6 +11,8 @@ export function slugify(text: string | null | undefined): string {
         .replace(/\-\-+/g, '-');
 }
 
+import { getAssetUrl } from './assets';
+
 export const cleanApiValue = (value: any): any => {
     if (typeof value === 'string' && value.toLowerCase().trim() === 'null') {
         return null;
@@ -19,25 +21,8 @@ export const cleanApiValue = (value: any): any => {
 };
 
 export function getPlayerImageUrl(player: any): string {
-    // If database has a specific URL/filename, use it
-    if (player.foto_url) {
-        return `/assets/jugadoras/${player.foto_url}`;
-    }
-
-    // Otherwise generate from name: "Misa Rodríguez" -> "misa_rodriguez.png"
-    if (player.nombre) {
-        let normalized = player.nombre.toString().toLowerCase()
-            .replace(/ø/g, 'o').replace(/Ø/g, 'o')
-            .replace(/ö/g, 'o').replace(/Ö/g, 'o')
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
-            .trim()
-            .replace(/\s+/g, '_') // Replace spaces with underscore
-            .replace(/[^a-z0-9_]/g, ''); // Remove special chars just in case
-
-        return `/assets/jugadoras/${normalized}.png`;
-    }
-
-    return '/assets/jugadoras/placeholder.png';
+    const name = player.foto_url || player.nombre;
+    return getAssetUrl('jugadoras', name);
 }
 
 export function getCleanCountryName(country: string | null | undefined): string {
@@ -55,7 +40,6 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             return [];
         }
 
-        // Fetch flat list to avoid complex GROUP_CONCAT issues
         const query = `
             SELECT 
                 j.id_jugadora, 
@@ -365,7 +349,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const estadisticasArray = Object.values(estadisticas);
 
-        // Debug log for cards
         const totalYellowRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_amarillas) || 0), 0);
         const totalRedRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_rojas) || 0), 0);
         if (totalYellowRequest > 0 || totalRedRequest > 0) {

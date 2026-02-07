@@ -7,7 +7,7 @@ interface Player {
     nombre: string;
     lugar_nacimiento?: string;
     pais_origen?: string;
-    pais_origin?: string; // Handle both typo/naming cases
+    pais_origin?: string;
     imageUrl: string;
     slug: string;
     [key: string]: any;
@@ -17,51 +17,39 @@ interface PlayerStatsDashboardProps {
     players: Player[];
 }
 
-// Map country names (from DB/Data) to SVG filenames in src/assets/banderas/
-// DB names might be "España", "Colombia", etc.
-// Files are "espana.svg", "colombia.svg", etc.
 function getFlagSrc(countryName: string): string {
     if (!countryName) return '';
     const normalize = (str: string) => str.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_") // Default to underscore based on file list, will check later
-        .replace(/-/g, "_") // Handle if input has hyphens
+        .replace(/\s+/g, "_")
+        .replace(/-/g, "_")
         .replace(/ñ/g, "n");
 
     const filename = normalize(countryName);
 
-    // Manual overrides if normalization doesn't match specific filenames
     const map: Record<string, string> = {
         'paises_bajos': 'paises_bajos',
         'republica_checa': 'republica_checa',
-        'reino_unido': 'inglaterra', // Common mapping
+        'reino_unido': 'inglaterra',
         'inglaterra': 'inglaterra',
         'escocia': 'escocia'
     };
 
     const finalName = map[filename] || filename;
-    return `/assets/banderas/${finalName}.svg`; // Point to public folder
+    return `/assets/banderas/${finalName}.svg`;
 }
 
 const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) => {
     const stats = useMemo(() => {
         if (!players || players.length === 0) return null;
 
-        // 1. Total Players
         const totalPlayers = players.length;
 
-        // 2. Nationalities
         const nationalities = new Set<string>();
         const countryCounts: Record<string, number> = {};
 
-        // 3. Furthest Country Calculation
         let maxDist = 0;
         let furthestCountryName = '';
-
-        // We need to reliably map player country to coordinates. 
-        // Using 'pais_origen' directly. If it's "Alemania", we need coords for "Alemania".
-        // getCoordinates handles cities better, but works for countries if in KNOWN_LOCATIONS.
-        // Let's iterate unique countries for distance to avoid redundancy.
 
         players.forEach(p => {
             const country = p.pais_origin || p.pais_origen;
@@ -71,9 +59,8 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
             }
         });
 
-        // Determine Furthest Country
         Array.from(nationalities).forEach(country => {
-            const coords = getCoordinates(country, 'city'); // 'city' type is default but works for generic lookups
+            const coords = getCoordinates(country, 'city');
             if (coords) {
                 const dist = calculateDistance(
                     MADRID_COORDS.lat, MADRID_COORDS.lng,
@@ -86,7 +73,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
             }
         });
 
-        // Top 3 Countries
         const sortedCountries = Object.entries(countryCounts)
             .sort(([, countA], [, countB]) => countB - countA)
             .slice(0, 3)
@@ -105,7 +91,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 w-full max-w-7xl mx-auto">
-            {/* Total Players */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
                 <div className="bg-blue-50 p-3 rounded-full text-blue-600 mb-3">
                     <Users size={32} />
@@ -116,7 +101,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 </div>
             </div>
 
-            {/* Nationalities */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
                 <div className="bg-purple-50 p-3 rounded-full text-purple-600 mb-3">
                     <Globe size={32} />
@@ -127,7 +111,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 </div>
             </div>
 
-            {/* Top 3 Countries */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
                 <div className="flex flex-col items-center justify-center mb-3">
                     <div className="bg-yellow-50 p-1.5 rounded-full text-yellow-600 mb-2">
@@ -153,7 +136,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 </div>
             </div>
 
-            {/* Furthest Country */}
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
                 <div className="bg-green-50 p-3 rounded-full text-green-600 mb-3">
                     <Plane size={32} />

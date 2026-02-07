@@ -5,7 +5,7 @@ interface Rival {
     nombre: string;
     shieldUrl: string;
     ciudad: string;
-    pais: string; // ISO code or name for flag
+    pais: string;
     estadio: string;
     capacidad: string | number;
     slug: string;
@@ -44,13 +44,11 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                 let aValue = getValue(a, sortConfig.key);
                 let bValue = getValue(b, sortConfig.key);
 
-                // Handle numeric percentages
                 if (typeof aValue === 'string' && sortConfig.key.includes('Pct')) {
                     aValue = parseFloat(aValue);
                     bValue = parseFloat(bValue);
                 }
 
-                // Handle numbers (played, wins, etc are numbers)
 
                 if (aValue < bValue) {
                     return sortConfig.direction === 'asc' ? -1 : 1;
@@ -131,7 +129,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                 <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
-                            {/* Sticky Columns */}
+
                             <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-10 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
@@ -145,7 +143,6 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 align="left"
                             />
 
-                            {/* Scrollable Columns */}
                             <SortableHeader sortKey="ciudad" label="Ciudad" />
                             <th className="py-3 px-2 text-center">País</th>
                             <SortableHeader sortKey="estadio" label="Estadio" />
@@ -174,7 +171,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                 key={rival.id_club}
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
-                                {/* Sticky Columns */}
+                                { }
                                 <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                     {index + 1}
                                 </td>
@@ -192,7 +189,6 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                     </a>
                                 </td>
 
-                                {/* Scrollable Columns */}
                                 <td className="py-3 px-2 text-gray-600 truncate max-w-[120px]" title={rival.ciudad}>{rival.ciudad}</td>
                                 <td className="py-3 px-2 text-center">
                                     <img

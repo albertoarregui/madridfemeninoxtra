@@ -1,7 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
-import { turso } from '../../lib/turso';
+import { getPlayersDbClient } from '../../db/client';
 
 export const prerender = false;
 
@@ -40,7 +40,7 @@ export const POST = async ({ request }: { request: Request }) => {
                         playerName: z.string().optional().describe('Nombre de la jugadora si se pregunta por una específica'),
                         stat: z.enum(['goals', 'assists', 'minutes', 'all']).optional().describe('Estadística específica a buscar'),
                     }),
-                    execute: async ({ playerName, stat }) => {
+                    execute: async ({ playerName }: { playerName?: string }) => {
                         let query = `SELECT player, goals, assists, minutes FROM players_stats_24_25`;
                         const params: any[] = [];
 
@@ -53,7 +53,9 @@ export const POST = async ({ request }: { request: Request }) => {
                         }
 
                         try {
-                            const { rows } = await turso.execute({ sql: query, args: params });
+                            const client = await getPlayersDbClient();
+                            if (!client) return "Error conectando a la base de datos.";
+                            const { rows } = await client.execute({ sql: query, args: params });
                             return JSON.stringify(rows);
                         } catch (e) {
                             console.error(e);
@@ -66,10 +68,9 @@ export const POST = async ({ request }: { request: Request }) => {
                     parameters: z.object({}),
                     execute: async () => {
                         try {
-                            // Assuming there is a 'calendar' or 'matches' table. 
-                            // Adjusting table name based on common patterns since exact schema isn't fully visible but likely exists.
-                            // Falling back to a safe query or empty if not sure, but let's try 'matches'
-                            const { rows } = await turso.execute("SELECT * FROM matches WHERE date >= date('now') ORDER BY date ASC LIMIT 5");
+                            const client = await getPlayersDbClient();
+                            if (!client) return "Error conectando a la base de datos.";
+                            const { rows } = await client.execute("SELECT * FROM matches WHERE date >= date('now') ORDER BY date ASC LIMIT 5");
                             return JSON.stringify(rows);
                         } catch (e) {
                             return "No se pudo obtener el calendario (posiblemente la tabla no exista o haya error).";
@@ -81,7 +82,9 @@ export const POST = async ({ request }: { request: Request }) => {
                     parameters: z.object({}),
                     execute: async () => {
                         try {
-                            const { rows } = await turso.execute("SELECT * FROM matches WHERE date < date('now') ORDER BY date DESC LIMIT 5");
+                            const client = await getPlayersDbClient();
+                            if (!client) return "Error conectando a la base de datos.";
+                            const { rows } = await client.execute("SELECT * FROM matches WHERE date < date('now') ORDER BY date DESC LIMIT 5");
                             return JSON.stringify(rows);
                         } catch (e) {
                             return "No se pudieron obtener resultados pasados.";

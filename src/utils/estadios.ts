@@ -1,6 +1,7 @@
 
 import { KNOWN_LOCATIONS } from '../consts/location-data';
 import { generateSlug } from './url-helper';
+import { getAssetUrl } from './assets';
 
 export interface StadiumSummary {
     name: string;
@@ -12,28 +13,19 @@ export interface StadiumSummary {
 }
 
 export function getAllStadiums(): StadiumSummary[] {
-    // Filter only entries that look like stadiums (have imageUrl generally, or we filter explicitly)
-    // Actually KNOWN_LOCATIONS mixes cities and stadiums.
-    // We can filter by those having 'imageUrl' as a heuristic for "interesting place/stadium".
-
     return Object.entries(KNOWN_LOCATIONS)
         .filter(([key, loc]) => {
-            // We want to list stadiums primarily. 
-            // Cities usually don't have imageUrl in our data unless it represents a stadium in a generic way.
-            // We can also filter by excluding known country entries if needed.
             return !!loc.imageUrl;
         })
         .map(([key, loc]) => {
             return {
                 name: loc.label,
-                // Extract city from label if possible (Text after comma usually)
                 city: loc.label.includes(',') ? loc.label.split(',').pop()?.trim() : '',
                 imageUrl: loc.imageUrl,
-                slug: generateSlug(loc.label), // Use the label (Official Name) for the slug
+                slug: generateSlug(loc.label),
                 coordinates: { lat: loc.lat, lng: loc.lng }
             };
         })
-        // Remove duplicates based on slug/name
         .filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i)
         .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -88,7 +80,6 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
 
         if (!client) return [];
 
-        // Get stats from DB
         const query = `
             SELECT 
                 e.nombre,
@@ -121,11 +112,9 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
         const result = await client.execute(query);
         const dbStadiums = result.rows;
 
-        // Merge with KNOWN_LOCATIONS for images and better data if available
         return dbStadiums.map((stadium: any) => {
             const slug = generateSlug(stadium.nombre);
 
-            // Try to find in KNOWN_LOCATIONS
             const knownLoc = Object.values(KNOWN_LOCATIONS).find(loc => {
                 const locSlug = generateSlug(loc.label);
                 return locSlug === slug || loc.label === stadium.nombre;
@@ -144,7 +133,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                 name: stadium.nombre,
                 city: stadium.ciudad || (knownLoc && knownLoc.label.includes(',') ? knownLoc.label.split(',').pop()?.trim() : ''),
                 capacity: stadium.capacidad,
-                imageUrl: knownLoc?.imageUrl || null,
+                imageUrl: getAssetUrl('estadios', knownLoc?.imageUrl),
                 coordinates: knownLoc ? { lat: knownLoc.lat, lng: knownLoc.lng } : undefined,
                 slug: slug,
                 stats: {
