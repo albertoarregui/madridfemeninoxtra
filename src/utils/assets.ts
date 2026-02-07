@@ -1,7 +1,6 @@
 
 import type { ImageMetadata } from "astro";
 
-// Load all assets eagerly to have them available for synchronous resolution
 const assets = {
     jugadoras: import.meta.glob<{ default: ImageMetadata }>("/src/assets/jugadoras/*.{png,jpg,jpeg,webp}", { eager: true }),
     jugadorasPerfil: import.meta.glob<{ default: ImageMetadata }>("/src/assets/jugadoras-perfil/*.{png,jpg,jpeg,webp}", { eager: true }),
@@ -20,9 +19,6 @@ const assets = {
 
 type AssetType = keyof typeof assets;
 
-/**
- * Normalizes a filename to match the glob keys
- */
 function normalizeName(name: string): string {
     return name.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -32,9 +28,6 @@ function normalizeName(name: string): string {
         .replace(/[^a-z0-9_.-]/g, '');
 }
 
-/**
- * Gets the optimized URL for an asset
- */
 export function getAssetUrl(type: AssetType, fileName: string | null | undefined): string {
     if (!fileName) return "";
 
@@ -48,19 +41,16 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     const folder = type === 'jugadorasPerfil' ? 'jugadoras-perfil' :
         type === 'jugadoras' ? 'jugadoras' : type;
 
-    // Try original first
     const directPath = `/src/assets/${folder}/${cleanFileName}`;
     if (assets[type] && assets[type][directPath]) {
         return assets[type][directPath].default.src;
     }
 
-    // Try normalized
     const normalizedPath = `/src/assets/${folder}/${normalized}`;
     if (assets[type] && assets[type][normalizedPath]) {
         return assets[type][normalizedPath].default.src;
     }
 
-    // Try without extension if missing
     if (!cleanFileName.includes('.')) {
         for (const ext of ['.png', '.jpg', '.svg', '.webp']) {
             const originalPathExt = `/src/assets/${folder}/${cleanFileName}${ext}`;
@@ -74,7 +64,6 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
         }
     }
 
-    // Fallback constants
     if (type === 'jugadoras' || type === 'jugadorasPerfil') {
         const placeholderPath = type === 'jugadoras' ? '/src/assets/jugadoras/placeholder.png' : '/src/assets/jugadoras-perfil/placeholder.png';
         return assets[type][placeholderPath]?.default.src || "";
@@ -83,9 +72,6 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     return "";
 }
 
-/**
- * Gets the full ImageMetadata object for an asset (useful for <Image /> component)
- */
 export function getAssetMetadata(type: AssetType, fileName: string | null | undefined): ImageMetadata | null {
     if (!fileName) return null;
 
@@ -98,7 +84,6 @@ export function getAssetMetadata(type: AssetType, fileName: string | null | unde
         `/src/assets/${folder}/${normalized}`,
     ];
 
-    // Add versions with extension if missing
     if (!fileName.includes('.')) {
         for (const ext of ['.png', '.jpg', '.webp', '.svg']) {
             pathsToTry.push(`/src/assets/${folder}/${fileName}${ext}`);
