@@ -426,7 +426,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                                 <line x1={getX(i)} y1="0" x2={getX(i)} y2="300" stroke="#ffde59" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
                                                 <circle cx={getX(i)} cy={getY(d.attendance)} r="4" fill="#151e42" stroke="#fff" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
                                                 <foreignObject x={getX(i) < 500 ? getX(i) : getX(i) - 140} y={0} width="140" height="300" className="overflow-visible pointer-events-none">
-                                                    <div className={`absolute top-0 ${getX(i) < 500 ? 'left-2' : 'right-2'} transition-opacity opacity-0 group-hover/point:opacity-100 z-50 bg-[#151e42] text-white text-[10px] p-2 rounded shadow-lg min-w-[140px] whitespace-nowrap`}>
+                                                    <div className={`absolute top-0 ${getX(i) < 500 ? 'left-2' : 'right-2'} transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[#151e42] text-white text-[10px] p-2 rounded shadow-lg min-w-[140px] whitespace-nowrap pointer-events-none`}>
                                                         <p className="font-bold border-b border-gray-600 pb-1 mb-1 text-[#ffde59]">{d.fullDate}</p>
                                                         <p className="text-gray-300 mb-1">vs {d.rival}</p>
                                                         <div className="flex justify-between gap-3"><span className="text-gray-400">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString()}</span></div>
@@ -466,7 +466,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                             <span className="absolute text-[#151e42] font-black text-xs opacity-70 group-hover:opacity-0 transition-opacity">
                                                 {bucket.count}
                                             </span>
-                                            <span className="absolute text-[#151e42] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="absolute text-[#151e42] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity z-[100]">
                                                 {bucket.sharePercent}%
                                             </span>
                                         </div>
