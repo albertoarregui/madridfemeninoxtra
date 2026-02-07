@@ -13,6 +13,10 @@ export default function ChatWidget() {
     const { messages, append, status } = useChat({
         api: '/api/chat',
         streamProtocol: 'text',
+        onError: (error) => {
+            console.error('Chat error:', error);
+            // Optionally add an error message to the thread
+        }
     } as any) as any;
 
     const [input, setInput] = useState('');
@@ -24,19 +28,21 @@ export default function ChatWidget() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        if (!input.trim() || isLoading) return;
         append({ role: 'user', content: input });
         setInput('');
     };
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, status]);
 
     return (
         <div className="fixed bottom-4 right-4 z-50 font-sans">
