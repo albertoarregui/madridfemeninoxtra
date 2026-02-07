@@ -10,28 +10,14 @@ const SUGGESTED_QUESTIONS = [
 
 export default function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
-    const { messages, append, status } = useChat({
+    const { messages, input, handleInputChange, handleSubmit, status, append } = useChat({
         api: '/api/chat',
-        streamProtocol: 'text',
         onError: (error) => {
             console.error('Chat error:', error);
-            // Optionally add an error message to the thread
         }
-    } as any) as any;
+    });
 
-    const [input, setInput] = useState('');
     const isLoading = status === 'streaming' || status === 'submitted';
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInput(e.target.value);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
-        append({ role: 'user', content: input });
-        setInput('');
-    };
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
