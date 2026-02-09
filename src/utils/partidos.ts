@@ -260,7 +260,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 name: displayName,
                 pos: displayPos,
                 number: row.dorsal || '-',
-                imageUrl: `/assets/jugadoras-perfil/${encodeURI(fileName || 'placeholder.png')}`,
+                imageUrl: getAssetUrl('jugadoras', fileName || 'placeholder.png'),
                 slug: row.nombre ? slugify(row.nombre) : '#',
                 minutes: row.minutos_jugados,
                 substituted: row.minuto_salida !== null,

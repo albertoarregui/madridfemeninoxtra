@@ -156,6 +156,9 @@ const playerImageMap = Object.fromEntries(
                     <tbody id="dynamic-table-body"> </tbody>
                 </table>
             </div>
+            <div class="pagination-controls" id="pagination-controls">
+                <div id="page-numbers" class="page-numbers"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -167,6 +170,11 @@ const playerImageMap = Object.fromEntries(
     const tableTitle = document.getElementById("dynamic-table-title");
     const tableHead = document.getElementById("dynamic-table-head");
     const tableBody = document.getElementById("dynamic-table-body");
+    const pageNumbers = document.getElementById("page-numbers");
+    const paginationControls = document.getElementById("pagination-controls");
+
+    let currentPage = 1;
+    const playersPerPage = 25;
 
     const tableConfigs = {
         goles: {
@@ -488,14 +496,49 @@ const playerImageMap = Object.fromEntries(
                 .sort((a, b) => b[sortKey] - a[sortKey]);
         }
 
-        sortedPlayers = sortedPlayers.slice(0, 50);
-        if (sortedPlayers.length === 0) {
+        // Store all players for pagination
+        cachedPlayers = sortedPlayers;
+        cachedConfig = config;
+        const totalPages = Math.ceil(cachedPlayers.length / playersPerPage);
+
+        // Update pagination controls visibility
+        if (totalPages > 1) {
+            paginationControls.style.display = "flex";
+        } else {
+            paginationControls.style.display = "none";
+        }
+
+        // Reset to first page
+        currentPage = 1;
+
+        renderPage(cachedPlayers, cachedConfig);
+    }
+
+    function renderPage(allPlayers, config) {
+        const totalPages = Math.ceil(allPlayers.length / playersPerPage);
+        const startIndex = (currentPage - 1) * playersPerPage;
+        const endIndex = startIndex + playersPerPage;
+        const playersToShow = allPlayers.slice(startIndex, endIndex);
+
+        if (playersToShow.length === 0 && allPlayers.length === 0) {
             tableBody.innerHTML =
                 '<tr><td colspan="10" class="no-data">No hay datos registrados.</td></tr>';
         } else {
-            tableBody.innerHTML = sortedPlayers
+            tableBody.innerHTML = playersToShow
                 .map((player, index) => {
+                    const globalIndex = startIndex + index;
                     const extraStyle = "";
+
+                    // Determinar si esta fila debe tener estilo especial (solo top 3 en página 1)
+                    const isFirstPage = currentPage === 1;
+                    const isTopThree = globalIndex < 3;
+                    const shouldHighlight = isFirstPage && isTopThree;
+
+                    // Agregar clase especial a las filas top 3 de la página 1
+                    const rowClass = shouldHighlight
+                        ? `class="top-three-row top-${globalIndex + 1}"`
+                        : "";
+
                     const valueCells = config.dataKeys
                         .map(
                             (key) => `
@@ -511,8 +554,8 @@ const playerImageMap = Object.fromEntries(
                         : "";
 
                     return `
-                    <tr>
-                        <td class="pos-cell text-center" style="${extraStyle}">${index + 1}</td>
+                    <tr ${rowClass}>
+                        <td class="pos-cell text-center" style="${extraStyle}">${globalIndex + 1}</td>
                         <td class="player-cell" style="${extraStyle}">
                             <a href="/jugadoras/${player.slug}" class="player-link">
                                 <div class="flex items-center gap-2">
@@ -534,13 +577,48 @@ const playerImageMap = Object.fromEntries(
                 })
                 .join("");
         }
+
+        // Update pagination info - Generate page number buttons
+        pageNumbers.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+            const pageBtn = document.createElement("button");
+            pageBtn.className = "page-number-btn";
+            pageBtn.textContent = i;
+            pageBtn.setAttribute("data-page", i);
+
+            if (i === currentPage) {
+                pageBtn.classList.add("active");
+            }
+
+            pageBtn.addEventListener("click", () => {
+                currentPage = i;
+                renderPage(cachedPlayers, cachedConfig);
+            });
+
+            pageNumbers.appendChild(pageBtn);
+        }
     }
+
+    let cachedPlayers = [];
+    let cachedConfig = null;
+
+    function updateRankings() {
+        calculateRankings();
+    }
+
+    // Store reference to render later
+    window.renderCurrentPage = function (players, config) {
+        cachedPlayers = players;
+        cachedConfig = config;
+        renderPage(players, config);
+    };
 
     calculateRankings();
 
-    typeSelect.addEventListener("change", calculateRankings);
-    seasonSelect.addEventListener("change", calculateRankings);
-    competitionSelect.addEventListener("change", calculateRankings);
+    typeSelect.addEventListener("change", updateRankings);
+    seasonSelect.addEventListener("change", updateRankings);
+    competitionSelect.addEventListener("change", updateRankings);
 </script>
 
 <style is:global>
@@ -630,7 +708,7 @@ const playerImageMap = Object.fromEntries(
         font-weight: 800;
         color: #111827;
         padding: 1.25rem 2rem;
-        border-bottom: 2px solid #fbbf24;
+        border-bottom: 2px solid #ffde59;
         background: #ffffff;
         margin: 0;
         text-align: left;
@@ -646,7 +724,7 @@ const playerImageMap = Object.fromEntries(
         display: inline-block;
         width: 6px;
         height: 24px;
-        background: #fbbf24;
+        background: #ffde59;
         border-radius: 4px;
     }
 
@@ -734,16 +812,16 @@ const playerImageMap = Object.fromEntries(
         width: 4rem;
     }
 
-    tbody tr:nth-child(1) .pos-cell {
+    tbody tr.top-1 .pos-cell {
         color: #d97706;
         font-size: 1.1rem;
         font-weight: 800;
     }
-    tbody tr:nth-child(2) .pos-cell {
+    tbody tr.top-2 .pos-cell {
         color: #5f666f;
         font-weight: 800;
     }
-    tbody tr:nth-child(3) .pos-cell {
+    tbody tr.top-3 .pos-cell {
         color: #b45309;
         font-weight: 800;
     }
@@ -768,7 +846,7 @@ const playerImageMap = Object.fromEntries(
         justify-content: center;
     }
 
-    tbody tr:nth-child(1) .player-thumb-wrapper {
+    tbody tr.top-1 .player-thumb-wrapper {
         width: 18rem;
         height: 18rem;
         min-width: 18rem;
@@ -779,22 +857,22 @@ const playerImageMap = Object.fromEntries(
             0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
-    tbody tr:nth-child(2) .player-thumb-wrapper,
-    tbody tr:nth-child(3) .player-thumb-wrapper {
+    tbody tr.top-2 .player-thumb-wrapper,
+    tbody tr.top-3 .player-thumb-wrapper {
         width: 10rem;
         height: 10rem;
         min-width: 10rem;
         min-height: 10rem;
     }
 
-    tbody tr:nth-child(2) .player-thumb-wrapper {
+    tbody tr.top-2 .player-thumb-wrapper {
         border-color: #c0c0c0;
         box-shadow:
             0 0 0 2px #c0c0c0,
             0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
 
-    tbody tr:nth-child(3) .player-thumb-wrapper {
+    tbody tr.top-3 .player-thumb-wrapper {
         border-color: #cd7f32;
         box-shadow:
             0 0 0 2px #cd7f32,
@@ -865,6 +943,53 @@ const playerImageMap = Object.fromEntries(
         gap: 0.75rem;
     }
 
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem 2rem;
+        border-top: 2px solid #ffde59;
+        background: #ffffff;
+    }
+
+    .page-numbers {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .page-number-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 0.5rem;
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #374151;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .page-number-btn:hover {
+        background: #fffef8;
+        border-color: #ffde59;
+        transform: scale(1.05);
+    }
+
+    .page-number-btn.active {
+        background: #ffde59;
+        border-color: #ffd700;
+        color: #2b2b2b;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.3);
+    }
+
     @media (max-width: 768px) {
         .ranking-title {
             padding: 0.75rem 1rem;
@@ -906,6 +1031,20 @@ const playerImageMap = Object.fromEntries(
             max-width: 100%;
         }
 
+        .filters-container select {
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            text-align: center;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+        }
+
+        .filter-icon {
+            right: 0.75rem;
+            width: 18px;
+            height: 18px;
+        }
+
         .player-thumb-wrapper {
             width: 2rem;
             height: 2rem;
@@ -914,15 +1053,15 @@ const playerImageMap = Object.fromEntries(
             border-radius: 6px;
         }
 
-        tbody tr:nth-child(1) .player-thumb-wrapper {
+        tbody tr.top-1 .player-thumb-wrapper {
             width: 4rem;
             height: 4rem;
             min-width: 4rem;
             min-height: 4rem;
         }
 
-        tbody tr:nth-child(2) .player-thumb-wrapper,
-        tbody tr:nth-child(3) .player-thumb-wrapper {
+        tbody tr.top-2 .player-thumb-wrapper,
+        tbody tr.top-3 .player-thumb-wrapper {
             width: 3rem;
             height: 3rem;
             min-width: 3rem;
@@ -937,6 +1076,21 @@ const playerImageMap = Object.fromEntries(
             font-size: 0.75rem;
             padding-left: 0.1rem;
             padding-right: 0.1rem;
+        }
+
+        .pagination-controls {
+            padding: 1rem;
+            gap: 0.75rem;
+        }
+
+        .page-numbers {
+            gap: 0.35rem;
+        }
+
+        .page-number-btn {
+            min-width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
         }
     }
 </style>
