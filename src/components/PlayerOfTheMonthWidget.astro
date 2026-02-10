@@ -25,23 +25,45 @@ function getAwardImage(
     const normalizedMonth = monthName.toLowerCase();
     const yearStr = year.toString();
 
-    // Try to find matching image with pattern: playername_month_year.ext
-    const matchingPath = Object.keys(awardImages).find((path) => {
-        const pathLower = path.toLowerCase();
+    const paths = Object.keys(awardImages);
+
+    // Strategy 1: Perfect match (Player + Month + Year)
+    let matchingPath = paths.find((path) => {
+        const p = path.toLowerCase();
         return (
-            pathLower.includes(normalizedPlayer) &&
-            pathLower.includes(normalizedMonth) &&
-            pathLower.includes(yearStr)
+            p.includes(normalizedPlayer) &&
+            p.includes(normalizedMonth) &&
+            p.includes(yearStr)
         );
     });
 
+    // Strategy 2: Fallback to Player + Month (any year)
+    if (!matchingPath) {
+        matchingPath = paths.find((path) => {
+            const p = path.toLowerCase();
+            return p.includes(normalizedPlayer) && p.includes(normalizedMonth);
+        });
+    }
+
+    // Strategy 3: Fallback to Player + Year (any month)
+    if (!matchingPath) {
+        matchingPath = paths.find((path) => {
+            const p = path.toLowerCase();
+            return p.includes(normalizedPlayer) && p.includes(yearStr);
+        });
+    }
+
+    // Strategy 4: Fallback to just Player name (last resort)
+    if (!matchingPath) {
+        matchingPath = paths.find((path) => {
+            const p = path.toLowerCase();
+            return p.includes(normalizedPlayer);
+        });
+    }
+
     if (import.meta.env.DEV && !matchingPath) {
         console.log(
-            `[AwardWidget] No image found for: ${normalizedPlayer}_${normalizedMonth}_${yearStr}`,
-        );
-        console.log(
-            `[AwardWidget] Available images:`,
-            Object.keys(awardImages),
+            `[AwardWidget] No image found for: ${normalizedPlayer} (${normalizedMonth} ${yearStr})`,
         );
     }
 
