@@ -31,17 +31,28 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 p.fecha
             FROM jugadora_del_mes p
             JOIN jugadoras j ON p.id_jugadora = j.id_jugadora
-            ORDER BY p.fecha DESC
+            ORDER BY 
+                substr(p.fecha, 7, 4) DESC, 
+                substr(p.fecha, 4, 2) DESC, 
+                substr(p.fecha, 1, 2) DESC
         `;
 
         const result = await client.execute(query);
 
-        return result.rows.map((row: any) => {
-            const fecha = new Date(row.fecha);
-            const año = fecha.getFullYear();
-            const mes = fecha.toLocaleDateString('es-ES', { month: 'long' });
+        const parsedAwards = result.rows.map((row: any) => {
+            // Robust parsing for DD/MM/YYYY
+            const parts = row.fecha.split('/');
+            let date: Date;
+            if (parts.length === 3) {
+                date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            } else {
+                date = new Date(row.fecha);
+            }
 
-            const mesNumero = fecha.getMonth() + 1;
+            const año = date.getFullYear();
+            const mes = date.toLocaleDateString('es-ES', { month: 'long' });
+
+            const mesNumero = date.getMonth() + 1;
             const temporada = mesNumero >= 8 ? `${año}-${año + 1}` : `${año - 1}-${año}`;
 
             return {
@@ -51,11 +62,15 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 slug: slugify(row.nombre),
                 tipo: row.tipo,
                 titulo: row.titulo,
-                fecha: row.fecha,
+                fecha: row.fecha, // keep original string for widget compatibility
                 temporada: temporada,
-                mes: mes
+                mes: mes,
+                _timestamp: date.getTime()
             };
         });
+
+        // Ensure descending order by timestamp
+        return parsedAwards.sort((a, b) => b._timestamp - a._timestamp);
 
     } catch (error) {
         console.error("Error fetching player awards:", error);

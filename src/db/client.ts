@@ -10,8 +10,8 @@ export async function getDbClient(): Promise<Client | null> {
 
     try {
         const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env?.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('[DB CLIENT] Credenciales de Turso (Votes) no configuradas');
@@ -33,8 +33,8 @@ export async function getPlayersDbClient(): Promise<Client | null> {
 
     try {
         const { createClient } = await import('@libsql/client');
-        const url = import.meta.env.TURSO_STATS_DATABASE_URL || import.meta.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env.TURSO_STATS_AUTH_TOKEN || import.meta.env.TURSO_AUTH_TOKEN;
+        const url = import.meta.env?.TURSO_STATS_DATABASE_URL || process.env.TURSO_STATS_DATABASE_URL || import.meta.env?.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL;
+        const authToken = import.meta.env?.TURSO_STATS_AUTH_TOKEN || process.env.TURSO_STATS_AUTH_TOKEN || import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
             console.error('[DB CLIENT] Credenciales de Turso (Players/Stats) no configuradas');

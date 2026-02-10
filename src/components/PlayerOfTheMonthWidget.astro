@@ -10,43 +10,62 @@ const awardImages = import.meta.glob<{ default: ImageMetadata }>(
     { eager: true },
 );
 
-function getAwardImage(awardId: number) {
-    const matchingPath = Object.keys(awardImages).find(
-        (path) =>
-            path.includes(`/${awardId}.`) ||
-            path.includes(`/award_${awardId}.`) ||
-            path.includes(`/${awardId}_`),
-    );
+function getAwardImage(
+    playerName: string,
+    monthName: string,
+    year: number | string,
+) {
+    // Normalize player name: remove accents, convert to lowercase, replace spaces with underscores
+    const normalizedPlayer = playerName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
+
+    const normalizedMonth = monthName.toLowerCase();
+    const yearStr = year.toString();
+
+    // Try to find matching image with pattern: playername_month_year.ext
+    const matchingPath = Object.keys(awardImages).find((path) => {
+        const pathLower = path.toLowerCase();
+        return (
+            pathLower.includes(normalizedPlayer) &&
+            pathLower.includes(normalizedMonth) &&
+            pathLower.includes(yearStr)
+        );
+    });
+
+    if (import.meta.env.DEV && !matchingPath) {
+        console.log(
+            `[AwardWidget] No image found for: ${normalizedPlayer}_${normalizedMonth}_${yearStr}`,
+        );
+        console.log(
+            `[AwardWidget] Available images:`,
+            Object.keys(awardImages),
+        );
+    }
+
     return matchingPath ? awardImages[matchingPath].default : null;
 }
 
 const awards = allAwards.map((award) => {
-    if (import.meta.env.DEV) {
-        console.log(
-            `[AwardWidget] ID: ${award.id_premio}, FechaRaw: '${award.fecha}'`,
+    // Parse DD/MM/YYYY format
+    const parts = award.fecha.split("/");
+    let date: Date;
+    if (parts.length === 3) {
+        date = new Date(
+            parseInt(parts[2]),
+            parseInt(parts[1]) - 1,
+            parseInt(parts[0]),
         );
-    }
-
-    let date = new Date(award.fecha);
-
-    if (isNaN(date.getTime()) && typeof award.fecha === "string") {
-        const parts = award.fecha.split(/[-/]/);
-        if (parts.length === 3) {
-            if (parseInt(parts[0]) > 31) {
-                date = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-            } else {
-                date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-            }
-        }
+    } else {
+        date = new Date(award.fecha);
     }
 
     let monthName = "";
     let year: number | string = "----";
 
     if (isNaN(date.getTime())) {
-        console.warn(
-            `[AwardWidget] Date parsing failed completely for: ${award.fecha}`,
-        );
         monthName = "CONSULTAR";
         year = "----";
     } else {
@@ -56,7 +75,13 @@ const awards = allAwards.map((award) => {
         year = date.getFullYear();
     }
 
-    const image = getAwardImage(award.id_premio);
+    const image = getAwardImage(award.nombre, monthName, year);
+
+    if (import.meta.env.DEV) {
+        console.log(
+            `[AwardWidget] Mapped: ${award.nombre} (${monthName} ${year}) - Image: ${image ? "FOUND" : "NOT FOUND"}`,
+        );
+    }
 
     return {
         month: monthName,
@@ -66,6 +91,15 @@ const awards = allAwards.map((award) => {
         hasImage: image !== null,
     };
 });
+
+if (import.meta.env.DEV) {
+    console.log(`[AwardWidget] Final awards array length: ${awards.length}`);
+    if (awards.length > 0) {
+        console.log(
+            `[AwardWidget] First item: ${awards[0].player} - ${awards[0].month} ${awards[0].year}`,
+        );
+    }
+}
 
 if (awards.length === 0) {
     awards.push({
