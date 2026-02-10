@@ -20,54 +20,52 @@ function getAwardImage(awardId: number) {
     return matchingPath ? awardImages[matchingPath].default : null;
 }
 
-const awards = allAwards
-    .map((award) => {
-        if (import.meta.env.DEV) {
-            console.log(
-                `[AwardWidget] ID: ${award.id_premio}, FechaRaw: '${award.fecha}'`,
-            );
-        }
+const awards = allAwards.map((award) => {
+    if (import.meta.env.DEV) {
+        console.log(
+            `[AwardWidget] ID: ${award.id_premio}, FechaRaw: '${award.fecha}'`,
+        );
+    }
 
-        let date = new Date(award.fecha);
+    let date = new Date(award.fecha);
 
-        if (isNaN(date.getTime()) && typeof award.fecha === "string") {
-            const parts = award.fecha.split(/[-/]/);
-            if (parts.length === 3) {
-                if (parseInt(parts[0]) > 31) {
-                    date = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-                } else {
-                    date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                }
+    if (isNaN(date.getTime()) && typeof award.fecha === "string") {
+        const parts = award.fecha.split(/[-/]/);
+        if (parts.length === 3) {
+            if (parseInt(parts[0]) > 31) {
+                date = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+            } else {
+                date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
             }
         }
+    }
 
-        let monthName = "";
-        let year: number | string = "----";
+    let monthName = "";
+    let year: number | string = "----";
 
-        if (isNaN(date.getTime())) {
-            console.warn(
-                `[AwardWidget] Date parsing failed completely for: ${award.fecha}`,
-            );
-            monthName = "CONSULTAR";
-            year = "----";
-        } else {
-            monthName = date
-                .toLocaleDateString("es-ES", { month: "long" })
-                .toUpperCase();
-            year = date.getFullYear();
-        }
+    if (isNaN(date.getTime())) {
+        console.warn(
+            `[AwardWidget] Date parsing failed completely for: ${award.fecha}`,
+        );
+        monthName = "CONSULTAR";
+        year = "----";
+    } else {
+        monthName = date
+            .toLocaleDateString("es-ES", { month: "long" })
+            .toUpperCase();
+        year = date.getFullYear();
+    }
 
-        const image = getAwardImage(award.id_premio);
+    const image = getAwardImage(award.id_premio);
 
-        return {
-            month: monthName,
-            year: year,
-            player: award.nombre.toUpperCase(),
-            image: image || defaultLindaImg,
-            hasImage: image !== null,
-        };
-    })
-    .reverse();
+    return {
+        month: monthName,
+        year: year,
+        player: award.nombre.toUpperCase(),
+        image: image || defaultLindaImg,
+        hasImage: image !== null,
+    };
+});
 
 if (awards.length === 0) {
     awards.push({
@@ -192,16 +190,16 @@ if (awards.length === 0) {
 
             function updateButtons() {
                 if (prevBtn instanceof HTMLElement) {
-                    const isFirst = currentIndex === 0;
-                    prevBtn.style.opacity = isFirst ? "0.3" : "1";
-                    prevBtn.style.cursor = isFirst ? "default" : "pointer";
-                    prevBtn.style.pointerEvents = isFirst ? "none" : "auto";
+                    const isOldest = currentIndex === slides.length - 1;
+                    prevBtn.style.opacity = isOldest ? "0.3" : "1";
+                    prevBtn.style.cursor = isOldest ? "default" : "pointer";
+                    prevBtn.style.pointerEvents = isOldest ? "none" : "auto";
                 }
                 if (nextBtn instanceof HTMLElement) {
-                    const isLast = currentIndex === slides.length - 1;
-                    nextBtn.style.opacity = isLast ? "0.3" : "1";
-                    nextBtn.style.cursor = isLast ? "default" : "pointer";
-                    nextBtn.style.pointerEvents = isLast ? "none" : "auto";
+                    const isNewest = currentIndex === 0;
+                    nextBtn.style.opacity = isNewest ? "0.3" : "1";
+                    nextBtn.style.cursor = isNewest ? "default" : "pointer";
+                    nextBtn.style.pointerEvents = isNewest ? "none" : "auto";
                 }
             }
 
@@ -221,15 +219,15 @@ if (awards.length === 0) {
             updateButtons();
 
             prevBtn?.addEventListener("click", () => {
-                if (currentIndex > 0) {
-                    currentIndex--;
+                if (currentIndex < slides.length - 1) {
+                    currentIndex++;
                     showSlide(currentIndex);
                 }
             });
 
             nextBtn?.addEventListener("click", () => {
-                if (currentIndex < slides.length - 1) {
-                    currentIndex++;
+                if (currentIndex > 0) {
+                    currentIndex--;
                     showSlide(currentIndex);
                 }
             });
