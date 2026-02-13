@@ -262,7 +262,11 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
             JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE 
                 a.minutos_jugados > 0
-            ORDER BY j.id_jugadora, p.fecha ASC
+            ORDER BY 
+                j.id_jugadora, 
+                substr(p.fecha, 7, 4) ASC, 
+                substr(p.fecha, 4, 2) ASC, 
+                substr(p.fecha, 1, 2) ASC
         `;
 
         const result = await client.execute(query);
@@ -297,7 +301,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 const season = m.temporada;
                 const competition = m.competicion;
 
-                const contexts = [`season:\${season}`, `comp:\${competition}`];
+                const contexts = [`season:${season}`, `comp:${competition}`];
 
                 if (competition !== 'Amistoso') {
                     contexts.push('global');

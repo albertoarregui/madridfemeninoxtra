@@ -315,7 +315,7 @@ const playerImageMap = Object.fromEntries(
         },
         award_monthly: {
             title: "Mejor Jugadora del Mes",
-            headers: ["Pos", "Jugadora", "Premios", "Meses"],
+            headers: ["Pos", "Jugadora", "Premios"],
             dataKeys: ["award_count"],
             primaryKey: "award_count",
             isAward: true,
@@ -323,7 +323,7 @@ const playerImageMap = Object.fromEntries(
         },
         award_season: {
             title: "Mejor Jugadora de la Temporada",
-            headers: ["Pos", "Jugadora", "Premios", "Temporadas"],
+            headers: ["Pos", "Jugadora", "Premios"],
             dataKeys: ["award_count"],
             primaryKey: "award_count",
             isAward: true,
@@ -354,6 +354,27 @@ const playerImageMap = Object.fromEntries(
 
         const config = tableConfigs[selectedType];
         if (!config) return;
+
+        // Manage filter visibility
+        const seasonWrapper = seasonSelect.closest(".filter-wrapper");
+        const competitionWrapper = competitionSelect.closest(".filter-wrapper");
+
+        if (config.isAward) {
+            competitionWrapper.style.display = "none";
+            if (selectedType === "award_monthly") {
+                seasonWrapper.style.display = "none";
+                // Force "todos" for monthly all-time ranking
+                if (seasonSelect.value !== "todos") {
+                    // We don't change the value to avoid triggering another update,
+                    // but we use "todos" for the calculation logic.
+                }
+            } else {
+                seasonWrapper.style.display = "block";
+            }
+        } else {
+            competitionWrapper.style.display = "block";
+            seasonWrapper.style.display = "block";
+        }
 
         tableTitle.textContent = config.title;
 
@@ -403,20 +424,42 @@ const playerImageMap = Object.fromEntries(
                         Number(b[config.primaryKey]) -
                         Number(a[config.primaryKey]),
                 );
-
-            if (
-                selectedSeason !== "todos" &&
-                award.temporada !== selectedSeason
-            ) {
-                return false;
-            }
-
-            return true;
-
+        } else if (config.isAward) {
             const playerMap = {};
+
+            const filteredAwards = awardsData.filter((award) => {
+                const tipo = (award.tipo || "").toUpperCase();
+
+                if (selectedType === "award_monthly") {
+                    // Check if type is monthly (contains MES or is null/empty as a fallback)
+                    if (
+                        !tipo.includes("MES") &&
+                        !tipo.includes("MENSUAL") &&
+                        tipo !== ""
+                    )
+                        return false;
+                    return true; // Monthly is always all-time for now
+                } else {
+                    // Seasonal awards
+                    if (
+                        !tipo.includes("TEMPORADA") &&
+                        !tipo.includes("SEASON") &&
+                        !tipo.includes("MVP")
+                    )
+                        return false;
+
+                    const matchSeason =
+                        selectedSeason === "todos" ||
+                        award.temporada === selectedSeason;
+
+                    return matchSeason;
+                }
+            });
+
             filteredAwards.forEach((award) => {
                 if (!playerMap[award.id_jugadora]) {
                     playerMap[award.id_jugadora] = {
+                        id_jugadora: award.id_jugadora,
                         nombre: award.nombre,
                         slug: award.slug,
                         award_count: 0,
@@ -475,6 +518,7 @@ const playerImageMap = Object.fromEntries(
 
                 if (!playerMap[item.id_jugadora]) {
                     playerMap[item.id_jugadora] = {
+                        id_jugadora: item.id_jugadora,
                         nombre: item.nombre,
                         slug: item.slug,
                         posicion: item.posicion,
@@ -547,12 +591,6 @@ const playerImageMap = Object.fromEntries(
                         )
                         .join("");
 
-                    const periodsCell = config.isAward
-                        ? `
-                    <td class="stat-cell text-center" style="${extraStyle}">${player.periods_text || ""}</td>
-                    `
-                        : "";
-
                     return `
                     <tr ${rowClass}>
                         <td class="pos-cell text-center" style="${extraStyle}">${globalIndex + 1}</td>
@@ -571,7 +609,6 @@ const playerImageMap = Object.fromEntries(
                             </a>
                         </td>
                         ${valueCells}
-                        ${periodsCell}
                     </tr>
                 `;
                 })
@@ -666,9 +703,9 @@ const playerImageMap = Object.fromEntries(
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        width: 280px;
-        min-width: 280px;
-        max-width: 280px;
+        width: auto;
+        min-width: 300px;
+        max-width: 400px;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
         outline: none;
