@@ -231,10 +231,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         SELECT 
             p.id_temporada,
             p.id_competicion,
-            COUNT(cp.id_capitania) as capitanias
-        FROM capitanias cp
-        JOIN partidos p ON cp.id_partido = p.id_partido
-        WHERE cp.id_jugadora = ?
+            COUNT(*) as capitanias
+        FROM partidos p
+        WHERE p.capitana = ?
         GROUP BY p.id_temporada, p.id_competicion
     )
 

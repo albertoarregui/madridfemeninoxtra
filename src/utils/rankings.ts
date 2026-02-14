@@ -154,13 +154,13 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             ),
             u_captain_data AS (
                 SELECT 
-                    c.id_jugadora,
+                    p.capitana as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
                     COUNT(*) as capitanias
-                FROM capitanias c
-                JOIN partidos p ON c.id_partido = p.id_partido
-                GROUP BY c.id_jugadora, p.id_temporada, p.id_competicion
+                FROM partidos p
+                WHERE p.capitana IS NOT NULL
+                GROUP BY p.capitana, p.id_temporada, p.id_competicion
             )
 
             SELECT 

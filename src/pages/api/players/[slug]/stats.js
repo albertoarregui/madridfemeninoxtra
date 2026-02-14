@@ -144,7 +144,9 @@ export const GET = async ({ params }) => {
                 END) as tarjetas_rojas,
                 
                 -- Capitanías (times as captain)
-                COUNT(DISTINCT cap.id_capitania) as capitanias
+                COUNT(DISTINCT CASE 
+                    WHEN p.capitana = a.id_jugadora THEN p.id_partido 
+                END) as capitanias
                 
             FROM alineaciones a
             INNER JOIN partidos p ON a.id_partido = p.id_partido
@@ -171,9 +173,7 @@ export const GET = async ({ params }) => {
             LEFT JOIN tarjetas tj ON tj.id_partido = a.id_partido 
                 AND tj.id_jugadora = a.id_jugadora
             
-            -- Capitanías
-            LEFT JOIN capitanias cap ON cap.id_partido = a.id_partido 
-                AND cap.id_jugadora = a.id_jugadora
+
             
             WHERE a.id_jugadora = ?
             
