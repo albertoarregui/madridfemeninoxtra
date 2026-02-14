@@ -129,17 +129,15 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             ),
             penalty_data AS (
                 SELECT 
-                    id_jugadora,
+                    goleadora as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
                     COUNT(*) as penaltis
-                FROM penaltis pen
-                JOIN partidos p ON pen.id_partido = p.id_partido
-                WHERE id_jugadora IS NOT NULL 
-                AND (
-                    LOWER(resultado) IN ('gol', 'g', 'marcado', 's', 'goal', 'anotado')
-                )
-                GROUP BY id_jugadora, p.id_temporada, p.id_competicion
+                FROM goles_y_asistencias ga
+                JOIN partidos p ON ga.id_partido = p.id_partido
+                WHERE ga.goleadora IS NOT NULL 
+                AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                GROUP BY goleadora, p.id_temporada, p.id_competicion
             ),
             card_data AS (
                 SELECT 

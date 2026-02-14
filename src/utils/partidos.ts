@@ -70,8 +70,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rival,
-                (SELECT COUNT(*) FROM penaltis pen WHERE pen.id_partido = p.id_partido AND pen.id_jugadora IS NOT NULL) as penaltis_rm,
-                (SELECT COUNT(*) FROM penaltis pen WHERE pen.id_partido = p.id_partido AND pen.id_jugadora IS NULL) as penaltis_rival,
+                (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')) as penaltis_rm,
+                0 as penaltis_rival,
                 
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
@@ -534,12 +534,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE t.id_partido = ?
         `;
 
-        const penaltiesQuery = `
-            SELECT p.*, j.nombre as nombre_jugadora
-            FROM penaltis p
-            LEFT JOIN jugadoras j ON p.id_jugadora = j.id_jugadora
-            WHERE p.id_partido = ?
-        `;
+
 
         const penaltyShootoutQuery = `
             SELECT pt.*, j.nombre as nombre_jugadora
@@ -556,11 +551,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE og.id_partido = ?
         `;
 
-        const [subs, goalsResult, cardsResult, penaltiesResult, shootoutResult, ownGoalsResult] = await Promise.all([
+        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
             client.execute({ sql: cardsQuery, args: [matchId] }),
-            client.execute({ sql: penaltiesQuery, args: [matchId] }),
             client.execute({ sql: penaltyShootoutQuery, args: [matchId] }),
             client.execute({ sql: ownGoalsQuery, args: [matchId] })
         ]);
@@ -586,9 +580,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
             const tipoLower = String(goal.tipo || '').toLowerCase().trim();
             const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || tipoLower === 'propia' || tipoLower === 'own_goal' || tipoLower === 'p.p.';
-            const isPenaltyInGolesTable = tipoLower === 'penalti' || tipoLower === 'p' || goal.tipo === 1 || String(goal.penalti) === '1';
 
-            if (isOwnGoalInGolesTable || isPenaltyInGolesTable) continue;
+            if (isOwnGoalInGolesTable) continue;
 
 
             if (!goal.goleadora && !goal.nombre_jugadora) continue;
@@ -608,7 +601,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 text: goalText,
                 scorer: playerName,
                 assistant: assistantName,
-                isPenalty: goal.tipo === 'penalti',
+                isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
                 isOwnGoal: false,
                 team: 'local'
             });
@@ -650,46 +643,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        const penalties = penaltiesResult.rows;
 
-        for (const penalty of penalties) {
-            const parseMinute = (min: any): number => {
-                if (!min) return 0;
-                const s = String(min);
-                if (s.includes('+')) {
-                    const [base, extra] = s.split('+');
-                    return Number(base) + Number(extra);
-                }
-                return Number(min);
-            };
-
-            const res = String(penalty.resultado || '').toLowerCase().trim();
-            const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado'].includes(res);
-
-            const playerName = penalty.nombre_jugadora || penalty.lanzadora_rival;
-
-            if (isGoal) {
-                events.push({
-                    minute: parseMinute(penalty.minuto),
-                    displayMinute: formatDisplayMinute(penalty.minuto as any),
-                    type: 'penalty',
-                    outcome: 'scored',
-                    text: `${playerName} (penalti)`,
-                    player: playerName,
-                    team: 'local'
-                });
-            } else {
-                events.push({
-                    minute: parseMinute(penalty.minuto),
-                    displayMinute: formatDisplayMinute(penalty.minuto as any),
-                    type: 'penalty',
-                    outcome: 'missed',
-                    text: `Penalti fallado por ${playerName || 'Desconocido'}`,
-                    player: playerName,
-                    team: 'local'
-                });
-            }
-        }
 
         for (const og of ownGoalsResult.rows) {
             const parseMinute = (min: any): number => {

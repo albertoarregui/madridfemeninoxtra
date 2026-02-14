@@ -55,18 +55,12 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                 ) as red_cards,
                 (
                     SELECT COUNT(*)
-                    FROM penaltis pen
-                    JOIN partidos p2 ON pen.id_partido = p2.id_partido
+                    FROM goles_y_asistencias ga
+                    JOIN partidos p2 ON ga.id_partido = p2.id_partido
                     WHERE p2.id_arbitra = a.id_arbitra
-                    AND pen.id_jugadora IS NOT NULL
+                    AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                 ) as penalties_for,
-                (
-                    SELECT COUNT(*)
-                    FROM penaltis pen
-                    JOIN partidos p2 ON pen.id_partido = p2.id_partido
-                    WHERE p2.id_arbitra = a.id_arbitra
-                    AND pen.id_jugadora IS NULL
-                ) as penalties_against,
+                0 as penalties_against,
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas t 
@@ -184,16 +178,11 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                 ) as rojas,
                 (
                     SELECT COUNT(*)
-                    FROM penaltis pen
-                    WHERE pen.id_partido = p.id_partido
-                    AND pen.id_jugadora IS NOT NULL
+                    FROM goles_y_asistencias ga
+                    WHERE ga.id_partido = p.id_partido
+                    AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                 ) as penalties_for,
-                (
-                    SELECT COUNT(*)
-                    FROM penaltis pen
-                    WHERE pen.id_partido = p.id_partido
-                    AND pen.id_jugadora IS NULL
-                ) as penalties_against,
+                0 as penalties_against,
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas tr 
