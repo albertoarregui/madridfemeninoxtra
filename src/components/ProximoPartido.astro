@@ -5,6 +5,7 @@ import vsImagen from "../assets/main/vs.png";
 import { CALENDAR } from "../consts/calendar";
 import { generateSlug } from "../utils/url-helper";
 import { getAssetUrl, getAssetMetadata } from "../utils/assets";
+import { parseMatchDate, isMatchActive } from "../utils/date-helper";
 import "@fontsource/bowlby-one-sc";
 
 interface Props {
@@ -18,19 +19,9 @@ interface Props {
 
 const { rivalStats } = Astro.props;
 
-function parseMatchDate(dateStr: string, timeStr: string): Date {
-    const [hours, minutes] = timeStr.replace(/[^0-9:]/g, "").split(":");
-    return new Date(`${dateStr}T${hours}:${minutes}:00`);
-}
-
-const now = new Date();
-const twoHours = 2 * 60 * 60 * 1000;
-
-const nextMatch = CALENDAR.find((match) => {
-    const matchDate = parseMatchDate(match.date, match.time);
-    const matchEndTime = new Date(matchDate.getTime() + twoHours);
-    return matchEndTime > now;
-});
+const nextMatch = CALENDAR.find((match) =>
+    isMatchActive(match.date, match.time),
+);
 
 const activeMatch = nextMatch || CALENDAR[CALENDAR.length - 1];
 const LOCAL_TEAM = activeMatch.team1;

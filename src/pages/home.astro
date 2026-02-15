@@ -25,19 +25,11 @@ import {
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
 import { CALENDAR } from "../consts/calendar";
 
-function parseMatchDate(dateStr: string, timeStr: string): Date {
-	const [hours, minutes] = timeStr.replace(/[^0-9:]/g, "").split(":");
-	return new Date(`${dateStr}T${hours}:${minutes}:00`);
-}
+import { parseMatchDate, isMatchActive } from "../utils/date-helper";
 
-const now = new Date();
-const twoHours = 2 * 60 * 60 * 1000;
 const nextMatch =
-	CALENDAR.find((match) => {
-		const matchDate = parseMatchDate(match.date, match.time);
-		const matchEndTime = new Date(matchDate.getTime() + twoHours);
-		return matchEndTime > now;
-	}) || CALENDAR[CALENDAR.length - 1];
+	CALENDAR.find((match) => isMatchActive(match.date, match.time)) ||
+	CALENDAR[CALENDAR.length - 1];
 
 const rivalName = nextMatch.team1.includes("Real Madrid")
 	? nextMatch.team2
