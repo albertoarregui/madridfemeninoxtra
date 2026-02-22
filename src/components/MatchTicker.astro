@@ -22,13 +22,19 @@ const maxLength = Math.max(nextMatches.length, latestResults.length);
 for (let i = 0; i < maxLength; i++) {
     if (i < latestResults.length) {
         const res = latestResults[i];
-        const isRmLocal = res.club_local.toLowerCase().includes("real madrid");
-        const localGoals = isRmLocal ? res.goles_rm : res.goles_rival;
-        const visitorGoals = isRmLocal ? res.goles_rival : res.goles_rm;
+        const clubLocal = res.club_local || "Local";
+        const clubVisitante = res.club_visitante || "Visitante";
+        const isRmLocal = clubLocal.toLowerCase().includes("real madrid");
+        const localGoals = isRmLocal
+            ? (res.goles_rm ?? 0)
+            : (res.goles_rival ?? 0);
+        const visitorGoals = isRmLocal
+            ? (res.goles_rival ?? 0)
+            : (res.goles_rm ?? 0);
 
         tickerItems.push({
             label: "RESULTADO",
-            text: `${res.club_local} ${localGoals} - ${visitorGoals} ${res.club_visitante}`,
+            text: `${clubLocal} ${localGoals} - ${visitorGoals} ${clubVisitante}`,
             colorClass: "result-item",
         });
     }

@@ -46,7 +46,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
 
         const query = `
             SELECT
-                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia,
+                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 cl.nombre AS club_local,
@@ -144,13 +144,15 @@ export interface RivalStats {
     wins: number;
     draws: number;
     losses: number;
+    total: number;
 }
 
 export function calculateRivalStats(matches: any[], rivalName: string): RivalStats {
     const stats: RivalStats = {
         wins: 0,
         draws: 0,
-        losses: 0
+        losses: 0,
+        total: 0
     };
 
     if (!matches || !Array.isArray(matches)) return stats;
@@ -164,6 +166,8 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
         const isRivalMatch = clubLocal === normalizedRivalName || clubVisitante === normalizedRivalName;
 
         if (!isRivalMatch) return;
+
+        stats.total++;
 
         const golesRm = parseInt(match.goles_rm) || 0;
         const golesRival = parseInt(match.goles_rival) || 0;
