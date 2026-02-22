@@ -27,8 +27,8 @@ export const cleanApiValue = (value: any): any => {
 
 export async function fetchCoachesDirectly(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];
@@ -101,8 +101,8 @@ export async function fetchCoaches(): Promise<any[]> {
 
 export async function fetchCoachStats(coachId: string | number): Promise<any> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return null;
@@ -245,8 +245,8 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
 
 export async function fetchCoachTrajectory(coachId: string | number): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];

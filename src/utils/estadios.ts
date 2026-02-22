@@ -32,8 +32,8 @@ export function getAllStadiums(): StadiumSummary[] {
 
 export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 
@@ -75,8 +75,8 @@ export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]>
 
 export async function fetchAllStadiumsWithStats(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) return [];
 

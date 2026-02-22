@@ -24,8 +24,8 @@ export const cleanApiValue = (value: any): any => {
 
 export async function fetchRivalsDirectly(): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const client = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
 
         if (!client) {
             return [];

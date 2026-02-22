@@ -7,29 +7,14 @@ const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
 };
 
-function getDbClient() {
-    if (dbClient) {
-        return dbClient;
-    }
-
-    const url = import.meta.env.TURSO_DATABASE_URL;
-    const authToken = import.meta.env.TURSO_AUTH_TOKEN;
-
-    if (!url || !authToken) {
-        return null;
-    }
-
-    dbClient = createClient({
-        url: url,
-        authToken: authToken,
-    });
-
-    return dbClient;
+async function getDb() {
+    const { getPlayersDbClient } = await import('../../db/client');
+    return await getPlayersDbClient();
 }
 
 export const GET = async () => {
 
-    const client = getDbClient();
+    const client = await getDb();
 
     if (!client) {
         return new Response(

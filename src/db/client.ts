@@ -14,14 +14,15 @@ export async function getDbClient(): Promise<Client | null> {
         const authToken = import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
-            console.error('[DB CLIENT] Credenciales de Turso (Votes) no configuradas');
+            console.error('[DB CLIENT] AWARDS: Credenciales no configuradas');
             return null;
         }
 
+        console.log(`[DB CLIENT] Connecting to AWARDS DB: ${url}`);
         clientInstance = createClient({ url, authToken });
         return clientInstance;
     } catch (e) {
-        console.error("[DB CLIENT] Error creating DB client:", e);
+        console.error("[DB CLIENT] AWARDS: Error creating client:", e);
         return null;
     }
 }
@@ -37,14 +38,15 @@ export async function getPlayersDbClient(): Promise<Client | null> {
         const authToken = import.meta.env?.TURSO_STATS_AUTH_TOKEN || process.env.TURSO_STATS_AUTH_TOKEN || import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
 
         if (!url || !authToken) {
-            console.error('[DB CLIENT] Credenciales de Turso (Players/Stats) no configuradas');
+            console.error('[DB CLIENT] STATS: Credenciales no configuradas');
             return null;
         }
 
+        console.log(`[DB CLIENT] Connecting to STATS DB: ${url}`);
         statsClientInstance = createClient({ url, authToken });
         return statsClientInstance;
     } catch (e) {
-        console.error("[DB CLIENT] Error creating Players DB client:", e);
+        console.error("[DB CLIENT] STATS: Error creating client:", e);
         return null;
     }
 }

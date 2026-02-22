@@ -1,7 +1,7 @@
 export async function fetchCoachRecords(coachId: string | number): Promise<any> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const db = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const db = await getPlayersDbClient();
 
         if (!db) {
             return null;

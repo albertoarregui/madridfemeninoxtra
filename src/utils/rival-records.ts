@@ -1,7 +1,7 @@
 export async function fetchRivalRecords(rivalId: string | number): Promise<any> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const db = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const db = await getPlayersDbClient();
 
         if (!db) {
             return null;
@@ -143,8 +143,8 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
 
 export async function fetchRivalTopPlayers(rivalId: string | number): Promise<any> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const db = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const db = await getPlayersDbClient();
 
         if (!db) {
             return { topScorers: [], topAssisters: [], topContributors: [] };
@@ -241,8 +241,8 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
 
 export async function fetchRivalMatches(rivalId: string | number): Promise<any[]> {
     try {
-        const { getDbClient } = await import('../db/client');
-        const db = await getDbClient();
+        const { getPlayersDbClient } = await import('../db/client');
+        const db = await getPlayersDbClient();
 
         if (!db) {
             return [];
