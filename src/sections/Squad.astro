@@ -49,15 +49,17 @@ function calculateAge(birthDateString: string): number {
                 <span class="player-position" id="player-position"
                     >{listofPlayers[0].position}</span
                 >
-                <img
-                    id="player-flag"
-                    src={getFlagSrc(listofPlayers[0].country)}
-                    alt={listofPlayers[0].countryName}
-                    class="country-flag"
-                />
-                <span id="player-country-name"
-                    >{listofPlayers[0].countryName}</span
-                >
+                <div class="player-country">
+                    <img
+                        id="player-flag"
+                        src={getFlagSrc(listofPlayers[0].country)}
+                        alt={listofPlayers[0].countryName}
+                        class="country-flag"
+                    />
+                    <span id="player-country-name"
+                        >{listofPlayers[0].countryName}</span
+                    >
+                </div>
             </div>
             <div class="player-main-image-container">
                 <img
@@ -389,17 +391,32 @@ function calculateAge(birthDateString: string): number {
 
         @media (min-width: 1440px) {
             .main-player-display {
-                flex: 0 0 750px;
+                flex: 0 0 700px;
             }
         }
 
         .player-rows-container {
             flex: 1;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 3rem;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 5rem 4rem;
             padding: 0 1rem;
             min-width: 0;
+            align-items: start;
+        }
+
+        @media (max-width: 1440px) {
+            .player-rows-container {
+                grid-template-columns: 1fr !important; /* Stack columns on laptop if space is tight */
+                gap: 3rem;
+            }
+        }
+
+        @media (min-width: 1600px) {
+            .player-rows-container {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 5rem 3rem;
+            }
         }
 
         .player-row-section {
@@ -423,8 +440,8 @@ function calculateAge(birthDateString: string): number {
 
         .player-row {
             display: grid !important;
-            grid-template-columns: repeat(6, 1fr) !important;
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 1.25rem;
             width: 100%;
             justify-items: center;
             padding: 0;
@@ -433,7 +450,7 @@ function calculateAge(birthDateString: string): number {
 
         @media (min-width: 1440px) {
             .player-row {
-                grid-template-columns: repeat(8, 1fr) !important;
+                grid-template-columns: repeat(4, 1fr) !important;
             }
         }
     }
@@ -513,16 +530,18 @@ function calculateAge(birthDateString: string): number {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 3rem;
         min-height: 60px;
+        width: 100%;
+        padding: 0 1rem;
     }
 
     .player-position {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         font-family: "Archivo Black", sans-serif;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #2b2b2b;
+        letter-spacing: 2px;
+        color: #1a1a1a;
         font-weight: 800;
     }
 
@@ -540,11 +559,11 @@ function calculateAge(birthDateString: string): number {
     }
 
     #player-country-name {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         font-weight: 800;
         font-family: "Archivo Black", sans-serif;
         text-transform: uppercase;
-        color: #2b2b2b;
+        color: #1a1a1a;
     }
 
     .player-main-image-container {
@@ -585,21 +604,18 @@ function calculateAge(birthDateString: string): number {
 
     .player-name {
         text-align: center;
-        font-size: clamp(2.2rem, 5vw, 4.5rem);
+        font-size: clamp(2.5rem, 6vw, 5.5rem);
         font-weight: 900;
         font-family: "Permanent Marker", cursive;
-        margin: 0 0 1.5rem;
+        margin: 0 0 2rem;
         text-transform: uppercase;
-        background: linear-gradient(135deg, #ffd700, #ffa500);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #ffde59;
         letter-spacing: 1px;
         min-height: 140px;
         display: flex;
         align-items: center;
         justify-content: center;
-        line-height: 1.1;
+        line-height: 1;
         word-break: break-word;
         overflow-wrap: break-word;
         padding: 0 30px;
@@ -621,18 +637,20 @@ function calculateAge(birthDateString: string): number {
     }
 
     .stat-label {
-        font-size: 1.2rem;
-        font-family: "Permanent Marker", cursive;
+        font-size: 0.9rem;
+        font-family: "Archivo Black", sans-serif;
+        color: #1a1a1a;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #2b2b2b;
+        font-style: italic;
+        opacity: 0.8;
     }
 
     .stat-value {
-        font-size: 2.9rem;
-        font-weight: bold;
-        font-family: "Poppins", sans-serif;
-        color: #ffd700;
+        font-size: 3.5rem;
+        font-weight: 900;
+        font-family: "Archivo Black", sans-serif;
+        color: #ffde59;
+        line-height: 1.1;
     }
 
     .player-actions {
@@ -641,34 +659,23 @@ function calculateAge(birthDateString: string): number {
     }
 
     .btn-profile {
-        padding: 0.75rem 2rem;
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        color: #000;
-        text-decoration: none;
-        border-radius: 25px;
-        font-weight: 600;
+        background: #ffde59;
+        color: #1a1a1a;
+        padding: 1.2rem 3.5rem;
+        border-radius: 50px;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+        font-weight: 900;
+        font-size: 1.2rem;
+        text-decoration: none;
+        box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: inline-block;
     }
 
     .btn-profile:hover {
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background: #ffcc00;
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 222, 89, 0.6);
         color: #000;
     }
 
@@ -726,17 +733,17 @@ function calculateAge(birthDateString: string): number {
     }
 
     .player-thumbnail::before {
-        top: -3px;
-        left: -3px;
-        border-top-color: #ffd700;
-        border-left-color: #ffd700;
+        top: -6px;
+        left: -6px;
+        border-top-color: #ffde59;
+        border-left-color: #ffde59;
     }
 
     .player-thumbnail::after {
-        bottom: -3px;
-        right: -3px;
-        border-bottom-color: #ffd700;
-        border-right-color: #ffd700;
+        bottom: -6px;
+        right: -6px;
+        border-bottom-color: #ffde59;
+        border-right-color: #ffde59;
     }
     .player-thumbnail:hover::before,
     .player-thumbnail:hover::after {
@@ -746,7 +753,7 @@ function calculateAge(birthDateString: string): number {
     .player-thumbnail.active::before,
     .player-thumbnail.active::after {
         opacity: 1;
-        border-width: 5px;
+        border-width: 6px;
     }
 
     .player-thumbnail:hover {
@@ -763,18 +770,18 @@ function calculateAge(birthDateString: string): number {
 
     .thumbnail-number {
         position: absolute;
-        bottom: 5px;
+        bottom: 25px;
         left: 50%;
         transform: translateX(-50%);
         background: transparent;
-        color: #ffd700;
-        font-size: 3rem;
+        color: #ffde59;
+        font-size: 3.5rem;
         font-weight: 900;
         font-family: "Permanent Marker", cursive;
         z-index: 10;
         pointer-events: none;
         line-height: 1;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9);
     }
 
     .thumbnail-image-wrapper {
