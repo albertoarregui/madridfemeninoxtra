@@ -1,16 +1,31 @@
 ---
-import { TOTAL_PLAYERS as PLAYERS } from "../consts/players";
-import { COUNTRIES } from "../consts/countries";
 import { getAssetUrl } from "../utils/assets";
 import { getFlagSrc } from "../utils/flags";
 import type { ImageMetadata } from "astro";
 import "../styles/global.css";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 
-const listofPlayers = PLAYERS.map((player) => {
-    const { country } = player;
-    const countryName = country ? (COUNTRIES[country as keyof typeof COUNTRIES]?.name || "") : "";
-    return { ...player, countryName };
-});
+const allPlayersDb = await fetchPlayersDirectly();
+const allSeasons = allPlayersDb.flatMap((p) => p.temporadas || []);
+const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
+const squadPlayers = allPlayersDb.filter((player) => {
+    const dorsal = player.dorsales && player.dorsales[latestSeason];
+    return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
+}).sort((a, b) => Number(a.dorsales?.[latestSeason]) - Number(b.dorsales?.[latestSeason]));
+
+const listofPlayers = squadPlayers.map((player) => ({
+    ...player,
+    id: player.slug,
+    name: player.nombre,
+    number: String(player.dorsales?.[latestSeason] || ''),
+    position: player.posicion,
+    country: player.pais_origin || '',
+    countryName: player.pais_origin || '',
+    flagUrl: getFlagSrc(player.iso || player.pais_origin),
+    date_birth: player.fecha_nacimiento,
+    height: player.altura,
+    imageUrl: getPlayerImageUrl({ ...player, foto_url: player.season_photos?.[latestSeason] || player.profile_photos?.[latestSeason] }),
+}));
 
 function getPlayerImageSrc(playerId: string) {
     return { src: getAssetUrl('jugadoras', playerId) };

@@ -1,29 +1,32 @@
 ---
-import { TEAMS as RIVALS } from "../consts/rivals";
 import { getFlagSrc } from "../utils/flags";
-import { COUNTRIES } from "../consts/countries";
-import type { ImageMetadata } from "astro";
 import { fetchGamesDirectly, calculateRivalStats } from "../utils/partidos";
 import RivalsStatsDashboard from "../components/RivalsStatsDashboard.astro";
 import RivalsMapWrapper from "../components/RivalsMapWrapper";
 import { getAssetUrl } from "../utils/assets";
-import { fetchAllClubShields } from "../utils/rivales";
+import { fetchAllClubShields, fetchRivalsDirectly } from "../utils/rivales";
 import "../styles/global.css";
 
 const clubShieldsMapBase = await fetchAllClubShields();
-
 const allMatches = await fetchGamesDirectly();
-// Force reload - debugging singleton client
+const allRivals = await fetchRivalsDirectly();
 
-const listofRivals = RIVALS.map((rival) => {
-    const { country } = rival;
-    const countryName = country
-        ? COUNTRIES[country as keyof typeof COUNTRIES]?.name || ""
-        : "";
-    const stats = calculateRivalStats(allMatches, rival.name);
-
-    return { ...rival, countryName, stats, flagUrl: getFlagSrc(country) };
-});
+// Build the rivals list for the carousel using DB data
+const listofRivals = allRivals
+    .filter((r) => r.stats.played > 0)
+    .map((rival) => ({
+        id: rival.slug,
+        name: rival.nombre,
+        city: rival.ciudad || "",
+        country: rival.iso || rival.pais || "",
+        countryName: rival.pais || "",
+        flagUrl: rival.flagUrl || getFlagSrc(rival.iso || rival.pais),
+        stats: {
+            wins: rival.stats.wins,
+            draws: rival.stats.draws,
+            losses: rival.stats.losses,
+        },
+    }));
 
 function getRivalLogoSrc(rivalId: string, rivalName: string) {
     const remote = clubShieldsMapBase[rivalName];
@@ -31,11 +34,10 @@ function getRivalLogoSrc(rivalId: string, rivalName: string) {
     return { src: getAssetUrl("escudos", rivalId) };
 }
 
-const rivalShieldsMap = RIVALS.reduce(
+const rivalShieldsMap = allRivals.reduce(
     (acc, team) => {
-        const logo = getRivalLogoSrc(team.id, team.name);
-        if (logo) {
-            acc[team.id] = logo.src;
+        if (team.shieldUrl) {
+            acc[team.slug] = team.shieldUrl;
         }
         return acc;
     },
@@ -184,11 +186,7 @@ const rivalShieldsMap = RIVALS.reduce(
     </div>
 
     {/* Map Section - Below Selector */}
-    <RivalsMapWrapper
-        client:only="react"
-        matches={allMatches}
-        rivalShields={rivalShieldsMap}
-    />
+    <RivalsMapWrapper client:only="react" rivals={allRivals} />
 
     <script define:vars={{ rivals: listofRivals }}>
         let selectedIndex = 0;

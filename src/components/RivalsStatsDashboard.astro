@@ -1,6 +1,4 @@
 ---
-import { TEAMS } from "../consts/rivals";
-import { COUNTRIES } from "../consts/countries";
 import { getFlagSrc, getFlagCdnCode } from "../utils/flags";
 import { getAssetUrl } from "../utils/assets";
 import { fetchAllClubShields } from "../utils/rivales";
@@ -23,13 +21,8 @@ const countryStats = new Map<
     { matches: number; wins: number; name: string }
 >();
 
-const getCountryCode = (rivalName: string) => {
-    const team = TEAMS.find(
-        (t) =>
-            t.name === rivalName ||
-            t.id === rivalName.toLowerCase().replace(/ /g, "-"),
-    );
-    return team ? team.country : null;
+const getCountryCode = (_rivalName: string) => {
+    return null;
 };
 
 matches.forEach((m) => {
@@ -83,29 +76,12 @@ matches.forEach((m) => {
         isHomeMatch: boolean,
     ) => {
         if (match.pais) {
-            const paisLower = match.pais.toLowerCase().trim();
-
-            if (COUNTRIES[paisLower as keyof typeof COUNTRIES])
-                return paisLower;
-
-            if (
-                paisLower === "spain" ||
-                paisLower === "espana" ||
-                paisLower === "esp"
-            )
-                return "es";
-
-            const entry = Object.entries(COUNTRIES).find(
-                ([_, data]) =>
-                    data.name.toLowerCase() === paisLower ||
-                    data.name.toLowerCase().includes(paisLower) ||
-                    paisLower.includes(data.name.toLowerCase()),
-            );
-            if (entry) return entry[0];
+            // Use iso code directly if it looks like a 2-letter code
+            const pais = match.pais.trim();
+            if (/^[a-zA-Z]{2}$/.test(pais)) return pais.toLowerCase();
         }
 
         if (isHomeMatch) return "es";
-
         return rivalCountryCode;
     };
 
@@ -124,9 +100,7 @@ matches.forEach((m) => {
         const currentCountry = countryStats.get(playedCountryCode) || {
             matches: 0,
             wins: 0,
-            name:
-                COUNTRIES[playedCountryCode as keyof typeof COUNTRIES]?.name ||
-                playedCountryCode,
+            name: playedCountryCode.toUpperCase(),
         };
         currentCountry.matches += 1;
         if (isWin) currentCountry.wins += 1;
