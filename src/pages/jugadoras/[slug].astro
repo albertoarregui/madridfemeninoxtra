@@ -18,15 +18,18 @@ if (!player) {
 }
 const resolvedImage = player.imageUrl;
 const seasonPhotosData = Object.entries(player.season_photos || {})
-    .sort((a, b) => b[0].localeCompare(a[0])) // Latest first
+    .sort((a, b) => a[0].localeCompare(b[0])) // Oldest first, Latest last
     .map(([season, url]) => ({ season, url }));
 
-const initialSeasonIndex = 0;
+const initialSeasonIndex =
+    seasonPhotosData.length > 0 ? seasonPhotosData.length - 1 : 0;
 const currentImageUrl =
-    seasonPhotosData.length > 0 ? seasonPhotosData[0].url : resolvedImage;
+    seasonPhotosData.length > 0
+        ? seasonPhotosData[initialSeasonIndex].url
+        : resolvedImage;
 const currentSeasonName =
     seasonPhotosData.length > 0
-        ? seasonPhotosData[0].season
+        ? seasonPhotosData[initialSeasonIndex].season
         : player.temporada || "Actualidad";
 const isGoalkeeper = player.posicion === "Portera";
 const playerStats = await fetchPlayerStats(player.id_jugadora, isGoalkeeper);
@@ -758,7 +761,8 @@ const schema = {
         </div>
 
         <script define:vars={{ seasonPhotos: seasonPhotosData }}>
-            let currentIdx = 0;
+            let currentIdx =
+                seasonPhotos.length > 0 ? seasonPhotos.length - 1 : 0;
             const photoEl = document.getElementById("main-player-photo");
             const badgeEl = document.getElementById("photo-season-badge");
             const prevBtn = document.getElementById("prev-photo");
@@ -912,11 +916,17 @@ const schema = {
             .current-photo-box {
                 position: relative;
                 width: 300px;
-                border-radius: 8px;
+                border-radius: 12px;
                 overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                border: 1px solid #ddd;
-                background: #fdfdfd;
+                background: transparent;
+                border: none;
+                filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+                transition: transform 0.4s
+                    cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .current-photo-box:hover {
+                transform: translateY(-8px) scale(1.02);
+                filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.2));
             }
             .photo-season-badge {
                 position: absolute;
