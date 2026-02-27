@@ -29,7 +29,9 @@ interface Goal {
     temporada: string;
     competicion: string;
     nombre_goleadora?: string;
+    foto_goleadora?: string;
     nombre_asistente?: string;
+    foto_asistente?: string;
 }
 
 interface ClubStatsDashboardProps {
@@ -199,7 +201,18 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
     }, [filteredGoals]);
 
     const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
-    const getPlayerImage = (name: string) => {
+    const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora') => {
+        // Buscar la foto en los datos de los goles
+        const goal = goals.find(g =>
+            (type === 'goleadora' && g.nombre_goleadora === name) ||
+            (type === 'asistente' && g.nombre_asistente === name)
+        );
+
+        const dbPhoto = goal ? (type === 'goleadora' ? goal.foto_goleadora : goal.foto_asistente) : null;
+
+        if (dbPhoto) return dbPhoto;
+
+        // Fallback al asset local si no hay foto en el registro del gol
         return getAssetUrl('jugadoras', getSlug(name));
     };
 
@@ -498,7 +511,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.goals}</span>
@@ -517,7 +530,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'asistente')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.assists}</span>
@@ -536,7 +549,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras-perfil/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.total}</span>

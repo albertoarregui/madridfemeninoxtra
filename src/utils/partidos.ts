@@ -777,7 +777,9 @@ export async function fetchAllGoals(): Promise<any[]> {
                 t.temporada,
                 c.competicion,
                 j.nombre as nombre_goleadora,
-                ast.nombre as nombre_asistente
+                j.foto_url as foto_goleadora,
+                ast.nombre as nombre_asistente,
+                ast.foto_url as foto_asistente
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada

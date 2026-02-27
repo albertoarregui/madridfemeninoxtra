@@ -36,21 +36,23 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         const query = `
             SELECT
                 cal.id_proximopartido AS id,
-                cl.nombre  AS club_local,
+                cal.id_club_local,
+                cal.id_club_visitante,
+                cl.nombre  AS club_local_nombre,
                 cl.foto_url AS local_foto_url,
-                cv.nombre  AS club_visitante,
+                cv.nombre  AS club_visitante_nombre,
                 cv.foto_url AS visitante_foto_url,
-                e.nombre   AS estadio,
-                comp.competicion,
+                e.nombre   AS estadio_nombre,
+                comp.competicion AS competicion_nombre,
                 cal.fecha,
                 cal.hora,
                 cal.jornada,
                 cal.tv
             FROM calendario cal
-            JOIN clubes cl          ON cal.id_club_local     = cl.id_club
-            JOIN clubes cv          ON cal.id_club_visitante = cv.id_club
-            JOIN competiciones comp ON cal.id_competicion    = comp.id_competicion
-            LEFT JOIN estadios e    ON cal.id_estadio        = e.id_estadio
+            LEFT JOIN clubes cl          ON cal.id_club_local     = cl.id_club
+            LEFT JOIN clubes cv          ON cal.id_club_visitante = cv.id_club
+            LEFT JOIN competiciones comp ON cal.id_competicion    = comp.id_competicion
+            LEFT JOIN estadios e    ON (cal.id_estadio = e.id_estadio OR cal.id_estadi = e.id_estadio)
             ORDER BY cal.fecha ASC, cal.hora ASC
         `;
 
@@ -59,8 +61,8 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         if (!result.rows || result.rows.length === 0) return [];
 
         return result.rows.map((row: any) => {
-            const clubLocal = row.club_local || '';
-            const clubVisitante = row.club_visitante || '';
+            const clubLocal = row.club_local_nombre || row.id_club_local || '';
+            const clubVisitante = row.club_visitante_nombre || row.id_club_visitante || '';
             const rmIsLocal = isRealMadrid(clubLocal);
             const homeaway: 'home' | 'away' | 'neutral' = rmIsLocal ? 'home' : 'away';
 
@@ -70,8 +72,8 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 local_foto_url: row.local_foto_url || '',
                 club_visitante: clubVisitante,
                 visitante_foto_url: row.visitante_foto_url || '',
-                estadio: row.estadio || null,
-                competicion: row.competicion || '',
+                estadio: row.estadio_nombre || null,
+                competicion: row.competicion_nombre || row.id_competicion || '',
                 fecha: row.fecha || '',
                 hora: row.hora || '',
                 jornada: row.jornada || '',
@@ -81,8 +83,8 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 team2: clubVisitante,
                 date: row.fecha || '',
                 time: row.hora || '',
-                competition: row.competicion || '',
-                stadium: row.estadio || '',
+                competition: row.competicion_nombre || row.id_competicion || '',
+                stadium: row.estadio_nombre || '',
                 homeaway,
             };
         });
