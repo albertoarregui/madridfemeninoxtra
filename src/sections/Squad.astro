@@ -6,17 +6,28 @@ import { fetchAndCleanPlayers, fetchPlayersDirectly } from "../utils/players";
 // Fetch all players from DB
 const allPlayersDb = await fetchPlayersDirectly();
 
+// Determine the latest season globally
+const allSeasons = allPlayersDb.flatMap((p) => p.temporadas || []);
+const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
+
+// Filter players who played in the latest season with dorsal 1-24
+const squadPlayers = allPlayersDb.filter((player) => {
+    const dorsal = player.dorsales && player.dorsales[latestSeason];
+    return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
+});
+
 // Maintain the same order and grouping as defined in SQUAD if possible,
 // or just use the DB players grouped by position.
-const listofPlayers = allPlayersDb.map((player) => {
+const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin } = player;
+    const dorsal = player.dorsales[latestSeason];
     const countryName =
         (COUNTRIES as any)[pais_origin]?.name || pais_origin || "";
     return {
         ...player,
         id: player.id_jugadora.toString(), // For compatibility with older code
         name: player.nombre,
-        number: player.dorsal || "0",
+        number: dorsal.toString(),
         position: player.posicion,
         country: pais_origin,
         countryName,
@@ -24,6 +35,9 @@ const listofPlayers = allPlayersDb.map((player) => {
         date_birth: player.fecha_nacimiento,
     };
 });
+
+// Sort by number for each position grouping
+listofPlayers.sort((a, b) => Number(a.number) - Number(b.number));
 
 // Group players by position for the rows
 const porteras = listofPlayers.filter((p) => p.position === "Portera");

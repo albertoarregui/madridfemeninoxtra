@@ -187,32 +187,32 @@ const schema = {
                 <div class="ficha-content">
                     <div class="player-photo-container">
                         <div class="photo-carousel-wrapper">
-                            <button
-                                id="prev-photo"
-                                class="carousel-nav-btn"
-                                aria-label="Foto anterior"
-                                disabled={seasonPhotosData.length <= 1}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
-                                    ><path
-                                        stroke="none"
-                                        d="M0 0h24v24H0z"
-                                        fill="none"></path><path
-                                        d="M15 6l-6 6l6 6"></path></svg
-                                >
-                            </button>
-
                             <div class="current-photo-box">
+                                <button
+                                    id="prev-photo"
+                                    class="carousel-nav-btn prev"
+                                    aria-label="Foto anterior"
+                                    disabled={seasonPhotosData.length <= 1}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="32"
+                                        height="32"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="white"
+                                        stroke-width="2.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
+                                        ><path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"></path><path
+                                            d="M15 6l-6 6l6 6"></path></svg
+                                    >
+                                </button>
+
                                 <img
                                     id="main-player-photo"
                                     src={currentImageUrl}
@@ -226,32 +226,32 @@ const schema = {
                                 >
                                     {currentSeasonName}
                                 </div>
-                            </div>
 
-                            <button
-                                id="next-photo"
-                                class="carousel-nav-btn"
-                                aria-label="Siguiente foto"
-                                disabled={seasonPhotosData.length <= 1}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
-                                    ><path
-                                        stroke="none"
-                                        d="M0 0h24v24H0z"
-                                        fill="none"></path><path
-                                        d="M9 6l6 6l-6 6"></path></svg
+                                <button
+                                    id="next-photo"
+                                    class="carousel-nav-btn next"
+                                    aria-label="Siguiente foto"
+                                    disabled={seasonPhotosData.length <= 1}
                                 >
-                            </button>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="32"
+                                        height="32"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="white"
+                                        stroke-width="2.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
+                                        ><path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"></path><path
+                                            d="M9 6l6 6l-6 6"></path></svg
+                                    >
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="player-info">
@@ -771,21 +771,9 @@ const schema = {
                 photoEl.src = current.url;
                 badgeEl.textContent = current.season;
 
-                if (prevBtn) {
-                    prevBtn.disabled = currentIdx === 0;
-                    prevBtn.style.opacity = currentIdx === 0 ? "0.3" : "1";
-                    prevBtn.style.pointerEvents =
-                        currentIdx === 0 ? "none" : "auto";
-                }
-                if (nextBtn) {
+                if (prevBtn) prevBtn.disabled = currentIdx === 0;
+                if (nextBtn)
                     nextBtn.disabled = currentIdx === seasonPhotos.length - 1;
-                    nextBtn.style.opacity =
-                        currentIdx === seasonPhotos.length - 1 ? "0.3" : "1";
-                    nextBtn.style.pointerEvents =
-                        currentIdx === seasonPhotos.length - 1
-                            ? "none"
-                            : "auto";
-                }
             }
 
             if (prevBtn) {
@@ -877,54 +865,57 @@ const schema = {
             }
             .player-photo-container {
                 margin-bottom: 0;
-                text-align: center;
+                text-align: left;
                 flex-shrink: 0;
                 display: flex;
+                justify-content: flex-start;
             }
             .photo-carousel-wrapper {
                 display: flex;
                 align-items: center;
-                gap: 1rem;
-                width: 100%;
-                justify-content: center;
+                gap: 0;
+                width: auto;
+                justify-content: flex-start;
                 position: relative;
-                min-height: 400px;
             }
             .carousel-nav-btn {
-                background: #f8f9fa;
-                border: 2px solid #ffde59;
-                border-radius: 50%;
-                width: 44px;
-                height: 44px;
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                width: auto;
+                height: auto;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                color: #2b2b2b;
-                padding: 0;
-                box-shadow: 0 4px 12px rgba(255, 222, 89, 0.2);
-                flex-shrink: 0;
+                transition: all 0.3s ease;
+                padding: 0.5rem;
                 z-index: 10;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+            }
+            .carousel-nav-btn.prev {
+                left: 0.5rem;
+            }
+            .carousel-nav-btn.next {
+                right: 0.5rem;
             }
             .carousel-nav-btn:hover:not(:disabled) {
-                background: #ffde59;
-                transform: scale(1.15);
-                box-shadow: 0 6px 16px rgba(255, 222, 89, 0.4);
+                background: none;
+                transform: translateY(-50%) scale(1.2);
             }
             .carousel-nav-btn:disabled {
-                opacity: 0.3;
-                cursor: not-allowed;
-                border-color: #ddd;
+                opacity: 0;
+                pointer-events: none;
             }
             .current-photo-box {
                 position: relative;
-                flex: 1;
-                max-width: 320px;
-                border-radius: 12px;
+                width: 300px;
+                border-radius: 8px;
                 overflow: hidden;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-                border: 1px solid #eee;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                border: 1px solid #ddd;
                 background: #fdfdfd;
             }
             .photo-season-badge {
