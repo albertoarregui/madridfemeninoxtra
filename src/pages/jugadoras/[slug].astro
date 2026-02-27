@@ -18,11 +18,10 @@ if (!player) {
 }
 const resolvedImage = player.imageUrl;
 const seasonPhotosData = Object.entries(player.season_photos || {})
-    .sort((a, b) => a[0].localeCompare(b[0])) // Oldest first, Latest last
+    .sort((a, b) => b[0].localeCompare(a[0])) // Latest first, Oldest last
     .map(([season, url]) => ({ season, url }));
 
-const initialSeasonIndex =
-    seasonPhotosData.length > 0 ? seasonPhotosData.length - 1 : 0;
+const initialSeasonIndex = 0;
 const currentImageUrl =
     seasonPhotosData.length > 0
         ? seasonPhotosData[initialSeasonIndex].url
@@ -194,13 +193,13 @@ const schema = {
                                 <button
                                     id="prev-photo"
                                     class="carousel-nav-btn prev"
-                                    aria-label="Foto anterior"
+                                    aria-label="Ver fotos anteriores"
                                     disabled={seasonPhotosData.length <= 1}
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
-                                        width="32"
-                                        height="32"
+                                        width="40"
+                                        height="40"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="white"
@@ -221,7 +220,7 @@ const schema = {
                                     src={currentImageUrl}
                                     alt={`Foto de ${player.nombre}`}
                                     class="player-photo"
-                                    loading="eager"
+                                    loading="lazy"
                                 />
                                 <div
                                     id="photo-season-badge"
@@ -233,13 +232,13 @@ const schema = {
                                 <button
                                     id="next-photo"
                                     class="carousel-nav-btn next"
-                                    aria-label="Siguiente foto"
+                                    aria-label="Ver fotos más recientes"
                                     disabled={seasonPhotosData.length <= 1}
                                 >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
-                                        width="32"
-                                        height="32"
+                                        width="40"
+                                        height="40"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="white"
@@ -775,15 +774,18 @@ const schema = {
                 photoEl.src = current.url;
                 badgeEl.textContent = current.season;
 
-                if (prevBtn) prevBtn.disabled = currentIdx === 0;
-                if (nextBtn)
-                    nextBtn.disabled = currentIdx === seasonPhotos.length - 1;
+                // Left button (Next in array = Older)
+                if (prevBtn)
+                    prevBtn.disabled = currentIdx === seasonPhotos.length - 1;
+                // Right button (Prev in array = Newer)
+                if (nextBtn) nextBtn.disabled = currentIdx === 0;
             }
 
             if (prevBtn) {
                 prevBtn.addEventListener("click", () => {
-                    if (currentIdx > 0) {
-                        currentIdx--;
+                    // Clicking Left advances to the "next" in our reversed list (Older)
+                    if (currentIdx < seasonPhotos.length - 1) {
+                        currentIdx++;
                         updateCarousel();
                     }
                 });
@@ -791,8 +793,9 @@ const schema = {
 
             if (nextBtn) {
                 nextBtn.addEventListener("click", () => {
-                    if (currentIdx < seasonPhotos.length - 1) {
-                        currentIdx++;
+                    // Clicking Right goes back to "previous" in our reversed list (Newer)
+                    if (currentIdx > 0) {
+                        currentIdx--;
                         updateCarousel();
                     }
                 });
@@ -900,14 +903,14 @@ const schema = {
                 filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
             }
             .carousel-nav-btn.prev {
-                left: 0.5rem;
+                left: 1rem;
             }
             .carousel-nav-btn.next {
-                right: 0.5rem;
+                left: 3.5rem;
             }
             .carousel-nav-btn:hover:not(:disabled) {
-                background: none;
-                transform: translateY(-50%) scale(1.2);
+                background: rgba(0, 0, 0, 0.2);
+                transform: translateY(-50%) scale(1.1);
             }
             .carousel-nav-btn:disabled {
                 opacity: 0;
@@ -927,14 +930,14 @@ const schema = {
                 bottom: 1.25rem;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(43, 43, 43, 0.85);
+                background: rgba(43, 43, 43, 0.7);
                 color: #ffde59;
-                padding: 0.5rem 1.25rem;
+                padding: 0.35rem 1rem;
                 border-radius: 30px;
-                font-size: 0.9rem;
+                font-size: 0.85rem;
                 font-weight: 800;
-                backdrop-filter: blur(8px);
-                border: 1.5px solid rgba(255, 222, 89, 0.4);
+                backdrop-filter: blur(4px);
+                border: 1px solid rgba(255, 222, 89, 0.3);
                 white-space: nowrap;
                 z-index: 5;
                 font-family: "Archivo Black", sans-serif;
@@ -943,9 +946,11 @@ const schema = {
             .player-photo {
                 width: 100%;
                 height: 450px;
-                object-fit: cover;
+                object-fit: contain;
                 display: block;
                 transition: opacity 0.3s ease;
+                background: transparent;
+                pointer-events: none;
             }
             .player-info {
                 display: flex;
