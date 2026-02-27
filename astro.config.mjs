@@ -13,6 +13,7 @@ export default defineConfig({
   output: 'server',
   adapter: vercel({
     imageService: true,
+    runtime: 'nodejs20.x',
   }),
   vite: {
     plugins: [tailwindcss()]
