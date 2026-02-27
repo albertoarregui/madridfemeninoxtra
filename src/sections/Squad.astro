@@ -23,14 +23,17 @@ const squadPlayers = allPlayersDb.filter((player) => {
 // Maintain the same order and grouping as defined in SQUAD if possible,
 // or just use the DB players grouped by position.
 const listofPlayers = squadPlayers.map((player) => {
-    const { pais_origin } = player;
+    const { pais_origin, iso } = player;
     const dorsal = player.dorsales[latestSeason];
     const profilePhoto =
         player.profile_photos && player.profile_photos[latestSeason];
     const seasonPhoto =
         player.season_photos && player.season_photos[latestSeason];
     const countryName =
-        (COUNTRIES as any)[pais_origin]?.name || pais_origin || "";
+        (COUNTRIES as any)[iso?.toLowerCase()]?.name ||
+        (COUNTRIES as any)[pais_origin?.toLowerCase()]?.name ||
+        pais_origin ||
+        "";
 
     return {
         ...player,
@@ -39,8 +42,9 @@ const listofPlayers = squadPlayers.map((player) => {
         number: dorsal.toString(),
         position: player.posicion,
         country: pais_origin,
+        iso,
         countryName,
-        flagUrl: getFlagSrc(pais_origin),
+        flagUrl: getFlagSrc(iso || pais_origin),
         date_birth: player.fecha_nacimiento,
         height: player.altura,
         weight: player.peso,

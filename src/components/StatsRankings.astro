@@ -24,6 +24,11 @@ const {
 const playerImageMap = Object.fromEntries(
     players.map((p: any) => [p.slug, p.imageUrl]),
 );
+
+import { getFlagSrc } from "../utils/flags";
+const playerFlagMap = Object.fromEntries(
+    players.map((p: any) => [p.slug, getFlagSrc(p.iso || p.pais_origin)]),
+);
 ---
 
 <div class="stats-rankings-ui">
@@ -163,7 +168,15 @@ const playerImageMap = Object.fromEntries(
     </div>
 </div>
 
-<script define:vars={{ rankingsData, streaksData, awardsData, playerImageMap }}>
+<script
+    define:vars={{
+        rankingsData,
+        streaksData,
+        awardsData,
+        playerImageMap,
+        playerFlagMap,
+    }}
+>
     const typeSelect = document.getElementById("filtro-tipo");
     const seasonSelect = document.getElementById("filtro-temporada");
     const competitionSelect = document.getElementById("filtro-competicion");
@@ -334,6 +347,11 @@ const playerImageMap = Object.fromEntries(
     function getPlayerImage(slug) {
         if (!slug) return "";
         return playerImageMap[slug] || "";
+    }
+
+    function getPlayerFlag(slug) {
+        if (!slug) return "";
+        return playerFlagMap[slug] || "";
     }
 
     function isDefenderOrGK(pos) {
@@ -604,7 +622,12 @@ const playerImageMap = Object.fromEntries(
                                             class="player-thumb-img"
                                         />
                                     </div>
-                                    <div class="player-name">${player.nombre}</div>
+                                    <div class="flex flex-col">
+                                        <div class="player-name">${player.nombre}</div>
+                                        <div class="flex items-center gap-1">
+                                            <img src="${getPlayerFlag(player.slug)}" class="w-4 h-auto rounded-sm opacity-80" alt="Bandera" />
+                                        </div>
+                                    </div>
                                 </div>
                             </a>
                         </td>
