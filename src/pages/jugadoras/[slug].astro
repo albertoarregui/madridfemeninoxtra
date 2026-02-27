@@ -17,9 +17,12 @@ if (!player) {
     return Astro.redirect("/404");
 }
 const resolvedImage = player.imageUrl;
-const seasonPhotosData = Object.entries(player.season_photos || {})
+// Merge profile_photos and season_photos, prioritizing profile_photos
+const mergedPhotos = { ...player.season_photos, ...player.profile_photos };
+
+const seasonPhotosData = Object.entries(mergedPhotos || {})
     .sort((a, b) => b[0].localeCompare(a[0])) // Latest first, Oldest last
-    .map(([season, url]) => ({ season, url }));
+    .map(([season, url]) => ({ season, url: url as string }));
 
 const initialSeasonIndex = 0;
 const currentImageUrl =
@@ -876,6 +879,7 @@ const schema = {
                 flex-shrink: 0;
                 display: flex;
                 justify-content: flex-start;
+                overflow: visible; /* Prevent clipping */
             }
             .photo-carousel-wrapper {
                 display: flex;
@@ -920,12 +924,15 @@ const schema = {
             .current-photo-box {
                 position: relative;
                 width: 300px;
-                background: transparent;
+                background: #fdfdfd;
+                border-radius: 16px;
                 border: none;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                overflow: visible; /* Let badge & arrows go outside if needed */
             }
             .photo-season-badge {
                 position: absolute;
-                bottom: 1.25rem;
+                bottom: 2.5rem; /* Moved up */
                 left: 50%;
                 transform: translateX(-50%);
                 background: rgba(43, 43, 43, 0.7);
