@@ -49,7 +49,8 @@ export const GET = async () => {
                 nombre, 
                 ciudad, 
                 pais, 
-                fecha_nacimiento 
+                fecha_nacimiento,
+                foto_url
             FROM 
                 entrenadores 
             WHERE 
@@ -96,7 +97,7 @@ export const POST = async ({ request }) => {
         );
     }
 
-    const { nombre, ciudad, pais, fecha_nacimiento } = body;
+    const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
 
     if (!nombre || !ciudad || !pais || !fecha_nacimiento) {
         return new Response(
@@ -106,14 +107,14 @@ export const POST = async ({ request }) => {
     }
 
     const sql = `
-        INSERT INTO entrenadores (nombre, ciudad, pais, fecha_nacimiento)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO entrenadores (nombre, ciudad, pais, fecha_nacimiento, foto_url)
+        VALUES (?, ?, ?, ?, ?)
     `;
 
     try {
         await client.execute({
             sql: sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento]
+            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url]
         });
 
         return new Response(
@@ -145,7 +146,7 @@ export const PUT = async ({ request, url }) => {
         );
     }
 
-    const { nombre, ciudad, pais, fecha_nacimiento } = body;
+    const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
 
     if (!id_entrenador || !nombre || !ciudad || !pais || !fecha_nacimiento) {
         return new Response(
@@ -156,14 +157,14 @@ export const PUT = async ({ request, url }) => {
 
     const sql = `
         UPDATE entrenadores
-        SET nombre = ?, ciudad = ?, pais = ?, fecha_nacimiento = ?
+        SET nombre = ?, ciudad = ?, pais = ?, fecha_nacimiento = ?, foto_url = ?
         WHERE id_entrenador = ?
     `;
 
     try {
         const result = await client.execute({
             sql: sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento, id_entrenador]
+            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url, id_entrenador]
         });
 
         if (result.rowsAffected === 0) {

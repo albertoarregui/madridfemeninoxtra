@@ -14,7 +14,14 @@ export function slugify(text: string | null | undefined): string {
 import { getAssetUrl } from './assets';
 
 export function getCoachImageUrl(coach: any): string {
-    const name = coach.foto_url || coach.nombre;
+    const photoUrl = coach.foto_url || coach.imageUrl;
+
+    // Si ya es una URL completa (Cloudflare), la devolvemos directamente
+    if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
+        return photoUrl;
+    }
+
+    const name = photoUrl || coach.nombre;
     return getAssetUrl('entrenadores', name);
 }
 
@@ -40,7 +47,8 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                 nombre, 
                 ciudad, 
                 pais, 
-                fecha_nacimiento 
+                fecha_nacimiento,
+                foto_url 
             FROM 
                 entrenadores 
             WHERE 
@@ -58,6 +66,7 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                 ciudad: cleanApiValue(coach.ciudad) || '',
                 pais: cleanApiValue(coach.pais) || '',
                 fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || '',
+                foto_url: cleanApiValue(coach.foto_url) || '',
                 slug: slugify(coach.nombre),
                 imageUrl: getCoachImageUrl(coach),
             };

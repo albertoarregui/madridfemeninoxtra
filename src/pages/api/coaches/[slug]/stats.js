@@ -61,7 +61,8 @@ export const GET = async ({ params }) => {
                 nombre, 
                 ciudad, 
                 pais, 
-                fecha_nacimiento 
+                fecha_nacimiento,
+                foto_url 
             FROM 
                 entrenadores 
             WHERE 
