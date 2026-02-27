@@ -6,6 +6,7 @@ import { CALENDAR } from "../consts/calendar";
 import { generateSlug } from "../utils/url-helper";
 import { getAssetUrl, getAssetMetadata } from "../utils/assets";
 import { parseMatchDate, isMatchActive } from "../utils/date-helper";
+import { fetchAllClubShields } from "../utils/rivales";
 import "@fontsource/bowlby-one-sc";
 
 interface Props {
@@ -55,6 +56,10 @@ function getTeamLogo(teamName: string) {
     return getAssetMetadata("escudos", teamName);
 }
 
+const clubShields = await fetchAllClubShields();
+const localShieldUrl = clubShields[LOCAL_TEAM];
+const visitorShieldUrl = clubShields[VISITOR_TEAM];
+
 const localLogo = getTeamLogo(LOCAL_TEAM);
 const visitorLogo = getTeamLogo(VISITOR_TEAM);
 ---
@@ -90,7 +95,15 @@ const visitorLogo = getTeamLogo(VISITOR_TEAM);
         <div class="teams-battle">
             <div class="team-side local">
                 {
-                    localLogo ? (
+                    localShieldUrl ? (
+                        <img
+                            src={localShieldUrl}
+                            alt={LOCAL_TEAM}
+                            class="escudo-giant"
+                            width="170"
+                            height="170"
+                        />
+                    ) : localLogo ? (
                         <Image
                             src={localLogo}
                             alt={LOCAL_TEAM}
@@ -121,7 +134,15 @@ const visitorLogo = getTeamLogo(VISITOR_TEAM);
 
             <div class="team-side visitor">
                 {
-                    visitorLogo ? (
+                    visitorShieldUrl ? (
+                        <img
+                            src={visitorShieldUrl}
+                            alt={VISITOR_TEAM}
+                            class="escudo-giant"
+                            width="170"
+                            height="170"
+                        />
+                    ) : visitorLogo ? (
                         <Image
                             src={visitorLogo}
                             alt={VISITOR_TEAM}

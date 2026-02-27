@@ -1,9 +1,12 @@
 ---
 import { TEAMS } from "../consts/rivals";
 import { COUNTRIES } from "../consts/countries";
-import { getFlagSrc } from "../utils/flags";
+import { getFlagSrc, getFlagCdnCode } from "../utils/flags";
 import { getAssetUrl } from "../utils/assets";
+import { fetchAllClubShields } from "../utils/rivales";
 import type { ImageMetadata } from "astro";
+
+const clubShieldsMapBase = await fetchAllClubShields();
 
 interface Props {
     matches: any[];
@@ -144,6 +147,8 @@ rivalMap.forEach((data, name) => {
 });
 
 function getRivalLogoSrc(rivalName: string) {
+    const remote = clubShieldsMapBase[rivalName];
+    if (remote) return remote;
     return getAssetUrl("escudos", rivalName);
 }
 

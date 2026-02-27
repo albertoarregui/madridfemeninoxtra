@@ -40,19 +40,25 @@ if (!rival) {
     return Astro.redirect("/404");
 }
 
-let shieldImage: { src: string } | undefined;
-let flagImage: ImageMetadata | undefined;
-let stadiumImage: ImageMetadata | undefined;
+const shieldImageSrc = rival.shieldUrl;
 
-const shieldImageMetadata = getAssetMetadata("escudos", rival.nombre);
-shieldImage = shieldImageMetadata
-    ? { src: shieldImageMetadata.src }
-    : undefined;
+const flagImage = getAssetMetadata("banderas", rival.pais) || undefined;
 
-const flagImageMetadata = getAssetMetadata("banderas", rival.pais);
-flagImage = flagImageMetadata || undefined;
+// Stadium Image logic
+const stadiumUrl = rival.estadio_foto_url;
+const hasExternalStadium =
+    stadiumUrl &&
+    (stadiumUrl.startsWith("http://") || stadiumUrl.startsWith("https://"));
+let stadiumImageSrc = hasExternalStadium
+    ? stadiumUrl
+    : getAssetMetadata("estadios", rival.estadio)?.src || null;
 
-stadiumImage = getAssetMetadata("estadios", rival.estadio) || undefined;
+// Rival Photo logic (if any)
+const clubUrl = rival.foto_url;
+const hasExternalClub =
+    clubUrl &&
+    (clubUrl.startsWith("http://") || clubUrl.startsWith("https://"));
+let clubImageSrc = hasExternalClub ? clubUrl : null;
 
 const rivalRecords = await fetchRivalRecords(rival.id_club);
 
@@ -199,20 +205,11 @@ const isRealMadrid =
                     </h2>
                     <div class="rival-info">
                         <div class="rival-shield">
-                            {
-                                shieldImage ? (
-                                    <img
-                                        src={shieldImage.src}
-                                        alt={`Escudo de ${rival.nombre}`}
-                                    />
-                                ) : (
-                                    <img
-                                        src={rival.shieldUrl}
-                                        alt={`Escudo de ${rival.nombre}`}
-                                        onerror={`this.onerror=null; this.src='${getAssetUrl("escudos", "placeholder")}';`}
-                                    />
-                                )
-                            }
+                            <img
+                                src={shieldImageSrc}
+                                alt={`Escudo de ${rival.nombre}`}
+                                onerror={`this.onerror=null; this.src='/assets/escudos/placeholder.png';`}
+                            />
                         </div>
                         <div class="rival-details">
                             <div class="info-row">
@@ -724,9 +721,9 @@ const isRealMadrid =
                     <div class="stadium-content">
                         <div class="stadium-photo">
                             {
-                                stadiumImage ? (
+                                stadiumImageSrc ? (
                                     <img
-                                        src={stadiumImage.src}
+                                        src={stadiumImageSrc}
                                         alt={`Estadio ${rival.estadio}`}
                                         class="stadium-img"
                                     />

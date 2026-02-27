@@ -11,6 +11,10 @@ export function slugify(text: string | null | undefined): string {
 import { getAssetUrl } from './assets';
 
 export function getRivalShieldUrl(rival: any): string {
+    const fotoUrl = rival.foto_url || rival.club_foto_url;
+    if (fotoUrl && (fotoUrl.startsWith('http://') || fotoUrl.startsWith('https://'))) {
+        return fotoUrl;
+    }
     const name = rival.escudo_url || rival.nombre;
     return getAssetUrl('escudos', name);
 }
@@ -38,6 +42,7 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.ciudad,
                 c.pais,
                 c.slug,
+                c.escudo_url,
                 e.nombre as estadio,
                 e.capacidad,
                 COUNT(p.id_partido) as played,
@@ -57,7 +62,9 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 END) as losses,
                 SUM(CAST(p.goles_rm AS INTEGER)) as gf,
                 SUM(CAST(p.goles_rival AS INTEGER)) as ga,
-                SUM(CASE WHEN CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END) as clean_sheets
+                SUM(CASE WHEN CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END) as clean_sheets,
+                c.foto_url as club_foto_url,
+                e.foto_url as estadio_foto_url
             FROM 
                 clubes c
             LEFT JOIN
@@ -94,6 +101,9 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 estadio: cleanApiValue(rival.estadio) || '',
                 capacidad: cleanApiValue(rival.capacidad) || '-',
                 shieldUrl: getRivalShieldUrl(rival),
+                escudo_url: cleanApiValue(rival.escudo_url),
+                foto_url: cleanApiValue(rival.club_foto_url),
+                estadio_foto_url: cleanApiValue(rival.estadio_foto_url),
                 stats: {
                     played,
                     wins,
@@ -142,5 +152,21 @@ export async function fetchRivals(): Promise<any[]> {
     } catch (error) {
         console.error("Fallo al obtener rivales de la API:", error);
         return [];
+    }
+}
+export async function fetchAllClubShields(): Promise<Record<string, string>> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return {};
+
+        const result = await client.execute("SELECT nombre, foto_url, escudo_url FROM clubes");
+        return result.rows.reduce((acc: any, row: any) => {
+            acc[row.nombre] = getRivalShieldUrl(row);
+            return acc;
+        }, {});
+    } catch (error) {
+        console.error("Error fetching all club shields:", error);
+        return {};
     }
 }

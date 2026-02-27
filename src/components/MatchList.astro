@@ -14,6 +14,8 @@ interface Match {
     goles_rival: number;
     resultado: string;
     temporada_nombre: string;
+    local_shield_url?: string;
+    visitante_shield_url?: string;
 }
 
 interface Props {
@@ -148,8 +150,11 @@ function getTeamLogo(teamName: string) {
                           ? "loss"
                           : "draw";
 
-                const localLogo = getTeamLogo(match.club_local);
-                const visitanteLogo = getTeamLogo(match.club_visitante);
+                const localLogoSrc =
+                    match.local_shield_url || getTeamLogo(match.club_local);
+                const visitanteLogoSrc =
+                    match.visitante_shield_url ||
+                    getTeamLogo(match.club_visitante);
                 const competitionLogo = getCompetitionLogo(
                     match.competicion_nombre,
                 );
@@ -191,14 +196,17 @@ function getTeamLogo(teamName: string) {
                                     <span class="team-name">
                                         {match.club_local}
                                     </span>
-                                    {localLogo ? (
-                                        <Image
-                                            src={localLogo}
+                                    {localLogoSrc ? (
+                                        <img
+                                            src={
+                                                typeof localLogoSrc === "string"
+                                                    ? localLogoSrc
+                                                    : localLogoSrc.src
+                                            }
                                             alt={match.club_local}
                                             class="team-shield"
                                             width={28}
                                             height={28}
-                                            format="webp"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />
@@ -224,14 +232,18 @@ function getTeamLogo(teamName: string) {
                                 </div>
 
                                 <div class="team team-visitor">
-                                    {visitanteLogo ? (
-                                        <Image
-                                            src={visitanteLogo}
+                                    {visitanteLogoSrc ? (
+                                        <img
+                                            src={
+                                                typeof visitanteLogoSrc ===
+                                                "string"
+                                                    ? visitanteLogoSrc
+                                                    : visitanteLogoSrc.src
+                                            }
                                             alt={match.club_visitante}
                                             class="team-shield"
                                             width={28}
                                             height={28}
-                                            format="webp"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />

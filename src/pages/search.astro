@@ -14,6 +14,9 @@ interface SearchResult {
     relevance: number;
 }
 
+const { fetchAllClubShields } = await import("../utils/rivales");
+const clubShields = await fetchAllClubShields();
+
 let results: SearchResult[] = [];
 let error = "";
 
@@ -45,8 +48,10 @@ const coachImages = import.meta.glob<{ default: ImageMetadata }>(
 
 async function getImage(result: SearchResult) {
     if (result.type === "rival") {
+        const remoteShield = clubShields[result.title];
+        if (remoteShield) return { src: remoteShield };
+
         const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
-        // Assuming PNG as per previous standards and file listing
         return { src: `/assets/escudos/${slugUnderscored}.png` };
     }
 

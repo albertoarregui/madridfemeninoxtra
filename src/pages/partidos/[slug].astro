@@ -76,15 +76,33 @@ mvpPlayer = {
     id: game.mvp ? String(game.mvp) : "unknown",
 };
 
-const stadiumImageSrc = getAssetUrl("estadios", game.estadio);
+const isRMEstadio =
+    game.estadio &&
+    (game.estadio.toLowerCase().includes("alfredo di stefano") ||
+        game.estadio.toLowerCase().includes("santiago bernabeu"));
+const stadiumUrl = game.estadio_foto_url;
+const hasExternalStadium =
+    stadiumUrl &&
+    (stadiumUrl.startsWith("http://") || stadiumUrl.startsWith("https://"));
+const stadiumImageSrc = hasExternalStadium
+    ? stadiumUrl
+    : getAssetUrl("estadios", game.estadio);
 
-const getShieldSrc = (teamName: string) => {
+const getShieldSrc = (teamName: string, remoteUrl?: string) => {
+    if (
+        remoteUrl &&
+        (remoteUrl.startsWith("http://") || remoteUrl.startsWith("https://"))
+    ) {
+        return remoteUrl;
+    }
     return getAssetUrl("escudos", teamName);
 };
 
-const localShield =
-    getShieldSrc(game.club_local) || getShieldSrc("Real Madrid");
-const visitorShield = getShieldSrc(game.club_visitante);
+const localShield = getShieldSrc(game.club_local, game.local_foto_url);
+const visitorShield = getShieldSrc(
+    game.club_visitante,
+    game.visitante_foto_url,
+);
 const refereeStats = game.id_arbitra
     ? await fetchRefereeStats(game.id_arbitra)
     : null;

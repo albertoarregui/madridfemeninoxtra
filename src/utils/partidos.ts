@@ -1,4 +1,5 @@
 import { getAssetUrl } from './assets';
+import { getRivalShieldUrl } from './rivales';
 
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
@@ -50,11 +51,14 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 cl.nombre AS club_local,
+                cl.foto_url AS local_foto_url,
                 cv.nombre AS club_visitante,
+                cv.foto_url AS visitante_foto_url,
                 e.nombre AS estadio,
                 e.ciudad,
                 e.pais,
                 e.capacidad,
+                e.foto_url as estadio_foto_url,
                 p.goles_rm,
                 p.goles_rival,
                 a.nombre AS arbitra_nombre,
@@ -101,6 +105,10 @@ export async function fetchGamesDirectly(): Promise<any[]> {
             return {
                 ...game,
                 mvp: cleanApiValue(game.mvp),
+                local_foto_url: cleanApiValue(game.local_foto_url),
+                visitante_foto_url: cleanApiValue(game.visitante_foto_url),
+                local_shield_url: getRivalShieldUrl({ nombre: game.club_local, foto_url: game.local_foto_url }),
+                visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
             };

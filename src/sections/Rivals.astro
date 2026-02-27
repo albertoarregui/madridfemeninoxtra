@@ -7,7 +7,10 @@ import { fetchGamesDirectly, calculateRivalStats } from "../utils/partidos";
 import RivalsStatsDashboard from "../components/RivalsStatsDashboard.astro";
 import RivalsMapWrapper from "../components/RivalsMapWrapper";
 import { getAssetUrl } from "../utils/assets";
+import { fetchAllClubShields } from "../utils/rivales";
 import "../styles/global.css";
+
+const clubShieldsMapBase = await fetchAllClubShields();
 
 const allMatches = await fetchGamesDirectly();
 // Force reload - debugging singleton client
@@ -22,13 +25,15 @@ const listofRivals = RIVALS.map((rival) => {
     return { ...rival, countryName, stats, flagUrl: getFlagSrc(country) };
 });
 
-function getRivalLogoSrc(rivalId: string) {
+function getRivalLogoSrc(rivalId: string, rivalName: string) {
+    const remote = clubShieldsMapBase[rivalName];
+    if (remote) return { src: remote };
     return { src: getAssetUrl("escudos", rivalId) };
 }
 
 const rivalShieldsMap = RIVALS.reduce(
     (acc, team) => {
-        const logo = getRivalLogoSrc(team.id);
+        const logo = getRivalLogoSrc(team.id, team.name);
         if (logo) {
             acc[team.id] = logo.src;
         }
@@ -63,7 +68,10 @@ const rivalShieldsMap = RIVALS.reduce(
             <div class="rival-main-logo-container">
                 <img
                     id="rival-main-logo"
-                    src={getRivalLogoSrc(listofRivals[0].id)?.src}
+                    src={getRivalLogoSrc(
+                        listofRivals[0].id,
+                        listofRivals[0].name,
+                    )?.src}
                     alt={listofRivals[0].name}
                     class="rival-main-logo"
                 />
@@ -129,7 +137,10 @@ const rivalShieldsMap = RIVALS.reduce(
                 <div class="rival-thumbnails" id="rival-thumbnails-track">
                     {
                         listofRivals.map((rival, index) => {
-                            const rivalLogoSrc = getRivalLogoSrc(rival.id)?.src;
+                            const rivalLogoSrc = getRivalLogoSrc(
+                                rival.id,
+                                rival.name,
+                            )?.src;
                             return (
                                 <button
                                     class={`rival-thumbnail ${index === 0 ? "active" : ""}`}

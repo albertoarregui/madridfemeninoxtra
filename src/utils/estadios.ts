@@ -101,11 +101,12 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                     ELSE 0 
                 END) as losses,
                 SUM(CAST(p.goles_rm AS INTEGER)) as gf,
-                SUM(CAST(p.goles_rival AS INTEGER)) as ga
+                SUM(CAST(p.goles_rival AS INTEGER)) as ga,
+                e.foto_url
             FROM estadios e
             JOIN partidos p ON e.id_estadio = p.id_estadio
             WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
-            GROUP BY e.id_estadio, e.nombre, e.ciudad, e.capacidad
+            GROUP BY e.id_estadio, e.nombre, e.ciudad, e.capacidad, e.foto_url
             ORDER BY played DESC
         `;
 
@@ -129,11 +130,17 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
             const drawPct = played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0';
             const lossPct = played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0';
 
+            const photoUrl = stadium.foto_url;
+            const finalImageUrl = (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')))
+                ? photoUrl
+                : getAssetUrl('estadios', knownLoc?.imageUrl);
+
             return {
                 name: stadium.nombre,
                 city: stadium.ciudad || (knownLoc && knownLoc.label.includes(',') ? knownLoc.label.split(',').pop()?.trim() : ''),
                 capacity: stadium.capacidad,
-                imageUrl: getAssetUrl('estadios', knownLoc?.imageUrl),
+                imageUrl: finalImageUrl,
+                foto_url: photoUrl,
                 coordinates: knownLoc ? { lat: knownLoc.lat, lng: knownLoc.lng } : undefined,
                 slug: slug,
                 stats: {
