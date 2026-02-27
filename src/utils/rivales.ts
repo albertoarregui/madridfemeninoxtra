@@ -9,6 +9,7 @@ export function slugify(text: string | null | undefined): string {
 }
 
 import { getAssetUrl } from './assets';
+import { getFlagSrc } from './flags';
 
 function normalizeFileName(name: string): string {
     return name.toLowerCase()
@@ -57,10 +58,13 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.nombre,
                 c.ciudad,
                 c.pais,
+                c.iso,
                 c.slug,
                 c.escudo_url,
                 e.nombre as estadio,
                 e.capacidad,
+                e.lat as estadio_lat,
+                e.lng as estadio_lng,
                 COUNT(p.id_partido) as played,
                 SUM(CASE 
                     WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
@@ -113,9 +117,13 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 nombre: cleanApiValue(rival.nombre) || '',
                 ciudad: cleanApiValue(rival.ciudad) || '',
                 pais: cleanApiValue(rival.pais) || '',
+                iso: cleanApiValue(rival.iso) || '',
+                flagUrl: getFlagSrc(cleanApiValue(rival.iso) || cleanApiValue(rival.pais) || undefined),
                 slug: rival.slug || slugify(rival.nombre),
                 estadio: cleanApiValue(rival.estadio) || '',
                 capacidad: cleanApiValue(rival.capacidad) || '-',
+                lat: rival.estadio_lat != null ? Number(rival.estadio_lat) : null,
+                lng: rival.estadio_lng != null ? Number(rival.estadio_lng) : null,
                 shieldUrl: getRivalShieldUrl(rival),
                 escudo_url: cleanApiValue(rival.escudo_url),
                 foto_url: cleanApiValue(rival.club_foto_url),

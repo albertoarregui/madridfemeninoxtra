@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ url }) => {
             fetchGamesDirectly(),
             fetchCoachesDirectly(),
             fetchRefereesDirectly(),
-            Promise.resolve(getAllStadiums())
+            getAllStadiums()
         ]);
 
         const results: any[] = [];

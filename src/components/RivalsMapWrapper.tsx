@@ -1,102 +1,81 @@
-
 import React, { useMemo } from 'react';
-import InteractiveMap, { type MapMarker } from './Map';
-import { getCoordinates } from '../consts/location-data';
+import InteractiveMap from './Map';
+import { getCompetitionLogo } from '../consts/location-data';
 import { getFlagCdnCode } from '../utils/flags';
-import { getAssetUrl } from '../utils/assets';
 
-interface RivalsMapWrapperProps {
-    matches: any[];
-    rivalShields?: Record<string, string>;
+interface Rival {
+    nombre: string;
+    ciudad?: string;
+    pais?: string;
+    iso?: string;
+    flagUrl?: string;
+    slug: string;
+    shieldUrl?: string;
+    lat?: number | null;
+    lng?: number | null;
+    stats?: {
+        played: number;
+        wins: number;
+        draws: number;
+        losses: number;
+    };
+    [key: string]: any;
 }
 
-const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShields = {} }) => {
+interface RivalsMapWrapperProps {
+    rivals: Rival[];
+}
+
+const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ rivals }) => {
 
     const markers = useMemo(() => {
+        // Group rivals by coordinates (some cities have multiple clubs)
         const cityMap = new Map<string, {
             lat: number;
             lng: number;
             label: string;
+            flagUrl: string;
             countryCode: string;
             teams: Array<{
                 name: string;
-                id: string;
+                slug: string;
                 wins: number;
                 draws: number;
                 losses: number;
                 matches: number;
-                shieldUrl?: string
+                shieldUrl?: string;
             }>;
         }>();
 
-        const teamStats = new Map<string, { wins: number; draws: number; losses: number; matches: number }>();
-        const teamCityMap = new Map<string, { city: string; country: string }>();
+        rivals.forEach(rival => {
+            if (rival.lat == null || rival.lng == null) return;
 
-        matches.forEach(m => {
-            const isHome = m.club_local === 'Real Madrid' || m.club_local === 'Real Madrid Femenino' || m.club_local === 'CD Tacón';
-            const rivalName = isHome ? m.club_visitante : m.club_local;
-            if (!rivalName || rivalName === 'Real Madrid') return;
+            const key = `${rival.lat.toFixed(4)},${rival.lng.toFixed(4)}`;
+            const isoCode = rival.iso || '';
+            const flagUrl = rival.flagUrl || (isoCode ? `https://flagcdn.com/w80/${getFlagCdnCode(isoCode)}.png` : '');
+            const label = rival.ciudad || rival.nombre;
 
-            const stats = teamStats.get(rivalName) || { wins: 0, draws: 0, losses: 0, matches: 0 };
-            stats.matches += 1;
-
-            const goalsRM = parseInt(m.goles_rm) || 0;
-            const goalsRival = parseInt(m.goles_rival) || 0;
-
-            if (goalsRM > goalsRival) {
-                stats.wins += 1;
-            } else if (goalsRM < goalsRival) {
-                stats.losses += 1;
-            } else {
-                const penalties = m.penaltis;
-                if (penalties === 1 || penalties === '1') {
-                    stats.wins += 1;
-                } else if (penalties === 0 || penalties === '0') {
-                    stats.losses += 1;
-                } else {
-                    stats.draws += 1;
-                }
+            if (!cityMap.has(key)) {
+                cityMap.set(key, {
+                    lat: rival.lat,
+                    lng: rival.lng,
+                    label,
+                    flagUrl,
+                    countryCode: isoCode,
+                    teams: []
+                });
             }
 
-            teamStats.set(rivalName, stats);
-
-            // Guardar ciudad/país del rival si viene en los datos del partido
-            if (!teamCityMap.has(rivalName) && m.ciudad) {
-                teamCityMap.set(rivalName, { city: m.ciudad, country: m.pais || '' });
-            }
-        });
-
-        // Para cada rival con estadísticas, buscar sus coordenadas
-        teamStats.forEach((stats, rivalName) => {
-            const cityInfo = teamCityMap.get(rivalName);
-            const cityName = cityInfo?.city || rivalName;
-            const countryCode = cityInfo?.country || '';
-
-            const cityCoords = getCoordinates(cityName, 'city') || getCoordinates(rivalName, 'team');
-            if (!cityCoords) return;
-
-            const key = `${cityCoords.lat}-${cityCoords.lng}`;
-            const existing = cityMap.get(key) || {
-                lat: cityCoords.lat,
-                lng: cityCoords.lng,
-                label: cityName,
-                countryCode: (cityCoords as any).country || countryCode,
-                teams: []
-            };
-
-            const shieldUrl = rivalShields[rivalName] || getAssetUrl('escudos', rivalName) || '';
-
-            existing.teams.push({
-                name: rivalName,
-                id: rivalName,
-                wins: stats.wins,
-                draws: stats.draws,
-                losses: stats.losses,
-                matches: stats.matches,
-                shieldUrl
+            const entry = cityMap.get(key)!;
+            entry.teams.push({
+                name: rival.nombre,
+                slug: rival.slug,
+                wins: rival.stats?.wins ?? 0,
+                draws: rival.stats?.draws ?? 0,
+                losses: rival.stats?.losses ?? 0,
+                matches: rival.stats?.played ?? 0,
+                shieldUrl: rival.shieldUrl || ''
             });
-
-            cityMap.set(key, existing);
         });
 
         return Array.from(cityMap.values()).map(city => ({
@@ -104,14 +83,14 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             lng: city.lng,
             label: city.label,
             type: 'rival-city' as const,
-            imageUrl: `https://flagcdn.com/w80/${getFlagCdnCode(city.countryCode)}.png`,
+            imageUrl: city.flagUrl,
             description: `Equipos: ${city.teams.map(t => t.name).join(', ')}`,
             data: {
                 teams: city.teams,
                 countryCode: city.countryCode
             }
         }));
-    }, [matches, rivalShields]);
+    }, [rivals]);
 
     return (
         <div className="w-full my-8">
@@ -121,8 +100,8 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             <InteractiveMap
                 markers={markers}
                 height="600px"
-                center={{ lat: 48, lng: 10 }}
-                zoom={3.5}
+                center={{ lat: 43, lng: -3 }}
+                zoom={4.5}
             />
         </div>
     );

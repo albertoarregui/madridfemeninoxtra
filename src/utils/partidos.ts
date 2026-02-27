@@ -58,6 +58,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 e.ciudad,
                 e.pais,
                 e.capacidad,
+                e.lat AS estadio_lat,
+                e.lng AS estadio_lng,
                 e.foto_url as estadio_foto_url,
                 p.goles_rm,
                 p.goles_rival,
@@ -111,6 +113,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
+                estadio_lat: game.estadio_lat != null ? Number(game.estadio_lat) : null,
+                estadio_lng: game.estadio_lng != null ? Number(game.estadio_lng) : null,
             };
         });
     } catch (error) {

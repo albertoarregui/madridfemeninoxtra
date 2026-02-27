@@ -6,6 +6,8 @@ interface Rival {
     shieldUrl: string;
     ciudad: string;
     pais: string;
+    iso: string;
+    flagUrl: string;
     estadio: string;
     capacidad: string | number;
     slug: string;
@@ -29,7 +31,6 @@ interface RivalsTableProps {
 }
 
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { getFlagSrc } from '../utils/flags';
 
 const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'stats.played', direction: 'desc' });
@@ -161,12 +162,14 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
 
                                 <td className="py-3 px-2 text-gray-600 truncate max-w-[120px]" title={rival.ciudad}>{rival.ciudad}</td>
                                 <td className="py-3 px-2 text-center">
-                                    <img
-                                        src={getFlagSrc(rival.pais)}
-                                        alt={rival.pais}
-                                        className="w-5 h-auto inline-block rounded-sm shadow-sm opacity-90"
-                                        title={rival.pais}
-                                    />
+                                    {rival.flagUrl ? (
+                                        <img
+                                            src={rival.flagUrl}
+                                            alt={rival.pais}
+                                            className="w-5 h-auto inline-block shadow-sm opacity-90"
+                                            title={rival.pais}
+                                        />
+                                    ) : rival.pais || '-'}
                                 </td>
                                 <td className="py-3 px-2 text-gray-500 whitespace-nowrap truncate max-w-[150px]" title={rival.estadio}>
                                     {rival.estadio ? (

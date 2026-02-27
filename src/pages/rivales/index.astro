@@ -4,20 +4,8 @@ import "../../styles/global.css";
 import { fetchRivalsDirectly } from "../../utils/rivales";
 import RivalsTable from "../../components/RivalsTable";
 import RivalsMapWrapper from "../../components/RivalsMapWrapper";
-import { fetchGamesDirectly } from "../../utils/partidos";
 
 const rivals = await fetchRivalsDirectly();
-const allMatches = await fetchGamesDirectly();
-
-const rivalShieldsMap = rivals.reduce(
-    (acc, team) => {
-        if (team.shieldUrl) {
-            acc[team.slug] = team.shieldUrl;
-        }
-        return acc;
-    },
-    {} as Record<string, string>,
-);
 ---
 
 <Layout
@@ -31,11 +19,7 @@ const rivalShieldsMap = rivals.reduce(
             Todos los rivales del Real Madrid Femenino a lo largo de su historia
         </h2>
 
-        <RivalsMapWrapper
-            client:only="react"
-            matches={allMatches}
-            rivalShields={rivalShieldsMap}
-        />
+        <RivalsMapWrapper client:only="react" rivals={rivals} />
 
         <RivalsTable client:load rivals={rivals} />
     </main>

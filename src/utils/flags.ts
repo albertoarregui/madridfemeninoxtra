@@ -1,11 +1,15 @@
 import { getAssetUrl } from './assets';
-import { COUNTRIES } from '../consts/countries';
 
+/**
+ * Maps 3-letter ISO codes (and some special cases like gb-eng) to 2-letter codes
+ * used by flagcdn.com. This list does NOT need to be extended for new countries —
+ * if the 3-letter code is not here and the 2-letter code is not working,
+ * flagcdn uses the code as-is (most 2-letter codes work directly).
+ */
 export const getFlagCdnCode = (code: string | undefined): string => {
-    // ... preserved for backward compatibility if needed, but we'll use local flags mostly
     if (!code) return 'unknown';
     const c = code.toLowerCase().trim();
-    const map: Record<string, string> = {
+    const threeToTwo: Record<string, string> = {
         'cze': 'cz',
         'aut': 'at',
         'alb': 'al',
@@ -25,40 +29,76 @@ export const getFlagCdnCode = (code: string | undefined): string => {
         'por': 'pt',
         'prt': 'pt',
         'ita': 'it',
+        'bra': 'br',
+        'esp': 'es',
+        'fra': 'fr',
+        'col': 'co',
+        'aus': 'au',
+        'pry': 'py',
+        'par': 'py',
+        'arg': 'ar',
+        'usa': 'us',
+        'jpn': 'jp',
+        'kor': 'kr',
+        'chn': 'cn',
+        'nzl': 'nz',
+        'zaf': 'za',
+        'nga': 'ng',
+        'cmr': 'cm',
+        'mar': 'ma',
+        'sen': 'sn',
+        'gha': 'gh',
+        'jam': 'jm',
+        'tto': 'tt',
+        'ven': 've',
+        'uru': 'uy',
+        'chl': 'cl',
+        'per': 'pe',
+        'ecu': 'ec',
+        'bol': 'bo',
+        'pan': 'pa',
+        'cri': 'cr',
+        'hnd': 'hn',
+        'gtm': 'gt',
+        'slv': 'sv',
+        'nic': 'ni',
+        'dom': 'do',
+        'cub': 'cu',
+        'hat': 'ht',
+        'rus': 'ru',
+        'pol': 'pl',
+        'hun': 'hu',
+        'rom': 'ro',
+        'srb': 'rs',
+        'cro': 'hr',
+        'svk': 'sk',
+        'svn': 'si',
+        'bih': 'ba',
+        'gre': 'gr',
+        'tur': 'tr',
+        'bel': 'be',
+        'fin': 'fi',
+        'irl': 'ie',
     };
-    return map[c] || c;
+    return threeToTwo[c] || c;
 };
 
+/**
+ * Returns the URL of a flag image for a given ISO country code or country name.
+ * - First tries to find a local SVG asset in /src/assets/banderas/
+ * - Falls back to flagcdn.com using the ISO code automatically
+ * No need to update any list when a new country is added to the DB.
+ */
 export function getFlagSrc(codeOrName: string | undefined): string {
     if (!codeOrName) return "";
 
-    const lowerValue = codeOrName.toLowerCase().trim();
+    const raw = codeOrName.trim();
+    const cdnCode = getFlagCdnCode(raw);
 
-    // Try as code first
-    let countryEntry = COUNTRIES[lowerValue as keyof typeof COUNTRIES];
-    let countryCode = lowerValue;
+    // Try local asset using the raw value (could be a name like "España" or code like "es")
+    const local = getAssetUrl('banderas', raw);
+    if (local && !local.includes('placeholder') && !local.startsWith('https://media.')) return local;
 
-    // If not found as code, try as name
-    if (!countryEntry) {
-        const found = Object.entries(COUNTRIES).find(([k, v]) => (v as any).name.toLowerCase() === lowerValue);
-        if (found) {
-            countryCode = found[0];
-            countryEntry = found[1] as any;
-        }
-    } else {
-        // If found as key, check if it's a 3-letter code and try to find its 2-letter equivalent for CDN
-        if (lowerValue.length === 3) {
-            const found2Letter = Object.entries(COUNTRIES).find(([k, v]) => k.length === 2 && (v as any).name === (countryEntry as any).name);
-            if (found2Letter) countryCode = found2Letter[0];
-        }
-    }
-
-    const nameForAsset = countryEntry ? (countryEntry as any).name : codeOrName;
-
-    // Try local asset first
-    const local = getAssetUrl('banderas', nameForAsset);
-    if (local && !local.includes('placeholder')) return local;
-
-    // Fallback to flagcdn using the resolved code
-    return `https://flagcdn.com/w40/${getFlagCdnCode(countryCode)}.png`;
+    // Fallback: use flagcdn with resolved code
+    return `https://flagcdn.com/w40/${cdnCode}.png`;
 }

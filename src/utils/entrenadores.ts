@@ -12,6 +12,7 @@ export function slugify(text: string | null | undefined): string {
 }
 
 import { getAssetUrl } from './assets';
+import { getFlagSrc } from './flags';
 
 export function getCoachImageUrl(coach: any): string {
     const photoUrl = coach.foto_url || coach.imageUrl;
@@ -49,6 +50,7 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                 nombre, 
                 ciudad, 
                 pais, 
+                iso,
                 fecha_nacimiento,
                 foto_url 
             FROM 
@@ -75,6 +77,8 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                     city: cleanApiValue(coach.ciudad) || "",
                     pais: cleanApiValue(coach.pais) || "",
                     country: cleanApiValue(coach.pais) || "",
+                    iso: cleanApiValue(coach.iso) || "",
+                    flagUrl: getFlagSrc(cleanApiValue(coach.iso) || cleanApiValue(coach.pais) || undefined),
                     fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || "",
                     foto_url: cleanApiValue(coach.foto_url) || "",
                     slug: slug,

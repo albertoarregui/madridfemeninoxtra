@@ -263,7 +263,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <img
                                     src={player.flagUrl}
                                     alt={player.countryName}
-                                    className="w-5 h-5 rounded-full object-cover shadow-sm"
+                                    className="w-5 h-auto object-cover shadow-sm"
                                     loading="lazy"
                                     decoding="async"
                                     width={20}

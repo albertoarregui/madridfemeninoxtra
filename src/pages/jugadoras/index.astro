@@ -6,7 +6,6 @@ import PlayersGrid from "../../components/PlayersGrid";
 import PlayerMapWrapper from "../../components/PlayerMapWrapper";
 import PlayerStatsDashboard from "../../components/PlayerStatsDashboard";
 
-import { COUNTRIES } from "../../consts/countries";
 import { getFlagSrc } from "../../utils/flags";
 
 let playersRaw = await fetchPlayersDirectly();
@@ -18,15 +17,9 @@ if (!playersRaw) {
 
 const playersData = playersRaw.map((player) => {
     const { iso, pais_origin } = player;
-    const countryName =
-        (COUNTRIES as any)[iso?.toLowerCase()]?.name ||
-        (COUNTRIES as any)[pais_origin?.toLowerCase()]?.name ||
-        pais_origin ||
-        "";
-
     return {
         ...player,
-        countryName,
+        countryName: pais_origin || iso || "",
         flagUrl: getFlagSrc(iso || pais_origin),
     };
 });

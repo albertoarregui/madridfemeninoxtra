@@ -1,5 +1,4 @@
 
-import { KNOWN_LOCATIONS } from '../consts/location-data';
 import { generateSlug } from './url-helper';
 import { getAssetUrl } from './assets';
 
@@ -12,22 +11,35 @@ export interface StadiumSummary {
     capacity?: string | number;
 }
 
-export function getAllStadiums(): StadiumSummary[] {
-    return Object.entries(KNOWN_LOCATIONS)
-        .filter(([key, loc]) => {
-            return !!loc.imageUrl;
-        })
-        .map(([key, loc]) => {
-            return {
-                name: loc.label,
-                city: loc.label.includes(',') ? loc.label.split(',').pop()?.trim() : '',
-                imageUrl: loc.imageUrl,
-                slug: generateSlug(loc.label),
-                coordinates: { lat: loc.lat, lng: loc.lng }
-            };
-        })
-        .filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i)
-        .sort((a, b) => a.name.localeCompare(b.name));
+/** Returns all stadiums with at least one match, reading from DB */
+export async function getAllStadiums(): Promise<StadiumSummary[]> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return [];
+
+        const result = await client.execute(`
+            SELECT DISTINCT e.nombre, e.ciudad, e.capacidad, e.lat, e.lng, e.foto_url
+            FROM estadios e
+            JOIN partidos p ON e.id_estadio = p.id_estadio
+            WHERE e.foto_url IS NOT NULL
+            ORDER BY e.nombre ASC
+        `);
+
+        return result.rows.map((row: any) => ({
+            name: row.nombre,
+            city: row.ciudad || '',
+            imageUrl: row.foto_url?.startsWith('http') ? row.foto_url : getAssetUrl('estadios', row.nombre),
+            slug: generateSlug(row.nombre),
+            coordinates: (row.lat != null && row.lng != null)
+                ? { lat: Number(row.lat), lng: Number(row.lng) }
+                : undefined,
+            capacity: row.capacidad
+        }));
+    } catch (e) {
+        console.error('[getAllStadiums] Error:', e);
+        return [];
+    }
 }
 
 export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]> {
@@ -85,6 +97,8 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                 e.nombre,
                 e.ciudad,
                 e.capacidad,
+                e.lat,
+                e.lng,
                 COUNT(p.id_partido) as played,
                 SUM(CASE 
                     WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
@@ -116,11 +130,6 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
         return dbStadiums.map((stadium: any) => {
             const slug = generateSlug(stadium.nombre);
 
-            const knownLoc = Object.values(KNOWN_LOCATIONS).find(loc => {
-                const locSlug = generateSlug(loc.label);
-                return locSlug === slug || loc.label === stadium.nombre;
-            });
-
             const played = Number(stadium.played);
             const wins = Number(stadium.wins);
             const draws = Number(stadium.draws);
@@ -133,15 +142,17 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
             const photoUrl = stadium.foto_url;
             const finalImageUrl = (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')))
                 ? photoUrl
-                : getAssetUrl('estadios', knownLoc?.imageUrl);
+                : getAssetUrl('estadios', photoUrl);
 
             return {
                 name: stadium.nombre,
-                city: stadium.ciudad || (knownLoc && knownLoc.label.includes(',') ? knownLoc.label.split(',').pop()?.trim() : ''),
+                city: stadium.ciudad || '',
                 capacity: stadium.capacidad,
                 imageUrl: finalImageUrl,
                 foto_url: photoUrl,
-                coordinates: knownLoc ? { lat: knownLoc.lat, lng: knownLoc.lng } : undefined,
+                coordinates: (stadium.lat != null && stadium.lng != null)
+                    ? { lat: Number(stadium.lat), lng: Number(stadium.lng) }
+                    : undefined,
                 slug: slug,
                 stats: {
                     played,

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import InteractiveMap from './Map';
-import { getCoordinates, getCompetitionLogo } from '../consts/location-data';
+import { getCompetitionLogo } from '../consts/location-data';
 import { getAssetUrl } from '../utils/assets';
 
 interface Match {
@@ -9,6 +9,9 @@ interface Match {
     club_visitante: string;
     estadio?: string;
     ciudad?: string;
+    estadio_lat?: number | null;
+    estadio_lng?: number | null;
+    estadio_foto_url?: string;
     slug: string;
     fecha_formateada: string;
     competicion_nombre: string;
@@ -22,61 +25,49 @@ interface MatchMapWrapperProps {
 const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
     const markers = useMemo(() => {
 
-
         const locationMap = new Map<string, {
             lat: number;
             lng: number;
             label: string;
             imageUrl?: string;
             count: number;
-            lastMatch: string;
             matches: Match[];
         }>();
 
         matches.forEach(match => {
+            // Use coordinates from DB directly — skip if missing
+            if (match.estadio_lat == null || match.estadio_lng == null) return;
 
-            let locationName = match.estadio || match.ciudad;
+            const key = `${match.estadio_lat},${match.estadio_lng}`;
+            const label = match.estadio || match.ciudad || '';
 
+            if (!locationMap.has(key)) {
+                const rawFoto = match.estadio_foto_url;
+                const imageUrl = rawFoto
+                    ? (rawFoto.startsWith('http') ? rawFoto : getAssetUrl('estadios', rawFoto))
+                    : undefined;
 
-            if (!locationName && match.club_visitante === 'Real Madrid') {
-                locationName = match.club_local;
-            } else if (!locationName && match.club_local === 'Real Madrid') {
-                locationName = 'Madrid';
+                locationMap.set(key, {
+                    lat: match.estadio_lat,
+                    lng: match.estadio_lng,
+                    label,
+                    imageUrl,
+                    count: 0,
+                    matches: []
+                });
             }
 
-            if (!locationName) return;
-
-            const coords = getCoordinates(locationName, 'stadium');
-
-            if (coords) {
-                const key = `${coords.lat},${coords.lng}`;
-
-                if (!locationMap.has(key)) {
-                    locationMap.set(key, {
-                        lat: coords.lat,
-                        lng: coords.lng,
-                        label: coords.label || locationName,
-                        imageUrl: getAssetUrl('estadios', coords.imageUrl),
-                        count: 0,
-                        lastMatch: '',
-                        matches: []
-                    });
-                }
-
-                const entry = locationMap.get(key)!;
-                entry.count++;
-                entry.matches.push(match);
-            }
+            const entry = locationMap.get(key)!;
+            entry.count++;
+            entry.matches.push(match);
         });
 
         return Array.from(locationMap.values()).map(loc => {
-
             const sortedMatches = loc.matches.sort((a, b) => {
                 const dateA = new Date(a.fecha || 0).getTime();
                 const dateB = new Date(b.fecha || 0).getTime();
                 return dateB - dateA;
             });
-
 
             const matchesWithLogos = sortedMatches.map(m => ({
                 ...m,
