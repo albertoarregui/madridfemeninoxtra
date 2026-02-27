@@ -59,18 +59,38 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
 
         const result = await client.execute(query);
 
-        return result.rows.map((coach: any) => {
-            return {
-                id_entrenador: coach.id_entrenador,
-                nombre: cleanApiValue(coach.nombre) || '',
-                ciudad: cleanApiValue(coach.ciudad) || '',
-                pais: cleanApiValue(coach.pais) || '',
-                fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || '',
-                foto_url: cleanApiValue(coach.foto_url) || '',
-                slug: slugify(coach.nombre),
-                imageUrl: getCoachImageUrl(coach),
-            };
-        });
+        return result.rows
+            .map((coach: any) => {
+                const nombreRaw = coach.nombre;
+                const nombre = cleanApiValue(nombreRaw) || "";
+                const slug = slugify(nombre);
+
+                return {
+                    id_entrenador: coach.id_entrenador,
+                    nombre: nombre,
+                    name: nombre,
+                    ciudad: cleanApiValue(coach.ciudad) || "",
+                    city: cleanApiValue(coach.ciudad) || "",
+                    pais: cleanApiValue(coach.pais) || "",
+                    country: cleanApiValue(coach.pais) || "",
+                    fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || "",
+                    foto_url: cleanApiValue(coach.foto_url) || "",
+                    slug: slug,
+                    id: slug,
+                    imageUrl: getCoachImageUrl(coach),
+                };
+            })
+            .filter((coach) => {
+                // Filtro estricto: debe tener nombre y el nombre no puede ser null/vacío
+                const hasValidName = coach.name &&
+                    coach.name.trim() !== "" &&
+                    coach.name.toLowerCase() !== "null" &&
+                    coach.name.toLowerCase() !== "undefined";
+
+                const isExcluded = coach.name === "José Manuel Lara";
+
+                return hasValidName && !isExcluded;
+            });
     } catch (error) {
         console.error("Error al obtener entrenadores directamente de la DB:", error);
         return [];

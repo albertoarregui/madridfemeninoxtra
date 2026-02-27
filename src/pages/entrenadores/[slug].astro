@@ -23,7 +23,11 @@ const competitionLogos: Record<string, any> = {
 const { slug } = Astro.params;
 
 const allCoaches = await fetchCoachesDirectly();
-const coach = allCoaches.find((c) => c.slug === slug);
+const coach = allCoaches.find(
+    (c) =>
+        c.slug.toLowerCase() === slug?.toLowerCase() ||
+        c.id?.toLowerCase() === slug?.toLowerCase(),
+);
 
 if (!coach) {
     return Astro.redirect("/404");
