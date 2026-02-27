@@ -35,20 +35,30 @@ export function getFlagSrc(codeOrName: string | undefined): string {
     const lowerValue = codeOrName.toLowerCase().trim();
 
     // Try as code first
-    let country = COUNTRIES[lowerValue as keyof typeof COUNTRIES];
+    let countryEntry = COUNTRIES[lowerValue as keyof typeof COUNTRIES];
+    let countryCode = lowerValue;
 
-    // If not found, try as name
-    if (!country) {
-        country = Object.values(COUNTRIES).find(c => (c as any).name.toLowerCase() === lowerValue) as any;
+    // If not found as code, try as name
+    if (!countryEntry) {
+        const found = Object.entries(COUNTRIES).find(([k, v]) => (v as any).name.toLowerCase() === lowerValue);
+        if (found) {
+            countryCode = found[0];
+            countryEntry = found[1] as any;
+        }
+    } else {
+        // If found as key, check if it's a 3-letter code and try to find its 2-letter equivalent for CDN
+        if (lowerValue.length === 3) {
+            const found2Letter = Object.entries(COUNTRIES).find(([k, v]) => k.length === 2 && (v as any).name === (countryEntry as any).name);
+            if (found2Letter) countryCode = found2Letter[0];
+        }
     }
 
-    const nameForAsset = country ? (country as any).name : codeOrName;
+    const nameForAsset = countryEntry ? (countryEntry as any).name : codeOrName;
 
     // Try local asset first
     const local = getAssetUrl('banderas', nameForAsset);
     if (local && !local.includes('placeholder')) return local;
 
-    // Fallback to flagcdn using the code
-    const cdnCode = country ? (Object.keys(COUNTRIES).find(k => (COUNTRIES[k as keyof typeof COUNTRIES] as any).name === (country as any).name) || lowerValue) : lowerValue;
-    return `https://flagcdn.com/w40/${getFlagCdnCode(cdnCode)}.png`;
+    // Fallback to flagcdn using the resolved code
+    return `https://flagcdn.com/w40/${getFlagCdnCode(countryCode)}.png`;
 }

@@ -6,12 +6,30 @@ import PlayersGrid from "../../components/PlayersGrid";
 import PlayerMapWrapper from "../../components/PlayerMapWrapper";
 import PlayerStatsDashboard from "../../components/PlayerStatsDashboard";
 
-let playersData = await fetchPlayersDirectly();
+import { COUNTRIES } from "../../consts/countries";
+import { getFlagSrc } from "../../utils/flags";
 
-// Fallback to empty array if something goes wrong, but never use static sample data
-if (!playersData) {
-    playersData = [];
+let playersRaw = await fetchPlayersDirectly();
+
+// Fallback to empty array if something goes wrong
+if (!playersRaw) {
+    playersRaw = [];
 }
+
+const playersData = playersRaw.map((player) => {
+    const { iso, pais_origin } = player;
+    const countryName =
+        (COUNTRIES as any)[iso?.toLowerCase()]?.name ||
+        (COUNTRIES as any)[pais_origin?.toLowerCase()]?.name ||
+        pais_origin ||
+        "";
+
+    return {
+        ...player,
+        countryName,
+        flagUrl: getFlagSrc(iso || pais_origin),
+    };
+});
 ---
 
 <Layout

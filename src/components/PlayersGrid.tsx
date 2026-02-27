@@ -9,7 +9,8 @@ interface Player {
     posicion: string;
     pais_origen: string;
     pais_origin?: string;
-    cleanCountryName: string;
+    countryName: string;
+    flagUrl: string;
     temporadas?: string[];
     dorsales?: Record<string, number>; // New field
     [key: string]: any;
@@ -120,92 +121,101 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid">
             <div className="mb-10 flex flex-col items-center gap-6">
-                <div className="flex gap-4 w-full flex-wrap justify-center">
-                    <div className="relative inline-block">
-                        <select
-                            value={selectedSeason}
-                            onChange={(e) => setSelectedSeason(e.target.value)}
-                            className="px-6 py-3 pr-10 bg-white border-2 border-[#ffde59] rounded-[25px] text-[#2b2b2b] font-semibold focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 focus:border-[#ffd700] cursor-pointer hover:bg-[#fffef8] transition-all shadow-[0_2px_8px_rgba(255,222,89,0.2)] appearance-none text-center min-w-[220px]"
-                        >
+                <div className="flex gap-6 w-full flex-wrap justify-center items-center">
+                    {/* Filtro Temporada */}
+                    <div className="custom-select-container">
+                        <div className="custom-select-trigger" onClick={(e) => {
+                            const container = e.currentTarget.parentElement;
+                            document.querySelectorAll('.custom-select-container').forEach(c => {
+                                if (c !== container) c.classList.remove('open');
+                            });
+                            container?.classList.toggle('open');
+                        }}>
+                            <span className="selected-text">
+                                {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
+                            </span>
+                            <div className="custom-select-arrow">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                            </div>
+                        </div>
+                        <div className="custom-select-options">
                             {seasons.map(s => (
-                                <option key={s} value={s} className="bg-white text-[#2b2b2b]">
+                                <div
+                                    key={s}
+                                    className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`}
+                                    onClick={(e) => {
+                                        setSelectedSeason(s);
+                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                    }}
+                                >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
-                                </option>
+                                </div>
                             ))}
-                        </select>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]"
-                        >
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </svg>
+                        </div>
                     </div>
 
-                    <div className="relative inline-block">
-                        <select
-                            value={selectedPosition}
-                            onChange={(e) => setSelectedPosition(e.target.value)}
-                            className="px-6 py-3 pr-10 bg-white border-2 border-[#ffde59] rounded-[25px] text-[#2b2b2b] font-semibold focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 focus:border-[#ffd700] cursor-pointer hover:bg-[#fffef8] transition-all shadow-[0_2px_8px_rgba(255,222,89,0.2)] appearance-none text-center min-w-[220px]"
-                        >
+                    {/* Filtro Posición */}
+                    <div className="custom-select-container">
+                        <div className="custom-select-trigger" onClick={(e) => {
+                            const container = e.currentTarget.parentElement;
+                            document.querySelectorAll('.custom-select-container').forEach(c => {
+                                if (c !== container) c.classList.remove('open');
+                            });
+                            container?.classList.toggle('open');
+                        }}>
+                            <span className="selected-text">
+                                {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
+                            </span>
+                            <div className="custom-select-arrow">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                            </div>
+                        </div>
+                        <div className="custom-select-options">
                             {positions.map(pos => (
-                                <option key={pos} value={pos} className="bg-white text-[#2b2b2b]">
+                                <div
+                                    key={pos}
+                                    className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`}
+                                    onClick={(e) => {
+                                        setSelectedPosition(pos);
+                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                    }}
+                                >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
-                                </option>
+                                </div>
                             ))}
-                        </select>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]"
-                        >
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </svg>
+                        </div>
                     </div>
 
-                    <div className="relative inline-block">
-                        <select
-                            value={selectedCountry}
-                            onChange={(e) => setSelectedCountry(e.target.value)}
-                            className="px-6 py-3 pr-10 bg-white border-2 border-[#ffde59] rounded-[25px] text-[#2b2b2b] font-semibold focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 focus:border-[#ffd700] cursor-pointer hover:bg-[#fffef8] transition-all shadow-[0_2px_8px_rgba(255,222,89,0.2)] appearance-none text-center min-w-[220px]"
-                        >
+                    {/* Filtro País */}
+                    <div className="custom-select-container">
+                        <div className="custom-select-trigger" onClick={(e) => {
+                            const container = e.currentTarget.parentElement;
+                            document.querySelectorAll('.custom-select-container').forEach(c => {
+                                if (c !== container) c.classList.remove('open');
+                            });
+                            container?.classList.toggle('open');
+                        }}>
+                            <span className="selected-text">
+                                {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
+                            </span>
+                            <div className="custom-select-arrow">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                            </div>
+                        </div>
+                        <div className="custom-select-options">
                             {countries.map(c => (
-                                <option key={c} value={c} className="bg-white text-[#2b2b2b]">
+                                <div
+                                    key={c}
+                                    className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`}
+                                    onClick={(e) => {
+                                        setSelectedCountry(c);
+                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                    }}
+                                >
                                     {c === 'Todos' ? 'Todos los Países' : c}
-                                </option>
+                                </div>
                             ))}
-                        </select>
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]"
-                        >
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </svg>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,8 +261,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                             <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
                                 <img
-                                    src={getFlagSrc(player.iso || player.pais_origin || player.pais_origen)}
-                                    alt={player.pais_origin || player.pais_origen}
+                                    src={player.flagUrl}
+                                    alt={player.countryName}
                                     className="w-5 h-5 rounded-full object-cover shadow-sm"
                                     loading="lazy"
                                     decoding="async"
@@ -262,7 +272,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
                                     }}
                                 />
-                                <span className="uppercase">{player.pais_origin || player.pais_origen}</span>
+                                <span className="uppercase">{player.countryName}</span>
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-white/10 flex justify-end">

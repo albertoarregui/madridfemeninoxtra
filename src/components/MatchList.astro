@@ -41,66 +41,105 @@ function getTeamLogo(teamName: string) {
     <div class="filters-container">
         {
             seasons.length > 0 && (
-                <div class="filter-wrapper">
+                <div class="custom-select-container" id="container-temporada">
+                    <div class="custom-select-trigger" id="trigger-temporada">
+                        <span class="selected-text">Todas las Temporadas</span>
+                        <div class="custom-select-arrow">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="custom-select-options">
+                        <div
+                            class="custom-select-option selected"
+                            data-value="todos"
+                        >
+                            Todas las Temporadas
+                        </div>
+                        {seasons.map((season) => (
+                            <div
+                                class="custom-select-option"
+                                data-value={season}
+                            >
+                                {season}
+                            </div>
+                        ))}
+                    </div>
                     <select
                         id="filtro-temporada"
                         aria-label="Filtrar por temporada"
+                        style="display: none;"
                     >
-                        <option value="todos">Todas las Temporadas</option>
+                        <option value="todos" selected>
+                            Todas las Temporadas
+                        </option>
                         {seasons.map((season) => (
                             <option value={season}>{season}</option>
                         ))}
                     </select>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="filter-icon"
-                    >
-                        <>
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </>
-                    </svg>
                 </div>
             )
         }
 
         {
             competitions.length > 0 && (
-                <div class="filter-wrapper">
+                <div class="custom-select-container" id="container-competicion">
+                    <div class="custom-select-trigger" id="trigger-competicion">
+                        <span class="selected-text">
+                            Todas las Competiciones
+                        </span>
+                        <div class="custom-select-arrow">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="custom-select-options">
+                        <div
+                            class="custom-select-option selected"
+                            data-value="todos"
+                        >
+                            Todas las Competiciones
+                        </div>
+                        {competitions.map((comp) => (
+                            <div class="custom-select-option" data-value={comp}>
+                                {comp}
+                            </div>
+                        ))}
+                    </div>
                     <select
                         id="filtro-competicion"
                         aria-label="Filtrar por competición"
+                        style="display: none;"
                     >
-                        <option value="todos">Todas las Competiciones</option>
+                        <option value="todos" selected>
+                            Todas las Competiciones
+                        </option>
                         {competitions.map((comp) => (
                             <option value={comp}>{comp}</option>
                         ))}
                     </select>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="filter-icon"
-                    >
-                        <>
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </>
-                    </svg>
                 </div>
             )
         }
@@ -316,6 +355,52 @@ function getTeamLogo(teamName: string) {
 
     seasonSelect?.addEventListener("change", filterMatches);
     competitionSelect?.addEventListener("change", filterMatches);
+
+    // Lógica para Custom Selects
+    function initCustomSelects() {
+        const containers = document.querySelectorAll(
+            ".custom-select-container",
+        );
+
+        containers.forEach((container) => {
+            const trigger = container.querySelector(".custom-select-trigger");
+            const select = container.querySelector("select");
+            const options = container.querySelectorAll(".custom-select-option");
+            const selectedText = trigger?.querySelector(".selected-text");
+
+            trigger?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                containers.forEach((c) => {
+                    if (c !== container) c.classList.remove("open");
+                });
+                container.classList.toggle("open");
+            });
+
+            options.forEach((option) => {
+                option.addEventListener("click", () => {
+                    const value = (option as HTMLElement).dataset.value;
+                    const text = option.textContent;
+
+                    if (selectedText) selectedText.textContent = text;
+                    options.forEach((opt) => opt.classList.remove("selected"));
+                    option.classList.add("selected");
+
+                    if (select && value) {
+                        select.value = value;
+                        select.dispatchEvent(new Event("change"));
+                    }
+
+                    container.classList.remove("open");
+                });
+            });
+        });
+
+        document.addEventListener("click", () => {
+            containers.forEach((c) => c.classList.remove("open"));
+        });
+    }
+
+    initCustomSelects();
 </script>
 
 <style>
@@ -327,56 +412,11 @@ function getTeamLogo(teamName: string) {
 
     .filters-container {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
         flex-wrap: wrap;
         justify-content: center;
-    }
-
-    .filter-wrapper {
-        position: relative;
-        display: inline-block;
-    }
-
-    .filter-icon {
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: #2b2b2b;
-        width: 20px;
-        height: 20px;
-    }
-
-    .filters-container select {
-        padding: 0.75rem 3rem 0.75rem 1.5rem;
-        background: #ffffff;
-        color: #2b2b2b;
-        border: 2px solid #ffde59;
-        border-radius: 25px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        min-width: 220px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(255, 222, 89, 0.2);
-        outline: none;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        text-align: center;
-    }
-
-    .filters-container select:hover {
-        background: #fffef8;
-        border-color: #ffd700;
-    }
-
-    .filters-container select:focus {
-        outline: none;
-        border-color: #ffd700;
-        box-shadow: 0 0 0 4px rgba(255, 222, 89, 0.2);
+        align-items: flex-start;
     }
 
     .matches-container {
