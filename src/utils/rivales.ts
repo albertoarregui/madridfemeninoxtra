@@ -207,8 +207,18 @@ export async function fetchClubCountDirectly(): Promise<number> {
         const client = await getPlayersDbClient();
         if (!client) return 0;
 
-        const result = await client.execute("SELECT COUNT(*) as count FROM clubes WHERE nombre NOT LIKE '%Real Madrid%'");
-        return Number(result.rows[0].count || 0);
+        // Intentar contar clubes excluyendo Real Madrid con búsqueda insensible a mayúsculas
+        const result = await client.execute("SELECT COUNT(*) as count FROM clubes WHERE UPPER(nombre) NOT LIKE '%REAL MADRID%'");
+        const count = Number(result.rows[0]?.count || 0);
+
+        if (count === 0) {
+            // Fallback: contar todos y restar 1 (asumiendo que al menos está el RM)
+            const fallback = await client.execute("SELECT COUNT(*) as count FROM clubes");
+            const total = Number(fallback.rows[0]?.count || 0);
+            return Math.max(0, total - 1);
+        }
+
+        return count;
     } catch (error) {
         console.error("Error fetching club count:", error);
         return 0;

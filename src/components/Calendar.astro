@@ -31,28 +31,33 @@ function getCompetitionLogo(competitionName: string) {
 }
 
 const MONTHS_DATA = [
-    { month: "ENERO", year: 2026, days: 31, startDay: 3, num: 0 },
-    { month: "FEBRERO", year: 2026, days: 28, startDay: 6, num: 1 },
-    { month: "MARZO", year: 2026, days: 31, startDay: 6, num: 2 },
-    { month: "ABRIL", year: 2026, days: 30, startDay: 2, num: 3 },
-    { month: "MAYO", year: 2026, days: 31, startDay: 4, num: 4 },
+    { month: "SEPTIEMBRE", year: 2025, days: 30, startDay: 0, monthNum: 9 },
+    { month: "OCTUBRE", year: 2025, days: 31, startDay: 2, monthNum: 10 },
+    { month: "NOVIEMBRE", year: 2025, days: 30, startDay: 5, monthNum: 11 },
+    { month: "DICIEMBRE", year: 2025, days: 31, startDay: 0, monthNum: 12 },
+    { month: "ENERO", year: 2026, days: 31, startDay: 3, monthNum: 1 },
+    { month: "FEBRERO", year: 2026, days: 28, startDay: 6, monthNum: 2 },
+    { month: "MARZO", year: 2026, days: 31, startDay: 6, monthNum: 3 },
+    { month: "ABRIL", year: 2026, days: 30, startDay: 2, monthNum: 4 },
+    { month: "MAYO", year: 2026, days: 31, startDay: 4, monthNum: 5 },
+    { month: "JUNIO", year: 2026, days: 30, startDay: 0, monthNum: 6 },
 ];
 
 const now = new Date();
-const currentMonth = now.getMonth();
+const currentMonth = now.getMonth() + 1; // 1-12
 const currentYear = now.getFullYear();
 
-const activeMonthIndex =
-    currentYear === 2026 && currentMonth < MONTHS_DATA.length
-        ? currentMonth
-        : 0;
+let activeMonthIndex = MONTHS_DATA.findIndex(
+    (m) => m.monthNum === currentMonth && m.year === currentYear,
+);
+if (activeMonthIndex === -1) activeMonthIndex = 4; // Default to Jan 2026 if not found
 
 const getMatchForDay = (day: number, monthIndex: number) => {
     const monthData = MONTHS_DATA[monthIndex];
     if (!monthData) return null;
 
     const year = monthData.year;
-    const monthStr = (monthIndex + 1).toString().padStart(2, "0");
+    const monthStr = monthData.monthNum.toString().padStart(2, "0");
     const dayStr = day.toString().padStart(2, "0");
 
     const dateStr = `${year}-${monthStr}-${dayStr}`;
