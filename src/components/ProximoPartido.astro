@@ -21,11 +21,20 @@ const { rivalStats } = Astro.props;
 
 const calendarMatches = await fetchCalendarFromDb();
 
-const nextMatch = calendarMatches.find((match) =>
-    isMatchActive(match.date, match.time),
-);
+const nextMatch =
+    calendarMatches.length > 0
+        ? calendarMatches.find((match) => isMatchActive(match.date, match.time))
+        : null;
 
-const activeMatch = nextMatch || calendarMatches[calendarMatches.length - 1];
+const activeMatch =
+    nextMatch ||
+    (calendarMatches.length > 0
+        ? calendarMatches[calendarMatches.length - 1]
+        : null);
+
+if (!activeMatch) {
+    return null; // O podrías retornar un mensaje de "No hay partidos próximos"
+}
 const LOCAL_TEAM = activeMatch.team1;
 const VISITOR_TEAM = activeMatch.team2;
 const activeDateObj = parseMatchDate(activeMatch.date, activeMatch.time);

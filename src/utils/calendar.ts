@@ -37,12 +37,12 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
             SELECT
                 cal.id_proximopartido AS id,
                 cal.id_club_local,
-                cal.id_club_visitante,
-                cl.nombre  AS club_local_nombre,
+                cal."id-club_visitante" AS id_club_visitante,
+                cl.nombre AS club_local_nombre,
                 cl.foto_url AS local_foto_url,
-                cv.nombre  AS club_visitante_nombre,
+                cv.nombre AS club_visitante_nombre,
                 cv.foto_url AS visitante_foto_url,
-                e.nombre   AS estadio_nombre,
+                e.nombre AS estadio_nombre,
                 comp.competicion AS competicion_nombre,
                 cal.fecha,
                 cal.hora,
@@ -50,9 +50,9 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 cal.tv
             FROM calendario cal
             LEFT JOIN clubes cl          ON cal.id_club_local     = cl.id_club
-            LEFT JOIN clubes cv          ON cal.id_club_visitante = cv.id_club
+            LEFT JOIN clubes cv          ON cal."id-club_visitante" = cv.id_club
             LEFT JOIN competiciones comp ON cal.id_competicion    = comp.id_competicion
-            LEFT JOIN estadios e    ON (cal.id_estadio = e.id_estadio OR cal.id_estadi = e.id_estadio)
+            LEFT JOIN estadios e    ON cal.id_estadi         = e.id_estadio
             ORDER BY cal.fecha ASC, cal.hora ASC
         `;
 
