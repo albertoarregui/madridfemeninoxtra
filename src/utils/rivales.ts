@@ -200,3 +200,17 @@ export async function fetchAllClubShields(): Promise<Record<string, string>> {
         return {};
     }
 }
+
+export async function fetchClubCountDirectly(): Promise<number> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return 0;
+
+        const result = await client.execute("SELECT COUNT(*) as count FROM clubes WHERE nombre NOT LIKE '%Real Madrid%'");
+        return Number(result.rows[0].count || 0);
+    } catch (error) {
+        console.error("Error fetching club count:", error);
+        return 0;
+    }
+}
