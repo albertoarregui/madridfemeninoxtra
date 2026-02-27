@@ -21,7 +21,7 @@ export const cleanApiValue = (value: any): any => {
 };
 
 export function getPlayerImageUrl(player: any): string {
-    const photoUrl = player.foto_url || player.nombre;
+    const photoUrl = player.foto_perfil_url || player.foto_url || player.nombre;
     if (typeof photoUrl === 'string' && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
         return photoUrl;
     }
@@ -55,7 +55,8 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 j.posicion,
                 t.temporada,
                 d.dorsal,
-                d.foto_url
+                d.foto_url,
+                d.foto_perfil_url
             FROM 
                 jugadoras j
             LEFT JOIN
@@ -90,6 +91,10 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 if (row.foto_url) {
                     player.season_photos[row.temporada] = row.foto_url;
                 }
+                if (row.foto_perfil_url) {
+                    if (!player.profile_photos) player.profile_photos = {};
+                    player.profile_photos[row.temporada] = row.foto_perfil_url;
+                }
             }
         });
 
@@ -113,6 +118,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 temporadas: temporadas,
                 dorsales: player.dorsales || {},
                 season_photos: player.season_photos || {},
+                profile_photos: player.profile_photos || {},
                 rm_career: temporadas.length > 0 ? temporadas.join('-') : 'Actualidad'
             };
         });

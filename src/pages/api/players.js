@@ -33,7 +33,8 @@ export const GET = async () => {
                 j.altura, 
                 j.peso, 
                 j.posicion,
-                (SELECT d.foto_url FROM dorsales d WHERE d.id_jugadora = j.id_jugadora ORDER BY d.id_temporada DESC LIMIT 1) as foto_url
+                (SELECT d.foto_url FROM dorsales d WHERE d.id_jugadora = j.id_jugadora ORDER BY d.id_temporada DESC LIMIT 1) as foto_url,
+                (SELECT d.foto_perfil_url FROM dorsales d WHERE d.id_jugadora = j.id_jugadora ORDER BY d.id_temporada DESC LIMIT 1) as foto_perfil_url
             FROM 
                 jugadoras j
             ORDER BY 

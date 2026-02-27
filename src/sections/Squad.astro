@@ -21,8 +21,13 @@ const squadPlayers = allPlayersDb.filter((player) => {
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin } = player;
     const dorsal = player.dorsales[latestSeason];
+    const profilePhoto =
+        player.profile_photos && player.profile_photos[latestSeason];
+    const seasonPhoto =
+        player.season_photos && player.season_photos[latestSeason];
     const countryName =
         (COUNTRIES as any)[pais_origin]?.name || pais_origin || "";
+
     return {
         ...player,
         id: player.id_jugadora.toString(), // For compatibility with older code
@@ -35,6 +40,11 @@ const listofPlayers = squadPlayers.map((player) => {
         date_birth: player.fecha_nacimiento,
         height: player.altura,
         weight: player.peso,
+        imageUrl: getPlayerImageUrl({
+            ...player,
+            foto_perfil_url: profilePhoto,
+            foto_url: seasonPhoto,
+        }),
     };
 });
 
