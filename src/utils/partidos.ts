@@ -167,13 +167,18 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
     const normalizedRivalName = rivalName.toLowerCase().trim();
 
+    const isRivalMatch = (name: string) => {
+        const n = name.toLowerCase().trim();
+        return n === normalizedRivalName || n.includes(normalizedRivalName) || normalizedRivalName.includes(n);
+    };
+
     matches.forEach((match) => {
         const clubLocal = (match.club_local || '').toLowerCase().trim();
         const clubVisitante = (match.club_visitante || '').toLowerCase().trim();
 
-        const isRivalMatch = clubLocal === normalizedRivalName || clubVisitante === normalizedRivalName;
+        const rivalInMatch = isRivalMatch(clubLocal) || isRivalMatch(clubVisitante);
 
-        if (!isRivalMatch) return;
+        if (!rivalInMatch) return;
 
         stats.total++;
 

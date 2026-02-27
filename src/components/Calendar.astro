@@ -1,13 +1,29 @@
 ---
-import { CALENDAR } from "../consts/calendar";
-
+import { fetchCalendarFromDb } from "../utils/calendar";
 import { getAssetUrl } from "../utils/assets";
-import { fetchAllClubShields } from "../utils/rivales";
 
-const clubShields = await fetchAllClubShields();
+const calendarMatches = await fetchCalendarFromDb();
 
-function getShieldSrc(teamName: string) {
-    return clubShields[teamName] || getAssetUrl("escudos", teamName);
+// Construir el mapa de escudos directamente de los datos de la BD
+const shieldMap: Record<string, string> = {};
+for (const m of calendarMatches) {
+    if (m.club_local && m.local_foto_url)
+        shieldMap[m.club_local] = m.local_foto_url;
+    if (m.club_visitante && m.visitante_foto_url)
+        shieldMap[m.club_visitante] = m.visitante_foto_url;
+}
+
+function getShieldSrc(teamName: string): string {
+    if (shieldMap[teamName]) return shieldMap[teamName];
+    // Fallback: busca por contains
+    const lower = teamName.toLowerCase();
+    const found = Object.entries(shieldMap).find(
+        ([k]) =>
+            k.toLowerCase().includes(lower) || lower.includes(k.toLowerCase()),
+    );
+    if (found) return found[1];
+    // Último recurso: asset local
+    return getAssetUrl("escudos", teamName);
 }
 
 function getCompetitionLogo(competitionName: string) {
@@ -34,7 +50,7 @@ const activeMonthIndex =
 const getMatchForDay = (day: number, monthIndex: number) => {
     const monthStr = (monthIndex + 1).toString().padStart(2, "0");
     const dateStr = `2026-${monthStr}-${day.toString().padStart(2, "0")}`;
-    return CALENDAR.find((match) => match.date === dateStr);
+    return calendarMatches.find((match) => match.date === dateStr);
 };
 
 const getDayInfo = (
@@ -49,14 +65,17 @@ const getDayInfo = (
     if (!isValidDay && i >= 35) return null;
 
     const match = isValidDay ? getMatchForDay(dayNum, monthIndex) : null;
-    const isHome = match?.homeaway === "home";
-    const isAway = match?.homeaway === "away";
+    const rmIsLocal = match
+        ? match.club_local.toLowerCase().includes("real madrid")
+        : false;
+    const isHome = match ? rmIsLocal : false;
+    const isAway = match ? !rmIsLocal : false;
     const rivalName = match
-        ? match.team1 === "Real Madrid"
-            ? match.team2
-            : match.team1
+        ? rmIsLocal
+            ? match.club_visitante
+            : match.club_local
         : "";
-    const competitionLogo = match ? getCompetitionLogo(match.competition) : "";
+    const competitionLogo = match ? getCompetitionLogo(match.competicion) : "";
 
     return {
         dayNum,

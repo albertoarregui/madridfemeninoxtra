@@ -2,11 +2,10 @@
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import vsImagen from "../assets/main/vs.png";
-import { CALENDAR } from "../consts/calendar";
 import { generateSlug } from "../utils/url-helper";
 import { getAssetUrl, getAssetMetadata } from "../utils/assets";
 import { parseMatchDate, isMatchActive } from "../utils/date-helper";
-import { fetchAllClubShields } from "../utils/rivales";
+import { fetchCalendarFromDb } from "../utils/calendar";
 import "@fontsource/bowlby-one-sc";
 
 interface Props {
@@ -20,11 +19,13 @@ interface Props {
 
 const { rivalStats } = Astro.props;
 
-const nextMatch = CALENDAR.find((match) =>
+const calendarMatches = await fetchCalendarFromDb();
+
+const nextMatch = calendarMatches.find((match) =>
     isMatchActive(match.date, match.time),
 );
 
-const activeMatch = nextMatch || CALENDAR[CALENDAR.length - 1];
+const activeMatch = nextMatch || calendarMatches[calendarMatches.length - 1];
 const LOCAL_TEAM = activeMatch.team1;
 const VISITOR_TEAM = activeMatch.team2;
 const activeDateObj = parseMatchDate(activeMatch.date, activeMatch.time);
@@ -56,9 +57,13 @@ function getTeamLogo(teamName: string) {
     return getAssetMetadata("escudos", teamName);
 }
 
-const clubShields = await fetchAllClubShields();
-const localShieldUrl = clubShields[LOCAL_TEAM];
-const visitorShieldUrl = clubShields[VISITOR_TEAM];
+// Para el escudo: si la BD devuelve foto_url directamente, usarla; si no, buscar en assets locales
+const localShieldUrl =
+    activeMatch.local_foto_url || getAssetUrl("escudos", LOCAL_TEAM) || "";
+const visitorShieldUrl =
+    activeMatch.visitante_foto_url ||
+    getAssetUrl("escudos", VISITOR_TEAM) ||
+    "";
 
 const localLogo = getTeamLogo(LOCAL_TEAM);
 const visitorLogo = getTeamLogo(VISITOR_TEAM);

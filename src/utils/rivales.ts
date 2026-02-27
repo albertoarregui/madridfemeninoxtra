@@ -10,13 +10,29 @@ export function slugify(text: string | null | undefined): string {
 
 import { getAssetUrl } from './assets';
 
+function normalizeFileName(name: string): string {
+    return name.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, '_')
+        .replace(/[^a-z0-9_.-]/g, '');
+}
+
 export function getRivalShieldUrl(rival: any): string {
     const fotoUrl = rival.foto_url || rival.club_foto_url;
     if (fotoUrl && (fotoUrl.startsWith('http://') || fotoUrl.startsWith('https://'))) {
         return fotoUrl;
     }
     const name = rival.escudo_url || rival.nombre;
-    return getAssetUrl('escudos', name);
+    const localUrl = getAssetUrl('escudos', name);
+    if (localUrl && !localUrl.includes('media.madridfemeninoxtra.com')) {
+        return localUrl;
+    }
+    // Fallback al CDN con nombre normalizado
+    const cleanName = normalizeFileName(name || '');
+    if (cleanName) {
+        return `https://media.madridfemeninoxtra.com/escudos/${cleanName}.png`;
+    }
+    return localUrl;
 }
 
 export const cleanApiValue = (value: any): any => {
@@ -161,10 +177,24 @@ export async function fetchAllClubShields(): Promise<Record<string, string>> {
         if (!client) return {};
 
         const result = await client.execute("SELECT nombre, foto_url, escudo_url FROM clubes");
-        return result.rows.reduce((acc: any, row: any) => {
-            acc[row.nombre] = getRivalShieldUrl(row);
-            return acc;
-        }, {});
+        const map: Record<string, string> = {};
+
+        result.rows.forEach((row: any) => {
+            const shieldUrl = getRivalShieldUrl(row);
+            if (!shieldUrl || !row.nombre) return;
+
+            const nombre: string = row.nombre;
+            // Key exacto
+            map[nombre] = shieldUrl;
+            // Sin "Femenino"
+            const sinFemenino = nombre.replace(/\s*Femenino\s*/gi, '').trim();
+            if (sinFemenino && sinFemenino !== nombre) map[sinFemenino] = shieldUrl;
+            // Normalizado sin tildes
+            const normalizado = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (normalizado !== nombre) map[normalizado] = shieldUrl;
+        });
+
+        return map;
     } catch (error) {
         console.error("Error fetching all club shields:", error);
         return {};

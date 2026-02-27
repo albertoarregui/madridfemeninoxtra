@@ -23,17 +23,19 @@ import {
 	calculateRivalStats,
 } from "../utils/partidos";
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
-import { CALENDAR } from "../consts/calendar";
+import { fetchCalendarFromDb } from "../utils/calendar";
 
 import { parseMatchDate, isMatchActive } from "../utils/date-helper";
 
-const nextMatch =
-	CALENDAR.find((match) => isMatchActive(match.date, match.time)) ||
-	CALENDAR[CALENDAR.length - 1];
+const calendarMatches = await fetchCalendarFromDb();
 
-const rivalName = nextMatch.team1.includes("Real Madrid")
-	? nextMatch.team2
-	: nextMatch.team1;
+const nextMatch =
+	calendarMatches.find((match) => isMatchActive(match.date, match.time)) ||
+	calendarMatches[calendarMatches.length - 1];
+
+const rivalName = nextMatch.club_local.toLowerCase().includes("real madrid")
+	? nextMatch.club_visitante
+	: nextMatch.club_local;
 
 const gamesData = await fetchGamesDirectly();
 const allGoals = await fetchAllGoals();
