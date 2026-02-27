@@ -165,10 +165,27 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
     if (!matches || !Array.isArray(matches)) return stats;
 
-    const normalizedRivalName = rivalName.toLowerCase().trim();
+    const normalizeForComparison = (name: string) => {
+        return (name || '').toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+de\s+/gi, '')
+            .replace(/\s+la\s+/gi, '')
+            .replace(/\s*femenino\s*/gi, '')
+            .replace(/\s*femeni\s*/gi, '')
+            .replace(/\s*f\.\s*f\.\s*/gi, '')
+            .replace(/\s*c\.\s*f\.\s*/gi, '')
+            .replace(/[^a-z0-9]/g, '') // Elimina todo lo que no sea letra o número
+            .replace(/^real/i, '')     // Quita "Real" al principio (común en muchos equipos)
+            .replace(/^cd/i, '')       // Quita "CD" al principio
+            .replace(/^club/i, '')     // Quita "Club" al principio
+            .trim();
+    };
+
+    const normalizedRivalName = normalizeForComparison(rivalName);
 
     const isRivalMatch = (name: string) => {
-        const n = name.toLowerCase().trim();
+        const n = normalizeForComparison(name);
+        if (!n || !normalizedRivalName) return false;
         return n === normalizedRivalName || n.includes(normalizedRivalName) || normalizedRivalName.includes(n);
     };
 
