@@ -10,10 +10,10 @@ const allPlayersDb = await fetchPlayersDirectly();
 const allSeasons = allPlayersDb.flatMap((p) => p.temporadas || []);
 const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
 
-// Filter players who played in the latest season with dorsal 1-99
+// Filter players who played in the latest season with dorsal 1-24
 const squadPlayers = allPlayersDb.filter((player) => {
     const dorsal = player.dorsales && player.dorsales[latestSeason];
-    return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 99;
+    return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
 });
 
 // Maintain the same order and grouping as defined in SQUAD if possible,
@@ -38,21 +38,58 @@ const listofPlayers = squadPlayers.map((player) => {
     };
 });
 
-// Sort by number for each position grouping
+// Sort by number
 listofPlayers.sort((a, b) => Number(a.number) - Number(b.number));
 
 // Group players by position for the rows
-const porteras = listofPlayers.filter((p) => p.position === "Portera");
-const defensas = listofPlayers.filter((p) => p.position === "Defensa");
-const medios = listofPlayers.filter((p) => p.position === "Centrocampista");
-const delanteras = listofPlayers.filter((p) => p.position === "Delantera");
+const getNormalizedPosition = (pos: string) => {
+    const p = pos?.toLowerCase() || "";
+    if (p.includes("portera")) return "Portera";
+    if (p.includes("defensa") || p.includes("lateral") || p.includes("central"))
+        return "Defensa";
+    if (
+        p.includes("medio") ||
+        p.includes("centro") ||
+        p.includes("pivote") ||
+        p.includes("interior")
+    )
+        return "Centrocampista";
+    if (
+        p.includes("delantera") ||
+        p.includes("extremo") ||
+        p.includes("punta") ||
+        p.includes("ariete")
+    )
+        return "Delantera";
+    return "Otros";
+};
+
+const porteras = listofPlayers.filter(
+    (p) => getNormalizedPosition(p.position) === "Portera",
+);
+const defensas = listofPlayers.filter(
+    (p) => getNormalizedPosition(p.position) === "Defensa",
+);
+const medios = listofPlayers.filter(
+    (p) => getNormalizedPosition(p.position) === "Centrocampista",
+);
+const delanteras = listofPlayers.filter(
+    (p) => getNormalizedPosition(p.position) === "Delantera",
+);
+const otros = listofPlayers.filter(
+    (p) => getNormalizedPosition(p.position) === "Otros",
+);
 
 const rows = [
     { title: "PORTERAS", players: porteras },
     { title: "DEFENSAS", players: defensas },
     { title: "CENTROCAMPISTAS", players: medios },
     { title: "DELANTERAS", players: delanteras },
-];
+].filter((row) => row.players.length > 0);
+
+if (otros.length > 0) {
+    rows.push({ title: "OTRAS", players: otros });
+}
 
 function calculateAge(birthDateString: string): number {
     const birthDate = new Date(birthDateString);
