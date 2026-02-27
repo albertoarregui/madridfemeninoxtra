@@ -50,6 +50,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
+                c.foto_url AS competicion_foto_url,
                 cl.nombre AS club_local,
                 cl.foto_url AS local_foto_url,
                 cv.nombre AS club_visitante,
@@ -115,6 +116,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 fecha_formateada: formatGameDate(game.fecha),
                 estadio_lat: game.estadio_lat != null ? Number(game.estadio_lat) : null,
                 estadio_lng: game.estadio_lng != null ? Number(game.estadio_lng) : null,
+                competicion_foto_url: cleanApiValue(game.competicion_foto_url) || null,
             };
         });
     } catch (error) {

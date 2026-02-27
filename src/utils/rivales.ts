@@ -65,26 +65,40 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 e.capacidad,
                 e.lat as estadio_lat,
                 e.lng as estadio_lng,
-                COUNT(p.id_partido) as played,
+                c.foto_url as club_foto_url,
+                e.foto_url as estadio_foto_url,
+                COUNT(DISTINCT CASE 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    THEN p.id_partido 
+                END) as played,
                 SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
-                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
                     ELSE 0 
                 END) as wins,
                 SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
                     ELSE 0 
                 END) as draws,
                 SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
-                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
                     ELSE 0 
                 END) as losses,
-                SUM(CAST(p.goles_rm AS INTEGER)) as gf,
-                SUM(CAST(p.goles_rival AS INTEGER)) as ga,
-                SUM(CASE WHEN CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END) as clean_sheets,
-                c.foto_url as club_foto_url,
-                e.foto_url as estadio_foto_url
+                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') THEN CAST(p.goles_rm AS INTEGER) ELSE 0 END) as gf,
+                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') THEN CAST(p.goles_rival AS INTEGER) ELSE 0 END) as ga,
+                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') AND CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END) as clean_sheets
             FROM 
                 clubes c
             LEFT JOIN
@@ -94,12 +108,11 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             LEFT JOIN
                 competiciones comp ON p.id_competicion = comp.id_competicion
             WHERE
-                c.nombre != 'Real Madrid Femenino'
-                AND c.nombre != 'Real Madrid'
-                AND p.goles_rm IS NOT NULL
-                AND comp.competicion NOT LIKE '%Amistoso%'
+                UPPER(c.nombre) NOT LIKE '%REAL MADRID%'
             GROUP BY
                 c.id_club
+            HAVING
+                played > 0
             ORDER BY 
                 played DESC, wins DESC, c.nombre ASC
         `;

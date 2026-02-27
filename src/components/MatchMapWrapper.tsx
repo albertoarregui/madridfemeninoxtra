@@ -71,7 +71,7 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
 
             const matchesWithLogos = sortedMatches.map(m => ({
                 ...m,
-                logo_competicion: getCompetitionLogo(m.competicion_nombre)
+                logo_competicion: m.competicion_foto_url || getCompetitionLogo(m.competicion_nombre)
             }));
 
             return {
