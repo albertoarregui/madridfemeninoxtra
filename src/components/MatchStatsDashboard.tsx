@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { getCoordinates, normalizeLocationName } from '../consts/location-data';
 import { calculateDistance, estimateTravelTime, MADRID_COORDS } from '../utils/geo';
 import { MapPin, Navigation, Clock, Calendar } from 'lucide-react';
 
@@ -30,42 +29,31 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                 seasonStats[season] = { trips: 0, km: 0, hours: 0 };
             }
 
-            const localNameNormalized = normalizeLocationName(m.club_local);
-            const stadiumNameNormalized = m.estadio ? normalizeLocationName(m.estadio) : '';
+            // Determine if home match by club name
+            const localName = (m.club_local || '').toLowerCase().replace(/\s/g, '');
+            const isHomeGame = localName.includes('realmadrid') ||
+                localName.includes('tacon') ||
+                (m.estadio || '').toLowerCase().includes('alfredo') ||
+                (m.estadio || '').toLowerCase().includes('ciudad real madrid');
 
-            const isHomeGame = localNameNormalized.includes('realmadrid') ||
-                localNameNormalized.includes('tacon') ||
-                localNameNormalized.includes('alfredo') ||
-                stadiumNameNormalized.includes('alfredo') ||
-                stadiumNameNormalized.includes('ciudadrealmadrid');
+            if (!isHomeGame && m.estadio_lat != null && m.estadio_lng != null) {
+                const oneWayKm = calculateDistance(
+                    MADRID_COORDS.lat, MADRID_COORDS.lng,
+                    Number(m.estadio_lat), Number(m.estadio_lng)
+                );
 
-            if (!isHomeGame) {
-                const locationName = m.estadio || m.ciudad || m.club_local;
+                const roundTripKm = oneWayKm * 2;
+                const tripHours = estimateTravelTime(oneWayKm) * 2;
 
-                const hostCoords = getCoordinates(locationName, 'stadium');
-
-                if (hostCoords) {
-                    const oneWayKm = calculateDistance(
-                        MADRID_COORDS.lat, MADRID_COORDS.lng,
-                        hostCoords.lat, hostCoords.lng
-                    );
-
-                    const roundTripKm = oneWayKm * 2;
-                    const tripHours = estimateTravelTime(oneWayKm) * 2;
-
-                    if (oneWayKm > 70) {
-                        seasonStats[season].trips += 1;
-                        totalTrips += 1;
-                    }
-
-                    seasonStats[season].km += roundTripKm;
-                    seasonStats[season].hours += tripHours;
-
-                    totalKm += roundTripKm;
-                    totalHours += tripHours;
-                } else {
-                    console.warn(`[MatchStats] Missing location for away match: "${locationName}" (Club: ${m.club_local}, Season: ${season})`);
+                if (oneWayKm > 70) {
+                    seasonStats[season].trips += 1;
+                    totalTrips += 1;
                 }
+
+                seasonStats[season].km += roundTripKm;
+                seasonStats[season].hours += tripHours;
+                totalKm += roundTripKm;
+                totalHours += tripHours;
             }
         });
 

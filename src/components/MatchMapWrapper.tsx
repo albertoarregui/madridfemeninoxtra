@@ -1,7 +1,16 @@
 import React, { useMemo } from 'react';
 import InteractiveMap from './Map';
-import { getCompetitionLogo } from '../consts/location-data';
 import { getAssetUrl } from '../utils/assets';
+
+// Fallback if DB logo is missing
+function getCompetitionLogo(name: string): string | null {
+    const n = (name || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (n.includes('liga')) return '/assets/competiciones/liga_f.png';
+    if (n.includes('uwcl') || n.includes('champions')) return '/assets/competiciones/uwcl.png';
+    if (n.includes('supercopa')) return '/assets/competiciones/supercopa_de_espana.png';
+    if (n.includes('copa')) return '/assets/competiciones/copa_de_la_reina.png';
+    return null;
+}
 
 interface Match {
     id_partido: string;

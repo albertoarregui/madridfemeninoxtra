@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { getCoordinates } from '../consts/location-data';
 import { calculateDistance, MADRID_COORDS } from '../utils/geo';
 import { Users, Globe, Flag, Plane } from 'lucide-react';
 
@@ -41,20 +40,18 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 nationalities.add(country);
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
                 if (iso) countryIsos[country] = iso;
-            }
-        });
 
-        Array.from(nationalities).forEach(country => {
-            const coords = getCoordinates(country, 'city');
-            if (coords) {
-                const dist = calculateDistance(
-                    MADRID_COORDS.lat, MADRID_COORDS.lng,
-                    coords.lat, coords.lng
-                );
-                if (dist > maxDist) {
-                    maxDist = dist;
-                    furthestCountryName = country;
-                    furthestCountryIso = countryIsos[country] || '';
+                // Use player's own lat/lng if available to find furthest origin
+                if (p.lat != null && p.lng != null) {
+                    const dist = calculateDistance(
+                        MADRID_COORDS.lat, MADRID_COORDS.lng,
+                        Number(p.lat), Number(p.lng)
+                    );
+                    if (dist > maxDist) {
+                        maxDist = dist;
+                        furthestCountryName = country;
+                        furthestCountryIso = iso || '';
+                    }
                 }
             }
         });

@@ -1,6 +1,15 @@
 import React, { useMemo } from 'react';
 import InteractiveMap from './Map';
-import { getCompetitionLogo } from '../consts/location-data';
+
+function getCompetitionLogo(name: string): string | null {
+    const n = (name || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (n.includes('liga')) return '/assets/competiciones/liga_f.png';
+    if (n.includes('uwcl') || n.includes('champions')) return '/assets/competiciones/uwcl.png';
+    if (n.includes('supercopa')) return '/assets/competiciones/supercopa_de_espana.png';
+    if (n.includes('copa')) return '/assets/competiciones/copa_de_la_reina.png';
+    return null;
+}
+
 
 interface Rival {
     nombre: string;
