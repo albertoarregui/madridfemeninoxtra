@@ -17,27 +17,7 @@ interface PlayerStatsDashboardProps {
     players: Player[];
 }
 
-function getFlagSrc(countryName: string): string {
-    if (!countryName) return '';
-    const normalize = (str: string) => str.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_")
-        .replace(/-/g, "_")
-        .replace(/ñ/g, "n");
-
-    const filename = normalize(countryName);
-
-    const map: Record<string, string> = {
-        'paises_bajos': 'paises_bajos',
-        'republica_checa': 'republica_checa',
-        'reino_unido': 'inglaterra',
-        'inglaterra': 'inglaterra',
-        'escocia': 'escocia'
-    };
-
-    const finalName = map[filename] || filename;
-    return `/assets/banderas/${finalName}.svg`;
-}
+import { getFlagSrc } from '../utils/flags';
 
 const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) => {
     const stats = useMemo(() => {
@@ -48,14 +28,19 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
         const nationalities = new Set<string>();
         const countryCounts: Record<string, number> = {};
 
+        const countryIsos: Record<string, string> = {};
+
         let maxDist = 0;
         let furthestCountryName = '';
+        let furthestCountryIso = '';
 
         players.forEach(p => {
             const country = p.pais_origin || p.pais_origen;
+            const iso = p.iso;
             if (country) {
                 nationalities.add(country);
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
+                if (iso) countryIsos[country] = iso;
             }
         });
 
@@ -69,6 +54,7 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 if (dist > maxDist) {
                     maxDist = dist;
                     furthestCountryName = country;
+                    furthestCountryIso = countryIsos[country] || '';
                 }
             }
         });
@@ -81,8 +67,9 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
         return {
             totalPlayers,
             totalNationalities: nationalities.size,
-            topCountries: sortedCountries,
+            topCountries: sortedCountries.map(sc => ({ ...sc, iso: countryIsos[sc.country] })),
             furthestCountryName,
+            furthestCountryIso,
             furthestDistance: Math.round(maxDist)
         };
     }, [players]);
@@ -122,7 +109,7 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                     {stats.topCountries.map((item, idx) => (
                         <div key={idx} className="flex flex-col items-center">
                             <img
-                                src={getFlagSrc(item.country)}
+                                src={getFlagSrc(item.iso || item.country)}
                                 alt={item.country}
                                 className="w-8 h-auto mb-1"
                                 onError={(e) => {
@@ -144,7 +131,7 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 group-hover:text-[#ffde59] transition-colors">País con rep. más lejano</p>
                     <div className="flex flex-col items-center justify-center gap-2">
                         <img
-                            src={getFlagSrc(stats.furthestCountryName)}
+                            src={getFlagSrc(stats.furthestCountryIso || stats.furthestCountryName)}
                             alt={stats.furthestCountryName}
                             className="w-10 h-auto"
                             onError={(e) => {

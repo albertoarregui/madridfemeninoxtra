@@ -66,7 +66,11 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
 
     if (type === 'jugadoras' || type === 'jugadorasPerfil') {
         const placeholderPath = type === 'jugadoras' ? '/src/assets/jugadoras/placeholder.png' : '/src/assets/jugadoras-perfil/placeholder.png';
-        return assets[type][placeholderPath]?.default.src || "";
+        return assets[type][placeholderPath]?.default.src || `https://media.madridfemeninoxtra.com/${folder}/placeholder.png`;
+    }
+
+    if (cleanFileName) {
+        return `https://media.madridfemeninoxtra.com/${folder}/${cleanFileName}`;
     }
 
     return "";

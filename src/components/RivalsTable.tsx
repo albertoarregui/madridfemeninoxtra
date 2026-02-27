@@ -29,6 +29,7 @@ interface RivalsTableProps {
 }
 
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { getFlagSrc } from '../utils/flags';
 
 const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'stats.played', direction: 'desc' });
@@ -91,37 +92,6 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
             </div>
         </th>
     );
-
-    const getFlagSrc = (country: string) => {
-        if (!country) return '';
-        const normalized = country.toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/ñ/g, 'n')
-            .replace(/\s+/g, '_');
-
-        const map: { [key: string]: string } = {
-            'espana': 'es', 'spain': 'es', 'es': 'es',
-            'inglaterra': 'gb-eng', 'uk': 'gb',
-            'alemania': 'de', 'germany': 'de',
-            'francia': 'fr', 'france': 'fr',
-            'italia': 'it', 'italy': 'it',
-            'portugal': 'pt',
-            'suecia': 'se',
-            'noruega': 'no',
-            'ucrania': 'ua',
-            'islandia': 'is',
-            'albania': 'al',
-            'austria': 'at',
-            'republica_checa': 'cz',
-            'mexico': 'mx',
-            'suiza': 'ch',
-            'escocia': 'gb-sct', 'scotland': 'gb-sct',
-            'paises_bajos': 'nl', 'holanda': 'nl'
-        };
-
-        const code = map[normalized] || normalized;
-        return `https://flagcdn.com/w40/${code}.png`;
-    };
 
     return (
         <div className="w-full max-w-[1600px] mx-auto overflow-hidden rounded-xl border border-gray-200 shadow-xl bg-white mb-10">

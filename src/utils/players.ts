@@ -50,6 +50,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 j.fecha_nacimiento,
                 j.lugar_nacimiento, 
                 j.pais_origen, 
+                j.iso,
                 j.altura, 
                 j.peso, 
                 j.posicion,

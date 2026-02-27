@@ -251,7 +251,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                             <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
                                 <img
-                                    src={getFlagSrc(player.pais_origin || player.pais_origen)}
+                                    src={getFlagSrc(player.iso)}
                                     alt={player.pais_origin || player.pais_origen}
                                     className="w-5 h-5 rounded-full object-cover shadow-sm"
                                     loading="lazy"

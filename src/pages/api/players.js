@@ -30,6 +30,7 @@ export const GET = async () => {
                 j.nombre, 
                 j.fecha_nacimiento, 
                 j.pais_origen, 
+                j.iso,
                 j.altura, 
                 j.peso, 
                 j.posicion,
