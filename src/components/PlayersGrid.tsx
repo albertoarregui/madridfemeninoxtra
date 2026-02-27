@@ -222,7 +222,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         <div className="w-full h-72 relative z-10 px-4 -mb-12">
                             <div className="w-full h-full relative flex items-end justify-center">
                                 <img
-                                    src={player.imageUrl}
+                                    src={player.thumbnailUrl || player.imageUrl}
                                     alt={player.nombre}
                                     className="w-full h-full object-cover object-top transform origin-bottom transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2 rounded-t-2xl"
                                     loading="lazy"

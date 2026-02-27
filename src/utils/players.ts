@@ -21,7 +21,7 @@ export const cleanApiValue = (value: any): any => {
 };
 
 export function getPlayerImageUrl(player: any): string {
-    const photoUrl = player.foto_perfil_url || player.foto_url || player.nombre;
+    const photoUrl = player.foto_url || player.foto_perfil_url || player.nombre;
     if (typeof photoUrl === 'string' && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
         return photoUrl;
     }
