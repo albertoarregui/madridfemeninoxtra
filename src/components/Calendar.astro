@@ -48,9 +48,21 @@ const activeMonthIndex =
         : 0;
 
 const getMatchForDay = (day: number, monthIndex: number) => {
+    const monthData = MONTHS_DATA[monthIndex];
+    if (!monthData) return null;
+
+    const year = monthData.year;
     const monthStr = (monthIndex + 1).toString().padStart(2, "0");
-    const dateStr = `2026-${monthStr}-${day.toString().padStart(2, "0")}`;
-    return calendarMatches.find((match) => match.date === dateStr);
+    const dayStr = day.toString().padStart(2, "0");
+
+    const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+    return calendarMatches.find((match) => {
+        if (!match.date) return false;
+        // Normalizar comparación: quitar horas si las hay o manejar formatos diferentes
+        const matchDateOnly = match.date.split(" ")[0];
+        return matchDateOnly === dateStr;
+    });
 };
 
 const getDayInfo = (

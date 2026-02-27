@@ -9,6 +9,8 @@ export interface GoalAssist {
     id_gol: number;
     goleadora: string | null;
     asistente: string | null;
+    foto_goleadora?: string | null;
+    foto_asistente?: string | null;
     id_partido: number;
     goles_a_favor: number;
     goles_en_contra: number;
@@ -51,8 +53,10 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
         const query = `
             SELECT 
                 g.id_gol, 
-                jg.nombre AS goleadora, 
-                ja.nombre AS asistente, 
+                COALESCE(jg.nombre, g.goleadora) AS goleadora, 
+                COALESCE(ja.nombre, g.asistente) AS asistente, 
+                COALESCE(jg.foto_url, jg2.foto_url) AS foto_goleadora,
+                COALESCE(ja.foto_url, ja2.foto_url) AS foto_asistente,
                 g.id_partido, 
                 g.goles_a_favor, 
                 g.goles_en_contra, 
@@ -63,10 +67,12 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
                 t.temporada AS temporada
             FROM 
                 goles_y_asistencias g
-            LEFT JOIN 
-                jugadoras jg ON g.goleadora = jg.id_jugadora
-            LEFT JOIN 
-                jugadoras ja ON g.asistente = ja.id_jugadora
+            -- Uniones por ID
+            LEFT JOIN jugadoras jg ON g.goleadora = jg.id_jugadora
+            LEFT JOIN jugadoras ja ON g.asistente = ja.id_jugadora
+            -- Uniones por Nombre (fallback)
+            LEFT JOIN jugadoras jg2 ON g.goleadora = jg2.nombre AND jg.id_jugadora IS NULL
+            LEFT JOIN jugadoras ja2 ON g.asistente = ja2.nombre AND ja.id_jugadora IS NULL
             JOIN 
                 partidos p ON g.id_partido = p.id_partido
             JOIN 
@@ -86,6 +92,8 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
             id_gol: row.id_gol,
             goleadora: cleanApiValue(row.goleadora),
             asistente: cleanApiValue(row.asistente),
+            foto_goleadora: row.foto_goleadora,
+            foto_asistente: row.foto_asistente,
             id_partido: row.id_partido,
             goles_a_favor: row.goles_a_favor || 0,
             goles_en_contra: row.goles_en_contra || 0,
