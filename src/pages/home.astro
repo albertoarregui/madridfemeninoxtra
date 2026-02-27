@@ -31,11 +31,16 @@ const calendarMatches = await fetchCalendarFromDb();
 
 const nextMatch =
 	calendarMatches.find((match) => isMatchActive(match.date, match.time)) ||
-	calendarMatches[calendarMatches.length - 1];
+	(calendarMatches.length > 0
+		? calendarMatches[calendarMatches.length - 1]
+		: null);
 
-const rivalName = nextMatch.club_local.toLowerCase().includes("real madrid")
-	? nextMatch.club_visitante
-	: nextMatch.club_local;
+const rivalName =
+	nextMatch && nextMatch.club_local
+		? nextMatch.club_local.toLowerCase().includes("real madrid")
+			? nextMatch.club_visitante
+			: nextMatch.club_local
+		: "Rival";
 
 const gamesData = await fetchGamesDirectly();
 const allGoals = await fetchAllGoals();
