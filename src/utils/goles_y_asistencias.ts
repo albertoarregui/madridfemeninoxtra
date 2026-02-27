@@ -55,8 +55,8 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
                 g.id_gol, 
                 COALESCE(jg.nombre, g.goleadora) AS goleadora, 
                 COALESCE(ja.nombre, g.asistente) AS asistente, 
-                COALESCE(jg.foto_url, jg2.foto_url) AS foto_goleadora,
-                COALESCE(ja.foto_url, ja2.foto_url) AS foto_asistente,
+                COALESCE(d_g1.foto_url, jg.foto_url, d_g2.foto_url, jg2.foto_url) AS foto_goleadora,
+                COALESCE(d_a1.foto_url, ja.foto_url, d_a2.foto_url, ja2.foto_url) AS foto_asistente,
                 g.id_partido, 
                 g.goles_a_favor, 
                 g.goles_en_contra, 
@@ -67,18 +67,25 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
                 t.temporada AS temporada
             FROM 
                 goles_y_asistencias g
-            -- Uniones por ID
-            LEFT JOIN jugadoras jg ON g.goleadora = jg.id_jugadora
-            LEFT JOIN jugadoras ja ON g.asistente = ja.id_jugadora
-            -- Uniones por Nombre (fallback)
-            LEFT JOIN jugadoras jg2 ON g.goleadora = jg2.nombre AND jg.id_jugadora IS NULL
-            LEFT JOIN jugadoras ja2 ON g.asistente = ja2.nombre AND ja.id_jugadora IS NULL
             JOIN 
                 partidos p ON g.id_partido = p.id_partido
             JOIN 
                 competiciones c ON p.id_competicion = c.id_competicion
             JOIN 
                 temporadas t ON p.id_temporada = t.id_temporada
+            
+            -- Goleadora
+            LEFT JOIN jugadoras jg ON g.goleadora = jg.id_jugadora
+            LEFT JOIN dorsales d_g1 ON (g.goleadora = d_g1.id_jugadora AND p.id_temporada = d_g1.id_temporada)
+            LEFT JOIN dorsales d_g2 ON (g.goleadora = d_g2.id_jugadora AND d_g2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.goleadora))
+            LEFT JOIN jugadoras jg2 ON (g.goleadora = jg2.nombre AND jg.id_jugadora IS NULL)
+            
+            -- Asistente
+            LEFT JOIN jugadoras ja ON g.asistente = ja.id_jugadora
+            LEFT JOIN dorsales d_a1 ON (g.asistente = d_a1.id_jugadora AND p.id_temporada = d_a1.id_temporada)
+            LEFT JOIN dorsales d_a2 ON (g.asistente = d_a2.id_jugadora AND d_a2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.asistente))
+            LEFT JOIN jugadoras ja2 ON (g.asistente = ja2.nombre AND ja.id_jugadora IS NULL)
+            
             ${whereString}
             ORDER BY 
                 g.id_partido ASC, g.minuto ASC

@@ -777,19 +777,35 @@ export async function fetchAllGoals(): Promise<any[]> {
                 t.temporada,
                 c.competicion,
                 COALESCE(j.nombre, g.goleadora) as nombre_goleadora,
-                COALESCE(j.foto_url, j2.foto_url) as foto_goleadora,
+                -- Prioridad: 1. Foto dorsal temporada actual, 2. Foto jugadora, 3. Foto dorsal fallback, 4. Foto jugadora por nombre
+                COALESCE(d1.foto_url, j.foto_url, d2.foto_url, j2.foto_url) as foto_goleadora,
                 COALESCE(ast.nombre, g.asistente) as nombre_asistente,
-                COALESCE(ast.foto_url, ast2.foto_url) as foto_asistente
+                COALESCE(d_ast1.foto_url, ast.foto_url, d_ast2.foto_url, ast2.foto_url) as foto_asistente
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
-            -- Intento por ID (preferido)
+            
+            -- Goleadora: Relación por ID
             LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
+            -- Foto de la temporada actual del partido
+            LEFT JOIN dorsales d1 ON (g.goleadora = d1.id_jugadora AND p.id_temporada = d1.id_temporada)
+            -- Foto de la última temporada disponible (fallback general)
+            LEFT JOIN dorsales d2 ON (g.goleadora = d2.id_jugadora AND d2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.goleadora))
+            
+            -- Goleadora: Relación por Nombre (fallback si id_jugadora es null)
+            LEFT JOIN jugadoras j2 ON (g.goleadora = j2.nombre AND j.id_jugadora IS NULL)
+            
+            -- Asistente: Relación por ID
             LEFT JOIN jugadoras ast ON g.asistente = ast.id_jugadora
-            -- Intento por Nombre (fallback si goleadora/asistente es el nombre)
-            LEFT JOIN jugadoras j2 ON g.goleadora = j2.nombre AND j.id_jugadora IS NULL
-            LEFT JOIN jugadoras ast2 ON g.asistente = ast2.nombre AND ast.id_jugadora IS NULL
+            -- Foto dorsal asistente temporada actual
+            LEFT JOIN dorsales d_ast1 ON (g.asistente = d_ast1.id_jugadora AND p.id_temporada = d_ast1.id_temporada)
+            -- Foto dorsal asistente última temporada
+            LEFT JOIN dorsales d_ast2 ON (g.asistente = d_ast2.id_jugadora AND d_ast2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.asistente))
+            
+            -- Asistente: Relación por Nombre (fallback)
+            LEFT JOIN jugadoras ast2 ON (g.asistente = ast2.nombre AND ast.id_jugadora IS NULL)
+            
             WHERE 1=1 
         `;
 
