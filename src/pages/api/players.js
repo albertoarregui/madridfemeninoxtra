@@ -26,17 +26,18 @@ export const GET = async () => {
     try {
         const query = `
             SELECT 
-                id_jugadora, 
-                nombre, 
-                fecha_nacimiento, 
-                pais_origen, 
-                altura, 
-                peso, 
-                posicion
+                j.id_jugadora, 
+                j.nombre, 
+                j.fecha_nacimiento, 
+                j.pais_origen, 
+                j.altura, 
+                j.peso, 
+                j.posicion,
+                (SELECT d.foto_url FROM dorsales d WHERE d.id_jugadora = j.id_jugadora ORDER BY d.id_temporada DESC LIMIT 1) as foto_url
             FROM 
-                jugadoras
+                jugadoras j
             ORDER BY 
-                nombre ASC
+                j.nombre ASC
         `;
 
         const result = await client.execute({ sql: query, params: [], parse: true });

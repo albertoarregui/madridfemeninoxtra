@@ -21,8 +21,11 @@ export const cleanApiValue = (value: any): any => {
 };
 
 export function getPlayerImageUrl(player: any): string {
-    const name = player.foto_url || player.nombre;
-    return getAssetUrl('jugadoras', name);
+    const photoUrl = player.foto_url || player.nombre;
+    if (typeof photoUrl === 'string' && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
+        return photoUrl;
+    }
+    return getAssetUrl('jugadoras', photoUrl);
 }
 
 export function getCleanCountryName(country: string | null | undefined): string {
@@ -51,7 +54,8 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 j.peso, 
                 j.posicion,
                 t.temporada,
-                d.dorsal
+                d.dorsal,
+                d.foto_url
             FROM 
                 jugadoras j
             LEFT JOIN
@@ -59,7 +63,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             LEFT JOIN
                 temporadas t ON d.id_temporada = t.id_temporada
             ORDER BY 
-                j.nombre ASC
+                j.nombre ASC, t.temporada DESC
         `;
 
         const result = await client.execute(query);
@@ -72,7 +76,8 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 playersMap.set(id, {
                     ...row,
                     temporadas: [],
-                    dorsales: {}
+                    dorsales: {},
+                    season_photos: {}
                 });
             }
 
@@ -82,6 +87,9 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                     player.temporadas.push(row.temporada);
                 }
                 player.dorsales[row.temporada] = Number(row.dorsal);
+                if (row.foto_url) {
+                    player.season_photos[row.temporada] = row.foto_url;
+                }
             }
         });
 
@@ -89,10 +97,13 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             const cleanPaisOrigin = cleanApiValue(player.pais_origen);
             const temporadas = player.temporadas || [];
 
+            // The first row in ORDER BY t.temporada DESC will have the latest season if it exists
+            const latestPhoto = player.foto_url;
+
             return {
                 ...player,
                 slug: slugify(player.nombre),
-                imageUrl: getPlayerImageUrl(player),
+                imageUrl: getPlayerImageUrl({ ...player, foto_url: latestPhoto }),
                 cleanCountryName: getCleanCountryName(cleanPaisOrigin),
                 pais_origin: cleanPaisOrigin || '',
                 altura: cleanApiValue(player.altura) || null,
@@ -101,6 +112,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 lugar_nacimiento: cleanApiValue(player.lugar_nacimiento) || null,
                 temporadas: temporadas,
                 dorsales: player.dorsales || {},
+                season_photos: player.season_photos || {},
                 rm_career: temporadas.length > 0 ? temporadas.join('-') : 'Actualidad'
             };
         });

@@ -219,6 +219,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 j.nombre,
                 j.posicion,
                 d.dorsal,
+                d.foto_url,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
@@ -272,7 +273,9 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 name: displayName,
                 pos: displayPos,
                 number: row.dorsal || '-',
-                imageUrl: getAssetUrl('jugadoras', fileName || 'placeholder.png'),
+                imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
+                    ? row.foto_url
+                    : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
                 slug: row.nombre ? slugify(row.nombre) : '#',
                 minutes: row.minutos_jugados,
                 substituted: row.minuto_salida !== null,
@@ -303,8 +306,8 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 a.minuto_entrada,
                 a.minuto_salida,
                 j.nombre,
-                j.nombre,
                 j.posicion,
+                d.foto_url,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
@@ -312,6 +315,8 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas
             FROM alineaciones a
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            LEFT JOIN partidos p ON a.id_partido = p.id_partido
+            LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
             WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
             ORDER BY IFNULL(a.minuto_entrada, a.minuto_salida) ASC
         `;
@@ -351,7 +356,9 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
-                    imageUrl: getAssetUrl('jugadoras', fileName || 'placeholder.png'),
+                    imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
+                        ? row.foto_url
+                        : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
                     slug: row.nombre ? slugify(row.nombre) : '#',
                     goals: row.goles,
                     assists: row.asistencias,

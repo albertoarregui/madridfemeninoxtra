@@ -12,6 +12,8 @@ interface SearchResult {
     url: string;
     slug: string;
     relevance: number;
+    imageUrl?: string;
+    shieldUrl?: string;
 }
 
 const { fetchAllClubShields } = await import("../utils/rivales");
@@ -48,11 +50,21 @@ const coachImages = import.meta.glob<{ default: ImageMetadata }>(
 
 async function getImage(result: SearchResult) {
     if (result.type === "rival") {
+        if (result.shieldUrl) return { src: result.shieldUrl };
+
         const remoteShield = clubShields[result.title];
         if (remoteShield) return { src: remoteShield };
 
         const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
         return { src: `/assets/escudos/${slugUnderscored}.png` };
+    }
+
+    if (result.type === "player") {
+        if (result.imageUrl) return { src: result.imageUrl };
+    }
+
+    if (result.type === "coach") {
+        if (result.imageUrl) return { src: result.imageUrl };
     }
 
     if (result.type === "stadium") {

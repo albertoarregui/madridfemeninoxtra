@@ -38,6 +38,7 @@ export const GET: APIRoute = async ({ url }) => {
                     subtitle: player.posicion || '',
                     url: `/jugadoras/${player.slug}`,
                     slug: player.slug,
+                    imageUrl: player.imageUrl,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -52,6 +53,7 @@ export const GET: APIRoute = async ({ url }) => {
                     subtitle: 'Rival',
                     url: `/rivales/${club.slug}`,
                     slug: club.slug,
+                    shieldUrl: club.shieldUrl || club.foto_url,
                     relevance: name.startsWith(query) ? 10 : 5
                 });
             }
@@ -66,6 +68,7 @@ export const GET: APIRoute = async ({ url }) => {
                     subtitle: 'Entrenador',
                     url: `/entrenadores/${coach.slug}`,
                     slug: coach.slug,
+                    imageUrl: coach.imageUrl,
                     relevance: name.startsWith(query) ? 9 : 4
                 });
             }
