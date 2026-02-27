@@ -61,44 +61,45 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.iso,
                 c.slug,
                 c.escudo_url,
+                c.foto_url as club_foto_url,
                 e.nombre as estadio,
                 e.capacidad,
                 e.lat as estadio_lat,
                 e.lng as estadio_lng,
-                c.foto_url as club_foto_url,
                 e.foto_url as estadio_foto_url,
                 COUNT(DISTINCT CASE 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
                     THEN p.id_partido 
                 END) as played,
-                SUM(CASE 
+                COALESCE(SUM(CASE 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
                     AND CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
                     AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
                     ELSE 0 
-                END) as wins,
-                SUM(CASE 
+                END), 0) as wins,
+                COALESCE(SUM(CASE 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
-                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
+                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) 
+                    AND (p.penaltis IS NULL OR TRIM(p.penaltis) = '') THEN 1 
                     ELSE 0 
-                END) as draws,
-                SUM(CASE 
+                END), 0) as draws,
+                COALESCE(SUM(CASE 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
                     AND CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
                     WHEN p.goles_rm IS NOT NULL 
-                    AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%')
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
                     AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
                     ELSE 0 
-                END) as losses,
-                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') THEN CAST(p.goles_rm AS INTEGER) ELSE 0 END) as gf,
-                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') THEN CAST(p.goles_rival AS INTEGER) ELSE 0 END) as ga,
-                SUM(CASE WHEN p.goles_rm IS NOT NULL AND (comp.competicion IS NULL OR comp.competicion NOT LIKE '%Amistoso%') AND CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END) as clean_sheets
+                END), 0) as losses,
+                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' THEN CAST(p.goles_rm AS INTEGER) ELSE 0 END), 0) as gf,
+                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' THEN CAST(p.goles_rival AS INTEGER) ELSE 0 END), 0) as ga,
+                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' AND CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END), 0) as clean_sheets
             FROM 
                 clubes c
             LEFT JOIN
@@ -112,9 +113,17 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             GROUP BY
                 c.id_club
             HAVING
-                played > 0
+                COUNT(DISTINCT CASE 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
+                    THEN p.id_partido 
+                END) > 0
             ORDER BY 
-                played DESC, wins DESC, c.nombre ASC
+                COUNT(DISTINCT CASE 
+                    WHEN p.goles_rm IS NOT NULL 
+                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
+                    THEN p.id_partido 
+                END) DESC, c.nombre ASC
         `;
 
         const result = await client.execute(query);
