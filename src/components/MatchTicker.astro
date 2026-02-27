@@ -1,15 +1,18 @@
 ---
-import { CALENDAR } from "../consts/calendar";
+import { fetchCalendarFromDb } from "../utils/calendar";
 import { fetchGamesDirectly } from "../utils/partidos";
 
+const calendarMatches = await fetchCalendarFromDb();
 const gamesData = await fetchGamesDirectly();
 
 const now = new Date();
 
-const nextMatches = CALENDAR.filter((match) => {
-    const matchDate = new Date(match.date);
-    return matchDate >= now;
-}).slice(0, 5);
+const nextMatches = calendarMatches
+    .filter((match) => {
+        const matchDate = new Date(match.date);
+        return matchDate >= now;
+    })
+    .slice(0, 5);
 
 const latestResults = [...gamesData]
     .filter((g) => g.goles_rm !== null && g.goles_rival !== null)
@@ -47,7 +50,7 @@ for (let i = 0; i < maxLength; i++) {
         });
         tickerItems.push({
             label: "PRÓXIMO",
-            text: `${next.team1} vs ${next.team2} • ${dateStr} ${next.time ? next.time.split(" ")[0] : ""}`,
+            text: `${next.club_local} vs ${next.club_visitante} • ${dateStr} ${next.hora ? next.hora.split(" ")[0] : ""}`,
             colorClass: "next-item",
         });
     }

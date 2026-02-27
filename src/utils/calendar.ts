@@ -1,4 +1,3 @@
-import { CALENDAR } from '../consts/calendar';
 
 export interface CalendarMatch {
     id: number;
@@ -32,7 +31,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
-        if (!client) return getStaticCalendar();
+        if (!client) return [];
 
         const query = `
             SELECT
@@ -57,7 +56,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
 
         const result = await client.execute(query);
 
-        if (!result.rows || result.rows.length === 0) return getStaticCalendar();
+        if (!result.rows || result.rows.length === 0) return [];
 
         return result.rows.map((row: any) => {
             const clubLocal = row.club_local || '';
@@ -89,33 +88,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         });
     } catch (error) {
         console.error('[fetchCalendarFromDb] Error:', error);
-        return getStaticCalendar();
+        return [];
     }
 }
 
-/** Fallback al calendario estático si la BD no está disponible */
-function getStaticCalendar(): CalendarMatch[] {
-    return CALENDAR.map((m, i) => {
-        const rmIsLocal = isRealMadrid(m.team1);
-        return {
-            id: i,
-            club_local: m.team1,
-            local_foto_url: '',
-            club_visitante: m.team2,
-            visitante_foto_url: '',
-            estadio: m.stadium || null,
-            competicion: m.competition,
-            fecha: m.date,
-            hora: m.time,
-            jornada: (m as any).matchday || '',
-            tv: m.tv || '',
-            team1: m.team1,
-            team2: m.team2,
-            date: m.date,
-            time: m.time,
-            competition: m.competition,
-            stadium: m.stadium || '',
-            homeaway: rmIsLocal ? 'home' : 'away',
-        };
-    });
-}

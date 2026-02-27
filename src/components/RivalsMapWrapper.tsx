@@ -1,7 +1,6 @@
 
 import React, { useMemo } from 'react';
 import InteractiveMap, { type MapMarker } from './Map';
-import { TEAMS } from '../consts/rivals';
 import { getCoordinates } from '../consts/location-data';
 import { getFlagCdnCode } from '../utils/flags';
 import { getAssetUrl } from '../utils/assets';
@@ -31,6 +30,7 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
         }>();
 
         const teamStats = new Map<string, { wins: number; draws: number; losses: number; matches: number }>();
+        const teamCityMap = new Map<string, { city: string; country: string }>();
 
         matches.forEach(m => {
             const isHome = m.club_local === 'Real Madrid' || m.club_local === 'Real Madrid Femenino' || m.club_local === 'CD Tacón';
@@ -59,35 +59,44 @@ const RivalsMapWrapper: React.FC<RivalsMapWrapperProps> = ({ matches, rivalShiel
             }
 
             teamStats.set(rivalName, stats);
+
+            // Guardar ciudad/país del rival si viene en los datos del partido
+            if (!teamCityMap.has(rivalName) && m.ciudad) {
+                teamCityMap.set(rivalName, { city: m.ciudad, country: m.pais || '' });
+            }
         });
 
-        TEAMS.forEach(team => {
-            const cityCoords = getCoordinates(team.city, 'city');
+        // Para cada rival con estadísticas, buscar sus coordenadas
+        teamStats.forEach((stats, rivalName) => {
+            const cityInfo = teamCityMap.get(rivalName);
+            const cityName = cityInfo?.city || rivalName;
+            const countryCode = cityInfo?.country || '';
 
-            if (cityCoords) {
-                const key = `${cityCoords.lat}-${cityCoords.lng}`;
-                const existing = cityMap.get(key) || {
-                    lat: cityCoords.lat,
-                    lng: cityCoords.lng,
-                    label: team.city,
-                    countryCode: team.country,
-                    teams: []
-                };
+            const cityCoords = getCoordinates(cityName, 'city') || getCoordinates(rivalName, 'team');
+            if (!cityCoords) return;
 
-                const stats = teamStats.get(team.name) || { wins: 0, draws: 0, losses: 0, matches: 0 };
+            const key = `${cityCoords.lat}-${cityCoords.lng}`;
+            const existing = cityMap.get(key) || {
+                lat: cityCoords.lat,
+                lng: cityCoords.lng,
+                label: cityName,
+                countryCode: (cityCoords as any).country || countryCode,
+                teams: []
+            };
 
-                existing.teams.push({
-                    name: team.name,
-                    id: team.id,
-                    wins: stats.wins,
-                    draws: stats.draws,
-                    losses: stats.losses,
-                    matches: stats.matches,
-                    shieldUrl: getAssetUrl('escudos', team.id) || ''
-                });
+            const shieldUrl = rivalShields[rivalName] || getAssetUrl('escudos', rivalName) || '';
 
-                cityMap.set(key, existing);
-            }
+            existing.teams.push({
+                name: rivalName,
+                id: rivalName,
+                wins: stats.wins,
+                draws: stats.draws,
+                losses: stats.losses,
+                matches: stats.matches,
+                shieldUrl
+            });
+
+            cityMap.set(key, existing);
         });
 
         return Array.from(cityMap.values()).map(city => ({
