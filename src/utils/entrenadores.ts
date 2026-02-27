@@ -26,8 +26,10 @@ export function getCoachImageUrl(coach: any): string {
 }
 
 export const cleanApiValue = (value: any): any => {
-    if (typeof value === 'string' && value.toLowerCase().trim() === 'null') {
-        return null;
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed.toLowerCase() === 'null') return null;
+        return trimmed;
     }
     return value;
 };
@@ -52,7 +54,7 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
             FROM 
                 entrenadores 
             WHERE 
-                nombre != 'José Manuel Lara'
+                nombre NOT IN ('José Manuel Lara', 'Antonio Rodríguez')
             ORDER BY 
                 id_entrenador ASC
         `;
@@ -87,7 +89,10 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                     coach.name.toLowerCase() !== "null" &&
                     coach.name.toLowerCase() !== "undefined";
 
-                const isExcluded = coach.name === "José Manuel Lara";
+                const excludedNames = ["José Manuel Lara", "Antonio Rodríguez", "Antonio Rodriguez"];
+                const isExcluded = excludedNames.some(name =>
+                    coach.name.toLowerCase().trim() === name.toLowerCase().trim()
+                );
 
                 return hasValidName && !isExcluded;
             });

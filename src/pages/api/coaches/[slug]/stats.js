@@ -81,6 +81,15 @@ export const GET = async ({ params }) => {
         entrenador = fichaResult.rows[0];
         const id_entrenador = entrenador.id_entrenador;
 
+        // Exclusión de entrenadores específicos
+        const excludedNames = ["jose manuel lara", "antonio rodriguez"];
+        if (entrenador.nombre && excludedNames.includes(entrenador.nombre.toLowerCase().trim())) {
+            return new Response(
+                JSON.stringify({ error: "Este entrenador no tiene ficha pública disponible." }),
+                { status: 403, headers: JSON_HEADERS }
+            );
+        }
+
         const statsQuery = `
             SELECT
                 t.temporada,

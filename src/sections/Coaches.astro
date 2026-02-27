@@ -30,7 +30,17 @@ const listofCoachesRaw = displayCoaches.map((coach) => {
     return { ...coach, countryName };
 });
 
-const listofCoaches = listofCoachesRaw.filter((c) => c.nombre || c.name);
+const listofCoaches = listofCoachesRaw.filter((c) => {
+    const name = (c.nombre || c.name || "").trim();
+    if (!name || name.toLowerCase() === "null") return false;
+
+    const excluded = [
+        "josé manuel lara",
+        "antonio rodríguez",
+        "antonio rodriguez",
+    ];
+    return !excluded.includes(name.toLowerCase());
+});
 
 import { getAssetUrl } from "../utils/assets";
 import { getFlagSrc } from "../utils/flags";

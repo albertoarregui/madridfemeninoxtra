@@ -54,7 +54,7 @@ export const GET = async () => {
             FROM 
                 entrenadores 
             WHERE 
-                nombre != 'José Manuel Lara'
+                nombre NOT IN ('José Manuel Lara', 'Antonio Rodríguez')
             ORDER BY 
                 id_entrenador ASC
         `;
