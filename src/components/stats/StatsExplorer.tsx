@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { StatsCharts } from './StatsCharts';
 import { COMPETITION_NAMES, getCompetitionId } from '../../utils/stats-mapper';
 import fbrefDataStr from '../../consts/fbref-data.json';
+import CustomSelect from '../CustomSelect';
 
 const fbrefData = fbrefDataStr as Record<string, Record<string, any[]>>;
 
@@ -155,40 +156,24 @@ export const StatsExplorer: React.FC<{ playerImageMap: Record<string, string> }>
     return (
         <div className="space-y-8">
             <div className="flex flex-wrap gap-4 justify-center w-full md:w-auto" style={{ marginBottom: '2rem' }}>
-                <div className="relative">
-                    <select
-                        className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
-                        value={season}
-                        onChange={(e) => setSeason(e.target.value)}
-                    >
-                        <option value="todas">Todas las Temporadas</option>
-                        {seasons.map(s => <option key={s} value={s}>{formatSeason(s)}</option>)}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </svg>
-                    </div>
-                </div>
+                <CustomSelect
+                    options={[
+                        { value: 'todas', label: 'Todas las Temporadas' },
+                        ...seasons.map(s => ({ value: s, label: formatSeason(s) }))
+                    ]}
+                    value={season}
+                    onChange={(val) => setSeason(val)}
+                />
 
-                <div className="relative">
-                    <select
-                        className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
-                        value={competition}
-                        onChange={(e) => setCompetition(e.target.value)}
-                    >
-                        <option value="todas">Todas las Competiciones</option>
-                        <option value="230">Liga F</option>
-                        <option value="181">UWCL</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M6 9l6 6l6 -6" />
-                        </svg>
-                    </div>
-                </div>
+                <CustomSelect
+                    options={[
+                        { value: 'todas', label: 'Todas las Competiciones' },
+                        { value: '230', label: 'Liga F' },
+                        { value: '181', label: 'UWCL' }
+                    ]}
+                    value={competition}
+                    onChange={(val) => setCompetition(val)}
+                />
             </div>
 
             <StatsCharts data={aggregatedData} matchLogs={matchLogs} season={season} playerImageMap={playerImageMap} />

@@ -1,6 +1,7 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Hash, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
+import CustomSelect from './CustomSelect';
 
 interface Match {
     temporada_nombre: string;
@@ -234,35 +235,27 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
         <div className="w-full max-w-7xl mx-auto mb-0">
             <div className="flex flex-col items-center mb-6 gap-4">
                 <div className="flex flex-wrap gap-4 justify-center w-full">
-                    <div className="relative">
-                        <select
-                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
-                            value={selectedSeason}
-                            onChange={(e) => setSelectedSeason(e.target.value)}
-                            aria-label="Seleccionar temporada"
-                        >
-                            <option value="all">Todas las Temporadas</option>
-                            {seasons.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 9l6 6l6 -6" /></svg>
-                        </div>
-                    </div>
-                    <div className="relative">
-                        <select
-                            className="appearance-none bg-white text-[#2b2b2b] border-2 border-[#ffde59] rounded-full py-3 pl-6 pr-12 text-[0.95rem] font-semibold min-w-[220px] shadow-[0_2px_8px_rgba(255,222,89,0.2)] focus:outline-none focus:ring-4 focus:ring-[#ffde59]/20 hover:bg-[#fffef8] hover:border-[#ffd700] transition-all cursor-pointer text-center"
-                            value={selectedCompetition}
-                            onChange={(e) => setSelectedCompetition(e.target.value)}
-                            aria-label="Seleccionar competición"
-                        >
-                            <option value="all">Todas las Competiciones</option>
-                            <option value="Partidos Oficiales">Partidos Oficiales</option>
-                            {['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos'].map(c => competitions.includes(c) && <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#2b2b2b]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 9l6 6l6 -6" /></svg>
-                        </div>
-                    </div>
+                    <CustomSelect
+                        id="container-temporada"
+                        options={[
+                            { value: 'all', label: 'Todas las Temporadas' },
+                            ...seasons.map(s => ({ value: s, label: s }))
+                        ]}
+                        value={selectedSeason}
+                        onChange={(val) => setSelectedSeason(val)}
+                    />
+                    <CustomSelect
+                        id="container-competicion"
+                        options={[
+                            { value: 'all', label: 'Todas las Competiciones' },
+                            { value: 'Partidos Oficiales', label: 'Partidos Oficiales' },
+                            ...['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
+                                .filter(c => competitions.includes(c))
+                                .map(c => ({ value: c, label: c }))
+                        ]}
+                        value={selectedCompetition}
+                        onChange={(val) => setSelectedCompetition(val)}
+                    />
                 </div>
             </div>
 

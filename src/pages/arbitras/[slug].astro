@@ -533,8 +533,52 @@ const redArc =
                 <section class="charts-card">
                     <h2 class="section-header">GRÁFICAS</h2>
                     <div class="filters-container">
-                        <div class="filter-wrapper">
-                            <select id="season-filter">
+                        <div
+                            class="custom-select-container"
+                            id="container-temporada"
+                        >
+                            <div
+                                class="custom-select-trigger"
+                                id="trigger-temporada"
+                            >
+                                <span class="selected-text"
+                                    >Todas las Temporadas</span
+                                >
+                                <div class="custom-select-arrow">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="custom-select-options">
+                                <div
+                                    class="custom-select-option selected"
+                                    data-value="all"
+                                >
+                                    Todas las Temporadas
+                                </div>
+                                {
+                                    uniqueSeasons.map((season) => (
+                                        <div
+                                            class="custom-select-option"
+                                            data-value={season}
+                                        >
+                                            {season}
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                            <select id="season-filter" style="display: none;">
                                 <option value="all">Todas las Temporadas</option
                                 >
                                 {
@@ -543,26 +587,56 @@ const redArc =
                                     ))
                                 }
                             </select>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="filter-icon"
-                                ><path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"></path><path d="M6 9l6 6l6 -6"
-                                ></path></svg
-                            >
                         </div>
-                        <div class="filter-wrapper">
-                            <select id="competition-filter">
+                        <div
+                            class="custom-select-container"
+                            id="container-competicion"
+                        >
+                            <div
+                                class="custom-select-trigger"
+                                id="trigger-competicion"
+                            >
+                                <span class="selected-text"
+                                    >Todas las Competiciones</span
+                                >
+                                <div class="custom-select-arrow">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="m6 9 6 6 6-6"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="custom-select-options">
+                                <div
+                                    class="custom-select-option selected"
+                                    data-value="all"
+                                >
+                                    Todas las Competiciones
+                                </div>
+                                {
+                                    uniqueCompetitions.map((comp) => (
+                                        <div
+                                            class="custom-select-option"
+                                            data-value={comp}
+                                        >
+                                            {comp}
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                            <select
+                                id="competition-filter"
+                                style="display: none;"
+                            >
                                 <option value="all"
                                     >Todas las Competiciones</option
                                 >
@@ -572,23 +646,6 @@ const redArc =
                                     ))
                                 }
                             </select>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="filter-icon"
-                                ><path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"></path><path d="M6 9l6 6l6 -6"
-                                ></path></svg
-                            >
                         </div>
                     </div>
                     <div class="charts-row">
@@ -932,9 +989,54 @@ const redArc =
     const seasonFilter = document.getElementById("season-filter");
     const competitionFilter = document.getElementById("competition-filter");
 
-    const allMatches = initialMatches; // from define:vars
+    function initCustomSelects() {
+        const containers = document.querySelectorAll(
+            ".custom-select-container",
+        );
 
-    function applyFilters() {
+        containers.forEach((container) => {
+            const trigger = container.querySelector(".custom-select-trigger");
+            const select = container.querySelector("select");
+            const options = container.querySelectorAll(".custom-select-option");
+            const selectedText = trigger?.querySelector(".selected-text");
+
+            trigger?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                containers.forEach((c) => {
+                    if (c !== container) c.classList.remove("open");
+                });
+                container.classList.toggle("open");
+            });
+
+            options.forEach((option) => {
+                option.addEventListener("click", () => {
+                    const value = option.dataset.value;
+                    const text = option.textContent;
+
+                    if (selectedText) selectedText.textContent = text;
+                    options.forEach((opt) => opt.classList.remove("selected"));
+                    option.classList.add("selected");
+
+                    if (select && value) {
+                        select.value = value;
+                        select.dispatchEvent(new Event("change"));
+                    }
+
+                    container.classList.remove("open");
+                });
+            });
+        });
+
+        document.addEventListener("click", () => {
+            containers.forEach((c) => c.classList.remove("open"));
+        });
+    }
+
+    initCustomSelects();
+
+    function filterDataAndCharts() {
+        const allMatches = initialMatches; // from define:vars
+
         const selectedSeason = seasonFilter.value;
         const selectedComp = competitionFilter.value;
 
