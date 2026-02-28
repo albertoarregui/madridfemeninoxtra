@@ -1,9 +1,4 @@
 
-/**
- * Parses a match date string (YYYY-MM-DD) and time string (HH:MM or HH:MMh CEST)
- * and returns a Date object strictly in Madrid time (CET/CEST).
- * Correctly handles Daylight Saving Time transitions.
- */
 export function parseMatchDate(dateStr: string, timeStr: string): Date {
     let hours = "00";
     let minutes = "00";
@@ -64,10 +59,6 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
 
     return result;
 }
-
-/**
- * Returns true if the match is still "active" (date < now + 2 hours)
- */
 export function isMatchActive(dateStr: string, timeStr: string): boolean {
     const now = new Date();
     const twoHours = 2 * 60 * 60 * 1000;

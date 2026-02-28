@@ -16,10 +16,6 @@ export const OPTIONS = () => {
         headers: CORS_HEADERS
     });
 };
-
-/**
- * @param {object} context
- */
 export const GET = async ({ url }) => {
     if (!dbUrl || !dbToken) {
         return new Response(

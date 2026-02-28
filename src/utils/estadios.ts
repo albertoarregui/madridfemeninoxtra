@@ -10,8 +10,6 @@ export interface StadiumSummary {
     coordinates?: { lat: number, lng: number };
     capacity?: string | number;
 }
-
-/** Returns all stadiums with at least one match, reading from DB */
 export async function getAllStadiums(): Promise<StadiumSummary[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');

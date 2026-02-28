@@ -1,11 +1,4 @@
 import { getAssetUrl } from './assets';
-
-/**
- * Maps 3-letter ISO codes (and some special cases like gb-eng) to 2-letter codes
- * used by flagcdn.com. This list does NOT need to be extended for new countries —
- * if the 3-letter code is not here and the 2-letter code is not working,
- * flagcdn uses the code as-is (most 2-letter codes work directly).
- */
 export const getFlagCdnCode = (code: string | undefined): string => {
     if (!code) return 'unknown';
     const c = code.toLowerCase().trim();
@@ -82,13 +75,6 @@ export const getFlagCdnCode = (code: string | undefined): string => {
     };
     return threeToTwo[c] || c;
 };
-
-/**
- * Returns the URL of a flag image for a given ISO country code or country name.
- * - First tries to find a local SVG asset in /src/assets/banderas/
- * - Falls back to flagcdn.com using the ISO code automatically
- * No need to update any list when a new country is added to the DB.
- */
 export function getFlagSrc(codeOrName: string | undefined): string {
     if (!codeOrName) return "";
 

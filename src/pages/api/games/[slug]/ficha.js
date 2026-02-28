@@ -34,10 +34,6 @@ export const OPTIONS = () => {
         headers: JSON_HEADERS
     });
 };
-
-/**
- * @param {object} context 
- */
 export const GET = async ({ params }) => {
 
     const slug = params.slug;
