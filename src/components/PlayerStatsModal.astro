@@ -4,47 +4,55 @@
 
 <dialog id="player-stats-modal" class="player-modal">
     <div class="player-modal-content">
-        <button id="close-player-modal" class="close-modal-btn">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
-                    d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg
-            >
-        </button>
+        <div class="pm-header-bar">
+            <h3 class="pm-modal-title">Ficha Técnica</h3>
+            <button id="close-player-modal" class="close-modal-btn">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path d="M18 6l-12 12"></path><path d="M6 6l12 12"
+                    ></path></svg
+                >
+            </button>
+        </div>
 
         <div class="pm-header">
             <div class="pm-photo-container">
                 <img id="pm-img" src="" alt="Player image" />
             </div>
+
+            <img id="pm-flag" src="" alt="Flag" class="pm-flag-divider" />
+
             <div class="pm-info">
-                <div class="pm-name-row">
-                    <img id="pm-flag" src="" alt="Flag" class="pm-flag" />
-                    <h3 id="pm-name">Name</h3>
-                </div>
+                <h3 id="pm-name">Name</h3>
                 <p id="pm-pos">Position</p>
             </div>
         </div>
 
         <div class="pm-body">
-            <div class="pm-rating-container">
-                <span class="pm-rating-label">Valoración Sofascore</span>
+            <div class="pm-rating-floating">
+                <span class="pm-rating-label">VALORACIÓN</span>
                 <div id="pm-rating-val" class="pm-rating-badge"></div>
             </div>
 
-            <div class="pm-stats-grid" id="pm-stats-grid"></div>
+            <div class="pm-stats-section">
+                <div class="pm-stats-grid" id="pm-stats-grid"></div>
+            </div>
         </div>
 
         <div class="pm-footer">
-            * Los datos han sido recolectados de Sofascore y manipulados por
-            nosotros para ofrecerte la mejor información.
+            <p>
+                Información estadística proporcionada por Sofascore y procesada
+                por el equipo de análisis de Madrid Femenino Xtra.
+            </p>
         </div>
     </div>
 </dialog>
@@ -85,6 +93,8 @@
 
     function getRatingColor(val) {
         if (!val) return "#e0e0e0";
+        if (val === 10) return "#000080"; // Azul oscuro
+        if (val >= 9) return "#00ced1"; // Azul turquesa
         if (val >= 7.5) return "#4caf50"; // Verde
         if (val >= 6.8) return "#ffeb3b"; // Amarillo
         if (val >= 6.0) return "#ff9800"; // Naranja
@@ -120,8 +130,15 @@
 
         if (rating && !isNaN(rating)) {
             pmRatingVal.textContent = rating.toFixed(1);
-            pmRatingVal.style.backgroundColor = getRatingColor(rating);
-            pmRatingVal.style.color = "#000";
+            const bgColor = getRatingColor(rating);
+            pmRatingVal.style.backgroundColor = bgColor;
+            // Si es azul oscuro o rojo o verde oscuro, texto blanco.
+            pmRatingVal.style.color =
+                bgColor === "#000080" ||
+                bgColor === "#f44336" ||
+                bgColor === "#4caf50"
+                    ? "#fff"
+                    : "#000";
             pmRatingVal.parentElement.style.display = "flex";
         } else {
             pmRatingVal.textContent = "-";
@@ -186,12 +203,13 @@
                 m.val !== 0;
 
             const div = document.createElement("div");
-            div.className = `pm-stat-item ${!hasData ? "no-data" : ""}`;
+            div.className = `pm-stat-row ${!hasData ? "no-data" : ""}`;
 
             const htmlStr =
-                '<span class="pm-stat-label">' +
+                '<span class="pm-stat-label-col">' +
                 m.label +
-                '</span><span class="pm-stat-val">' +
+                "</span>" +
+                '<span class="pm-stat-val-col">' +
                 (m.val || 0) +
                 "</span>";
             div.innerHTML = htmlStr;
@@ -206,13 +224,13 @@
 <style>
     .player-modal {
         border: none;
-        border-radius: 20px;
+        border-radius: 24px;
         background: #ffffff;
         color: #2b2b2b;
         padding: 0;
-        max-width: 550px;
+        max-width: 500px;
         width: 95%;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.3);
         position: fixed;
         top: 50%;
         left: 50%;
@@ -222,37 +240,47 @@
     }
 
     .player-modal::backdrop {
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
     }
 
     .player-modal-content {
         position: relative;
-        padding: 30px;
+    }
+
+    .pm-header-bar {
+        background: #ffde59;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .pm-modal-title {
+        margin: 0;
+        color: #1a1a1a;
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
     .close-modal-btn {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: #f5f5f5;
+        background: none;
         border: none;
-        color: #666;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
+        color: #1a1a1a;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
+        padding: 4px;
+        border-radius: 50%;
         transition: all 0.2s;
-        z-index: 10;
     }
 
     .close-modal-btn:hover {
-        background: #ffde59;
-        color: #000;
-        transform: rotate(90deg);
+        background: rgba(0, 0, 0, 0.1);
+        transform: scale(1.1);
     }
 
     .pm-header {
@@ -260,20 +288,18 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        margin-bottom: 25px;
-        padding-bottom: 25px;
-        border-bottom: 2px solid #f0f0f0;
+        padding: 30px 20px 20px;
     }
 
     .pm-photo-container {
-        width: 120px;
-        height: 120px;
+        width: 140px;
+        height: 140px;
         border-radius: 50%;
         overflow: hidden;
         border: 4px solid #ffde59;
         margin-bottom: 15px;
         background: #f9f9f9;
-        box-shadow: 0 8px 20px rgba(255, 222, 89, 0.2);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     }
 
     .pm-photo-container img {
@@ -283,126 +309,136 @@
         object-position: top center;
     }
 
-    .pm-name-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        margin-bottom: 5px;
-    }
-
-    .pm-name-row h3 {
-        margin: 0;
-        font-family: "Barlow Condensed", sans-serif;
-        font-size: 2rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #1a1a1a;
-        letter-spacing: -0.5px;
-    }
-
-    .pm-flag {
-        width: 28px;
+    .pm-flag-divider {
+        width: 32px;
         height: auto;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 5px 0 15px;
+    }
+
+    .pm-info h3 {
+        margin: 0;
+        font-family: "Barlow Condensed", sans-serif;
+        font-size: 2.5rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #1a1a1a;
+        line-height: 1;
+        letter-spacing: -1px;
     }
 
     .pm-info p {
-        margin: 0;
-        color: #ffb800;
-        font-size: 1.1rem;
+        margin: 5px 0 0;
+        color: #2b2b2b;
+        font-size: 1rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1.5px;
     }
 
-    .pm-rating-container {
+    .pm-body {
+        padding: 0 25px 25px;
+    }
+
+    .pm-rating-floating {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #f8f9fa;
+        background: #fafafa;
         padding: 15px 25px;
-        border-radius: 15px;
+        border-radius: 18px;
         margin-bottom: 25px;
-        border-left: 5px solid #ffde59;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        border: 1px solid #eee;
     }
 
     .pm-rating-label {
         font-weight: 800;
-        font-size: 1.1rem;
-        color: #444;
-        text-transform: uppercase;
+        font-size: 0.95rem;
+        color: #888;
+        letter-spacing: 1px;
     }
 
     .pm-rating-badge {
         font-family: "Barlow Condensed", sans-serif;
-        padding: 8px 18px;
-        border-radius: 10px;
-        font-size: 1.5rem;
+        padding: 8px 24px;
+        border-radius: 12px;
+        font-size: 2rem;
         font-weight: 800;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        min-width: 80px;
+        text-align: center;
     }
 
     .pm-stats-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
 
-    .pm-stat-item {
-        display: flex;
-        justify-content: space-between;
+    .pm-stat-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
         align-items: center;
+        padding: 12px 18px;
+        border-radius: 12px;
         background: #ffffff;
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 1px solid #eee;
+        border: 1px solid #f0f0f0;
         transition: all 0.2s ease;
     }
 
-    .pm-stat-item:hover {
+    .pm-stat-row:hover {
         border-color: #ffde59;
         background: #fffdf5;
-        transform: translateY(-2px);
+        transform: scale(1.01);
     }
 
-    .pm-stat-item.no-data {
-        opacity: 0.6;
+    .pm-stat-row.no-data {
+        opacity: 0.4;
     }
 
-    .pm-stat-label {
+    .pm-stat-label-col {
         color: #666;
         font-size: 0.85rem;
         font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .pm-stat-val {
+    .pm-stat-val-col {
         font-weight: 800;
         color: #1a1a1a;
-        font-size: 1rem;
+        font-size: 1.1rem;
+        min-width: 60px;
+        text-align: right;
     }
 
     .pm-footer {
         text-align: center;
         font-size: 0.8rem;
-        color: #888;
-        border-top: 1px solid #eee;
-        padding-top: 20px;
-        line-height: 1.4;
+        color: #999;
+        border-top: 1px solid #f5f5f5;
+        padding: 24px 25px;
+        line-height: 1.6;
+    }
+
+    .pm-footer p {
+        margin: 0;
+        max-width: 80%;
+        margin: 0 auto;
     }
 
     @media (max-width: 500px) {
-        .pm-stats-grid {
-            grid-template-columns: 1fr;
+        .pm-header {
+            padding: 25px 15px 15px;
         }
-        .player-modal-content {
-            padding: 25px 20px;
+        .pm-info h3 {
+            font-size: 2rem;
         }
-        .pm-name-row h3 {
-            font-size: 1.6rem;
+        .pm-photo-container {
+            width: 110px;
+            height: 110px;
         }
     }
 </style>
