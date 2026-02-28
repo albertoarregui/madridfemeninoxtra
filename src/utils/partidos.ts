@@ -1,5 +1,6 @@
 import { getAssetUrl } from './assets';
 import { getRivalShieldUrl } from './rivales';
+import { getFlagSrc } from './flags';
 
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
@@ -326,7 +327,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 id: row.id_alineacion,
                 name: displayName,
                 pos: displayPos,
-                flagUrl: getAssetUrl('banderas', row.iso || 'es'),
+                flagUrl: getFlagSrc(row.iso),
                 number: row.dorsal || '-',
                 imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                     ? row.foto_url
@@ -451,7 +452,7 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
-                    flagUrl: getAssetUrl('banderas', row.iso || 'es'),
+                    flagUrl: getFlagSrc(row.iso),
                     imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                         ? row.foto_url
                         : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
