@@ -1,10 +1,12 @@
 import { config } from 'dotenv';
 config();
+import { getPlayersDbClient } from '../src/db/client';
 
-import { fetchRivalsDirectly } from '../src/utils/rivales';
-
-async function main() {
-    const r = await fetchRivalsDirectly();
-    console.log("RIVALES:", r.slice(0, 5).map(x => ({ nombre: x.nombre, stats: x.stats })));
+async function check() {
+    const client = await getPlayersDbClient();
+    try {
+        const c = await client.execute('PRAGMA table_info(clubes)');
+        console.log(JSON.stringify(c.rows.map(r => r.name), null, 2));
+    } catch (err) { console.error("ERROR CAUGHT IN DEBUG:", err); }
 }
-main();
+check();
