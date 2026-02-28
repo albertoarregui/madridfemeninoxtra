@@ -14,7 +14,8 @@ export function slugify(text: string | null | undefined): string {
 }
 
 export const cleanApiValue = (value: any): any => {
-    if (typeof value === 'string' && value.toLowerCase().trim() === 'null') {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'string' && (value.toLowerCase().trim() === 'null' || value.toLowerCase().trim() === 'undefined')) {
         return null;
     }
     return value;
@@ -104,12 +105,25 @@ export async function fetchGamesDirectly(): Promise<any[]> {
         const result = await client.execute(query);
 
         return result.rows.map((game: any) => {
-            const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
+            let dateSlug = 'sin-fecha';
+            try {
+                if (game.fecha) {
+                    const d = new Date(game.fecha);
+                    if (!isNaN(d.getTime())) {
+                        dateSlug = d.toISOString().split('T')[0];
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing date for slug:", game.fecha, e);
+            }
+
             return {
                 ...game,
                 mvp: cleanApiValue(game.mvp),
                 local_foto_url: cleanApiValue(game.local_foto_url),
                 visitante_foto_url: cleanApiValue(game.visitante_foto_url),
+                mvp_foto_url: cleanApiValue(game.mvp_foto_url),
+                once_inicial_url: cleanApiValue(game.once_inicial_url),
                 local_shield_url: getRivalShieldUrl({ nombre: game.club_local, foto_url: game.local_foto_url }),
                 visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
@@ -473,6 +487,7 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
         });
 
         const row = result.rows[0];
+        if (!row) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
         return {
             wins: Number(row.wins || 0),
@@ -544,12 +559,12 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
         const cardRow = cardResult.rows[0];
 
         return {
-            wins: Number(matchRow.wins || 0),
-            draws: Number(matchRow.draws || 0),
-            losses: Number(matchRow.losses || 0),
-            total: Number(matchRow.total || 0),
-            yellowCards: Number(cardRow.yellowCards || 0),
-            redCards: Number(cardRow.redCards || 0)
+            wins: Number(matchRow?.wins || 0),
+            draws: Number(matchRow?.draws || 0),
+            losses: Number(matchRow?.losses || 0),
+            total: Number(matchRow?.total || 0),
+            yellowCards: Number(cardRow?.yellowCards || 0),
+            redCards: Number(cardRow?.redCards || 0)
         };
 
     } catch (error) {
@@ -608,29 +623,27 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         const events: any[] = [];
 
-        const validGoals = (matchScore === 0) ? [] : goalsResult.rows;
-
         const formatDisplayMinute = (min: any): string => {
-            return String(min);
+            return min ? String(min) : '?';
         };
 
-        for (const goal of validGoals) {
-            const parseMinute = (min: any): number => {
-                if (!min) return 0;
-                const s = String(min);
-                if (s.includes('+')) {
-                    const [base, extra] = s.split('+');
-                    return Number(base) + Number(extra);
-                }
-                return Number(min);
-            };
+        const parseMinuteInternal = (min: any): number => {
+            if (!min) return 0;
+            const s = String(min);
+            if (s.includes('+')) {
+                const parts = s.split('+');
+                return Number(parts[0] || 0) + Number(parts[1] || 0);
+            }
+            const val = Number(min);
+            return isNaN(val) ? 0 : val;
+        };
 
+        // Goles
+        for (const goal of goalsResult.rows) {
             const tipoLower = String(goal.tipo || '').toLowerCase().trim();
             const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) || tipoLower === 'propia' || tipoLower === 'own_goal' || tipoLower === 'p.p.';
 
             if (isOwnGoalInGolesTable) continue;
-
-
             if (!goal.goleadora && !goal.nombre_jugadora) continue;
 
             let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
@@ -642,7 +655,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             }
 
             events.push({
-                minute: parseMinute(goal.minuto),
+                minute: parseMinuteInternal(goal.minuto),
                 displayMinute: formatDisplayMinute(goal.minuto),
                 type: 'goal',
                 text: goalText,
@@ -654,20 +667,9 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        const cards = cardsResult.rows;
-
-        for (const card of cards) {
-            const parseMinute = (min: any): number => {
-                if (!min) return 0;
-                const s = String(min);
-                if (s.includes('+')) {
-                    const [base, extra] = s.split('+');
-                    return Number(base) + Number(extra);
-                }
-                return Number(min);
-            };
-
-            const rawType = String(card.tipo_tarjeta).toUpperCase();
+        // Tarjetas
+        for (const card of cardsResult.rows) {
+            const rawType = String(card.tipo_tarjeta || '').toUpperCase();
             let cardType = 'Yellow';
             let cardText = 'Tarjeta amarilla';
 
@@ -680,7 +682,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             }
 
             events.push({
-                minute: parseMinute(card.minuto),
+                minute: parseMinuteInternal(card.minuto),
                 displayMinute: formatDisplayMinute(card.minuto),
                 type: 'card',
                 cardType: cardType,
@@ -690,23 +692,11 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-
-
+        // Goles en propia
         for (const og of ownGoalsResult.rows) {
-            const parseMinute = (min: any): number => {
-                if (!min) return 0;
-                const s = String(min);
-                if (s.includes('+')) {
-                    const [base, extra] = s.split('+');
-                    return Number(base) + Number(extra);
-                }
-                return Number(min);
-            };
-
-            const playerName = og.nombre_jugadora || og.rival_nombre;
-
+            const playerName = og.nombre_jugadora || og.rival_nombre || 'Rival';
             events.push({
-                minute: parseMinute(og.minuto),
+                minute: parseMinuteInternal(og.minuto),
                 displayMinute: formatDisplayMinute(og.minuto),
                 type: 'own_goal',
                 text: `${playerName} (P.P.)`,
@@ -715,27 +705,20 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
+        // Sustituciones
         for (const sub of subs) {
-            const parseMinute = (min: string | number): number => {
-                const s = String(min);
-                if (s.includes('+')) {
-                    const [base, extra] = s.split('+');
-                    return Number(base) + Number(extra);
-                }
-                return Number(min);
-            };
-
             events.push({
-                minute: parseMinute(sub.minute),
+                minute: parseMinuteInternal(sub.minute),
                 displayMinute: formatDisplayMinute(sub.minute),
                 type: 'sub',
-                text: `Entra ${sub.playerIn.name} por ${sub.playerOut.name}`,
-                playerIn: sub.playerIn.name,
-                playerOut: sub.playerOut.name,
+                text: `Entra ${sub.playerIn?.name || '?'} por ${sub.playerOut?.name || '?'}`,
+                playerIn: sub.playerIn?.name,
+                playerOut: sub.playerOut?.name,
                 team: 'local'
             });
         }
 
+        // Tanda de penaltis
         for (const pt of shootoutResult.rows) {
             const res = String(pt.resultado || '').toLowerCase().trim();
             const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
@@ -753,7 +736,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        return events.sort((a, b) => a.minute - b.minute);
+        return events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
 
     } catch (e) {
         console.error("Error fetching match events:", e);
