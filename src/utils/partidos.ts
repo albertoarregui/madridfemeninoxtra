@@ -784,9 +784,9 @@ export async function fetchAllGoals(): Promise<any[]> {
                 c.competicion,
                 COALESCE(j.nombre, g.goleadora) as nombre_goleadora,
                 -- Prioridad: 1. Foto dorsal temporada actual, 2. Foto jugadora, 3. Foto dorsal fallback, 4. Foto jugadora por nombre
-                COALESCE(d1.foto_url, j.foto_url, d2.foto_url, j2.foto_url) as foto_goleadora,
+                COALESCE(d1.foto_url, d2.foto_url) as foto_goleadora,
                 COALESCE(ast.nombre, g.asistente) as nombre_asistente,
-                COALESCE(d_ast1.foto_url, ast.foto_url, d_ast2.foto_url, ast2.foto_url) as foto_asistente
+                COALESCE(d_ast1.foto_url, d_ast2.foto_url) as foto_asistente
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada

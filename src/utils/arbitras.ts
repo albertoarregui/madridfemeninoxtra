@@ -18,6 +18,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                 a.foto_url,
                 a.iso,
                 a.colegio,
+                a.pais_origen,
                 COUNT(p.id_partido) as played,
                 SUM(CASE 
                     WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
@@ -119,6 +120,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                 foto_url: cleanApiValue(ref.foto_url) || null,
                 iso: cleanApiValue(ref.iso) || null,
                 colegio: cleanApiValue(ref.colegio) || null,
+                pais_origen: cleanApiValue(ref.pais_origen) || null,
                 stats: {
                     played,
                     wins,
