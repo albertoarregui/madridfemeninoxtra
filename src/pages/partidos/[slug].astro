@@ -1261,93 +1261,591 @@ try {
 
                 <section class="metrics-card" style="margin-top: 2rem;">
                     <h2 class="section-header">Métricas</h2>
-                    <div class="metrics-content" style="padding: 1.5rem;">
-                        <div
-                            class="metric-group"
-                            style="margin-bottom: 1.5rem;"
-                        >
-                            <div
-                                class="metric-header"
-                                style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;"
-                            >
-                                <span
-                                    >{
-                                        isLocalRM
-                                            ? game.posesion_rm
-                                                ? `${game.posesion_rm}%`
-                                                : "-"
-                                            : game.posesion_rival
-                                              ? `${game.posesion_rival}%`
-                                              : "-"
-                                    }</span
-                                >
-                                <span
-                                    style="color: #777; text-transform: uppercase; font-size: 0.9rem;"
-                                    >Posesión</span
-                                >
-                                <span
-                                    >{
-                                        isLocalRM
-                                            ? game.posesion_rival
-                                                ? `${game.posesion_rival}%`
-                                                : "-"
-                                            : game.posesion_rm
-                                              ? `${game.posesion_rm}%`
-                                              : "-"
-                                    }</span
-                                >
-                            </div>
-                            <div
-                                style="height: 8px; background: #eee; border-radius: 4px; overflow: hidden; display: flex;"
-                            >
-                                <div
-                                    style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%; background: #151e42; height: 100%;`}
-                                >
-                                </div>
-                                <div
-                                    style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%; background: #ccc; height: 100%;`}
-                                >
-                                </div>
-                            </div>
-                        </div>
+                    <div
+                        class="metrics-content"
+                        style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;"
+                    >
+                        {
+                            !game.posesion_rm && !game.rm_tiros ? (
+                                <p class="no-data-msg">
+                                    Estadísticas no disponibles para este
+                                    partido
+                                </p>
+                            ) : (
+                                <>
+                                    {/* --- DISTRIBUCIÓN --- */}
+                                    <div class="metrics-category">
+                                        <h3 class="stat-category-title">
+                                            Distribución
+                                        </h3>
+                                        <div class="stats-grid">
+                                            {/* Posesión */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.posesion_rm
+                                                                ? `${game.posesion_rm}%`
+                                                                : "50%"
+                                                            : game.posesion_rival
+                                                              ? `${game.posesion_rival}%`
+                                                              : "50%"}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Posesión
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.posesion_rival
+                                                                ? `${game.posesion_rival}%`
+                                                                : "50%"
+                                                            : game.posesion_rm
+                                                              ? `${game.posesion_rm}%`
+                                                              : "50%"}
+                                                    </span>
+                                                </div>
+                                                <div class="stat-bar-container">
+                                                    <div
+                                                        class="stat-bar rm"
+                                                        style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%`}
+                                                    />
+                                                    <div
+                                                        class="stat-bar rival"
+                                                        style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%`}
+                                                    />
+                                                </div>
+                                            </div>
 
-                        <div class="metric-group">
-                            <div
-                                class="metric-header"
-                                style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 600;"
-                            >
-                                <span
-                                    >{
-                                        isLocalRM
-                                            ? game.xg_a_favor || "-"
-                                            : game.xg_en_contra || "-"
-                                    }</span
-                                >
-                                <span
-                                    style="color: #777; text-transform: uppercase; font-size: 0.9rem;"
-                                    >xG Expected Goals</span
-                                >
-                                <span
-                                    >{
-                                        isLocalRM
-                                            ? game.xg_en_contra || "-"
-                                            : game.xg_a_favor || "-"
-                                    }</span
-                                >
-                            </div>
-                            <div
-                                style="height: 8px; background: #eee; border-radius: 4px; overflow: hidden; display: flex;"
-                            >
-                                <div
-                                    style={`width: ${isLocalRM ? (parseFloat(game.xg_a_favor || 0) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100 : (parseFloat(game.xg_en_contra || 0) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100}%; background: #151e42; height: 100%;`}
-                                >
-                                </div>
-                                <div
-                                    style={`width: ${isLocalRM ? (parseFloat(game.xg_en_contra || 0) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100 : (parseFloat(game.xg_a_favor || 1) / (parseFloat(game.xg_a_favor || 1) + parseFloat(game.xg_en_contra || 1))) * 100}%; background: #ccc; height: 100%;`}
-                                >
-                                </div>
-                            </div>
-                        </div>
+                                            {/* Pases */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_pases_completados || 0}/${game.rm_pases_totales || 0}`
+                                                            : `${game.rival_pases_completados || 0}/${game.rival_pases_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Pases
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_pases_completados || 0}/${game.rival_pases_totales || 0}`
+                                                            : `${game.rm_pases_completados || 0}/${game.rm_pases_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Pases en largo */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_pases_largo_completados || 0}/${game.rm_pases_largo_totales || 0}`
+                                                            : `${game.rival_pases_largo_completados || 0}/${game.rival_pases_largo_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Pases en largo
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_pases_largo_completados || 0}/${game.rival_pases_largo_totales || 0}`
+                                                            : `${game.rm_pases_largo_completados || 0}/${game.rm_pases_largo_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Pases último tercio */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_pases_tercio_completados || 0}/${game.rm_pases_tercio_totales || 0}`
+                                                            : `${game.rival_pases_tercio_completados || 0}/${game.rival_pases_tercio_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Pases último tercio
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_pases_tercio_completados || 0}/${game.rival_pases_tercio_totales || 0}`
+                                                            : `${game.rm_pases_tercio_completados || 0}/${game.rm_pases_tercio_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Centros */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_centros_completados || 0}/${game.rm_centros_totales || 0}`
+                                                            : `${game.rival_centros_completados || 0}/${game.rival_centros_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Centros
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_centros_completados || 0}/${game.rival_centros_totales || 0}`
+                                                            : `${game.rm_centros_completados || 0}/${game.rm_centros_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Toques área rival */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_toques_area_rival ||
+                                                              0
+                                                            : game.rival_toques_area_rival ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Toques en área rival
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_toques_area_rival ||
+                                                              0
+                                                            : game.rm_toques_area_rival ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* --- ATAQUE --- */}
+                                    <div class="metrics-category">
+                                        <h3 class="stat-category-title">
+                                            Ataque
+                                        </h3>
+                                        <div class="stats-grid">
+                                            {/* xG */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.xg_a_favor ||
+                                                              "0.0"
+                                                            : game.xg_en_contra ||
+                                                              "0.0"}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Goles esperados (xG)
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.xg_en_contra ||
+                                                              "0.0"
+                                                            : game.xg_a_favor ||
+                                                              "0.0"}
+                                                    </span>
+                                                </div>
+                                                <div class="stat-bar-container">
+                                                    <div
+                                                        class="stat-bar rm"
+                                                        style={`width: ${(parseFloat(isLocalRM ? game.xg_a_favor : game.xg_en_contra) / (parseFloat(game.xg_a_favor || 0) + parseFloat(game.xg_en_contra || 0.1))) * 100 || 50}%`}
+                                                    />
+                                                    <div
+                                                        class="stat-bar rival"
+                                                        style={`width: ${(parseFloat(isLocalRM ? game.xg_en_contra : game.xg_a_favor) / (parseFloat(game.xg_a_favor || 0) + parseFloat(game.xg_en_contra || 0.1))) * 100 || 50}%`}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* xA */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_asistencias_esperadas ||
+                                                              "0.0"
+                                                            : game.rival_asistencias_esperadas ||
+                                                              "0.0"}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Asistencias esp. (xA)
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_asistencias_esperadas ||
+                                                              "0.0"
+                                                            : game.rm_asistencias_esperadas ||
+                                                              "0.0"}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Tiros */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_tiros || 0
+                                                            : game.rival_tiros ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Tiros
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_tiros ||
+                                                              0
+                                                            : game.rm_tiros ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Tiros a puerta */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_tiros_puerta ||
+                                                              0
+                                                            : game.rival_tiros_puerta ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Tiros a puerta
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_tiros_puerta ||
+                                                              0
+                                                            : game.rm_tiros_puerta ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Grandes Ocasiones */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_grandes_ocasiones ||
+                                                              0
+                                                            : game.rival_grandes_ocasiones ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Grandes ocasiones
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_grandes_ocasiones ||
+                                                              0
+                                                            : game.rm_grandes_ocasiones ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Tiros al palo */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_tiros_palo ||
+                                                              0
+                                                            : game.rival_tiros_palo ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Tiros al palo
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_tiros_palo ||
+                                                              0
+                                                            : game.rm_tiros_palo ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Córners */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_corners ||
+                                                              0
+                                                            : game.rival_corners ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Córners
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_corners ||
+                                                              0
+                                                            : game.rm_corners ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Regates */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_regates ||
+                                                              0
+                                                            : game.rival_regates ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Regates
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_regates ||
+                                                              0
+                                                            : game.rm_regates ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Fueras de juego */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_fueras_juego ||
+                                                              0
+                                                            : game.rival_fueras_juego ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Fueras de juego
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_fueras_juego ||
+                                                              0
+                                                            : game.rm_fueras_juego ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* --- DEFENSA --- */}
+                                    <div class="metrics-category">
+                                        <h3 class="stat-category-title">
+                                            Defensa y Disciplina
+                                        </h3>
+                                        <div class="stats-grid">
+                                            {/* Paradas */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_paradas ||
+                                                              0
+                                                            : game.rival_paradas ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Paradas
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_paradas ||
+                                                              0
+                                                            : game.rm_paradas ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Entradas */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_entradas_ganadas || 0}/${game.rm_entradas_totales || 0}`
+                                                            : `${game.rival_entradas_ganadas || 0}/${game.rival_entradas_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Entradas
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_entradas_ganadas || 0}/${game.rival_entradas_totales || 0}`
+                                                            : `${game.rm_entradas_ganadas || 0}/${game.rm_entradas_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Intercepciones */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_intercepciones ||
+                                                              0
+                                                            : game.rival_intercepciones ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Intercepciones
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_intercepciones ||
+                                                              0
+                                                            : game.rm_intercepciones ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Recuperaciones */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_recuperaciones ||
+                                                              0
+                                                            : game.rival_recuperaciones ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Recuperaciones
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_recuperaciones ||
+                                                              0
+                                                            : game.rm_recuperaciones ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Despejes */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_despejes ||
+                                                              0
+                                                            : game.rival_despejes ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Despejes
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_despejes ||
+                                                              0
+                                                            : game.rm_despejes ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Duelos Suelo */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_duelos_suelo_ganados || 0}/${game.rm_duelos_suelo_totales || 0}`
+                                                            : `${game.rival_duelos_suelo_ganados || 0}/${game.rival_duelos_suelo_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Duelos en el suelo
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_duelos_suelo_ganados || 0}/${game.rival_duelos_suelo_totales || 0}`
+                                                            : `${game.rm_duelos_suelo_ganados || 0}/${game.rm_duelos_suelo_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Duelos Aéreos */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rm_duelos_aereos_ganados || 0}/${game.rm_duelos_aereos_totales || 0}`
+                                                            : `${game.rival_duelos_aereos_ganados || 0}/${game.rival_duelos_aereos_totales || 0}`}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Duelos aéreos
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? `${game.rival_duelos_aereos_ganados || 0}/${game.rival_duelos_aereos_totales || 0}`
+                                                            : `${game.rm_duelos_aereos_ganados || 0}/${game.rm_duelos_aereos_totales || 0}`}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Faltas */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.faltas_cometidas ||
+                                                              0
+                                                            : game.faltas_recibidas ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Faltas cometidas
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.faltas_recibidas ||
+                                                              0
+                                                            : game.faltas_cometidas ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Tiros Libres */}
+                                            <div class="stat-row">
+                                                <div class="stat-labels">
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rm_tiros_libres ||
+                                                              0
+                                                            : game.rival_tiros_libres ||
+                                                              0}
+                                                    </span>
+                                                    <span class="stat-name">
+                                                        Tiros libres
+                                                    </span>
+                                                    <span>
+                                                        {isLocalRM
+                                                            ? game.rival_tiros_libres ||
+                                                              0
+                                                            : game.rm_tiros_libres ||
+                                                              0}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )
+                        }
                     </div>
                 </section>
             </div>
@@ -2200,6 +2698,80 @@ try {
     }
     .bar-fill.drawn {
         background: #fef08a;
+    }
+
+    /* Metrics Styles */
+    .metrics-category {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .stat-category-title {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: #888;
+        letter-spacing: 1px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stats-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .stat-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .stat-labels {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .stat-name {
+        color: #777;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        font-weight: 500;
+        text-align: center;
+        flex: 1;
+    }
+
+    .stat-bar-container {
+        height: 6px;
+        background: #eee;
+        border-radius: 3px;
+        overflow: hidden;
+        display: flex;
+    }
+
+    .stat-bar {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .stat-bar.rm {
+        background: #151e42; /* RM Dark Blue */
+    }
+
+    .stat-bar.rival {
+        background: #ccc; /* Rival Gray */
+    }
+
+    .no-data-msg {
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        padding: 2rem;
     }
     .bar-fill.lost {
         background: #fecaca;
