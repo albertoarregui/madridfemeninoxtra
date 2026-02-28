@@ -1,510 +1,1 @@
----
-// PlayerStatsModal.astro
----
-
-<dialog id="player-stats-modal" class="player-modal">
-    <div class="player-modal-container">
-        <div class="pm-header-bar">
-            <h3 id="pm-header-title" class="pm-header-title">Estadísticas</h3>
-            <button id="close-player-modal" class="close-modal-btn">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="icon icon-tabler icons-tabler-outline icon-tabler-x"
-                >
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                    <path d="M18 6l-12 12"></path>
-                    <path d="M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-
-        <div class="pm-scrollable-content">
-            <div class="pm-header">
-                <div class="pm-photo-container">
-                    <img id="pm-img" src="" alt="Player image" />
-                </div>
-
-                <img id="pm-flag" src="" alt="Flag" class="pm-flag-divider" />
-
-                <div class="pm-info">
-                    <h3 id="pm-name">Name</h3>
-                    <p id="pm-pos">Position</p>
-                </div>
-            </div>
-
-            <div class="pm-body">
-                <div class="pm-rating-floating">
-                    <span class="pm-rating-label">VALORACIÓN</span>
-                    <div id="pm-rating-val" class="pm-rating-badge"></div>
-                </div>
-
-                <div class="pm-stats-section">
-                    <div class="pm-stats-grid" id="pm-stats-grid"></div>
-                </div>
-            </div>
-
-            <div class="pm-footer">
-                <p>
-                    Información estadística proporcionada por Sofascore y
-                    procesada por el equipo de análisis de Madrid Femenino Xtra.
-                </p>
-            </div>
-        </div>
-    </div>
-</dialog>
-
-<script is:inline>
-    document.addEventListener("astro:page-load", setupPlayerModals);
-    document.addEventListener("DOMContentLoaded", setupPlayerModals);
-
-    function setupPlayerModals() {
-        const modal = document.getElementById("player-stats-modal");
-        const clBtn = document.getElementById("close-player-modal");
-
-        if (clBtn && modal) {
-            clBtn.addEventListener("click", () => {
-                modal.close();
-            });
-            modal.addEventListener("click", (e) => {
-                if (e.target === modal) modal.close();
-            });
-        }
-
-        const rows = document.querySelectorAll(".clickable-player-row");
-        rows.forEach((row) => {
-            row.addEventListener("click", (e) => {
-                e.preventDefault();
-                const playerStr = row.getAttribute("data-player");
-                if (!playerStr) return;
-
-                try {
-                    const data = JSON.parse(decodeURIComponent(playerStr));
-                    openPlayerModal(data);
-                } catch (err) {
-                    console.error("Error parsing player data:", err);
-                }
-            });
-        });
-    }
-
-    function getRatingColor(val) {
-        if (!val) return "#e0e0e0";
-        if (val === 10) return "#000080"; // Azul oscuro
-        if (val >= 9) return "#00ced1"; // Azul turquesa
-        if (val >= 7.5) return "#4caf50"; // Verde
-        if (val >= 6.8) return "#ffeb3b"; // Amarillo
-        if (val >= 6.0) return "#ff9800"; // Naranja
-        return "#f44336"; // Rojo
-    }
-
-    function openPlayerModal(player) {
-        const modal = document.getElementById("player-stats-modal");
-        if (!modal) return;
-
-        const pmHeaderTitle = document.getElementById("pm-header-title");
-        const pmImg = document.getElementById("pm-img");
-        const pmFlag = document.getElementById("pm-flag");
-        const pmName = document.getElementById("pm-name");
-        const pmPos = document.getElementById("pm-pos");
-        const pmRatingVal = document.getElementById("pm-rating-val");
-        const pmStatsGrid = document.getElementById("pm-stats-grid");
-
-        if (pmHeaderTitle)
-            pmHeaderTitle.textContent = player.name || "Estadísticas";
-        pmImg.src = player.imageUrl || "/src/assets/jugadoras/placeholder.png";
-        pmImg.alt = player.name || "Jugadora";
-
-        if (player.flagUrl) {
-            pmFlag.src = player.flagUrl;
-            pmFlag.style.display = "block";
-        } else {
-            pmFlag.style.display = "none";
-        }
-
-        pmName.textContent = player.name;
-        pmPos.textContent = player.pos;
-
-        const stats = player.stats || {};
-        const rating = parseFloat(stats.valoracion);
-
-        if (rating && !isNaN(rating)) {
-            pmRatingVal.textContent = rating.toFixed(1);
-            const bgColor = getRatingColor(rating);
-            pmRatingVal.style.backgroundColor = bgColor;
-            pmRatingVal.style.color =
-                bgColor === "#000080" ||
-                bgColor === "#f44336" ||
-                bgColor === "#4caf50"
-                    ? "#fff"
-                    : "#000";
-            pmRatingVal.parentElement.style.display = "flex";
-        } else {
-            pmRatingVal.textContent = "-";
-            pmRatingVal.style.backgroundColor = "#eee";
-            pmRatingVal.style.color = "#999";
-        }
-
-        const metrics = [
-            { label: "Goles", val: player.goals },
-            { label: "Asistencias", val: player.assists },
-            { label: "Pases Clave", val: stats.pases_clave },
-            { label: "Tiros", val: stats.tiros_totales },
-            { label: "Tiros a Puerta", val: stats.tiros_puerta },
-            { label: "Toques", val: stats.toques },
-            { label: "Toques Área Rival", val: stats.toques_area_rival },
-            {
-                label: "Pases Comp.",
-                val:
-                    stats.pases_totales > 0
-                        ? `${stats.pases_completados || 0}/${stats.pases_totales || 0}`
-                        : null,
-            },
-            {
-                label: "Pases Últ. Tercio",
-                val:
-                    stats.pases_ultimo_tercio_totales > 0
-                        ? `${stats.pases_ultimo_tercio_completados || 0}/${stats.pases_ultimo_tercio_totales || 0}`
-                        : null,
-            },
-            {
-                label: "Pases en Largo",
-                val:
-                    stats.pases_largo_totales > 0
-                        ? `${stats.pases_largo_completados || 0}/${stats.pases_largo_totales || 0}`
-                        : null,
-            },
-            {
-                label: "Centros",
-                val:
-                    stats.centros_totales > 0
-                        ? `${stats.centros_completados || 0}/${stats.centros_totales || 0}`
-                        : null,
-            },
-            { label: "Fueras de Juego", val: stats.fueras_juego },
-            {
-                label: "Regates Comp.",
-                val:
-                    stats.regates_totales > 0
-                        ? `${stats.regates_completados || 0}/${stats.regates_totales || 0}`
-                        : null,
-            },
-            { label: "Pérdidas", val: stats.perdidas },
-            { label: "Entradas", val: stats.entradas },
-            { label: "Intercepciones", val: stats.intercepciones },
-            { label: "Bloqueos", val: stats.bloqueos },
-            { label: "Despejes", val: stats.despejes },
-            { label: "Regateada", val: stats.regateada },
-            {
-                label: "Duelos Suelo",
-                val:
-                    stats.duelos_suelo_totales > 0
-                        ? `${stats.duelos_suelo_ganados || 0}/${stats.duelos_suelo_totales || 0}`
-                        : null,
-            },
-            {
-                label: "Duelos Aéreos",
-                val:
-                    stats.duelos_aereos_totales > 0
-                        ? `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_ganados || 0}`
-                        : null,
-            },
-            { label: "Faltas Recibidas", val: stats.faltas_recibidas },
-            { label: "Faltas Cometidas", val: stats.faltas_cometidas },
-        ];
-
-        pmStatsGrid.innerHTML = "";
-        metrics.forEach((m) => {
-            const hasData =
-                m.val !== undefined &&
-                m.val !== null &&
-                m.val !== "" &&
-                m.val !== "0/0" &&
-                m.val !== 0;
-
-            const div = document.createElement("div");
-            div.className = `pm-stat-row ${!hasData ? "no-data" : ""}`;
-
-            const htmlStr =
-                '<span class="pm-stat-label-col">' +
-                m.label +
-                "</span>" +
-                '<span class="pm-stat-val-col">' +
-                (hasData ? m.val : "0") +
-                "</span>";
-            div.innerHTML = htmlStr;
-
-            pmStatsGrid.appendChild(div);
-        });
-
-        modal.showModal();
-    }
-</script>
-
-<style>
-    .player-modal {
-        border: none;
-        border-radius: 32px;
-        background: #ffffff;
-        color: #2b2b2b;
-        padding: 0;
-        max-width: 500px;
-        width: 95%;
-        box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.4);
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        max-height: 85vh;
-        overflow: hidden; /* Prevent dialog from scrolling to keep rounded corners clean */
-    }
-
-    .player-modal-container {
-        display: flex;
-        flex-direction: column;
-        max-height: 85vh;
-        width: 100%;
-    }
-
-    /* Scrollable content container with custom scrollbar */
-    .pm-scrollable-content {
-        overflow-y: auto;
-        flex: 1;
-        padding-bottom: 20px;
-        /* Custom scrollbar styling */
-        scrollbar-width: thin;
-        scrollbar-color: #ffde59 #f5f5f5;
-    }
-
-    .pm-scrollable-content::-webkit-scrollbar {
-        width: 10px;
-    }
-
-    .pm-scrollable-content::-webkit-scrollbar-track {
-        background: #f5f5f5;
-        margin-top: 10px; /* Inset scrollbar from top header */
-        margin-bottom: 20px; /* Inset scrollbar from bottom rounded corners */
-        border-radius: 10px;
-    }
-
-    .pm-scrollable-content::-webkit-scrollbar-thumb {
-        background-color: #ffde59;
-        border-radius: 20px;
-        border: 3px solid #f5f5f5;
-    }
-
-    .player-modal::backdrop {
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(12px);
-    }
-
-    .pm-header-bar {
-        background: #ffde59;
-        padding: 12px 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 100;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        border-top-left-radius: 32px;
-        border-top-right-radius: 32px;
-    }
-
-    .pm-header-title {
-        margin: 0;
-        color: #1a1a1a;
-        font-size: 1.1rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .close-modal-btn {
-        background: transparent;
-        border: none;
-        color: #1a1a1a;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        padding: 4px;
-        border-radius: 50%;
-        transition: all 0.2s;
-    }
-
-    .close-modal-btn:hover {
-        background: rgba(0, 0, 0, 0.1);
-        transform: scale(1.1);
-    }
-
-    .pm-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: 40px 20px 20px;
-    }
-
-    .pm-photo-container {
-        width: 140px;
-        height: 140px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 4px solid #ffde59;
-        margin-bottom: 20px;
-        background: #f9f9f9;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
-    }
-
-    .pm-photo-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: top center;
-    }
-
-    .pm-flag-divider {
-        width: 32px;
-        height: auto;
-        border-radius: 4px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-
-    .pm-info h3 {
-        margin: 0;
-        font-family: "Barlow Condensed", sans-serif;
-        font-size: 2.8rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #1a1a1a;
-        line-height: 0.9;
-        letter-spacing: -1.5px;
-    }
-
-    .pm-info p {
-        margin: 8px 0 0;
-        color: #2b2b2b;
-        font-size: 1.1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-
-    .pm-body {
-        padding: 0 30px 10px;
-    }
-
-    .pm-rating-floating {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: #ffffff;
-        padding: 18px 25px;
-        border-radius: 20px;
-        margin-bottom: 30px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
-        border: 1px solid #f0f0f0;
-        transform: translateY(-10px);
-    }
-
-    .pm-rating-label {
-        font-weight: 950;
-        font-size: 1.25rem;
-        color: #000000;
-        letter-spacing: 1.5px;
-    }
-
-    .pm-rating-badge {
-        font-family: "Barlow Condensed", sans-serif;
-        padding: 10px 28px;
-        border-radius: 14px;
-        font-size: 2.2rem;
-        font-weight: 800;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        min-width: 90px;
-        text-align: center;
-    }
-
-    .pm-stats-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .pm-stat-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        padding: 14px 20px;
-        border-radius: 14px;
-        background: #ffffff;
-        border: 1px solid #f2f2f2;
-        transition: all 0.2s ease;
-    }
-
-    .pm-stat-row:hover {
-        border-color: #ffde59;
-        background: #fffdf5;
-        transform: translateX(5px);
-    }
-
-    .pm-stat-row.no-data {
-        opacity: 0.35;
-    }
-
-    .pm-stat-label-col {
-        color: #1a1a1a;
-        font-size: 0.95rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .pm-stat-val-col {
-        font-weight: 900;
-        color: #1a1a1a;
-        font-size: 1.1rem;
-        min-width: 70px;
-        text-align: right;
-    }
-
-    .pm-footer {
-        text-align: center;
-        font-size: 0.85rem;
-        color: #aaa;
-        border-top: 1px solid #f8f8f8;
-        padding: 30px 30px;
-        line-height: 1.6;
-        font-style: italic;
-    }
-
-    .pm-footer p {
-        margin: 0;
-        max-width: 90%;
-        margin: 0 auto;
-    }
-
-    @media (max-width: 500px) {
-        .pm-header {
-            padding: 40px 20px 20px;
-        }
-        .pm-info h3 {
-            font-size: 2.2rem;
-        }
-        .pm-photo-container {
-            width: 120px;
-            height: 120px;
-        }
-        .pm-rating-badge {
-            font-size: 1.8rem;
-            padding: 8px 20px;
-        }
-    }
-</style>
+------<dialog id="player-stats-modal" class="player-modal">    <div class="player-modal-container">        <div class="pm-header-bar">            <h3 id="pm-header-title" class="pm-header-title">Estadísticas</h3>            <button id="close-player-modal" class="close-modal-btn">                <svg                    xmlns="http://www.w3.org/2000/svg"                    width="24"                    height="24"                    viewBox="0 0 24 24"                    fill="none"                    stroke="currentColor"                    stroke-width="2"                    stroke-linecap="round"                    stroke-linejoin="round"                    class="icon icon-tabler icons-tabler-outline icon-tabler-x"                >                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>                    <path d="M18 6l-12 12"></path>                    <path d="M6 6l12 12"></path>                </svg>            </button>        </div>        <div class="pm-scrollable-content">            <div class="pm-header">                <div class="pm-photo-container">                    <img id="pm-img" src="" alt="Player image" />                </div>                <img id="pm-flag" src="" alt="Flag" class="pm-flag-divider" />                <div class="pm-info">                    <h3 id="pm-name">Name</h3>                    <p id="pm-pos">Position</p>                </div>            </div>            <div class="pm-body">                <div class="pm-rating-floating">                    <span class="pm-rating-label">VALORACIÓN</span>                    <div id="pm-rating-val" class="pm-rating-badge"></div>                </div>                <div class="pm-stats-section">                    <div class="pm-stats-grid" id="pm-stats-grid"></div>                </div>            </div>            <div class="pm-footer">                <p>                    Información estadística proporcionada por Sofascore y                    procesada por el equipo de análisis de Madrid Femenino Xtra.                </p>            </div>        </div>    </div></dialog><script is:inline>    document.addEventListener("astro:page-load", setupPlayerModals);    document.addEventListener("DOMContentLoaded", setupPlayerModals);    function setupPlayerModals() {        const modal = document.getElementById("player-stats-modal");        const clBtn = document.getElementById("close-player-modal");        if (clBtn && modal) {            clBtn.addEventListener("click", () => {                modal.close();            });            modal.addEventListener("click", (e) => {                if (e.target === modal) modal.close();            });        }        const rows = document.querySelectorAll(".clickable-player-row");        rows.forEach((row) => {            row.addEventListener("click", (e) => {                e.preventDefault();                const playerStr = row.getAttribute("data-player");                if (!playerStr) return;                try {                    const data = JSON.parse(decodeURIComponent(playerStr));                    openPlayerModal(data);                } catch (err) {                    console.error("Error parsing player data:", err);                }            });        });    }    function getRatingColor(val) {        if (!val) return "#e0e0e0";        if (val === 10) return "#000080"; // Azul oscuro        if (val >= 9) return "#00ced1"; // Azul turquesa        if (val >= 7.5) return "#4caf50"; // Verde        if (val >= 6.8) return "#ffeb3b"; // Amarillo        if (val >= 6.0) return "#ff9800"; // Naranja        return "#f44336"; // Rojo    }    function openPlayerModal(player) {        const modal = document.getElementById("player-stats-modal");        if (!modal) return;        const pmHeaderTitle = document.getElementById("pm-header-title");        const pmImg = document.getElementById("pm-img");        const pmFlag = document.getElementById("pm-flag");        const pmName = document.getElementById("pm-name");        const pmPos = document.getElementById("pm-pos");        const pmRatingVal = document.getElementById("pm-rating-val");        const pmStatsGrid = document.getElementById("pm-stats-grid");        if (pmHeaderTitle)            pmHeaderTitle.textContent = player.name || "Estadísticas";        pmImg.src = player.imageUrl || "/src/assets/jugadoras/placeholder.png";        pmImg.alt = player.name || "Jugadora";        if (player.flagUrl) {            pmFlag.src = player.flagUrl;            pmFlag.style.display = "block";        } else {            pmFlag.style.display = "none";        }        pmName.textContent = player.name;        pmPos.textContent = player.pos;        const stats = player.stats || {};        const rating = parseFloat(stats.valoracion);        if (rating && !isNaN(rating)) {            pmRatingVal.textContent = rating.toFixed(1);            const bgColor = getRatingColor(rating);            pmRatingVal.style.backgroundColor = bgColor;            pmRatingVal.style.color =                bgColor === "#000080" ||                bgColor === "#f44336" ||                bgColor === "#4caf50"                    ? "#fff"                    : "#000";            pmRatingVal.parentElement.style.display = "flex";        } else {            pmRatingVal.textContent = "-";            pmRatingVal.style.backgroundColor = "#eee";            pmRatingVal.style.color = "#999";        }        const metrics = [            { label: "Goles", val: player.goals },            { label: "Asistencias", val: player.assists },            { label: "Pases Clave", val: stats.pases_clave },            { label: "Tiros", val: stats.tiros_totales },            { label: "Tiros a Puerta", val: stats.tiros_puerta },            { label: "Toques", val: stats.toques },            { label: "Toques Área Rival", val: stats.toques_area_rival },            {                label: "Pases Comp.",                val:                    stats.pases_totales > 0                        ? `${stats.pases_completados || 0}/${stats.pases_totales || 0}`                        : null,            },            {                label: "Pases Últ. Tercio",                val:                    stats.pases_ultimo_tercio_totales > 0                        ? `${stats.pases_ultimo_tercio_completados || 0}/${stats.pases_ultimo_tercio_totales || 0}`                        : null,            },            {                label: "Pases en Largo",                val:                    stats.pases_largo_totales > 0                        ? `${stats.pases_largo_completados || 0}/${stats.pases_largo_totales || 0}`                        : null,            },            {                label: "Centros",                val:                    stats.centros_totales > 0                        ? `${stats.centros_completados || 0}/${stats.centros_totales || 0}`                        : null,            },            { label: "Fueras de Juego", val: stats.fueras_juego },            {                label: "Regates Comp.",                val:                    stats.regates_totales > 0                        ? `${stats.regates_completados || 0}/${stats.regates_totales || 0}`                        : null,            },            { label: "Pérdidas", val: stats.perdidas },            { label: "Entradas", val: stats.entradas },            { label: "Intercepciones", val: stats.intercepciones },            { label: "Bloqueos", val: stats.bloqueos },            { label: "Despejes", val: stats.despejes },            { label: "Regateada", val: stats.regateada },            {                label: "Duelos Suelo",                val:                    stats.duelos_suelo_totales > 0                        ? `${stats.duelos_suelo_ganados || 0}/${stats.duelos_suelo_totales || 0}`                        : null,            },            {                label: "Duelos Aéreos",                val:                    stats.duelos_aereos_totales > 0                        ? `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_ganados || 0}`                        : null,            },            { label: "Faltas Recibidas", val: stats.faltas_recibidas },            { label: "Faltas Cometidas", val: stats.faltas_cometidas },        ];        pmStatsGrid.innerHTML = "";        metrics.forEach((m) => {            const hasData =                m.val !== undefined &&                m.val !== null &&                m.val !== "" &&                m.val !== "0/0" &&                m.val !== 0;            const div = document.createElement("div");            div.className = `pm-stat-row ${!hasData ? "no-data" : ""}`;            const htmlStr =                '<span class="pm-stat-label-col">' +                m.label +                "</span>" +                '<span class="pm-stat-val-col">' +                (hasData ? m.val : "0") +                "</span>";            div.innerHTML = htmlStr;            pmStatsGrid.appendChild(div);        });        modal.showModal();    }</script><style>    .player-modal {        border: none;        border-radius: 32px;        background: #ffffff;        color: #2b2b2b;        padding: 0;        max-width: 500px;        width: 95%;        box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.4);        position: fixed;        top: 50%;        left: 50%;        transform: translate(-50%, -50%);        max-height: 85vh;        overflow: hidden;     }    .player-modal-container {        display: flex;        flex-direction: column;        max-height: 85vh;        width: 100%;    }    .pm-scrollable-content {        overflow-y: auto;        flex: 1;        padding-bottom: 20px;        scrollbar-width: thin;        scrollbar-color: #ffde59 #f5f5f5;    }    .pm-scrollable-content::-webkit-scrollbar {        width: 10px;    }    .pm-scrollable-content::-webkit-scrollbar-track {        background: #f5f5f5;        margin-top: 10px;         margin-bottom: 20px;         border-radius: 10px;    }    .pm-scrollable-content::-webkit-scrollbar-thumb {        background-color: #ffde59;        border-radius: 20px;        border: 3px solid #f5f5f5;    }    .player-modal::backdrop {        background: rgba(0, 0, 0, 0.7);        backdrop-filter: blur(12px);    }    .pm-header-bar {        background: #ffde59;        padding: 12px 25px;        display: flex;        justify-content: space-between;        align-items: center;        z-index: 100;        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);        border-top-left-radius: 32px;        border-top-right-radius: 32px;    }    .pm-header-title {        margin: 0;        color: #1a1a1a;        font-size: 1.1rem;        font-weight: 800;        text-transform: uppercase;        letter-spacing: 0.5px;    }    .close-modal-btn {        background: transparent;        border: none;        color: #1a1a1a;        cursor: pointer;        display: flex;        align-items: center;        padding: 4px;        border-radius: 50%;        transition: all 0.2s;    }    .close-modal-btn:hover {        background: rgba(0, 0, 0, 0.1);        transform: scale(1.1);    }    .pm-header {        display: flex;        flex-direction: column;        align-items: center;        text-align: center;        padding: 40px 20px 20px;    }    .pm-photo-container {        width: 140px;        height: 140px;        border-radius: 50%;        overflow: hidden;        border: 4px solid #ffde59;        margin-bottom: 20px;        background: #f9f9f9;        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);    }    .pm-photo-container img {        width: 100%;        height: 100%;        object-fit: cover;        object-position: top center;    }    .pm-flag-divider {        width: 32px;        height: auto;        border-radius: 4px;        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);        margin-bottom: 20px;    }    .pm-info h3 {        margin: 0;        font-family: "Barlow Condensed", sans-serif;        font-size: 2.8rem;        font-weight: 800;        text-transform: uppercase;        color: #1a1a1a;        line-height: 0.9;        letter-spacing: -1.5px;    }    .pm-info p {        margin: 8px 0 0;        color: #2b2b2b;        font-size: 1.1rem;        font-weight: 700;        text-transform: uppercase;        letter-spacing: 2px;    }    .pm-body {        padding: 0 30px 10px;    }    .pm-rating-floating {        display: flex;        align-items: center;        justify-content: space-between;        background: #ffffff;        padding: 18px 25px;        border-radius: 20px;        margin-bottom: 30px;        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);        border: 1px solid #f0f0f0;        transform: translateY(-10px);    }    .pm-rating-label {        font-weight: 950;        font-size: 1.25rem;        color: #000000;        letter-spacing: 1.5px;    }    .pm-rating-badge {        font-family: "Barlow Condensed", sans-serif;        padding: 10px 28px;        border-radius: 14px;        font-size: 2.2rem;        font-weight: 800;        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);        min-width: 90px;        text-align: center;    }    .pm-stats-grid {        display: flex;        flex-direction: column;        gap: 10px;    }    .pm-stat-row {        display: grid;        grid-template-columns: 1fr auto;        align-items: center;        padding: 14px 20px;        border-radius: 14px;        background: #ffffff;        border: 1px solid #f2f2f2;        transition: all 0.2s ease;    }    .pm-stat-row:hover {        border-color: #ffde59;        background: #fffdf5;        transform: translateX(5px);    }    .pm-stat-row.no-data {        opacity: 0.35;    }    .pm-stat-label-col {        color: #1a1a1a;        font-size: 0.95rem;        font-weight: 900;        text-transform: uppercase;        letter-spacing: 0.5px;    }    .pm-stat-val-col {        font-weight: 900;        color: #1a1a1a;        font-size: 1.1rem;        min-width: 70px;        text-align: right;    }    .pm-footer {        text-align: center;        font-size: 0.85rem;        color: #aaa;        border-top: 1px solid #f8f8f8;        padding: 30px 30px;        line-height: 1.6;        font-style: italic;    }    .pm-footer p {        margin: 0;        max-width: 90%;        margin: 0 auto;    }    @media (max-width: 500px) {        .pm-header {            padding: 40px 20px 20px;        }        .pm-info h3 {            font-size: 2.2rem;        }        .pm-photo-container {            width: 120px;            height: 120px;        }        .pm-rating-badge {            font-size: 1.8rem;            padding: 8px 20px;        }    }</style>
