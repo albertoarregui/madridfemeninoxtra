@@ -105,8 +105,8 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             const isAmistoso = comp.includes('amistoso') || comp.includes('friendly');
             if (isAmistoso) return;
 
-            const localId = m.id_club_local;
-            const visitanteId = m.id_club_visitante;
+            const localId = String(m.id_club_local);
+            const visitanteId = String(m.id_club_visitante);
             const gRM = Number(m.goles_rm) || 0;
             const gRiv = Number(m.goles_rival) || 0;
             const pen = String(m.penaltis || '').trim();
@@ -129,31 +129,20 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 }
                 const s = statsMap.get(clubId)!;
                 s.played += 1;
-                // From Real Madrid's perspective: if this club is the visitante, RM was local
-                const isRMLocal = (clubId === visitanteId);
-                if (isRMLocal) {
-                    // RM played at home, gRM = local goals
-                    if (result === 'W') s.losses += 1;
-                    else if (result === 'L') s.wins += 1;
-                    else s.draws += 1;
-                    s.gf += gRiv; // rival's goals
-                    s.ga += gRM;
-                    if (gRM === 0) s.cleanSheets += 1;
-                } else {
-                    // This club was local, RM was away
-                    if (result === 'W') s.losses += 1;
-                    else if (result === 'L') s.wins += 1;
-                    else s.draws += 1;
-                    s.gf += gRiv;
-                    s.ga += gRM;
-                    if (gRM === 0) s.cleanSheets += 1;
-                }
+
+                if (result === 'W') s.wins += 1;
+                else if (result === 'L') s.losses += 1;
+                else s.draws += 1;
+
+                s.gf += gRM;
+                s.ga += gRiv;
+                if (gRiv === 0) s.cleanSheets += 1;
             }
         });
 
         const rivals = clubsResult.rows
             .map((rival: any) => {
-                const s = statsMap.get(rival.id_club);
+                const s = statsMap.get(String(rival.id_club));
                 if (!s || s.played === 0) return null;
 
                 const played = s.played;
