@@ -10,6 +10,7 @@ export interface AwardData {
     fecha: string;
     temporada?: string;
     mes?: string;
+    foto_url?: string | null;
 }
 
 export async function fetchPlayerAwards(): Promise<AwardData[]> {
@@ -28,8 +29,9 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 j.nombre,
                 p.tipo,
                 p.titulo,
-                p.fecha
-            FROM jugadora_del_mes p
+                p.fecha,
+                p.foto_url
+            FROM mvp p
             JOIN jugadoras j ON p.id_jugadora = j.id_jugadora
             ORDER BY 
                 substr(p.fecha, 7, 4) DESC, 
@@ -65,6 +67,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 fecha: row.fecha, // keep original string for widget compatibility
                 temporada: temporada,
                 mes: mes,
+                foto_url: row.foto_url,
                 _timestamp: date.getTime()
             };
         });

@@ -109,8 +109,11 @@ const awards = allAwards.map((award) => {
         month: monthName,
         year: year,
         player: award.nombre.toUpperCase(),
-        image: image || defaultLindaImg,
-        hasImage: image !== null,
+        image: award.foto_url || image || defaultLindaImg,
+        hasImage: !!award.foto_url || image !== null,
+        isExternalUrl: !!award.foto_url,
+        tipo: award.tipo,
+        temporada: award.temporada,
     };
 });
 
@@ -135,20 +138,28 @@ if (awards.length === 0) {
 ---
 
 <div
-    class="player-month-widget group relative overflow-hidden rounded-xl bg-white shadow-md border border-gray-200 mb-8 aspect-square md:aspect-[4/3] w-full"
+    class="player-month-widget group relative overflow-hidden rounded-xl bg-white shadow-md border border-gray-200 mb-8 w-full"
 >
     {
         awards.map((award, index) => (
             <div
-                class={`award-slide absolute inset-0 transition-opacity duration-500 ${index === 0 ? "opacity-100 z-10" : "opacity-0 z-0"} ${!award.hasImage ? "bg-gray-300" : ""}`}
+                class={`award-slide w-full transition-opacity duration-500 ${index === 0 ? "opacity-100 z-10 relative block" : "opacity-0 z-0 absolute top-0 left-0 hidden"} ${!award.hasImage ? "bg-gray-300 min-h-[400px]" : ""}`}
                 data-index={index}
             >
                 {award.hasImage ? (
-                    <Image
-                        src={award.image}
-                        alt={`Jugadora del mes ${award.month}`}
-                        class="h-full w-full object-cover"
-                    />
+                    award.isExternalUrl ? (
+                        <img
+                            src={award.image as string}
+                            alt={`MVP ${award.month || award.temporada}`}
+                            class="w-full h-auto object-cover"
+                        />
+                    ) : (
+                        <Image
+                            src={award.image}
+                            alt={`MVP ${award.month || award.temporada}`}
+                            class="w-full h-auto object-cover"
+                        />
+                    )
                 ) : (
                     <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center">
                         <div class="text-gray-500 text-center">
@@ -177,9 +188,14 @@ if (awards.length === 0) {
                     <div class="text-3xl font-black uppercase leading-none shadow-black drop-shadow-lg text-center mb-2">
                         {award.player}
                     </div>
-                    <div class="text-base font-bold text-[#ffde59] opacity-100 uppercase tracking-widest shadow-black drop-shadow-md text-center">
-                        {award.month} {award.year}
-                    </div>
+                </div>
+
+                <div
+                    class={`photo-season-badge ${award.tipo === "TEMPORADA" ? "temporada-badge" : ""}`}
+                >
+                    {award.tipo === "TEMPORADA"
+                        ? `MVP ${award.temporada}`
+                        : `MVP ${award.month} ${award.year}`}
                 </div>
             </div>
         ))
@@ -229,6 +245,31 @@ if (awards.length === 0) {
     }
 </div>
 
+<style>
+    .photo-season-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        transform: none;
+        background: #151e42;
+        color: #ffde59;
+        padding: 0.35rem 1rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 900;
+        font-family: "Archivo Black", sans-serif;
+        letter-spacing: 0.5px;
+        border: none;
+        white-space: nowrap;
+        z-index: 20;
+    }
+
+    .photo-season-badge.temporada-badge {
+        background: #d4af37; /* Golden background for season */
+        color: #fff;
+    }
+</style>
+
 <script>
     document.addEventListener("astro:page-load", () => {
         initSliders();
@@ -264,11 +305,35 @@ if (awards.length === 0) {
             function showSlide(index: number) {
                 slides.forEach((slide, i) => {
                     if (i === index) {
-                        slide.classList.remove("opacity-0", "z-0");
-                        slide.classList.add("opacity-100", "z-10");
+                        slide.classList.remove(
+                            "opacity-0",
+                            "z-0",
+                            "absolute",
+                            "top-0",
+                            "left-0",
+                            "hidden",
+                        );
+                        slide.classList.add(
+                            "opacity-100",
+                            "z-10",
+                            "relative",
+                            "block",
+                        );
                     } else {
-                        slide.classList.remove("opacity-100", "z-10");
-                        slide.classList.add("opacity-0", "z-0");
+                        slide.classList.remove(
+                            "opacity-100",
+                            "z-10",
+                            "relative",
+                            "block",
+                        );
+                        slide.classList.add(
+                            "opacity-0",
+                            "z-0",
+                            "absolute",
+                            "top-0",
+                            "left-0",
+                            "hidden",
+                        );
                     }
                 });
                 updateButtons();
