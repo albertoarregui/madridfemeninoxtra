@@ -52,7 +52,8 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             return [];
         }
 
-        const query = `
+        // Step 1: get all clubs (excluding Real Madrid)
+        const clubsQuery = `
             SELECT 
                 c.id_club,
                 c.nombre,
@@ -66,105 +67,136 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 e.capacidad,
                 e.lat as estadio_lat,
                 e.lng as estadio_lng,
-                e.foto_url as estadio_foto_url,
-                COUNT(DISTINCT CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    THEN p.id_partido 
-                END) as played,
-                COALESCE(SUM(CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    AND CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
-                    ELSE 0 
-                END), 0) as wins,
-                COALESCE(SUM(CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) 
-                    AND (p.penaltis IS NULL OR TRIM(p.penaltis) = '') THEN 1 
-                    ELSE 0 
-                END), 0) as draws,
-                COALESCE(SUM(CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    AND CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    AND CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
-                    ELSE 0 
-                END), 0) as losses,
-                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' THEN CAST(p.goles_rm AS INTEGER) ELSE 0 END), 0) as gf,
-                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' THEN CAST(p.goles_rival AS INTEGER) ELSE 0 END), 0) as ga,
-                COALESCE(SUM(CASE WHEN p.goles_rm IS NOT NULL AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%' AND CAST(p.goles_rival AS INTEGER) = 0 THEN 1 ELSE 0 END), 0) as clean_sheets
-            FROM 
-                clubes c
-            LEFT JOIN
-                estadios e ON c.estadio = e.id_estadio
-            LEFT JOIN
-                partidos p ON (p.id_club_local = c.id_club OR p.id_club_visitante = c.id_club)
-            LEFT JOIN
-                competiciones comp ON p.id_competicion = comp.id_competicion
-            WHERE
-                UPPER(c.nombre) NOT LIKE '%REAL MADRID%'
-            GROUP BY
-                c.id_club
-            HAVING
-                COUNT(DISTINCT CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    THEN p.id_partido 
-                END) > 0
-            ORDER BY 
-                COUNT(DISTINCT CASE 
-                    WHEN p.goles_rm IS NOT NULL 
-                    AND COALESCE(comp.competicion, '') NOT LIKE '%Amistoso%'
-                    THEN p.id_partido 
-                END) DESC, c.nombre ASC
+                e.foto_url as estadio_foto_url
+            FROM clubes c
+            LEFT JOIN estadios e ON c.estadio = e.id_estadio
+            WHERE UPPER(c.nombre) NOT LIKE '%REAL MADRID%'
+            ORDER BY c.nombre ASC
         `;
 
-        const result = await client.execute(query);
+        // Step 2: get all matches with club IDs and competition info
+        const matchesQuery = `
+            SELECT 
+                p.id_partido,
+                p.id_club_local,
+                p.id_club_visitante,
+                p.goles_rm,
+                p.goles_rival,
+                p.penaltis,
+                comp.competicion
+            FROM partidos p
+            LEFT JOIN competiciones comp ON p.id_competicion = comp.id_competicion
+            WHERE p.goles_rm IS NOT NULL
+        `;
 
-        return result.rows.map((rival: any) => {
-            const played = Number(rival.played || 0);
-            const wins = Number(rival.wins || 0);
-            const draws = Number(rival.draws || 0);
-            const losses = Number(rival.losses || 0);
+        const [clubsResult, matchesResult] = await Promise.all([
+            client.execute(clubsQuery),
+            client.execute(matchesQuery)
+        ]);
 
-            return {
-                id_club: rival.id_club,
-                nombre: cleanApiValue(rival.nombre) || '',
-                ciudad: cleanApiValue(rival.ciudad) || '',
-                pais: cleanApiValue(rival.pais) || '',
-                iso: cleanApiValue(rival.iso) || '',
-                flagUrl: getFlagSrc(cleanApiValue(rival.iso) || cleanApiValue(rival.pais) || undefined),
-                slug: rival.slug || slugify(rival.nombre),
-                estadio: cleanApiValue(rival.estadio) || '',
-                capacidad: cleanApiValue(rival.capacidad) || '-',
-                lat: rival.estadio_lat != null ? Number(rival.estadio_lat) : null,
-                lng: rival.estadio_lng != null ? Number(rival.estadio_lng) : null,
-                shieldUrl: getRivalShieldUrl(rival),
-                escudo_url: cleanApiValue(rival.escudo_url),
-                foto_url: cleanApiValue(rival.club_foto_url),
-                estadio_foto_url: cleanApiValue(rival.estadio_foto_url),
-                stats: {
-                    played,
-                    wins,
-                    draws,
-                    losses,
-                    gf: Number(rival.gf || 0),
-                    ga: Number(rival.ga || 0),
-                    gd: Number(rival.gf || 0) - Number(rival.ga || 0),
-                    cleanSheets: Number(rival.clean_sheets || 0),
-                    winPct: played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0',
-                    drawPct: played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0',
-                    lossPct: played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0'
+        // Build stats per club in JS
+        const statsMap = new Map<any, {
+            played: number; wins: number; draws: number; losses: number;
+            gf: number; ga: number; cleanSheets: number;
+        }>();
+
+        matchesResult.rows.forEach((m: any) => {
+            const comp = (m.competicion || '').toLowerCase();
+            const isAmistoso = comp.includes('amistoso') || comp.includes('friendly');
+            if (isAmistoso) return;
+
+            const localId = m.id_club_local;
+            const visitanteId = m.id_club_visitante;
+            const gRM = Number(m.goles_rm) || 0;
+            const gRiv = Number(m.goles_rival) || 0;
+            const pen = String(m.penaltis || '').trim();
+
+            let result: 'W' | 'D' | 'L';
+            if (gRM > gRiv) result = 'W';
+            else if (gRM < gRiv) result = 'L';
+            else if (pen === '1') result = 'W';
+            else if (pen === '0') result = 'L';
+            else result = 'D';
+
+            // The "rival" is the non-Real Madrid club
+            // Both localId and visitanteId might be rivals if we look at it from both sides
+            // But we only want the rival club (not RM)
+            // We'll add stats for both IDs — RM won't appear because it's excluded from clubs
+            for (const clubId of [localId, visitanteId]) {
+                if (!clubId) continue;
+                if (!statsMap.has(clubId)) {
+                    statsMap.set(clubId, { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, cleanSheets: 0 });
                 }
-            };
+                const s = statsMap.get(clubId)!;
+                s.played += 1;
+                // From Real Madrid's perspective: if this club is the visitante, RM was local
+                const isRMLocal = (clubId === visitanteId);
+                if (isRMLocal) {
+                    // RM played at home, gRM = local goals
+                    if (result === 'W') s.losses += 1;
+                    else if (result === 'L') s.wins += 1;
+                    else s.draws += 1;
+                    s.gf += gRiv; // rival's goals
+                    s.ga += gRM;
+                    if (gRM === 0) s.cleanSheets += 1;
+                } else {
+                    // This club was local, RM was away
+                    if (result === 'W') s.losses += 1;
+                    else if (result === 'L') s.wins += 1;
+                    else s.draws += 1;
+                    s.gf += gRiv;
+                    s.ga += gRM;
+                    if (gRM === 0) s.cleanSheets += 1;
+                }
+            }
         });
+
+        const rivals = clubsResult.rows
+            .map((rival: any) => {
+                const s = statsMap.get(rival.id_club);
+                if (!s || s.played === 0) return null;
+
+                const played = s.played;
+                const wins = s.wins;
+                const draws = s.draws;
+                const losses = s.losses;
+
+                return {
+                    id_club: rival.id_club,
+                    nombre: cleanApiValue(rival.nombre) || '',
+                    ciudad: cleanApiValue(rival.ciudad) || '',
+                    pais: cleanApiValue(rival.pais) || '',
+                    iso: cleanApiValue(rival.iso) || '',
+                    flagUrl: getFlagSrc(cleanApiValue(rival.iso) || cleanApiValue(rival.pais) || undefined),
+                    slug: rival.slug || slugify(rival.nombre),
+                    estadio: cleanApiValue(rival.estadio) || '',
+                    capacidad: cleanApiValue(rival.capacidad) || '-',
+                    lat: rival.estadio_lat != null ? Number(rival.estadio_lat) : null,
+                    lng: rival.estadio_lng != null ? Number(rival.estadio_lng) : null,
+                    shieldUrl: getRivalShieldUrl(rival),
+                    escudo_url: cleanApiValue(rival.escudo_url),
+                    foto_url: cleanApiValue(rival.club_foto_url),
+                    estadio_foto_url: cleanApiValue(rival.estadio_foto_url),
+                    stats: {
+                        played,
+                        wins,
+                        draws,
+                        losses,
+                        gf: s.gf,
+                        ga: s.ga,
+                        gd: s.gf - s.ga,
+                        cleanSheets: s.cleanSheets,
+                        winPct: played > 0 ? ((wins / played) * 100).toFixed(1) : '0.0',
+                        drawPct: played > 0 ? ((draws / played) * 100).toFixed(1) : '0.0',
+                        lossPct: played > 0 ? ((losses / played) * 100).toFixed(1) : '0.0'
+                    }
+                };
+            })
+            .filter(Boolean)
+            .sort((a: any, b: any) => b.stats.played - a.stats.played || a.nombre.localeCompare(b.nombre));
+
+        return rivals;
+
     } catch (error) {
         console.error("Error al obtener rivales directamente de la DB:", error);
         return [];
