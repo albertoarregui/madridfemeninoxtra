@@ -114,6 +114,7 @@ const awards = allAwards.map((award) => {
         isExternalUrl: !!award.foto_url,
         tipo: award.tipo,
         temporada: award.temporada,
+        titulo: award.titulo,
     };
 });
 
@@ -133,33 +134,38 @@ if (awards.length === 0) {
         player: "LINDA CAICEDO",
         image: defaultLindaImg,
         hasImage: true,
+        isExternalUrl: false,
+        tipo: 'MVP_MES',
+        temporada: undefined,
+        titulo: 'Mejor Jugadora Enero 2026'
     });
 }
 ---
 
 <div
-    class="player-month-widget group relative overflow-hidden rounded-xl bg-white shadow-md border border-gray-200 mb-8 w-full"
+    class="player-month-widget group relative overflow-hidden rounded-xl bg-white shadow-md border border-gray-200 mb-8 w-full aspect-[4/5]"
 >
     {
         awards.map((award, index) => (
             <div
-                class={`award-slide w-full transition-opacity duration-500 ${index === 0 ? "opacity-100 z-10 relative block" : "opacity-0 z-0 absolute top-0 left-0 hidden"} ${!award.hasImage ? "bg-gray-300 min-h-[400px]" : ""}`}
+                class={`award-slide w-full h-full transition-opacity duration-500 ${index === 0 ? "opacity-100 z-10 relative block" : "opacity-0 z-0 absolute top-0 left-0 hidden"} ${!award.hasImage ? "bg-gray-300 min-h-[400px]" : ""}`}
                 data-index={index}
             >
                 {award.hasImage ? (
                     award.isExternalUrl ? (
                         <img
                             src={award.image as string}
-                            alt={`MVP ${award.month || award.temporada}`}
-                            class="w-full h-auto object-cover"
+                            alt={award.titulo || `MVP ${award.month}`}
+                            class="w-full h-full object-cover"
                         />
                     ) : (
                         <Image
-                            src={award.image}
-                            alt={`MVP ${award.month || award.temporada}`}
-                            class="w-full h-auto object-cover"
+                            src={award.image as ImageMetadata}
+                            alt={award.titulo || `MVP ${award.month}`}
+                            class="w-full h-full object-cover"
                         />
                     )
+
                 ) : (
                     <div class="h-full w-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center">
                         <div class="text-gray-500 text-center">
@@ -184,18 +190,18 @@ if (awards.length === 0) {
                     </div>
                 )}
 
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-12 pb-6 px-4 text-white flex flex-col items-center justify-end">
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-14 pb-6 px-4 text-white flex flex-col items-center justify-end">
                     <div class="text-3xl font-black uppercase leading-none shadow-black drop-shadow-lg text-center mb-2">
                         {award.player}
                     </div>
-                </div>
-
-                <div
-                    class={`photo-season-badge ${award.tipo === "TEMPORADA" ? "temporada-badge" : ""}`}
-                >
-                    {award.tipo === "TEMPORADA"
-                        ? `MVP ${award.temporada}`
-                        : `MVP ${award.month} ${award.year}`}
+                    
+                    <div
+                        class={`photo-season-badge-bottom ${award.tipo === "MVP_TEMPORADA" ? "temporada-badge-bottom" : ""}`}
+                    >
+                        {award.tipo === "MVP_TEMPORADA"
+                            ? award.titulo.toUpperCase().replace('MEJOR JUGADORA DE LA TEMPORADA', 'MVP TEMPORADA')
+                            : `MVP ${award.month} ${award.year}`}
+                    </div>
                 </div>
             </div>
         ))
@@ -245,28 +251,24 @@ if (awards.length === 0) {
     }
 </div>
 
-<style>
-    .photo-season-badge {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        transform: none;
-        background: #151e42;
+    .photo-season-badge-bottom {
+        display: inline-block;
+        background: rgba(43, 43, 43, 0.7);
         color: #ffde59;
-        padding: 0.35rem 1rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        font-weight: 900;
-        font-family: "Archivo Black", sans-serif;
-        letter-spacing: 0.5px;
-        border: none;
+        padding: 0.25rem 1rem;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 222, 89, 0.3);
         white-space: nowrap;
-        z-index: 20;
+        margin-top: 0.25rem;
     }
 
-    .photo-season-badge.temporada-badge {
-        background: #d4af37; /* Golden background for season */
+    .photo-season-badge-bottom.temporada-badge-bottom {
+        background: rgba(212, 175, 55, 0.85); /* Golden background */
         color: #fff;
+        border-color: rgba(255, 255, 255, 0.5);
     }
 </style>
 
