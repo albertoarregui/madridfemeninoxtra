@@ -608,12 +608,22 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             WHERE og.id_partido = ?
         `;
 
-        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult] = await Promise.all([
+        const rivalGoalsQuery = `
+            SELECT * FROM goles_rival WHERE id_partido = ?
+        `;
+
+        const rivalCardsQuery = `
+            SELECT * FROM tarjetas_rival WHERE id_partido = ?
+        `;
+
+        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult, rivalGoalsResult, rivalCardsResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
             client.execute({ sql: cardsQuery, args: [matchId] }),
             client.execute({ sql: penaltyShootoutQuery, args: [matchId] }),
-            client.execute({ sql: ownGoalsQuery, args: [matchId] })
+            client.execute({ sql: ownGoalsQuery, args: [matchId] }),
+            client.execute({ sql: rivalGoalsQuery, args: [matchId] }),
+            client.execute({ sql: rivalCardsQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -729,6 +739,52 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 player: playerName,
                 team: pt.id_jugadora ? 'local' : 'rival',
                 order: pt.orden
+            });
+        }
+
+        // Goles Rival
+        for (const goal of rivalGoalsResult.rows) {
+            const tipoLower = String(goal.tipo || '').toLowerCase().trim();
+            let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
+            if (goal.asistente) {
+                goalText += ` (Asis. ${goal.asistente})`;
+            }
+
+            events.push({
+                minute: parseMinuteInternal(goal.minuto),
+                displayMinute: formatDisplayMinute(goal.minuto),
+                type: 'goal',
+                text: goalText,
+                scorer: goal.goleadora,
+                assistant: goal.asistente,
+                isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
+                isOwnGoal: false,
+                team: 'rival'
+            });
+        }
+
+        // Tarjetas Rival
+        for (const card of rivalCardsResult.rows) {
+            const rawType = String(card.tipo_tarjeta || '').toUpperCase();
+            let cardType = 'Yellow';
+            let cardText = 'Tarjeta amarilla';
+
+            if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
+                cardType = 'DoubleYellow';
+                cardText = 'Doble amarilla';
+            } else if (rawType.includes('ROJA') || rawType === 'RED') {
+                cardType = 'Red';
+                cardText = 'Tarjeta roja';
+            }
+
+            events.push({
+                minute: parseMinuteInternal(card.minuto),
+                displayMinute: formatDisplayMinute(card.minuto),
+                type: 'card',
+                cardType: cardType,
+                text: `${cardText} a ${card.nombre || 'Jugadora'}`,
+                player: card.nombre,
+                team: 'rival'
             });
         }
 
