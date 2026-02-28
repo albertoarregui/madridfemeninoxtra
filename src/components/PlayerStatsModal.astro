@@ -5,7 +5,7 @@
 <dialog id="player-stats-modal" class="player-modal">
     <div class="player-modal-content">
         <div class="pm-header-bar">
-            <h3 class="pm-modal-title">Ficha Técnica</h3>
+            <div class="pm-modal-logo">MNX</div>
             <button id="close-player-modal" class="close-modal-btn">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -156,24 +156,39 @@
             { label: "Toques Área Rival", val: stats.toques_area_rival },
             {
                 label: "Pases Comp.",
-                val: `${stats.pases_completados || 0}/${stats.pases_totales || 0}`,
+                val:
+                    stats.pases_totales > 0
+                        ? `${stats.pases_completados || 0}/${stats.pases_totales || 0}`
+                        : null,
             },
             {
                 label: "Pases Últ. Tercio",
-                val: `${stats.pases_ultimo_tercio_completados || 0}/${stats.pases_ultimo_tercio_totales || 0}`,
+                val:
+                    stats.pases_ultimo_tercio_totales > 0
+                        ? `${stats.pases_ultimo_tercio_completados || 0}/${stats.pases_ultimo_tercio_totales || 0}`
+                        : null,
             },
             {
                 label: "Pases en Largo",
-                val: `${stats.pases_largo_completados || 0}/${stats.pases_largo_totales || 0}`,
+                val:
+                    stats.pases_largo_totales > 0
+                        ? `${stats.pases_largo_completados || 0}/${stats.pases_largo_totales || 0}`
+                        : null,
             },
             {
                 label: "Centros",
-                val: `${stats.centros_completados || 0}/${stats.centros_totales || 0}`,
+                val:
+                    stats.centros_totales > 0
+                        ? `${stats.centros_completados || 0}/${stats.centros_totales || 0}`
+                        : null,
             },
             { label: "Fueras de Juego", val: stats.fueras_juego },
             {
                 label: "Regates Comp.",
-                val: `${stats.regates_completados || 0}/${stats.regates_totales || 0}`,
+                val:
+                    stats.regates_totales > 0
+                        ? `${stats.regates_completados || 0}/${stats.regates_totales || 0}`
+                        : null,
             },
             { label: "Pérdidas", val: stats.perdidas },
             { label: "Entradas", val: stats.entradas },
@@ -183,11 +198,17 @@
             { label: "Regateada", val: stats.regateada },
             {
                 label: "Duelos Suelo",
-                val: `${stats.duelos_suelo_ganados || 0}/${stats.duelos_suelo_totales || 0}`,
+                val:
+                    stats.duelos_suelo_totales > 0
+                        ? `${stats.duelos_suelo_ganados || 0}/${stats.duelos_suelo_totales || 0}`
+                        : null,
             },
             {
                 label: "Duelos Aéreos",
-                val: `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_totales || 0}`,
+                val:
+                    stats.duelos_aereos_totales > 0
+                        ? `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_totales || 0}`
+                        : null,
             },
             { label: "Faltas Recibidas", val: stats.faltas_recibidas },
             { label: "Faltas Cometidas", val: stats.faltas_cometidas },
@@ -210,7 +231,7 @@
                 m.label +
                 "</span>" +
                 '<span class="pm-stat-val-col">' +
-                (m.val || 0) +
+                (hasData ? m.val : "0") +
                 "</span>";
             div.innerHTML = htmlStr;
 
@@ -230,7 +251,7 @@
         padding: 0;
         max-width: 500px;
         width: 95%;
-        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 40px 80px -15px rgba(0, 0, 0, 0.4);
         position: fixed;
         top: 50%;
         left: 50%;
@@ -241,7 +262,7 @@
 
     .player-modal::backdrop {
         background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
     }
 
     .player-modal-content {
@@ -249,38 +270,41 @@
     }
 
     .pm-header-bar {
-        background: #ffde59;
-        padding: 10px 20px;
+        background: transparent;
+        padding: 15px 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
     }
 
-    .pm-modal-title {
-        margin: 0;
-        color: #1a1a1a;
-        font-size: 1rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .pm-modal-logo {
+        color: #ddd;
+        font-weight: 900;
+        font-size: 0.9rem;
+        letter-spacing: 2px;
     }
 
     .close-modal-btn {
-        background: none;
+        background: #f5f5f5;
         border: none;
-        color: #1a1a1a;
+        color: #333;
         cursor: pointer;
         display: flex;
         align-items: center;
-        padding: 4px;
+        padding: 6px;
         border-radius: 50%;
-        transition: all 0.2s;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .close-modal-btn:hover {
-        background: rgba(0, 0, 0, 0.1);
-        transform: scale(1.1);
+        background: #ffde59;
+        transform: rotate(90deg);
     }
 
     .pm-header {
@@ -288,7 +312,7 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        padding: 30px 20px 20px;
+        padding: 50px 20px 20px;
     }
 
     .pm-photo-container {
@@ -297,9 +321,9 @@
         border-radius: 50%;
         overflow: hidden;
         border: 4px solid #ffde59;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
         background: #f9f9f9;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
     }
 
     .pm-photo-container img {
@@ -313,132 +337,138 @@
         width: 32px;
         height: auto;
         border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        margin: 5px 0 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
     }
 
     .pm-info h3 {
         margin: 0;
         font-family: "Barlow Condensed", sans-serif;
-        font-size: 2.5rem;
+        font-size: 2.8rem;
         font-weight: 800;
         text-transform: uppercase;
         color: #1a1a1a;
-        line-height: 1;
-        letter-spacing: -1px;
+        line-height: 0.9;
+        letter-spacing: -1.5px;
     }
 
     .pm-info p {
-        margin: 5px 0 0;
+        margin: 8px 0 0;
         color: #2b2b2b;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 2px;
     }
 
     .pm-body {
-        padding: 0 25px 25px;
+        padding: 0 30px 30px;
     }
 
     .pm-rating-floating {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: #fafafa;
-        padding: 15px 25px;
-        border-radius: 18px;
-        margin-bottom: 25px;
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-        border: 1px solid #eee;
+        background: #ffffff;
+        padding: 18px 25px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06);
+        border: 1px solid #f0f0f0;
+        transform: translateY(-10px);
     }
 
     .pm-rating-label {
-        font-weight: 800;
-        font-size: 0.95rem;
-        color: #888;
-        letter-spacing: 1px;
+        font-weight: 900;
+        font-size: 1rem;
+        color: #999;
+        letter-spacing: 1.5px;
     }
 
     .pm-rating-badge {
         font-family: "Barlow Condensed", sans-serif;
-        padding: 8px 24px;
-        border-radius: 12px;
-        font-size: 2rem;
+        padding: 10px 28px;
+        border-radius: 14px;
+        font-size: 2.2rem;
         font-weight: 800;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        min-width: 80px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        min-width: 90px;
         text-align: center;
     }
 
     .pm-stats-grid {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
     .pm-stat-row {
         display: grid;
         grid-template-columns: 1fr auto;
         align-items: center;
-        padding: 12px 18px;
-        border-radius: 12px;
+        padding: 14px 20px;
+        border-radius: 14px;
         background: #ffffff;
-        border: 1px solid #f0f0f0;
+        border: 1px solid #f2f2f2;
         transition: all 0.2s ease;
     }
 
     .pm-stat-row:hover {
         border-color: #ffde59;
         background: #fffdf5;
-        transform: scale(1.01);
+        transform: translateX(5px);
     }
 
     .pm-stat-row.no-data {
-        opacity: 0.4;
+        opacity: 0.35;
     }
 
     .pm-stat-label-col {
-        color: #666;
-        font-size: 0.85rem;
-        font-weight: 600;
+        color: #333;
+        font-size: 0.95rem;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .pm-stat-val-col {
-        font-weight: 800;
+        font-weight: 900;
         color: #1a1a1a;
         font-size: 1.1rem;
-        min-width: 60px;
+        min-width: 70px;
         text-align: right;
     }
 
     .pm-footer {
         text-align: center;
-        font-size: 0.8rem;
-        color: #999;
-        border-top: 1px solid #f5f5f5;
-        padding: 24px 25px;
+        font-size: 0.85rem;
+        color: #aaa;
+        border-top: 1px solid #f8f8f8;
+        padding: 30px 30px;
         line-height: 1.6;
+        font-style: italic;
     }
 
     .pm-footer p {
         margin: 0;
-        max-width: 80%;
+        max-width: 90%;
         margin: 0 auto;
     }
 
     @media (max-width: 500px) {
         .pm-header {
-            padding: 25px 15px 15px;
+            padding: 60px 20px 20px;
         }
         .pm-info h3 {
-            font-size: 2rem;
+            font-size: 2.2rem;
         }
         .pm-photo-container {
-            width: 110px;
-            height: 110px;
+            width: 120px;
+            height: 120px;
+        }
+        .pm-rating-badge {
+            font-size: 1.8rem;
+            padding: 8px 20px;
         }
     }
 </style>
