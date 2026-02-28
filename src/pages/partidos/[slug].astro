@@ -56,7 +56,15 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer;
-const slugifyLocal = slugify;
+const slugifyForImages = (text: string | null | undefined): string => {
+    if (!text) return "";
+    return text
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[-\s]+/g, "_");
+};
 
 mvpPlayer = {
     name: game.mvp
@@ -64,7 +72,7 @@ mvpPlayer = {
         : "MVP no disponible",
     image:
         game.mvp && game.mvp_nombre
-            ? getPlayerImage(slugifyLocal(game.mvp_nombre))
+            ? getPlayerImage(slugifyForImages(game.mvp_nombre))
             : null,
     id: game.mvp ? String(game.mvp) : "unknown",
 };
@@ -449,7 +457,7 @@ try {
                 </div>
 
                 <section class="lineup-card">
-                    <h2 class="section-header">XI titular</h2>
+                    <h2 class="section-header">Alineaciones</h2>
                     <div class="lineup-list">
                         {
                             lineup.map((player: any) => (
@@ -879,7 +887,9 @@ try {
                 {
                     mvpPlayer && (
                         <section class="mvp-card" style="margin-bottom: 2rem;">
-                            <h2 class="section-header">MVP DEL PARTIDO</h2>
+                            {!(game.mvp_foto_url || mvpPlayer.image) && (
+                                <h2 class="section-header">MVP DEL PARTIDO</h2>
+                            )}
                             <div
                                 class={
                                     game.mvp &&
@@ -935,7 +945,6 @@ try {
                 {
                     game.once_inicial_url && (
                         <section class="xi-card" style="margin-bottom: 2rem;">
-                            <h2 class="section-header">XI INICIAL</h2>
                             <div class="xi-img-wrap">
                                 <img
                                     src={game.once_inicial_url}
@@ -1615,6 +1624,14 @@ try {
         border: 1px solid #ddd;
         border-radius: 8px;
         overflow: hidden;
+    }
+
+    /* Override for full-bleed images in cards */
+    .mvp-card:has(.mvp-content-full-image),
+    .xi-card:has(.xi-img-wrap) {
+        border-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
 
     .match-result-redesigned {
