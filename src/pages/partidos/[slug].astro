@@ -7,6 +7,7 @@ import {
     fetchStadiumStats,
     fetchRefereeStats,
     fetchMatchEvents,
+    slugify,
 } from "../../utils/partidos";
 import { getPlayerImage } from "../../utils/player-images";
 import { v2 as cloudinary } from "cloudinary";
@@ -55,14 +56,7 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer;
-const slugifyLocal = (text: string | null | undefined): string => {
-    if (!text) return "";
-    return text
-        .toLowerCase()
-        .replace(/ /g, "_")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-};
+const slugifyLocal = slugify;
 
 mvpPlayer = {
     name: game.mvp
@@ -114,6 +108,10 @@ const refereeStats = game.id_arbitra
 
 const isLocalRM =
     game.club_local?.toLowerCase().includes("real madrid") ?? false;
+
+// Pre-compute slugs for links (safe, done in frontmatter)
+const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
+const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
 // Fetch Cloudinary images
 let galleryImages: string[] = [];
@@ -252,7 +250,7 @@ try {
                         {
                             game.arbitra_nombre ? (
                                 <a
-                                    href={`/arbitras/${slugify(game.arbitra_nombre)}`}
+                                    href={`/arbitras/${arbitraSlug}`}
                                     class="referee-btn hover:text-[#ffde59] transition-colors decoration-none"
                                 >
                                     <svg
@@ -304,7 +302,7 @@ try {
                     <div class="stadium-info">
                         <p class="stadium-name-large">
                             <a
-                                href={`/estadios/${slugify(game.estadio)}`}
+                                href={`/estadios/${estadioSlug}`}
                                 class="hover:text-[#ffde59] transition-colors decoration-none"
                             >
                                 {game.estadio || "Estadio"}
