@@ -5,31 +5,49 @@ import { fetchAllClubShields } from "../utils/rivales";
 import { getAssetUrl } from "../utils/assets";
 
 const allGoals = await fetchAllGoals();
-const officialComps = [
-    "Liga F",
-    "UWCL",
-    "Copa de la Reina",
-    "Supercopa de España",
-];
 const clubShields = await fetchAllClubShields();
 
-// Global milestones for the club (every 100 goals) and every 10 for the beginning?
-// The user said "cifras redondas de goles (cada 10 goles)". Let's stick to every 10.
-const milestones = allGoals
-    .filter((g) => officialComps.includes(g.competicion))
-    .sort((a, b) => {
-        const dateA = new Date(a.fecha).getTime();
-        const dateB = new Date(b.fecha).getTime();
-        if (dateA !== dateB) return dateA - dateB;
-        return parseInt(a.minuto) - parseInt(b.minuto);
+const officialComps = [
+    { id: "Liga F", name: "Liga F", icon: "liga_f" },
+    { id: "UWCL", name: "UWCL", icon: "uwcl" },
+    {
+        id: "Copa de la Reina",
+        name: "Copa de la Reina",
+        icon: "copa_de_la_reina",
+    },
+    {
+        id: "Supercopa de España",
+        name: "Supercopa",
+        icon: "supercopa_de_espana",
+    },
+];
+
+const milestonesByComp = officialComps
+    .map((comp) => {
+        const compGoals = allGoals
+            .filter((g) => g.competicion === comp.id)
+            .sort((a, b) => {
+                const dateA = new Date(a.fecha).getTime();
+                const dateB = new Date(b.fecha).getTime();
+                if (dateA !== dateB) return dateA - dateB;
+                return parseInt(a.minuto) - parseInt(b.minuto);
+            })
+            .map((g, index) => ({
+                ...g,
+                goalNumber: index + 1,
+                rival:
+                    g.club_local === "Real Madrid"
+                        ? g.club_visitante
+                        : g.club_local,
+            }))
+            .filter((g) => g.goalNumber % 10 === 0);
+
+        return {
+            ...comp,
+            goals: compGoals,
+        };
     })
-    .map((g, index) => ({
-        ...g,
-        goalNumber: index + 1,
-        rival: g.club_local === "Real Madrid" ? g.club_visitante : g.club_local,
-    }))
-    .filter((g) => g.goalNumber % 10 === 0)
-    .reverse(); // Latest milestones first
+    .filter((c) => c.goals.length > 0);
 
 const formatShortDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -48,131 +66,130 @@ const formatShortDate = (dateString: string | null | undefined): string => {
 ---
 
 <Layout
-    title="Récords y Goles Históricos | Madrid Femenino Xtra"
-    description="Repaso por los hitos goleadores y récords del Real Madrid Femenino. Cifras redondas de goles y momentos históricos."
+    title="Récords | Madrid Femenino Xtra"
+    description="Marcas de goles redondos a lo largo de la historia del Real Madrid femenino."
 >
     <main class="records-page">
         <header class="records-header">
-            <h1 class="page-title">Récords e Hitos Goleadores</h1>
+            <h1 class="page-title">RÉCORDS</h1>
             <p class="subtitle">
-                Repaso por las cifras redondas que marcan la historia de nuestra
-                sección femenina.
+                Marcas de goles redondos a lo largo de la historia del Real
+                Madrid femenino.
             </p>
         </header>
 
-        <section class="milestones-container">
-            <div class="milestones-grid">
-                {
-                    milestones.map((m) => (
-                        <div
-                            class={`milestone-card-big ${m.video_url ? "has-video" : ""}`}
-                            onclick={
-                                m.video_url
-                                    ? `openVideoModal('${m.video_url}', '${m.nombre_goleadora.replace(/'/g, "\\'")}')`
-                                    : null
-                            }
-                        >
-                            <div class="milestone-badge-wrapper">
-                                <div class="milestone-number-big">
-                                    <span class="m-count">{m.goalNumber}</span>
-                                    <span class="m-label">GOLES</span>
-                                </div>
-                            </div>
+        {
+            milestonesByComp.map((comp) => (
+                <section class="comp-records-section">
+                    <div class="comp-header">
+                        <img
+                            src={getAssetUrl("competiciones", comp.icon)}
+                            alt={comp.name}
+                            class="comp-icon-title"
+                        />
+                        <h2 class="comp-title">{comp.name}</h2>
+                    </div>
 
-                            <div class="milestone-main-info">
-                                <div class="m-player-display">
-                                    <div class="m-avatar-container">
-                                        <img
-                                            src={
-                                                m.foto_goleadora ||
-                                                getAssetUrl(
-                                                    "jugadoras",
-                                                    "placeholder",
-                                                )
-                                            }
-                                            alt={m.nombre_goleadora}
-                                            class="m-avatar"
-                                        />
-                                    </div>
-                                    <div class="m-player-name">
-                                        {m.nombre_goleadora}
-                                    </div>
-                                </div>
-
-                                <div class="m-match-details">
-                                    <div class="m-rival-info">
-                                        <img
-                                            src={
-                                                clubShields[m.rival] ||
-                                                getAssetUrl("escudos", m.rival)
-                                            }
-                                            alt={m.rival}
-                                            class="m-shield"
-                                        />
-                                        <div class="m-rival-text">
-                                            <span class="m-rival-name">
-                                                {m.rival}
-                                            </span>
-                                            <span class="m-comp">
-                                                {m.competicion}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="m-date-info">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-event"
-                                        >
-                                            <>
-                                                <path
-                                                    stroke="none"
-                                                    d="M0 0h24v24H0z"
-                                                    fill="none"
-                                                />
-                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
-                                                <path d="M16 3l0 4" />
-                                                <path d="M8 3l0 4" />
-                                                <path d="M4 11l16 0" />
-                                                <path d="M8 15h2v2h-2z" />
-                                            </>
-                                        </svg>
-                                        {formatShortDate(m.fecha)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {m.video_url && (
-                                <div class="video-indicator-big">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
+                    <div class="table-container floating-table">
+                        <table class="records-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-milestone">Hito</th>
+                                    <th class="col-player">Goleadora</th>
+                                    <th class="col-rival">Rival</th>
+                                    <th class="col-date">Fecha</th>
+                                    <th class="col-video">Vídeo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {comp.goals.map((m) => (
+                                    <tr
+                                        class={
+                                            m.video_url ? "row-has-video" : ""
+                                        }
                                     >
-                                        <path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"
-                                        />
-                                        <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                    </svg>
-                                    <span>VER GOL</span>
-                                </div>
-                            )}
-                        </div>
-                    ))
-                }
-            </div>
-        </section>
+                                        <td class="cell-milestone">
+                                            <span class="goal-tag">
+                                                GOL {m.goalNumber}
+                                            </span>
+                                        </td>
+                                        <td class="cell-player">
+                                            <div class="player-info-cell">
+                                                <div class="player-img-wrapper">
+                                                    <img
+                                                        src={
+                                                            m.foto_goleadora ||
+                                                            getAssetUrl(
+                                                                "jugadoras",
+                                                                "placeholder",
+                                                            )
+                                                        }
+                                                        alt={m.nombre_goleadora}
+                                                        class="player-thumb"
+                                                    />
+                                                </div>
+                                                <span class="player-name-text">
+                                                    {m.nombre_goleadora}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="cell-rival">
+                                            <div class="rival-info-cell">
+                                                <img
+                                                    src={
+                                                        clubShields[m.rival] ||
+                                                        getAssetUrl(
+                                                            "escudos",
+                                                            m.rival,
+                                                        )
+                                                    }
+                                                    alt={m.rival}
+                                                    class="rival-shield-thumb"
+                                                />
+                                                <span class="rival-name-text">
+                                                    {m.rival}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="cell-date">
+                                            <span class="date-text">
+                                                {formatShortDate(m.fecha)}
+                                            </span>
+                                        </td>
+                                        <td class="cell-video">
+                                            {m.video_url ? (
+                                                <button
+                                                    class="play-btn-small"
+                                                    onclick={`openVideoModal('${m.video_url}', '${m.nombre_goleadora.replace(/'/g, "\\'")}')`}
+                                                    title="Ver gol"
+                                                >
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="20"
+                                                        height="20"
+                                                        viewBox="0 0 24 24"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            stroke="none"
+                                                            d="M0 0h24v24H0z"
+                                                            fill="none"
+                                                        />
+                                                        <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                    </svg>
+                                                </button>
+                                            ) : (
+                                                <span class="no-video">-</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            ))
+        }
 
         <!-- Video Modal -->
         <div id="video-modal" class="video-modal-overlay">
@@ -205,7 +222,6 @@ const formatShortDate = (dateString: string | null | undefined): string => {
                         class="goal-video-element"
                     >
                         <source id="video-source" src="" type="video/mp4" />
-                        Tu navegador no soporta el elemento de video.
                     </video>
                 </div>
             </div>
@@ -225,9 +241,7 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         modal.style.display = "flex";
         video.play().catch((e) => console.log("Auto-play prevented", e));
         modal.onclick = function (e) {
-            if (e.target === modal) {
-                closeVideoModal();
-            }
+            if (e.target === modal) closeVideoModal();
         };
     }
     function closeVideoModal() {
@@ -240,182 +254,193 @@ const formatShortDate = (dateString: string | null | undefined): string => {
 
 <style>
     .records-page {
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 4rem 1.5rem;
     }
+
+    /* Header Styling matching other pages */
     .records-header {
         text-align: center;
-        margin-bottom: 4rem;
+        margin-bottom: 5rem;
     }
     .page-title {
-        font-size: 3rem;
+        font-size: 3.5rem;
         font-weight: 900;
         color: #151e42;
         text-transform: uppercase;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         position: relative;
         display: inline-block;
+        letter-spacing: -1px;
     }
     .page-title::after {
         content: "";
         position: absolute;
-        bottom: -10px;
+        bottom: -15px;
         left: 50%;
         transform: translateX(-50%);
-        width: 60px;
-        height: 4px;
+        width: 120px; /* Wider yellow line as requested */
+        height: 6px;
         background: #ffde59;
+        border-radius: 3px;
     }
     .subtitle {
-        font-size: 1.2rem;
-        color: #666;
-        max-width: 600px;
-        margin: 0 auto;
+        font-size: 1.25rem;
+        color: #4b5563;
+        font-weight: 500;
+        max-width: 700px;
+        margin: 1rem auto 0;
+        line-height: 1.6;
     }
 
-    .milestones-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-        gap: 2rem;
+    /* Section & Competition Header */
+    .comp-records-section {
+        margin-bottom: 5rem;
     }
-
-    .milestone-card-big {
+    .comp-header {
         display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-left: 0.5rem;
+    }
+    .comp-icon-title {
+        height: 40px;
+        width: auto;
+        object-fit: contain;
+    }
+    .comp-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #151e42;
+        text-transform: uppercase;
+    }
+
+    /* Floating White Table Styles */
+    .floating-table {
         background: white;
         border-radius: 20px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        border: 1px solid #eee;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
+        border: 1px solid #f0f0f0;
     }
-    .milestone-card-big.has-video {
-        cursor: pointer;
-    }
-    .milestone-card-big.has-video:hover {
-        transform: translateY(-8px);
-        border-color: #ffde59;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
     }
 
-    .milestone-badge-wrapper {
-        background: #151e42;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        min-width: 120px;
-    }
-    .milestone-number-big {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: #ffde59;
-    }
-    .m-count {
-        font-size: 3rem;
-        font-weight: 900;
-        line-height: 1;
-    }
-    .m-label {
+    /* Table Header */
+    .records-table th {
+        background: #f8fafc;
+        padding: 1.25rem 1.5rem;
         font-size: 0.8rem;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    /* Table Rows */
+    .records-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .records-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Goal Tag */
+    .goal-tag {
+        background: #151e42;
+        color: #ffde59;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.2rem;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
         font-weight: 700;
-        letter-spacing: 2px;
-        margin-top: 5px;
-        color: white;
+        min-width: 90px;
+        text-align: center;
+        letter-spacing: 1px;
     }
 
-    .milestone-main-info {
-        flex: 1;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        gap: 1.5rem;
-    }
-
-    .m-player-display {
+    /* Player Info Cell */
+    .player-info-cell {
         display: flex;
         align-items: center;
         gap: 1rem;
     }
-    .m-avatar-container {
-        width: 60px;
-        height: 60px;
+    .player-img-wrapper {
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         overflow: hidden;
-        border: 3px solid #ffde59;
-        background: #f0f0f0;
+        border: 2px solid #ffde59;
+        background: #f1f5f9;
+        flex-shrink: 0;
     }
-    .m-avatar {
+    .player-thumb {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: top; /* Prevents cutting from top as requested */
     }
-    .m-player-name {
-        font-size: 1.2rem;
-        font-weight: 800;
+    .player-name-text {
+        font-weight: 700;
         color: #151e42;
+        font-size: 1.05rem;
     }
 
-    .m-match-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    .m-rival-info {
+    /* Rival Info Cell */
+    .rival-info-cell {
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
-    .m-shield {
-        width: 40px;
-        height: 40px;
+    .rival-shield-thumb {
+        width: 32px;
+        height: 32px;
         object-fit: contain;
     }
-    .m-rival-text {
-        display: flex;
-        flex-direction: column;
-    }
-    .m-rival-name {
-        font-weight: 700;
-        color: #333;
-    }
-    .m-comp {
-        font-size: 0.8rem;
-        color: #666;
-    }
-    .m-date-info {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        color: #666;
-        font-weight: 500;
+    .rival-name-text {
+        font-weight: 600;
+        color: #4b5563;
     }
 
-    .video-indicator-big {
-        position: absolute;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+    /* Date & Video Cells */
+    .date-text {
+        color: #64748b;
+        font-weight: 500;
+        font-family: monospace;
+    }
+    .play-btn-small {
         background: #ffde59;
         color: #151e42;
-        padding: 0.5rem 1rem;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        font-weight: 800;
-        opacity: 0.8;
-        transition: opacity 0.3s;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(255, 222, 89, 0.4);
     }
-    .milestone-card-big:hover .video-indicator-big {
-        opacity: 1;
+    .play-btn-small:hover {
+        transform: scale(1.1);
+        background: #151e42;
+        color: #ffde59;
+    }
+    .no-video {
+        color: #cbd5e1;
     }
 
-    /* Video Modal Styles (Shared with [slug].astro) */
+    /* Modal Styling */
     .video-modal-overlay {
         display: none;
         position: fixed;
@@ -424,44 +449,38 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.9);
-        z-index: 9999;
+        z-index: 10000;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(8px);
     }
     .video-modal-container {
         background: #151e42;
         width: 100%;
         max-width: 1000px;
-        border-radius: 12px;
+        border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 222, 89, 0.2);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
     }
     .video-modal-header {
-        padding: 1rem 1.5rem;
+        padding: 1.25rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         background: #ffde59;
-        color: #2b2b2b;
     }
     .video-modal-header h3 {
         margin: 0;
-        font-size: 1.25rem;
-        font-weight: 800;
+        color: #151e42;
+        font-weight: 900;
         text-transform: uppercase;
     }
     .video-close-btn {
         background: none;
         border: none;
-        color: #2b2b2b;
+        color: #151e42;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 4px;
     }
     .video-modal-body {
         position: relative;
@@ -473,22 +492,22 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         left: 0;
         width: 100%;
         height: 100%;
-        display: block;
     }
 
     @media (max-width: 768px) {
-        .milestones-grid {
-            grid-template-columns: 1fr;
-        }
         .page-title {
-            font-size: 2rem;
+            font-size: 2.5rem;
         }
-        .milestone-badge-wrapper {
-            min-width: 100px;
-            padding: 1rem;
+        .records-table th:nth-child(4),
+        .records-table td:nth-child(4) {
+            display: none;
         }
-        .m-count {
-            font-size: 2.2rem;
+        .player-name-text {
+            font-size: 0.9rem;
+        }
+        .goal-tag {
+            font-size: 1rem;
+            min-width: 70px;
         }
     }
 </style>
