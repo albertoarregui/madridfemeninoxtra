@@ -10,6 +10,9 @@ import {
 
 import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
+import { fetchAllGoals } from "../../utils/partidos";
+import { fetchAllClubShields } from "../../utils/rivales";
+import PlayerEvolutionCharts from "../../components/PlayerEvolutionCharts";
 const { slug } = Astro.params;
 const allPlayers = await fetchPlayersDirectly();
 const player = allPlayers.find((p) => p.slug === slug);
@@ -97,6 +100,38 @@ const debutDisplay =
           }`
         : "-";
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
+
+// Goal Milestones Logic
+const allGoals = await fetchAllGoals();
+const officialComps = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+];
+const clubShields = await fetchAllClubShields();
+
+const milestones = allGoals
+    .filter((g) => {
+        const isCurrentPlayer =
+            g.goleadora === player.id_jugadora ||
+            g.nombre_goleadora === player.nombre;
+        const isOfficial = officialComps.includes(g.competicion);
+        return isCurrentPlayer && isOfficial;
+    })
+    .sort((a, b) => {
+        const dateA = new Date(a.fecha).getTime();
+        const dateB = new Date(b.fecha).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        // If same day, sort by minute (ignoring + extra time for simplicity in sorting)
+        return parseInt(a.minuto) - parseInt(b.minuto);
+    })
+    .map((g, index) => ({
+        ...g,
+        goalNumber: index + 1,
+        rival: g.club_local === "Real Madrid" ? g.club_visitante : g.club_local,
+    }))
+    .filter((g) => g.goalNumber % 10 === 0);
 
 const getPlayerCoordinates = (pos: string) => {
     const p = pos.toLowerCase();
@@ -281,7 +316,7 @@ const schema = {
                                             player.pais_origin ||
                                             player.pais_origen,
                                     ) && (
-                                        <Image
+                                        <img
                                             class="flag-icon"
                                             src={getFlagSrc(
                                                 player.iso ||
@@ -289,8 +324,9 @@ const schema = {
                                                     player.pais_origen,
                                             )}
                                             alt={`Bandera de ${player.pais_origin}`}
-                                            width={24}
-                                            height={24}
+                                            width="24"
+                                            height="24"
+                                            loading="lazy"
                                         />
                                     )
                                 }
@@ -442,6 +478,94 @@ const schema = {
                     }
                 </div>
             </section>
+
+            <PlayerEvolutionCharts
+                stats={playerStats.estadisticas}
+                isGoalkeeper={isGoalkeeper}
+                client:load
+            />
+
+            {
+                milestones.length > 0 && (
+                    <section class="milestones-section">
+                        <h2 class="section-header">HITOS DE GOLES</h2>
+                        <div class="milestones-grid">
+                            {milestones.map((m) => (
+                                <div
+                                    class={`milestone-card ${m.video_url ? "has-video" : ""}`}
+                                    onclick={
+                                        m.video_url
+                                            ? `openVideoModal('${m.video_url}', '${player.nombre.replace(/'/g, "\\'")}')`
+                                            : null
+                                    }
+                                >
+                                    <div class="milestone-number">
+                                        <span class="m-count">
+                                            {m.goalNumber}
+                                        </span>
+                                        <span class="m-label">GOLES</span>
+                                    </div>
+                                    <div class="milestone-content">
+                                        <div class="m-player-photo">
+                                            <img
+                                                src={
+                                                    m.foto_goleadora ||
+                                                    player.imageUrl
+                                                }
+                                                alt={player.nombre}
+                                                onError={(e) =>
+                                                    (e.currentTarget.src =
+                                                        player.imageUrl)
+                                                }
+                                            />
+                                        </div>
+                                        <div class="m-match-info">
+                                            <div class="m-rival-shield">
+                                                <img
+                                                    src={
+                                                        clubShields[m.rival] ||
+                                                        getAssetUrl(
+                                                            "escudos",
+                                                            m.rival,
+                                                        )
+                                                    }
+                                                    alt={m.rival}
+                                                />
+                                            </div>
+                                            <div class="m-details">
+                                                <span class="m-rival-name">
+                                                    {m.rival}
+                                                </span>
+                                                <span class="m-date">
+                                                    {formatShortDate(m.fecha)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {m.video_url && (
+                                        <div class="video-indicator">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="currentColor"
+                                            >
+                                                <path
+                                                    stroke="none"
+                                                    d="M0 0h24v24H0z"
+                                                    fill="none"
+                                                />
+                                                <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
 
             <section class="stats-section">
                 <h2 class="section-header">ESTADÍSTICAS</h2>
@@ -1435,6 +1559,268 @@ const schema = {
                     font-size: 0.85rem;
                 }
             }
+            .milestones-section {
+                grid-column: 1 / -1;
+                background: #f8f9fa;
+                border: 1px solid #eee;
+                border-radius: 12px;
+                overflow: hidden;
+                margin-bottom: 2rem;
+            }
+            .milestones-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+            .milestone-card {
+                display: flex;
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                border: 1px solid #f0f0f0;
+                transition: transform 0.2s ease;
+            }
+            .milestone-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            }
+            .milestone-number {
+                background: #151e42;
+                color: white;
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-width: 80px;
+                text-align: center;
+            }
+            .m-count {
+                font-size: 2rem;
+                font-weight: 900;
+                line-height: 1;
+                color: #ffde59;
+            }
+            .m-label {
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 1px;
+                margin-top: 4px;
+            }
+            .milestone-content {
+                display: flex;
+                padding: 1rem;
+                gap: 1rem;
+                flex: 1;
+                align-items: center;
+            }
+            .m-player-photo {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                overflow: hidden;
+                border: 2px solid #ffde59;
+                background: #f0f0f0;
+                flex-shrink: 0;
+            }
+            .m-player-photo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-top: center;
+            }
+            .m-match-info {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .m-rival-shield {
+                width: 40px;
+                height: 40px;
+                flex-shrink: 0;
+            }
+            .m-rival-shield img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+            .m-details {
+                display: flex;
+                flex-direction: column;
+            }
+            .m-rival-name {
+                font-weight: 800;
+                font-size: 0.9rem;
+                color: #151e42;
+                line-height: 1.2;
+            }
+            .m-date {
+                font-size: 0.75rem;
+                color: #666;
+                font-weight: 500;
+            }
+            @media (max-width: 480px) {
+                .milestone-card {
+                    flex-direction: column;
+                }
+                .milestone-number {
+                    flex-direction: row;
+                    padding: 0.5rem;
+                    gap: 1rem;
+                    min-width: auto;
+                }
+                .m-count {
+                    font-size: 1.5rem;
+                }
+            }
+
+            /* Video Modal Styles */
+            .video-modal-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 9999;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                backdrop-filter: blur(5px);
+            }
+            .video-modal-container {
+                background: #151e42;
+                width: 100%;
+                max-width: 1000px;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+                border: 1px solid rgba(255, 222, 89, 0.2);
+            }
+            .video-modal-header {
+                padding: 1rem 1.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #ffde59;
+                color: #2b2b2b;
+            }
+            .video-modal-header h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+            .video-close-btn {
+                background: none;
+                border: none;
+                color: #2b2b2b;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4px;
+                transition: transform 0.2s;
+            }
+            .video-close-btn:hover {
+                transform: scale(1.1);
+            }
+            .video-modal-body {
+                position: relative;
+                padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            }
+            .goal-video-element {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+
+            .milestone-card.has-video {
+                cursor: pointer;
+                position: relative;
+            }
+            .milestone-card.has-video:hover {
+                border-color: #ffde59;
+                transform: translateY(-4px);
+            }
+            .video-indicator {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                background: #ffde59;
+                color: #151e42;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
         </style>
+        <div id="video-modal" class="video-modal-overlay">
+            <div class="video-modal-container">
+                <div class="video-modal-header">
+                    <h3 id="video-modal-title">Gol</h3>
+                    <button class="video-close-btn" onclick="closeVideoModal()">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="video-modal-body">
+                    <video
+                        id="goal-video-player"
+                        controls
+                        class="goal-video-element"
+                    >
+                        <source id="video-source" src="" type="video/mp4" />
+                        Tu navegador no soporta el elemento de video.
+                    </video>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <script is:inline>
+        function openVideoModal(url, scorer) {
+            const modal = document.getElementById("video-modal");
+            const video = document.getElementById("goal-video-player");
+            const source = document.getElementById("video-source");
+            const title = document.getElementById("video-modal-title");
+            title.textContent = `Gol de ${scorer}`;
+            source.src = url;
+            video.load();
+            modal.style.display = "flex";
+            video.play().catch((e) => console.log("Auto-play prevented", e));
+            modal.onclick = function (e) {
+                if (e.target === modal) {
+                    closeVideoModal();
+                }
+            };
+        }
+        function closeVideoModal() {
+            const modal = document.getElementById("video-modal");
+            const video = document.getElementById("goal-video-player");
+            video.pause();
+            modal.style.display = "none";
+        }
+    </script>
 </Layout>

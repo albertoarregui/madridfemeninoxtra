@@ -902,8 +902,12 @@ export async function fetchAllGoals(): Promise<any[]> {
                 g.tipo,
                 g.goleadora,
                 g.asistente,
+                g.video_url,
                 p.id_temporada,
                 p.id_competicion,
+                p.fecha,
+                cl.nombre as club_local,
+                cv.nombre as club_visitante,
                 p.goles_rm,
                 p.goles_rival,
                 t.temporada,
@@ -917,6 +921,8 @@ export async function fetchAllGoals(): Promise<any[]> {
             JOIN partidos p ON g.id_partido = p.id_partido
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+            LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+            LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
             
             -- Goleadora: Relación por ID
             LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
