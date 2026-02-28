@@ -55,7 +55,8 @@ const stadiumStats = await fetchStadiumStats(game.estadio);
 
 // Fetch MVP
 let mvpPlayer;
-const slugify = (text: string): string => {
+const slugifyLocal = (text: string | null | undefined): string => {
+    if (!text) return "";
     return text
         .toLowerCase()
         .replace(/ /g, "_")
@@ -69,7 +70,7 @@ mvpPlayer = {
         : "MVP no disponible",
     image:
         game.mvp && game.mvp_nombre
-            ? await getPlayerImage(slugify(game.mvp_nombre))
+            ? getPlayerImage(slugifyLocal(game.mvp_nombre))
             : null,
     id: game.mvp ? String(game.mvp) : "unknown",
 };
@@ -78,22 +79,28 @@ const isRMEstadio =
     game.estadio &&
     (game.estadio.toLowerCase().includes("alfredo di stefano") ||
         game.estadio.toLowerCase().includes("santiago bernabeu"));
+
 const stadiumUrl = game.estadio_foto_url;
 const hasExternalStadium =
     stadiumUrl &&
+    typeof stadiumUrl === "string" &&
     (stadiumUrl.startsWith("http://") || stadiumUrl.startsWith("https://"));
 const stadiumImageSrc = hasExternalStadium
     ? stadiumUrl
     : getAssetUrl("estadios", game.estadio);
 
-const getShieldSrc = (teamName: string, remoteUrl?: string) => {
+const getShieldSrc = (
+    teamName: string | null | undefined,
+    remoteUrl?: string | null | undefined,
+) => {
     if (
         remoteUrl &&
+        typeof remoteUrl === "string" &&
         (remoteUrl.startsWith("http://") || remoteUrl.startsWith("https://"))
     ) {
         return remoteUrl;
     }
-    return getAssetUrl("escudos", teamName);
+    return getAssetUrl("escudos", teamName || "placeholder");
 };
 
 const localShield = getShieldSrc(game.club_local, game.local_foto_url);
@@ -105,7 +112,8 @@ const refereeStats = game.id_arbitra
     ? await fetchRefereeStats(game.id_arbitra)
     : null;
 
-const isLocalRM = game.club_local.toLowerCase().includes("real madrid");
+const isLocalRM =
+    game.club_local?.toLowerCase().includes("real madrid") ?? false;
 
 // Fetch Cloudinary images
 let galleryImages: string[] = [];
@@ -244,7 +252,7 @@ try {
                         {
                             game.arbitra_nombre ? (
                                 <a
-                                    href={`/arbitras/${generateSlug(game.arbitra_nombre)}`}
+                                    href={`/arbitras/${slugify(game.arbitra_nombre)}`}
                                     class="referee-btn hover:text-[#ffde59] transition-colors decoration-none"
                                 >
                                     <svg
@@ -296,7 +304,7 @@ try {
                     <div class="stadium-info">
                         <p class="stadium-name-large">
                             <a
-                                href={`/estadios/${generateSlug(game.estadio)}`}
+                                href={`/estadios/${slugify(game.estadio)}`}
                                 class="hover:text-[#ffde59] transition-colors decoration-none"
                             >
                                 {game.estadio || "Estadio"}

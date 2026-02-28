@@ -585,7 +585,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         const penaltyShootoutQuery = `
             SELECT pt.*, j.nombre as nombre_jugadora
-            FROM penaltis_tanda pt
+            FROM tanda_penaltis pt
             LEFT JOIN jugadoras j ON pt.id_jugadora = j.id_jugadora
             WHERE pt.id_partido = ?
             ORDER BY pt.orden ASC
