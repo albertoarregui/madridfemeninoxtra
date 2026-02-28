@@ -23,7 +23,7 @@ export function getRivalShieldUrl(rival: any): string {
     if (fotoUrl && (fotoUrl.startsWith('http://') || fotoUrl.startsWith('https://'))) {
         return fotoUrl;
     }
-    const name = rival.escudo_url || rival.nombre;
+    const name = rival.nombre;
     const localUrl = getAssetUrl('escudos', name);
     if (localUrl && !localUrl.includes('media.madridfemeninoxtra.com')) {
         return localUrl;
@@ -61,7 +61,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                 c.pais,
                 c.iso,
                 c.slug,
-                c.escudo_url,
                 c.foto_url as club_foto_url,
                 e.nombre as estadio,
                 e.capacidad,
@@ -163,7 +162,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
                     lat: rival.estadio_lat != null ? Number(rival.estadio_lat) : null,
                     lng: rival.estadio_lng != null ? Number(rival.estadio_lng) : null,
                     shieldUrl: getRivalShieldUrl(rival),
-                    escudo_url: cleanApiValue(rival.escudo_url),
                     foto_url: cleanApiValue(rival.club_foto_url),
                     estadio_foto_url: cleanApiValue(rival.estadio_foto_url),
                     stats: {
@@ -227,7 +225,7 @@ export async function fetchAllClubShields(): Promise<Record<string, string>> {
         const client = await getPlayersDbClient();
         if (!client) return {};
 
-        const result = await client.execute("SELECT nombre, foto_url, escudo_url FROM clubes");
+        const result = await client.execute("SELECT nombre, foto_url FROM clubes");
         const map: Record<string, string> = {};
 
         result.rows.forEach((row: any) => {
