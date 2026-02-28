@@ -37,6 +37,16 @@ export const GET = async () => {
                 IFNULL(p.goles_rm, 0) AS goles_rm,
                 IFNULL(p.goles_rival, 0) AS goles_rival,
                 p.penaltis AS penaltis,
+                (SELECT COUNT(*) FROM (
+                    SELECT ga.id_gol FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                    UNION ALL
+                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NOT NULL
+                )) as penaltis_rm,
+                (SELECT COUNT(*) FROM (
+                    SELECT gr.id_gol_rival FROM goles_rival gr WHERE gr.id_partido = p.id_partido AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
+                    UNION ALL
+                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NULL
+                )) as penaltis_rival,
                 a.nombre AS arbitra_nombre,
                 en.nombre AS entrenador_nombre,
                 

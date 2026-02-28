@@ -73,8 +73,16 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rival,
-                (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')) as penaltis_rm,
-                0 as penaltis_rival,
+                (SELECT COUNT(*) FROM (
+                    SELECT ga.id_gol FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                    UNION ALL
+                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NOT NULL
+                )) as penaltis_rm,
+                (SELECT COUNT(*) FROM (
+                    SELECT gr.id_gol_rival FROM goles_rival gr WHERE gr.id_partido = p.id_partido AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
+                    UNION ALL
+                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NULL
+                )) as penaltis_rival,
                 
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
@@ -255,14 +263,23 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 a.minuto_salida,
                 j.nombre,
                 j.posicion,
+                j.iso,
                 d.dorsal,
                 d.foto_url,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
-                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas,
+                e.valoracion, e.pases_claves, e.tiros_totales, e.tiros_puerta, e.toques, e.toques_area_rival,
+                e.pases_completados, e.pases_totales, e.pases_ultimo_tercio_completados, e.pases_ultimo_tercio_totales,
+                e.pases_largo_completados, e.pases_largo_totales, e.centros_completados, e.centros_totales,
+                e.fueras_juego, e.regates_completados, e.regates_totales, e.perdidas_posesion as perdidas, e.entradas,
+                e.intercepciones, e.bloqueos, e.despejes, e.regateada,
+                e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
+                e.faltas_recibidas, e.faltas_cometidas
             FROM alineaciones a
+            LEFT JOIN estadisticas_jugadoras e ON e.id_est_jugadora = a.id_alineacion
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
@@ -309,6 +326,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 id: row.id_alineacion,
                 name: displayName,
                 pos: displayPos,
+                flagUrl: getAssetUrl('banderas', row.iso || 'es'),
                 number: row.dorsal || '-',
                 imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                     ? row.foto_url
@@ -320,7 +338,38 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 assists: row.asistencias,
                 yellowCards: row.tarjetas_amarillas,
                 redCards: row.tarjetas_rojas,
-                doubleYellows: row.tarjetas_doble_amarillas
+                doubleYellows: row.tarjetas_doble_amarillas,
+                stats: {
+                    valoracion: row.valoracion,
+                    pases_claves: row.pases_claves,
+                    tiros_totales: row.tiros_totales,
+                    tiros_puerta: row.tiros_puerta,
+                    toques: row.toques,
+                    toques_area_rival: row.toques_area_rival,
+                    pases_completados: row.pases_completados,
+                    pases_totales: row.pases_totales,
+                    pases_ultimo_tercio_completados: row.pases_ultimo_tercio_completados,
+                    pases_ultimo_tercio_totales: row.pases_ultimo_tercio_totales,
+                    pases_largo_completados: row.pases_largo_completados,
+                    pases_largo_totales: row.pases_largo_totales,
+                    centros_completados: row.centros_completados,
+                    centros_totales: row.centros_totales,
+                    fueras_juego: row.fueras_juego,
+                    regates_completados: row.regates_completados,
+                    regates_totales: row.regates_totales,
+                    perdidas: row.perdidas,
+                    entradas: row.entradas,
+                    intercepciones: row.intercepciones,
+                    bloqueos: row.bloqueos,
+                    despejes: row.despejes,
+                    regateada: row.regateada,
+                    duelos_suelo_ganados: row.duelos_suelo_ganados,
+                    duelos_suelo_totales: row.duelos_suelo_totales,
+                    duelos_aereos_ganados: row.duelos_aereos_ganados,
+                    duelos_aereos_totales: row.duelos_aereos_totales,
+                    faltas_recibidas: row.faltas_recibidas,
+                    faltas_cometidas: row.faltas_cometidas
+                }
             };
         });
     } catch (error) {
@@ -344,13 +393,22 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 a.minuto_salida,
                 j.nombre,
                 j.posicion,
+                j.iso,
                 d.foto_url,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
-                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas,
+                e.valoracion, e.pases_claves, e.tiros_totales, e.tiros_puerta, e.toques, e.toques_area_rival,
+                e.pases_completados, e.pases_totales, e.pases_ultimo_tercio_completados, e.pases_ultimo_tercio_totales,
+                e.pases_largo_completados, e.pases_largo_totales, e.centros_completados, e.centros_totales,
+                e.fueras_juego, e.regates_completados, e.regates_totales, e.perdidas_posesion as perdidas, e.entradas,
+                e.intercepciones, e.bloqueos, e.despejes, e.regateada,
+                e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
+                e.faltas_recibidas, e.faltas_cometidas
             FROM alineaciones a
+            LEFT JOIN estadisticas_jugadoras e ON e.id_est_jugadora = a.id_alineacion
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
@@ -393,6 +451,7 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
+                    flagUrl: getAssetUrl('banderas', row.iso || 'es'),
                     imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                         ? row.foto_url
                         : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
@@ -401,14 +460,45 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                     assists: row.asistencias,
                     yellowCards: row.tarjetas_amarillas,
                     redCards: row.tarjetas_rojas,
-                    doubleYellows: row.tarjetas_doble_amarillas
+                    doubleYellows: row.tarjetas_doble_amarillas,
+                    stats: {
+                        valoracion: row.valoracion,
+                        pases_claves: row.pases_claves,
+                        tiros_totales: row.tiros_totales,
+                        tiros_puerta: row.tiros_puerta,
+                        toques: row.toques,
+                        toques_area_rival: row.toques_area_rival,
+                        pases_completados: row.pases_completados,
+                        pases_totales: row.pases_totales,
+                        pases_ultimo_tercio_completados: row.pases_ultimo_tercio_completados,
+                        pases_ultimo_tercio_totales: row.pases_ultimo_tercio_totales,
+                        pases_largo_completados: row.pases_largo_completados,
+                        pases_largo_totales: row.pases_largo_totales,
+                        centros_completados: row.centros_completados,
+                        centros_totales: row.centros_totales,
+                        fueras_juego: row.fueras_juego,
+                        regates_completados: row.regates_completados,
+                        regates_totales: row.regates_totales,
+                        perdidas: row.perdidas,
+                        entradas: row.entradas,
+                        intercepciones: row.intercepciones,
+                        bloqueos: row.bloqueos,
+                        despejes: row.despejes,
+                        regateada: row.regateada,
+                        duelos_suelo_ganados: row.duelos_suelo_ganados,
+                        duelos_suelo_totales: row.duelos_suelo_totales,
+                        duelos_aereos_ganados: row.duelos_aereos_ganados,
+                        duelos_aereos_totales: row.duelos_aereos_totales,
+                        faltas_recibidas: row.faltas_recibidas,
+                        faltas_cometidas: row.faltas_cometidas
+                    }
                 };
             };
 
             substitutions.push({
                 minute: minute,
                 playerIn: processPlayer(pIn),
-                playerOut: pOut ? processPlayer(pOut) : { name: '?', pos: '', imageUrl: '', slug: '#' }
+                playerOut: pOut ? processPlayer(pOut) : { name: '?', pos: '', flagUrl: '', imageUrl: '', slug: '#' }
             });
         });
 

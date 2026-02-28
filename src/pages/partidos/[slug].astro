@@ -12,6 +12,7 @@ import {
 import { getPlayerImage } from "../../utils/player-images";
 import { v2 as cloudinary } from "cloudinary";
 import { getAssetUrl } from "../../utils/assets";
+import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 
 cloudinary.config({
     cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
@@ -461,9 +462,11 @@ try {
                     <div class="lineup-list">
                         {
                             lineup.map((player: any) => (
-                                <a
-                                    href={`/jugadoras/${player.slug}`}
-                                    class="lineup-row"
+                                <div
+                                    class="lineup-row clickable-player-row"
+                                    data-player={JSON.stringify(player)}
+                                    role="button"
+                                    tabindex="0"
                                 >
                                     <div class="player-photo-rect">
                                         {player.imageUrl &&
@@ -611,7 +614,7 @@ try {
                                             )}
                                         </div>
                                     </div>
-                                </a>
+                                </div>
                             ))
                         }
                     </div>
@@ -647,9 +650,13 @@ try {
                                                 </>
                                             </svg>
                                         </span>
-                                        <a
-                                            href={`/jugadoras/${sub.playerIn.slug}`}
-                                            class="sub-player-link"
+                                        <div
+                                            class="sub-player-link clickable-player-row"
+                                            data-player={JSON.stringify(
+                                                sub.playerIn,
+                                            )}
+                                            role="button"
+                                            tabindex="0"
                                         >
                                             {sub.playerIn.imageUrl &&
                                                 !sub.playerIn.imageUrl.includes(
@@ -743,7 +750,7 @@ try {
                                                     title="Tarjeta Roja"
                                                 />
                                             )}
-                                        </a>
+                                        </div>
                                     </div>
                                     <div class="sub-movement out">
                                         <span
@@ -768,9 +775,13 @@ try {
                                                 </>
                                             </svg>
                                         </span>
-                                        <a
-                                            href={`/jugadoras/${sub.playerOut.slug}`}
-                                            class="sub-player-link"
+                                        <div
+                                            class="sub-player-link clickable-player-row"
+                                            data-player={JSON.stringify(
+                                                sub.playerOut,
+                                            )}
+                                            role="button"
+                                            tabindex="0"
                                         >
                                             {sub.playerOut.imageUrl &&
                                                 !sub.playerOut.imageUrl.includes(
@@ -865,7 +876,7 @@ try {
                                                     title="Tarjeta Roja"
                                                 />
                                             )}
-                                        </a>
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -1929,6 +1940,8 @@ try {
             </div>
         </div>
     </main>
+
+    <PlayerStatsModal />
 </Layout>
 
 <script is:inline>

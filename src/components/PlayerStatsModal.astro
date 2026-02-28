@@ -1,0 +1,391 @@
+---
+// PlayerStatsModal.astro
+---
+
+<dialog id="player-stats-modal" class="player-modal">
+    <div class="player-modal-content">
+        <button id="close-player-modal" class="close-modal-btn">
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                ><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path
+                    d="M18 6l-12 12"></path><path d="M6 6l12 12"></path></svg
+            >
+        </button>
+
+        <div class="pm-header">
+            <div class="pm-photo-container">
+                <img id="pm-img" src="" alt="Player image" />
+            </div>
+            <div class="pm-info">
+                <div class="pm-name-row">
+                    <img id="pm-flag" src="" alt="Flag" class="pm-flag" />
+                    <h3 id="pm-name">Name</h3>
+                </div>
+                <p id="pm-pos">Position</p>
+            </div>
+        </div>
+
+        <div class="pm-body">
+            <div class="pm-rating-container">
+                <span class="pm-rating-label">Valoración</span>
+                <div id="pm-rating-val" class="pm-rating-badge"></div>
+            </div>
+
+            <div class="pm-stats-grid" id="pm-stats-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <div class="pm-footer">
+            * Los datos han sido recolectados de Sofascore y manipulados por
+            nosotros.
+        </div>
+    </div>
+</dialog>
+
+<script is:inline>
+    // Call it immediately matching DCL or Astro page load
+    document.addEventListener("astro:page-load", setupPlayerModals);
+    document.addEventListener("DOMContentLoaded", setupPlayerModals);
+
+    function setupPlayerModals() {
+        const modal = document.getElementById("player-stats-modal");
+        const clBtn = document.getElementById("close-player-modal");
+
+        if (clBtn && modal) {
+            clBtn.addEventListener("click", () => {
+                modal.close();
+            });
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) modal.close();
+            });
+        }
+
+        const rows = document.querySelectorAll(".clickable-player-row");
+        rows.forEach((row) => {
+            row.addEventListener("click", (e) => {
+                e.preventDefault();
+                const playerStr = row.getAttribute("data-player");
+                if (!playerStr) return;
+
+                try {
+                    const data = JSON.parse(playerStr);
+                    openPlayerModal(data);
+                } catch (err) {
+                    console.error("Error parsing player data:", err);
+                }
+            });
+        });
+    }
+
+    function getRatingColor(val) {
+        if (!val) return "#444";
+        if (val >= 7.5) return "#4caf50";
+        if (val >= 6.5) return "#ffeb3b";
+        if (val >= 5.5) return "#ff9800";
+        return "#f44336";
+    }
+
+    function openPlayerModal(player) {
+        const modal = document.getElementById("player-stats-modal");
+        if (!modal) return;
+
+        const pmImg = document.getElementById("pm-img");
+        const pmFlag = document.getElementById("pm-flag");
+        const pmName = document.getElementById("pm-name");
+        const pmPos = document.getElementById("pm-pos");
+        const pmRatingVal = document.getElementById("pm-rating-val");
+        const pmStatsGrid = document.getElementById("pm-stats-grid");
+
+        pmImg.src = player.imageUrl || "";
+        pmImg.alt = player.name || "Jugadora";
+
+        if (player.flagUrl) {
+            pmFlag.src = player.flagUrl;
+            pmFlag.style.display = "block";
+        } else {
+            pmFlag.style.display = "none";
+        }
+
+        pmName.textContent = player.name;
+        pmPos.textContent = player.pos;
+
+        const stats = player.stats || {};
+        const rating = parseFloat(stats.valoracion);
+
+        if (rating && !isNaN(rating)) {
+            pmRatingVal.textContent = rating.toFixed(1);
+            pmRatingVal.style.backgroundColor = getRatingColor(rating);
+            pmRatingVal.style.color =
+                rating >= 6.5 && rating < 7.5 ? "#000" : "#fff";
+            pmRatingVal.parentElement.style.display = "flex";
+        } else {
+            pmRatingVal.textContent = "-";
+            pmRatingVal.style.backgroundColor = "#444";
+        }
+
+        const metrics = [
+            { label: "Goles", val: player.goals },
+            { label: "Asistencias", val: player.assists },
+            { label: "Pases Clave", val: stats.pases_claves },
+            { label: "Tiros", val: stats.tiros_totales },
+            { label: "Tiros a Puerta", val: stats.tiros_puerta },
+            { label: "Toques", val: stats.toques },
+            { label: "Toques Área Rival", val: stats.toques_area_rival },
+            {
+                label: "Pases",
+                val: `${stats.pases_completados || 0}/${stats.pases_totales || 0}`,
+            },
+            {
+                label: "Pases Últ. Tercio",
+                val: `${stats.pases_ultimo_tercio_completados || 0}/${stats.pases_ultimo_tercio_totales || 0}`,
+            },
+            {
+                label: "Pases en Largo",
+                val: `${stats.pases_largo_completados || 0}/${stats.pases_largo_totales || 0}`,
+            },
+            {
+                label: "Centros",
+                val: `${stats.centros_completados || 0}/${stats.centros_totales || 0}`,
+            },
+            { label: "Fueras de Juego", val: stats.fueras_juego },
+            {
+                label: "Regates",
+                val: `${stats.regates_completados || 0}/${stats.regates_totales || 0}`,
+            },
+            { label: "Pérdidas", val: stats.perdidas },
+            { label: "Entradas", val: stats.entradas },
+            { label: "Intercepciones", val: stats.intercepciones },
+            { label: "Bloqueos", val: stats.bloqueos },
+            { label: "Despejes", val: stats.despejes },
+            { label: "Regateada", val: stats.regateada },
+            {
+                label: "Duelos en Suelo",
+                val: `${stats.duelos_suelo_ganados || 0}/${stats.duelos_suelo_totales || 0}`,
+            },
+            {
+                label: "Duelos Aéreos",
+                val: `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_totales || 0}`,
+            },
+            { label: "Faltas Recibidas", val: stats.faltas_recibidas },
+            { label: "Faltas Cometidas", val: stats.faltas_cometidas },
+        ];
+
+        pmStatsGrid.innerHTML = "";
+        metrics.forEach((m) => {
+            const displayVal =
+                m.val !== undefined && m.val !== null
+                    ? m.val
+                    : typeof m.val === "string"
+                      ? "0/0"
+                      : 0;
+
+            const div = document.createElement("div");
+            div.className = "pm-stat-item";
+
+            const htmlStr =
+                '<span class="pm-stat-label">' +
+                m.label +
+                '</span><span class="pm-stat-val">' +
+                displayVal +
+                "</span>";
+            div.innerHTML = htmlStr;
+
+            pmStatsGrid.appendChild(div);
+        });
+
+        modal.showModal();
+    }
+</script>
+
+<style>
+    .player-modal {
+        border: none;
+        border-radius: 16px;
+        background: #1a1a1a;
+        color: #fff;
+        padding: 0;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .player-modal::backdrop {
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+    }
+
+    .player-modal-content {
+        position: relative;
+        padding: 24px;
+    }
+
+    .close-modal-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        z-index: 10;
+    }
+
+    .close-modal-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .pm-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 20px;
+    }
+
+    .pm-photo-container {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #ffde59;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.3);
+        background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+    }
+
+    .pm-photo-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+    }
+
+    .pm-name-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 4px;
+    }
+
+    .pm-name-row h3 {
+        margin: 0;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+    }
+
+    .pm-flag {
+        width: 24px;
+        height: 16px;
+        object-fit: cover;
+        border-radius: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .pm-info p {
+        margin: 0;
+        color: #a0a0a0;
+        font-size: 0.95rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .pm-rating-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .pm-rating-label {
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+    }
+
+    .pm-rating-badge {
+        font-family: "Archivo Black", sans-serif;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .pm-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .pm-stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .pm-stat-label {
+        color: #bbb;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .pm-stat-val {
+        font-weight: 700;
+        color: #fff;
+        font-family: "Archivo Black", sans-serif;
+        font-size: 0.95rem;
+    }
+
+    .pm-footer {
+        text-align: center;
+        font-size: 0.75rem;
+        color: #666;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 16px;
+        font-style: italic;
+    }
+
+    @media (max-width: 480px) {
+        .pm-stats-grid {
+            grid-template-columns: 1fr;
+        }
+        .player-modal-content {
+            padding: 20px 16px;
+        }
+    }
+</style>

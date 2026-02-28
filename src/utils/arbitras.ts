@@ -58,13 +58,19 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                       )
                 ) as red_cards,
                 (
-                    SELECT COUNT(*)
-                    FROM goles_y_asistencias ga
-                    JOIN partidos p2 ON ga.id_partido = p2.id_partido
-                    WHERE p2.id_arbitra = a.id_arbitra
-                    AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                    SELECT COUNT(*) FROM (
+                        SELECT ga.id_gol FROM goles_y_asistencias ga JOIN partidos p2 ON ga.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                        UNION ALL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND pf.id_jugadora IS NOT NULL
+                    )
                 ) as penalties_for,
-                0 as penalties_against,
+                (
+                    SELECT COUNT(*) FROM (
+                        SELECT gr.id_gol_rival FROM goles_rival gr JOIN partidos p2 ON gr.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
+                        UNION ALL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND pf.id_jugadora IS NULL
+                    )
+                ) as penalties_against,
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas t 
@@ -185,12 +191,19 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                       )
                 ) as rojas,
                 (
-                    SELECT COUNT(*)
-                    FROM goles_y_asistencias ga
-                    WHERE ga.id_partido = p.id_partido
-                    AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                    SELECT COUNT(*) FROM (
+                        SELECT ga.id_gol FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                        UNION ALL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NOT NULL
+                    )
                 ) as penalties_for,
-                0 as penalties_against,
+                (
+                    SELECT COUNT(*) FROM (
+                        SELECT gr.id_gol_rival FROM goles_rival gr WHERE gr.id_partido = p.id_partido AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
+                        UNION ALL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NULL
+                    )
+                ) as penalties_against,
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas tr 
