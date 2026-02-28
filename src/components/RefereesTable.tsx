@@ -102,13 +102,10 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
                             </th>
-                            <th className="sticky left-[50px] bg-gray-50 z-30 py-3 px-2 w-[50px] min-w-[50px] border-r border-gray-100 text-center">
-                                Foto
-                            </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Árbitra"
-                                className="sticky left-[100px] bg-gray-50 z-30 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
+                                className="sticky left-[50px] bg-gray-50 z-30 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
                                 align="left"
                             />
 
@@ -147,17 +144,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-[50px] min-w-[50px]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-[50px] bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-100 text-center w-[50px] min-w-[50px]">
-                                    <div className="w-8 h-8 rounded-full overflow-hidden mx-auto bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center">
-                                        <img
-                                            src={referee.foto_url ? `https://media.madridfemeninoxtra.com${referee.foto_url}` : '/assets/jugadoras/placeholder.png'}
-                                            alt={referee.nombre}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'}
-                                        />
-                                    </div>
-                                </td>
-                                <td className="sticky left-[100px] bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate min-w-[200px]" title={referee.nombre}>
+                                <td className="sticky left-[50px] bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate min-w-[200px]" title={referee.nombre}>
                                     <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-[#ffde59] transition-colors whitespace-normal break-words leading-tight block">
                                         {referee.nombre}
                                     </a>

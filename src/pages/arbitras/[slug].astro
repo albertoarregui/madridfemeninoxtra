@@ -224,43 +224,47 @@ const redArc =
                     <h2 class="section-header">
                         FICHA DE {referee.nombre.toUpperCase()}
                     </h2>
-                    <div class="rival-info">
-                        <div
-                            class="referee-icon-container overflow-hidden rounded-full shadow-md bg-gray-50 border border-gray-200"
-                        >
+                    <div class="ficha-content">
+                        <div class="player-photo-container">
                             {
                                 referee.foto_url ? (
                                     <img
-                                        src={`https://media.madridfemeninoxtra.com${referee.foto_url}`}
+                                        src={
+                                            referee.foto_url.startsWith("http")
+                                                ? referee.foto_url
+                                                : `https://media.madridfemeninoxtra.com${referee.foto_url}`
+                                        }
                                         alt={referee.nombre}
-                                        class="w-full h-full object-cover"
-                                        onError="this.src='/assets/jugadoras/placeholder.png'"
+                                        class="player-photo"
+                                        onerror="this.src='/assets/jugadoras/placeholder.png'"
                                     />
                                 ) : (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="100%"
-                                        height="100%"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="text-gray-300 p-4"
-                                    >
-                                        <path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
+                                    <div class="player-photo flex items-center justify-center bg-gray-100">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="50%"
+                                            height="50%"
+                                            viewBox="0 0 24 24"
                                             fill="none"
-                                        />
-                                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                                    </svg>
+                                            stroke="currentColor"
+                                            stroke-width="1.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            class="text-gray-300"
+                                        >
+                                            <path
+                                                stroke="none"
+                                                d="M0 0h24v24H0z"
+                                                fill="none"
+                                            />
+                                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                        </svg>
+                                    </div>
                                 )
                             }
                         </div>
-                        <div class="rival-details w-full">
+                        <div class="player-info w-full">
                             <div class="info-row">
                                 <span class="label">Nombre:</span>
                                 <span class="value">{referee.nombre}</span>
@@ -271,13 +275,12 @@ const redArc =
                                     {
                                         referee.iso ? (
                                             <>
-                                                {referee.iso.toUpperCase()}
                                                 <img
                                                     src={getFlagSrc(
                                                         referee.iso,
                                                     )}
                                                     alt={referee.iso}
-                                                    className="w-5 h-auto rounded-sm shadow-sm"
+                                                    class="w-4 h-auto rounded-sm shadow-sm"
                                                 />
                                             </>
                                         ) : (
@@ -326,1156 +329,1258 @@ const redArc =
                             </div>
                         </div>
                     </div>
-                </section>
 
-                <section class="stats-table-card">
-                    <h3 class="section-subheader">ESTADÍSTICAS</h3>
-                    <div class="table-wrapper">
-                        {
-                            refereeDeepStats.length > 0 ? (
-                                <table class="stats-table detailed-table">
-                                    <thead>
-                                        <tr>
-                                            <th>TEMPORADA</th>
-                                            <th>PJ</th>
-                                            <th>PG</th>
-                                            <th>PE</th>
-                                            <th>PP</th>
-                                            <th>TA (F)</th>
-                                            <th>TR (F)</th>
-                                            <th>PF</th>
-                                            <th>PC</th>
-                                            <th>TA (C)</th>
-                                            <th>TR (C)</th>
-                                            <th>FC</th>
-                                            <th>FR</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {refereeDeepStats.map((season) => (
-                                            <>
-                                                <tr
-                                                    class="season-total-row"
-                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
-                                                    style="cursor: pointer;"
-                                                >
-                                                    <td>
-                                                        <strong>
-                                                            {season.temporada}
-                                                        </strong>
-                                                        <span class="toggle-icon">
-                                                            ▼
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pj}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pg}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pe}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pp}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.ta}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.tr}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pf}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pc}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.ta_c}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.tr_c}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.fc}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.fr}
-                                                        </strong>
-                                                    </td>
-                                                </tr>
-                                                {season.competiciones.map(
-                                                    (comp: any) => (
-                                                        <tr
-                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
-                                                            style="display: none;"
-                                                        >
-                                                            <td class="competition-name">
-                                                                {competitionLogos[
-                                                                    comp
-                                                                        .competicion
-                                                                ] && (
-                                                                    <img
-                                                                        src={
-                                                                            competitionLogos[
-                                                                                comp
-                                                                                    .competicion
-                                                                            ]
-                                                                                .src
-                                                                        }
-                                                                        alt={
-                                                                            comp.competicion
-                                                                        }
-                                                                        class="competition-logo"
-                                                                    />
-                                                                )}
+                    <section class="stats-table-card">
+                        <h3 class="section-subheader">ESTADÍSTICAS</h3>
+                        <div class="table-wrapper">
+                            {
+                                refereeDeepStats.length > 0 ? (
+                                    <table class="stats-table detailed-table">
+                                        <thead>
+                                            <tr>
+                                                <th>TEMPORADA</th>
+                                                <th>PJ</th>
+                                                <th>PG</th>
+                                                <th>PE</th>
+                                                <th>PP</th>
+                                                <th>TA (F)</th>
+                                                <th>TR (F)</th>
+                                                <th>PF</th>
+                                                <th>PC</th>
+                                                <th>TA (C)</th>
+                                                <th>TR (C)</th>
+                                                <th>FC</th>
+                                                <th>FR</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {refereeDeepStats.map((season) => (
+                                                <>
+                                                    <tr
+                                                        class="season-total-row"
+                                                        onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                                        style="cursor: pointer;"
+                                                    >
+                                                        <td>
+                                                            <strong>
                                                                 {
-                                                                    comp.competicion
+                                                                    season.temporada
                                                                 }
-                                                            </td>
-                                                            <td>{comp.pj}</td>
-                                                            <td>{comp.pg}</td>
-                                                            <td>{comp.pe}</td>
-                                                            <td>{comp.pp}</td>
-                                                            <td>{comp.ta}</td>
-                                                            <td>{comp.tr}</td>
-                                                            <td>{comp.pf}</td>
-                                                            <td>{comp.pc}</td>
-                                                            <td>{comp.ta}</td>
-                                                            <td>{comp.tr}</td>
-                                                            <td>{comp.pf}</td>
-                                                            <td>{comp.pc}</td>
-                                                            <td>{comp.ta_c}</td>
-                                                            <td>{comp.tr_c}</td>
-                                                            <td>{comp.fc}</td>
-                                                            <td>{comp.fr}</td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                            </>
-                                        ))}
-                                        <tr class="total-row">
-                                            <td>
-                                                <strong>TOTAL</strong>
-                                            </td>
-                                            <td>{totalStats.pj}</td>
-                                            <td>{totalStats.pg}</td>
-                                            <td>{totalStats.pe}</td>
-                                            <td>{totalStats.pp}</td>
-                                            <td class="font-bold">
-                                                {totalStats.ta}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.tr}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.pf}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.pc}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.ta_c}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.tr_c}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.fc}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.fr}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div class="p-4 text-center text-gray-500">
-                                    No hay estadísticas disponibles
+                                                            </strong>
+                                                            <span class="toggle-icon">
+                                                                ▼
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pj
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pg
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pe
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pp
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .ta
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .tr
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pf
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .pc
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .ta_c
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .tr_c
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .fc
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                        <td>
+                                                            <strong>
+                                                                {
+                                                                    season.total
+                                                                        .fr
+                                                                }
+                                                            </strong>
+                                                        </td>
+                                                    </tr>
+                                                    {season.competiciones.map(
+                                                        (comp: any) => (
+                                                            <tr
+                                                                class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
+                                                                style="display: none;"
+                                                            >
+                                                                <td class="competition-name">
+                                                                    {competitionLogos[
+                                                                        comp
+                                                                            .competicion
+                                                                    ] && (
+                                                                        <img
+                                                                            src={
+                                                                                competitionLogos[
+                                                                                    comp
+                                                                                        .competicion
+                                                                                ]
+                                                                                    .src
+                                                                            }
+                                                                            alt={
+                                                                                comp.competicion
+                                                                            }
+                                                                            class="competition-logo"
+                                                                        />
+                                                                    )}
+                                                                    {
+                                                                        comp.competicion
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pj}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pg}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pe}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pp}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.ta}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.tr}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pf}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pc}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.ta}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.tr}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pf}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.pc}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.ta_c}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.tr_c}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.fc}
+                                                                </td>
+                                                                <td>
+                                                                    {comp.fr}
+                                                                </td>
+                                                            </tr>
+                                                        ),
+                                                    )}
+                                                </>
+                                            ))}
+                                            <tr class="total-row">
+                                                <td>
+                                                    <strong>TOTAL</strong>
+                                                </td>
+                                                <td>{totalStats.pj}</td>
+                                                <td>{totalStats.pg}</td>
+                                                <td>{totalStats.pe}</td>
+                                                <td>{totalStats.pp}</td>
+                                                <td class="font-bold">
+                                                    {totalStats.ta}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.tr}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.pf}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.pc}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.ta_c}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.tr_c}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.fc}
+                                                </td>
+                                                <td class="font-bold">
+                                                    {totalStats.fr}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div class="p-4 text-center text-gray-500">
+                                        No hay estadísticas disponibles
+                                    </div>
+                                )
+                            }
+                        </div>
+                    </section>
+
+                    <section class="charts-card">
+                        <h2 class="section-header">GRÁFICAS</h2>
+                        <div class="filters-container">
+                            <div class="filter-wrapper">
+                                <select id="season-filter">
+                                    <option value="all"
+                                        >Todas las Temporadas</option
+                                    >
+                                    {
+                                        uniqueSeasons.map((season) => (
+                                            <option value={season}>
+                                                {season}
+                                            </option>
+                                        ))
+                                    }
+                                </select>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="filter-icon"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M6 9l6 6l6 -6"></path></svg
+                                >
+                            </div>
+                            <div class="filter-wrapper">
+                                <select id="competition-filter">
+                                    <option value="all"
+                                        >Todas las Competiciones</option
+                                    >
+                                    {
+                                        uniqueCompetitions.map((comp) => (
+                                            <option value={comp}>{comp}</option>
+                                        ))
+                                    }
+                                </select>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="filter-icon"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M6 9l6 6l6 -6"></path></svg
+                                >
+                            </div>
+                        </div>
+                        <div class="charts-row">
+                            <div class="chart-item">
+                                <h4 class="text-sm font-bold mb-2">
+                                    RESULTADOS
+                                </h4>
+                                <svg
+                                    viewBox="0 0 100 100"
+                                    class="pie-chart"
+                                    id="results-chart"
+                                >
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#c8e6c9"
+                                        stroke-width="20"
+                                        stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#fff9c4"
+                                        stroke-width="20"
+                                        stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
+                                        stroke-dashoffset={-winsArc}
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#ffcdd2"
+                                        stroke-width="20"
+                                        stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
+                                        stroke-dashoffset={-(
+                                            winsArc + drawsArc
+                                        )}
+                                        transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <div class="chart-legend" id="results-legend">
+                                    <div>
+                                        <span class="dot green"></span> Ganados ({
+                                            totalStats.pg
+                                        })
+                                    </div>
+                                    <div>
+                                        <span class="dot orange"></span> Empatados
+                                        ({totalStats.pe})
+                                    </div>
+                                    <div>
+                                        <span class="dot red"></span> Perdidos ({
+                                            totalStats.pp
+                                        })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chart-item">
+                                <h4 class="text-sm font-bold mb-2">TARJETAS</h4>
+                                <svg
+                                    viewBox="0 0 100 100"
+                                    class="pie-chart"
+                                    id="cards-chart"
+                                >
+                                    {
+                                        /* Changed card colors to pastel as requested: Pastel Yellow #fff9c4, Pastel Red #ffcdd2 */
+                                    }
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#fff9c4"
+                                        stroke-width="20"
+                                        stroke-dasharray={`${yellowArc} ${circumference - yellowArc}`}
+                                        transform="rotate(-90 50 50)"></circle>
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        r="35"
+                                        fill="none"
+                                        stroke="#ffcdd2"
+                                        stroke-width="20"
+                                        stroke-dasharray={`${redArc} ${circumference - redArc}`}
+                                        stroke-dashoffset={-yellowArc}
+                                        transform="rotate(-90 50 50)"></circle>
+                                </svg>
+                                <div class="chart-legend" id="cards-legend">
+                                    <div>
+                                        <span class="dot yellow"></span> Amarillas
+                                        ({totalStats.ta})
+                                    </div>
+                                    <div>
+                                        <span class="dot red"></span> Rojas ({
+                                            totalStats.tr
+                                        })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="matches-card">
+                        <h3 class="section-subheader">PARTIDOS DIRIGIDOS</h3>
+                        <div class="table-wrapper">
+                            <table class="matches-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Competición</th>
+                                        <th>Local</th>
+                                        <th>Res.</th>
+                                        <th>Visitante</th>
+                                        <th>Estadio</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        matches.map((match, index) => (
+                                            <tr
+                                                class={`match-row ${index >= 10 ? "hidden-match" : ""}`}
+                                                style={
+                                                    index >= 10
+                                                        ? "display: none;"
+                                                        : ""
+                                                }
+                                            >
+                                                <td>
+                                                    {new Date(
+                                                        match.fecha,
+                                                    ).toLocaleDateString(
+                                                        "es-ES",
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {competitionLogos[
+                                                        match.competicion
+                                                    ] && (
+                                                        <img
+                                                            src={
+                                                                competitionLogos[
+                                                                    match
+                                                                        .competicion
+                                                                ].src
+                                                            }
+                                                            alt={
+                                                                match.competicion
+                                                            }
+                                                            class="competition-logo-small"
+                                                            title={
+                                                                match.competicion
+                                                            }
+                                                        />
+                                                    )}
+                                                    {!competitionLogos[
+                                                        match.competicion
+                                                    ] && match.competicion}
+                                                </td>
+                                                <td
+                                                    class={
+                                                        match.club_local
+                                                            .toLowerCase()
+                                                            .includes(
+                                                                "real madrid",
+                                                            )
+                                                            ? "font-bold"
+                                                            : ""
+                                                    }
+                                                >
+                                                    {match.club_local}
+                                                </td>
+                                                <td
+                                                    class={`${
+                                                        match.resultado === "V"
+                                                            ? "resultado-victoria"
+                                                            : match.resultado ===
+                                                                "E"
+                                                              ? "resultado-empate"
+                                                              : "resultado-derrota"
+                                                    }`}
+                                                >
+                                                    {match.goles_rm} -{" "}
+                                                    {match.goles_rival}
+                                                </td>
+                                                <td
+                                                    class={
+                                                        match.club_visitante
+                                                            .toLowerCase()
+                                                            .includes(
+                                                                "real madrid",
+                                                            )
+                                                            ? "font-bold"
+                                                            : ""
+                                                    }
+                                                >
+                                                    {match.club_visitante}
+                                                </td>
+                                                <td>
+                                                    {match.estadio && (
+                                                        <a
+                                                            href={`/estadios/${generateSlug(match.estadio)}`}
+                                                            class="hover:text-[#ffde59] transition-colors"
+                                                        >
+                                                            {match.estadio}
+                                                        </a>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        {
+                            matches.length > 10 && (
+                                <div class="matches-footer">
+                                    <button
+                                        id="show-more-matches"
+                                        class="btn-more"
+                                    >
+                                        Ver todos los partidos ({matches.length}
+                                        )
+                                    </button>
                                 </div>
                             )
                         }
-                    </div>
-                </section>
-
-                <section class="charts-card">
-                    <h2 class="section-header">GRÁFICAS</h2>
-                    <div class="filters-container">
-                        <div class="filter-wrapper">
-                            <select id="season-filter">
-                                <option value="all">Todas las Temporadas</option
-                                >
-                                {
-                                    uniqueSeasons.map((season) => (
-                                        <option value={season}>{season}</option>
-                                    ))
-                                }
-                            </select>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="filter-icon"
-                                ><path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"></path><path d="M6 9l6 6l6 -6"
-                                ></path></svg
-                            >
-                        </div>
-                        <div class="filter-wrapper">
-                            <select id="competition-filter">
-                                <option value="all"
-                                    >Todas las Competiciones</option
-                                >
-                                {
-                                    uniqueCompetitions.map((comp) => (
-                                        <option value={comp}>{comp}</option>
-                                    ))
-                                }
-                            </select>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="filter-icon"
-                                ><path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"></path><path d="M6 9l6 6l6 -6"
-                                ></path></svg
-                            >
-                        </div>
-                    </div>
-                    <div class="charts-row">
-                        <div class="chart-item">
-                            <h4 class="text-sm font-bold mb-2">RESULTADOS</h4>
-                            <svg
-                                viewBox="0 0 100 100"
-                                class="pie-chart"
-                                id="results-chart"
-                            >
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#c8e6c9"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#fff9c4"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
-                                    stroke-dashoffset={-winsArc}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#ffcdd2"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
-                                    stroke-dashoffset={-(winsArc + drawsArc)}
-                                    transform="rotate(-90 50 50)"></circle>
-                            </svg>
-                            <div class="chart-legend" id="results-legend">
-                                <div>
-                                    <span class="dot green"></span> Ganados ({
-                                        totalStats.pg
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot orange"></span> Empatados ({
-                                        totalStats.pe
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot red"></span> Perdidos ({
-                                        totalStats.pp
-                                    })
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="chart-item">
-                            <h4 class="text-sm font-bold mb-2">TARJETAS</h4>
-                            <svg
-                                viewBox="0 0 100 100"
-                                class="pie-chart"
-                                id="cards-chart"
-                            >
-                                {
-                                    /* Changed card colors to pastel as requested: Pastel Yellow #fff9c4, Pastel Red #ffcdd2 */
-                                }
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#fff9c4"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${yellowArc} ${circumference - yellowArc}`}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#ffcdd2"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${redArc} ${circumference - redArc}`}
-                                    stroke-dashoffset={-yellowArc}
-                                    transform="rotate(-90 50 50)"></circle>
-                            </svg>
-                            <div class="chart-legend" id="cards-legend">
-                                <div>
-                                    <span class="dot yellow"></span> Amarillas ({
-                                        totalStats.ta
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot red"></span> Rojas ({
-                                        totalStats.tr
-                                    })
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="matches-card">
-                    <h3 class="section-subheader">PARTIDOS DIRIGIDOS</h3>
-                    <div class="table-wrapper">
-                        <table class="matches-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Competición</th>
-                                    <th>Local</th>
-                                    <th>Res.</th>
-                                    <th>Visitante</th>
-                                    <th>Estadio</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    matches.map((match, index) => (
-                                        <tr
-                                            class={`match-row ${index >= 10 ? "hidden-match" : ""}`}
-                                            style={
-                                                index >= 10
-                                                    ? "display: none;"
-                                                    : ""
-                                            }
-                                        >
-                                            <td>
-                                                {new Date(
-                                                    match.fecha,
-                                                ).toLocaleDateString("es-ES")}
-                                            </td>
-                                            <td>
-                                                {competitionLogos[
-                                                    match.competicion
-                                                ] && (
-                                                    <img
-                                                        src={
-                                                            competitionLogos[
-                                                                match
-                                                                    .competicion
-                                                            ].src
-                                                        }
-                                                        alt={match.competicion}
-                                                        class="competition-logo-small"
-                                                        title={
-                                                            match.competicion
-                                                        }
-                                                    />
-                                                )}
-                                                {!competitionLogos[
-                                                    match.competicion
-                                                ] && match.competicion}
-                                            </td>
-                                            <td
-                                                class={
-                                                    match.club_local
-                                                        .toLowerCase()
-                                                        .includes("real madrid")
-                                                        ? "font-bold"
-                                                        : ""
-                                                }
-                                            >
-                                                {match.club_local}
-                                            </td>
-                                            <td
-                                                class={`${
-                                                    match.resultado === "V"
-                                                        ? "resultado-victoria"
-                                                        : match.resultado ===
-                                                            "E"
-                                                          ? "resultado-empate"
-                                                          : "resultado-derrota"
-                                                }`}
-                                            >
-                                                {match.goles_rm} -{" "}
-                                                {match.goles_rival}
-                                            </td>
-                                            <td
-                                                class={
-                                                    match.club_visitante
-                                                        .toLowerCase()
-                                                        .includes("real madrid")
-                                                        ? "font-bold"
-                                                        : ""
-                                                }
-                                            >
-                                                {match.club_visitante}
-                                            </td>
-                                            <td>
-                                                {match.estadio && (
-                                                    <a
-                                                        href={`/estadios/${generateSlug(match.estadio)}`}
-                                                        class="hover:text-[#ffde59] transition-colors"
-                                                    >
-                                                        {match.estadio}
-                                                    </a>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                    {
-                        matches.length > 10 && (
-                            <div class="matches-footer">
-                                <button id="show-more-matches" class="btn-more">
-                                    Ver todos los partidos ({matches.length})
-                                </button>
-                            </div>
-                        )
-                    }
+                    </section>
                 </section>
             </div>
         </div>
     </main>
-</Layout>
 
-<script define:vars={{ initialMatches: matches }}>
-    // Toggle Season Logic
-    window.toggleSeason = function (season) {
-        const rows = document.querySelectorAll(
-            `.competition-row.season-${season}`,
-        );
-        const icon = document.querySelector(
-            `.season-total-row[onclick*="${season}"] .toggle-icon`,
-        );
-
-        rows.forEach((row) => {
-            if (row.style.display === "none") {
-                row.style.display = "table-row";
-                if (icon) icon.textContent = "▲";
-            } else {
-                row.style.display = "none";
-                if (icon) icon.textContent = "▼";
-            }
-        });
-    };
-
-    function calculateStatsDoubleFilter(matches) {
-        const stats = {
-            pj: 0,
-            pg: 0,
-            pe: 0,
-            pp: 0,
-            ta: 0,
-            tr: 0,
-            pf: 0,
-            pc: 0,
-            ta_c: 0,
-            tr_c: 0,
-        };
-
-        matches.forEach((m) => {
-            stats.pj++;
-            stats.ta += parseInt(m.yellowCards) || 0;
-            stats.tr += parseInt(m.redCards) || 0;
-            stats.pf += parseInt(m.penaltiesFor) || 0;
-            stats.pc += parseInt(m.penaltiesAgainst) || 0;
-            stats.ta_c += parseInt(m.yellowCardsAgainst) || 0;
-            stats.tr_c += parseInt(m.redCardsAgainst) || 0;
-
-            if (m.resultado === "V") stats.pg++;
-            else if (m.resultado === "E") stats.pe++;
-            else stats.pp++;
-        });
-        return stats;
-    }
-
-    function updateCharts(stats) {
-        const circumference = 220;
-        const totalMatches = stats.pj;
-
-        const updateCircle = (id, idx, val, total, offset = 0) => {
-            const chart = document.getElementById(id);
-            if (!chart) return;
-            const circle = chart.querySelectorAll("circle")[idx];
-            if (!circle) return;
-
-            const arc =
-                total > 0 ? Math.round((val / total) * circumference) : 0;
-            circle.setAttribute(
-                "stroke-dasharray",
-                `${arc} ${circumference - arc}`,
+    <script define:vars={{ initialMatches: matches }}>
+        // Toggle Season Logic
+        window.toggleSeason = function (season) {
+            const rows = document.querySelectorAll(
+                `.competition-row.season-${season}`,
             );
-            if (offset !== 0) circle.setAttribute("stroke-dashoffset", -offset);
-            return arc;
+            const icon = document.querySelector(
+                `.season-total-row[onclick*="${season}"] .toggle-icon`,
+            );
+
+            rows.forEach((row) => {
+                if (row.style.display === "none") {
+                    row.style.display = "table-row";
+                    if (icon) icon.textContent = "▲";
+                } else {
+                    row.style.display = "none";
+                    if (icon) icon.textContent = "▼";
+                }
+            });
         };
 
-        const winsArc = updateCircle(
-            "results-chart",
-            0,
-            stats.pg,
-            totalMatches,
-        );
-        const drawsArc = updateCircle(
-            "results-chart",
-            1,
-            stats.pe,
-            totalMatches,
-            winsArc,
-        );
-        updateCircle(
-            "results-chart",
-            2,
-            stats.pp,
-            totalMatches,
-            winsArc + drawsArc,
-        );
+        function calculateStatsDoubleFilter(matches) {
+            const stats = {
+                pj: 0,
+                pg: 0,
+                pe: 0,
+                pp: 0,
+                ta: 0,
+                tr: 0,
+                pf: 0,
+                pc: 0,
+                ta_c: 0,
+                tr_c: 0,
+            };
 
-        // Legends
-        document.querySelector(
-            "#results-legend div:nth-child(1) .dot",
-        ).nextSibling.textContent = ` Ganados (${stats.pg})`;
-        document.querySelector(
-            "#results-legend div:nth-child(2) .dot",
-        ).nextSibling.textContent = ` Empatados (${stats.pe})`;
-        document.querySelector(
-            "#results-legend div:nth-child(3) .dot",
-        ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
+            matches.forEach((m) => {
+                stats.pj++;
+                stats.ta += parseInt(m.yellowCards) || 0;
+                stats.tr += parseInt(m.redCards) || 0;
+                stats.pf += parseInt(m.penaltiesFor) || 0;
+                stats.pc += parseInt(m.penaltiesAgainst) || 0;
+                stats.ta_c += parseInt(m.yellowCardsAgainst) || 0;
+                stats.tr_c += parseInt(m.redCardsAgainst) || 0;
 
-        // Cards
-        const totalCards = stats.ta + stats.tr;
-        const yellowArc = updateCircle("cards-chart", 0, stats.ta, totalCards);
-        updateCircle("cards-chart", 1, stats.tr, totalCards, yellowArc);
-
-        document.querySelector(
-            "#cards-legend div:nth-child(1) .dot",
-        ).nextSibling.textContent = ` Amarillas (${stats.ta})`;
-        document.querySelector(
-            "#cards-legend div:nth-child(2) .dot",
-        ).nextSibling.textContent = ` Rojas (${stats.tr})`;
-    }
-
-    // Event Listeners for filters
-    const seasonFilter = document.getElementById("season-filter");
-    const competitionFilter = document.getElementById("competition-filter");
-
-    const allMatches = initialMatches; // from define:vars
-
-    function applyFilters() {
-        const selectedSeason = seasonFilter.value;
-        const selectedComp = competitionFilter.value;
-
-        let filtered = allMatches;
-
-        if (selectedSeason !== "all") {
-            filtered = filtered.filter((m) => m.season === selectedSeason);
-        }
-        if (selectedComp !== "all") {
-            filtered = filtered.filter((m) => m.competicion === selectedComp);
-        }
-
-        const stats = calculateStatsDoubleFilter(filtered);
-        updateCharts(stats);
-    }
-
-    if (seasonFilter) seasonFilter.addEventListener("change", applyFilters);
-    if (competitionFilter)
-        competitionFilter.addEventListener("change", applyFilters);
-
-    const showMoreBtn = document.getElementById("show-more-matches");
-    if (showMoreBtn) {
-        showMoreBtn.addEventListener("click", () => {
-            document.querySelectorAll(".hidden-match").forEach((row) => {
-                row.style.display = "table-row";
-                row.classList.remove("hidden-match");
+                if (m.resultado === "V") stats.pg++;
+                else if (m.resultado === "E") stats.pe++;
+                else stats.pp++;
             });
-            showMoreBtn.style.display = "none";
-        });
-    }
-</script>
-
-<style>
-    .rival-details-page {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-        overflow-x: hidden;
-    }
-
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        text-decoration: none;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        transition: color 0.3s;
-    }
-
-    .back-link:hover {
-        color: #ffde59;
-    }
-
-    .rival-grid {
-        display: flex;
-        justify-content: center;
-    }
-
-    .left-column {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        width: 100%;
-        max-width: 1000px;
-        overflow-x: hidden;
-    }
-
-    .right-column {
-        display: none;
-    }
-
-    @media (max-width: 1024px) {
-        .rival-grid {
-            grid-template-columns: 1fr;
+            return stats;
         }
-    }
 
-    .section-header {
-        background: #ffde59;
-        color: #2b2b2b;
-        padding: 0.75rem 1rem;
-        margin: 0;
-        font-size: 1rem;
-        font-weight: bold;
-    }
+        function updateCharts(stats) {
+            const circumference = 220;
+            const totalMatches = stats.pj;
 
-    .section-subheader {
-        background: #ffde59;
-        color: #000;
-        padding: 0.75rem 1rem;
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: bold;
-    }
+            const updateCircle = (id, idx, val, total, offset = 0) => {
+                const chart = document.getElementById(id);
+                if (!chart) return;
+                const circle = chart.querySelectorAll("circle")[idx];
+                if (!circle) return;
 
-    .rival-card,
-    .stats-table-card,
-    .charts-card,
-    .matches-card,
-    .stadium-card {
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-    }
+                const arc =
+                    total > 0 ? Math.round((val / total) * circumference) : 0;
+                circle.setAttribute(
+                    "stroke-dasharray",
+                    `${arc} ${circumference - arc}`,
+                );
+                if (offset !== 0)
+                    circle.setAttribute("stroke-dashoffset", -offset);
+                return arc;
+            };
 
-    .rival-info {
-        padding: 1.5rem;
-        display: flex;
-        gap: 2rem;
-        align-items: center;
-    }
+            const winsArc = updateCircle(
+                "results-chart",
+                0,
+                stats.pg,
+                totalMatches,
+            );
+            const drawsArc = updateCircle(
+                "results-chart",
+                1,
+                stats.pe,
+                totalMatches,
+                winsArc,
+            );
+            updateCircle(
+                "results-chart",
+                2,
+                stats.pp,
+                totalMatches,
+                winsArc + drawsArc,
+            );
 
-    .referee-icon-container {
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 120px;
-        height: 120px;
-    }
+            // Legends
+            document.querySelector(
+                "#results-legend div:nth-child(1) .dot",
+            ).nextSibling.textContent = ` Ganados (${stats.pg})`;
+            document.querySelector(
+                "#results-legend div:nth-child(2) .dot",
+            ).nextSibling.textContent = ` Empatados (${stats.pe})`;
+            document.querySelector(
+                "#results-legend div:nth-child(3) .dot",
+            ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
-    .rival-details {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
+            // Cards
+            const totalCards = stats.ta + stats.tr;
+            const yellowArc = updateCircle(
+                "cards-chart",
+                0,
+                stats.ta,
+                totalCards,
+            );
+            updateCircle("cards-chart", 1, stats.tr, totalCards, yellowArc);
 
-    .rival-details.w-full {
-        width: 100%;
-        max-width: 100%;
-    }
+            document.querySelector(
+                "#cards-legend div:nth-child(1) .dot",
+            ).nextSibling.textContent = ` Amarillas (${stats.ta})`;
+            document.querySelector(
+                "#cards-legend div:nth-child(2) .dot",
+            ).nextSibling.textContent = ` Rojas (${stats.tr})`;
+        }
 
-    .info-row {
-        display: flex;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
-        align-items: center;
-    }
+        // Event Listeners for filters
+        const seasonFilter = document.getElementById("season-filter");
+        const competitionFilter = document.getElementById("competition-filter");
 
-    .info-row .label {
-        font-weight: 600;
-        width: 150px;
-    }
+        const allMatches = initialMatches; // from define:vars
 
-    .info-row .value {
-        flex: 1;
-        text-align: right;
-        display: flex;
-        justify-content: flex-end;
-    }
+        function applyFilters() {
+            const selectedSeason = seasonFilter.value;
+            const selectedComp = competitionFilter.value;
 
-    /* Detailed Table Styles */
-    .table-wrapper {
-        overflow-x: auto;
-    }
+            let filtered = allMatches;
 
-    .stats-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family:
-            "Inter",
-            system-ui,
-            -apple-system,
-            sans-serif;
-        min-width: 600px;
-    }
+            if (selectedSeason !== "all") {
+                filtered = filtered.filter((m) => m.season === selectedSeason);
+            }
+            if (selectedComp !== "all") {
+                filtered = filtered.filter(
+                    (m) => m.competicion === selectedComp,
+                );
+            }
 
-    .detailed-table th,
-    .detailed-table td {
-        padding: 0.75rem;
-        text-align: center;
-        border: 1px solid #ddd;
-        font-size: 0.85rem;
-    }
+            const stats = calculateStatsDoubleFilter(filtered);
+            updateCharts(stats);
+        }
 
-    .detailed-table th {
-        background: #333;
-        color: white;
-        font-weight: 600;
-        text-transform: uppercase;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    .detailed-table th:first-child,
-    .detailed-table td:first-child {
-        text-align: left;
-        position: sticky;
-        left: 0;
-        background: white;
-        z-index: 5;
-    }
+        if (seasonFilter) seasonFilter.addEventListener("change", applyFilters);
+        if (competitionFilter)
+            competitionFilter.addEventListener("change", applyFilters);
 
-    .detailed-table th:first-child {
-        background: #333;
-        z-index: 15;
-    }
+        const showMoreBtn = document.getElementById("show-more-matches");
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener("click", () => {
+                document.querySelectorAll(".hidden-match").forEach((row) => {
+                    row.style.display = "table-row";
+                    row.classList.remove("hidden-match");
+                });
+                showMoreBtn.style.display = "none";
+            });
+        }
+    </script>
 
-    .detailed-table tbody tr:nth-child(even) {
-        background: #f9fafb;
-    }
+    <style>
+        .rival-details-page {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
 
-    .detailed-table tbody tr:hover {
-        background: #f3f4f6;
-    }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: color 0.3s;
+        }
 
-    .competition-row {
-        background-color: #fcfcfc !important;
-    }
-    .competition-row td {
-        font-size: 0.75rem;
-        color: #555;
-    }
+        .back-link:hover {
+            color: #ffde59;
+        }
 
-    .competition-logo {
-        width: 20px;
-        height: 20px;
-        object-fit: contain;
-        margin-right: 8px;
-        vertical-align: middle;
-        display: inline-block;
-    }
+        .rival-grid {
+            display: flex;
+            justify-content: center;
+        }
 
-    .season-total-row {
-        background-color: #f0f0f0 !important;
-        font-weight: bold;
-        border-top: 2px solid #333;
-        cursor: pointer;
-    }
-    .season-total-row:hover {
-        background-color: #e8e8e8 !important;
-    }
-
-    .season-total-row td:first-child {
-        background-color: #f0f0f0 !important;
-    }
-
-    .career-total-row {
-        background-color: #eef2f7 !important;
-        font-weight: bold;
-        border-top: 2px solid #333;
-    }
-
-    .detailed-table tr.total-row {
-        background: #ffde59 !important;
-        font-weight: bold;
-        border-top: 3px solid #333;
-    }
-
-    .detailed-table tr.total-row:hover {
-        background: #ffde59 !important;
-    }
-
-    .detailed-table .total-row td {
-        background: #ffde59 !important;
-        font-weight: 800;
-        color: #111827;
-    }
-
-    .detailed-table .total-row td:first-child {
-        background: #ffde59 !important;
-    }
-
-    .toggle-icon {
-        font-size: 0.7rem;
-        color: #999;
-    }
-
-    /* Charts */
-    .filters-container {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding-top: 1.5rem;
-    }
-
-    .filter-wrapper {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-width: 240px;
-    }
-
-    .filter-icon {
-        position: absolute;
-        right: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: #6b7280;
-        width: 18px;
-        height: 18px;
-        z-index: 2;
-    }
-
-    .filters-container select {
-        width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.5rem;
-        background: #ffffff;
-        color: #1f2937;
-        border: 1px solid #d1d5db;
-        border-radius: 9999px;
-        font-size: 0.95rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        outline: none;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        text-align: center;
-    }
-
-    .filters-container select:hover {
-        border-color: #fbbf24;
-        background: #fffdf5;
-    }
-
-    .filters-container select:focus {
-        border-color: #fbbf24;
-        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
-        background: #ffffff;
-    }
-
-    .charts-row {
-        display: flex;
-        flex-wrap: wrap;
-        padding: 1.5rem;
-        gap: 2rem;
-        justify-content: center;
-        align-items: flex-start;
-    }
-
-    .chart-item {
-        flex: 1;
-        min-width: 250px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .pie-chart {
-        width: 150px;
-        height: 150px;
-        transform: rotate(-90deg);
-    }
-
-    .chart-legend {
-        margin-top: 1rem;
-        text-align: left;
-        font-size: 0.9rem;
-    }
-
-    .chart-legend div {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.25rem;
-    }
-
-    .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 0.5rem;
-    }
-
-    .dot.green {
-        background-color: #c8e6c9;
-    }
-    .dot.orange {
-        background-color: #fff9c4;
-    }
-    .dot.red {
-        background-color: #e57373;
-    }
-    .dot.yellow {
-        background-color: #fff9c4;
-    } /* Pastel yellow */
-
-    .matches-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family:
-            "Inter",
-            system-ui,
-            -apple-system,
-            sans-serif;
-    }
-
-    .matches-table th,
-    .matches-table td {
-        padding: 0.5rem 0.25rem;
-        text-align: center;
-        border: 1px solid #e5e7eb;
-        font-size: 0.8rem;
-        color: #374151;
-        white-space: nowrap;
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .matches-table th {
-        background: #333;
-        color: white;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.05em;
-    }
-
-    .matches-table tbody tr:nth-child(even) {
-        background: #f9fafb;
-    }
-
-    .matches-table tbody tr:hover {
-        background: #f3f4f6;
-    }
-
-    .competition-logo-small {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    .matches-table .resultado-victoria {
-        background-color: #c8e6c9 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-    .matches-table .resultado-empate {
-        background-color: #fff9c4 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-    .matches-table .resultado-derrota {
-        background-color: #ffcdd2 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-
-    .matches-footer {
-        padding: 1rem;
-        text-align: center;
-        background: #f8f9fa;
-        border-top: 1px solid #eee;
-    }
-
-    .btn-more {
-        display: inline-block;
-        margin-top: 1.5rem;
-        padding: 0.75rem 1.5rem;
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        color: #2b2b2b;
-        font-weight: 700;
-        text-decoration: none;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.9rem;
-        cursor: pointer;
-        border: none;
-    }
-
-    .btn-more:hover {
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        color: #000;
-    }
-
-    .hidden-match {
-        display: none;
-    }
-
-    @media (max-width: 768px) {
-        .filters-container {
+        .left-column {
+            display: flex;
             flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+            overflow-x: hidden;
+        }
+
+        .right-column {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .rival-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-header {
+            background: #ffde59;
+            color: #2b2b2b;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .section-subheader {
+            background: #ffde59;
+            color: #000;
+            padding: 0.75rem 1rem;
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .rival-card,
+        .stats-table-card,
+        .charts-card,
+        .matches-card,
+        .stadium-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .ficha-content {
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        .player-photo-container {
+            margin-bottom: 0;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+        }
+
+        .player-photo {
+            max-width: 280px;
+            height: 100%;
+            width: auto;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .player-info.w-full {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
             align-items: center;
         }
-        .filter-wrapper {
-            width: 100%;
+
+        .info-row .label {
+            font-weight: 600;
+            width: 150px;
         }
 
-        .rival-info {
+        .info-row .value {
+            flex: 1;
+            text-align: right;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Detailed Table Styles */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family:
+                "Inter",
+                system-ui,
+                -apple-system,
+                sans-serif;
+            min-width: 600px;
+        }
+
+        .detailed-table th,
+        .detailed-table td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
+        }
+
+        .detailed-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .detailed-table th:first-child,
+        .detailed-table td:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 5;
+        }
+
+        .detailed-table th:first-child {
+            background: #333;
+            z-index: 15;
+        }
+
+        .detailed-table tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .detailed-table tbody tr:hover {
+            background: #f3f4f6;
+        }
+
+        .competition-row {
+            background-color: #fcfcfc !important;
+        }
+        .competition-row td {
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .competition-logo {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .season-total-row {
+            background-color: #f0f0f0 !important;
+            font-weight: bold;
+            border-top: 2px solid #333;
+            cursor: pointer;
+        }
+        .season-total-row:hover {
+            background-color: #e8e8e8 !important;
+        }
+
+        .season-total-row td:first-child {
+            background-color: #f0f0f0 !important;
+        }
+
+        .career-total-row {
+            background-color: #eef2f7 !important;
+            font-weight: bold;
+            border-top: 2px solid #333;
+        }
+
+        .detailed-table tr.total-row {
+            background: #ffde59 !important;
+            font-weight: bold;
+            border-top: 3px solid #333;
+        }
+
+        .detailed-table tr.total-row:hover {
+            background: #ffde59 !important;
+        }
+
+        .detailed-table .total-row td {
+            background: #ffde59 !important;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .detailed-table .total-row td:first-child {
+            background: #ffde59 !important;
+        }
+
+        .toggle-icon {
+            font-size: 0.7rem;
+            color: #999;
+        }
+
+        /* Charts */
+        .filters-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding-top: 1.5rem;
+        }
+
+        .filter-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 240px;
+        }
+
+        .filter-icon {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: #6b7280;
+            width: 18px;
+            height: 18px;
+            z-index: 2;
+        }
+
+        .filters-container select {
+            width: 100%;
+            padding: 0.875rem 3rem 0.875rem 1.5rem;
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            text-align: center;
+        }
+
+        .filters-container select:hover {
+            border-color: #fbbf24;
+            background: #fffdf5;
+        }
+
+        .filters-container select:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
+            background: #ffffff;
+        }
+
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            gap: 2rem;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .chart-item {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
         }
 
-        .referee-icon-container {
-            margin-bottom: 1rem;
+        .pie-chart {
+            width: 150px;
+            height: 150px;
+            transform: rotate(-90deg);
         }
 
-        .stats-table,
-        .detailed-table,
+        .chart-legend {
+            margin-top: 1rem;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .chart-legend div {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .dot.green {
+            background-color: #c8e6c9;
+        }
+        .dot.orange {
+            background-color: #fff9c4;
+        }
+        .dot.red {
+            background-color: #e57373;
+        }
+        .dot.yellow {
+            background-color: #fff9c4;
+        } /* Pastel yellow */
+
         .matches-table {
-            font-size: 0.75rem;
+            width: 100%;
+            border-collapse: collapse;
+            font-family:
+                "Inter",
+                system-ui,
+                -apple-system,
+                sans-serif;
         }
 
-        .detailed-table th,
-        .detailed-table td,
         .matches-table th,
         .matches-table td {
             padding: 0.5rem 0.25rem;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            font-size: 0.8rem;
+            color: #374151;
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .table-wrapper {
-            -webkit-overflow-scrolling: touch;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .section-header,
-        .section-subheader {
-            font-size: 0.85rem;
-            padding: 0.5rem 0.75rem;
+        .matches-table th {
+            background: #333;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
         }
 
-        .chart-item {
-            min-width: 200px;
+        .matches-table tbody tr:nth-child(even) {
+            background: #f9fafb;
         }
 
-        .pie-chart {
-            width: 120px;
-            height: 120px;
+        .matches-table tbody tr:hover {
+            background: #f3f4f6;
         }
-    }
-</style>
+
+        .competition-logo-small {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .matches-table .resultado-victoria {
+            background-color: #c8e6c9 !important;
+            color: #000000 !important;
+            font-weight: 700;
+        }
+        .matches-table .resultado-empate {
+            background-color: #fff9c4 !important;
+            color: #000000 !important;
+            font-weight: 700;
+        }
+        .matches-table .resultado-derrota {
+            background-color: #ffcdd2 !important;
+            color: #000000 !important;
+            font-weight: 700;
+        }
+
+        .matches-footer {
+            padding: 1rem;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-more {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(
+                135deg,
+                #ffd700 0%,
+                #ffed4e 50%,
+                #ffd700 100%
+            );
+            color: #2b2b2b;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-more:hover {
+            background: linear-gradient(
+                135deg,
+                #ffd700 0%,
+                #ffed4e 50%,
+                #ffd700 100%
+            );
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: #000;
+        }
+
+        .hidden-match {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .filters-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .filter-wrapper {
+                width: 100%;
+            }
+
+            .rival-info {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .referee-icon-container {
+                margin-bottom: 1rem;
+            }
+
+            .stats-table,
+            .detailed-table,
+            .matches-table {
+                font-size: 0.75rem;
+            }
+
+            .detailed-table th,
+            .detailed-table td,
+            .matches-table th,
+            .matches-table td {
+                padding: 0.5rem 0.25rem;
+            }
+
+            .table-wrapper {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .section-header,
+            .section-subheader {
+                font-size: 0.85rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .chart-item {
+                min-width: 200px;
+            }
+
+            .pie-chart {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+</Layout>
