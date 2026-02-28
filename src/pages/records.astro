@@ -1,0 +1,494 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchAllGoals } from "../utils/partidos";
+import { fetchAllClubShields } from "../utils/rivales";
+import { getAssetUrl } from "../utils/assets";
+
+const allGoals = await fetchAllGoals();
+const officialComps = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+];
+const clubShields = await fetchAllClubShields();
+
+// Global milestones for the club (every 100 goals) and every 10 for the beginning?
+// The user said "cifras redondas de goles (cada 10 goles)". Let's stick to every 10.
+const milestones = allGoals
+    .filter((g) => officialComps.includes(g.competicion))
+    .sort((a, b) => {
+        const dateA = new Date(a.fecha).getTime();
+        const dateB = new Date(b.fecha).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return parseInt(a.minuto) - parseInt(b.minuto);
+    })
+    .map((g, index) => ({
+        ...g,
+        goalNumber: index + 1,
+        rival: g.club_local === "Real Madrid" ? g.club_visitante : g.club_local,
+    }))
+    .filter((g) => g.goalNumber % 10 === 0)
+    .reverse(); // Latest milestones first
+
+const formatShortDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString.split("T")[0]);
+        if (isNaN(date.getTime())) return "-";
+        return date.toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+    } catch {
+        return "-";
+    }
+};
+---
+
+<Layout
+    title="Récords y Goles Históricos | Madrid Femenino Xtra"
+    description="Repaso por los hitos goleadores y récords del Real Madrid Femenino. Cifras redondas de goles y momentos históricos."
+>
+    <main class="records-page">
+        <header class="records-header">
+            <h1 class="page-title">Récords e Hitos Goleadores</h1>
+            <p class="subtitle">
+                Repaso por las cifras redondas que marcan la historia de nuestra
+                sección femenina.
+            </p>
+        </header>
+
+        <section class="milestones-container">
+            <div class="milestones-grid">
+                {
+                    milestones.map((m) => (
+                        <div
+                            class={`milestone-card-big ${m.video_url ? "has-video" : ""}`}
+                            onclick={
+                                m.video_url
+                                    ? `openVideoModal('${m.video_url}', '${m.nombre_goleadora.replace(/'/g, "\\'")}')`
+                                    : null
+                            }
+                        >
+                            <div class="milestone-badge-wrapper">
+                                <div class="milestone-number-big">
+                                    <span class="m-count">{m.goalNumber}</span>
+                                    <span class="m-label">GOLES</span>
+                                </div>
+                            </div>
+
+                            <div class="milestone-main-info">
+                                <div class="m-player-display">
+                                    <div class="m-avatar-container">
+                                        <img
+                                            src={
+                                                m.foto_goleadora ||
+                                                getAssetUrl(
+                                                    "jugadoras",
+                                                    "placeholder",
+                                                )
+                                            }
+                                            alt={m.nombre_goleadora}
+                                            class="m-avatar"
+                                        />
+                                    </div>
+                                    <div class="m-player-name">
+                                        {m.nombre_goleadora}
+                                    </div>
+                                </div>
+
+                                <div class="m-match-details">
+                                    <div class="m-rival-info">
+                                        <img
+                                            src={
+                                                clubShields[m.rival] ||
+                                                getAssetUrl("escudos", m.rival)
+                                            }
+                                            alt={m.rival}
+                                            class="m-shield"
+                                        />
+                                        <div class="m-rival-text">
+                                            <span class="m-rival-name">
+                                                {m.rival}
+                                            </span>
+                                            <span class="m-comp">
+                                                {m.competicion}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="m-date-info">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-event"
+                                        >
+                                            <>
+                                                <path
+                                                    stroke="none"
+                                                    d="M0 0h24v24H0z"
+                                                    fill="none"
+                                                />
+                                                <path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" />
+                                                <path d="M16 3l0 4" />
+                                                <path d="M8 3l0 4" />
+                                                <path d="M4 11l16 0" />
+                                                <path d="M8 15h2v2h-2z" />
+                                            </>
+                                        </svg>
+                                        {formatShortDate(m.fecha)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {m.video_url && (
+                                <div class="video-indicator-big">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                    </svg>
+                                    <span>VER GOL</span>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                }
+            </div>
+        </section>
+
+        <!-- Video Modal -->
+        <div id="video-modal" class="video-modal-overlay">
+            <div class="video-modal-container">
+                <div class="video-modal-header">
+                    <h3 id="video-modal-title">Gol</h3>
+                    <button class="video-close-btn" onclick="closeVideoModal()">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><line x1="18" y1="6" x2="6" y2="18"></line><line
+                                x1="6"
+                                y1="6"
+                                x2="18"
+                                y2="18"></line></svg
+                        >
+                    </button>
+                </div>
+                <div class="video-modal-body">
+                    <video
+                        id="goal-video-player"
+                        controls
+                        class="goal-video-element"
+                    >
+                        <source id="video-source" src="" type="video/mp4" />
+                        Tu navegador no soporta el elemento de video.
+                    </video>
+                </div>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script is:inline>
+    function openVideoModal(url, scorer) {
+        const modal = document.getElementById("video-modal");
+        const video = document.getElementById("goal-video-player");
+        const source = document.getElementById("video-source");
+        const title = document.getElementById("video-modal-title");
+        title.textContent = `Gol de ${scorer}`;
+        source.src = url;
+        video.load();
+        modal.style.display = "flex";
+        video.play().catch((e) => console.log("Auto-play prevented", e));
+        modal.onclick = function (e) {
+            if (e.target === modal) {
+                closeVideoModal();
+            }
+        };
+    }
+    function closeVideoModal() {
+        const modal = document.getElementById("video-modal");
+        const video = document.getElementById("goal-video-player");
+        video.pause();
+        modal.style.display = "none";
+    }
+</script>
+
+<style>
+    .records-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 4rem 1.5rem;
+    }
+    .records-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+    .page-title {
+        font-size: 3rem;
+        font-weight: 900;
+        color: #151e42;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        position: relative;
+        display: inline-block;
+    }
+    .page-title::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: #ffde59;
+    }
+    .subtitle {
+        font-size: 1.2rem;
+        color: #666;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .milestones-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 2rem;
+    }
+
+    .milestone-card-big {
+        display: flex;
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        border: 1px solid #eee;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .milestone-card-big.has-video {
+        cursor: pointer;
+    }
+    .milestone-card-big.has-video:hover {
+        transform: translateY(-8px);
+        border-color: #ffde59;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .milestone-badge-wrapper {
+        background: #151e42;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        min-width: 120px;
+    }
+    .milestone-number-big {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #ffde59;
+    }
+    .m-count {
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .m-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-top: 5px;
+        color: white;
+    }
+
+    .milestone-main-info {
+        flex: 1;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1.5rem;
+    }
+
+    .m-player-display {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .m-avatar-container {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #ffde59;
+        background: #f0f0f0;
+    }
+    .m-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .m-player-name {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #151e42;
+    }
+
+    .m-match-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .m-rival-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .m-shield {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+    .m-rival-text {
+        display: flex;
+        flex-direction: column;
+    }
+    .m-rival-name {
+        font-weight: 700;
+        color: #333;
+    }
+    .m-comp {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    .m-date-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .video-indicator-big {
+        position: absolute;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #ffde59;
+        color: #151e42;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        opacity: 0.8;
+        transition: opacity 0.3s;
+    }
+    .milestone-card-big:hover .video-indicator-big {
+        opacity: 1;
+    }
+
+    /* Video Modal Styles (Shared with [slug].astro) */
+    .video-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(5px);
+    }
+    .video-modal-container {
+        background: #151e42;
+        width: 100%;
+        max-width: 1000px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 222, 89, 0.2);
+    }
+    .video-modal-header {
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ffde59;
+        color: #2b2b2b;
+    }
+    .video-modal-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .video-close-btn {
+        background: none;
+        border: none;
+        color: #2b2b2b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+    }
+    .video-modal-body {
+        position: relative;
+        padding-top: 56.25%;
+    }
+    .goal-video-element {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .milestones-grid {
+            grid-template-columns: 1fr;
+        }
+        .page-title {
+            font-size: 2rem;
+        }
+        .milestone-badge-wrapper {
+            min-width: 100px;
+            padding: 1rem;
+        }
+        .m-count {
+            font-size: 2.2rem;
+        }
+    }
+</style>
