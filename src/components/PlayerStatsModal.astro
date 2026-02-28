@@ -3,7 +3,7 @@
 ---
 
 <dialog id="player-stats-modal" class="player-modal">
-    <div class="player-modal-content">
+    <div class="player-modal-container">
         <div class="pm-header-bar">
             <h3 id="pm-header-title" class="pm-header-title">Estadísticas</h3>
             <button id="close-player-modal" class="close-modal-btn">
@@ -26,35 +26,37 @@
             </button>
         </div>
 
-        <div class="pm-header">
-            <div class="pm-photo-container">
-                <img id="pm-img" src="" alt="Player image" />
+        <div class="pm-scrollable-content">
+            <div class="pm-header">
+                <div class="pm-photo-container">
+                    <img id="pm-img" src="" alt="Player image" />
+                </div>
+
+                <img id="pm-flag" src="" alt="Flag" class="pm-flag-divider" />
+
+                <div class="pm-info">
+                    <h3 id="pm-name">Name</h3>
+                    <p id="pm-pos">Position</p>
+                </div>
             </div>
 
-            <img id="pm-flag" src="" alt="Flag" class="pm-flag-divider" />
+            <div class="pm-body">
+                <div class="pm-rating-floating">
+                    <span class="pm-rating-label">VALORACIÓN</span>
+                    <div id="pm-rating-val" class="pm-rating-badge"></div>
+                </div>
 
-            <div class="pm-info">
-                <h3 id="pm-name">Name</h3>
-                <p id="pm-pos">Position</p>
-            </div>
-        </div>
-
-        <div class="pm-body">
-            <div class="pm-rating-floating">
-                <span class="pm-rating-label">VALORACIÓN</span>
-                <div id="pm-rating-val" class="pm-rating-badge"></div>
+                <div class="pm-stats-section">
+                    <div class="pm-stats-grid" id="pm-stats-grid"></div>
+                </div>
             </div>
 
-            <div class="pm-stats-section">
-                <div class="pm-stats-grid" id="pm-stats-grid"></div>
+            <div class="pm-footer">
+                <p>
+                    Información estadística proporcionada por Sofascore y
+                    procesada por el equipo de análisis de Madrid Femenino Xtra.
+                </p>
             </div>
-        </div>
-
-        <div class="pm-footer">
-            <p>
-                Información estadística proporcionada por Sofascore y procesada
-                por el equipo de análisis de Madrid Femenino Xtra.
-            </p>
         </div>
     </div>
 </dialog>
@@ -211,7 +213,7 @@
                 label: "Duelos Aéreos",
                 val:
                     stats.duelos_aereos_totales > 0
-                        ? `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_totales || 0}`
+                        ? `${stats.duelos_aereos_ganados || 0}/${stats.duelos_aereos_ganados || 0}`
                         : null,
             },
             { label: "Faltas Recibidas", val: stats.faltas_recibidas },
@@ -261,23 +263,38 @@
         left: 50%;
         transform: translate(-50%, -50%);
         max-height: 85vh;
-        overflow-y: auto;
+        overflow: hidden; /* Prevent dialog from scrolling to keep rounded corners clean */
+    }
 
+    .player-modal-container {
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        width: 100%;
+    }
+
+    /* Scrollable content container with custom scrollbar */
+    .pm-scrollable-content {
+        overflow-y: auto;
+        flex: 1;
+        padding-bottom: 20px;
         /* Custom scrollbar styling */
         scrollbar-width: thin;
         scrollbar-color: #ffde59 #f5f5f5;
     }
 
-    .player-modal::-webkit-scrollbar {
+    .pm-scrollable-content::-webkit-scrollbar {
         width: 10px;
     }
 
-    .player-modal::-webkit-scrollbar-track {
+    .pm-scrollable-content::-webkit-scrollbar-track {
         background: #f5f5f5;
-        border-radius: 32px;
+        margin-top: 10px; /* Inset scrollbar from top header */
+        margin-bottom: 20px; /* Inset scrollbar from bottom rounded corners */
+        border-radius: 10px;
     }
 
-    .player-modal::-webkit-scrollbar-thumb {
+    .pm-scrollable-content::-webkit-scrollbar-thumb {
         background-color: #ffde59;
         border-radius: 20px;
         border: 3px solid #f5f5f5;
@@ -288,20 +305,16 @@
         backdrop-filter: blur(12px);
     }
 
-    .player-modal-content {
-        position: relative;
-    }
-
     .pm-header-bar {
-        background: #ffde59; /* Matching goal popup background */
+        background: #ffde59;
         padding: 12px 25px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        position: sticky; /* Keep it on top while scrolling */
-        top: 0;
         z-index: 100;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-top-left-radius: 32px;
+        border-top-right-radius: 32px;
     }
 
     .pm-header-title {
@@ -385,7 +398,7 @@
     }
 
     .pm-body {
-        padding: 0 30px 30px;
+        padding: 0 30px 10px;
     }
 
     .pm-rating-floating {
