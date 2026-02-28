@@ -1,9 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
+import { getFlagSrc } from '../utils/flags';
+
 interface Referee {
     id_arbitra: string | number;
     nombre: string;
+    foto_url: string | null;
+    iso: string | null;
     stats: {
         played: number;
         wins: number;
@@ -95,15 +99,20 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                 <table className="w-full border-collapse text-left min-w-[800px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
-                            <th className="sticky left-0 bg-gray-50 z-20 py-3 px-2 text-center w-10 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                            <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                                 #
+                            </th>
+                            <th className="sticky left-[50px] bg-gray-50 z-30 py-3 px-2 w-[50px] min-w-[50px] border-r border-gray-100 text-center">
+                                Foto
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Árbitra"
-                                className="sticky left-10 bg-gray-50 z-20 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
+                                className="sticky left-[100px] bg-gray-50 z-30 border-r border-gray-100 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[200px]"
                                 align="left"
                             />
+
+                            <th className="py-3 px-2 text-center min-w-[60px]">País</th>
 
                             <SortableHeader sortKey="stats.played" label="PJ" />
 
@@ -135,13 +144,34 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 key={referee.id_arbitra}
                                 className="hover:bg-gray-50 transition-colors group text-gray-700"
                             >
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-10 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-100 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-[50px] min-w-[50px]">
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-10 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={referee.nombre}>
-                                    <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-[#ffde59] transition-colors">
+                                <td className="sticky left-[50px] bg-white group-hover:bg-gray-50 z-20 py-3 px-2 border-r border-gray-100 text-center w-[50px] min-w-[50px]">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden mx-auto bg-gray-100 border border-gray-200 shadow-sm flex items-center justify-center">
+                                        <img
+                                            src={referee.foto_url ? `https://media.madridfemeninoxtra.com${referee.foto_url}` : '/assets/jugadoras/placeholder.png'}
+                                            alt={referee.nombre}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'}
+                                        />
+                                    </div>
+                                </td>
+                                <td className="sticky left-[100px] bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate min-w-[200px]" title={referee.nombre}>
+                                    <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-[#ffde59] transition-colors whitespace-normal break-words leading-tight block">
                                         {referee.nombre}
                                     </a>
+                                </td>
+
+                                <td className="py-3 px-2 text-center">
+                                    {referee.iso ? (
+                                        <img
+                                            src={getFlagSrc(referee.iso)}
+                                            alt={referee.iso}
+                                            className="w-6 h-auto mx-auto shadow-sm rounded-sm"
+                                            title={referee.iso}
+                                        />
+                                    ) : '-'}
                                 </td>
 
                                 <td className="py-3 px-2 text-center font-bold text-gray-900 bg-gray-50/50">

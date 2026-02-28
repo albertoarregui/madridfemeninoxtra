@@ -8,6 +8,7 @@ import {
 import { generateSlug } from "../../utils/url-helper";
 
 import { getAssetMetadata } from "../../utils/assets";
+import { getFlagSrc } from "../../utils/flags";
 
 const competitionLogos: Record<string, any> = {
     "Liga F": getAssetMetadata("competiciones", "liga_f"),
@@ -224,35 +225,72 @@ const redArc =
                         FICHA DE {referee.nombre.toUpperCase()}
                     </h2>
                     <div class="rival-info">
-                        {/* Added SVG Icon as requested */}
-                        <div class="referee-icon-container">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="120"
-                                height="120"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="text-gray-300"
-                            >
-                                <path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"></path>
-                                <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"
-                                ></path>
-                                <path
-                                    d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"
-                                ></path>
-                            </svg>
+                        <div
+                            class="referee-icon-container overflow-hidden rounded-full shadow-md bg-gray-50 border border-gray-200"
+                        >
+                            {
+                                referee.foto_url ? (
+                                    <img
+                                        src={`https://media.madridfemeninoxtra.com${referee.foto_url}`}
+                                        alt={referee.nombre}
+                                        class="w-full h-full object-cover"
+                                        onError="this.src='/assets/jugadoras/placeholder.png'"
+                                    />
+                                ) : (
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="100%"
+                                        height="100%"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="text-gray-300 p-4"
+                                    >
+                                        <path
+                                            stroke="none"
+                                            d="M0 0h24v24H0z"
+                                            fill="none"
+                                        />
+                                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                    </svg>
+                                )
+                            }
                         </div>
                         <div class="rival-details w-full">
                             <div class="info-row">
                                 <span class="label">Nombre:</span>
                                 <span class="value">{referee.nombre}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">País:</span>
+                                <span class="value flex items-center gap-2">
+                                    {
+                                        referee.iso ? (
+                                            <>
+                                                {referee.iso.toUpperCase()}
+                                                <img
+                                                    src={getFlagSrc(
+                                                        referee.iso,
+                                                    )}
+                                                    alt={referee.iso}
+                                                    className="w-5 h-auto rounded-sm shadow-sm"
+                                                />
+                                            </>
+                                        ) : (
+                                            "-"
+                                        )
+                                    }
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Colegio:</span>
+                                <span class="value"
+                                    >{referee.colegio || "-"}</span
+                                >
                             </div>
                             <div class="info-row">
                                 <span class="label">Partidos:</span>
