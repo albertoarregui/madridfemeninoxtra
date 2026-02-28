@@ -663,7 +663,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 assistant: assistantName,
                 isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
                 isOwnGoal: false,
-                team: 'local'
+                team: 'local',
+                videoUrl: goal.video_url || null
             });
         }
 
