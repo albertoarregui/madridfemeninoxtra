@@ -184,8 +184,6 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
 
         const statsQuery = `
     WITH base_matches AS (
-        -- Get all unique matches relevant to the player (played, benched, scored, etc)
-        -- Actually, we can just aggregate per table and join on season/comp
         SELECT 
             p.id_temporada, 
             p.id_competicion,
@@ -326,8 +324,28 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                         tarjetas_rojas: 0,
                         capitanias: 0,
                     },
+                    official_total: {
+                        convocatorias: 0,
+                        partidos: 0,
+                        titularidades: 0,
+                        minutos: 0,
+                        suplencias: 0,
+                        cambio_entrada: 0,
+                        cambio_salida: 0,
+                        victorias: 0,
+                        goles: 0,
+                        asistencias: 0,
+                        goles_asistencias: 0,
+                        porterias_cero: 0,
+                        tarjetas_amarillas: 0,
+                        tarjetas_rojas: 0,
+                        capitanias: 0,
+                    }
                 };
             }
+
+            const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
+            const isOfficial = officialComps.includes(row.competicion);
 
             const stats = {
                 competicion: row.competicion,
@@ -367,15 +385,31 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             total.tarjetas_amarillas += stats.tarjetas_amarillas;
             total.tarjetas_rojas += stats.tarjetas_rojas;
             total.capitanias += stats.capitanias;
+
+            if (isOfficial) {
+                const offTotal = estadisticas[temporada].official_total;
+                offTotal.convocatorias += stats.convocatorias;
+                offTotal.partidos += stats.partidos;
+                offTotal.titularidades += stats.titularidades;
+                offTotal.minutos += stats.minutos;
+                offTotal.suplencias += stats.suplencias;
+                offTotal.cambio_entrada += stats.cambio_entrada;
+                offTotal.cambio_salida += stats.cambio_salida;
+                offTotal.victorias += stats.victorias;
+                offTotal.goles += stats.goles;
+                offTotal.asistencias += stats.asistencias;
+                offTotal.goles_asistencias += stats.goles_asistencias;
+                offTotal.porterias_cero += stats.porterias_cero;
+                offTotal.tarjetas_amarillas += stats.tarjetas_amarillas;
+                offTotal.tarjetas_rojas += stats.tarjetas_rojas;
+                offTotal.capitanias += stats.capitanias;
+            }
         });
 
         const estadisticasArray = Object.values(estadisticas);
 
         const totalYellowRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_amarillas) || 0), 0);
         const totalRedRequest = estadisticasArray.reduce((acc: number, s: any) => acc + (Number(s.total.tarjetas_rojas) || 0), 0);
-        if (totalYellowRequest > 0 || totalRedRequest > 0) {
-            console.log(`[DEBUG_CARDS] Player ${playerId} has ${totalYellowRequest} yellow and ${totalRedRequest} red cards.`);
-        }
 
         const careerTotal: any = {
             convocatorias: 0,
@@ -395,16 +429,21 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             capitanias: 0,
         };
 
+        const careerOfficialTotal: any = { ...careerTotal };
+
         estadisticasArray.forEach((season: any) => {
             const total = season.total;
+            const official = season.official_total;
             Object.keys(careerTotal).forEach((key) => {
                 careerTotal[key] += total[key];
+                careerOfficialTotal[key] += official[key];
             });
         });
 
         return {
             estadisticas: estadisticasArray,
             total_carrera: careerTotal,
+            total_carrera_oficial: careerOfficialTotal
         };
 
     } catch (error) {

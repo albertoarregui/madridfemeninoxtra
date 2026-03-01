@@ -23,6 +23,14 @@ interface SeasonData {
         goles_asistencias: number;
         porterias_cero: number;
     };
+    official_total: {
+        partidos: number;
+        minutos: number;
+        goles: number;
+        asistencias: number;
+        goles_asistencias: number;
+        porterias_cero: number;
+    };
 }
 
 interface PlayerEvolutionChartsProps {
@@ -65,19 +73,18 @@ const ChartSection = ({ title, icon: Icon, children }: { title: string, icon: an
 );
 
 const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, isGoalkeeper }) => {
-    // We reverse stats because the database returns latest first, but charts look better oldest to latest
     const chartData = useMemo(() => {
         return [...stats]
             .reverse()
-            .filter(s => s.total.partidos > 0)
+            .filter(s => s.official_total.partidos > 0)
             .map(s => ({
                 season: s.temporada,
-                partidos: s.total.partidos,
-                minutos: s.total.minutos,
-                goles: s.total.goles,
-                asistencias: s.total.asistencias,
-                ga: s.total.goles_asistencias,
-                p0: s.total.porterias_cero
+                partidos: s.official_total.partidos,
+                minutos: s.official_total.minutos,
+                goles: s.official_total.goles,
+                asistencias: s.official_total.asistencias,
+                ga: s.official_total.goles_asistencias,
+                p0: s.official_total.porterias_cero
             }));
     }, [stats]);
 

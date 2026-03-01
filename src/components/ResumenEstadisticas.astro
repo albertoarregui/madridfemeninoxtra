@@ -4,12 +4,24 @@ import { fetchPlayersDirectly } from "../utils/players";
 import { fetchRivalsDirectly, fetchClubCountDirectly } from "../utils/rivales";
 import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
 
-const [partidos, jugadoras, totalRivales, golesData] = await Promise.all([
+const [partidosRaw, jugadoras, totalRivales, golesData] = await Promise.all([
     fetchGamesDirectly(),
     fetchPlayersDirectly(),
     fetchClubCountDirectly(),
     fetchGoalsAssistsDirectly(),
 ]);
+
+const officialCompsIds = [
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+];
+
+const partidos = partidosRaw.filter(
+    (p) =>
+        p.competicion_nombre && officialCompsIds.includes(p.competicion_nombre),
+);
 
 let stats = {
     victorias: 0,

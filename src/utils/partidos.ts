@@ -49,7 +49,8 @@ export async function fetchGamesDirectly(): Promise<any[]> {
 
         const query = `
             SELECT
-                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion, p.galeria_urls,
+                ep.*,
+                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 c.foto_url AS competicion_foto_url,
@@ -69,7 +70,6 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 a.nombre AS arbitra_nombre,
                 jm.nombre AS mvp_nombre,
                 en.nombre AS entrenador_nombre,
-                ep.*,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rm,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm,
@@ -945,6 +945,8 @@ export async function fetchAllGoals(): Promise<any[]> {
             LEFT JOIN jugadoras ast2 ON (g.asistente = ast2.nombre AND ast.id_jugadora IS NULL)
             
             WHERE 1=1 
+            -- Deduplicate by goal ID in case joins have multiple matches
+            GROUP BY g.id_gol
         `;
 
         const result = await client.execute(query);
