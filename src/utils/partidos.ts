@@ -534,6 +534,34 @@ export async function fetchMatchGoals(matchId: string | number): Promise<any[]> 
     }
 }
 
+export async function fetchMatchKit(matchId: string | number): Promise<string | null> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return null;
+
+        const query = `
+            SELECT e.imagen_url 
+            FROM equipacion_partido ep 
+            JOIN equipaciones e ON ep.id_equipacion = e.id_equipacion
+            WHERE ep.id_partido = ?
+        `;
+
+        const result = await client.execute({
+            sql: query,
+            args: [matchId]
+        });
+
+        if (result.rows.length > 0) {
+            return result.rows[0].imagen_url as string;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching match kit:", error);
+        return null;
+    }
+}
+
 export async function fetchStadiumStats(stadiumName: string | null): Promise<{ wins: number, draws: number, losses: number, total: number }> {
     if (!stadiumName) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
