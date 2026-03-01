@@ -67,21 +67,24 @@ const ChartSection = ({ title, icon: Icon, children }: { title: string, icon: an
 const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, isGoalkeeper }) => {
     // We reverse stats because the database returns latest first, but charts look better oldest to latest
     const chartData = useMemo(() => {
-        return [...stats].reverse().map(s => ({
-            season: s.temporada,
-            partidos: s.total.partidos,
-            minutos: s.total.minutos,
-            goles: s.total.goles,
-            asistencias: s.total.asistencias,
-            ga: s.total.goles_asistencias,
-            p0: s.total.porterias_cero
-        }));
+        return [...stats]
+            .reverse()
+            .filter(s => s.total.partidos > 0)
+            .map(s => ({
+                season: s.temporada,
+                partidos: s.total.partidos,
+                minutos: s.total.minutos,
+                goles: s.total.goles,
+                asistencias: s.total.asistencias,
+                ga: s.total.goles_asistencias,
+                p0: s.total.porterias_cero
+            }));
     }, [stats]);
 
     if (!chartData || chartData.length === 0) return null;
 
     return (
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 mt-2">
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Chart 1: Partidos */}
             <ChartSection title="Evolución Partidos" icon={Activity}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -90,18 +93,20 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                         <XAxis
                             dataKey="season"
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            interval="preserveStartEnd"
                         />
                         <YAxis
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            width={30}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffde59', opacity: 0.1 }} />
-                        <Bar dataKey="partidos" name="Partidos" fill="#151e42" radius={[2, 2, 0, 0]} barSize={32}>
+                        <Bar dataKey="partidos" name="Partidos" fill="#151e42" radius={[2, 2, 0, 0]} barSize={24}>
                             {chartData.map((_, index) => (
                                 <Cell key={`cell-${index}`} className="hover:fill-[#ffde59] transition-colors cursor-pointer" />
                             ))}
@@ -113,20 +118,22 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
             {/* Chart 2: Minutos */}
             <ChartSection title="Evolución Minutos" icon={Clock}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
                             dataKey="season"
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            interval="preserveStartEnd"
                         />
                         <YAxis
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            width={35}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line
@@ -135,8 +142,8 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                             name="Minutos"
                             stroke="#151e42"
                             strokeWidth={3}
-                            dot={{ r: 4, fill: '#151e42', strokeWidth: 2, stroke: '#fff' }}
-                            activeDot={{ r: 6, fill: '#ffde59', stroke: '#151e42' }}
+                            dot={{ r: 3, fill: '#151e42', strokeWidth: 2, stroke: '#fff' }}
+                            activeDot={{ r: 5, fill: '#ffde59', stroke: '#151e42' }}
                         />
                     </LineChart>
                 </ResponsiveContainer>
@@ -153,27 +160,29 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                         <XAxis
                             dataKey="season"
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            interval="preserveStartEnd"
                         />
                         <YAxis
                             stroke="#9ca3af"
-                            tick={{ fontSize: 9, fontWeight: 700, fontFamily: 'monospace' }}
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
+                            width={30}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffde59', opacity: 0.1 }} />
                         {isGoalkeeper ? (
-                            <Bar dataKey="p0" name="Porterías 0" fill="#10b981" radius={[2, 2, 0, 0]} barSize={32}>
+                            <Bar dataKey="p0" name="Porterías 0" fill="#10b981" radius={[2, 2, 0, 0]} barSize={24}>
                                 {chartData.map((_, index) => (
                                     <Cell key={`cell-${index}`} className="hover:fill-[#ffde59] transition-colors cursor-pointer" />
                                 ))}
                             </Bar>
                         ) : (
                             <>
-                                <Bar dataKey="goles" stackId="a" name="Goles" fill="#151e42" barSize={32} />
-                                <Bar dataKey="asistencias" stackId="a" name="Asistencias" fill="#ffde59" radius={[2, 2, 0, 0]} barSize={32} />
+                                <Bar dataKey="goles" stackId="a" name="Goles" fill="#151e42" barSize={24} />
+                                <Bar dataKey="asistencias" stackId="a" name="Asistencias" fill="#ffde59" radius={[2, 2, 0, 0]} barSize={24} />
                             </>
                         )}
                     </BarChart>

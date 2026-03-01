@@ -4,7 +4,7 @@ import { fetchAllGoals } from "../utils/partidos";
 import { fetchAllClubShields } from "../utils/rivales";
 import { getAssetUrl } from "../utils/assets";
 
-const allGoals = await fetchAllGoals();
+const allGoalsRaw = await fetchAllGoals();
 const clubShields = await fetchAllClubShields();
 
 const officialComps = [
@@ -22,32 +22,33 @@ const officialComps = [
     },
 ];
 
-const milestonesByComp = officialComps
-    .map((comp) => {
-        const compGoals = allGoals
-            .filter((g) => g.competicion === comp.id)
-            .sort((a, b) => {
-                const dateA = new Date(a.fecha).getTime();
-                const dateB = new Date(b.fecha).getTime();
-                if (dateA !== dateB) return dateA - dateB;
-                return parseInt(a.minuto) - parseInt(b.minuto);
-            })
-            .map((g, index) => ({
-                ...g,
-                goalNumber: index + 1,
-                rival:
-                    g.club_local === "Real Madrid"
-                        ? g.club_visitante
-                        : g.club_local,
-            }))
-            .filter((g) => g.goalNumber % 10 === 0);
+// Map used to highlight specific goals
+const highlightedNumbers = [
+    1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+];
 
+// Process all goals to add goalNumber and rival info
+const processedGoals = allGoalsRaw
+    .sort((a, b) => {
+        const dateA = new Date(a.fecha).getTime();
+        const dateB = new Date(b.fecha).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return parseInt(a.minuto || "0") - parseInt(b.minuto || "0");
+    })
+    .map((g, index) => {
+        const goalNumber = index + 1;
         return {
-            ...comp,
-            goals: compGoals,
+            ...g,
+            goalNumber,
+            rival:
+                g.club_local === "Real Madrid"
+                    ? g.club_visitante
+                    : g.club_local,
+            isMilestone: goalNumber === 1 || goalNumber % 10 === 0,
+            isHighlighted: highlightedNumbers.includes(goalNumber),
         };
     })
-    .filter((c) => c.goals.length > 0);
+    .filter((g) => g.isMilestone); // Keep only milestones (1, 10, 20...)
 
 const formatShortDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -69,127 +70,245 @@ const formatShortDate = (dateString: string | null | undefined): string => {
     title="Récords | Madrid Femenino Xtra"
     description="Marcas de goles redondos a lo largo de la historia del Real Madrid femenino."
 >
-    <main class="records-page">
-        <header class="records-header">
-            <h1 class="page-title">RÉCORDS</h1>
-            <p class="subtitle">
-                Marcas de goles redondos a lo largo de la historia del Real
-                Madrid femenino.
-            </p>
-        </header>
+    <main class="records-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <h1 class="page-title">RÉCORDS</h1>
+        <h2 class="content-h2 text-pretty">
+            Marcas de goles redondos a lo largo de la historia del Real Madrid
+            femenino.
+        </h2>
 
-        {
-            milestonesByComp.map((comp) => (
-                <section class="comp-records-section">
-                    <div class="comp-header">
-                        <img
-                            src={getAssetUrl("competiciones", comp.icon)}
-                            alt={comp.name}
-                            class="comp-icon-title"
-                        />
-                        <h2 class="comp-title">{comp.name}</h2>
+        <div
+            class="filters-container mb-10 flex flex-wrap gap-4 justify-center"
+        >
+            <div class="custom-select-container" id="container-competicion">
+                <div class="custom-select-trigger" id="trigger-competicion">
+                    <span class="selected-text">Todas las Competiciones</span>
+                    <div class="custom-select-arrow">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path d="m6 9 6 6 6-6"></path></svg
+                        >
                     </div>
+                </div>
+                <div class="custom-select-options">
+                    <div
+                        class="custom-select-option selected"
+                        data-value="todos"
+                    >
+                        Todas las Competiciones
+                    </div>
+                    <div class="custom-select-option" data-value="oficiales">
+                        Partidos Oficiales
+                    </div>
+                    {
+                        officialComps.map((c) => (
+                            <div class="custom-select-option" data-value={c.id}>
+                                {c.name}
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+        </div>
 
-                    <div class="table-container floating-table">
-                        <table class="records-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-milestone">Hito</th>
-                                    <th class="col-player">Goleadora</th>
-                                    <th class="col-rival">Rival</th>
-                                    <th class="col-date">Fecha</th>
-                                    <th class="col-video">Vídeo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {comp.goals.map((m) => (
-                                    <tr
-                                        class={
-                                            m.video_url ? "row-has-video" : ""
-                                        }
-                                    >
-                                        <td class="cell-milestone">
-                                            <span class="goal-tag">
-                                                GOL {m.goalNumber}
-                                            </span>
-                                        </td>
-                                        <td class="cell-player">
-                                            <div class="player-info-cell">
-                                                <div class="player-img-wrapper">
-                                                    <img
-                                                        src={
-                                                            m.foto_goleadora ||
-                                                            getAssetUrl(
-                                                                "jugadoras",
-                                                                "placeholder",
-                                                            )
-                                                        }
-                                                        alt={m.nombre_goleadora}
-                                                        class="player-thumb"
-                                                    />
-                                                </div>
-                                                <span class="player-name-text">
-                                                    {m.nombre_goleadora}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="cell-rival">
-                                            <div class="rival-info-cell">
-                                                <img
-                                                    src={
-                                                        clubShields[m.rival] ||
-                                                        getAssetUrl(
-                                                            "escudos",
-                                                            m.rival,
-                                                        )
-                                                    }
-                                                    alt={m.rival}
-                                                    class="rival-shield-thumb"
-                                                />
-                                                <span class="rival-name-text">
-                                                    {m.rival}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td class="cell-date">
-                                            <span class="date-text">
-                                                {formatShortDate(m.fecha)}
-                                            </span>
-                                        </td>
-                                        <td class="cell-video">
-                                            {m.video_url ? (
-                                                <button
-                                                    class="play-btn-small"
-                                                    onclick={`openVideoModal('${m.video_url}', '${m.nombre_goleadora.replace(/'/g, "\\'")}')`}
-                                                    title="Ver gol"
-                                                >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="20"
-                                                        height="20"
-                                                        viewBox="0 0 24 24"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                    </svg>
-                                                </button>
-                                            ) : (
-                                                <span class="no-video">-</span>
-                                            )}
-                                        </td>
+        <div id="records-content">
+            {
+                officialComps.map((comp) => (
+                    <section class="comp-records-section" data-comp={comp.id}>
+                        <div class="comp-header">
+                            <img
+                                src={getAssetUrl("competiciones", comp.icon)}
+                                alt={comp.name}
+                                class="comp-icon-title"
+                            />
+                            <h2 class="comp-title">{comp.name}</h2>
+                        </div>
+
+                        <div class="table-container floating-table mb-12">
+                            <table class="records-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-milestone">Hito</th>
+                                        <th class="col-player">Goleadora</th>
+                                        <th class="col-rival">Rival</th>
+                                        <th class="col-date">Fecha</th>
+                                        <th class="col-video">Vídeo</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            ))
-        }
+                                </thead>
+                                <tbody class="comp-goals-body">
+                                    {processedGoals
+                                        .filter(
+                                            (g) => g.competicion === comp.id,
+                                        )
+                                        .map((m) => (
+                                            <tr
+                                                class={
+                                                    m.isHighlighted
+                                                        ? "row-highlighted"
+                                                        : ""
+                                                }
+                                            >
+                                                <td class="cell-milestone">
+                                                    <span
+                                                        class={`goal-tag ${m.isHighlighted ? "tag-highlight" : ""}`}
+                                                    >
+                                                        GOL {m.goalNumber}
+                                                    </span>
+                                                </td>
+                                                <td class="cell-player">
+                                                    <div class="player-info-cell">
+                                                        <div class="player-img-wrapper">
+                                                            {m.tipo &&
+                                                            (m.tipo
+                                                                .toLowerCase()
+                                                                .includes(
+                                                                    "propia",
+                                                                ) ||
+                                                                m.tipo
+                                                                    .toLowerCase()
+                                                                    .includes(
+                                                                        "own",
+                                                                    )) ? (
+                                                                <div class="own-goal-icon">
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        width="24"
+                                                                        height="24"
+                                                                        viewBox="0 0 24 24"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        stroke-width="2"
+                                                                        stroke-linecap="round"
+                                                                        stroke-linejoin="round"
+                                                                        class="icon-tabler-user"
+                                                                    >
+                                                                        <path
+                                                                            stroke="none"
+                                                                            d="M0 0h24v24H0z"
+                                                                            fill="none"
+                                                                        />
+                                                                        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                                                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                                                                    </svg>
+                                                                </div>
+                                                            ) : (
+                                                                <img
+                                                                    src={
+                                                                        m.foto_goleadora ||
+                                                                        getAssetUrl(
+                                                                            "jugadoras",
+                                                                            "placeholder",
+                                                                        )
+                                                                    }
+                                                                    alt={
+                                                                        m.nombre_goleadora
+                                                                    }
+                                                                    class="player-thumb"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <span class="player-name-text">
+                                                            {m.nombre_goleadora}
+                                                            {m.tipo &&
+                                                                (m.tipo
+                                                                    .toLowerCase()
+                                                                    .includes(
+                                                                        "propia",
+                                                                    ) ||
+                                                                    m.tipo
+                                                                        .toLowerCase()
+                                                                        .includes(
+                                                                            "own",
+                                                                        )) && (
+                                                                    <span class="own-goal-label">
+                                                                        (p.p.)
+                                                                    </span>
+                                                                )}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="cell-rival">
+                                                    <div class="rival-info-cell">
+                                                        <img
+                                                            src={
+                                                                clubShields[
+                                                                    m.rival
+                                                                ] ||
+                                                                clubShields[
+                                                                    m.rival
+                                                                        .normalize(
+                                                                            "NFD",
+                                                                        )
+                                                                        .replace(
+                                                                            /[\u0300-\u036f]/g,
+                                                                            "",
+                                                                        )
+                                                                ] ||
+                                                                getAssetUrl(
+                                                                    "escudos",
+                                                                    m.rival,
+                                                                )
+                                                            }
+                                                            alt={m.rival}
+                                                            class="rival-shield-thumb"
+                                                        />
+                                                        <span class="rival-name-text">
+                                                            {m.rival}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td class="cell-date">
+                                                    <span class="date-text">
+                                                        {formatShortDate(
+                                                            m.fecha,
+                                                        )}
+                                                    </span>
+                                                </td>
+                                                <td class="cell-video">
+                                                    {m.video_url ? (
+                                                        <button
+                                                            class="play-btn-small"
+                                                            onclick={`openVideoModal('${m.video_url}', '${(m.nombre_goleadora || "Real Madrid").replace(/'/g, "\\'")}')`}
+                                                            title="Ver gol"
+                                                        >
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="20"
+                                                                height="20"
+                                                                viewBox="0 0 24 24"
+                                                                fill="currentColor"
+                                                            >
+                                                                <path
+                                                                    stroke="none"
+                                                                    d="M0 0h24v24H0z"
+                                                                    fill="none"
+                                                                />
+                                                                <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                            </svg>
+                                                        </button>
+                                                    ) : (
+                                                        <span class="no-video">
+                                                            -
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                ))
+            }
+        </div>
 
         <!-- Video Modal -->
         <div id="video-modal" class="video-modal-overlay">
@@ -250,160 +369,179 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         video.pause();
         modal.style.display = "none";
     }
+
+    // Filter Logic
+    document.addEventListener("DOMContentLoaded", () => {
+        const trigger = document.getElementById("trigger-competicion");
+        const container = document.getElementById("container-competicion");
+        const options = container.querySelectorAll(".custom-select-option");
+        const sections = document.querySelectorAll(".comp-records-section");
+        const selectedText = trigger.querySelector(".selected-text");
+
+        trigger.addEventListener("click", () =>
+            container.classList.toggle("open"),
+        );
+
+        options.forEach((opt) => {
+            opt.addEventListener("click", () => {
+                const val = opt.dataset.value;
+                selectedText.textContent = opt.textContent;
+                options.forEach((o) => o.classList.remove("selected"));
+                opt.classList.add("selected");
+                container.classList.remove("open");
+
+                sections.forEach((sec) => {
+                    const compId = sec.dataset.comp;
+                    const goalsBody = sec.querySelector(".comp-goals-body");
+                    const hasGoals = goalsBody && goalsBody.children.length > 0;
+
+                    let shouldShow = false;
+                    if (val === "todos" || val === "oficiales") {
+                        shouldShow = hasGoals;
+                    } else {
+                        shouldShow = compId === val && hasGoals;
+                    }
+                    sec.style.display = shouldShow ? "block" : "none";
+                });
+            });
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!container.contains(e.target))
+                container.classList.remove("open");
+        });
+    });
 </script>
 
 <style>
     .records-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 4rem 1.5rem;
+        padding-top: 2rem;
     }
 
-    /* Header Styling matching other pages */
-    .records-header {
-        text-align: center;
-        margin-bottom: 5rem;
-    }
-    .page-title {
-        font-size: 3.5rem;
-        font-weight: 900;
-        color: #151e42;
-        text-transform: uppercase;
-        margin-bottom: 1.5rem;
-        position: relative;
-        display: inline-block;
-        letter-spacing: -1px;
-    }
-    .page-title::after {
-        content: "";
-        position: absolute;
-        bottom: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px; /* Wider yellow line as requested */
-        height: 6px;
-        background: #ffde59;
-        border-radius: 3px;
-    }
-    .subtitle {
-        font-size: 1.25rem;
-        color: #4b5563;
-        font-weight: 500;
-        max-width: 700px;
-        margin: 1rem auto 0;
-        line-height: 1.6;
-    }
-
-    /* Section & Competition Header */
-    .comp-records-section {
-        margin-bottom: 5rem;
-    }
+    /* Competiciones Header */
     .comp-header {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-        padding-left: 0.5rem;
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-radius: 15px;
+        border-left: 5px solid #ffde59;
     }
     .comp-icon-title {
-        height: 40px;
+        height: 48px;
         width: auto;
-        object-fit: contain;
     }
     .comp-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 800;
         color: #151e42;
         text-transform: uppercase;
+        margin: 0;
     }
 
     /* Floating White Table Styles */
     .floating-table {
         background: white;
         border-radius: 20px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
         overflow: hidden;
         border: 1px solid #f0f0f0;
     }
     .records-table {
         width: 100%;
         border-collapse: collapse;
-        text-align: left;
     }
-
-    /* Table Header */
     .records-table th {
-        background: #f8fafc;
+        background: #fdfdfd;
         padding: 1.25rem 1.5rem;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 800;
-        color: #64748b;
+        color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        border-bottom: 2px solid #f1f5f9;
+        border-bottom: 2px solid #f8fafc;
     }
-
-    /* Table Rows */
     .records-table td {
-        padding: 1rem 1.5rem;
+        padding: 1.25rem 1.5rem;
         border-bottom: 1px solid #f1f5f9;
         vertical-align: middle;
     }
-    .records-table tr:last-child td {
-        border-bottom: none;
+    .row-highlighted {
+        background: #fffef0;
     }
 
-    /* Goal Tag */
+    /* Goal Tag - Updated to Black text on white/floating style as requested */
     .goal-tag {
-        background: #151e42;
-        color: #ffde59;
+        background: white;
+        color: #2b2b2b;
         font-family: "Bebas Neue", sans-serif;
         font-size: 1.2rem;
-        padding: 0.4rem 1rem;
-        border-radius: 8px;
+        padding: 0.5rem 1.2rem;
+        border-radius: 10px;
         display: inline-block;
         font-weight: 700;
-        min-width: 90px;
+        min-width: 100px;
         text-align: center;
         letter-spacing: 1px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eee;
+    }
+    .tag-highlight {
+        background: #ffde59;
+        border-color: #f6d336;
+        box-shadow: 0 4px 15px rgba(255, 222, 89, 0.3);
     }
 
     /* Player Info Cell */
     .player-info-cell {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1.25rem;
     }
     .player-img-wrapper {
-        width: 50px;
-        height: 50px;
+        width: 55px;
+        height: 55px;
         border-radius: 50%;
         overflow: hidden;
         border: 2px solid #ffde59;
-        background: #f1f5f9;
+        background: #f8fafc;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     .player-thumb {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: top; /* Prevents cutting from top as requested */
+        object-position: top;
+    }
+    .own-goal-icon {
+        color: #64748b;
+    }
+    .own-goal-label {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-left: 0.5rem;
+        font-weight: 500;
     }
     .player-name-text {
         font-weight: 700;
         color: #151e42;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
 
-    /* Rival Info Cell */
+    /* Rival Info */
     .rival-info-cell {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 1rem;
     }
     .rival-shield-thumb {
-        width: 32px;
-        height: 32px;
+        width: 35px;
+        height: 35px;
         object-fit: contain;
     }
     .rival-name-text {
@@ -411,36 +549,28 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         color: #4b5563;
     }
 
-    /* Date & Video Cells */
-    .date-text {
-        color: #64748b;
-        font-weight: 500;
-        font-family: monospace;
-    }
+    /* Video Play Button */
     .play-btn-small {
         background: #ffde59;
         color: #151e42;
         border: none;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s;
-        box-shadow: 0 4px 10px rgba(255, 222, 89, 0.4);
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(255, 222, 89, 0.3);
     }
     .play-btn-small:hover {
-        transform: scale(1.1);
+        transform: scale(1.1) rotate(5deg);
         background: #151e42;
         color: #ffde59;
     }
-    .no-video {
-        color: #cbd5e1;
-    }
 
-    /* Modal Styling */
+    /* Video Modal */
     .video-modal-overlay {
         display: none;
         position: fixed;
@@ -448,23 +578,23 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.95);
         z-index: 10000;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(10px);
     }
     .video-modal-container {
         background: #151e42;
         width: 100%;
         max-width: 1000px;
-        border-radius: 20px;
+        border-radius: 25px;
         overflow: hidden;
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
     }
     .video-modal-header {
-        padding: 1.25rem 1.5rem;
+        padding: 1.5rem 2rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -475,16 +605,12 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         color: #151e42;
         font-weight: 900;
         text-transform: uppercase;
-    }
-    .video-close-btn {
-        background: none;
-        border: none;
-        color: #151e42;
-        cursor: pointer;
+        letter-spacing: 1px;
     }
     .video-modal-body {
         position: relative;
         padding-top: 56.25%;
+        background: black;
     }
     .goal-video-element {
         position: absolute;
@@ -495,19 +621,23 @@ const formatShortDate = (dateString: string | null | undefined): string => {
     }
 
     @media (max-width: 768px) {
-        .page-title {
-            font-size: 2.5rem;
+        .records-page {
+            padding: 2rem 1rem;
         }
         .records-table th:nth-child(4),
         .records-table td:nth-child(4) {
             display: none;
         }
-        .player-name-text {
-            font-size: 0.9rem;
+        .comp-header {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
         }
-        .goal-tag {
-            font-size: 1rem;
-            min-width: 70px;
+        .player-info-cell {
+            gap: 0.75rem;
+        }
+        .player-name-text {
+            font-size: 0.95rem;
         }
     }
 </style>
