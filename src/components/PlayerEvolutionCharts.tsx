@@ -92,7 +92,6 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
 
     return (
         <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Chart 1: Partidos */}
             <ChartSection title="Evolución Partidos" icon={Activity}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
@@ -122,7 +121,6 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                 </ResponsiveContainer>
             </ChartSection>
 
-            {/* Chart 2: Minutos */}
             <ChartSection title="Evolución Minutos" icon={Clock}>
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
@@ -156,7 +154,6 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                 </ResponsiveContainer>
             </ChartSection>
 
-            {/* Chart 3: Goles/Asistencias or P0 */}
             <ChartSection
                 title={isGoalkeeper ? "Evolución Porterías 0" : "Evolución G+A"}
                 icon={isGoalkeeper ? Shield : Target}

@@ -41,7 +41,6 @@ const PlayerStatsDashboard: React.FC<PlayerStatsDashboardProps> = ({ players }) 
                 countryCounts[country] = (countryCounts[country] || 0) + 1;
                 if (iso) countryIsos[country] = iso;
 
-                // Use player's own lat/lng if available to find furthest origin
                 if (p.lat != null && p.lng != null) {
                     const dist = calculateDistance(
                         MADRID_COORDS.lat, MADRID_COORDS.lng,

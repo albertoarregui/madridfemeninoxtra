@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import InteractiveMap from './Map';
 import { getAssetUrl } from '../utils/assets';
 
-// Fallback if DB logo is missing
 function getCompetitionLogo(name: string): string | null {
     const n = (name || '').toLowerCase().replace(/[^a-z]/g, '');
     if (n.includes('liga')) return '/assets/competiciones/liga_f.png';
@@ -44,7 +43,6 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
         }>();
 
         matches.forEach(match => {
-            // Use coordinates from DB directly — skip if missing
             if (match.estadio_lat == null || match.estadio_lng == null) return;
 
             const key = `${match.estadio_lat},${match.estadio_lng}`;

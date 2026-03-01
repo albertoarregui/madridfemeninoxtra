@@ -22,7 +22,6 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
         const markerMap = new Map<string, MapMarker>();
 
         players.forEach(player => {
-            // Use coordinates from the DB directly
             if (player.lat == null || player.lng == null) return;
 
             const jitterLat = (Math.random() - 0.5) * 0.01;

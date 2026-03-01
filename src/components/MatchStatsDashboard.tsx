@@ -29,7 +29,6 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
                 seasonStats[season] = { trips: 0, km: 0, hours: 0 };
             }
 
-            // Determine if home match by club name
             const localName = (m.club_local || '').toLowerCase().replace(/\s/g, '');
             const isHomeGame = localName.includes('realmadrid') ||
                 localName.includes('tacon') ||

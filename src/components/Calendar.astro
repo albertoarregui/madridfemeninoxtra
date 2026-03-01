@@ -4,7 +4,6 @@ import { getAssetUrl } from "../utils/assets";
 
 const calendarMatches = await fetchCalendarFromDb();
 
-// Construir el mapa de escudos directamente de los datos de la BD
 const shieldMap: Record<string, string> = {};
 for (const m of calendarMatches) {
     if (m.club_local && m.local_foto_url)
@@ -15,14 +14,12 @@ for (const m of calendarMatches) {
 
 function getShieldSrc(teamName: string): string {
     if (shieldMap[teamName]) return shieldMap[teamName];
-    // Fallback: busca por contains
     const lower = teamName.toLowerCase();
     const found = Object.entries(shieldMap).find(
         ([k]) =>
             k.toLowerCase().includes(lower) || lower.includes(k.toLowerCase()),
     );
     if (found) return found[1];
-    // Último recurso: asset local
     return getAssetUrl("escudos", teamName);
 }
 
@@ -44,13 +41,13 @@ const MONTHS_DATA = [
 ];
 
 const now = new Date();
-const currentMonth = now.getMonth() + 1; // 1-12
+const currentMonth = now.getMonth() + 1;
 const currentYear = now.getFullYear();
 
 let activeMonthIndex = MONTHS_DATA.findIndex(
     (m) => m.monthNum === currentMonth && m.year === currentYear,
 );
-if (activeMonthIndex === -1) activeMonthIndex = 4; // Default to Jan 2026 if not found
+if (activeMonthIndex === -1) activeMonthIndex = 4;
 
 const getMatchForDay = (day: number, monthIndex: number) => {
     const monthData = MONTHS_DATA[monthIndex];
@@ -64,7 +61,6 @@ const getMatchForDay = (day: number, monthIndex: number) => {
 
     return calendarMatches.find((match) => {
         if (!match.date) return false;
-        // Normalizar comparación: quitar horas si las hay o manejar formatos diferentes
         const matchDateOnly = match.date.split(" ")[0];
         return matchDateOnly === dateStr;
     });
@@ -716,7 +712,7 @@ const getDayInfo = (
     }
 
     .rival-shield {
-        width: 70%; /* Adjusted size */
+        width: 70%;
         height: 70%;
         object-fit: contain;
         z-index: 1;

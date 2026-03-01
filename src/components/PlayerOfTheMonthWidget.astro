@@ -1,12 +1,10 @@
 ---
 import { Image } from "astro:assets";
 import { fetchPlayerAwards } from "../utils/awards";
-import defaultLindaImg from "../assets/jugadora_del_mes/linda_caicedo_enero_2026.webp";
-
 const allAwards = await fetchPlayerAwards();
 
 const awardImages = import.meta.glob<{ default: ImageMetadata }>(
-    "../assets/jugadora_del_mes/*.{png,jpg,jpeg,webp}",
+    "../assets/intro/*.{png,jpg,jpeg,webp}",
     { eager: true },
 );
 
@@ -15,7 +13,6 @@ function getAwardImage(
     monthName: string,
     year: number | string,
 ) {
-    // Normalize player name: remove accents, convert to lowercase, replace spaces with underscores
     const normalizedPlayer = playerName
         .toLowerCase()
         .normalize("NFD")
@@ -27,7 +24,6 @@ function getAwardImage(
 
     const paths = Object.keys(awardImages);
 
-    // Strategy 1: Perfect match (Player + Month + Year)
     let matchingPath = paths.find((path) => {
         const p = path.toLowerCase();
         return (
@@ -37,7 +33,6 @@ function getAwardImage(
         );
     });
 
-    // Strategy 2: Fallback to Player + Month (any year)
     if (!matchingPath) {
         matchingPath = paths.find((path) => {
             const p = path.toLowerCase();
@@ -45,7 +40,6 @@ function getAwardImage(
         });
     }
 
-    // Strategy 3: Fallback to Player + Year (any month)
     if (!matchingPath) {
         matchingPath = paths.find((path) => {
             const p = path.toLowerCase();
@@ -53,7 +47,6 @@ function getAwardImage(
         });
     }
 
-    // Strategy 4: Fallback to just Player name (last resort)
     if (!matchingPath) {
         matchingPath = paths.find((path) => {
             const p = path.toLowerCase();
@@ -61,17 +54,10 @@ function getAwardImage(
         });
     }
 
-    if (import.meta.env.DEV && !matchingPath) {
-        console.log(
-            `[AwardWidget] No image found for: ${normalizedPlayer} (${normalizedMonth} ${yearStr})`,
-        );
-    }
-
     return matchingPath ? awardImages[matchingPath].default : null;
 }
 
 const awards = allAwards.map((award) => {
-    // Parse DD/MM/YYYY format
     const parts = award.fecha.split("/");
     let date: Date;
     if (parts.length === 3) {
@@ -99,17 +85,11 @@ const awards = allAwards.map((award) => {
 
     const image = getAwardImage(award.nombre, monthName, year);
 
-    if (import.meta.env.DEV) {
-        console.log(
-            `[AwardWidget] Mapped: ${award.nombre} (${monthName} ${year}) - Image: ${image ? "FOUND" : "NOT FOUND"}`,
-        );
-    }
-
     return {
         month: monthName,
         year: year,
         player: award.nombre.toUpperCase(),
-        image: award.foto_url || image || defaultLindaImg,
+        image: award.foto_url || image,
         hasImage: !!award.foto_url || image !== null,
         isExternalUrl: !!award.foto_url,
         tipo: award.tipo,
@@ -117,29 +97,6 @@ const awards = allAwards.map((award) => {
         titulo: award.titulo,
     };
 });
-
-if (import.meta.env.DEV) {
-    console.log(`[AwardWidget] Final awards array length: ${awards.length}`);
-    if (awards.length > 0) {
-        console.log(
-            `[AwardWidget] First item: ${awards[0].player} - ${awards[0].month} ${awards[0].year}`,
-        );
-    }
-}
-
-if (awards.length === 0) {
-    awards.push({
-        month: "ENERO",
-        year: 2026,
-        player: "LINDA CAICEDO",
-        image: defaultLindaImg,
-        hasImage: true,
-        isExternalUrl: false,
-        tipo: "MVP_MES",
-        temporada: undefined,
-        titulo: "Mejor Jugadora Enero 2026",
-    });
-}
 ---
 
 <div
@@ -162,7 +119,6 @@ if (awards.length === 0) {
             const altText =
                 award.titulo || `MVP ${award.month || award.temporada}`;
 
-            // Cast types safely in JS scope to avoid Astro compiler errors inside JSX braces
             const externalImageUrl = award.isExternalUrl
                 ? (award.image as string)
                 : "";
@@ -293,7 +249,7 @@ if (awards.length === 0) {
     }
 
     .photo-season-badge-bottom.temporada-badge-bottom {
-        background: rgba(212, 175, 55, 0.85); /* Golden background */
+        background: rgba(212, 175, 55, 0.85);
         color: #fff;
         border-color: rgba(255, 255, 255, 0.5);
     }

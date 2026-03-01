@@ -573,16 +573,14 @@ const playerImageMap = Object.fromEntries(
                 const tipo = (award.tipo || "").toUpperCase();
 
                 if (selectedType === "award_monthly") {
-                    // Check if type is monthly (contains MES or is null/empty as a fallback)
                     if (
                         !tipo.includes("MES") &&
                         !tipo.includes("MENSUAL") &&
                         tipo !== ""
                     )
                         return false;
-                    return true; // Monthly is always all-time for now
+                    return true;
                 } else {
-                    // Seasonal awards
                     if (
                         !tipo.includes("TEMPORADA") &&
                         !tipo.includes("SEASON") &&
@@ -682,19 +680,15 @@ const playerImageMap = Object.fromEntries(
                 .sort((a, b) => b[sortKey] - a[sortKey]);
         }
 
-        // Store all players for pagination
         cachedPlayers = sortedPlayers;
         cachedConfig = config;
         const totalPages = Math.ceil(cachedPlayers.length / playersPerPage);
-
-        // Update pagination controls visibility
         if (totalPages > 1) {
             paginationControls.style.display = "flex";
         } else {
             paginationControls.style.display = "none";
         }
 
-        // Reset to first page
         currentPage = 1;
 
         renderPage(cachedPlayers, cachedConfig);
@@ -715,12 +709,9 @@ const playerImageMap = Object.fromEntries(
                     const globalIndex = startIndex + index;
                     const extraStyle = "";
 
-                    // Determinar si esta fila debe tener estilo especial (solo top 3 en página 1)
                     const isFirstPage = currentPage === 1;
                     const isTopThree = globalIndex < 3;
                     const shouldHighlight = isFirstPage && isTopThree;
-
-                    // Agregar clase especial a las filas top 3 de la página 1
                     const rowClass = shouldHighlight
                         ? `class="top-three-row top-${globalIndex + 1}"`
                         : "";
@@ -757,7 +748,6 @@ const playerImageMap = Object.fromEntries(
                 .join("");
         }
 
-        // Update pagination info - Generate page number buttons
         pageNumbers.innerHTML = "";
 
         for (let i = 1; i <= totalPages; i++) {
@@ -786,7 +776,6 @@ const playerImageMap = Object.fromEntries(
         calculateRankings();
     }
 
-    // Store reference to render later
     window.renderCurrentPage = function (players, config) {
         cachedPlayers = players;
         cachedConfig = config;
@@ -795,7 +784,6 @@ const playerImageMap = Object.fromEntries(
 
     competitionSelect.addEventListener("change", updateRankings);
 
-    // Lógica para Custom Selects
     function initCustomSelects() {
         const containers = document.querySelectorAll(
             ".custom-select-container",
@@ -809,7 +797,6 @@ const playerImageMap = Object.fromEntries(
 
             trigger.addEventListener("click", (e) => {
                 e.stopPropagation();
-                // Cerrar otros abiertos
                 containers.forEach((c) => {
                     if (c !== container) c.classList.remove("open");
                 });
@@ -821,12 +808,9 @@ const playerImageMap = Object.fromEntries(
                     const value = option.dataset.value;
                     const text = option.textContent;
 
-                    // Actualizar UI
                     selectedText.textContent = text;
                     options.forEach((opt) => opt.classList.remove("selected"));
                     option.classList.add("selected");
-
-                    // Actualizar Select oculto y disparar evento
                     select.value = value;
                     select.dispatchEvent(new Event("change"));
 
@@ -835,7 +819,6 @@ const playerImageMap = Object.fromEntries(
             });
         });
 
-        // Cerrar al hacer clic fuera
         document.addEventListener("click", () => {
             containers.forEach((c) => c.classList.remove("open"));
         });
@@ -843,7 +826,6 @@ const playerImageMap = Object.fromEntries(
 
     initCustomSelects();
 
-    // Inicializar rankings
     calculateRankings();
 
     typeSelect.addEventListener("change", updateRankings);
@@ -868,7 +850,7 @@ const playerImageMap = Object.fromEntries(
         margin-bottom: 2.5rem;
         flex-wrap: wrap;
         justify-content: center;
-        align-items: flex-start; /* Asegura que no se estiren */
+        align-items: flex-start;
     }
 
     .ranking-cards-container {

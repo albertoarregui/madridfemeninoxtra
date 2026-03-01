@@ -203,11 +203,9 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
 
     const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
     const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora') => {
-        // Normalizar nombres para la búsqueda (quitar acentos, etc)
         const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         const searchName = normalize(name);
 
-        // Buscar la foto en los datos de los goles
         const goal = goals.find(g => {
             const gName = type === 'goleadora' ? g.nombre_goleadora : g.nombre_asistente;
             return gName && normalize(gName) === searchName;
@@ -219,7 +217,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             return dbPhoto;
         }
 
-        // Fallback al asset local si no hay foto en el registro del gol
         const localPlaceholder = '/assets/jugadoras/placeholder.png';
         try {
             const localAsset = getAssetUrl('jugadoras', getSlug(name));

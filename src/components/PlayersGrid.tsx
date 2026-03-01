@@ -12,7 +12,7 @@ interface Player {
     countryName: string;
     flagUrl: string;
     temporadas?: string[];
-    dorsales?: Record<string, number>; // New field
+    dorsales?: Record<string, number>;
     [key: string]: any;
 }
 
@@ -122,7 +122,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid">
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex gap-6 w-full flex-wrap justify-center items-center">
-                    {/* Filtro Temporada */}
                     <div className="custom-select-container">
                         <div className="custom-select-trigger" onClick={(e) => {
                             const container = e.currentTarget.parentElement;
@@ -154,7 +153,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
-                    {/* Filtro Posición */}
                     <div className="custom-select-container">
                         <div className="custom-select-trigger" onClick={(e) => {
                             const container = e.currentTarget.parentElement;
@@ -186,7 +184,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
-                    {/* Filtro País */}
                     <div className="custom-select-container">
                         <div className="custom-select-trigger" onClick={(e) => {
                             const container = e.currentTarget.parentElement;
