@@ -49,7 +49,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
 
         const query = `
             SELECT
-                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
+                p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion, p.galeria_urls,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 c.foto_url AS competicion_foto_url,
