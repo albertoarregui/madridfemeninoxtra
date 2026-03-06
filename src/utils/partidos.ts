@@ -71,9 +71,9 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 jm.nombre AS mvp_nombre,
                 en.nombre AS entrenador_nombre,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rm,
-                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
+                (SELECT COUNT(*) FROM tarjetas_rival trr WHERE trr.id_partido = p.id_partido AND (UPPER(trr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(trr.tipo_tarjeta) LIKE '%YELLOW%') AND UPPER(trr.tipo_tarjeta) NOT LIKE '%DOBLE%') as amarillas_rival,
                 (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NOT NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rm,
-                (SELECT COUNT(*) FROM tarjetas tr WHERE tr.id_partido = p.id_partido AND tr.id_jugadora IS NULL AND (UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tr.tipo_tarjeta) LIKE '%RED%' OR UPPER(tr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rival,
+                (SELECT COUNT(*) FROM tarjetas_rival trr WHERE trr.id_partido = p.id_partido AND (UPPER(trr.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(trr.tipo_tarjeta) LIKE '%RED%' OR UPPER(trr.tipo_tarjeta) LIKE '%DOBLE%')) as rojas_rival,
                 (SELECT COUNT(*) FROM (
                     SELECT ga.id_gol FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                     UNION ALL
@@ -82,7 +82,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 (SELECT COUNT(*) FROM (
                     SELECT gr.id_gol_rival FROM goles_rival gr WHERE gr.id_partido = p.id_partido AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
                     UNION ALL
-                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND pf.id_jugadora IS NULL
+                    SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND (pf.id_jugadora IS NULL OR pf.id_jugadora = 0 OR pf.id_jugadora = '')
                 )) as penaltis_rival,
                 
                 CASE 
