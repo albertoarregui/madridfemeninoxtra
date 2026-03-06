@@ -785,14 +785,14 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 (goal.goleadora && !goal.nombre_jugadora && isNaN(Number(goal.goleadora)));
 
             if (isOwnGoalInGolesTable) {
-                let playerName = goal.nombre_jugadora || goal.goleadora || "Rival";
+                let playerName = "Propia puerta";
                 let assistantName = goal.nombre_asistente || goal.asistente;
 
                 events.push({
                     minute: parseMinuteInternal(goal.minuto),
                     displayMinute: formatDisplayMinute(goal.minuto),
                     type: 'goal',
-                    text: `${playerName} (P.P.)`,
+                    text: playerName,
                     scorer: playerName,
                     assistant: assistantName,
                     isPenalty: false,
@@ -854,12 +854,12 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         // Goles en propia
         for (const og of ownGoalsResult.rows) {
-            const playerName = og.nombre_jugadora || og.rival_nombre || 'Rival';
+            const playerName = "Propia puerta";
             events.push({
                 minute: parseMinuteInternal(og.minuto),
                 displayMinute: formatDisplayMinute(og.minuto),
                 type: 'goal',
-                text: `${playerName} (P.P.)`,
+                text: playerName,
                 scorer: playerName,
                 isOwnGoal: true,
                 team: 'local'
@@ -905,8 +905,8 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 tipoLower.includes('own') ||
                 tipoLower.includes('p.p');
 
-            let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
-            if (isOwnGoal) goalText = `${goal.goleadora || 'Rival'} (P.P.)`;
+            let goalText = isOwnGoal ? "Propia puerta" : `Gol de ${goal.goleadora || 'Rival'}`;
+            let scorer = isOwnGoal ? "Propia puerta" : goal.goleadora;
 
             if (goal.asistente) {
                 goalText += ` (Asis. ${goal.asistente})`;
@@ -917,7 +917,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 displayMinute: formatDisplayMinute(goal.minuto),
                 type: 'goal',
                 text: goalText,
-                scorer: goal.goleadora,
+                scorer: scorer,
                 assistant: goal.asistente,
                 isPenalty: tipoLower.includes('penalti') || tipoLower === 'p',
                 isOwnGoal: isOwnGoal,
