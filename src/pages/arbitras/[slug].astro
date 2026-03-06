@@ -7,16 +7,16 @@ import {
 } from "../../utils/arbitras";
 import { generateSlug } from "../../utils/url-helper";
 
-import { getAssetMetadata } from "../../utils/assets";
+import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 
-const competitionLogos: Record<string, any> = {
-    "Liga F": getAssetMetadata("competiciones", "liga_f"),
-    UWCL: getAssetMetadata("competiciones", "uwcl"),
-    "Copa de la Reina": getAssetMetadata("competiciones", "copa_de_la_reina"),
-    "Supercopa de España": getAssetMetadata(
+const competitionLogos: Record<string, string> = {
+    "Liga F": getAssetUrl("competiciones", "liga_f.png"),
+    UWCL: getAssetUrl("competiciones", "uwcl.png"),
+    "Copa de la Reina": getAssetUrl("competiciones", "copa_de_la_reina.png"),
+    "Supercopa de España": getAssetUrl(
         "competiciones",
-        "supercopa_de_espana",
+        "supercopa_de_espana.png",
     ),
 };
 
@@ -302,8 +302,7 @@ const redArc =
                             </div>
                             <div class="info-row">
                                 <span class="label">Partidos:</span>
-                                {
-                                }
+                                {}
                                 <span class="value">{totalStats.pj}</span>
                             </div>
                             <div class="info-row">
@@ -448,7 +447,6 @@ const redArc =
                                                                                 comp
                                                                                     .competicion
                                                                             ]
-                                                                                .src
                                                                         }
                                                                         alt={
                                                                             comp.competicion
@@ -707,8 +705,7 @@ const redArc =
                                 class="pie-chart"
                                 id="cards-chart"
                             >
-                                {
-                                }
+                                {}
                                 <circle
                                     cx="50"
                                     cy="50"
@@ -784,7 +781,7 @@ const redArc =
                                                             competitionLogos[
                                                                 match
                                                                     .competicion
-                                                            ].src
+                                                            ]
                                                         }
                                                         alt={match.competicion}
                                                         class="competition-logo-small"
@@ -1047,9 +1044,10 @@ const redArc =
         updateCharts(stats);
     }
 
-    if (seasonFilter) seasonFilter.addEventListener("change", applyFilters);
+    if (seasonFilter)
+        seasonFilter.addEventListener("change", filterDataAndCharts);
     if (competitionFilter)
-        competitionFilter.addEventListener("change", applyFilters);
+        competitionFilter.addEventListener("change", filterDataAndCharts);
 
     const showMoreBtn = document.getElementById("show-more-matches");
     if (showMoreBtn) {
@@ -1145,7 +1143,25 @@ const redArc =
         padding: 1.5rem;
         display: flex;
         gap: 1.5rem;
-        align-items: stretch;
+        align-items: center;
+        flex-direction: row;
+    }
+
+    @media (max-width: 900px) {
+        .ficha-content {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+        }
+
+        .player-info {
+            width: 100%;
+        }
+
+        .info-row .value {
+            justify-content: center;
+            text-align: center;
+        }
     }
 
     .player-photo-container {
