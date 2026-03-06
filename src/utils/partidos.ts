@@ -917,7 +917,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         // Penaltis Fallados
         for (const pf of missedPenaltiesResult.rows) {
-            const playerName = pf.nombre_jugadora || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
+            const playerName = pf.nombre_jugadora || pf.nombre_rival || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
             events.push({
                 minute: parseMinuteInternal(pf.minuto),
                 displayMinute: formatDisplayMinute(pf.minuto),
