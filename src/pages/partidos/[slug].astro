@@ -1011,7 +1011,8 @@ try {
                                                         <path d="M7.245 10.455l-3.745 -1.455" />
                                                         <path d="M3 3l18 18" />
                                                     </svg>
-                                                ) : event.type === "goal" ? (
+                                                ) : event.type === "goal" &&
+                                                  !event.isPenalty ? (
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
                                                         width="24"
@@ -1034,33 +1035,69 @@ try {
                                                         <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
                                                     </svg>
                                                 ) : event.type === "penalty" ||
-                                                  event.type === "shootout" ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 64 64"
-                                                        fill="currentColor"
-                                                        stroke="currentColor"
-                                                        stroke-width="0"
-                                                        style={`color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
-                                                    >
-                                                        <g fill="currentColor">
-                                                            <rect
-                                                                x="10"
-                                                                y="27"
-                                                                width="2"
-                                                                height="28"
-                                                            />
-                                                            <rect
-                                                                x="52"
-                                                                y="27"
-                                                                width="2"
-                                                                height="28"
-                                                            />
-                                                            <path d="M52,29V27H12v2h3.016l-3.328,11.094l1.914,0.574l2.586-8.621l3.594,11.979l1.916-0.574L18.104,31.47 l3.594,11.979l1.916-0.574L20.02,29h4.379l3.594,11.979l1.916-0.574L26.315,29h4.379l3.594,11.979l1.916-0.574L32.61,29h4.38 l3.594,11.979l1.916-0.574L38.906,29h4.379l3.594,11.979l1.916-0.574L45.201,29h3.783V29z" />
-                                                        </g>
-                                                    </svg>
+                                                  event.type === "shootout" ||
+                                                  (event.type === "goal" &&
+                                                      event.isPenalty) ? (
+                                                    <div style="position: relative; width: 24px; height: 24px;">
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="24"
+                                                            height="24"
+                                                            viewBox="0 0 64 64"
+                                                            fill="currentColor"
+                                                            stroke="currentColor"
+                                                            stroke-width="0"
+                                                            style={`color: ${event.outcome === "scored" || (event.type === "goal" && event.isPenalty) ? "#77dd77" : "#ff6b6b"}`}
+                                                        >
+                                                            <g fill="currentColor">
+                                                                <rect
+                                                                    x="10"
+                                                                    y="27"
+                                                                    width="2"
+                                                                    height="28"
+                                                                />
+                                                                <rect
+                                                                    x="52"
+                                                                    y="27"
+                                                                    width="2"
+                                                                    height="28"
+                                                                />
+                                                                <path d="M52,29V27H12v2h3.016l-3.328,11.094l1.914,0.574l2.586-8.621l3.594,11.979l1.916-0.574L18.104,31.47 l3.594,11.979l1.916-0.574L20.02,29h4.379l3.594,11.979l1.916-0.574L26.315,29h4.379l3.594,11.979l1.916-0.574L32.61,29h4.38 l3.594,11.979l1.916-0.574L38.906,29h4.379l3.594,11.979l1.916-0.574L45.201,29h3.783V29z" />
+                                                            </g>
+                                                        </svg>
+                                                        {((event.type ===
+                                                            "penalty" ||
+                                                            event.type ===
+                                                                "shootout") &&
+                                                            event.outcome !==
+                                                                "scored") && (
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="24"
+                                                                height="24"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="#ff3333"
+                                                                stroke-width="3"
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                style="position: absolute; top: 0; left: 0; filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.3));"
+                                                            >
+                                                                <line
+                                                                    x1="18"
+                                                                    y1="6"
+                                                                    x2="6"
+                                                                    y2="18"
+                                                                />
+                                                                <line
+                                                                    x1="6"
+                                                                    y1="6"
+                                                                    x2="18"
+                                                                    y2="18"
+                                                                />
+                                                            </svg>
+                                                        )}
+                                                    </div>
                                                 ) : event.type === "sub" ? (
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
@@ -1212,7 +1249,7 @@ try {
                                                         {event.videoUrl && (
                                                             <button
                                                                 class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.scorer.replace(/'/g, "\\'")}')`}
+                                                                onclick={`openVideoModal('${event.videoUrl}', 'Gol de ${event.scorer.replace(/'/g, "\\'")}')`}
                                                                 title="Ver gol"
                                                             >
                                                                 <svg
@@ -1240,13 +1277,59 @@ try {
                                                         >
                                                             {event.player}
                                                         </span>
+                                                        {event.videoUrl && (
+                                                            <button
+                                                                class="play-video-btn"
+                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
+                                                                title="Ver video"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="currentColor"
+                                                                >
+                                                                    <path
+                                                                        stroke="none"
+                                                                        d="M0 0h24v24H0z"
+                                                                        fill="none"
+                                                                    />
+                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ) : event.type === "penalty" ? (
-                                                    <span
-                                                        style={`font-weight: 600; color: ${event.outcome === "scored" ? "#000" : "#ff6b6b"}`}
-                                                    >
-                                                        {event.text}
-                                                    </span>
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <span
+                                                            style={`font-weight: 600; color: ${event.outcome === "scored" ? "#000" : "#ff6b6b"}`}
+                                                        >
+                                                            {event.text}
+                                                        </span>
+                                                        {event.videoUrl && (
+                                                            <button
+                                                                class="play-video-btn"
+                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
+                                                                title="Ver video"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="currentColor"
+                                                                >
+                                                                    <path
+                                                                        stroke="none"
+                                                                        d="M0 0h24v24H0z"
+                                                                        fill="none"
+                                                                    />
+                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 ) : event.type === "card" ? (
                                                     <strong>
                                                         {event.player ||
@@ -1936,12 +2019,12 @@ try {
     function closeRefereeModal() {
         document.getElementById("referee-modal").style.display = "none";
     }
-    function openVideoModal(url, scorer) {
+    function openVideoModal(url, titleText) {
         const modal = document.getElementById("video-modal");
         const video = document.getElementById("goal-video-player");
         const source = document.getElementById("video-source");
         const title = document.getElementById("video-modal-title");
-        title.textContent = `Gol de ${scorer}`;
+        title.textContent = titleText;
         source.src = url;
         video.load();
         modal.style.display = "flex";

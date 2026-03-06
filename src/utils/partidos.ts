@@ -735,14 +735,22 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             SELECT * FROM tarjetas_rival WHERE id_partido = ?
         `;
 
-        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult, rivalGoalsResult, rivalCardsResult] = await Promise.all([
+        const missedPenaltiesQuery = `
+            SELECT pf.*, j.nombre as nombre_jugadora
+            FROM penaltis_fallados pf
+            LEFT JOIN jugadoras j ON pf.id_jugadora = j.id_jugadora
+            WHERE pf.id_partido = ?
+        `;
+
+        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult, rivalGoalsResult, rivalCardsResult, missedPenaltiesResult] = await Promise.all([
             subsPromise,
             client.execute({ sql: goalsQuery, args: [matchId] }),
             client.execute({ sql: cardsQuery, args: [matchId] }),
             client.execute({ sql: penaltyShootoutQuery, args: [matchId] }),
             client.execute({ sql: ownGoalsQuery, args: [matchId] }),
             client.execute({ sql: rivalGoalsQuery, args: [matchId] }),
-            client.execute({ sql: rivalCardsQuery, args: [matchId] })
+            client.execute({ sql: rivalCardsQuery, args: [matchId] }),
+            client.execute({ sql: missedPenaltiesQuery, args: [matchId] })
         ]);
 
         const events: any[] = [];
@@ -904,6 +912,21 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 text: `${cardText} a ${card.nombre || 'Jugadora'}`,
                 player: card.nombre,
                 team: 'rival'
+            });
+        }
+
+        // Penaltis Fallados
+        for (const pf of missedPenaltiesResult.rows) {
+            const playerName = pf.nombre_jugadora || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
+            events.push({
+                minute: parseMinuteInternal(pf.minuto),
+                displayMinute: formatDisplayMinute(pf.minuto),
+                type: 'penalty',
+                outcome: 'missed',
+                text: `Penalti fallado por ${playerName}`,
+                player: playerName,
+                team: pf.id_jugadora ? 'local' : 'rival',
+                videoUrl: pf.video_url || null
             });
         }
 
