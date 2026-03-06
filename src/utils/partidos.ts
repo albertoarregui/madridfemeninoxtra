@@ -772,12 +772,17 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         // Goles
         for (const goal of goalsResult.rows) {
-            const tipoLower = String(goal.tipo || '').toLowerCase().trim();
-            const isOwnGoalInGolesTable = (!goal.nombre_jugadora && goal.goleadora) ||
-                tipoLower === 'propia' ||
-                tipoLower === 'own_goal' ||
-                tipoLower === 'p.p.' ||
-                tipoLower === 'propia puerta';
+            const tipoValue = String(goal.tipo || '');
+            const tipoLower = tipoValue.toLowerCase().trim();
+
+            // Detectar si es gol en propia puerta (a favor del RM si está en esta tabla)
+            const isOwnGoalInGolesTable =
+                tipoLower.includes('propia') ||
+                tipoLower.includes('own') ||
+                tipoLower.includes('p.p') ||
+                // Si hay un nombre de goleadora pero no se encontró en nuestra tabla de jugadoras, 
+                // y no es un ID numérico, probablemente sea una jugadora rival (P.P.)
+                (goal.goleadora && !goal.nombre_jugadora && isNaN(Number(goal.goleadora)));
 
             if (isOwnGoalInGolesTable) {
                 let playerName = goal.nombre_jugadora || goal.goleadora || "Rival";
@@ -894,8 +899,11 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
 
         // Goles Rival
         for (const goal of rivalGoalsResult.rows) {
-            const tipoLower = String(goal.tipo || '').toLowerCase().trim();
-            const isOwnGoal = tipoLower === 'propia' || tipoLower === 'own_goal' || tipoLower === 'p.p.' || tipoLower === 'propia puerta';
+            const tipoValue = String(goal.tipo || '');
+            const tipoLower = tipoValue.toLowerCase().trim();
+            const isOwnGoal = tipoLower.includes('propia') ||
+                tipoLower.includes('own') ||
+                tipoLower.includes('p.p');
 
             let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
             if (isOwnGoal) goalText = `${goal.goleadora || 'Rival'} (P.P.)`;
@@ -911,7 +919,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 text: goalText,
                 scorer: goal.goleadora,
                 assistant: goal.asistente,
-                isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
+                isPenalty: tipoLower.includes('penalti') || tipoLower === 'p',
                 isOwnGoal: isOwnGoal,
                 team: 'rival'
             });
