@@ -286,23 +286,19 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
             WHERE a.id_partido = ? AND a.titular = 1
             ORDER BY 
-                CASE j.posicion 
-                    WHEN 'Portera' THEN 1
-                    WHEN 'Defensa' THEN 2
-                    WHEN 'Central' THEN 2
-                    WHEN 'Lateral izquierda' THEN 3
-                    WHEN 'Lateral Izquierda' THEN 3
-                    WHEN 'Lateral derecha' THEN 4
-                    WHEN 'Lateral Derecha' THEN 4
-                    WHEN 'Centrocampista' THEN 5
-                    WHEN 'Pivote' THEN 5
-                    WHEN 'Interior' THEN 5
-                    WHEN 'Extremo' THEN 6
-                    WHEN 'Extremo izquierdo' THEN 6
-                    WHEN 'Extremo derecho' THEN 6
-                    WHEN 'Delantera' THEN 7
+                CASE 
+                    WHEN UPPER(j.posicion) LIKE '%PORTER%' OR UPPER(j.posicion) LIKE '%GK%' THEN 1
+                    WHEN UPPER(j.posicion) LIKE '%CENTRAL%' THEN 2
+                    WHEN UPPER(j.posicion) LIKE '%DEFENSA%' AND UPPER(j.posicion) NOT LIKE '%LATERAL%' THEN 2
+                    WHEN UPPER(j.posicion) LIKE '%LATERAL%IZQ%' OR UPPER(j.posicion) LIKE '%LATERAL%LEFT%' OR UPPER(j.posicion) LIKE '%LIZ%' THEN 3
+                    WHEN UPPER(j.posicion) LIKE '%LATERAL%DER%' OR UPPER(j.posicion) LIKE '%LATERAL%RIGHT%' OR UPPER(j.posicion) LIKE '%LDE%' THEN 4
+                    WHEN UPPER(j.posicion) LIKE '%CENTRO%' OR UPPER(j.posicion) LIKE '%PIVOTE%' OR UPPER(j.posicion) LIKE '%INTERIOR%' OR UPPER(j.posicion) LIKE '%MEDIO%' OR UPPER(j.posicion) LIKE '%MC%' THEN 5
+                    WHEN UPPER(j.posicion) LIKE '%EXTREMO%' OR UPPER(j.posicion) LIKE '%WINGER%' THEN 6
+                    WHEN UPPER(j.posicion) LIKE '%DELANTERA%' OR UPPER(j.posicion) LIKE '%ATACANTE%' OR UPPER(j.posicion) LIKE '%PUNTA%' OR UPPER(j.posicion) LIKE '%FORWARD%' THEN 7
                     ELSE 99
-                END ASC
+                END ASC,
+                CAST(d.dorsal AS INTEGER) ASC,
+                j.nombre ASC
         `;
 
         const result = await client.execute({
