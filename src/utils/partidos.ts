@@ -288,10 +288,10 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             ORDER BY 
                 CASE j.posicion 
                     WHEN 'Portera' THEN 1
-                    WHEN 'Lateral izquierda' THEN 2
-                    WHEN 'Lateral Izquierda' THEN 2
-                    WHEN 'Defensa' THEN 3
-                    WHEN 'Central' THEN 3
+                    WHEN 'Defensa' THEN 2
+                    WHEN 'Central' THEN 2
+                    WHEN 'Lateral izquierda' THEN 3
+                    WHEN 'Lateral Izquierda' THEN 3
                     WHEN 'Lateral derecha' THEN 4
                     WHEN 'Lateral Derecha' THEN 4
                     WHEN 'Centrocampista' THEN 5
