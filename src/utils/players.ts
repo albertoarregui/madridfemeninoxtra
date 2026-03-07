@@ -306,6 +306,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             if (!estadisticas[temporada]) {
                 estadisticas[temporada] = {
                     temporada: temporada,
+                    id_temporada: Number(row.id_temporada),
                     competiciones: [],
                     total: {
                         convocatorias: 0,

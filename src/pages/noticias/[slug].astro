@@ -1,0 +1,1594 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
+import { getAssetUrl } from "../../utils/assets";
+import { fetchPlayersDirectly, fetchPlayerStats } from "../../utils/players";
+import {
+    fetchCoachesDirectly,
+    fetchCoachStats,
+} from "../../utils/entrenadores";
+import { fetchRefereesDirectly } from "../../utils/arbitras";
+import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
+import { fetchGames } from "../../utils/partidos";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+let noticia = null;
+
+try {
+    const { contentfulClient } = await import("../../lib/contentful");
+    const entries = await contentfulClient.getEntries({
+        content_type: "noticia",
+        "fields.slug": slug,
+        limit: 1,
+    });
+
+    if (entries && entries.items.length > 0) {
+        noticia = entries.items[0].fields;
+    }
+} catch (e: any) {
+    console.warn("Error consultando Contentful:", e);
+}
+
+if (!noticia) {
+    return Astro.redirect("/404");
+}
+
+const { title, subtitle, player, category, focusType, referenceId, id } =
+    noticia;
+
+const contentReferenceId = referenceId || id;
+
+const featuredImageUrl = noticia.featuredImage?.fields?.file?.url
+    ? `https:${noticia.featuredImage.fields.file.url}`
+    : "https://res.cloudinary.com/dnx7vsqbi/image/upload/v1741372500/background/stadium.webp";
+
+let bodyHtml = ``;
+
+if (noticia.body) {
+    try {
+        if (typeof noticia.body === "string") {
+            bodyHtml = `<p>${noticia.body}</p>`;
+        } else if (noticia.body.nodeType === "document") {
+            bodyHtml = documentToHtmlString(noticia.body);
+        } else {
+            bodyHtml = `<p>Error de formato.</p>`;
+        }
+    } catch (e) {
+        console.error("Error al procesar el Rich Text de Contentful:", e);
+        bodyHtml = `<p>Ocurrió un error leyendo el contenido.</p>`;
+    }
+}
+
+let playerData: any = null;
+let playerStats: any = null;
+let coachData: any = null;
+let coachStats: any = null;
+let clubData: any = null;
+let refereeData: any = null;
+let matchData: any = null;
+let matchLineup: any[] = [];
+
+if (focusType === "player" && (contentReferenceId || player)) {
+    const allPlayers = await fetchPlayersDirectly();
+    playerData =
+        allPlayers.find(
+            (p) => p.nombre.toLowerCase() === player?.toLowerCase(),
+        ) ||
+        allPlayers.find((p) =>
+            p.nombre.toLowerCase().includes(player?.toLowerCase() || ""),
+        ) ||
+        allPlayers.find(
+            (p) => String(p.id_jugadora) === String(contentReferenceId),
+        );
+
+    if (playerData) {
+        const statsResponse = await fetchPlayerStats(
+            playerData.id_jugadora,
+            playerData.posicion === "Portera",
+        );
+
+        if (statsResponse?.estadisticas?.length > 0) {
+            const sortedSeasons = [...statsResponse.estadisticas].sort(
+                (a: any, b: any) =>
+                    (b.temporada || "").localeCompare(a.temporada || ""),
+            );
+            const currentSeason = sortedSeasons[0];
+
+            playerStats = {
+                ...statsResponse,
+                current_official: currentSeason.official_total,
+                season_name: currentSeason.temporada,
+            };
+        } else {
+            playerStats = statsResponse;
+        }
+    }
+}
+
+if (focusType === "coach") {
+    const coaches = await fetchCoachesDirectly();
+    coachData = contentReferenceId
+        ? coaches.find(
+              (c) => String(c.id_entrenador) === String(contentReferenceId),
+          )
+        : coaches.find((c) => c.nombre?.toLowerCase().includes("toril"));
+
+    if (coachData) {
+        const statsResp = await fetchCoachStats(coachData.id_entrenador);
+        if (statsResp?.estadisticas?.length > 0) {
+            const sorted = [...statsResp.estadisticas].sort((a: any, b: any) =>
+                (b.temporada || "").localeCompare(a.temporada || ""),
+            );
+            const currentSeason = sorted[0];
+            const officialComps = [
+                "Liga F",
+                "UWCL",
+                "Copa de la Reina",
+                "Supercopa de España",
+            ];
+            const officialTotal = currentSeason.competiciones
+                .filter((c: any) => officialComps.includes(c.competicion))
+                .reduce(
+                    (acc: any, c: any) => ({
+                        partidos: acc.partidos + c.partidos,
+                        victorias: acc.victorias + c.victorias,
+                        empates: acc.empates + c.empates,
+                        derrotas: acc.derrotas + c.derrotas,
+                        goles_favor: acc.goles_favor + c.goles_favor,
+                        goles_contra: acc.goles_contra + c.goles_contra,
+                    }),
+                    {
+                        partidos: 0,
+                        victorias: 0,
+                        empates: 0,
+                        derrotas: 0,
+                        goles_favor: 0,
+                        goles_contra: 0,
+                    },
+                );
+            coachStats = {
+                current_official: officialTotal,
+                season_name: currentSeason.temporada,
+            };
+        }
+    }
+}
+
+if (focusType === "referee") {
+    const referees = await fetchRefereesDirectly();
+    refereeData = contentReferenceId
+        ? referees.find(
+              (r) => String(r.id_arbitra) === String(contentReferenceId),
+          )
+        : referees[0];
+}
+
+if (focusType === "club") {
+    const rivals = await fetchRivalsDirectly();
+    clubData = contentReferenceId
+        ? rivals.find((r) => String(r.id_club) === String(contentReferenceId))
+        : rivals[0];
+}
+
+if (focusType === "match" && contentReferenceId) {
+    try {
+        const allMatches = await fetchGames();
+        matchData = allMatches.find(
+            (m: any) => String(m.id_partido) === String(contentReferenceId),
+        );
+        if (matchData) {
+            const { getPlayersDbClient } = await import("../../db/client");
+            const client = await getPlayersDbClient();
+            if (client) {
+                const lineupResult = await client.execute({
+                    sql: `SELECT al.*, j.nombre, j.posicion, j.foto_url,
+                            (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = al.id_partido AND g.goleadora = al.id_jugadora) as goles,
+                            (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = al.id_partido AND g.asistente = al.id_jugadora) as asistencias
+                          FROM alineaciones al
+                          JOIN jugadoras j ON al.id_jugadora = j.id_jugadora
+                          WHERE al.id_partido = ? AND al.titular = 1
+                          ORDER BY j.posicion`,
+                    args: [contentReferenceId],
+                });
+                matchLineup = (lineupResult?.rows || []) as any[];
+            }
+        }
+    } catch (e) {
+        console.warn("Error fetching match data:", e);
+    }
+}
+
+const posOrder = ["Portera", "Defensa", "Centrocampista", "Delantera"];
+const matchRows: Record<string, any[]> = {};
+matchLineup.forEach((p: any) => {
+    const pos = p.posicion || "Centrocampista";
+    const key =
+        posOrder.find((o) =>
+            pos.toLowerCase().startsWith(o.slice(0, 4).toLowerCase()),
+        ) || "Centrocampista";
+    if (!matchRows[key]) matchRows[key] = [];
+    matchRows[key].push(p);
+});
+const matchRowsOrdered = posOrder
+    .map((k) => ({ key: k, players: matchRows[k] || [] }))
+    .filter((r) => r.players.length > 0);
+---
+
+<Layout
+    title={`${title} | Madrid Femenino Xtra`}
+    description={`Descubre el hito histórico de ${player} en el Real Madrid Femenino.`}
+>
+    <article class="news-detail-page">
+        <div class="news-full-white-row">
+            <div class="news-content-limit">
+                <div class="news-back-link-wrapper">
+                    <a href="/" class="news-back-link">
+                        <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Volver a la página principal
+                    </a>
+                </div>
+
+                <div class="news-featured-photo">
+                    <img
+                        src={featuredImageUrl}
+                        alt={title}
+                        class="featured-news-img"
+                    />
+                </div>
+
+                <div class="news-main-body-content">
+                    <header class="news-header-section centered">
+                        <span class="news-category-capsule">
+                            {category}
+                        </span>
+
+                        <h1 class="news-main-title">{title}</h1>
+
+                        <p class="news-main-subtitle">
+                            {subtitle}
+                        </p>
+
+                        <div class="news-social-icons">
+                            <a href="#" class="social-circle x" aria-label="X">
+                                <img src={getAssetUrl("redes", "x")} alt="X" />
+                            </a>
+                            <a
+                                href="#"
+                                class="social-circle instagram"
+                                aria-label="Instagram"
+                            >
+                                <img
+                                    src={getAssetUrl("redes", "instagram")}
+                                    alt="Instagram"
+                                />
+                            </a>
+                            <a
+                                href="#"
+                                class="social-circle tiktok"
+                                aria-label="TikTok"
+                            >
+                                <img
+                                    src={getAssetUrl("redes", "tiktok")}
+                                    alt="TikTok"
+                                />
+                            </a>
+                        </div>
+
+                        <div class="news-meta-row">
+                            <time class="news-publish-date">
+                                {
+                                    noticia.publishDate
+                                        ? new Date(noticia.publishDate)
+                                              .toLocaleDateString("es-ES", {
+                                                  year: "numeric",
+                                                  month: "long",
+                                                  day: "numeric",
+                                              })
+                                              .toUpperCase()
+                                        : "7 DE AGOSTO DE 2026"
+                                }
+                            </time>
+                        </div>
+
+                        <div class="news-separator-thin"></div>
+                    </header>
+
+                    <div class="news-article-rich-text">
+                        <div set:html={bodyHtml} />
+                    </div>
+
+                    <hr class="section-separator-simple" />
+
+                    <div class="news-footer-widgets">
+                        {
+                            focusType === "player" && (
+                                <div class="dashboard-widget-card-refined">
+                                    <div class="widget-top-info">
+                                        <div class="widget-avatar-wrapper">
+                                            <img
+                                                src={
+                                                    playerData?.imageUrl ||
+                                                    "https://res.cloudinary.com/dnx7vsqbi/image/upload/v1741372500/jugadoras/default.webp"
+                                                }
+                                                alt={player}
+                                                class="widget-avatar"
+                                            />
+                                        </div>
+                                        <div class="widget-name-box">
+                                            <h3 class="widget-title-small">
+                                                {player}
+                                            </h3>
+                                            <span class="widget-subtitle-pos">
+                                                {playerData?.posicion ||
+                                                    "JUGADORA"}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class={`widget-stats-grid-compact ${playerData?.posicion?.toLowerCase() === "portera" ? "grid-3" : "grid-4"}`}
+                                    >
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {playerStats?.current_official
+                                                    ?.partidos ?? "0"}
+                                            </span>
+                                            <span class="stat-tag">
+                                                PARTIDOS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {playerStats?.current_official
+                                                    ?.minutos ?? "0"}
+                                            </span>
+                                            <span class="stat-tag">
+                                                MINUTOS
+                                            </span>
+                                        </div>
+                                        {playerData?.posicion?.toLowerCase() ===
+                                        "portera" ? (
+                                            <div class="widget-stat-unit">
+                                                <span class="stat-num">
+                                                    {playerStats
+                                                        ?.current_official
+                                                        ?.porterias_cero ?? "0"}
+                                                </span>
+                                                <span class="stat-tag">
+                                                    P. CERO
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div class="widget-stat-unit">
+                                                    <span class="stat-num">
+                                                        {playerStats
+                                                            ?.current_official
+                                                            ?.goles ?? "0"}
+                                                    </span>
+                                                    <span class="stat-tag">
+                                                        GOLES
+                                                    </span>
+                                                </div>
+                                                <div class="widget-stat-unit">
+                                                    <span class="stat-num">
+                                                        {playerStats
+                                                            ?.current_official
+                                                            ?.asistencias ??
+                                                            "0"}
+                                                    </span>
+                                                    <span class="stat-tag">
+                                                        ASISTENCIAS
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <a
+                                        href={`/jugadoras/${playerData?.slug || player?.toLowerCase().replace(/ /g, "-")}`}
+                                        class="widget-cta-btn-premium"
+                                    >
+                                        VER PERFIL COMPLETO
+                                    </a>
+                                </div>
+                            )
+                        }
+
+                        {
+                            focusType === "coach" && coachData && (
+                                <div class="dashboard-widget-card-refined">
+                                    <div class="widget-top-info">
+                                        <div class="widget-avatar-wrapper">
+                                            <img
+                                                src={coachData.imageUrl}
+                                                alt={coachData.nombre}
+                                                class="widget-avatar"
+                                            />
+                                        </div>
+                                        <div class="widget-name-box">
+                                            <h3 class="widget-title-small">
+                                                {coachData.nombre.toUpperCase()}
+                                            </h3>
+                                            <span class="widget-subtitle-pos">
+                                                ENTRENADORA
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="widget-season-label">
+                                        {coachStats?.season_name} · Competición
+                                        oficial
+                                    </p>
+                                    <div class="widget-stats-grid-compact grid-4">
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {coachStats?.current_official
+                                                    ?.victorias ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                VICTORIAS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {coachStats?.current_official
+                                                    ?.empates ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                EMPATES
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {coachStats?.current_official
+                                                    ?.derrotas ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                DERROTAS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {coachStats?.current_official
+                                                    ?.goles_favor ?? 0}
+                                                -
+                                                {coachStats?.current_official
+                                                    ?.goles_contra ?? 0}
+                                            </span>
+                                            <span class="stat-tag">GF-GC</span>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/entrenadores/${coachData.slug}`}
+                                        class="widget-cta-btn-premium"
+                                    >
+                                        VER PERFIL COMPLETO
+                                    </a>
+                                </div>
+                            )
+                        }
+
+                        {
+                            focusType === "referee" && refereeData && (
+                                <div class="dashboard-widget-card-refined">
+                                    <div class="widget-top-info">
+                                        <div class="widget-avatar-wrapper">
+                                            <img
+                                                src={
+                                                    refereeData.foto_url ||
+                                                    "https://res.cloudinary.com/dnx7vsqbi/image/upload/v1741372500/jugadoras/default.webp"
+                                                }
+                                                alt={refereeData.nombre}
+                                                class="widget-avatar"
+                                            />
+                                        </div>
+                                        <div class="widget-name-box">
+                                            <h3 class="widget-title-small">
+                                                {refereeData.nombre.toUpperCase()}
+                                            </h3>
+                                            <span class="widget-subtitle-pos">
+                                                ÁRBITRO ·{" "}
+                                                {refereeData.colegio || ""}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="widget-season-label">
+                                        Balance global en partidos oficiales
+                                    </p>
+                                    <div class="widget-stats-grid-compact grid-3">
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {refereeData.stats?.wins ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                VICTORIAS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {refereeData.stats?.draws ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                EMPATES
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {refereeData.stats?.losses ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                DERROTAS
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="widget-cards-row">
+                                        <div class="card-pill yellow">
+                                            <span class="card-icon">🟨</span>
+                                            <span>
+                                                {refereeData.stats
+                                                    ?.yellowCards ?? 0}{" "}
+                                                a favor
+                                            </span>
+                                            <span class="card-sep">·</span>
+                                            <span>
+                                                {refereeData.stats
+                                                    ?.yellowCardsAgainst ??
+                                                    0}{" "}
+                                                en contra
+                                            </span>
+                                        </div>
+                                        <div class="card-pill red">
+                                            <span class="card-icon">🟥</span>
+                                            <span>
+                                                {refereeData.stats?.redCards ??
+                                                    0}{" "}
+                                                a favor
+                                            </span>
+                                            <span class="card-sep">·</span>
+                                            <span>
+                                                {refereeData.stats
+                                                    ?.redCardsAgainst ?? 0}{" "}
+                                                en contra
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/arbitras/${refereeData.id_arbitra}`}
+                                        class="widget-cta-btn-premium"
+                                    >
+                                        VER PERFIL COMPLETO
+                                    </a>
+                                </div>
+                            )
+                        }
+
+                        {
+                            focusType === "club" && clubData && (
+                                <div class="dashboard-widget-card-refined club-widget">
+                                    <div class="club-widget-header">
+                                        <img
+                                            src={getRivalShieldUrl(clubData)}
+                                            alt={clubData.nombre}
+                                            class="club-shield"
+                                            onerror="this.style.display='none'"
+                                        />
+                                        <div class="widget-name-box">
+                                            <h3 class="widget-title-small">
+                                                {clubData.nombre.toUpperCase()}
+                                            </h3>
+                                            <span class="widget-subtitle-pos">
+                                                {clubData.ciudad ||
+                                                    clubData.pais}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="widget-season-label">
+                                        Balance en partidos oficiales
+                                    </p>
+                                    <div class="widget-stats-grid-compact grid-4">
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {clubData.stats?.wins ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                VICTORIAS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {clubData.stats?.draws ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                EMPATES
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {clubData.stats?.losses ?? 0}
+                                            </span>
+                                            <span class="stat-tag">
+                                                DERROTAS
+                                            </span>
+                                        </div>
+                                        <div class="widget-stat-unit">
+                                            <span class="stat-num">
+                                                {clubData.stats?.gf ?? 0}-
+                                                {clubData.stats?.ga ?? 0}
+                                            </span>
+                                            <span class="stat-tag">GF-GC</span>
+                                        </div>
+                                    </div>
+                                    <a
+                                        href={`/rivales/${clubData.slug}`}
+                                        class="widget-cta-btn-premium"
+                                    >
+                                        VER BALANCE COMPLETO
+                                    </a>
+                                </div>
+                            )
+                        }
+
+                        {
+                            focusType === "match" && matchData && (
+                                <div class="match-widget-full">
+                                    <div class="match-header-scores">
+                                        <div class="mh-team">
+                                            <img
+                                                src={getAssetUrl(
+                                                    "escudos",
+                                                    "real-madrid",
+                                                )}
+                                                alt="Real Madrid"
+                                                class="mh-shield"
+                                                onerror="this.src='/favicon.svg'"
+                                            />
+                                            <span class="mh-name">
+                                                REAL MADRID
+                                            </span>
+                                        </div>
+                                        <div class="mh-score">
+                                            <span class="mh-goals">
+                                                {matchData.goles_rm ?? 0} -{" "}
+                                                {matchData.goles_rival ?? 0}
+                                            </span>
+                                            <span class="mh-meta">
+                                                {matchData.fecha
+                                                    ? new Date(
+                                                          matchData.fecha,
+                                                      ).toLocaleDateString(
+                                                          "es-ES",
+                                                          {
+                                                              day: "numeric",
+                                                              month: "long",
+                                                              year: "numeric",
+                                                          },
+                                                      )
+                                                    : ""}
+                                                {matchData.hora
+                                                    ? ` · ${matchData.hora}`
+                                                    : ""}
+                                            </span>
+                                            {matchData.estadio && (
+                                                <span class="mh-stadium">
+                                                    {matchData.estadio}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div class="mh-team">
+                                            <img
+                                                src={getRivalShieldUrl({
+                                                    nombre: matchData.rival,
+                                                    foto_url:
+                                                        matchData.rival_foto_url,
+                                                })}
+                                                alt={matchData.rival}
+                                                class="mh-shield"
+                                                onerror="this.style.opacity='0'"
+                                            />
+                                            <span class="mh-name">
+                                                {(
+                                                    matchData.rival || ""
+                                                ).toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="football-pitch">
+                                        <div class="pitch-inner">
+                                            <div class="pitch-lines">
+                                                <div class="pitch-center-circle" />
+                                                <div class="pitch-center-line" />
+                                                <div class="pitch-penalty-top" />
+                                                <div class="pitch-penalty-bottom" />
+                                            </div>
+
+                                            {matchLineup.length === 0 && (
+                                                <div class="pitch-no-data">
+                                                    XI inicial no disponible
+                                                </div>
+                                            )}
+
+                                            {matchRowsOrdered.map((rowData) => (
+                                                <div class="pitch-row">
+                                                    {rowData.players.map(
+                                                        (p: any) => (
+                                                            <div
+                                                                class={`pitch-player ${Number(p.goles) > 0 ? "scored" : ""} ${Number(p.asistencias) > 0 ? "assisted" : ""}`}
+                                                            >
+                                                                <div class="pp-avatar">
+                                                                    {p.foto_url ? (
+                                                                        <img
+                                                                            src={
+                                                                                p.foto_url
+                                                                            }
+                                                                            alt={
+                                                                                p.nombre
+                                                                            }
+                                                                        />
+                                                                    ) : (
+                                                                        <span class="pp-initials">
+                                                                            {(
+                                                                                p.nombre ||
+                                                                                "?"
+                                                                            )
+                                                                                .split(
+                                                                                    " ",
+                                                                                )
+                                                                                .map(
+                                                                                    (
+                                                                                        n: string,
+                                                                                    ) =>
+                                                                                        n[0],
+                                                                                )
+                                                                                .slice(
+                                                                                    0,
+                                                                                    2,
+                                                                                )
+                                                                                .join(
+                                                                                    "",
+                                                                                )}
+                                                                        </span>
+                                                                    )}
+                                                                    {Number(
+                                                                        p.goles,
+                                                                    ) > 0 && (
+                                                                        <span class="pp-goal-badge">
+                                                                            ⚽{" "}
+                                                                            {
+                                                                                p.goles
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                    {Number(
+                                                                        p.asistencias,
+                                                                    ) > 0 &&
+                                                                        !Number(
+                                                                            p.goles,
+                                                                        ) && (
+                                                                            <span class="pp-assist-badge">
+                                                                                🅰
+                                                                            </span>
+                                                                        )}
+                                                                </div>
+                                                                <span class="pp-name">
+                                                                    {(
+                                                                        p.nombre ||
+                                                                        ""
+                                                                    )
+                                                                        .split(
+                                                                            " ",
+                                                                        )
+                                                                        .pop()}
+                                                                </span>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <a
+                                        href={`/partidos/${matchData.slug || matchData.id_partido}`}
+                                        class="widget-cta-btn-premium"
+                                        style="margin-top: 1.5rem; display:block;"
+                                    >
+                                        VER DETALLES DEL PARTIDO →
+                                    </a>
+                                </div>
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </article>
+</Layout>
+
+<style>
+    .news-detail-page {
+        background: #ffffff;
+        min-height: 100vh;
+        padding-top: 2rem;
+        padding-bottom: 5rem;
+    }
+
+    .news-full-white-row {
+        background: #ffffff;
+        width: 100%;
+        margin: 0 auto;
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .news-content-limit {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .news-back-link-wrapper {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .news-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .news-back-link:hover {
+        color: #ffd700;
+        transform: translateX(-5px);
+    }
+
+    .news-featured-photo {
+        width: 100%;
+        max-width: 1000px;
+        margin: 2rem auto 0;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        background: #fcfcfc;
+    }
+
+    .featured-news-img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 20px;
+    }
+
+    .news-main-body-content {
+        padding: 4rem 6rem;
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .news-header-section.centered {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .news-category-capsule {
+        background: #ffde59;
+        color: #000;
+        font-family: "Bebas Neue", sans-serif;
+        padding: 0.4rem 1.2rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        font-weight: 800;
+    }
+
+    .news-main-title {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 4rem;
+        color: #000;
+        line-height: 1.1;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        max-width: 900px;
+    }
+
+    .news-main-subtitle {
+        font-family: "Inter", sans-serif;
+        font-size: 1.4rem;
+        color: #333;
+        font-weight: 500;
+        max-width: 750px;
+        line-height: 1.5;
+    }
+
+    .news-meta-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1.5rem 0;
+    }
+
+    .news-publish-date {
+        font-family: "Bebas Neue", sans-serif;
+        color: #777;
+        font-size: 1.2rem;
+        letter-spacing: 1.5px;
+    }
+
+    .news-article-rich-text {
+        font-family: "Inter", sans-serif;
+        font-size: 1.15rem;
+        line-height: 1.8;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: justify;
+    }
+
+    .news-article-rich-text :global(p) {
+        margin-bottom: 1.8rem;
+        text-align: justify;
+    }
+
+    .news-article-rich-text :global(blockquote) {
+        margin: 3rem 0;
+        padding: 1.5rem 2rem;
+        border-left: 5px solid #ffde59;
+        background: #f9f9f9;
+        font-style: italic;
+        font-size: 1.4rem;
+        color: #111;
+        font-family: "Inter", sans-serif;
+        border-radius: 0 12px 12px 0;
+    }
+
+    .news-article-rich-text :global(h2) {
+        display: none;
+    }
+
+    .news-article-rich-text :global(a) {
+        color: #000;
+        background-image: linear-gradient(120deg, #ffde59 0%, #ffde59 100%);
+        background-repeat: no-repeat;
+        background-size: 100% 0.3em;
+        background-position: 0 90%;
+        transition: background-size 0.25s ease-in;
+        font-weight: 800;
+        text-decoration: none;
+        padding: 0 2px;
+    }
+
+    .news-article-rich-text :global(a:hover) {
+        background-size: 100% 100%;
+    }
+
+    .media-centered {
+        margin: 3.5rem auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .media-centered img {
+        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        width: 100%;
+    }
+
+    .photo-caption {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 0.75rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .tweet-placeholder {
+        width: 100%;
+        max-width: 550px;
+        height: 350px;
+        background: #fdfdfd;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #aaa;
+    }
+
+    .news-social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+    }
+
+    .social-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .social-circle img {
+        width: 16px;
+        height: 16px;
+        opacity: 0.7;
+        filter: grayscale(1);
+    }
+
+    .social-circle:hover {
+        background: #ffde59;
+        border-color: #ffde59;
+        transform: translateY(-2px);
+    }
+
+    .social-circle:hover img {
+        opacity: 1;
+        filter: none;
+    }
+
+    .news-separator-thin {
+        width: 100%;
+        max-width: 600px;
+        height: 1px;
+        background: #e0e0e0;
+        margin: 1.5rem auto;
+    }
+
+    .news-footer-widgets {
+        display: flex;
+        justify-content: center;
+        padding: 0 1.5rem 5rem;
+        margin-top: 3rem;
+    }
+
+    .dashboard-widget-card-refined {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
+        border: 1px solid #f0f0f0;
+    }
+
+    .widget-top-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .widget-avatar-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #ffde59;
+        flex-shrink: 0;
+    }
+
+    .widget-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 15%;
+    }
+
+    .widget-name-box {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .widget-title-small {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.5rem;
+        color: #000;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .widget-subtitle-pos {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.1rem;
+        color: #888;
+        letter-spacing: 1px;
+    }
+
+    .widget-stats-grid-compact {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        background: #fbfbfb;
+        padding: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .widget-stats-grid-compact.grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .widget-stats-grid-compact.grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .widget-stat-unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-num {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 2.2rem;
+        color: #000;
+        line-height: 1;
+    }
+
+    .stat-tag {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #aaa;
+        letter-spacing: 0.5px;
+        text-align: center;
+    }
+
+    .widget-cta-btn-premium {
+        display: block;
+        width: 100%;
+        background: linear-gradient(
+            135deg,
+            #ffd700 0%,
+            #ffed4e 50%,
+            #ffd700 100%
+        );
+        color: #2b2b2b;
+        padding: 15px 25px;
+        border-radius: 4px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .widget-cta-btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #000;
+    }
+
+    .section-separator-simple {
+        border: none;
+        border-top: 1px solid #e0e0e0;
+        margin: 2rem auto 4rem;
+        max-width: 600px;
+        width: 100%;
+    }
+
+    @media (max-width: 900px) {
+        .news-main-body-content {
+            padding: 4rem 2rem;
+        }
+        .widget-main-layout {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .news-featured-photo {
+            margin-bottom: 2rem;
+            border-radius: 12px;
+        }
+
+        .news-main-title {
+            font-size: 2.5rem;
+        }
+
+        .news-main-subtitle {
+            font-size: 1.1rem;
+        }
+
+        .news-main-body-content {
+            padding: 3rem 1.5rem;
+        }
+
+        .news-article-rich-text {
+            font-size: 1.05rem;
+        }
+
+        .news-footer-widgets {
+            flex-direction: column;
+            align-items: center;
+            padding: 0 1rem 3rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .news-main-title {
+            font-size: 2rem;
+        }
+
+        .news-main-body-content {
+            padding: 2rem 1rem;
+        }
+
+        .news-category-capsule {
+            font-size: 0.85rem;
+        }
+
+        .news-article-rich-text {
+            font-size: 1rem;
+        }
+
+        .widget-stats-grid-compact {
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+
+        .stat-num {
+            font-size: 1.8rem;
+        }
+    }
+
+    /* ─── Widget extras ─── */
+
+    .widget-season-label {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.85rem;
+        color: #aaa;
+        letter-spacing: 1px;
+        text-align: center;
+        margin: -0.5rem 0 1rem;
+    }
+
+    /* Club widget */
+    .club-widget-header {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .club-shield {
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    /* Referee cards pills */
+    .widget-cards-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+
+    .card-pill.yellow {
+        background: #fffbea;
+        border: 1px solid #ffde59;
+        color: #7a6000;
+    }
+
+    .card-pill.red {
+        background: #fff5f5;
+        border: 1px solid #ff4444;
+        color: #990000;
+    }
+
+    .card-sep {
+        color: #ccc;
+    }
+
+    /* ─── Match / XI inicial widget ─── */
+
+    .match-widget-full {
+        width: 100%;
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    .match-header-scores {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #111;
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem 2rem;
+        gap: 1rem;
+    }
+
+    .mh-team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .mh-shield {
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    .mh-name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.85rem;
+        color: #fff;
+        letter-spacing: 1px;
+        text-align: center;
+    }
+
+    .mh-score {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        flex: 1.2;
+    }
+
+    .mh-goals {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 2.8rem;
+        color: #ffde59;
+        line-height: 1;
+    }
+
+    .mh-meta {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.75rem;
+        color: #aaa;
+        letter-spacing: 0.5px;
+        text-align: center;
+    }
+
+    .mh-stadium {
+        font-family: "Inter", sans-serif;
+        font-size: 0.7rem;
+        color: #888;
+        text-align: center;
+    }
+
+    /* Football pitch */
+    .football-pitch {
+        background: #2d7a3a;
+        background-image: repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 49.5%,
+            rgba(255, 255, 255, 0.04) 49.5%,
+            rgba(255, 255, 255, 0.04) 50.5%,
+            transparent 50.5%
+        );
+        border-radius: 0 0 20px 20px;
+        padding: 2rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pitch-inner {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        z-index: 2;
+    }
+
+    .pitch-lines {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .pitch-center-line {
+        position: absolute;
+        top: 50%;
+        left: 5%;
+        right: 5%;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .pitch-center-circle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pitch-penalty-top,
+    .pitch-penalty-bottom {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 140px;
+        height: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pitch-penalty-top {
+        top: 0;
+        border-bottom: none;
+    }
+    .pitch-penalty-bottom {
+        bottom: 0;
+        border-top: none;
+    }
+
+    .pitch-no-data {
+        color: rgba(255, 255, 255, 0.5);
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.2rem;
+        text-align: center;
+        letter-spacing: 1px;
+        padding: 3rem;
+    }
+
+    .pitch-row {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 3;
+    }
+
+    .pitch-player {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: default;
+    }
+
+    .pp-avatar {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+
+    .pp-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+    }
+
+    .pp-initials {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 0.85rem;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    .pitch-player.scored .pp-avatar {
+        border-color: #ffde59;
+        box-shadow: 0 0 10px rgba(255, 222, 89, 0.6);
+    }
+
+    .pitch-player.assisted .pp-avatar {
+        border-color: #7ed4f7;
+        box-shadow: 0 0 10px rgba(126, 212, 247, 0.5);
+    }
+
+    .pp-goal-badge {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        background: #ffde59;
+        color: #000;
+        font-size: 0.55rem;
+        font-weight: 900;
+        border-radius: 50px;
+        padding: 1px 4px;
+        white-space: nowrap;
+    }
+
+    .pp-assist-badge {
+        position: absolute;
+        bottom: -4px;
+        right: -4px;
+        background: #7ed4f7;
+        color: #000;
+        font-size: 0.6rem;
+        font-weight: 900;
+        border-radius: 50px;
+        padding: 1px 4px;
+    }
+
+    .pp-name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.9);
+        letter-spacing: 0.5px;
+        text-align: center;
+        max-width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 480px) {
+        .match-header-scores {
+            padding: 1rem;
+        }
+        .mh-goals {
+            font-size: 2rem;
+        }
+        .mh-shield {
+            width: 40px;
+            height: 40px;
+        }
+        .pitch-row {
+            gap: 0.8rem;
+        }
+        .pp-avatar {
+            width: 38px;
+            height: 38px;
+        }
+    }
+</style>
