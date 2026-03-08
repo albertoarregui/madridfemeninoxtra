@@ -10,6 +10,7 @@ import {
 import { fetchRefereesDirectly } from "../../utils/arbitras";
 import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
 import { fetchGames } from "../../utils/partidos";
+import { getFlagSrc } from "../../utils/flags";
 
 export const prerender = false;
 
@@ -215,17 +216,95 @@ matchLineup.forEach((p: any) => {
 const matchRowsOrdered = posOrder
     .map((k) => ({ key: k, players: matchRows[k] || [] }))
     .filter((r) => r.players.length > 0);
+const publishDateISO = noticia?.publishDate
+    ? new Date(noticia.publishDate).toISOString()
+    : new Date().toISOString();
+const articleUrl = `https://www.madridfemeninoxtra.com/noticias/${slug}`;
+
+// Schema NewsArticle para Google
+const newsSchema = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: title,
+    description: subtitle || title,
+    image: featuredImageUrl ? [featuredImageUrl] : [],
+    datePublished: publishDateISO,
+    dateModified: publishDateISO,
+    author: {
+        "@type": "Organization",
+        name: "Madrid Femenino Xtra",
+        url: "https://www.madridfemeninoxtra.com",
+    },
+    publisher: {
+        "@type": "Organization",
+        name: "Madrid Femenino Xtra",
+        url: "https://www.madridfemeninoxtra.com",
+        logo: {
+            "@type": "ImageObject",
+            url: "https://www.madridfemeninoxtra.com/favicon.png",
+        },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+    url: articleUrl,
+    inLanguage: "es",
+    keywords: [
+        "Real Madrid Femenino",
+        category || "fútbol femenino",
+        player || "",
+    ]
+        .filter(Boolean)
+        .join(", "),
+};
+
+// Ping asíncrono a Google y Bing para indexación rápida (fire & forget)
+const sitemapUrl = encodeURIComponent(
+    "https://www.madridfemeninoxtra.com/sitemap.xml",
+);
+Promise.allSettled([
+    fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`),
+    fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`),
+]).catch(() => {});
 ---
 
 <Layout
     title={`${title} | Madrid Femenino Xtra`}
-    description={`Descubre el hito histórico de ${player} en el Real Madrid Femenino.`}
+    description={subtitle || `${title} - Madrid Femenino Xtra`}
+    image={featuredImageUrl || undefined}
 >
+    <script
+        type="application/ld+json"
+        set:html={JSON.stringify(newsSchema)}
+        slot="head"
+    />
+    <!-- Override og:type y og:url específicos para artículos de noticias -->
+    <meta property="og:type" content="article" slot="head" />
+    <meta property="og:url" content={articleUrl} slot="head" />
+    <meta
+        property="article:published_time"
+        content={publishDateISO}
+        slot="head"
+    />
+    <meta
+        property="article:author"
+        content="Madrid Femenino Xtra"
+        slot="head"
+    />
+    <meta name="twitter:image:alt" content={title} slot="head" />
+    {
+        featuredImageUrl && (
+            <meta property="og:image:width" content="1200" slot="head" />
+        )
+    }
+    {
+        featuredImageUrl && (
+            <meta property="og:image:height" content="630" slot="head" />
+        )
+    }
     <article class="news-detail-page">
         <div class="news-full-white-row">
             <div class="news-content-limit">
                 <div class="news-back-link-wrapper">
-                    <a href="/" class="news-back-link">
+                    <a href="/home" class="news-back-link">
                         <svg
                             width="16"
                             height="16"
@@ -264,30 +343,162 @@ const matchRowsOrdered = posOrder
                         </p>
 
                         <div class="news-social-icons">
-                            <a href="#" class="social-circle x" aria-label="X">
-                                <img src={getAssetUrl("redes", "x")} alt="X" />
-                            </a>
+                            <!-- X / Twitter -->
                             <a
-                                href="#"
-                                class="social-circle instagram"
-                                aria-label="Instagram"
+                                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}`}
+                                class="social-circle share-btn"
+                                aria-label="Compartir en X"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Compartir en X"
                             >
                                 <img
-                                    src={getAssetUrl("redes", "instagram")}
-                                    alt="Instagram"
+                                    src={getAssetUrl("redes", "x")}
+                                    alt="X"
+                                    style="width:20px;height:20px;object-fit:contain;"
                                 />
                             </a>
+
+                            <!-- Facebook -->
                             <a
-                                href="#"
-                                class="social-circle tiktok"
-                                aria-label="TikTok"
+                                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}`}
+                                class="social-circle share-btn"
+                                aria-label="Compartir en Facebook"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Compartir en Facebook"
                             >
-                                <img
-                                    src={getAssetUrl("redes", "tiktok")}
-                                    alt="TikTok"
-                                />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3"
+                                    ></path></svg
+                                >
                             </a>
+
+                            <!-- WhatsApp -->
+                            <a
+                                href={`https://wa.me/?text=${encodeURIComponent(`${title} https://www.madridfemeninoxtra.com/noticias/${slug}`)}`}
+                                class="social-circle share-btn"
+                                aria-label="Compartir en WhatsApp"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Compartir en WhatsApp"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"
+                                    ></path><path
+                                        d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"
+                                    ></path></svg
+                                >
+                            </a>
+
+                            <!-- Telegram -->
+                            <a
+                                href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}&text=${encodeURIComponent(title)}`}
+                                class="social-circle share-btn"
+                                aria-label="Compartir en Telegram"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Compartir en Telegram"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path
+                                        d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4"
+                                    ></path></svg
+                                >
+                            </a>
+
+                            <!-- Copiar enlace -->
+                            <button
+                                id="copyLinkBtn"
+                                class="social-circle share-btn"
+                                aria-label="Copiar enlace"
+                                data-url={`https://www.madridfemeninoxtra.com/noticias/${slug}`}
+                                title="Copiar enlace"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path
+                                        stroke="none"
+                                        d="M0 0h24v24H0z"
+                                        fill="none"></path><path d="M9 15l6 -6"
+                                    ></path><path
+                                        d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"
+                                    ></path><path
+                                        d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"
+                                    ></path></svg
+                                >
+                            </button>
                         </div>
+
+                        <script>
+                            const copyBtn =
+                                document.getElementById("copyLinkBtn");
+                            if (copyBtn) {
+                                copyBtn.addEventListener("click", () => {
+                                    const url =
+                                        copyBtn.getAttribute("data-url") ||
+                                        window.location.href;
+                                    navigator.clipboard
+                                        .writeText(url)
+                                        .then(() => {
+                                            copyBtn.classList.add("copied");
+                                            copyBtn.title = "¡Enlace copiado!";
+                                            setTimeout(() => {
+                                                copyBtn.classList.remove(
+                                                    "copied",
+                                                );
+                                                copyBtn.title = "Copiar enlace";
+                                            }, 2000);
+                                        });
+                                });
+                            }
+                        </script>
 
                         <div class="news-meta-row">
                             <time class="news-publish-date">
@@ -330,9 +541,20 @@ const matchRowsOrdered = posOrder
                                             />
                                         </div>
                                         <div class="widget-name-box">
-                                            <h3 class="widget-title-small">
-                                                {player}
-                                            </h3>
+                                            <div class="widget-name-row">
+                                                <h3 class="widget-title-small">
+                                                    {player}
+                                                </h3>
+                                                {playerData?.iso && (
+                                                    <img
+                                                        src={getFlagSrc(
+                                                            playerData.iso,
+                                                        )}
+                                                        alt={playerData.iso}
+                                                        class="widget-flag"
+                                                    />
+                                                )}
+                                            </div>
                                             <span class="widget-subtitle-pos">
                                                 {playerData?.posicion ||
                                                     "JUGADORA"}
@@ -421,9 +643,20 @@ const matchRowsOrdered = posOrder
                                             />
                                         </div>
                                         <div class="widget-name-box">
-                                            <h3 class="widget-title-small">
-                                                {coachData.nombre.toUpperCase()}
-                                            </h3>
+                                            <div class="widget-name-row">
+                                                <h3 class="widget-title-small">
+                                                    {coachData.nombre.toUpperCase()}
+                                                </h3>
+                                                {coachData.iso && (
+                                                    <img
+                                                        src={getFlagSrc(
+                                                            coachData.iso,
+                                                        )}
+                                                        alt={coachData.iso}
+                                                        class="widget-flag"
+                                                    />
+                                                )}
+                                            </div>
                                             <span class="widget-subtitle-pos">
                                                 ENTRENADORA
                                             </span>
@@ -497,9 +730,20 @@ const matchRowsOrdered = posOrder
                                             />
                                         </div>
                                         <div class="widget-name-box">
-                                            <h3 class="widget-title-small">
-                                                {refereeData.nombre.toUpperCase()}
-                                            </h3>
+                                            <div class="widget-name-row">
+                                                <h3 class="widget-title-small">
+                                                    {refereeData.nombre.toUpperCase()}
+                                                </h3>
+                                                {refereeData.iso && (
+                                                    <img
+                                                        src={getFlagSrc(
+                                                            refereeData.iso,
+                                                        )}
+                                                        alt={refereeData.iso}
+                                                        class="widget-flag"
+                                                    />
+                                                )}
+                                            </div>
                                             <span class="widget-subtitle-pos">
                                                 ÁRBITRO ·{" "}
                                                 {refereeData.colegio || ""}
@@ -587,9 +831,20 @@ const matchRowsOrdered = posOrder
                                             onerror="this.style.display='none'"
                                         />
                                         <div class="widget-name-box">
-                                            <h3 class="widget-title-small">
-                                                {clubData.nombre.toUpperCase()}
-                                            </h3>
+                                            <div class="widget-name-row">
+                                                <h3 class="widget-title-small">
+                                                    {clubData.nombre.toUpperCase()}
+                                                </h3>
+                                                {clubData.iso && (
+                                                    <img
+                                                        src={getFlagSrc(
+                                                            clubData.iso,
+                                                        )}
+                                                        alt={clubData.iso}
+                                                        class="widget-flag"
+                                                    />
+                                                )}
+                                            </div>
                                             <span class="widget-subtitle-pos">
                                                 {clubData.ciudad ||
                                                     clubData.pais}
@@ -987,6 +1242,39 @@ const matchRowsOrdered = posOrder
         background-size: 100% 100%;
     }
 
+    /* Centrado de medios embebidos en el cuerpo del artículo */
+    .news-article-rich-text :global(img) {
+        display: block;
+        margin: 2rem auto;
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .news-article-rich-text :global(iframe) {
+        display: block;
+        margin: 2.5rem auto;
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .news-article-rich-text :global(figure) {
+        margin: 2.5rem auto;
+        text-align: center;
+    }
+
+    .news-article-rich-text :global(figcaption) {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+
+    .news-article-rich-text :global(blockquote p) {
+        text-align: left;
+        margin-bottom: 0;
+    }
+
     .media-centered {
         margin: 3.5rem auto;
         display: flex;
@@ -1032,30 +1320,68 @@ const matchRowsOrdered = posOrder
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         background: rgba(0, 0, 0, 0.04);
         border: 1px solid rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
+        color: #444;
+        cursor: pointer;
+        padding: 0;
+        outline: none;
+        text-decoration: none;
+        flex-shrink: 0;
     }
 
     .social-circle img {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
+        opacity: 0.8;
+        filter: grayscale(0.3);
+    }
+
+    .social-circle svg {
         opacity: 0.7;
-        filter: grayscale(1);
+        transition: opacity 0.2s ease;
     }
 
     .social-circle:hover {
         background: #ffde59;
         border-color: #ffde59;
         transform: translateY(-2px);
+        color: #000;
     }
 
     .social-circle:hover img {
         opacity: 1;
         filter: none;
+    }
+
+    .social-circle:hover svg {
+        opacity: 1;
+    }
+
+    .social-circle.copied {
+        background: #00c853;
+        border-color: #00c853;
+        color: #fff;
+    }
+
+    /* Flag badge next to name */
+    .widget-name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .widget-flag {
+        width: 22px;
+        height: auto;
+        border-radius: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
     }
 
     .news-separator-thin {
@@ -1091,8 +1417,8 @@ const matchRowsOrdered = posOrder
     }
 
     .widget-avatar-wrapper {
-        width: 80px;
-        height: 80px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         overflow: hidden;
         border: 3px solid #ffde59;
@@ -1103,7 +1429,7 @@ const matchRowsOrdered = posOrder
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: 50% 15%;
+        object-position: 50% 5%;
     }
 
     .widget-name-box {

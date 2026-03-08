@@ -3,12 +3,13 @@ import { fetchPlayersDirectly } from '../utils/players';
 import { fetchCoachesDirectly } from '../utils/entrenadores';
 import { fetchRivalsDirectly } from '../utils/rivales';
 import { fetchGamesDirectly } from '../utils/partidos';
+import { contentfulClient } from '../lib/contentful';
 
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
-const WP_API_URL = "https://cms.madridfemeninoxtra.com/wp-json/wp/v2/posts?per_page=100&_embed=true";
 
 const staticPages = [
     { url: '', priority: 1.0, changefreq: 'daily' },
+    { url: 'home', priority: 1.0, changefreq: 'daily' },
     { url: 'noticias', priority: 0.9, changefreq: 'daily' },
     { url: 'jugadoras', priority: 0.8, changefreq: 'weekly' },
     { url: 'entrenadores', priority: 0.7, changefreq: 'monthly' },
@@ -26,11 +27,12 @@ const staticPages = [
 ];
 
 function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[]): string {
+    const today = new Date().toISOString().split('T')[0];
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(url => `  <url>
-    <loc>${url.loc}</loc>${url.lastmod ? `
-    <lastmod>${url.lastmod}</lastmod>` : ''}
+    <loc>${url.loc}</loc>
+    <lastmod>${url.lastmod || today}</lastmod>
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('\n')}
@@ -40,31 +42,37 @@ ${urls.map(url => `  <url>
 export const GET: APIRoute = async () => {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
+        const today = new Date().toISOString().split('T')[0];
 
         staticPages.forEach(page => {
             urls.push({
                 loc: `${SITE_URL}/${page.url}`,
+                lastmod: today,
                 changefreq: page.changefreq,
                 priority: page.priority,
             });
         });
 
+        // Noticias desde Contentful (reemplaza la antigua API de WordPress)
         try {
-            const response = await fetch(WP_API_URL);
-            if (response.ok) {
-                const posts = await response.json();
-                posts.forEach((post: any) => {
-                    const lastmod = new Date(post.modified).toISOString().split('T')[0];
-                    urls.push({
-                        loc: `${SITE_URL}/noticias/${post.slug}`,
-                        lastmod,
-                        changefreq: 'weekly',
-                        priority: 0.8,
-                    });
+            const entries = await contentfulClient.getEntries({
+                content_type: 'noticia',
+                limit: 1000,
+                order: ['-sys.updatedAt'] as any,
+            });
+            entries.items.forEach((item: any) => {
+                const slug = item.fields.slug;
+                if (!slug) return;
+                const lastmod = new Date(item.sys.updatedAt).toISOString().split('T')[0];
+                urls.push({
+                    loc: `${SITE_URL}/noticias/${slug}`,
+                    lastmod,
+                    changefreq: 'weekly',
+                    priority: 0.9,
                 });
-            }
+            });
         } catch (error) {
-            console.error('Error fetching news:', error);
+            console.error('Error fetching news from Contentful for sitemap:', error);
         }
 
         try {
@@ -109,6 +117,7 @@ export const GET: APIRoute = async () => {
         try {
             const matches = await fetchGamesDirectly();
             matches.forEach((match: any) => {
+                if (!match.slug) return;
                 urls.push({
                     loc: `${SITE_URL}/partidos/${match.slug}`,
                     changefreq: 'monthly',
@@ -125,7 +134,7 @@ export const GET: APIRoute = async () => {
             status: 200,
             headers: {
                 'Content-Type': 'application/xml; charset=utf-8',
-                'Cache-Control': 'public, max-age=600',
+                'Cache-Control': 'public, max-age=300',
             },
         });
     } catch (error) {
