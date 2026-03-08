@@ -73,6 +73,7 @@ try {
 <script>
     const grid = document.getElementById("hitosGrid");
     let scrollInterval: any;
+    let resumeTimeout: any;
     let isPaused = false;
 
     if (grid) {
@@ -92,6 +93,7 @@ try {
         };
 
         grid.addEventListener("mouseenter", () => {
+            clearTimeout(resumeTimeout);
             isPaused = true;
         });
         grid.addEventListener("mouseleave", () => {
@@ -100,12 +102,16 @@ try {
         grid.addEventListener(
             "touchstart",
             () => {
+                clearTimeout(resumeTimeout);
                 isPaused = true;
             },
             { passive: true },
         );
         grid.addEventListener("touchend", () => {
-            isPaused = false;
+            clearTimeout(resumeTimeout);
+            resumeTimeout = setTimeout(() => {
+                isPaused = false;
+            }, 3000);
         });
 
         // Iniciar el scroll
