@@ -49,7 +49,6 @@ export async function fetchGamesDirectly(): Promise<any[]> {
 
         const query = `
             SELECT
-                ep.*,
                 p.id_partido, p.fecha, p.hora, p.jornada, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
@@ -84,7 +83,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                     UNION ALL
                     SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND (pf.id_jugadora IS NULL OR pf.id_jugadora = 0 OR pf.id_jugadora = '')
                 )) as penaltis_rival,
-                
+                ep.*,
                 CASE 
                    WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
                    WHEN IFNULL(p.goles_rm, 0) < IFNULL(p.goles_rival, 0) THEN 'D'
@@ -280,7 +279,7 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
                 e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
                 e.faltas_recibidas, e.faltas_cometidas
             FROM alineaciones a
-            LEFT JOIN estadisticas_jugadoras e ON e.id_est_jugadora = a.id_alineacion
+            LEFT JOIN estadisticas_jugadoras e ON e.id_partido = a.id_partido AND e.id_jugadora = a.id_jugadora
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
@@ -405,7 +404,7 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
                 e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
                 e.faltas_recibidas, e.faltas_cometidas
             FROM alineaciones a
-            LEFT JOIN estadisticas_jugadoras e ON e.id_est_jugadora = a.id_alineacion
+            LEFT JOIN estadisticas_jugadoras e ON e.id_partido = a.id_partido AND e.id_jugadora = a.id_jugadora
             LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
