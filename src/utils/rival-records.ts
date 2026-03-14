@@ -303,12 +303,20 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         });
 
         cardsResult.rows.forEach((card: any) => {
+            const matchId = card.id_partido;
+            const match = rows.find((m: any) => m.id_partido === matchId);
+            if (!match) return;
 
             const cardTeamId = Number(card.id_equipo);
-            const rId = Number(rivalId);
+            const rivalIdNum = Number(rivalId);
 
-            if (cardTeamId === rId) {
-                const matchId = card.id_partido;
+            // Determine RM's ID for this match
+            // One is the rivalId, the other is Real Madrid
+            const localId = Number(match.id_club_local);
+            const visitanteId = Number(match.id_club_visitante);
+            const rmId = localId === rivalIdNum ? visitanteId : localId;
+
+            if (cardTeamId === rmId) {
                 if (cardsByMatch[matchId]) {
                     const type = (card.tipo_tarjeta || '').toUpperCase();
 
