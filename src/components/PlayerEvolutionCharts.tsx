@@ -66,7 +66,7 @@ const ChartSection = ({ title, icon: Icon, children }: { title: string, icon: an
                 <Icon size={16} />
             </div>
         </div>
-        <div className="h-64 w-full">
+        <div className="h-64 md:h-72 w-full min-h-[300px] md:min-h-[256px]">
             {children}
         </div>
     </div>
