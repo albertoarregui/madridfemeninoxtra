@@ -403,8 +403,8 @@ export function calculateRivalStats(matches: any[]) {
     stats.total.gc = stats.home.gc + stats.away.gc;
     stats.total.cleanSheets = stats.home.cleanSheets + stats.away.cleanSheets;
     stats.total.conceded = stats.home.conceded + stats.away.conceded;
-    stats.total.yellowCards = stats.home.yellowCards + stats.away.yellowCards;
-    stats.total.redCards = stats.home.redCards + stats.away.redCards;
+    stats.total.yellowCards = (stats.home.yellowCards || 0) + (stats.away.yellowCards || 0);
+    stats.total.redCards = (stats.home.redCards || 0) + (stats.away.redCards || 0);
 
     const addCalculatedFields = (obj: any) => ({
         ...obj,
