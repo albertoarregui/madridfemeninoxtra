@@ -177,31 +177,41 @@ const currentPath = pathname === "/" ? "/home" : pathname;
     .logo {
         display: flex;
         justify-content: flex-start;
-        position: relative;
-        width: 80px; /* Space to keep the nav centered */
-        height: 60px; /* Header visual height placeholder */
+        align-items: center;
+        width: 100px;
+        height: 60px;
+    }
+
+    /* Ocultar logo solo cuando el menú está abierto en móvil */
+    @media (max-width: 1024px) {
+        :global(body.nav-open) .logo {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .logo {
+            transition:
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+        }
     }
 
     .logo a {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        transform: translateY(-50%);
-        z-index: 110;
         display: flex;
         align-items: center;
-        transition: transform 0.3s ease;
     }
 
     .logo a:hover {
-        transform: translateY(-50%) scale(1.05);
+        transform: none;
     }
 
     .header-logo-img {
-        width: 90px !important;
-        height: auto !important;
-        mix-blend-mode: lighten; /* Blends the logo background with the header */
-        max-width: none !important;
+        width: auto !important;
+        height: 60px !important;
+        mix-blend-mode: screen;
+        filter: contrast(2) brightness(1.05); /* Filtro más agresivo para asegurar que el fondo sea negro puro */
+        max-width: 100% !important;
+        object-fit: contain;
     }
 
     .main-nav {
@@ -267,6 +277,7 @@ const currentPath = pathname === "/" ? "/home" : pathname;
         padding: 0.5rem 0;
         position: relative;
         white-space: nowrap;
+        display: inline-block; /* Asegura que el after se ajuste al texto */
     }
 
     .nav-list a::after {
@@ -390,6 +401,11 @@ const currentPath = pathname === "/" ? "/home" : pathname;
 
         .menu-toggle:hover .line {
             background-color: var(--header-accent);
+            width: 30px; /* Al pasar por encima se estiran un poco */
+        }
+
+        .menu-toggle:active {
+            transform: scale(0.9); /* Efecto de pulsación */
         }
 
         .menu-toggle[aria-expanded="true"] .line:nth-child(1) {
@@ -451,7 +467,9 @@ const currentPath = pathname === "/" ? "/home" : pathname;
         .nav-list a {
             font-size: 1.4rem;
             font-weight: 700;
-            display: block;
+            display: inline-block; /* Cambiado de block a inline-block para que el subrayado solo ocupe el texto */
+            width: auto;
+            margin: 0 auto;
         }
 
         .submenu-header {

@@ -463,6 +463,7 @@ function calculateAge(birthDateString: string): number {
         width: 100%;
         margin: 0 auto;
         padding: 0;
+        overflow: hidden;
     }
 
     .mobile-player-carousel {
@@ -540,6 +541,8 @@ function calculateAge(birthDateString: string): number {
         width: 100%;
         margin-bottom: 2.5rem;
         padding: 0 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .player-position {
@@ -699,11 +702,14 @@ function calculateAge(birthDateString: string): number {
     }
 
     .player-thumbnail.active::before,
-    .player-thumbnail.active::after {
+    .player-thumbnail.active::after,
+    .player-thumbnail:hover::before,
+    .player-thumbnail:hover::after {
         opacity: 1;
     }
 
-    .player-thumbnail.active {
+    .player-thumbnail.active,
+    .player-thumbnail:hover {
         background: rgba(255, 222, 89, 0.1);
         box-shadow: 0 0 20px rgba(255, 222, 89, 0.3);
     }
@@ -744,15 +750,16 @@ function calculateAge(birthDateString: string): number {
         filter: grayscale(0%);
         transform: translateX(-50%);
     }
+    /* ========== TABLET (max-width: 1023px) ========== */
     @media (max-width: 1023px) {
         .player-selector {
-            padding: 3rem 1rem;
+            padding: 2rem 1rem;
         }
         .main-player-display {
-            margin-bottom: 4rem;
+            margin-bottom: 3rem;
         }
         .player-rows-container {
-            gap: 3rem;
+            gap: 2rem;
         }
         .player-row {
             grid-template-columns: repeat(
@@ -770,6 +777,172 @@ function calculateAge(birthDateString: string): number {
         }
         .stat-value {
             font-size: 2.5rem;
+        }
+    }
+
+    /* ========== MÓVIL (max-width: 768px) ========== */
+    @media (max-width: 768px) {
+        /* Ocultar grilla de escritorio y mostrar carrusel móvil */
+        .player-rows-container {
+            display: none !important;
+        }
+        .mobile-player-carousel {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem; /* Gap simétrico para ambas flechas */
+            width: 100%;
+            margin-top: 0; /* Eliminado margin-top para usar padding del botón */
+            padding: 0 0.5rem;
+            box-sizing: border-box;
+        }
+
+        /* Wrapper con scroll horizontal */
+        .mobile-thumbnails-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: visible; /* Cambiado de hidden a visible para no cortar cabezas/marcos */
+            scroll-snap-type: x mandatory;
+            scroll-padding: 0 2rem; /* Espacio extra para que el snap no pegue la jugadora al borde */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            position: relative;
+        }
+        .mobile-thumbnails-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Track interior */
+        .mobile-thumbnails-track {
+            display: flex;
+            gap: 1.5rem;
+            padding: 3.5rem 2.5rem 1rem; /* Padding lateral simétrico */
+            width: max-content;
+            align-items: flex-end;
+            overflow: visible;
+        }
+
+        /* Cada thumbnail en el carrusel */
+        .mobile-thumbnails-track .player-thumbnail {
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            overflow: visible; /* Permitir que la imagen sobresalga */
+        }
+        .mobile-thumbnails-track .thumbnail-image-wrapper {
+            overflow: visible;
+        }
+        .mobile-thumbnails-track .thumbnail-image {
+            width: 155%; /* Ligeramente más grande */
+            height: auto;
+            bottom: -5px;
+        }
+        .mobile-thumbnails-track .thumbnail-number {
+            font-size: 2.2rem;
+            bottom: 4px;
+        }
+
+        /* Botones flechas del carrusel */
+        .carousel-arrow {
+            background: transparent !important;
+            border: none;
+            width: 44px; /* Más grandes */
+            height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ffde59; /* Amarillo por defecto */
+            box-shadow: none !important;
+            transition: color 0.3s ease;
+            padding: 0;
+            z-index: 20;
+        }
+        .carousel-arrow:hover svg {
+            stroke: #000000 !important; /* Forzar el color del trazo en hover */
+        }
+        .carousel-arrow svg {
+            width: 32px; /* Icono más grande */
+            height: 32px;
+            transition: stroke 0.3s ease;
+        }
+
+        /* Sección principal jugadora */
+        .player-selector {
+            padding: 1.5rem 1rem;
+        }
+        .player-container {
+            gap: 0;
+        }
+        .main-player-display {
+            margin-bottom: 0;
+            width: 100%;
+        }
+
+        /* Barra superior posición + bandera */
+        .player-info-top {
+            display: flex; /* Añadido flex para que justify-content funcione */
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+            justify-content: center;
+            align-items: center;
+            gap: 6rem;
+        }
+        .player-position {
+            font-size: 1rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .player-country-flat {
+            gap: 0.5rem;
+        }
+        .country-flag {
+            width: 28px;
+        }
+        #player-country-name {
+            font-size: 1rem;
+        }
+
+        /* Imagen principal */
+        .player-main-image-container {
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+        .player-main-image {
+            height: 300px;
+        }
+
+        /* Nombre jugadora */
+        .player-name {
+            font-size: clamp(1.8rem, 8vw, 3rem);
+            min-height: 60px;
+            margin-bottom: 1rem;
+        }
+
+        /* Stats: edad, altura, peso */
+        .player-stats {
+            gap: 1.5rem;
+            margin-bottom: 0; /* Eliminado para simetría perfecta con el padding del botón */
+        }
+        .stat-value {
+            font-size: 2rem;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+        }
+
+        /* Botón ver perfil */
+        .player-actions {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            padding: 5rem 0; /* Padding EXACTAMENTE IGUAL arriba y abajo */
+        }
+        .btn-profile {
+            padding: 0.9rem 2.5rem;
+            font-size: 1rem;
+            margin: 0 auto;
         }
     }
 </style>
