@@ -1432,10 +1432,11 @@ const isRealMadrid =
                 selectedSeason === "all" || m.season === selectedSeason;
 
             let locationMatch = true;
+            // esLocal=true means rival is local (RM is visitor), esLocal=false means RM is local
             if (selectedLocation === "local") {
-                locationMatch = m.esLocal === false;
+                locationMatch = m.esLocal === false; // RM is local = rival is NOT local
             } else if (selectedLocation === "visitor") {
-                locationMatch = m.esLocal === true;
+                locationMatch = m.esLocal === true; // RM is visitor = rival IS local
             }
 
             return compMatch && seasonMatch && locationMatch;
@@ -1737,15 +1738,30 @@ const isRealMadrid =
         flex-wrap: wrap;
         justify-content: center;
         padding-top: 1.5rem;
+        position: relative;
+    }
+
+    /* Ensure open dropdowns appear above siblings */
+    .filters-container .custom-select-container {
+        position: relative;
+        z-index: 1;
+    }
+    .filters-container .custom-select-container.open {
+        z-index: 9999 !important;
     }
 
     @media (max-width: 768px) {
         .filters-container {
             flex-direction: column;
             align-items: center;
-        }
-        .filter-wrapper {
+            gap: 1.25rem;
+            margin-bottom: 2rem;
             width: 100%;
+        }
+        .custom-select-container {
+            width: 100% !important;
+            max-width: 320px !important;
+            min-width: 0 !important;
         }
     }
 

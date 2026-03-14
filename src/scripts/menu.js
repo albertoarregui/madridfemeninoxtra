@@ -28,3 +28,32 @@ submenuToggles.forEach(toggle => {
     }
   });
 });
+
+// Mark active sub-menu links based on the current path
+(function markActiveSubLinks() {
+  const path = window.location.pathname;
+  const submenuLinks = document.querySelectorAll('.submenu a');
+  submenuLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+    // Active if exact match OR if current path starts with the href (for sub-pages like /jugadoras/xxx)
+    if (path === href || (href !== '/' && path.startsWith(href))) {
+      link.classList.add('active');
+      // Also open the parent submenu so the user can see which section they are in
+      const parentSubmenu = link.closest('.submenu');
+      const parentHasSubmenu = link.closest('.has-submenu');
+      if (parentSubmenu && parentHasSubmenu) {
+        // On desktop nothing changes, on mobile mark the submenu parent as active too
+        const parentToggle = parentHasSubmenu.querySelector('.submenu-toggle');
+        if (parentToggle) {
+          // don't auto-open on mobile, just highlight parent item
+        }
+        // Mark the parent "Estadísticas" link as active
+        const parentLink = parentHasSubmenu.querySelector('.submenu-header a');
+        if (parentLink) {
+          parentLink.classList.add('active');
+        }
+      }
+    }
+  });
+})();

@@ -292,45 +292,55 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         const matchIds = rows.map((m: any) => m.id_partido);
         const placeholders = matchIds.map(() => '?').join(',');
 
-        const cardsResult = await db.execute({
+        // 1. Fetch RM Cards
+        const cardsRMResult = await db.execute({
             sql: `SELECT * FROM tarjetas WHERE id_partido IN (${placeholders})`,
             args: matchIds
         });
 
-        const cardsByMatch: Record<string, { yellow: number; red: number }> = {};
+        const rmCardsByMatch: Record<string, { yellow: number; red: number }> = {};
         matchIds.forEach((id: any) => {
-            cardsByMatch[id] = { yellow: 0, red: 0 };
+            rmCardsByMatch[id] = { yellow: 0, red: 0 };
         });
 
-        cardsResult.rows.forEach((card: any) => {
+        cardsRMResult.rows.forEach((card: any) => {
             const matchId = card.id_partido;
-            const match = rows.find((m: any) => m.id_partido === matchId);
-            if (!match) return;
+            if (rmCardsByMatch[matchId]) {
+                const type = (card.tipo_tarjeta || '').toUpperCase();
+                if ((type.includes('AMARILLA') || type.includes('YELLOW')) && !type.includes('DOBLE')) {
+                    rmCardsByMatch[matchId].yellow++;
+                } else if (type.includes('ROJA') || type.includes('RED') || type.includes('DOBLE')) {
+                    rmCardsByMatch[matchId].red++;
+                }
+            }
+        });
 
-            const cardTeamId = Number(card.id_equipo);
-            const rivalIdNum = Number(rivalId);
+        // 2. Fetch Rival Cards
+        const cardsRivalResult = await db.execute({
+            sql: `SELECT * FROM tarjetas_rival WHERE id_partido IN (${placeholders})`,
+            args: matchIds
+        });
 
-            // Determine RM's ID for this match
-            // One is the rivalId, the other is Real Madrid
-            const localId = Number(match.id_club_local);
-            const visitanteId = Number(match.id_club_visitante);
-            const rmId = localId === rivalIdNum ? visitanteId : localId;
+        const rivalCardsByMatch: Record<string, { yellow: number; red: number }> = {};
+        matchIds.forEach((id: any) => {
+            rivalCardsByMatch[id] = { yellow: 0, red: 0 };
+        });
 
-            if (cardTeamId === rmId) {
-                if (cardsByMatch[matchId]) {
-                    const type = (card.tipo_tarjeta || '').toUpperCase();
-
-                    if ((type.includes('AMARILLA') || type.includes('YELLOW')) && !type.includes('DOBLE')) {
-                        cardsByMatch[matchId].yellow++;
-                    } else if (type.includes('ROJA') || type.includes('RED') || type.includes('DOBLE')) {
-                        cardsByMatch[matchId].red++;
-                    }
+        cardsRivalResult.rows.forEach((card: any) => {
+            const matchId = card.id_partido;
+            if (rivalCardsByMatch[matchId]) {
+                const type = (card.tipo_tarjeta || '').toUpperCase();
+                if ((type.includes('AMARILLA') || type.includes('YELLOW')) && !type.includes('DOBLE')) {
+                    rivalCardsByMatch[matchId].yellow++;
+                } else if (type.includes('ROJA') || type.includes('RED') || type.includes('DOBLE')) {
+                    rivalCardsByMatch[matchId].red++;
                 }
             }
         });
 
         return rows.map((match: any) => {
-            const cards = cardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
+            const rmCards = rmCardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
+            const rivalCards = rivalCardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
 
             const esLocal = Number(match.id_club_local) === Number(rivalId);
 
@@ -348,8 +358,10 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
                 estadio: match.estadio || '-',
-                amarillas: cards.yellow,
-                rojas: cards.red,
+                amarillas: rivalCards.yellow, // Provide rival cards for the Rival Page Chart
+                rojas: rivalCards.red,
+                amarillas_rm: rmCards.yellow,
+                rojas_rm: rmCards.red,
                 asistencia: match.asistencia ? match.asistencia.toString().trim() : null,
             };
         });
