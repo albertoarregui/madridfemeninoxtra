@@ -121,33 +121,46 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     const [openSelect, setOpenSelect] = useState<string | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
 
-    const toggleSelect = (id: string) => {
+    const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation();
         setOpenSelect(prev => prev === id ? null : id);
     };
 
+    const handleOptionClick = (e: React.MouseEvent | React.TouchEvent, type: string, value: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (type === 'season') setSelectedSeason(value);
+        if (type === 'position') setSelectedPosition(value);
+        if (type === 'country') setSelectedCountry(value);
+        setOpenSelect(null);
+    };
+
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
                 setOpenSelect(null);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, []);
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid" ref={gridRef}>
+        <div className="w-full max-w-7xl mx-auto px-4 py-8 relative" id="players-grid" ref={gridRef}>
             <div className="mb-10 flex flex-col items-center gap-6">
-                <div className="flex gap-6 w-full flex-wrap justify-center items-center">
+                <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[100]">
+                    {/* Filtro Temporada */}
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
-                        <button 
+                        <div 
                             className="custom-select-trigger" 
-                            onClick={() => toggleSelect('season')}
-                            aria-haspopup="listbox"
-                            aria-expanded={openSelect === 'season'}
+                            onClick={(e) => toggleSelect(e, 'season')}
+                            onTouchStart={(e) => toggleSelect(e, 'season')}
                         >
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
@@ -155,18 +168,14 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {seasons.map(s => (
                                 <div
                                     key={s}
                                     className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        setSelectedSeason(s);
-                                        setOpenSelect(null);
-                                    }}
-                                    role="option"
-                                    aria-selected={selectedSeason === s}
+                                    onClick={(e) => handleOptionClick(e, 'season', s)}
+                                    onTouchStart={(e) => handleOptionClick(e, 'season', s)}
                                 >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
                                 </div>
@@ -174,12 +183,12 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
+                    {/* Filtro Posición */}
                     <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
-                        <button 
+                        <div 
                             className="custom-select-trigger" 
-                            onClick={() => toggleSelect('position')}
-                            aria-haspopup="listbox"
-                            aria-expanded={openSelect === 'position'}
+                            onClick={(e) => toggleSelect(e, 'position')}
+                            onTouchStart={(e) => toggleSelect(e, 'position')}
                         >
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
@@ -187,18 +196,14 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {positions.map(pos => (
                                 <div
                                     key={pos}
                                     className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        setSelectedPosition(pos);
-                                        setOpenSelect(null);
-                                    }}
-                                    role="option"
-                                    aria-selected={selectedPosition === pos}
+                                    onClick={(e) => handleOptionClick(e, 'position', pos)}
+                                    onTouchStart={(e) => handleOptionClick(e, 'position', pos)}
                                 >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
                                 </div>
@@ -206,12 +211,12 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
+                    {/* Filtro País */}
                     <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
-                        <button 
+                        <div 
                             className="custom-select-trigger" 
-                            onClick={() => toggleSelect('country')}
-                            aria-haspopup="listbox"
-                            aria-expanded={openSelect === 'country'}
+                            onClick={(e) => toggleSelect(e, 'country')}
+                            onTouchStart={(e) => toggleSelect(e, 'country')}
                         >
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
@@ -219,18 +224,14 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {countries.map(c => (
                                 <div
                                     key={c}
                                     className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`}
-                                    onClick={() => {
-                                        setSelectedCountry(c);
-                                        setOpenSelect(null);
-                                    }}
-                                    role="option"
-                                    aria-selected={selectedCountry === c}
+                                    onClick={(e) => handleOptionClick(e, 'country', c)}
+                                    onTouchStart={(e) => handleOptionClick(e, 'country', c)}
                                 >
                                     {c === 'Todos' ? 'Todos los Países' : c}
                                 </div>
