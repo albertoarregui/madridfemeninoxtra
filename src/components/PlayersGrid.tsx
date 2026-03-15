@@ -129,14 +129,19 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex gap-6 w-full flex-wrap justify-center items-center">
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
-                        <div className="custom-select-trigger" onClick={() => toggleSelect('season')}>
-                            <span className="selected-text">
+                        <button 
+                            className="custom-select-trigger w-full" 
+                            onClick={() => toggleSelect('season')}
+                            aria-haspopup="listbox"
+                            aria-expanded={openSelect === 'season'}
+                        >
+                            <span className="selected-text mr-auto">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
                             </span>
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {seasons.map(s => (
                                 <div
@@ -146,6 +151,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                         setSelectedSeason(s);
                                         setOpenSelect(null);
                                     }}
+                                    role="option"
+                                    aria-selected={selectedSeason === s}
                                 >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
                                 </div>
@@ -154,14 +161,19 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
-                        <div className="custom-select-trigger" onClick={() => toggleSelect('position')}>
-                            <span className="selected-text">
+                        <button 
+                            className="custom-select-trigger w-full" 
+                            onClick={() => toggleSelect('position')}
+                            aria-haspopup="listbox"
+                            aria-expanded={openSelect === 'position'}
+                        >
+                            <span className="selected-text mr-auto">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
                             </span>
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {positions.map(pos => (
                                 <div
@@ -171,6 +183,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                         setSelectedPosition(pos);
                                         setOpenSelect(null);
                                     }}
+                                    role="option"
+                                    aria-selected={selectedPosition === pos}
                                 >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
                                 </div>
@@ -179,14 +193,19 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
-                        <div className="custom-select-trigger" onClick={() => toggleSelect('country')}>
-                            <span className="selected-text">
+                        <button 
+                            className="custom-select-trigger w-full" 
+                            onClick={() => toggleSelect('country')}
+                            aria-haspopup="listbox"
+                            aria-expanded={openSelect === 'country'}
+                        >
+                            <span className="selected-text mr-auto">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
                             </span>
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {countries.map(c => (
                                 <div
@@ -196,6 +215,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                         setSelectedCountry(c);
                                         setOpenSelect(null);
                                     }}
+                                    role="option"
+                                    aria-selected={selectedCountry === c}
                                 >
                                     {c === 'Todos' ? 'Todos los Países' : c}
                                 </div>

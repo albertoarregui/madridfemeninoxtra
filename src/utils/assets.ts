@@ -15,6 +15,7 @@ const assets = {
     background: import.meta.glob<{ default: ImageMetadata }>("/src/assets/background/*.{png,jpg,jpeg,webp}", { eager: true }),
     galeria: import.meta.glob<{ default: ImageMetadata }>("/src/assets/galeria/*.{png,jpg,jpeg,webp}", { eager: true }),
     redes: import.meta.glob<{ default: ImageMetadata }>("/src/assets/redes/*.{png,jpg,jpeg,webp,svg}", { eager: true }),
+    main: import.meta.glob<{ default: ImageMetadata }>("/src/assets/main/*.{png,jpg,jpeg,webp,svg}", { eager: true }),
 };
 
 type AssetType = keyof typeof assets;
@@ -70,7 +71,14 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     }
 
     if (cleanFileName) {
-        return `https://media.madridfemeninoxtra.com/${folder}/${cleanFileName}`;
+        let normalizedFallback = normalizeName(cleanFileName);
+        
+        // Si no tiene extensión, le añadimos .png por defecto para el CDN
+        if (!normalizedFallback.includes('.')) {
+            normalizedFallback += '.png';
+        }
+        
+        return `https://media.madridfemeninoxtra.com/${folder}/${normalizedFallback}`;
     }
 
     return "";
