@@ -118,18 +118,18 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         return `/assets/banderas/${normalized}.svg`;
     };
 
+    const [openSelect, setOpenSelect] = useState<string | null>(null);
+
+    const toggleSelect = (id: string) => {
+        setOpenSelect(prev => prev === id ? null : id);
+    };
+
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid">
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex gap-6 w-full flex-wrap justify-center items-center">
-                    <div className="custom-select-container">
-                        <div className="custom-select-trigger" onClick={(e) => {
-                            const container = e.currentTarget.parentElement;
-                            document.querySelectorAll('.custom-select-container').forEach(c => {
-                                if (c !== container) c.classList.remove('open');
-                            });
-                            container?.classList.toggle('open');
-                        }}>
+                    <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
+                        <div className="custom-select-trigger" onClick={() => toggleSelect('season')}>
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
                             </span>
@@ -142,9 +142,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={s}
                                     className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`}
-                                    onClick={(e) => {
+                                    onClick={() => {
                                         setSelectedSeason(s);
-                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                        setOpenSelect(null);
                                     }}
                                 >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
@@ -153,14 +153,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
-                    <div className="custom-select-container">
-                        <div className="custom-select-trigger" onClick={(e) => {
-                            const container = e.currentTarget.parentElement;
-                            document.querySelectorAll('.custom-select-container').forEach(c => {
-                                if (c !== container) c.classList.remove('open');
-                            });
-                            container?.classList.toggle('open');
-                        }}>
+                    <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
+                        <div className="custom-select-trigger" onClick={() => toggleSelect('position')}>
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
                             </span>
@@ -173,9 +167,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={pos}
                                     className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`}
-                                    onClick={(e) => {
+                                    onClick={() => {
                                         setSelectedPosition(pos);
-                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                        setOpenSelect(null);
                                     }}
                                 >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
@@ -184,14 +178,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         </div>
                     </div>
 
-                    <div className="custom-select-container">
-                        <div className="custom-select-trigger" onClick={(e) => {
-                            const container = e.currentTarget.parentElement;
-                            document.querySelectorAll('.custom-select-container').forEach(c => {
-                                if (c !== container) c.classList.remove('open');
-                            });
-                            container?.classList.toggle('open');
-                        }}>
+                    <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
+                        <div className="custom-select-trigger" onClick={() => toggleSelect('country')}>
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
                             </span>
@@ -204,9 +192,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={c}
                                     className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`}
-                                    onClick={(e) => {
+                                    onClick={() => {
                                         setSelectedCountry(c);
-                                        e.currentTarget.parentElement?.parentElement?.classList.remove('open');
+                                        setOpenSelect(null);
                                     }}
                                 >
                                     {c === 'Todos' ? 'Todos los Países' : c}
