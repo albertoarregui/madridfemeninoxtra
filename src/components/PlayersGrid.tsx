@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Filter } from 'lucide-react';
 
 interface Player {
@@ -119,23 +119,37 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     };
 
     const [openSelect, setOpenSelect] = useState<string | null>(null);
+    const gridRef = useRef<HTMLDivElement>(null);
 
     const toggleSelect = (id: string) => {
         setOpenSelect(prev => prev === id ? null : id);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
+                setOpenSelect(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid">
+        <div className="w-full max-w-7xl mx-auto px-4 py-8" id="players-grid" ref={gridRef}>
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex gap-6 w-full flex-wrap justify-center items-center">
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
                         <button 
-                            className="custom-select-trigger w-full" 
+                            className="custom-select-trigger" 
                             onClick={() => toggleSelect('season')}
                             aria-haspopup="listbox"
                             aria-expanded={openSelect === 'season'}
                         >
-                            <span className="selected-text mr-auto">
+                            <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
                             </span>
                             <div className="custom-select-arrow">
@@ -162,12 +176,12 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
                         <button 
-                            className="custom-select-trigger w-full" 
+                            className="custom-select-trigger" 
                             onClick={() => toggleSelect('position')}
                             aria-haspopup="listbox"
                             aria-expanded={openSelect === 'position'}
                         >
-                            <span className="selected-text mr-auto">
+                            <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
                             </span>
                             <div className="custom-select-arrow">
@@ -194,12 +208,12 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
                         <button 
-                            className="custom-select-trigger w-full" 
+                            className="custom-select-trigger" 
                             onClick={() => toggleSelect('country')}
                             aria-haspopup="listbox"
                             aria-expanded={openSelect === 'country'}
                         >
-                            <span className="selected-text mr-auto">
+                            <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
                             </span>
                             <div className="custom-select-arrow">
