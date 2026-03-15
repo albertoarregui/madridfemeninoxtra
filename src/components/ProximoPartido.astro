@@ -1,6 +1,6 @@
-﻿---
+---
 import { Image } from "astro:assets";
-import vsImagen from "../assets/main/vs.png";
+const vsImagen = "https://media.madridfemeninoxtra.com/main/vs.png";
 import { generateSlug } from "../utils/url-helper";
 import { getAssetUrl, getAssetMetadata } from "../utils/assets";
 import { parseMatchDate, isMatchActive } from "../utils/date-helper";
@@ -60,6 +60,7 @@ function getCompetitionLogo(competitionName: string) {
 }
 
 const compLogo = getCompetitionLogo(activeMatch.competition);
+const compLogoUrl = getAssetUrl("competiciones", activeMatch.competition);
 
 function getTeamLogo(teamName: string) {
     return getAssetMetadata("escudos", teamName);
@@ -81,7 +82,7 @@ const visitorLogo = getTeamLogo(VISITOR_TEAM);
         <h2 class="page-title">PRÓXIMO PARTIDO</h2>
         <div class="competicion-badge interactive-capsule">
             {
-                compLogo && (
+                compLogo ? (
                     <Image
                         src={compLogo}
                         alt={activeMatch.competition}
@@ -90,7 +91,15 @@ const visitorLogo = getTeamLogo(VISITOR_TEAM);
                         height={30}
                         format="webp"
                     />
-                )
+                ) : compLogoUrl ? (
+                    <img
+                        src={compLogoUrl}
+                        alt={activeMatch.competition}
+                        class="competicion-logo"
+                        width="30"
+                        height="30"
+                    />
+                ) : null
             }
             <span class="competicion-text">
                 {activeMatch.competition}
@@ -141,13 +150,12 @@ const visitorLogo = getTeamLogo(VISITOR_TEAM);
             </div>
 
             <div class="vs-center">
-                <Image
+                <img
                     src={vsImagen}
                     alt="VS"
                     class="vs-img-lg"
-                    width={180}
-                    height={180}
-                    format="webp"
+                    width="180"
+                    height="180"
                 />
             </div>
 
