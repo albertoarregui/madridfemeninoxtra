@@ -160,7 +160,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'season')}
-                            onTouchStart={(e) => toggleSelect(e, 'season')}
                         >
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
@@ -175,7 +174,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                     key={s}
                                     className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`}
                                     onClick={(e) => handleOptionClick(e, 'season', s)}
-                                    onTouchStart={(e) => handleOptionClick(e, 'season', s)}
                                 >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
                                 </div>
@@ -188,7 +186,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'position')}
-                            onTouchStart={(e) => toggleSelect(e, 'position')}
                         >
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
@@ -203,7 +200,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                     key={pos}
                                     className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`}
                                     onClick={(e) => handleOptionClick(e, 'position', pos)}
-                                    onTouchStart={(e) => handleOptionClick(e, 'position', pos)}
                                 >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
                                 </div>
@@ -216,7 +212,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                         <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'country')}
-                            onTouchStart={(e) => toggleSelect(e, 'country')}
                         >
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
@@ -231,7 +226,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                     key={c}
                                     className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`}
                                     onClick={(e) => handleOptionClick(e, 'country', c)}
-                                    onTouchStart={(e) => handleOptionClick(e, 'country', c)}
                                 >
                                     {c === 'Todos' ? 'Todos los Países' : c}
                                 </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Option {
     value: string;
@@ -34,12 +34,19 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         };
     }, [isOpen]);
 
+    const toggle = (e: React.MouseEvent | React.TouchEvent) => {
+        // We handle the toggle in a single place
+        // on mobile, we can use e.preventDefault() if we want to stop the subsequent click
+        // but it's simpler to just toggle and be sure it holds.
+        setIsOpen(!isOpen);
+    };
+
     return (
         <div
             className={`custom-select-container ${isOpen ? 'open' : ''}`}
             id={id}
             ref={containerRef}
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={toggle}
         >
             <div className="custom-select-trigger">
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
