@@ -359,82 +359,47 @@ function getTeamLogo(teamName: string) {
     // Lógica para Custom Selects
     // Lógica para Custom Selects
     function initCustomSelects() {
-        const containers = document.querySelectorAll<HTMLElement>(
-            ".custom-select-container",
-        );
-
+        const containers = document.querySelectorAll(".custom-select-container");
         if (!containers.length) return;
 
         containers.forEach((container) => {
-            // Unbind existing if any to avoid duplicates
             const trigger = container.querySelector(".custom-select-trigger");
-            if (!trigger) return;
-            
             const select = container.querySelector("select");
             const options = container.querySelectorAll(".custom-select-option");
-            const selectedText = trigger.querySelector(".selected-text");
+            const selectedText = trigger?.querySelector(".selected-text");
 
-            const handleToggle = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                containers.forEach((c) => {
-                    if (c !== container) c.classList.remove("open");
-                });
-                container.classList.toggle("open");
-            };
-
-            // Use controller to easily cleanup if needed, but for now just replace
-            // Replacing the listener is not directly possible easily without references, 
-            // so we'll just ensure we don't double bind by checking a data attribute
-            if (container.dataset.initialized) return;
+            if (!trigger || container.dataset.initialized) return;
             container.dataset.initialized = "true";
 
             trigger.addEventListener("click", (e) => {
                 e.stopPropagation();
-                handleToggle(e);
+                containers.forEach(c => { if(c !== container) c.classList.remove("open"); });
+                container.classList.toggle("open");
             });
-            trigger.addEventListener("touchstart", (e) => {
-                e.stopPropagation();
-                handleToggle(e);
-            }, { passive: false });
 
             options.forEach((option) => {
-                const handleOptionClick = (e) => {
-                    e.preventDefault();
+                option.addEventListener("click", (e) => {
                     e.stopPropagation();
                     const value = (option as HTMLElement).dataset.value;
-                    const text = option.textContent;
-
-                    if (selectedText) selectedText.textContent = text;
-                    options.forEach((opt) => opt.classList.remove("selected"));
-                    option.classList.add("selected");
-
+                    if (selectedText) selectedText.textContent = option.textContent;
+                    
                     if (select && value) {
                         select.value = value;
                         select.dispatchEvent(new Event("change"));
                     }
-
                     container.classList.remove("open");
-                };
-
-                option.addEventListener("click", handleOptionClick);
-                option.addEventListener("touchstart", handleOptionClick, { passive: false });
+                    options.forEach(opt => opt.classList.remove("selected"));
+                    option.classList.add("selected");
+                });
             });
         });
 
-        const closeAll = (e) => {
-            // Only close if we didn't touch a trigger
-            if (!(e.target as HTMLElement).closest('.custom-select-trigger')) {
-                containers.forEach((c) => c.classList.remove("open"));
-            }
-        };
-
-        document.addEventListener("click", closeAll);
-        document.addEventListener("touchstart", closeAll);
+        document.addEventListener("click", () => {
+            containers.forEach(c => c.classList.remove("open"));
+        });
     }
 
     document.addEventListener("astro:page-load", initCustomSelects);
-    // Standard initialization for direct navigation without transitions
     if (document.readyState === "complete" || document.readyState === "interactive") {
         initCustomSelects();
     } else {
