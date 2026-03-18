@@ -1,0 +1,612 @@
+---
+import { fetchCalendarFromDb } from "../utils/calendar";
+import { slugify } from "../utils/partidos";
+import "@fontsource/bowlby-one-sc";
+
+const calendarMatches = await fetchCalendarFromDb();
+const now = new Date();
+
+const nextMatch =
+    calendarMatches.length > 0
+        ? calendarMatches.find((match) => {
+              const h = match.hora?.includes(":")
+                  ? match.hora.split(":").length === 2
+                      ? `${match.hora}:00`
+                      : match.hora
+                  : "00:00:00";
+              const matchDate = new Date(`${match.fecha}T${h}`);
+              return matchDate >= now;
+          }) || calendarMatches[0]
+        : null;
+
+if (!nextMatch) return null;
+
+const targetDate =
+    nextMatch && nextMatch.fecha
+        ? new Date(
+              `${nextMatch.fecha}T${nextMatch.hora?.includes(":") ? (nextMatch.hora.split(":").length === 2 ? `${nextMatch.hora}:00` : nextMatch.hora) : "00:00:00"}`,
+          ).toISOString()
+        : "";
+const matchTimeDisplay = nextMatch.hora?.replace(/[^0-9:]/g, "") || "00:00";
+
+const dateObj = new Date(nextMatch.fecha);
+const day = String(dateObj.getDate()).padStart(2, "0");
+const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+const year = dateObj.getFullYear();
+const matchDateShort = `${day}/${month}/${year}`;
+
+const dateSlug = nextMatch.fecha.split(" ")[0];
+const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_visitante)}-${dateSlug}`;
+---
+
+<div class="countdown-strip-v5" data-target={targetDate} id="strip-v5">
+    <a href={`/partidos/${matchSlug}`} class="strip-link-target">
+        <div class="matchday-overlay-v5">
+            <span>MATCHDAY</span>
+        </div>
+
+        <div class="strip-main-grid-v5">
+            <div class="side-block far-left">
+                <img
+                    src={nextMatch.local_foto_url}
+                    alt={nextMatch.club_local}
+                    class="shield-v5"
+                />
+                <span class="team-name-v5 desktop-only"
+                    >{
+                        nextMatch.club_local
+                            .replace("Femenino", "")
+                            .toUpperCase()
+                    }</span
+                >
+            </div>
+
+            <div class="info-pills-stack-v5">
+                <div class="pill-v5">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><rect x="3" y="4" width="18" height="18" rx="2" ry="2"
+                        ></rect><line x1="16" y1="2" x2="16" y2="6"></line><line
+                            x1="8"
+                            y1="2"
+                            x2="8"
+                            y2="6"></line><line x1="3" y1="10" x2="21" y2="10"
+                        ></line></svg
+                    >
+                    <span>{matchDateShort}</span>
+                </div>
+                <div class="pill-v5">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><circle cx="12" cy="12" r="10"></circle><polyline
+                            points="12 6 12 12 16 14"></polyline></svg
+                    >
+                    <span>{matchTimeDisplay}</span>
+                </div>
+            </div>
+
+            <div class="center-infography-v5">
+                <div class="countdown-circular-stack-v5">
+                    <div class="c-unit-v5" id="v5-days">
+                        <div class="c-svg-v5">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"
+                                ></circle>
+                                <circle class="prog" cx="50" cy="50" r="45"
+                                ></circle>
+                            </svg>
+                            <span class="v5-val" id="v5-d">00</span>
+                        </div>
+                        <span class="v5-lab">DÍAS</span>
+                    </div>
+                    <div class="c-unit-v5" id="v5-hours">
+                        <div class="c-svg-v5">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"
+                                ></circle>
+                                <circle class="prog" cx="50" cy="50" r="45"
+                                ></circle>
+                            </svg>
+                            <span class="v5-val" id="v5-h">00</span>
+                        </div>
+                        <span class="v5-lab">HORAS</span>
+                    </div>
+                    <div class="c-unit-v5" id="v5-minutes">
+                        <div class="c-svg-v5">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"
+                                ></circle>
+                                <circle class="prog" cx="50" cy="50" r="45"
+                                ></circle>
+                            </svg>
+                            <span class="v5-val" id="v5-m">00</span>
+                        </div>
+                        <span class="v5-lab">MIN</span>
+                    </div>
+                    <div class="c-unit-v5" id="v5-seconds">
+                        <div class="c-svg-v5">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"
+                                ></circle>
+                                <circle class="prog" cx="50" cy="50" r="45"
+                                ></circle>
+                            </svg>
+                            <span class="v5-val" id="v5-s">00</span>
+                        </div>
+                        <span class="v5-lab">SEG</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-pills-stack-v5">
+                <div class="pill-v5">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><path d="M4 12a8 2 0 1 0 16 0a8 2 0 1 0 -16 0"
+                        ></path><path
+                            d="M4 12v7c0 .94 2.51 1.785 6 2v-3h4v3c3.435 -.225 6 -1.07 6 -2v-7"
+                        ></path><path d="M15 6h4v-3h-4v7"></path><path
+                            d="M7 6h4v-3h-4v7"></path></svg
+                    >
+                    <span class="full-stadium-name"
+                        >{nextMatch.estadio || "Alfredo Di Stéfano"}</span
+                    >
+                </div>
+                <div class="pill-v5">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><rect x="2" y="7" width="20" height="15" rx="2" ry="2"
+                        ></rect><polyline points="17 2 12 7 7 2"
+                        ></polyline></svg
+                    >
+                    <span>{nextMatch.tv || "DAZN"}</span>
+                </div>
+            </div>
+
+            <div class="side-block far-right">
+                <span class="team-name-v5 desktop-only"
+                    >{
+                        nextMatch.club_visitante
+                            .replace("Femenino", "")
+                            .toUpperCase()
+                    }</span
+                >
+                <img
+                    src={nextMatch.visitante_foto_url}
+                    alt={nextMatch.club_visitante}
+                    class="shield-v5"
+                />
+            </div>
+        </div>
+    </a>
+</div>
+
+<style>
+    .countdown-strip-v5 {
+        width: 100%;
+        background: #2b2b2b;
+        position: relative;
+        overflow: hidden;
+        z-index: 100;
+        height: 110px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .countdown-strip-v5::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100px;
+        height: 100px;
+        background-color: #ffde59;
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        z-index: 101;
+        pointer-events: none;
+        transition: none !important;
+    }
+
+    .countdown-strip-v5:hover::before {
+        transform: translate(-50%, -50%) scale(80);
+        transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    }
+
+    .countdown-strip-v5:hover {
+        cursor: pointer;
+    }
+
+    .strip-link-target {
+        display: block;
+        width: 100%;
+        height: 100%;
+        text-decoration: none;
+        position: relative;
+    }
+
+    .strip-main-grid-v5 {
+        width: auto;
+        max-width: 100%;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6vw;
+        position: relative;
+        z-index: 120;
+        height: 100%;
+    }
+
+    .side-block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        flex: 1;
+        min-width: 0;
+        flex-shrink: 1;
+        position: relative;
+        z-index: 200;
+        height: 100%;
+    }
+
+    .far-left {
+        justify-content: flex-start;
+    }
+    .far-right {
+        justify-content: flex-end;
+    }
+
+    .shield-v5 {
+        width: 65px;
+        height: 65px;
+        object-fit: contain;
+        transition: all 0.3s ease-out;
+    }
+
+    .team-name-v5 {
+        font-family: "Bebas Neue", sans-serif;
+        color: white;
+        font-size: 1.8rem;
+        letter-spacing: 1px;
+        text-align: center;
+        line-height: 0.9;
+        max-width: 15rem;
+    }
+
+    .center-infography-v5 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        flex: none;
+        width: auto;
+        height: 100%;
+    }
+
+    .info-pills-stack-v5 {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .pill-v5 {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 4px 12px;
+        border-radius: 50px;
+        color: white;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        width: fit-content;
+    }
+
+    .pill-v5 svg {
+        color: #ffde59;
+    }
+
+    .countdown-circular-stack-v5 {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .c-unit-v5 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .c-svg-v5 {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        transition: all 0.3s ease-out;
+    }
+
+    .c-svg-v5 svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+    }
+
+    .c-svg-v5 circle {
+        fill: none;
+        stroke-width: 6;
+    }
+
+    .c-svg-v5 circle.bg {
+        stroke: rgba(255, 255, 255, 0.1);
+    }
+    .c-svg-v5 circle.prog {
+        stroke: #ffde59;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .v5-val {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-family: "Bowlby One SC", sans-serif;
+        font-size: 1.4rem;
+        transition: font-size 0.3s ease-out;
+    }
+
+    .v5-lab {
+        color: white;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+
+    .matchday-overlay-v5 {
+        position: absolute;
+        inset: 0;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 150;
+        opacity: 0;
+        transition: none;
+        width: 100%;
+    }
+
+    .matchday-overlay-v5 span {
+        font-family: "Bowlby One SC", sans-serif;
+        font-size: 4rem;
+        color: white;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .pill-v5 span {
+        font-family: "Poppins", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: white;
+        transition: color 0.4s ease;
+    }
+
+    .countdown-strip-v5:hover .team-name-v5,
+    .countdown-strip-v5:hover .v5-val,
+    .countdown-strip-v5:hover .v5-lab,
+    .countdown-strip-v5:hover .pill-v5 span {
+        color: #2b2b2b !important;
+    }
+
+    .countdown-strip-v5:hover svg:not(.prog) {
+        stroke: #2b2b2b !important;
+    }
+
+    .countdown-strip-v5:hover .matchday-overlay-v5 {
+        opacity: 1 !important;
+        transition: none !important;
+    }
+
+    .countdown-strip-v5:hover .center-infography-v5,
+    .countdown-strip-v5:hover .info-pills-stack-v5,
+    .countdown-strip-v5:hover .team-name-v5 {
+        display: none !important;
+    }
+
+    @media (max-width: 1350px) {
+        .team-name-v5 {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 1280px) {
+        .info-pills-stack-v5 {
+            display: none !important;
+        }
+    }
+    @media (max-width: 1024px) {
+        .team-name-v5 {
+            display: none !important;
+        }
+        .strip-main-grid-v5 {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            padding: 1rem;
+        }
+        .center-infography-v5 {
+            flex: 0 0 auto;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .strip-main-grid-v5 {
+            padding: 0 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .side-block {
+            width: 45px;
+            flex: 0 0 auto;
+            transition: width 0.3s ease-out;
+        }
+        .center-infography-v5 {
+            flex: 1;
+            justify-content: center;
+            gap: 2vw;
+        }
+        .countdown-circular-stack-v5 {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            transition: gap 0.3s ease-out;
+        }
+        .c-unit-v5 {
+            min-width: 0;
+            flex-shrink: 0;
+        }
+        .c-svg-v5 {
+            width: 42px;
+            height: 42px;
+        }
+        .v5-val {
+            font-size: 1rem;
+        }
+        .v5-lab {
+            font-size: 0.6rem;
+            transition: font-size 0.3s ease-out;
+        }
+        .shield-v5 {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .c-svg-v5 {
+            width: 36px;
+            height: 36px;
+        }
+        .countdown-circular-stack-v5 {
+            gap: 6px;
+        }
+        .shield-v5 {
+            width: 35px;
+            height: 35px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .c-svg-v5 {
+            width: 28px;
+            height: 28px;
+        }
+        .countdown-circular-stack-v5 {
+            gap: 2px;
+        }
+        .strip-main-grid-v5 {
+            grid-template-columns: 32px 1fr 32px;
+        }
+    }
+</style>
+
+<script>
+    function updateCountdown() {
+        const strip = document.getElementById("strip-v5");
+        if (!strip) return;
+
+        const targetTime = new Date(strip.dataset.target).getTime();
+
+        function tick() {
+            const now = new Date().getTime();
+            const targetStr = strip.dataset.target;
+            if (!targetStr) return;
+            const targetTime = new Date(targetStr).getTime();
+            const diff = targetTime - now;
+
+            if (diff <= 0) {
+                return;
+            }
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor(
+                (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+            );
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            function updateCircle(id: string, val: number, max: number) {
+                const elVal = document.getElementById(`v5-${id}`);
+                const circle = document.querySelector(
+                    `#v5-${id === "d" ? "days" : id === "h" ? "hours" : id === "m" ? "minutes" : "seconds"} .prog`,
+                ) as HTMLElement;
+
+                if (elVal) elVal.textContent = String(val).padStart(2, "0");
+
+                if (circle) {
+                    const radius = 45;
+                    const circumference = 2 * Math.PI * radius;
+                    const offset = circumference - (val / max) * circumference;
+                    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                    circle.style.strokeDashoffset = String(offset);
+                }
+            }
+
+            updateCircle("d", d, 30);
+            updateCircle("h", h, 24);
+            updateCircle("m", m, 60);
+            updateCircle("s", s, 60);
+        }
+
+        tick();
+        setInterval(tick, 1000);
+    }
+
+    document.addEventListener("astro:page-load", updateCountdown);
+    updateCountdown();
+</script>

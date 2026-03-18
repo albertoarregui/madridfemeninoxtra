@@ -2,13 +2,20 @@ const menuToggle = document.getElementById('menu-toggle');
 const mainNav = document.getElementById('main-nav');
 
 if (menuToggle && mainNav) {
-  menuToggle.addEventListener('click', () => {
-    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+  const overlay = document.getElementById('nav-overlay');
 
+  const toggleMenu = () => {
+    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
     menuToggle.setAttribute('aria-expanded', !isExpanded);
     mainNav.classList.toggle('is-open');
     document.body.classList.toggle('nav-open');
-  });
+  };
+
+  menuToggle.addEventListener('click', toggleMenu);
+  
+  if (overlay) {
+    overlay.addEventListener('click', toggleMenu);
+  }
 }
 
 const submenuToggles = document.querySelectorAll('.submenu-toggle');

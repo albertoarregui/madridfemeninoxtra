@@ -1,8 +1,19 @@
 ---
 import { fetchCalendarFromDb } from "../utils/calendar";
 import { getAssetUrl } from "../utils/assets";
+import { fetchGamesDirectly, slugify } from "../utils/partidos";
 
 const calendarMatches = await fetchCalendarFromDb();
+const allGames = await fetchGamesDirectly();
+
+// Mapear juegos por fecha para obtener el slug rápidamente
+const gamesByDate = new Map();
+allGames.forEach((game) => {
+    if (game.fecha) {
+        const dateKey = game.fecha.split("T")[0];
+        gamesByDate.set(dateKey, game);
+    }
+});
 
 const shieldMap: Record<string, string> = {};
 for (const m of calendarMatches) {
@@ -110,6 +121,21 @@ const getDayInfo = (
     if (!isValidDay && i >= 35) return null;
 
     const match = isValidDay ? getMatchForDay(dayNum, monthIndex) : null;
+    let matchSlug = "";
+
+    if (match) {
+        const dateKey = match.date.split(" ")[0];
+        const existingGame = gamesByDate.get(dateKey);
+
+        if (existingGame) {
+            matchSlug = existingGame.slug;
+        } else {
+            // Fallback: generar slug si no existe en la tabla de partidos jugados
+            const dateSlug = match.date.split(" ")[0];
+            matchSlug = `${slugify(match.club_local)}-vs-${slugify(match.club_visitante)}-${dateSlug}`;
+        }
+    }
+
     const rmIsLocal = match
         ? match.club_local.toLowerCase().includes("real madrid")
         : false;
@@ -130,6 +156,7 @@ const getDayInfo = (
         isAway,
         rivalName,
         competitionLogo,
+        matchSlug,
     };
 };
 ---
@@ -211,6 +238,7 @@ const getDayInfo = (
                             isAway,
                             rivalName,
                             competitionLogo,
+                            matchSlug,
                         } = info;
 
                         return (
@@ -225,7 +253,10 @@ const getDayInfo = (
                                     </span>
                                 )}
                                 {match && (
-                                    <div class="match-content">
+                                    <a
+                                        href={`/partidos/${matchSlug}`}
+                                        class="match-content"
+                                    >
                                         {isHome && (
                                             <div
                                                 class="icon-indicator home"
@@ -292,7 +323,7 @@ const getDayInfo = (
                                                 title={match.competition}
                                             />
                                         )}
-                                    </div>
+                                    </a>
                                 )}
                             </div>
                         );
@@ -431,12 +462,12 @@ const getDayInfo = (
         }
 
         .day-number.badge-style {
-            width: 14px;
-            height: 14px;
-            font-size: 0.5rem;
-            top: -2px;
-            left: -2px;
-            border-width: 1px;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8rem;
+            top: -6px;
+            left: -6px;
+            border-width: 1.5px;
         }
 
         .rival-shield {
@@ -445,16 +476,17 @@ const getDayInfo = (
         }
 
         .icon-indicator {
-            width: 12px;
-            height: 12px;
-            top: -2px;
-            right: -2px;
-            border-width: 1px;
+            width: 22px;
+            height: 22px;
+            top: -6px;
+            right: -6px;
+            border-width: 1.5px;
+            padding: 3px;
         }
 
         .competition-logo {
-            width: 8px;
-            height: 8px;
+            width: 16px;
+            height: 16px;
         }
     }
 
@@ -541,12 +573,12 @@ const getDayInfo = (
         }
 
         .day-number.badge-style {
-            width: 18px !important;
-            height: 18px !important;
-            font-size: 0.6rem !important;
-            top: -6px !important;
-            left: -6px !important;
-            border-width: 2px !important;
+            width: 34px !important;
+            height: 34px !important;
+            font-size: 1rem !important;
+            top: -10px !important;
+            left: -10px !important;
+            border-width: 2.5px !important;
         }
 
         .rival-shield {
@@ -555,17 +587,17 @@ const getDayInfo = (
         }
 
         .icon-indicator {
-            width: 13px !important;
-            height: 13px !important;
-            top: -4px !important;
-            right: -4px !important;
-            border-width: 1.5px !important;
-            padding: 0 !important;
+            width: 32px !important;
+            height: 32px !important;
+            top: -10px !important;
+            right: -10px !important;
+            border-width: 2.5px !important;
+            padding: 4px !important;
         }
 
         .competition-logo {
-            width: 8px !important;
-            height: 8px !important;
+            width: 22px !important;
+            height: 22px !important;
         }
     }
 
@@ -709,18 +741,18 @@ const getDayInfo = (
         position: absolute;
         top: -6px;
         left: -6px;
-        width: 22px;
-        height: 22px;
+        width: 14px;
+        height: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         background: #fff;
         color: #333;
         border-radius: 50%;
-        font-size: 0.8rem;
+        font-size: 0.6rem;
         font-weight: 700;
-        border: 2px solid #333;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        border: 1px solid #333;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         margin: 0;
         z-index: 5;
     }
@@ -735,6 +767,8 @@ const getDayInfo = (
         align-items: center;
         justify-content: center;
         z-index: 1;
+        text-decoration: none;
+        color: inherit;
     }
 
     .day.has-match {
@@ -758,10 +792,10 @@ const getDayInfo = (
 
     .competition-logo {
         position: absolute;
-        bottom: 2px;
-        left: 2px;
-        width: 16px;
-        height: 16px;
+        bottom: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
         object-fit: contain;
         z-index: 3;
         opacity: 0.8;
@@ -771,8 +805,8 @@ const getDayInfo = (
         position: absolute;
         top: -6px;
         right: -6px;
-        width: 22px;
-        height: 22px;
+        width: 14px;
+        height: 14px;
         z-index: 4;
         display: flex;
         align-items: center;
@@ -780,9 +814,9 @@ const getDayInfo = (
         background: #333;
         color: white;
         border-radius: 50%;
-        padding: 3px;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        padding: 2px;
+        border: 1px solid white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     .icon-indicator.home {

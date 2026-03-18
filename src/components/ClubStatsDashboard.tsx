@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Hash, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 import CustomSelect from './CustomSelect';
@@ -180,17 +180,23 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
     }, [filteredGoals, stats.gf, stats.played]);
 
     const { topScorers, topAssisters, topGA } = useMemo(() => {
-        const playerMap: Record<string, { name: string, goals: number, assists: number, total: number }> = {};
+        const playerMap: Record<string, { name: string, goals: number, assists: number, total: number, photo?: string }> = {};
         filteredGoals.forEach(g => {
             if (g.nombre_goleadora) {
                 const name = g.nombre_goleadora;
                 if (!playerMap[name]) playerMap[name] = { name, goals: 0, assists: 0, total: 0 };
                 playerMap[name].goals += 1; playerMap[name].total += 1;
+                if (!playerMap[name].photo && g.foto_goleadora && g.foto_goleadora !== 'null') {
+                    playerMap[name].photo = g.foto_goleadora;
+                }
             }
             if (g.nombre_asistente) {
                 const name = g.nombre_asistente;
                 if (!playerMap[name]) playerMap[name] = { name, goals: 0, assists: 0, total: 0 };
                 playerMap[name].assists += 1; playerMap[name].total += 1;
+                if (!playerMap[name].photo && g.foto_asistente && g.foto_asistente !== 'null') {
+                    playerMap[name].photo = g.foto_asistente;
+                }
             }
         });
         const players = Object.values(playerMap);
@@ -202,7 +208,12 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
     }, [filteredGoals]);
 
     const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
-    const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora') => {
+    
+    const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora', preFetchedPhoto?: string) => {
+        if (preFetchedPhoto && preFetchedPhoto !== 'null' && preFetchedPhoto.length > 5) {
+            return preFetchedPhoto;
+        }
+
         const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
         const searchName = normalize(name);
 
@@ -371,15 +382,15 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center gap-6 hover:shadow-md transition-all cursor-default">
-                    <div className="flex items-center justify-between group">
+                    <div className="flex items-start justify-between group">
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Diferencia de Goles</p>
                             <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-600' : 'text-red-500'} group-hover:text-[#ffde59] transition-colors`}>{stats.gd}</p>
                         </div>
-                        <TrendingUp size={24} className="text-gray-300 group-hover:text-[#ffde59] transition-colors" />
+                        <TrendingUp size={24} className="text-gray-300 group-hover:text-[#ffde59] transition-colors mt-0.5" />
                     </div>
                     <div className="w-full h-px bg-gray-100"></div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                         <div className="group">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Porterías a Cero</p>
                             <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.cleanSheets}</p>
@@ -513,7 +524,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.goals}</span>
@@ -532,7 +543,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'asistente')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'asistente', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.assists}</span>
@@ -551,7 +562,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
                                 <div className="flex items-center gap-3">
                                     <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora')} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
                                     <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
                                 </div>
                                 <span className="text-lg font-black text-[#151e42]">{p.total}</span>

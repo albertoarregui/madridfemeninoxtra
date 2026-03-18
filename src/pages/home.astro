@@ -3,50 +3,26 @@ import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
 import "../styles/global.css";
 import "../styles/home.css";
-import ProximoPartido from "../components/ProximoPartido.astro";
 import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
 import Calendar from "../components/Calendar.astro";
 import Searcher from "../components/Searcher.astro";
 import YoutubeSection from "../components/YoutubeSection.astro";
-import MatchTicker from "../components/MatchTicker.astro";
 import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
 import HistoryCarousel from "../components/HistoryCarousel.astro";
 import { getAssetUrl } from "../utils/assets";
+import NextMatchCountdown from "../components/NextMatchCountdown.astro";
+import ProximoPartido from "../components/ProximoPartido.astro";
 
 import heroVideo from "../assets/main/intro-home.webm";
 const heroPoster = getAssetUrl("background", "background.jpg");
 const mapaJugadoras = getAssetUrl("sidebar", "mapa_jugadoras.png");
 const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
 
-import {
-	fetchGamesDirectly,
-	fetchAllGoals,
-	calculateRivalStats,
-} from "../utils/partidos";
+import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
-import { fetchCalendarFromDb } from "../utils/calendar";
-
-import { parseMatchDate, isMatchActive } from "../utils/date-helper";
-
-const calendarMatches = await fetchCalendarFromDb();
-
-const nextMatch =
-	calendarMatches.find((match) => isMatchActive(match.date, match.time)) ||
-	(calendarMatches.length > 0
-		? calendarMatches[calendarMatches.length - 1]
-		: null);
-
-const rivalName =
-	nextMatch && nextMatch.club_local
-		? nextMatch.club_local.toLowerCase().includes("real madrid")
-			? nextMatch.club_visitante
-			: nextMatch.club_local
-		: "Rival";
 
 const gamesData = await fetchGamesDirectly();
 const allGoals = await fetchAllGoals();
-
-const rivalStats = calculateRivalStats(gamesData, rivalName);
 
 const uniqueSeasons = [
 	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
@@ -91,7 +67,8 @@ const schema = {
 	description="Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!"
 >
 	<script type="application/ld+json" set:html={JSON.stringify(schema)} />
-	<MatchTicker />
+
+	<NextMatchCountdown />
 	<HistoryCarousel />
 	<link rel="preload" as="image" href={heroPoster} fetchpriority="high" />
 
@@ -126,17 +103,6 @@ const schema = {
 	<div class="content-layout">
 		<main class="welcome-area">
 			<section class="news-content">
-				<div class="match-center-container mb-[4rem]">
-					<ProximoPartido
-						rivalStats={{
-							...rivalStats,
-							total:
-								rivalStats.wins +
-								rivalStats.draws +
-								rivalStats.losses,
-						}}
-					/>
-				</div>
 
 				<div
 					class="season-stats-section mb-[4rem] w-full"
@@ -151,6 +117,7 @@ const schema = {
 						client:visible
 					/>
 				</div>
+
 				<div class="youtube-container mb-[4rem]">
 					<YoutubeSection />
 				</div>
@@ -211,154 +178,3 @@ const schema = {
 		</aside>
 	</div>
 </Layout>
-
-<style>
-	.match-center-container {
-		display: flex;
-		flex-direction: column;
-		gap: 20px;
-		width: 100%;
-		margin: 0 auto;
-	}
-	.next-match-section {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-	}
-	.historical-card {
-		background: linear-gradient(145deg, #ffffff, #f8f9fa);
-		border-radius: 16px;
-		padding: 25px 20px;
-		box-shadow:
-			0 4px 6px -1px rgba(0, 0, 0, 0.1),
-			0 2px 4px -1px rgba(0, 0, 0, 0.06);
-		border: 1px solid #edf2f7;
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease;
-	}
-	.historical-card:hover {
-		transform: translateY(-2px);
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
-	}
-	.historical-header {
-		text-align: center;
-		margin-bottom: 25px;
-	}
-	.historical-title {
-		font-size: 1.1rem;
-		font-weight: 800;
-		color: #1a202c;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 5px;
-	}
-	.rival-name {
-		color: #d97706;
-		font-size: 1.4rem;
-		font-weight: 900;
-		text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.05);
-	}
-	.historical-divider {
-		height: 3px;
-		width: 60px;
-		background: #fbbf24;
-		margin: 10px auto 0;
-		border-radius: 2px;
-	}
-	.historical-stats-content {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 15px;
-		margin-bottom: 25px;
-	}
-	.stat-group {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 8px;
-	}
-	.stat-circle {
-		width: 60px;
-		height: 60px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-family: "Bebas Neue", sans-serif;
-		font-size: 2rem;
-		font-weight: 700;
-		color: white;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	}
-	.stat-circle.win {
-		background: #10b981;
-	}
-	.stat-circle.draw {
-		background: #f59e0b;
-	}
-	.stat-circle.loss {
-		background: #ef4444;
-	}
-	.stat-label {
-		font-size: 0.7rem;
-		font-weight: 800;
-		color: #64748b;
-		letter-spacing: 0.05em;
-	}
-	.stat-separator {
-		width: 1px;
-		height: 40px;
-		background: #cbd5e1;
-	}
-	.total-matches-badge {
-		background: #e2e8f0;
-		color: #475569;
-		padding: 8px 16px;
-		border-radius: 20px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		font-size: 0.9rem;
-		margin: 0 auto;
-		width: fit-content;
-		font-weight: 600;
-	}
-	.total-matches-badge strong {
-		color: #1e293b;
-		font-weight: 800;
-	}
-	@media (max-width: 640px) {
-		.stat-circle {
-			width: 50px;
-			height: 50px;
-			font-size: 1.6rem;
-		}
-		.historical-stats-content {
-			gap: 10px;
-		}
-	}
-	.animate-fade-in-up {
-		animation: fadeInUp 0.8s ease-out forwards;
-		opacity: 0;
-		transform: translateY(20px);
-	}
-	@keyframes fadeInUp {
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-	.season-stats-section {
-		margin-top: 4rem;
-		margin-bottom: 4rem;
-	}
-</style>

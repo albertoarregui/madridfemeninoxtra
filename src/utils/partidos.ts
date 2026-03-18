@@ -85,10 +85,11 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 )) as penaltis_rival,
                 ep.*,
                 CASE 
-                   WHEN IFNULL(p.goles_rm, 0) > IFNULL(p.goles_rival, 0) THEN 'V'
-                   WHEN IFNULL(p.goles_rm, 0) < IFNULL(p.goles_rival, 0) THEN 'D'
-                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '1' OR p.penaltis = 1 OR TRIM(p.penaltis) = '1') THEN 'V'
-                   WHEN IFNULL(p.goles_rm, 0) = IFNULL(p.goles_rival, 0) AND (p.penaltis = '0' OR p.penaltis = 0 OR TRIM(p.penaltis) = '0') THEN 'D'
+                   WHEN p.goles_rm IS NULL OR p.goles_rival IS NULL THEN 'P'
+                   WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 'V'
+                   WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 'D'
+                   WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis = '1' OR p.penaltis = 1 OR TRIM(p.penaltis) = '1') THEN 'V'
+                   WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis = '0' OR p.penaltis = 0 OR TRIM(p.penaltis) = '0') THEN 'D'
                    ELSE 'E'
                    END AS resultado
 
@@ -120,8 +121,11 @@ export async function fetchGamesDirectly(): Promise<any[]> {
                 console.error("Error parsing date for slug:", game.fecha, e);
             }
 
+            const isPlayed = game.goles_rm !== null && game.goles_rm !== undefined && String(game.goles_rm).trim() !== '';
+
             return {
                 ...game,
+                isPlayed,
                 mvp: cleanApiValue(game.mvp),
                 local_foto_url: cleanApiValue(game.local_foto_url),
                 visitante_foto_url: cleanApiValue(game.visitante_foto_url),
@@ -159,8 +163,10 @@ export async function fetchGames(): Promise<any[]> {
 
         return games.map(game => {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
+            const isPlayed = game.goles_rm !== null && game.goles_rm !== undefined && String(game.goles_rm).trim() !== '';
             return {
                 ...game,
+                isPlayed,
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
                 fecha_formateada: formatGameDate(game.fecha),
             };
@@ -218,7 +224,8 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
 
         const rivalInMatch = isRivalMatch(clubLocal) || isRivalMatch(clubVisitante);
 
-        if (!rivalInMatch) return;
+        const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '';
+        if (!rivalInMatch || !isPlayed) return;
 
         stats.total++;
 
