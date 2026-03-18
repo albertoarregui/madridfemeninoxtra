@@ -42,7 +42,9 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
 <div class="countdown-strip-v5" data-target={targetDate} data-slug={matchSlug} id="strip-v5">
     <div class="strip-link-target" id="v5-interactive-container">
         <div class="matchday-overlay-v5">
+            <img src={nextMatch.local_foto_url} alt="" class="overlay-shield local-s" />
             <span>MATCHDAY</span>
+            <img src={nextMatch.visitante_foto_url} alt="" class="overlay-shield visitor-s" />
         </div>
 
         <div class="strip-main-grid-v5">
@@ -430,35 +432,56 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         font-size: 0.75rem;
         letter-spacing: 1px;
     }
-    
-    @media (max-width: 480px) {
-        .matchday-overlay-v5 span {
-            font-size: 1.5rem !important;
-        }
-    }
-
     .matchday-overlay-v5 {
         position: absolute;
-        inset: 0;
-        background: transparent;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 150;
+        gap: 20px;
         opacity: 0;
-        transition: none;
-        width: 100%;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 20;
+        padding: 0 15px;
+    }
+
+    .mobile-active .matchday-overlay-v5 {
+        opacity: 1;
+        visibility: visible;
     }
 
     .matchday-overlay-v5 span {
         font-family: "Bowlby One SC", sans-serif;
-        font-size: clamp(1.8rem, 10vw, 4rem);
+        font-size: clamp(1.5rem, 8vw, 2.5rem);
         color: white;
         letter-spacing: 2px;
         text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4);
         text-align: center;
-        width: 100%;
-        padding: 0 10px;
+        flex: 1;
+    }
+
+    .overlay-shield {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+    }
+
+    @media (max-width: 480px) {
+        .matchday-overlay-v5 span {
+            font-size: 1.5rem !important;
+        }
+        .overlay-shield {
+            width: 45px;
+            height: 45px;
+        }
+        .matchday-overlay-v5 {
+            gap: 10px;
+        }
     }
 
     .pill-v5 span {
