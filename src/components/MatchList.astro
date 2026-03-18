@@ -368,16 +368,22 @@ function getTeamLogo(teamName: string) {
             const options = container.querySelectorAll(".custom-select-option");
             const selectedText = trigger?.querySelector(".selected-text");
 
-            trigger?.addEventListener("click", (e) => {
+            const handleToggle = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 containers.forEach((c) => {
                     if (c !== container) c.classList.remove("open");
                 });
                 container.classList.toggle("open");
-            });
+            };
+
+            trigger?.addEventListener("click", handleToggle);
+            trigger?.addEventListener("touchstart", handleToggle, { passive: false });
 
             options.forEach((option) => {
-                option.addEventListener("click", () => {
+                const handleOptionClick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const value = (option as HTMLElement).dataset.value;
                     const text = option.textContent;
 
@@ -391,16 +397,27 @@ function getTeamLogo(teamName: string) {
                     }
 
                     container.classList.remove("open");
-                });
+                };
+
+                option.addEventListener("click", handleOptionClick);
+                option.addEventListener("touchstart", handleOptionClick, { passive: false });
             });
         });
 
         document.addEventListener("click", () => {
             containers.forEach((c) => c.classList.remove("open"));
         });
+        document.addEventListener("touchstart", () => {
+            containers.forEach((c) => c.classList.remove("open"));
+        });
     }
 
-    initCustomSelects();
+    document.addEventListener("astro:page-load", initCustomSelects);
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initCustomSelects);
+    } else {
+        initCustomSelects();
+    }
 </script>
 
 <style>

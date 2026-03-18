@@ -802,16 +802,22 @@ const playerImageMap = Object.fromEntries(
 
                 if (!trigger || !select) return;
 
-                trigger.addEventListener("click", (e) => {
+                const handleToggle = (e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     containers.forEach((c) => {
                         if (c !== container) c.classList.remove("open");
                     });
                     container.classList.toggle("open");
-                });
+                };
+
+                trigger.addEventListener("click", handleToggle);
+                trigger.addEventListener("touchstart", handleToggle, { passive: false });
 
                 options.forEach((option) => {
-                    option.addEventListener("click", () => {
+                    const handleOptionClick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         const value = option.dataset.value;
                         const text = option.textContent?.trim();
 
@@ -826,7 +832,10 @@ const playerImageMap = Object.fromEntries(
                         }
 
                         container.classList.remove("open");
-                    });
+                    };
+
+                    option.addEventListener("click", handleOptionClick);
+                    option.addEventListener("touchstart", handleOptionClick, { passive: false });
                 });
             });
 
@@ -877,6 +886,8 @@ const playerImageMap = Object.fromEntries(
         flex-wrap: wrap;
         justify-content: center;
         align-items: flex-start;
+        position: relative;
+        z-index: 1001;
     }
 
     .ranking-cards-container {
