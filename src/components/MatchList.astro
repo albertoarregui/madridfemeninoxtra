@@ -357,18 +357,24 @@ function getTeamLogo(teamName: string) {
     competitionSelect?.addEventListener("change", filterMatches);
 
     // Lógica para Custom Selects
+    // Lógica para Custom Selects
     function initCustomSelects() {
-        const containers = document.querySelectorAll(
+        const containers = document.querySelectorAll<HTMLElement>(
             ".custom-select-container",
         );
 
+        if (!containers.length) return;
+
         containers.forEach((container) => {
+            // Unbind existing if any to avoid duplicates
             const trigger = container.querySelector(".custom-select-trigger");
+            if (!trigger) return;
+            
             const select = container.querySelector("select");
             const options = container.querySelectorAll(".custom-select-option");
-            const selectedText = trigger?.querySelector(".selected-text");
+            const selectedText = trigger.querySelector(".selected-text");
 
-            const handleToggle = (e) => {
+            const handleToggle = (e: Event) => {
                 e.preventDefault();
                 e.stopPropagation();
                 containers.forEach((c) => {
@@ -377,11 +383,23 @@ function getTeamLogo(teamName: string) {
                 container.classList.toggle("open");
             };
 
-            trigger?.addEventListener("click", handleToggle);
-            trigger?.addEventListener("touchstart", handleToggle, { passive: false });
+            // Use controller to easily cleanup if needed, but for now just replace
+            // Replacing the listener is not directly possible easily without references, 
+            // so we'll just ensure we don't double bind by checking a data attribute
+            if (container.dataset.initialized) return;
+            container.dataset.initialized = "true";
+
+            trigger.addEventListener("click", (e) => {
+                e.stopPropagation();
+                handleToggle(e);
+            });
+            trigger.addEventListener("touchstart", (e) => {
+                e.stopPropagation();
+                handleToggle(e);
+            }, { passive: false });
 
             options.forEach((option) => {
-                const handleOptionClick = (e) => {
+                const handleOptionClick = (e: Event) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const value = (option as HTMLElement).dataset.value;
@@ -404,19 +422,23 @@ function getTeamLogo(teamName: string) {
             });
         });
 
-        document.addEventListener("click", () => {
-            containers.forEach((c) => c.classList.remove("open"));
-        });
-        document.addEventListener("touchstart", () => {
-            containers.forEach((c) => c.classList.remove("open"));
-        });
+        const closeAll = (e: Event) => {
+            // Close if not clicking/touching a trigger
+            if (!(e.target as HTMLElement).closest('.custom-select-trigger')) {
+                containers.forEach((c) => c.classList.remove("open"));
+            }
+        };
+
+        document.addEventListener("click", closeAll);
+        document.addEventListener("touchstart", closeAll);
     }
 
     document.addEventListener("astro:page-load", initCustomSelects);
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initCustomSelects);
-    } else {
+    // Standard initialization for direct navigation without transitions
+    if (document.readyState === "complete" || document.readyState === "interactive") {
         initCustomSelects();
+    } else {
+        document.addEventListener("DOMContentLoaded", initCustomSelects);
     }
 </script>
 

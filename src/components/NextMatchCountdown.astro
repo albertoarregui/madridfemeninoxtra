@@ -430,6 +430,12 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         font-size: 0.75rem;
         letter-spacing: 1px;
     }
+    
+    @media (max-width: 480px) {
+        .matchday-overlay-v5 span {
+            font-size: 1.5rem !important;
+        }
+    }
 
     .matchday-overlay-v5 {
         position: absolute;
@@ -446,10 +452,13 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
 
     .matchday-overlay-v5 span {
         font-family: "Bowlby One SC", sans-serif;
-        font-size: 4rem;
+        font-size: clamp(1.8rem, 10vw, 4rem);
         color: white;
         letter-spacing: 2px;
-        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4);
+        text-align: center;
+        width: 100%;
+        padding: 0 10px;
     }
 
     .pill-v5 span {
@@ -685,22 +694,22 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
             clearTimeout(touchTimer);
 
             // If they moved too much, it's a scroll, not a tap/hold
-            if (dist > 10) return;
+            if (dist > 15) return;
 
             if (isLongPress) {
                 const slug = stripV5.dataset.slug;
                 if (slug) window.location.href = `/partidos/${slug}`;
             } else {
+                // Short tap: toggle class and PREVENT click
+                e.preventDefault();
                 stripV5.classList.toggle('mobile-active');
             }
         });
 
         interactiveContainer.addEventListener('click', (e) => {
-            // On desktop, keep default behavior
-            if (window.innerWidth > 1024) {
-                const slug = stripV5.dataset.slug;
-                if (slug) window.location.href = `/partidos/${slug}`;
-            }
+            // General navigation if not handled by touchend preventDefault
+            const slug = stripV5.dataset.slug;
+            if (slug) window.location.href = `/partidos/${slug}`;
         });
     }
 

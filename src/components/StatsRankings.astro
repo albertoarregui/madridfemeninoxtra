@@ -811,8 +811,14 @@ const playerImageMap = Object.fromEntries(
                     container.classList.toggle("open");
                 };
 
-                trigger.addEventListener("click", handleToggle);
-                trigger.addEventListener("touchstart", handleToggle, { passive: false });
+                trigger.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    handleToggle(e);
+                });
+                trigger.addEventListener("touchstart", (e) => {
+                    e.stopPropagation();
+                    handleToggle(e);
+                }, { passive: false });
 
                 options.forEach((option) => {
                     const handleOptionClick = (e) => {
@@ -841,7 +847,13 @@ const playerImageMap = Object.fromEntries(
 
             // Close when clicking outside
             document.addEventListener("click", (e) => {
-                if (!statsRoot.contains(e.target)) {
+                if (!statsRoot.contains(e.target as Node)) {
+                    containers.forEach((c) => c.classList.remove("open"));
+                }
+            });
+            document.addEventListener("touchstart", (e) => {
+                const target = e.target as HTMLElement;
+                if (!target.closest('.custom-select-trigger') && !statsRoot.contains(target)) {
                     containers.forEach((c) => c.classList.remove("open"));
                 }
             });
