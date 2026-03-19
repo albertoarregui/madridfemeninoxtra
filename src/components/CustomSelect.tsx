@@ -25,7 +25,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         const handleToggle = (e: Event) => {
             e.stopPropagation();
             
-            // Close all other selects first (like in rankings)
+            // Close all other selects first
             document.querySelectorAll('.custom-select-container').forEach(c => {
                 if (c !== container) c.classList.remove('open');
             });
@@ -39,12 +39,13 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             }
         };
 
-        trigger.addEventListener('click', handleToggle);
-        document.addEventListener('click', handleClickOutside);
+        // Use pointerdown for maximum compatibility with Safari iOS
+        trigger.addEventListener('pointerdown', handleToggle);
+        document.addEventListener('pointerdown', handleClickOutside);
 
         return () => {
-            trigger.removeEventListener('click', handleToggle);
-            document.removeEventListener('click', handleClickOutside);
+            trigger.removeEventListener('pointerdown', handleToggle);
+            document.removeEventListener('pointerdown', handleClickOutside);
         };
     }, []);
 

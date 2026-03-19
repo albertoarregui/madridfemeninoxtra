@@ -139,17 +139,17 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                 c.classList.toggle('open');
             };
 
-            trigger.addEventListener('click', handleToggle);
+            trigger.addEventListener('pointerdown', handleToggle);
         });
 
         const handleClickOutside = (e: MouseEvent) => {
             selects.forEach((c: Element) => c.classList.remove('open'));
         };
 
-        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('pointerdown', handleClickOutside);
 
         return () => {
-            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('pointerdown', handleClickOutside);
         };
     }, []);
 
