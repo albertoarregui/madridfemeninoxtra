@@ -13,61 +13,53 @@ interface CustomSelectProps {
 }
 
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
+        const container = containerRef.current;
+        if (!container) return;
+        
+        const trigger = container.querySelector('.custom-select-trigger');
+        if (!trigger) return;
+
+        const handleToggle = (e: Event) => {
+            e.stopPropagation();
+            
+            // Close all other selects first (like in rankings)
+            document.querySelectorAll('.custom-select-container').forEach(c => {
+                if (c !== container) c.classList.remove('open');
+            });
+            
+            container.classList.toggle('open');
+        };
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (!container.contains(e.target as Node)) {
+                container.classList.remove('open');
             }
         };
 
-        if (isOpen) {
-            document.addEventListener('click', handleClickOutside);
-        }
+        trigger.addEventListener('click', handleToggle);
+        document.addEventListener('click', handleClickOutside);
 
         return () => {
+            trigger.removeEventListener('click', handleToggle);
             document.removeEventListener('click', handleClickOutside);
         };
-    }, [isOpen]);
+    }, []);
 
     const selectedOption = options.find(opt => opt.value === value) || options[0];
 
-    const toggle = (e: React.MouseEvent | React.TouchEvent) => {
-        e.stopPropagation();
-        if ('nativeEvent' in e) {
-            (e.nativeEvent as Event).stopImmediatePropagation();
-        }
-        setIsOpen(prev => !prev);
-    };
-
     return (
         <div
-            className={`custom-select-container ${isOpen ? 'open' : ''}`}
+            className="custom-select-container"
             id={id}
             ref={containerRef}
-            onClick={(e) => e.stopPropagation()}
         >
-            <button 
-                type="button"
+            <div 
                 className="custom-select-trigger" 
-                onClick={toggle}
-                style={{ 
-                    appearance: 'none', 
-                    background: 'none', 
-                    border: 'none', 
-                    padding: 0, 
-                    width: '100%', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    boxShadow: 'none',
-                    WebkitTapHighlightColor: 'transparent'
-                }}
+                style={{ cursor: 'pointer' }}
+                tabIndex={0}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
@@ -85,7 +77,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         <path d="m6 9 6 6 6-6" />
                     </svg>
                 </div>
-            </button>
+            </div>
             <div className="custom-select-options">
                 {options.map((option) => (
                     <div
@@ -94,7 +86,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         onClick={(e) => {
                             e.stopPropagation();
                             onChange(option.value);
-                            setIsOpen(false);
+                            containerRef.current?.classList.remove('open');
                         }}
                     >
                         {option.label}
