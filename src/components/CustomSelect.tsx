@@ -25,7 +25,6 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         if (!trigger) return;
 
         const handleToggle = (e: Event) => {
-            e.preventDefault();
             e.stopPropagation();
             
             // Close all other selects first (like in rankings)
@@ -43,13 +42,10 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         };
 
         trigger.addEventListener('click', handleToggle);
-        // Important: Use touchend for mobile responsiveness as seen in native-like environments
-        trigger.addEventListener('touchend', handleToggle, { passive: false });
         document.addEventListener('click', handleClickOutside);
 
         return () => {
             trigger.removeEventListener('click', handleToggle);
-            trigger.removeEventListener('touchend', handleToggle);
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);

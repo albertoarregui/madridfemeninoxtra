@@ -131,7 +131,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             if (!trigger) return;
 
             const handleToggle = (e: Event) => {
-                e.preventDefault();
                 e.stopPropagation();
                 
                 selects.forEach((other: Element) => {
@@ -141,7 +140,6 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             };
 
             trigger.addEventListener('click', handleToggle);
-            trigger.addEventListener('touchend', handleToggle, { passive: false });
         });
 
         const handleClickOutside = (e: MouseEvent) => {
