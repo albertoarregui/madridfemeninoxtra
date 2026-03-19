@@ -48,8 +48,8 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         >
             <div 
                 className="custom-select-trigger" 
-                onClick={toggle}
-                onTouchStart={(e) => e.stopPropagation()}
+                onPointerDown={toggle}
+                style={{ cursor: 'pointer' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
