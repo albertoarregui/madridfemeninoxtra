@@ -35,6 +35,9 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
     const selectedOption = options.find(opt => opt.value === value) || options[0];
 
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
+        if ('nativeEvent' in e) {
+            e.nativeEvent.stopImmediatePropagation();
+        }
         e.stopPropagation();
         setIsOpen(prev => !prev);
     };
@@ -46,12 +49,9 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             ref={containerRef}
             onClick={(e) => e.stopPropagation()}
         >
-            <button 
-                type="button"
+            <div 
                 className="custom-select-trigger" 
                 onClick={toggle}
-                onPointerDown={(e) => e.stopPropagation()}
-                style={{ cursor: 'pointer', appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
@@ -69,7 +69,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         <path d="m6 9 6 6 6-6" />
                     </svg>
                 </div>
-            </button>
+            </div>
             <div className="custom-select-options">
                 {options.map((option) => (
                     <div

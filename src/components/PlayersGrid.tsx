@@ -122,6 +122,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     const gridRef = useRef<HTMLDivElement>(null);
 
     const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
+        if ('nativeEvent' in e) {
+            (e.nativeEvent as Event).stopImmediatePropagation();
+        }
         e.stopPropagation();
         setOpenSelect(prev => prev === id ? null : id);
     };
@@ -153,12 +156,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                 <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001]">
                     {/* Filtro Temporada */}
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
-                        <button 
-                            type="button"
+                        <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'season')}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            style={{ cursor: 'pointer', appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}
                         >
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
@@ -166,7 +166,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {seasons.map(s => (
                                 <div
@@ -182,12 +182,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     {/* Filtro Posición */}
                     <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
-                        <button 
-                            type="button"
+                        <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'position')}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            style={{ cursor: 'pointer', appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}
                         >
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
@@ -195,7 +192,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {positions.map(pos => (
                                 <div
@@ -211,12 +208,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     {/* Filtro País */}
                     <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
-                        <button 
-                            type="button"
+                        <div 
                             className="custom-select-trigger" 
                             onClick={(e) => toggleSelect(e, 'country')}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            style={{ cursor: 'pointer', appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}
                         >
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
@@ -224,7 +218,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </button>
+                        </div>
                         <div className="custom-select-options">
                             {countries.map(c => (
                                 <div
