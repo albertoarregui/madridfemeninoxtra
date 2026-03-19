@@ -35,9 +35,8 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
     }, [isOpen]);
 
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
-        // We handle the toggle in a single place
-        // on mobile, we can use e.preventDefault() if we want to stop the subsequent click
-        // but it's simpler to just toggle and be sure it holds.
+        e.preventDefault();
+        e.stopPropagation();
         setIsOpen(!isOpen);
     };
 

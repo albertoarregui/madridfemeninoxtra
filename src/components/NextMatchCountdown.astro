@@ -238,19 +238,9 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
             padding: 1rem 0;
         }
         
-        /* Show info pills when parent has mobile-active class */
-        .countdown-strip-v5.mobile-active .info-pills-stack-v5 {
-            display: flex !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            position: relative !important;
-            transform: none !important;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .countdown-strip-v5.mobile-active .strip-main-grid-v5 {
-            flex-direction: column !important;
-            gap: 15px !important;
+        /* We remove the expansion to prevent 'ensanche' */
+        .countdown-strip-v5.mobile-active {
+            height: 110px !important; /* Keep fixed height */
         }
     }
 
@@ -748,9 +738,14 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
                 const slug = stripV5.dataset.slug;
                 if (slug) window.location.href = `/partidos/${slug}`;
             } else {
-                // Short tap: toggle class and PREVENT click
-                e.preventDefault();
-                stripV5.classList.toggle('mobile-active');
+                // Short tap: just show overlay briefly OR navigate directly
+                // To fulfill "no se ensanche", we avoid layout changes.
+                // We'll let it toggle the overlay for feedback, but navigate if tapped twice or handled by click.
+                stripV5.classList.add('mobile-active');
+                setTimeout(() => {
+                    const slug = stripV5.dataset.slug;
+                    if (slug) window.location.href = `/partidos/${slug}`;
+                }, 300);
             }
         });
 

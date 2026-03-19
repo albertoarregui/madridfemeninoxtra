@@ -154,7 +154,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8 relative" id="players-grid" ref={gridRef}>
             <div className="mb-10 flex flex-col items-center gap-6">
-                <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[100]">
+                <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001]">
                     {/* Filtro Temporada */}
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
                         <div 
