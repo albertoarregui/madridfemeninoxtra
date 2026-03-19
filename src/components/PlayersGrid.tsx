@@ -120,14 +120,46 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
     const [openSelect, setOpenSelect] = useState<string | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
+    const seasonTriggerRef = useRef<HTMLDivElement>(null);
+    const positionTriggerRef = useRef<HTMLDivElement>(null);
+    const countryTriggerRef = useRef<HTMLDivElement>(null);
 
-    const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
-        if ('nativeEvent' in e) {
-            (e.nativeEvent as Event).stopImmediatePropagation();
-        }
-        e.stopPropagation();
-        setOpenSelect(prev => prev === id ? null : id);
-    };
+    useEffect(() => {
+        const handleSeasonToggle = (e: Event) => {
+            e.preventDefault(); e.stopPropagation();
+            setOpenSelect(prev => prev === 'season' ? null : 'season');
+        };
+        const handlePositionToggle = (e: Event) => {
+            e.preventDefault(); e.stopPropagation();
+            setOpenSelect(prev => prev === 'position' ? null : 'position');
+        };
+        const handleCountryToggle = (e: Event) => {
+            e.preventDefault(); e.stopPropagation();
+            setOpenSelect(prev => prev === 'country' ? null : 'country');
+        };
+
+        const s = seasonTriggerRef.current;
+        const p = positionTriggerRef.current;
+        const c = countryTriggerRef.current;
+
+        if (s) { s.addEventListener('click', handleSeasonToggle); s.addEventListener('touchend', handleSeasonToggle, {passive:false}); }
+        if (p) { p.addEventListener('click', handlePositionToggle); p.addEventListener('touchend', handlePositionToggle, {passive:false}); }
+        if (c) { c.addEventListener('click', handleCountryToggle); c.addEventListener('touchend', handleCountryToggle, {passive:false}); }
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
+                setOpenSelect(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            if (s) { s.removeEventListener('click', handleSeasonToggle); s.removeEventListener('touchend', handleSeasonToggle); }
+            if (p) { p.removeEventListener('click', handlePositionToggle); p.removeEventListener('touchend', handlePositionToggle); }
+            if (c) { c.removeEventListener('click', handleCountryToggle); c.removeEventListener('touchend', handleCountryToggle); }
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleOptionClick = (e: React.MouseEvent | React.TouchEvent, type: string, value: string) => {
         e.stopPropagation();
@@ -137,18 +169,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         setOpenSelect(null);
     };
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => { // Removed TouchEvent to avoid conflict
-            if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
-                setOpenSelect(null);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+    const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
+        // Disabled in favor of native
+    };
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8 relative" id="players-grid" ref={gridRef}>
@@ -158,7 +181,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
                         <div 
                             className="custom-select-trigger" 
-                            onClick={(e) => toggleSelect(e, 'season')}
+                            ref={seasonTriggerRef}
+                            style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
@@ -184,7 +208,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
                         <div 
                             className="custom-select-trigger" 
-                            onClick={(e) => toggleSelect(e, 'position')}
+                            ref={positionTriggerRef}
+                            style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
@@ -210,7 +235,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
                         <div 
                             className="custom-select-trigger" 
-                            onClick={(e) => toggleSelect(e, 'country')}
+                            ref={countryTriggerRef}
+                            style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}

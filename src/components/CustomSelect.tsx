@@ -15,6 +15,7 @@ interface CustomSelectProps {
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -34,12 +35,30 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
 
     const selectedOption = options.find(opt => opt.value === value) || options[0];
 
-    const toggle = (e: React.MouseEvent | React.TouchEvent) => {
-        if ('nativeEvent' in e) {
-            e.nativeEvent.stopImmediatePropagation();
+    useEffect(() => {
+        const toggleHandler = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(prev => !prev);
+        };
+
+        const trigger = triggerRef.current;
+        if (trigger) {
+            trigger.addEventListener('click', toggleHandler);
+            // Also handle touch specifically for some browsers
+            trigger.addEventListener('touchend', toggleHandler, { passive: false });
         }
-        e.stopPropagation();
-        setIsOpen(prev => !prev);
+
+        return () => {
+            if (trigger) {
+                trigger.removeEventListener('click', toggleHandler);
+                trigger.removeEventListener('touchend', toggleHandler);
+            }
+        };
+    }, []);
+
+    const toggle = (e: React.MouseEvent | React.TouchEvent) => {
+        // Disabling React toggle in favor of native one above
     };
 
     return (
@@ -51,7 +70,8 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         >
             <div 
                 className="custom-select-trigger" 
-                onClick={toggle}
+                ref={triggerRef}
+                style={{ cursor: 'pointer' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
