@@ -118,46 +118,40 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         return `/assets/banderas/${normalized}.svg`;
     };
 
-    const [openSelect, setOpenSelect] = useState<string | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
-    const seasonTriggerRef = useRef<HTMLDivElement>(null);
-    const positionTriggerRef = useRef<HTMLDivElement>(null);
-    const countryTriggerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleSeasonToggle = (e: Event) => {
-            e.preventDefault(); e.stopPropagation();
-            setOpenSelect(prev => prev === 'season' ? null : 'season');
-        };
-        const handlePositionToggle = (e: Event) => {
-            e.preventDefault(); e.stopPropagation();
-            setOpenSelect(prev => prev === 'position' ? null : 'position');
-        };
-        const handleCountryToggle = (e: Event) => {
-            e.preventDefault(); e.stopPropagation();
-            setOpenSelect(prev => prev === 'country' ? null : 'country');
+        const container = gridRef.current;
+        if (!container) return;
+
+        const selects = container.querySelectorAll('.custom-select-container');
+        
+        selects.forEach((c: Element) => {
+            const trigger = c.querySelector('.custom-select-trigger');
+            if (!trigger) return;
+
+            const handleToggle = (e: Event) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                selects.forEach((other: Element) => {
+                    if (other !== c) other.classList.remove('open');
+                });
+                c.classList.toggle('open');
+            };
+
+            trigger.addEventListener('click', handleToggle);
+            trigger.addEventListener('touchend', handleToggle, { passive: false });
+        });
+
+        const handleClickOutside = (e: MouseEvent) => {
+            selects.forEach((c: Element) => c.classList.remove('open'));
         };
 
-        const s = seasonTriggerRef.current;
-        const p = positionTriggerRef.current;
-        const c = countryTriggerRef.current;
+        document.addEventListener('click', handleClickOutside);
 
-        if (s) { s.addEventListener('click', handleSeasonToggle); s.addEventListener('touchend', handleSeasonToggle, {passive:false}); }
-        if (p) { p.addEventListener('click', handlePositionToggle); p.addEventListener('touchend', handlePositionToggle, {passive:false}); }
-        if (c) { c.addEventListener('click', handleCountryToggle); c.addEventListener('touchend', handleCountryToggle, {passive:false}); }
-
-        const handleClickOutside = (event: MouseEvent) => {
-            if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
-                setOpenSelect(null);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
         return () => {
-            if (s) { s.removeEventListener('click', handleSeasonToggle); s.removeEventListener('touchend', handleSeasonToggle); }
-            if (p) { p.removeEventListener('click', handlePositionToggle); p.removeEventListener('touchend', handlePositionToggle); }
-            if (c) { c.removeEventListener('click', handleCountryToggle); c.removeEventListener('touchend', handleCountryToggle); }
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('click', handleClickOutside);
         };
     }, []);
 
@@ -166,7 +160,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         if (type === 'season') setSelectedSeason(value);
         if (type === 'position') setSelectedPosition(value);
         if (type === 'country') setSelectedCountry(value);
-        setOpenSelect(null);
+        
+        // Close all
+        gridRef.current?.querySelectorAll('.custom-select-container').forEach((c: Element) => c.classList.remove('open'));
     };
 
     const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
@@ -178,10 +174,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001]">
                     {/* Filtro Temporada */}
-                    <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
+                    <div className="custom-select-container">
                         <div 
                             className="custom-select-trigger" 
-                            ref={seasonTriggerRef}
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
@@ -196,7 +191,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={s}
                                     className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`}
-                                    onPointerDown={(e) => handleOptionClick(e, 'season', s)}
+                                    onClick={(e) => handleOptionClick(e, 'season', s)}
                                 >
                                     {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
                                 </div>
@@ -205,10 +200,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     {/* Filtro Posición */}
-                    <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
+                    <div className="custom-select-container">
                         <div 
                             className="custom-select-trigger" 
-                            ref={positionTriggerRef}
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
@@ -223,7 +217,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={pos}
                                     className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`}
-                                    onPointerDown={(e) => handleOptionClick(e, 'position', pos)}
+                                    onClick={(e) => handleOptionClick(e, 'position', pos)}
                                 >
                                     {pos === 'Todas' ? 'Todas las Posiciones' : pos}
                                 </div>
@@ -232,10 +226,9 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     {/* Filtro País */}
-                    <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
+                    <div className="custom-select-container">
                         <div 
                             className="custom-select-trigger" 
-                            ref={countryTriggerRef}
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
@@ -250,7 +243,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 <div
                                     key={c}
                                     className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`}
-                                    onPointerDown={(e) => handleOptionClick(e, 'country', c)}
+                                    onClick={(e) => handleOptionClick(e, 'country', c)}
                                 >
                                     {c === 'Todos' ? 'Todos los Países' : c}
                                 </div>

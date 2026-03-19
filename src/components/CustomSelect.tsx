@@ -13,49 +13,48 @@ interface CustomSelectProps {
 }
 
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const triggerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
+        const container = containerRef.current;
+        if (!container) return;
+        
+        const trigger = container.querySelector('.custom-select-trigger');
+        const optionsDocs = container.querySelectorAll('.custom-select-option');
 
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
+        if (!trigger) return;
 
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    const selectedOption = options.find(opt => opt.value === value) || options[0];
-
-    useEffect(() => {
-        const toggleHandler = (e: Event) => {
+        const handleToggle = (e: Event) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsOpen(prev => !prev);
+            
+            // Close all other selects first (like in rankings)
+            document.querySelectorAll('.custom-select-container').forEach(c => {
+                if (c !== container) c.classList.remove('open');
+            });
+            
+            container.classList.toggle('open');
         };
 
-        const trigger = triggerRef.current;
-        if (trigger) {
-            trigger.addEventListener('click', toggleHandler);
-            // Also handle touch specifically for some browsers
-            trigger.addEventListener('touchend', toggleHandler, { passive: false });
-        }
-
-        return () => {
-            if (trigger) {
-                trigger.removeEventListener('click', toggleHandler);
-                trigger.removeEventListener('touchend', toggleHandler);
+        const handleClickOutside = (e: MouseEvent) => {
+            if (!container.contains(e.target as Node)) {
+                container.classList.remove('open');
             }
         };
+
+        trigger.addEventListener('click', handleToggle);
+        // Important: Use touchend for mobile responsiveness as seen in native-like environments
+        trigger.addEventListener('touchend', handleToggle, { passive: false });
+        document.addEventListener('click', handleClickOutside);
+
+        return () => {
+            trigger.removeEventListener('click', handleToggle);
+            trigger.removeEventListener('touchend', handleToggle);
+            document.removeEventListener('click', handleClickOutside);
+        };
     }, []);
+
+    const selectedOption = options.find(opt => opt.value === value) || options[0];
 
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
         // Disabling React toggle in favor of native one above
@@ -63,14 +62,12 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
 
     return (
         <div
-            className={`custom-select-container ${isOpen ? 'open' : ''}`}
+            className="custom-select-container"
             id={id}
             ref={containerRef}
-            onClick={(e) => e.stopPropagation()}
         >
             <div 
                 className="custom-select-trigger" 
-                ref={triggerRef}
                 style={{ cursor: 'pointer' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
@@ -98,7 +95,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         onClick={(e) => {
                             e.stopPropagation();
                             onChange(option.value);
-                            setIsOpen(false);
+                            containerRef.current?.classList.remove('open');
                         }}
                     >
                         {option.label}
