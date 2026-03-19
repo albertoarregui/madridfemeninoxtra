@@ -72,5 +72,73 @@ const {
 		<Footer />
 		<CookieConsent showAds={showAds} />
 		<ScrollToTop />
+		<script is:inline>
+			function setupGlobalSelects() {
+				const containers = document.querySelectorAll(".custom-select-container[data-custom-select='true']");
+				
+				containers.forEach(container => {
+					if (container.getAttribute("data-global-init")) return;
+					container.setAttribute("data-global-init", "true");
+					
+					const trigger = container.querySelector(".custom-select-trigger");
+					const nativeSelect = container.querySelector(".native-select") || container.querySelector("select");
+					const options = container.querySelectorAll(".custom-select-option");
+					const selectedText = trigger ? trigger.querySelector(".selected-text") : null;
+					
+					if (!trigger) return;
+					
+					const handleToggle = (e) => {
+						e.stopPropagation();
+						document.querySelectorAll(".custom-select-container").forEach(c => {
+							if (c !== container) c.classList.remove("open");
+						});
+						container.classList.toggle("open");
+					};
+
+					// Using multiple events to ensure it catches on Safari/iOS
+					trigger.addEventListener("click", handleToggle);
+					
+					options.forEach(option => {
+						option.addEventListener("click", (e) => {
+							e.stopPropagation();
+							const value = option.getAttribute("data-value");
+							const text = option.textContent.trim();
+							
+							if (selectedText) selectedText.textContent = text;
+							options.forEach(opt => opt.classList.remove("selected"));
+							option.classList.add("selected");
+							
+							if (nativeSelect) {
+								nativeSelect.value = value;
+								nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+							}
+							container.classList.remove("open");
+						});
+					});
+				});
+				
+				// Close-on-outside listener
+				if (!window.globalSelectOutsideListenerSet) {
+					document.addEventListener("click", (e) => {
+						const isClickInside = e.target.closest(".custom-select-container");
+						if (!isClickInside) {
+							document.querySelectorAll(".custom-select-container.open").forEach(c => c.classList.remove("open"));
+						}
+					});
+					window.globalSelectOutsideListenerSet = true;
+				}
+			}
+
+			// Run on initial load and on every page change
+			if (document.readyState === 'loading') {
+				document.addEventListener("DOMContentLoaded", setupGlobalSelects);
+			} else {
+				setupGlobalSelects();
+			}
+			document.addEventListener("astro:page-load", setupGlobalSelects);
+			
+			// Periodically check for new components (helpful for React hydration)
+			setInterval(setupGlobalSelects, 1000);
+		</script>
 	</body>
 </html>

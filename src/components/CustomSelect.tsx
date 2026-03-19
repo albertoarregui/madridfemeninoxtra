@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface Option {
     value: string;
@@ -14,40 +14,14 @@ interface CustomSelectProps {
 
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const selectRef = useRef<HTMLSelectElement>(null);
 
+    // Synchronize React value with native select value for the global script
     useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-        
-        const trigger = container.querySelector('.custom-select-trigger');
-        if (!trigger) return;
-
-        const handleToggle = (e: Event) => {
-            e.stopPropagation();
-            
-            // Close all other selects first
-            document.querySelectorAll('.custom-select-container').forEach(c => {
-                if (c !== container) c.classList.remove('open');
-            });
-            
-            container.classList.toggle('open');
-        };
-
-        const handleClickOutside = (e: MouseEvent) => {
-            if (!container.contains(e.target as Node)) {
-                container.classList.remove('open');
-            }
-        };
-
-        // Use pointerdown for maximum compatibility with Safari iOS
-        trigger.addEventListener('pointerdown', handleToggle);
-        document.addEventListener('pointerdown', handleClickOutside);
-
-        return () => {
-            trigger.removeEventListener('pointerdown', handleToggle);
-            document.removeEventListener('pointerdown', handleClickOutside);
-        };
-    }, []);
+        if (selectRef.current) {
+            selectRef.current.value = value;
+        }
+    }, [value]);
 
     const selectedOption = options.find(opt => opt.value === value) || options[0];
 
@@ -56,11 +30,11 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             className="custom-select-container"
             id={id}
             ref={containerRef}
+            data-custom-select="true"
         >
             <div 
                 className="custom-select-trigger" 
                 style={{ cursor: 'pointer' }}
-                tabIndex={0}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
@@ -79,16 +53,24 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                     </svg>
                 </div>
             </div>
+            {/* Hidden native select for global script compatibility and accessibility */}
+            <select 
+                ref={selectRef}
+                style={{ display: 'none' }} 
+                className="native-select"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            >
+                {options.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+            </select>
             <div className="custom-select-options">
                 {options.map((option) => (
                     <div
                         key={option.value}
                         className={`custom-select-option ${option.value === value ? 'selected' : ''}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onChange(option.value);
-                            containerRef.current?.classList.remove('open');
-                        }}
+                        data-value={option.value}
                     >
                         {option.label}
                     </div>
