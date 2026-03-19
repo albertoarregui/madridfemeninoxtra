@@ -16,8 +16,6 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const selectedOption = options.find(opt => opt.value === value) || options[0];
-
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -26,18 +24,19 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         };
 
         if (isOpen) {
-            document.addEventListener('click', handleClickOutside);
+            document.addEventListener('mousedown', handleClickOutside);
         }
 
         return () => {
-            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isOpen]);
 
+    const selectedOption = options.find(opt => opt.value === value) || options[0];
+
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
-        e.preventDefault();
         e.stopPropagation();
-        setIsOpen(!isOpen);
+        setIsOpen(prev => !prev);
     };
 
     return (
@@ -45,9 +44,13 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             className={`custom-select-container ${isOpen ? 'open' : ''}`}
             id={id}
             ref={containerRef}
-            onClick={toggle}
+            onClick={(e) => e.stopPropagation()}
         >
-            <div className="custom-select-trigger">
+            <div 
+                className="custom-select-trigger" 
+                onClick={toggle}
+                onTouchStart={(e) => e.stopPropagation()}
+            >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
                     <svg

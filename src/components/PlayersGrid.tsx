@@ -122,13 +122,11 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     const gridRef = useRef<HTMLDivElement>(null);
 
     const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
-        e.preventDefault();
         e.stopPropagation();
         setOpenSelect(prev => prev === id ? null : id);
     };
 
     const handleOptionClick = (e: React.MouseEvent | React.TouchEvent, type: string, value: string) => {
-        e.preventDefault();
         e.stopPropagation();
         if (type === 'season') setSelectedSeason(value);
         if (type === 'position') setSelectedPosition(value);
@@ -137,17 +135,15 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     };
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+        const handleClickOutside = (event: MouseEvent) => { // Removed TouchEvent to avoid conflict
             if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
                 setOpenSelect(null);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, []);
 
