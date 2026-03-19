@@ -41,11 +41,19 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             }
         };
 
+        const handeTouch = (e: Event) => {
+            e.stopPropagation();
+        };
+
         trigger.addEventListener('click', handleToggle);
+        trigger.addEventListener('touchend', handleToggle);
+        trigger.addEventListener('touchstart', handeTouch);
         document.addEventListener('click', handleClickOutside);
 
         return () => {
             trigger.removeEventListener('click', handleToggle);
+            trigger.removeEventListener('touchend', handleToggle);
+            trigger.removeEventListener('touchstart', handeTouch);
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
