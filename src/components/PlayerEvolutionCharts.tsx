@@ -76,16 +76,19 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
     const chartData = useMemo(() => {
         return [...stats]
             .reverse()
-            .filter(s => s.official_total.partidos > 0)
-            .map(s => ({
-                season: s.temporada,
-                partidos: s.official_total.partidos,
-                minutos: s.official_total.minutos,
-                goles: s.official_total.goles,
-                asistencias: s.official_total.asistencias,
-                ga: s.official_total.goles_asistencias,
-                p0: s.official_total.porterias_cero
-            }));
+            .filter(s => (s.official_total?.partidos || s.total?.partidos) > 0)
+            .map(s => {
+                const data = (s.official_total && s.official_total.partidos > 0) ? s.official_total : s.total;
+                return {
+                    season: s.temporada,
+                    partidos: data.partidos,
+                    minutos: data.minutos,
+                    goles: data.goles,
+                    asistencias: data.asistencias,
+                    ga: data.goles_asistencias || ((data.goles || 0) + (data.asistencias || 0)),
+                    p0: data.porterias_cero
+                };
+            });
     }, [stats]);
 
     if (!chartData || chartData.length === 0) return null;
