@@ -13,66 +13,61 @@ interface CustomSelectProps {
 }
 
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
+    const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-        
-        const trigger = container.querySelector('.custom-select-trigger');
-        const optionsDocs = container.querySelectorAll('.custom-select-option');
-
-        if (!trigger) return;
-
-        const handleToggle = (e: Event) => {
-            e.stopPropagation();
-            
-            // Close all other selects first (like in rankings)
-            document.querySelectorAll('.custom-select-container').forEach(c => {
-                if (c !== container) c.classList.remove('open');
-            });
-            
-            container.classList.toggle('open');
-        };
-
-        const handleClickOutside = (e: MouseEvent) => {
-            if (!container.contains(e.target as Node)) {
-                container.classList.remove('open');
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
             }
         };
 
-        const handeTouch = (e: Event) => {
-            e.stopPropagation();
-        };
-
-        trigger.addEventListener('click', handleToggle);
-        trigger.addEventListener('touchend', handleToggle);
-        trigger.addEventListener('touchstart', handeTouch);
-        document.addEventListener('click', handleClickOutside);
+        if (isOpen) {
+            document.addEventListener('click', handleClickOutside);
+        }
 
         return () => {
-            trigger.removeEventListener('click', handleToggle);
-            trigger.removeEventListener('touchend', handleToggle);
-            trigger.removeEventListener('touchstart', handeTouch);
             document.removeEventListener('click', handleClickOutside);
         };
-    }, []);
+    }, [isOpen]);
 
     const selectedOption = options.find(opt => opt.value === value) || options[0];
 
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
-        // Disabling React toggle in favor of native one above
+        e.stopPropagation();
+        if ('nativeEvent' in e) {
+            (e.nativeEvent as Event).stopImmediatePropagation();
+        }
+        setIsOpen(prev => !prev);
     };
 
     return (
         <div
-            className="custom-select-container"
+            className={`custom-select-container ${isOpen ? 'open' : ''}`}
             id={id}
             ref={containerRef}
+            onClick={(e) => e.stopPropagation()}
         >
-            <div 
+            <button 
+                type="button"
                 className="custom-select-trigger" 
-                style={{ cursor: 'pointer' }}
+                onClick={toggle}
+                style={{ 
+                    appearance: 'none', 
+                    background: 'none', 
+                    border: 'none', 
+                    padding: 0, 
+                    width: '100%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                    boxShadow: 'none',
+                    WebkitTapHighlightColor: 'transparent'
+                }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
                 <div className="custom-select-arrow">
@@ -90,7 +85,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         <path d="m6 9 6 6 6-6" />
                     </svg>
                 </div>
-            </div>
+            </button>
             <div className="custom-select-options">
                 {options.map((option) => (
                     <div
@@ -99,7 +94,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                         onClick={(e) => {
                             e.stopPropagation();
                             onChange(option.value);
-                            containerRef.current?.classList.remove('open');
+                            setIsOpen(false);
                         }}
                     >
                         {option.label}

@@ -118,64 +118,55 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         return `/assets/banderas/${normalized}.svg`;
     };
 
+    const [openSelect, setOpenSelect] = useState<string | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const container = gridRef.current;
-        if (!container) return;
-
-        const selects = container.querySelectorAll('.custom-select-container');
-
-        selects.forEach((c: Element) => {
-            const trigger = c.querySelector('.custom-select-trigger');
-            if (!trigger) return;
-
-            const handleToggle = (e: Event) => {
-                e.stopPropagation();
-
-                selects.forEach((other: Element) => {
-                    if (other !== c) other.classList.remove('open');
-                });
-                c.classList.toggle('open');
-            };
-
-            trigger.addEventListener('click', handleToggle);
-        });
-
-        const handleClickOutside = (e: MouseEvent) => {
-            selects.forEach((c: Element) => c.classList.remove('open'));
-        };
-
-        document.addEventListener('click', handleClickOutside);
-
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
-    }, []);
+    const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
+        e.stopPropagation();
+        if ('nativeEvent' in e) {
+            (e.nativeEvent as Event).stopImmediatePropagation();
+        }
+        setOpenSelect(prev => prev === id ? null : id);
+    };
 
     const handleOptionClick = (e: React.MouseEvent | React.TouchEvent, type: string, value: string) => {
         e.stopPropagation();
         if (type === 'season') setSelectedSeason(value);
         if (type === 'position') setSelectedPosition(value);
         if (type === 'country') setSelectedCountry(value);
-
-        // Close all
-        gridRef.current?.querySelectorAll('.custom-select-container').forEach((c: Element) => c.classList.remove('open'));
+        setOpenSelect(null);
     };
 
-    const toggleSelect = (e: React.MouseEvent | React.TouchEvent, id: string) => {
-        // Disabled in favor of native
-    };
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (gridRef.current && !gridRef.current.contains(event.target as Node)) {
+                setOpenSelect(null);
+            }
+        };
+
+        if (openSelect) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [openSelect]);
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8 relative" id="players-grid" ref={gridRef}>
             <div className="mb-10 flex flex-col items-center gap-6">
                 <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center relative z-[1001]">
                     {/* Filtro Temporada */}
-                    <div className="custom-select-container">
-                        <div
-                            className="custom-select-trigger"
-                            style={{ cursor: 'pointer' }}
+                    <div className={`custom-select-container ${openSelect === 'season' ? 'open' : ''}`}>
+                        <button 
+                            type="button"
+                            className="custom-select-trigger" 
+                            onClick={(e) => toggleSelect(e, 'season')}
+                            style={{ 
+                                appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                fontFamily: 'inherit', outline: 'none', WebkitTapHighlightColor: 'transparent'
+                            }}
                         >
                             <span className="selected-text">
                                 {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
@@ -183,7 +174,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {seasons.map(s => (
                                 <div
@@ -198,10 +189,16 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     {/* Filtro Posición */}
-                    <div className="custom-select-container">
-                        <div
-                            className="custom-select-trigger"
-                            style={{ cursor: 'pointer' }}
+                    <div className={`custom-select-container ${openSelect === 'position' ? 'open' : ''}`}>
+                        <button 
+                            type="button"
+                            className="custom-select-trigger" 
+                            onClick={(e) => toggleSelect(e, 'position')}
+                            style={{ 
+                                appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                fontFamily: 'inherit', outline: 'none', WebkitTapHighlightColor: 'transparent'
+                            }}
                         >
                             <span className="selected-text">
                                 {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
@@ -209,7 +206,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {positions.map(pos => (
                                 <div
@@ -224,10 +221,16 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                     </div>
 
                     {/* Filtro País */}
-                    <div className="custom-select-container">
-                        <div
-                            className="custom-select-trigger"
-                            style={{ cursor: 'pointer' }}
+                    <div className={`custom-select-container ${openSelect === 'country' ? 'open' : ''}`}>
+                        <button 
+                            type="button"
+                            className="custom-select-trigger" 
+                            onClick={(e) => toggleSelect(e, 'country')}
+                            style={{ 
+                                appearance: 'none', background: 'none', border: 'none', padding: 0, width: '100%', 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                fontFamily: 'inherit', outline: 'none', WebkitTapHighlightColor: 'transparent'
+                            }}
                         >
                             <span className="selected-text">
                                 {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
@@ -235,7 +238,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                             <div className="custom-select-arrow">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                             </div>
-                        </div>
+                        </button>
                         <div className="custom-select-options">
                             {countries.map(c => (
                                 <div
