@@ -242,7 +242,8 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
     return (
         <div className="w-full max-w-7xl mx-auto mb-0">
             <div className="flex flex-col items-center mb-6 gap-4 relative z-[1001]">
-                <div className="flex flex-wrap gap-4 justify-center w-full">
+                {/* Filters container: stack in column on mobile, row on desktop to avoid overlapping and improve touch targets */}
+                <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center">
                     <CustomSelect
                         id="container-temporada"
                         options={[

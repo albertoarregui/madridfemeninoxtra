@@ -125,14 +125,14 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         if (!container) return;
 
         const selects = container.querySelectorAll('.custom-select-container');
-        
+
         selects.forEach((c: Element) => {
             const trigger = c.querySelector('.custom-select-trigger');
             if (!trigger) return;
 
             const handleToggle = (e: Event) => {
                 e.stopPropagation();
-                
+
                 selects.forEach((other: Element) => {
                     if (other !== c) other.classList.remove('open');
                 });
@@ -158,7 +158,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
         if (type === 'season') setSelectedSeason(value);
         if (type === 'position') setSelectedPosition(value);
         if (type === 'country') setSelectedCountry(value);
-        
+
         // Close all
         gridRef.current?.querySelectorAll('.custom-select-container').forEach((c: Element) => c.classList.remove('open'));
     };
@@ -170,11 +170,11 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-8 relative" id="players-grid" ref={gridRef}>
             <div className="mb-10 flex flex-col items-center gap-6">
-                <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001]">
+                <div className="flex flex-col md:flex-row gap-4 w-full justify-center items-center relative z-[1001]">
                     {/* Filtro Temporada */}
                     <div className="custom-select-container">
-                        <div 
-                            className="custom-select-trigger" 
+                        <div
+                            className="custom-select-trigger"
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
@@ -199,8 +199,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     {/* Filtro Posición */}
                     <div className="custom-select-container">
-                        <div 
-                            className="custom-select-trigger" 
+                        <div
+                            className="custom-select-trigger"
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
@@ -225,8 +225,8 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
 
                     {/* Filtro País */}
                     <div className="custom-select-container">
-                        <div 
-                            className="custom-select-trigger" 
+                        <div
+                            className="custom-select-trigger"
                             style={{ cursor: 'pointer' }}
                         >
                             <span className="selected-text">
