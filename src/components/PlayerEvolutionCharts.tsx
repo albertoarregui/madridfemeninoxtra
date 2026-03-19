@@ -91,12 +91,18 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
             });
     }, [stats]);
 
-    if (!chartData || chartData.length === 0) return null;
+    if (!chartData || chartData.length === 0) {
+        return (
+            <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-500 font-medium italic">
+                - No hay suficientes datos para generar gráficos de evolución -
+            </div>
+        );
+    }
 
     return (
         <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
             <ChartSection title="Evolución Partidos" icon={Activity}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
@@ -125,7 +131,7 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
             </ChartSection>
 
             <ChartSection title="Evolución Minutos" icon={Clock}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                     <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
@@ -161,7 +167,7 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                 title={isGoalkeeper ? "Evolución Porterías 0" : "Evolución G+A"}
                 icon={isGoalkeeper ? Shield : Target}
             >
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
