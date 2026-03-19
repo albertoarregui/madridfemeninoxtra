@@ -59,14 +59,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const ChartSection = ({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 group hover:shadow-md transition-all flex flex-col w-full overflow-hidden">
-        <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[#151e42] font-black uppercase tracking-widest text-[9px] md:text-[10px] group-hover:text-[#ffde59] transition-colors">{title}</h3>
-            <div className="bg-gray-50 p-1.5 rounded-lg text-gray-400 group-hover:text-[#ffde59] transition-colors">
-                <Icon size={14} />
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[#151e42] font-black uppercase tracking-widest text-[10px] group-hover:text-[#ffde59] transition-colors">{title}</h3>
+            <div className="bg-gray-50 p-2 rounded-lg text-gray-400 group-hover:text-[#ffde59] transition-colors">
+                <Icon size={16} />
             </div>
         </div>
-        <div className="h-[280px] md:h-72 w-full">
+        <div className="h-64 md:h-72 w-full min-h-[300px] md:min-h-[256px]">
             {children}
         </div>
     </div>
@@ -76,63 +76,25 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
     const chartData = useMemo(() => {
         return [...stats]
             .reverse()
-            .filter(s => (s.official_total?.partidos || s.total?.partidos) > 0)
-            .map(s => {
-                const data = (s.official_total && s.official_total.partidos > 0) ? s.official_total : s.total;
-                return {
-                    season: s.temporada,
-                    partidos: data.partidos,
-                    minutos: data.minutos,
-                    goles: data.goles,
-                    asistencias: data.asistencias,
-                    ga: data.goles_asistencias || ((data.goles || 0) + (data.asistencias || 0)),
-                    p0: data.porterias_cero
-                };
-            });
+            .filter(s => s.official_total.partidos > 0)
+            .map(s => ({
+                season: s.temporada,
+                partidos: s.official_total.partidos,
+                minutos: s.official_total.minutos,
+                goles: s.official_total.goles,
+                asistencias: s.official_total.asistencias,
+                ga: s.official_total.goles_asistencias,
+                p0: s.official_total.porterias_cero
+            }));
     }, [stats]);
 
-    if (!chartData || chartData.length === 0) {
-        return (
-            <div className="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-500 font-medium italic">
-                - No hay suficientes datos para generar gráficos de evolución -
-            </div>
-        );
-    }
+    if (!chartData || chartData.length === 0) return null;
 
     return (
-        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+        <div className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
             <ChartSection title="Evolución Partidos" icon={Activity}>
-                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                        <XAxis
-                            dataKey="season"
-                            stroke="#9ca3af"
-                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
-                            axisLine={false}
-                            tickLine={false}
-                            interval="preserveStartEnd"
-                        />
-                        <YAxis
-                            stroke="#9ca3af"
-                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
-                            axisLine={false}
-                            tickLine={false}
-                            width={25}
-                        />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffde59', opacity: 0.1 }} />
-                        <Bar dataKey="partidos" name="Partidos" fill="#151e42" radius={[2, 2, 0, 0]} barSize={24}>
-                            {chartData.map((_, index) => (
-                                <Cell key={`cell-${index}`} className="hover:fill-[#ffde59] transition-colors cursor-pointer" />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
-            </ChartSection>
-
-            <ChartSection title="Evolución Minutos" icon={Clock}>
-                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
                             dataKey="season"
@@ -148,6 +110,35 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                             axisLine={false}
                             tickLine={false}
                             width={30}
+                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffde59', opacity: 0.1 }} />
+                        <Bar dataKey="partidos" name="Partidos" fill="#151e42" radius={[2, 2, 0, 0]} barSize={24}>
+                            {chartData.map((_, index) => (
+                                <Cell key={`cell-${index}`} className="hover:fill-[#ffde59] transition-colors cursor-pointer" />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </ChartSection>
+
+            <ChartSection title="Evolución Minutos" icon={Clock}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                        <XAxis
+                            dataKey="season"
+                            stroke="#9ca3af"
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
+                            axisLine={false}
+                            tickLine={false}
+                            interval="preserveStartEnd"
+                        />
+                        <YAxis
+                            stroke="#9ca3af"
+                            tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
+                            axisLine={false}
+                            tickLine={false}
+                            width={35}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Line
@@ -167,8 +158,8 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                 title={isGoalkeeper ? "Evolución Porterías 0" : "Evolución G+A"}
                 icon={isGoalkeeper ? Shield : Target}
             >
-                <ResponsiveContainer width="100%" height="100%" minHeight={280}>
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                         <XAxis
                             dataKey="season"
@@ -183,7 +174,7 @@ const PlayerEvolutionCharts: React.FC<PlayerEvolutionChartsProps> = ({ stats, is
                             tick={{ fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}
                             axisLine={false}
                             tickLine={false}
-                            width={25}
+                            width={30}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffde59', opacity: 0.1 }} />
                         {isGoalkeeper ? (
