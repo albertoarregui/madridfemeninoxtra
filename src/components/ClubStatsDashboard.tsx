@@ -576,3 +576,5 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
 };
 
 export default ClubStatsDashboard;
+
+

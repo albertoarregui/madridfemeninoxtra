@@ -7,11 +7,11 @@ export interface CalendarMatch {
     visitante_foto_url: string;
     estadio: string | null;
     competicion: string;
-    fecha: string;         // YYYY-MM-DD
+    fecha: string;
     hora: string;
     jornada: string;
     tv: string;
-    // Campos derivados útiles
+
     team1: string;
     team2: string;
     date: string;
@@ -40,7 +40,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         const client = await getPlayersDbClient();
         if (!client) return [];
 
-        // 1. Obtener clubes para mapear nombres y fotos
         const clubsResult = await client.execute("SELECT id_club, nombre, foto_url FROM clubes");
         const clubMap: Record<string, { nombre: string, foto_url: string }> = {};
         clubsResult.rows.forEach((r: any) => {
@@ -52,7 +51,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
             }
         });
 
-        // 2. Obtener competiciones
         const compsResult = await client.execute("SELECT id_competicion, competicion, foto_url FROM competiciones");
         const compMap: Record<string, { nombre: string, foto_url: string }> = {};
         compsResult.rows.forEach((r: any) => {
@@ -64,7 +62,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
             }
         });
 
-        // 3. Obtener estadios
         const estResult = await client.execute("SELECT id_estadio, nombre, foto_url, ciudad, pais, capacidad FROM estadios");
         const estMap: Record<string, { nombre: string, foto_url: string, ciudad: string, pais: string, capacidad: number }> = {};
         estResult.rows.forEach((r: any) => {
@@ -78,8 +75,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 };
             }
         });
-        
-        // 4. Obtener árbitras
+
         const arbResult = await client.execute("SELECT id_arbitra, nombre FROM arbitras");
         const arbMap: Record<string, string> = {};
         arbResult.rows.forEach((r: any) => {
@@ -88,7 +84,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
             }
         });
 
-        // 5. Obtener calendario (SELECT * para ser tolerantes a nombres de columnas)
         const result = await client.execute("SELECT * FROM calendario ORDER BY fecha ASC, hora ASC");
 
         if (!result.rows || result.rows.length === 0) {
@@ -97,7 +92,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         }
 
         return result.rows.map((row: any) => {
-            // Detección dinámica de nombres de columna (id_club_visitante o id-club_visitante)
+
             const idLocal = String(row.id_club_local || '');
             const idVisitante = String(row.id_club_visitante || row['id-club_visitante'] || '');
             const idComp = String(row.id_competicion || '');
@@ -140,7 +135,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 hora: hora,
                 jornada: String(row.jornada || ''),
                 tv: String(row.tv || ''),
-                // Campos alias
+
                 team1: clubLocal,
                 team2: clubVisitante,
                 date: fecha,
@@ -162,3 +157,5 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         return [];
     }
 }
+
+

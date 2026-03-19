@@ -26,3 +26,5 @@ export function estimateTravelTime(distanceKm: number): number {
         return (distanceKm / 800) + 2.5;
     }
 }
+
+

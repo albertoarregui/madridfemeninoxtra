@@ -39,12 +39,25 @@ const dateSlug = nextMatch.fecha.split(" ")[0];
 const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_visitante)}-${dateSlug}`;
 ---
 
-<div class="countdown-strip-v5" data-target={targetDate} data-slug={matchSlug} id="strip-v5">
+<div
+    class="countdown-strip-v5"
+    data-target={targetDate}
+    data-slug={matchSlug}
+    id="strip-v5"
+>
     <div class="strip-link-target" id="v5-interactive-container">
         <div class="matchday-overlay-v5">
-            <img src={nextMatch.local_foto_url} alt="" class="overlay-shield local-s" />
+            <img
+                src={nextMatch.local_foto_url}
+                alt=""
+                class="overlay-shield local-s"
+            />
             <span>MATCHDAY</span>
-            <img src={nextMatch.visitante_foto_url} alt="" class="overlay-shield visitor-s" />
+            <img
+                src={nextMatch.visitante_foto_url}
+                alt=""
+                class="overlay-shield visitor-s"
+            />
         </div>
 
         <div class="strip-main-grid-v5">
@@ -237,10 +250,9 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
             min-height: 100px;
             padding: 1rem 0;
         }
-        
-        /* We remove the expansion to prevent 'ensanche' */
+
         .countdown-strip-v5.mobile-active {
-            height: 110px !important; /* Keep fixed height */
+            height: 110px !important;
         }
     }
 
@@ -436,7 +448,7 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s ease;
-        z-index: 151; /* Above yellow expansion (101) */
+        z-index: 151;
         padding: 0 15px;
     }
 
@@ -647,7 +659,8 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         .v5-lab {
             display: none !important;
         }
-        .info-pills-stack-v5, .team-name-v5 {
+        .info-pills-stack-v5,
+        .team-name-v5 {
             display: none !important;
         }
     }
@@ -705,8 +718,10 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
     }
 
     function initInteractions() {
-        const interactiveContainer = document.getElementById('v5-interactive-container');
-        const stripV5 = document.getElementById('strip-v5');
+        const interactiveContainer = document.getElementById(
+            "v5-interactive-container",
+        );
+        const stripV5 = document.getElementById("strip-v5");
         if (!interactiveContainer || !stripV5) return;
 
         let touchTimer: any = null;
@@ -714,34 +729,35 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         let startX = 0;
         let startY = 0;
 
-        interactiveContainer.addEventListener('touchstart', (e) => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            isLongPress = false;
-            touchTimer = setTimeout(() => {
-                isLongPress = true;
-                // Subtle haptic feedback feel if we could, but here we just mark it
-            }, 600);
-        }, { passive: true });
+        interactiveContainer.addEventListener(
+            "touchstart",
+            (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isLongPress = false;
+                touchTimer = setTimeout(() => {
+                    isLongPress = true;
+                }, 600);
+            },
+            { passive: true },
+        );
 
-        interactiveContainer.addEventListener('touchend', (e) => {
+        interactiveContainer.addEventListener("touchend", (e) => {
             const endX = e.changedTouches[0].clientX;
             const endY = e.changedTouches[0].clientY;
-            const dist = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-            
+            const dist = Math.sqrt(
+                Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2),
+            );
+
             clearTimeout(touchTimer);
 
-            // If they moved too much, it's a scroll, not a tap/hold
             if (dist > 15) return;
 
             if (isLongPress) {
                 const slug = stripV5.dataset.slug;
                 if (slug) window.location.href = `/partidos/${slug}`;
             } else {
-                // Short tap: just show overlay briefly OR navigate directly
-                // To fulfill "no se ensanche", we avoid layout changes.
-                // We'll let it toggle the overlay for feedback, but navigate if tapped twice or handled by click.
-                stripV5.classList.add('mobile-active');
+                stripV5.classList.add("mobile-active");
                 setTimeout(() => {
                     const slug = stripV5.dataset.slug;
                     if (slug) window.location.href = `/partidos/${slug}`;
@@ -749,8 +765,7 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
             }
         });
 
-        interactiveContainer.addEventListener('click', (e) => {
-            // General navigation if not handled by touchend preventDefault
+        interactiveContainer.addEventListener("click", (e) => {
             const slug = stripV5.dataset.slug;
             if (slug) window.location.href = `/partidos/${slug}`;
         });
@@ -760,10 +775,9 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         updateCountdown();
         initInteractions();
     });
-    
-    // Initial call for first load
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
             updateCountdown();
             initInteractions();
         });
@@ -772,3 +786,5 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         initInteractions();
     }
 </script>
+
+

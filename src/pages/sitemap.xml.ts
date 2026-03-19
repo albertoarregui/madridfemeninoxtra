@@ -53,7 +53,6 @@ export const GET: APIRoute = async () => {
             });
         });
 
-        // Noticias desde Contentful (reemplaza la antigua API de WordPress)
         try {
             const entries = await contentfulClient.getEntries({
                 content_type: 'noticia',
@@ -142,3 +141,5 @@ export const GET: APIRoute = async () => {
         return new Response('Error generating sitemap', { status: 500 });
     }
 };
+
+

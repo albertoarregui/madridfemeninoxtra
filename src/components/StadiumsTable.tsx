@@ -202,3 +202,5 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
 };
 
 export default StadiumsTable;
+
+

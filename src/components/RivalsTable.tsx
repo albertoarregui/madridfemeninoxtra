@@ -239,3 +239,5 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
 };
 
 export default RivalsTable;
+
+

@@ -17,7 +17,6 @@ import { getFlagSrc } from './flags';
 export function getCoachImageUrl(coach: any): string {
     const photoUrl = coach.foto_url || coach.imageUrl;
 
-    // Si ya es una URL completa (Cloudflare), la devolvemos directamente
     if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
         return photoUrl;
     }
@@ -87,7 +86,7 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                 };
             })
             .filter((coach) => {
-                // Filtro estricto: debe tener nombre y el nombre no puede ser null/vacío
+
                 const hasValidName = coach.name &&
                     coach.name.trim() !== "" &&
                     coach.name.toLowerCase() !== "null" &&
@@ -319,3 +318,4 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
         return [];
     }
 }
+

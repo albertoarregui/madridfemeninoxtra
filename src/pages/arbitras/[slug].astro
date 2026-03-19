@@ -39,7 +39,6 @@ if (!referee) {
 
 const rawMatches = await fetchMatchesByReferee(referee.nombre);
 
-// Process matches for statistics
 const matches = rawMatches.map((m) => {
     const isLocal =
         m.club_local.toLowerCase().trim().includes("real madrid") ||
@@ -80,7 +79,6 @@ const matches = rawMatches.map((m) => {
     };
 });
 
-// Calculate Detailed Stats (Season > Competition)
 interface StatBlock {
     pj: number;
     pg: number;
@@ -149,7 +147,6 @@ matches.forEach((m) => {
     calculateBlock(seasonData.competiciones.get(m.competicion), m);
 });
 
-// Convert Map to Array for rendering
 const refereeDeepStats = Array.from(seasonsMap.values())
     .map((s) => ({
         ...s,
@@ -157,11 +154,9 @@ const refereeDeepStats = Array.from(seasonsMap.values())
     }))
     .sort((a, b) => (a.temporada < b.temporada ? 1 : -1));
 
-// Total All Time
 const totalStats = initialStatBlock();
 matches.forEach((m) => calculateBlock(totalStats, m));
 
-// Filter lists
 const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
     .sort()
     .reverse();
@@ -169,7 +164,6 @@ const uniqueCompetitions = [
     ...new Set(matches.map((m) => m.competicion)),
 ].sort();
 
-// Charts Initial Data
 const circumference = 220;
 const totalMatches = totalStats.pj;
 const winsArc =
@@ -362,7 +356,7 @@ const redArc =
                                                     style="cursor: pointer;"
                                                 >
                                                     <td>
-                                                        <div class="flex items-center justify-center gap-2 w-full">
+                                                        <div class="flex items-center justify-start gap-2 w-full">
                                                             <strong>
                                                                 {
                                                                     season.temporada
@@ -861,7 +855,6 @@ const redArc =
 </Layout>
 
 <script define:vars={{ initialMatches: matches }}>
-    // Toggle Season Logic
     window.toggleSeason = function (season) {
         const rows = document.querySelectorAll(
             `.competition-row.season-${season}`,
@@ -952,7 +945,6 @@ const redArc =
             winsArc + drawsArc,
         );
 
-        // Legends
         document.querySelector(
             "#results-legend div:nth-child(1) .dot",
         ).nextSibling.textContent = ` Ganados (${stats.pg})`;
@@ -963,7 +955,6 @@ const redArc =
             "#results-legend div:nth-child(3) .dot",
         ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
-        // Cards
         const totalCards = stats.ta + stats.tr;
         const yellowArc = updateCircle("cards-chart", 0, stats.ta, totalCards);
         updateCircle("cards-chart", 1, stats.tr, totalCards, yellowArc);
@@ -976,7 +967,6 @@ const redArc =
         ).nextSibling.textContent = ` Rojas (${stats.tr})`;
     }
 
-    // Event Listeners for filters
     const seasonFilter = document.getElementById("season-filter");
     const competitionFilter = document.getElementById("competition-filter");
 
@@ -1026,7 +1016,7 @@ const redArc =
     initCustomSelects();
 
     function filterDataAndCharts() {
-        const allMatches = initialMatches; // from define:vars
+        const allMatches = initialMatches;
 
         const selectedSeason = seasonFilter.value;
         const selectedComp = competitionFilter.value;
@@ -1376,7 +1366,7 @@ const redArc =
     }
     .dot.yellow {
         background-color: #fff9c4;
-    } /* Pastel yellow */
+    }
 
     .matches-table {
         width: 100%;

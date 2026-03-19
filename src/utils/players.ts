@@ -105,7 +105,6 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
             const cleanPaisOrigin = cleanApiValue(player.pais_origen);
             const temporadas = player.temporadas || [];
 
-            // The first row in ORDER BY t.temporada DESC will have the latest season if it exists
             const latestPhoto = player.foto_url;
 
             return {
@@ -541,3 +540,4 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
         return [];
     }
 }
+

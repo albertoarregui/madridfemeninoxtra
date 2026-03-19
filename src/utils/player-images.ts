@@ -124,3 +124,5 @@ export const getImageSlug = (playerName: string) => {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/\s+/g, '_');
 }
+
+

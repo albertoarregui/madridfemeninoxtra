@@ -12,3 +12,5 @@ export function generateSlug(text: string | null | undefined): string {
         .replace(/\-\-+/g, '-')
         .replace(/^-+|-+$/g, '');
 }
+
+

@@ -81,10 +81,10 @@ export function getFlagSrc(codeOrName: string | undefined): string {
     const raw = codeOrName.trim();
     const cdnCode = getFlagCdnCode(raw);
 
-    // Try local asset using the raw value (could be a name like "España" or code like "es")
     const local = getAssetUrl('banderas', raw);
     if (local && !local.includes('placeholder') && !local.startsWith('https://media.')) return local;
 
-    // Fallback: use flagcdn with resolved code
     return `https://flagcdn.com/w40/${cdnCode}.png`;
 }
+
+

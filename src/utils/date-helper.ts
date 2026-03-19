@@ -9,18 +9,16 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
         hours = parts[0].padStart(2, "0");
         minutes = (parts[1] || "00").padStart(2, "0");
     } else if (cleanTime.length >= 1) {
-        // Handle cases like "12h" or "12"
+
         hours = cleanTime.padStart(2, "0");
         minutes = "00";
     }
 
-    // Default to midnight if we still have issues
     if (isNaN(parseInt(hours))) hours = "00";
     if (isNaN(parseInt(minutes))) minutes = "00";
 
-    // Calculate DST for Europe/Madrid (CET/CEST)
-    // Summer time starts last Sunday of March (02:00 -> 03:00)
-    // Summer time ends last Sunday of October (03:00 -> 02:00)
+
+
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(Date.UTC(y, m - 1, d));
     const year = y;
@@ -31,7 +29,7 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
     const oct31 = new Date(Date.UTC(year, 9, 31));
     const lastSundayOct = 31 - oct31.getUTCDay();
 
-    const monthNum = date.getUTCMonth(); // 0-indexed
+    const monthNum = date.getUTCMonth();
     const dayNum = date.getUTCDate();
 
     let isSummer = false;
@@ -45,7 +43,6 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
 
     const offset = isSummer ? "+02:00" : "+01:00";
 
-    // Ensure hours and minutes are valid numbers for the ISO string
     const finalHours = hours.slice(0, 2);
     const finalMinutes = minutes.slice(0, 2);
 
@@ -53,7 +50,7 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
     const result = new Date(isoString);
 
     if (isNaN(result.getTime())) {
-        // Ultimate fallback
+
         return new Date(`${dateStr}T00:00:00${offset}`);
     }
 
@@ -66,3 +63,5 @@ export function isMatchActive(dateStr: string, timeStr: string): boolean {
     const matchEndTime = new Date(matchDate.getTime() + twoHours);
     return matchEndTime > now;
 }
+
+

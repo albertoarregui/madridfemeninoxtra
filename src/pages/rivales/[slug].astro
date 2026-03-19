@@ -44,7 +44,6 @@ const shieldImageSrc = rival.shieldUrl;
 
 const flagImage = getAssetMetadata("banderas", rival.pais) || undefined;
 
-// Stadium Image logic
 const stadiumUrl = rival.estadio_foto_url;
 const hasExternalStadium =
     stadiumUrl &&
@@ -53,7 +52,6 @@ let stadiumImageSrc = hasExternalStadium
     ? stadiumUrl
     : getAssetMetadata("estadios", rival.estadio)?.src || null;
 
-// Rival Photo logic (if any)
 const clubUrl = rival.foto_url;
 const hasExternalClub =
     clubUrl &&
@@ -1076,7 +1074,7 @@ const isRealMadrid =
 </Layout>
 
 <script define:vars={{ initialMatches: rivalMatches }}>
-    // Helper to determine season from date
+
     function getSeason(dateStr) {
         const d = new Date(dateStr);
         const year = d.getFullYear();
@@ -1086,7 +1084,6 @@ const isRealMadrid =
         return `${startYear}/${endYear.toString().slice(-2)}`;
     }
 
-    // Add season to matches
     const allMatches = initialMatches.map((m) => ({
         ...m,
         season: getSeason(m.fecha),
@@ -1160,7 +1157,6 @@ const isRealMadrid =
             else location.pp++;
         });
 
-        // Aggregate totals
         stats.total.pj = stats.home.pj + stats.away.pj;
         stats.total.pg = stats.home.pg + stats.away.pg;
         stats.total.pe = stats.home.pe + stats.away.pe;
@@ -1196,7 +1192,6 @@ const isRealMadrid =
         const totalMatches = stats.total.pj;
         const totalGoals = stats.total.gf + stats.total.gc;
 
-        // Updated Arcs
         const winsArc =
             totalMatches > 0
                 ? Math.round((stats.total.pg / totalMatches) * circumference)
@@ -1232,12 +1227,11 @@ const isRealMadrid =
                   )
                 : 0;
 
-        // Update DOM - Circles
-        // Results Chart
+
         const resultsChart = document.getElementById("results-chart");
         if (resultsChart) {
             const circles = resultsChart.querySelectorAll("circle");
-            // 0: wins, 1: draws, 2: losses
+
             if (circles[0])
                 circles[0].setAttribute(
                     "stroke-dasharray",
@@ -1262,11 +1256,10 @@ const isRealMadrid =
             }
         }
 
-        // Goals Chart
         const goalsChart = document.getElementById("goals-chart");
         if (goalsChart) {
             const circles = goalsChart.querySelectorAll("circle");
-            // 0: for, 1: against
+
             if (circles[0])
                 circles[0].setAttribute(
                     "stroke-dasharray",
@@ -1281,11 +1274,10 @@ const isRealMadrid =
             }
         }
 
-        // Clean Sheets Chart
         const cleanSheetsChart = document.getElementById("clean-sheets-chart");
         if (cleanSheetsChart) {
             const circles = cleanSheetsChart.querySelectorAll("circle");
-            // 0: clean sheets, 1: conceded
+
             if (circles[0])
                 circles[0].setAttribute(
                     "stroke-dasharray",
@@ -1300,7 +1292,6 @@ const isRealMadrid =
             }
         }
 
-        // Update Legends
         const resultsLegend = document.getElementById("results-legend");
         if (resultsLegend) {
             const divs = resultsLegend.querySelectorAll("div");
@@ -1332,7 +1323,6 @@ const isRealMadrid =
                 divs[1].innerHTML = `<span class="dot red"></span> Con gol (${stats.total.conceded})`;
         }
 
-        // Cards Chart Logic
         const totalCards =
             (stats.total.yellowCards || 0) + (stats.total.redCards || 0);
         const yellowCardsArc =
@@ -1351,7 +1341,7 @@ const isRealMadrid =
         const cardsChart = document.getElementById("cards-chart");
         if (cardsChart) {
             const circles = cardsChart.querySelectorAll("circle");
-            // 0: yellow, 1: red
+
             if (circles[0])
                 circles[0].setAttribute(
                     "stroke-dasharray",
@@ -1380,7 +1370,6 @@ const isRealMadrid =
         const table = document.querySelector(".stats-table tbody");
         if (!table) return;
 
-        // Helper to generate row HTML
         const getRowHtml = (label, data) => `
                 <td>${label}</td>
                 <td>${data.pj}</td>
@@ -1432,11 +1421,11 @@ const isRealMadrid =
                 selectedSeason === "all" || m.season === selectedSeason;
 
             let locationMatch = true;
-            // esLocal=true means rival is local (RM is visitor), esLocal=false means RM is local
+
             if (selectedLocation === "local") {
-                locationMatch = m.esLocal === false; // RM is local = rival is NOT local
+                locationMatch = m.esLocal === false;
             } else if (selectedLocation === "visitor") {
-                locationMatch = m.esLocal === true; // RM is visitor = rival IS local
+                locationMatch = m.esLocal === true;
             }
 
             return compMatch && seasonMatch && locationMatch;
@@ -1502,7 +1491,7 @@ const isRealMadrid =
             const hiddenMatches = document.querySelectorAll(".hidden-match");
             hiddenMatches.forEach((row) => {
                 row.classList.remove("hidden-match");
-                // Animate entry if desired, or just show
+
                 row.style.display = "table-row";
             });
             if (showMoreBtn.parentElement) {
@@ -2229,3 +2218,4 @@ const isRealMadrid =
         text-align: left;
     }
 </style>
+

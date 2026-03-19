@@ -1,46 +1,60 @@
-# Astro Starter Kit: Basics
+# ⚪️ Madrid Femenino Xtra 🟣
 
-```sh
-pnpm create astro@latest -- --template basics
+Bienvenido al repositorio oficial de **Madrid Femenino Xtra**, la base de datos histórica más grande del Real Madrid Femenino.
+
+Este proyecto es una aplicación web moderna construida con **Astro**, diseñada para ser extremadamente rápida, visualmente atractiva y fácil de mantener.
+
+## 🚀 Tecnologías Principales
+
+- **Framework**: [Astro 5.x](https://astro.build/) (v5.x)
+- **Frontend**: [React](https://react.dev/) / [TailwindCSS 4](https://tailwindcss.com/)
+- **Base de Datos**: [Turso](https://turso.tech/) (LibSQL)
+- **Autenticación**: [Clerk](https://clerk.com/)
+- **CMS**: [Contentful](https://www.contentful.com/) (Noticias)
+- **Media**: [Cloudflare](https://www.cloudflare.com/) (R2 / Images)
+- **Despliegue**: [Vercel](https://vercel.com/)
+
+## 🛠️ Instalación y Configuración
+
+Sigue estos pasos para ejecutar el proyecto localmente:
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/tu-usuario/madridfemeninoxtra.git
+cd madridfemeninoxtra
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+### 2. Instalar dependencias
+Se recomienda el uso de `pnpm`:
+```bash
+pnpm install
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+### 3. Configurar variables de entorno
+Copia el archivo de ejemplo y rellena tus credenciales:
+```bash
+cp .env.example .env
+```
+_Nota: Necesitarás acceso a Turso, Clerk y Contentful para que el sitio funcione con datos reales._
 
-## 🧞 Commands
+### 4. Iniciar servidor de desarrollo
+```bash
+pnpm dev
+```
+La aplicación estará disponible en [http://localhost:4321](http://localhost:4321).
 
-All commands are run from the root of the project, from a terminal:
+## 📁 Estructura del Proyecto
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+- `/src/pages`: Rutas de la aplicación (incluye slugs dinámicos para jugadoras, hitos, etc.)
+- `/src/components`: Componentes reutilizables (Astro y React).
+- `/src/db`: Clientes de base de datos y configuración de Turso.
+- `/src/utils`: Lógica de negocio (formateo de fechas, cálculo de estadísticas, etc.)
+- `/src/assets`: Recursos estáticos (escudos, banderas, iconos).
 
-## 👀 Want to learn more?
+## 📄 Licencia
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Este proyecto está bajo la licencia [MIT](LICENSE). Siéntete libre de colaborar o usarlo como base para tus propios proyectos.
+
+---
+
+*Hala Madrid y nada más.* 🟣⚪️

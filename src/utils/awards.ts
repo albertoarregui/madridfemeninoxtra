@@ -42,7 +42,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
         const result = await client.execute(query);
 
         const parsedAwards = result.rows.map((row: any) => {
-            // Robust parsing for DD/MM/YYYY
+
             const parts = row.fecha.split('/');
             let date: Date;
             if (parts.length === 3) {
@@ -64,7 +64,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 slug: slugify(row.nombre),
                 tipo: row.tipo,
                 titulo: row.titulo,
-                fecha: row.fecha, // keep original string for widget compatibility
+                fecha: row.fecha,
                 temporada: temporada,
                 mes: mes,
                 foto_url: row.foto_url,
@@ -72,7 +72,6 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
             };
         });
 
-        // Ensure descending order by timestamp
         return parsedAwards.sort((a, b) => b._timestamp - a._timestamp);
 
     } catch (error) {
@@ -80,3 +79,5 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
         return [];
     }
 }
+
+

@@ -28,7 +28,7 @@ export function getRivalShieldUrl(rival: any): string {
     if (localUrl && !localUrl.includes('media.madridfemeninoxtra.com')) {
         return localUrl;
     }
-    // Fallback al CDN con nombre normalizado
+
     const cleanName = normalizeFileName(name || '');
     if (cleanName) {
         return `https://media.madridfemeninoxtra.com/escudos/${cleanName}.png`;
@@ -52,7 +52,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             return [];
         }
 
-        // Step 1: get all clubs (excluding Real Madrid)
         const clubsQuery = `
             SELECT 
                 c.id_club,
@@ -73,7 +72,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             ORDER BY c.nombre ASC
         `;
 
-        // Step 2: get all matches with club IDs and competition info
         const matchesQuery = `
             SELECT 
                 p.id_partido,
@@ -93,7 +91,6 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             client.execute(matchesQuery)
         ]);
 
-        // Build stats per club in JS
         const statsMap = new Map<any, {
             played: number; wins: number; draws: number; losses: number;
             gf: number; ga: number; cleanSheets: number;
@@ -117,10 +114,9 @@ export async function fetchRivalsDirectly(): Promise<any[]> {
             else if (pen === '0') result = 'L';
             else result = 'D';
 
-            // The "rival" is the non-Real Madrid club
-            // Both localId and visitanteId might be rivals if we look at it from both sides
-            // But we only want the rival club (not RM)
-            // We'll add stats for both IDs — RM won't appear because it's excluded from clubs
+
+
+
             for (const clubId of [localId, visitanteId]) {
                 if (!clubId) continue;
                 if (!statsMap.has(clubId)) {
@@ -233,12 +229,12 @@ export async function fetchAllClubShields(): Promise<Record<string, string>> {
             if (!shieldUrl || !row.nombre) return;
 
             const nombre: string = row.nombre;
-            // Key exacto
+
             map[nombre] = shieldUrl;
-            // Sin "Femenino"
+
             const sinFemenino = nombre.replace(/\s*Femenino\s*/gi, '').trim();
             if (sinFemenino && sinFemenino !== nombre) map[sinFemenino] = shieldUrl;
-            // Normalizado sin tildes
+
             const normalizado = nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
             if (normalizado !== nombre) map[normalizado] = shieldUrl;
         });
@@ -256,12 +252,11 @@ export async function fetchClubCountDirectly(): Promise<number> {
         const client = await getPlayersDbClient();
         if (!client) return 0;
 
-        // Intentar contar clubes excluyendo Real Madrid con búsqueda insensible a mayúsculas
         const result = await client.execute("SELECT COUNT(*) as count FROM clubes WHERE UPPER(nombre) NOT LIKE '%REAL MADRID%'");
         const count = Number(result.rows[0]?.count || 0);
 
         if (count === 0) {
-            // Fallback: contar todos y restar 1 (asumiendo que al menos está el RM)
+
             const fallback = await client.execute("SELECT COUNT(*) as count FROM clubes");
             const total = Number(fallback.rows[0]?.count || 0);
             return Math.max(0, total - 1);
@@ -273,3 +268,5 @@ export async function fetchClubCountDirectly(): Promise<number> {
         return 0;
     }
 }
+
+

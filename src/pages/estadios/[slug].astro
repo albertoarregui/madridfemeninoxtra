@@ -39,13 +39,11 @@ if (!stadium) {
 
 const rawMatches = await fetchMatchesByStadium(stadium.name);
 
-// Process matches for statistics
 const matches = rawMatches.map((m) => {
     const isLocal =
         m.club_local.toLowerCase().trim().includes("real madrid") ||
         m.club_local.toLowerCase().trim() === "real madrid cf";
 
-    // Determine season from date
     const d = new Date(m.fecha);
     const year = d.getFullYear();
     const month = d.getMonth() + 1;
@@ -65,7 +63,7 @@ const matches = rawMatches.map((m) => {
             const rival = parseInt(m.goles_rival) || 0;
             if (rm > rival) return "V";
             if (rm < rival) return "D";
-            // Check penalties if draw
+
             if (m.penaltis === 1 || m.penaltis === "1") return "V";
             if (m.penaltis === 0 || m.penaltis === "0") return "D";
             return "E";
@@ -75,7 +73,6 @@ const matches = rawMatches.map((m) => {
     };
 });
 
-// Calculate Detailed Stats (Season > Competition)
 interface StatBlock {
     pj: number;
     pg: number;
@@ -132,15 +129,13 @@ matches.forEach((m) => {
     calculateBlock(seasonData.competiciones.get(m.competicion), m);
 });
 
-// Convert Map to Array for rendering
 const stadiumDeepStats = Array.from(seasonsMap.values())
     .map((s) => ({
         ...s,
         competiciones: Array.from(s.competiciones.values()),
     }))
-    .sort((a, b) => (a.temporada < b.temporada ? 1 : -1)); // Newest first
+    .sort((a, b) => (a.temporada < b.temporada ? 1 : -1));
 
-// Total All Time for simple calc if needed
 const totalStats = initialStatBlock();
 matches.forEach((m) => calculateBlock(totalStats, m));
 
@@ -155,7 +150,6 @@ const addPercents = (s: StatBlock) => ({
 
 const totalStatsEnhanced = addPercents(totalStats);
 
-// Filters Setup
 const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
     .sort()
     .reverse();
@@ -163,7 +157,6 @@ const uniqueCompetitions = [
     ...new Set(matches.map((m) => m.competicion)),
 ].sort();
 
-// Arc Calculations for Server Render (Initial view uses Total)
 const circumference = 220;
 const totalMatches = totalStats.pj;
 const winsArc =
@@ -819,7 +812,7 @@ const concededArc =
 </Layout>
 
 <script define:vars={{ initialMatches: matches }}>
-    // Toggle Season Logic
+
     window.toggleSeason = function (season) {
         const rows = document.querySelectorAll(
             `.competition-row.season-${season}`,
@@ -839,7 +832,6 @@ const concededArc =
         });
     };
 
-    // Filters and Charts Logic
     function calculateStatsDoubleFilter(matches) {
         const stats = {
             pj: 0,
@@ -890,7 +882,6 @@ const concededArc =
             return arc;
         };
 
-        // Results
         const winsArc = updateCircle(
             "results-chart",
             0,
@@ -922,7 +913,6 @@ const concededArc =
             "#results-legend div:nth-child(3) .dot",
         ).nextSibling.textContent = ` Perdidos (${stats.pp})`;
 
-        // Goals
         const totalGoals = stats.gf + stats.gc;
         const goalsForArc = updateCircle(
             "goals-chart",
@@ -939,7 +929,6 @@ const concededArc =
             "#goals-legend div:nth-child(2) .dot",
         ).nextSibling.textContent = ` En contra (${stats.gc})`;
 
-        // Clean Sheets
         const cleanSheetsArc = updateCircle(
             "clean-sheets-chart",
             0,
@@ -964,7 +953,7 @@ const concededArc =
 
     const seasonFilter = document.getElementById("season-filter");
     const competitionFilter = document.getElementById("competition-filter");
-    const allMatches = initialMatches; // from define:vars
+    const allMatches = initialMatches;
 
     function initCustomSelects() {
         const containers = document.querySelectorAll(
@@ -1602,3 +1591,4 @@ const concededArc =
         }
     }
 </style>
+

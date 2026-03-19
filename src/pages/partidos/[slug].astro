@@ -12,16 +12,8 @@ import {
 } from "../../utils/partidos";
 import { fetchCalendarFromDb } from "../../utils/calendar";
 import { getPlayerImage } from "../../utils/player-images";
-import { v2 as cloudinary } from "cloudinary";
 import { getAssetUrl } from "../../utils/assets";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
-
-cloudinary.config({
-    cloud_name: import.meta.env.CLOUDINARY_CLOUD_NAME,
-    api_key: import.meta.env.CLOUDINARY_API_KEY,
-    api_secret: import.meta.env.CLOUDINARY_API_SECRET,
-    secure: true,
-});
 
 const { slug } = Astro.params;
 
@@ -30,7 +22,6 @@ const calendarMatches = await fetchCalendarFromDb();
 
 let game = allGames.find((g) => g.slug === slug);
 
-// Si no se encuentra en partidos jugados, buscar en el calendario
 if (!game) {
     const calendarMatch = calendarMatches.find((m) => {
         const dateSlug = m.date.split(" ")[0];
@@ -39,7 +30,6 @@ if (!game) {
     });
 
     if (calendarMatch) {
-        // Objeto de juego básico para partidos no jugados
         game = {
             id_partido: calendarMatch.id,
             club_local: calendarMatch.club_local,

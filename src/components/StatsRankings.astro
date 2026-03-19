@@ -786,38 +786,53 @@ const playerImageMap = Object.fromEntries(
         function initCustomSelects() {
             const root = document.querySelector(".stats-rankings-ui");
             if (!root) return;
-            const containers = root.querySelectorAll(".custom-select-container");
+            const containers = root.querySelectorAll(
+                ".custom-select-container",
+            );
 
-            containers.forEach(function(container) {
-                const trigger = container.querySelector(".custom-select-trigger");
+            containers.forEach(function (container) {
+                const trigger = container.querySelector(
+                    ".custom-select-trigger",
+                );
                 const select = container.querySelector("select");
-                const options = container.querySelectorAll(".custom-select-option");
-                const selectedText = trigger ? trigger.querySelector(".selected-text") : null;
+                const options = container.querySelectorAll(
+                    ".custom-select-option",
+                );
+                const selectedText = trigger
+                    ? trigger.querySelector(".selected-text")
+                    : null;
 
-                if (!trigger || !select || container.getAttribute("data-init")) return;
+                if (!trigger || !select || container.getAttribute("data-init"))
+                    return;
                 container.setAttribute("data-init", "true");
 
-                trigger.addEventListener("click", function(e) {
+                trigger.addEventListener("click", function (e) {
                     e.stopPropagation();
-                    containers.forEach(function(c) {
+                    containers.forEach(function (c) {
                         if (c !== container) c.classList.remove("open");
                     });
                     container.classList.toggle("open");
                 });
 
-                options.forEach(function(option) {
-                    option.addEventListener("click", function(e) {
+                options.forEach(function (option) {
+                    option.addEventListener("click", function (e) {
                         e.stopPropagation();
                         const value = option.getAttribute("data-value");
-                        const text = option.textContent ? option.textContent.trim() : "";
+                        const text = option.textContent
+                            ? option.textContent.trim()
+                            : "";
 
                         if (selectedText) selectedText.textContent = text;
-                        options.forEach(function(opt) { opt.classList.remove("selected"); });
+                        options.forEach(function (opt) {
+                            opt.classList.remove("selected");
+                        });
                         option.classList.add("selected");
 
                         if (value !== null) {
                             select.value = value;
-                            const event = new Event("change", { bubbles: true });
+                            const event = new Event("change", {
+                                bubbles: true,
+                            });
                             select.dispatchEvent(event);
                         }
                         container.classList.remove("open");
@@ -825,8 +840,10 @@ const playerImageMap = Object.fromEntries(
                 });
             });
 
-            document.addEventListener("click", function() {
-                containers.forEach(function(c) { c.classList.remove("open"); });
+            document.addEventListener("click", function () {
+                containers.forEach(function (c) {
+                    c.classList.remove("open");
+                });
             });
         }
 
@@ -837,7 +854,6 @@ const playerImageMap = Object.fromEntries(
         initCustomSelects();
         calculateRankings();
 
-        // attach change listeners directly without worrying about window since old elements are destroyed
         typeSelect.addEventListener("change", updateRankings);
         seasonSelect.addEventListener("change", updateRankings);
         competitionSelect.addEventListener("change", updateRankings);
@@ -973,14 +989,15 @@ const playerImageMap = Object.fromEntries(
     tbody tr.top-1 {
         background: #fffdf2 !important;
     }
-    
-    tbody tr.top-2, tbody tr.top-3 {
+
+    tbody tr.top-2,
+    tbody tr.top-3 {
         background: #fafafa !important;
     }
 
-    tbody tr:hover, 
-    tbody tr.top-1:hover, 
-    tbody tr.top-2:hover, 
+    tbody tr:hover,
+    tbody tr.top-1:hover,
+    tbody tr.top-2:hover,
     tbody tr.top-3:hover {
         background: rgba(255, 222, 89, 0.2) !important;
     }
@@ -1046,8 +1063,6 @@ const playerImageMap = Object.fromEntries(
         justify-content: center;
         transition: all 0.3s ease;
     }
-
-    /* Reverting general circularity to maintain podium card style */
 
     tbody tr.top-1 .player-thumb-wrapper {
         width: 18rem;
@@ -1301,3 +1316,5 @@ const playerImageMap = Object.fromEntries(
         }
     }
 </style>
+
+

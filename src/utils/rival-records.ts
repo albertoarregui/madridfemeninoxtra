@@ -292,7 +292,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
         const matchIds = rows.map((m: any) => m.id_partido);
         const placeholders = matchIds.map(() => '?').join(',');
 
-        // 1. Fetch RM Cards
         const cardsRMResult = await db.execute({
             sql: `SELECT * FROM tarjetas WHERE id_partido IN (${placeholders})`,
             args: matchIds
@@ -315,7 +314,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             }
         });
 
-        // 2. Fetch Rival Cards
         const cardsRivalResult = await db.execute({
             sql: `SELECT * FROM tarjetas_rival WHERE id_partido IN (${placeholders})`,
             args: matchIds
@@ -358,7 +356,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 golesRival: match.goles_rival,
                 arbitra: match.arbitra || '-',
                 estadio: match.estadio || '-',
-                amarillas: rivalCards.yellow, // Provide rival cards for the Rival Page Chart
+                amarillas: rivalCards.yellow,
                 rojas: rivalCards.red,
                 amarillas_rm: rmCards.yellow,
                 rojas_rm: rmCards.red,
@@ -511,3 +509,5 @@ export function calculateStreaks(matches: any[]) {
         cleanSheets: maxCleanSheetStreak
     };
 }
+
+

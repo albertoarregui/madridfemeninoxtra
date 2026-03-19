@@ -39,11 +39,10 @@ if (query) {
     }
 }
 
-// Image resolution logic
 const playerImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/jugadoras-perfil/*.{png,jpg,jpeg,webp}",
 );
-// rivalImages removed since we use public path
+
 const coachImages = import.meta.glob<{ default: ImageMetadata }>(
     "/src/assets/entrenadores/*.{png,jpg,jpeg,webp}",
 );
@@ -95,11 +94,9 @@ async function getImage(result: SearchResult) {
         return null;
     }
 
-    // Normalize slug: explicitly replace hyphens with underscores + lowercase
     const slugUnderscored = result.slug.replace(/-/g, "_").toLowerCase();
     const slugNormal = result.slug.toLowerCase();
 
-    // Construct valid keys for direct lookup using absolute paths
     const candidates = [
         `/src/assets/${folderName}/${slugUnderscored}.png`,
         `/src/assets/${folderName}/${slugNormal}.png`,
@@ -113,7 +110,6 @@ async function getImage(result: SearchResult) {
         }
     }
 
-    // Fallback: Find matching key in the glob record by checking filenames case-insensitive
     const matchingPath = Object.keys(imagesRecord).find((path) => {
         const fileName = path.split("/").pop()?.split(".")[0].toLowerCase();
         return fileName === slugNormal || fileName === slugUnderscored;
@@ -133,7 +129,6 @@ const matchResults = results.filter((r) => r.type === "match");
 const refereeResults = results.filter((r) => r.type === "referee");
 const stadiumResults = results.filter((r) => r.type === "stadium");
 
-// Resolve images ensuring no async map in JSX
 let playerResultsWithImages: any[] = [];
 let rivalResultsWithImages: any[] = [];
 let coachResultsWithImages: any[] = [];
@@ -744,3 +739,5 @@ try {
         }
     }
 </style>
+
+

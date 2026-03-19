@@ -203,10 +203,10 @@ export function calculateRivalStats(matches: any[], rivalName: string): RivalSta
             .replace(/\s*femeni\s*/gi, '')
             .replace(/\s*f\.\s*f\.\s*/gi, '')
             .replace(/\s*c\.\s*f\.\s*/gi, '')
-            .replace(/[^a-z0-9]/g, '') // Elimina todo lo que no sea letra o número
-            .replace(/^real/i, '')     // Quita "Real" al principio (común en muchos equipos)
-            .replace(/^cd/i, '')       // Quita "CD" al principio
-            .replace(/^club/i, '')     // Quita "Club" al principio
+            .replace(/[^a-z0-9]/g, '')
+            .replace(/^real/i, '')
+            .replace(/^cd/i, '')
+            .replace(/^club/i, '')
             .trim();
     };
 
@@ -772,18 +772,16 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             return isNaN(val) ? 0 : val;
         };
 
-        // Goles
         for (const goal of goalsResult.rows) {
             const tipoValue = String(goal.tipo || '');
             const tipoLower = tipoValue.toLowerCase().trim();
 
-            // Detectar si es gol en propia puerta (a favor del RM si está en esta tabla)
             const isOwnGoalInGolesTable =
                 tipoLower.includes('propia') ||
                 tipoLower.includes('own') ||
                 tipoLower.includes('p.p') ||
-                // Si hay un nombre de goleadora pero no se encontró en nuestra tabla de jugadoras, 
-                // y no es un ID numérico, probablemente sea una jugadora rival (P.P.)
+
+
                 (goal.goleadora && !goal.nombre_jugadora && isNaN(Number(goal.goleadora)));
 
             if (isOwnGoalInGolesTable) {
@@ -829,7 +827,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Tarjetas
         for (const card of cardsResult.rows) {
             const rawType = String(card.tipo_tarjeta || '').toUpperCase();
             let cardType = 'Yellow';
@@ -854,7 +851,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Goles en propia
         for (const og of ownGoalsResult.rows) {
             const playerName = "Propia puerta";
             events.push({
@@ -868,7 +864,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Sustituciones
         for (const sub of subs) {
             events.push({
                 minute: parseMinuteInternal(sub.minute),
@@ -881,7 +876,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Tanda de penaltis
         for (const pt of shootoutResult.rows) {
             const res = String(pt.resultado || '').toLowerCase().trim();
             const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
@@ -899,7 +893,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Goles Rival
         for (const goal of rivalGoalsResult.rows) {
             const tipoValue = String(goal.tipo || '');
             const tipoLower = tipoValue.toLowerCase().trim();
@@ -927,7 +920,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Tarjetas Rival
         for (const card of rivalCardsResult.rows) {
             const rawType = String(card.tipo_tarjeta || '').toUpperCase();
             let cardType = 'Yellow';
@@ -952,7 +944,6 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             });
         }
 
-        // Penaltis Fallados
         for (const pf of missedPenaltiesResult.rows) {
             const playerName = pf.nombre_jugadora || pf.nombre_rival || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
             events.push({
@@ -1044,4 +1035,6 @@ export async function fetchAllGoals(): Promise<any[]> {
         return [];
     }
 }
+
+
 

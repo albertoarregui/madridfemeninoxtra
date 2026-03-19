@@ -24,7 +24,7 @@ function normalizeName(name: string): string {
     return name.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/ø/g, 'o')
-        .replace(/ø/g, 'o') // Doble check por si acaso
+        .replace(/ø/g, 'o')
         .replace(/[-\s]+/g, '_')
         .replace(/[^a-z0-9_.-]/g, '');
 }
@@ -72,8 +72,7 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
 
     if (cleanFileName) {
         let normalizedFallback = normalizeName(cleanFileName);
-        
-        // Si no tiene extensión, le añadimos .png por defecto para el CDN
+
         if (!normalizedFallback.includes('.')) {
             normalizedFallback += '.png';
         }
@@ -111,3 +110,5 @@ export function getAssetMetadata(type: AssetType, fileName: string | null | unde
 
     return null;
 }
+
+

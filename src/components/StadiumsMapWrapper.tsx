@@ -38,3 +38,5 @@ const StadiumsMapWrapper: React.FC<StadiumsMapWrapperProps> = ({ stadiums }) => 
 };
 
 export default StadiumsMapWrapper;
+
+

@@ -16,7 +16,6 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
     const containerRef = useRef<HTMLDivElement>(null);
     const selectRef = useRef<HTMLSelectElement>(null);
 
-    // Synchronize React value with native select value for the global script
     useEffect(() => {
         if (selectRef.current) {
             selectRef.current.value = value;
@@ -32,8 +31,8 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             ref={containerRef}
             data-custom-select="true"
         >
-            <div 
-                className="custom-select-trigger" 
+            <div
+                className="custom-select-trigger"
                 style={{ cursor: 'pointer' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
@@ -53,10 +52,9 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                     </svg>
                 </div>
             </div>
-            {/* Hidden native select for global script compatibility and accessibility */}
-            <select 
+            <select
                 ref={selectRef}
-                style={{ display: 'none' }} 
+                style={{ display: 'none' }}
                 className="native-select"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -79,3 +77,5 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         </div>
     );
 }
+
+

@@ -86,7 +86,7 @@ export const GET: APIRoute = async ({ url }) => {
                     type: 'match',
                     title: `${partido.club_local} vs ${partido.club_visitante}`,
                     subtitle: `${partido.fecha_formateada} - ${partido.competicion_nombre}`,
-                    url: `/partidos/${partido.slug}`, // Fixed: Using slug instead of id_partido
+                    url: `/partidos/${partido.slug}`,
                     slug: partido.slug,
                     relevance: rival.startsWith(query) ? 8 : 3
                 });
@@ -150,3 +150,5 @@ export const GET: APIRoute = async ({ url }) => {
         });
     }
 };
+
+

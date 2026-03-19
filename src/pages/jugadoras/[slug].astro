@@ -21,7 +21,7 @@ if (!player) {
 }
 const resolvedImage = getAssetUrl("jugadoras", player.imageUrl);
 const seasonPhotosData = Object.entries(player.season_photos || {})
-    .sort((a, b) => b[0].localeCompare(a[0])) // Latest first, Oldest last
+    .sort((a, b) => b[0].localeCompare(a[0]))
     .map(([season, url]) => ({ season, url }));
 
 const initialSeasonIndex = 0;
@@ -102,7 +102,6 @@ const debutDisplay =
         : "-";
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 
-// Goal Milestones Logic
 const allGoals = await fetchAllGoals();
 const officialComps = [
     "Liga F",
@@ -124,7 +123,6 @@ const milestones = allGoals
         const dateA = new Date(a.fecha).getTime();
         const dateB = new Date(b.fecha).getTime();
         if (dateA !== dateB) return dateA - dateB;
-        // If same day, sort by minute (ignoring + extra time for simplicity in sorting)
         return parseInt(a.minuto) - parseInt(b.minuto);
     })
     .map((g, index) => ({
@@ -530,7 +528,7 @@ const schema = {
                                                     style="cursor: pointer;"
                                                 >
                                                     <td>
-                                                        <div class="flex items-center justify-center gap-2 w-full">
+                                                        <div class="flex items-center justify-start gap-2 w-full">
                                                             <strong>
                                                                 {
                                                                     season.temporada
@@ -769,7 +767,7 @@ const schema = {
                                             </>
                                         ))}
                                     <tr class="career-total-row">
-                                        <td>
+                                        <td style="text-align: left !important;">
                                             <strong>TOTAL</strong>
                                         </td>
                                         <td>
@@ -927,16 +925,13 @@ const schema = {
                 photoEl.src = current.url;
                 badgeEl.textContent = current.season;
 
-                // Left button (Next in array = Older)
                 if (prevBtn)
                     prevBtn.disabled = currentIdx === seasonPhotos.length - 1;
-                // Right button (Prev in array = Newer)
                 if (nextBtn) nextBtn.disabled = currentIdx === 0;
             }
 
             if (prevBtn) {
                 prevBtn.addEventListener("click", () => {
-                    // Clicking Left advances to the "next" in our reversed list (Older)
                     if (currentIdx < seasonPhotos.length - 1) {
                         currentIdx++;
                         updateCarousel();
@@ -946,7 +941,6 @@ const schema = {
 
             if (nextBtn) {
                 nextBtn.addEventListener("click", () => {
-                    // Clicking Right goes back to "previous" in our reversed list (Newer)
                     if (currentIdx > 0) {
                         currentIdx--;
                         updateCarousel();
@@ -954,7 +948,6 @@ const schema = {
                 });
             }
 
-            // Initial state
             updateCarousel();
         </script>
         <script is:inline>
@@ -1042,7 +1035,7 @@ const schema = {
                 flex-shrink: 0;
                 display: flex;
                 justify-content: flex-start;
-                overflow: visible; /* Prevent clipping */
+                overflow: visible;
             }
             .photo-carousel-wrapper {
                 display: flex;
@@ -1092,7 +1085,7 @@ const schema = {
                 border-radius: 16px;
                 border: none;
                 box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                overflow: visible; /* Let badge & arrows go outside if needed */
+                overflow: visible;
             }
             .photo-season-badge {
                 position: absolute;
@@ -1507,7 +1500,7 @@ const schema = {
 
             @media (max-width: 768px) {
                 .equipo-grid {
-                    gap: 1.5rem; /* Consistent padding between rows for team members */
+                    gap: 1.5rem;
                     padding: 0 1rem;
                 }
                 .team-card {
@@ -1704,7 +1697,6 @@ const schema = {
                 }
             }
 
-            /* Video Modal Styles */
             .video-modal-overlay {
                 display: none;
                 position: fixed;
@@ -1758,7 +1750,7 @@ const schema = {
             }
             .video-modal-body {
                 position: relative;
-                padding-top: 56.25%; /* 16:9 Aspect Ratio */
+                padding-top: 56.25%;
             }
             .goal-video-element {
                 position: absolute;
@@ -1852,3 +1844,4 @@ const schema = {
         }
     </script>
 </Layout>
+

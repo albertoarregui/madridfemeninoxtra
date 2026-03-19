@@ -6,21 +6,17 @@ import {
     getPlayerImageUrl,
 } from "../utils/players";
 
-// Fetch all players from DB
 const allPlayersDb = await fetchPlayersDirectly();
 
-// Determine the latest season globally
 const allSeasons = allPlayersDb.flatMap((p) => p.temporadas || []);
 const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
 
-// Filter players who played in the latest season with dorsal 1-24
 const squadPlayers = allPlayersDb.filter((player) => {
     const dorsal = player.dorsales && player.dorsales[latestSeason];
     return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
 });
 
-// Maintain the same order and grouping as defined in SQUAD if possible,
-// or just use the DB players grouped by position.
+
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin, iso } = player;
     const dorsal = player.dorsales[latestSeason];
@@ -32,7 +28,7 @@ const listofPlayers = squadPlayers.map((player) => {
 
     return {
         ...player,
-        id: player.id_jugadora.toString(), // For compatibility with older code
+        id: player.id_jugadora.toString(),
         name: player.nombre,
         number: dorsal.toString(),
         position: player.posicion,
@@ -56,10 +52,8 @@ const listofPlayers = squadPlayers.map((player) => {
     };
 });
 
-// Sort by number
 listofPlayers.sort((a, b) => Number(a.number) - Number(b.number));
 
-// Group players by position for the rows
 const getNormalizedPosition = (pos: string) => {
     const p = pos?.toLowerCase() || "";
     if (p.includes("portera")) return "Portera";
@@ -949,3 +943,5 @@ function calculateAge(birthDateString: string): number {
         }
     }
 </style>
+
+
