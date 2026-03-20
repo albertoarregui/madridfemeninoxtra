@@ -4,7 +4,7 @@ import "../styles/global.css";
 import { fetchRankingsDirectly, fetchPlayerStreaks } from "../utils/rankings";
 import { fetchPlayerAwards } from "../utils/awards";
 import { fetchPlayersDirectly } from "../utils/players";
-import StatsRankings from "../components/StatsRankings.astro";
+import StatsRankings from "../components/StatsRankings.tsx";
 
 const rankingsData = await fetchRankingsDirectly();
 const streaksData = await fetchPlayerStreaks();
@@ -40,6 +40,10 @@ const uniqueCompetitions = [
     if (indexB !== -1) return 1;
     return a.localeCompare(b);
 });
+
+const playerImageMap = Object.fromEntries(
+    playersData.map((p: any) => [p.slug, p.imageUrl]),
+);
 ---
 
 <Layout
@@ -49,7 +53,7 @@ const uniqueCompetitions = [
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <h1 class="page-title">RANKINGS</h1>
 
-        <h2 class="content-h2 text-left text-pretty">
+        <h2 class="content-h2 text-left text-pretty mb-12">
             Consulta las líderes históricas tanto por competición como por
             temporada en las diferentes estadísticas del Real Madrid Femenino
         </h2>
@@ -57,12 +61,13 @@ const uniqueCompetitions = [
         {
             rankingsData.length > 0 ? (
                 <StatsRankings
+                    client:load
                     rankingsData={rankingsData}
                     streaksData={streaksData}
                     awardsData={awardsData}
                     seasons={uniqueSeasons}
                     competitions={uniqueCompetitions}
-                    players={playersData}
+                    playerImageMap={playerImageMap}
                 />
             ) : (
                 <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">
@@ -73,5 +78,3 @@ const uniqueCompetitions = [
         }
     </main>
 </Layout>
-
-

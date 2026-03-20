@@ -11,7 +11,6 @@ export interface CalendarMatch {
     hora: string;
     jornada: string;
     tv: string;
-
     team1: string;
     team2: string;
     date: string;
@@ -40,83 +39,45 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         const client = await getPlayersDbClient();
         if (!client) return [];
 
-        const clubsResult = await client.execute("SELECT id_club, nombre, foto_url FROM clubes");
-        const clubMap: Record<string, { nombre: string, foto_url: string }> = {};
-        clubsResult.rows.forEach((r: any) => {
-            if (r.id_club !== null && r.id_club !== undefined) {
-                clubMap[String(r.id_club)] = {
-                    nombre: String(r.nombre || ''),
-                    foto_url: String(r.foto_url || '')
-                };
-            }
-        });
+        // Consultamos la tabla partidos para obtener todos los partidos (jugados y futuros)
+        const query = `
+            SELECT
+                p.id_partido as id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio,
+                p.goles_rm, p.goles_rival,
+                t.temporada AS temporada_nombre,
+                c.competicion AS competicion_nombre,
+                c.foto_url AS competicion_foto_url,
+                cl.nombre AS club_local,
+                cl.foto_url AS local_foto_url,
+                cv.nombre AS club_visitante,
+                cv.foto_url AS visitante_foto_url,
+                e.nombre AS estadio,
+                e.ciudad,
+                e.pais,
+                e.capacidad,
+                e.foto_url as estadio_foto_url,
+                a.nombre AS arbitra_nombre
+            FROM partidos p
+            LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
+            LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+            LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+            LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
+            LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+            LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
+            ORDER BY p.fecha ASC, p.hora ASC
+        `;
 
-        const compsResult = await client.execute("SELECT id_competicion, competicion, foto_url FROM competiciones");
-        const compMap: Record<string, { nombre: string, foto_url: string }> = {};
-        compsResult.rows.forEach((r: any) => {
-            if (r.id_competicion !== null && r.id_competicion !== undefined) {
-                compMap[String(r.id_competicion)] = {
-                    nombre: String(r.competicion || ''),
-                    foto_url: String(r.foto_url || '')
-                };
-            }
-        });
-
-        const estResult = await client.execute("SELECT id_estadio, nombre, foto_url, ciudad, pais, capacidad FROM estadios");
-        const estMap: Record<string, { nombre: string, foto_url: string, ciudad: string, pais: string, capacidad: number }> = {};
-        estResult.rows.forEach((r: any) => {
-            if (r.id_estadio !== null && r.id_estadio !== undefined) {
-                estMap[String(r.id_estadio)] = {
-                    nombre: String(r.nombre || ''),
-                    foto_url: String(r.foto_url || ''),
-                    ciudad: String(r.ciudad || ''),
-                    pais: String(r.pais || ''),
-                    capacidad: Number(r.capacidad || 0)
-                };
-            }
-        });
-
-        const arbResult = await client.execute("SELECT id_arbitra, nombre FROM arbitras");
-        const arbMap: Record<string, string> = {};
-        arbResult.rows.forEach((r: any) => {
-            if (r.id_arbitra !== null && r.id_arbitra !== undefined) {
-                arbMap[String(r.id_arbitra)] = String(r.nombre || '');
-            }
-        });
-
-        const result = await client.execute("SELECT * FROM calendario ORDER BY fecha ASC, hora ASC");
+        const result = await client.execute(query);
 
         if (!result.rows || result.rows.length === 0) {
-            console.log("[fetchCalendarFromDb] No se encontraron filas en calendario");
+            console.log("[fetchCalendarFromDb] No se encontraron partidos futuros en la tabla partidos");
             return [];
         }
 
         return result.rows.map((row: any) => {
-
-            const idLocal = String(row.id_club_local || '');
-            const idVisitante = String(row.id_club_visitante || row['id-club_visitante'] || '');
-            const idComp = String(row.id_competicion || '');
-            const idEstadio = String(row.id_estadi || row.id_estadio || '');
-            const idArbitra = String(row.id_arbitra || row.id_arbitro || '');
-
-            const clubLocalData = clubMap[idLocal];
-            const clubVisitanteData = clubMap[idVisitante];
-            const estadioData = estMap[idEstadio];
-
-            const clubLocal = clubLocalData?.nombre || idLocal || 'Real Madrid';
-            const clubVisitante = clubVisitanteData?.nombre || idVisitante || 'Rival';
-            const local_foto_url = clubLocalData?.foto_url || '';
-            const visitante_foto_url = clubVisitanteData?.foto_url || '';
-            const competitionData = compMap[idComp];
-            const competicion = competitionData?.nombre || idComp || 'Competición';
-            const competicion_foto_url = competitionData?.foto_url || null;
-            const estadio = estadioData?.nombre || null;
-            const estadio_foto_url = estadioData?.foto_url || null;
-            const ciudad = estadioData?.ciudad || null;
-            const pais = estadioData?.pais || null;
-            const capacidad = estadioData?.capacidad || null;
-            const arbitra_nombre = arbMap[idArbitra] || null;
-
+            const clubLocal = String(row.club_local || 'Real Madrid Femenino');
+            const clubVisitante = String(row.club_visitante || 'Rival');
+            
             const rmIsLocal = isRealMadrid(clubLocal);
             const homeaway: 'home' | 'away' | 'neutral' = rmIsLocal ? 'home' : 'away';
 
@@ -124,13 +85,13 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
             const hora = String(row.hora || '');
 
             return {
-                id: Number(row.id_proximopartido || row.id || 0),
+                id: Number(row.id || 0),
                 club_local: clubLocal,
-                local_foto_url: local_foto_url,
+                local_foto_url: String(row.local_foto_url || ''),
                 club_visitante: clubVisitante,
-                visitante_foto_url: visitante_foto_url,
-                estadio: estadio,
-                competicion: competicion,
+                visitante_foto_url: String(row.visitante_foto_url || ''),
+                estadio: row.estadio || null,
+                competicion: row.competicion_nombre || 'Competición',
                 fecha: fecha,
                 hora: hora,
                 jornada: String(row.jornada || ''),
@@ -140,22 +101,20 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
                 team2: clubVisitante,
                 date: fecha,
                 time: hora,
-                competition: competicion,
-                stadium: estadio || '',
+                competition: row.competicion_nombre || 'Competición',
+                stadium: row.estadio || '',
                 homeaway,
-                estadio_foto_url: estadio_foto_url,
-                competicion_foto_url: competicion_foto_url,
-                ciudad: ciudad,
-                pais: pais,
-                capacidad: capacidad,
-                id_arbitra: idArbitra ? Number(idArbitra) : null,
-                arbitra_nombre: arbitra_nombre,
+                estadio_foto_url: String(row.estadio_foto_url || ''),
+                competicion_foto_url: String(row.competicion_foto_url || ''),
+                ciudad: row.ciudad || null,
+                pais: row.pais || null,
+                capacidad: row.capacidad ? Number(row.capacidad) : null,
+                id_arbitra: row.id_arbitra ? Number(row.id_arbitra) : null,
+                arbitra_nombre: row.arbitra_nombre || null,
             };
         });
     } catch (error) {
-        console.error('[fetchCalendarFromDb] Error:', error);
+        console.error('[fetchCalendarFromDb] Error fetching from partidos:', error);
         return [];
     }
 }
-
-

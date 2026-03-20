@@ -32,6 +32,26 @@ export interface RankingStat {
     goles_empate: number;
     goles_abrelatas: number;
     penaltis: number;
+    // New Advanced Stats
+    pases_clave?: number;
+    tiros_totales?: number;
+    tiros_puerta?: number;
+    toques?: number;
+    toques_area_rival?: number;
+    pases_completados?: number;
+    pases_totales?: number;
+    pases_ultimo_tercio_completados?: number;
+    pases_largo_completados?: number;
+    centros_completados?: number;
+    regates_completados?: number;
+    regates_totales?: number;
+    duelos_suelo_ganados?: number;
+    duelos_aereos_ganados?: number;
+    intercepciones?: number;
+    despejes?: number;
+    bloqueos?: number;
+    entradas?: number;
+    recuperaciones?: number;
 }
 
 export interface StreakData {
@@ -159,6 +179,34 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 FROM partidos p
                 WHERE p.capitana IS NOT NULL
                 GROUP BY p.capitana, p.id_temporada, p.id_competicion
+            ),
+            individual_stats AS (
+                SELECT
+                    ej.id_jugadora,
+                    p.id_temporada,
+                    p.id_competicion,
+                    SUM(COALESCE(ej.pases_clave, 0)) as pases_clave,
+                    SUM(COALESCE(ej.tiros_totales, 0)) as tiros_totales,
+                    SUM(COALESCE(ej.tiros_puerta, 0)) as tiros_puerta,
+                    SUM(COALESCE(ej.toques, 0)) as toques,
+                    SUM(COALESCE(ej.toques_area_rival, 0)) as toques_area_rival,
+                    SUM(COALESCE(ej.pases_completados, 0)) as pases_completados,
+                    SUM(COALESCE(ej.pases_totales, 0)) as pases_totales,
+                    SUM(COALESCE(ej.pases_ultimo_tercio_completados, 0)) as pases_ultimo_tercio_completados,
+                    SUM(COALESCE(ej.pases_largo_completados, 0)) as pases_largo_completados,
+                    SUM(COALESCE(ej.centros_completados, 0)) as centros_completados,
+                    SUM(COALESCE(ej.regates_completados, 0)) as regates_completados,
+                    SUM(COALESCE(ej.regates_totales, 0)) as regates_totales,
+                    SUM(COALESCE(ej.duelos_suelo_ganados, 0)) as duelos_suelo_ganados,
+                    SUM(COALESCE(ej.duelos_aereos_ganados, 0)) as duelos_aereos_ganados,
+                    SUM(COALESCE(ej.intercepciones, 0)) as intercepciones,
+                    SUM(COALESCE(ej.despejes, 0)) as despejes,
+                    SUM(COALESCE(ej.bloqueos, 0)) as bloqueos,
+                    SUM(COALESCE(ej.entradas, 0)) as entradas,
+                    SUM(COALESCE(ej.recuperaciones, 0)) as recuperaciones
+                FROM estadisticas_jugadoras ej
+                JOIN partidos p ON ej.id_partido = p.id_partido
+                GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
             )
 
             SELECT 
@@ -183,7 +231,26 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(a.asistencias, 0) as asistencias,
                 COALESCE(cd.tarjetas_amarillas, 0) as tarjetas_amarillas,
                 COALESCE(cd.tarjetas_rojas, 0) as tarjetas_rojas,
-                COALESCE(cp.capitanias, 0) as capitanias
+                COALESCE(cp.capitanias, 0) as capitanias,
+                COALESCE(s.pases_clave, 0) as pases_clave,
+                COALESCE(s.tiros_totales, 0) as tiros_totales,
+                COALESCE(s.tiros_puerta, 0) as tiros_puerta,
+                COALESCE(s.toques, 0) as toques,
+                COALESCE(s.toques_area_rival, 0) as toques_area_rival,
+                COALESCE(s.pases_completados, 0) as pases_completados,
+                COALESCE(s.pases_totales, 0) as pases_totales,
+                COALESCE(s.pases_ultimo_tercio_completados, 0) as pases_ultimo_tercio_completados,
+                COALESCE(s.pases_largo_completados, 0) as pases_largo_completados,
+                COALESCE(s.centros_completados, 0) as centros_completados,
+                COALESCE(s.regates_completados, 0) as regates_completados,
+                COALESCE(s.regates_totales, 0) as regates_totales,
+                COALESCE(s.duelos_suelo_ganados, 0) as duelos_suelo_ganados,
+                COALESCE(s.duelos_aereos_ganados, 0) as duelos_aereos_ganados,
+                COALESCE(s.intercepciones, 0) as intercepciones,
+                COALESCE(s.despejes, 0) as despejes,
+                COALESCE(s.bloqueos, 0) as bloqueos,
+                COALESCE(s.entradas, 0) as entradas,
+                COALESCE(s.recuperaciones, 0) as recuperaciones
             FROM jugadoras j
             CROSS JOIN temporadas t
             CROSS JOIN competiciones c
@@ -194,8 +261,9 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             LEFT JOIN penalty_data pd ON j.id_jugadora = pd.id_jugadora AND t.id_temporada = pd.id_temporada AND c.id_competicion = pd.id_competicion
             LEFT JOIN card_data cd ON j.id_jugadora = cd.id_jugadora AND t.id_temporada = cd.id_temporada AND c.id_competicion = cd.id_competicion
             LEFT JOIN u_captain_data cp ON j.id_jugadora = cp.id_jugadora AND t.id_temporada = cp.id_temporada AND c.id_competicion = cp.id_competicion
+            LEFT JOIN individual_stats s ON j.id_jugadora = s.id_jugadora AND t.id_temporada = s.id_temporada AND c.id_competicion = s.id_competicion
             WHERE 
-                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0
+                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0 OR s.pases_clave > 0 OR s.tiros_totales > 0 OR s.toques > 0
             ORDER BY j.nombre
         `;
 
@@ -225,7 +293,26 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             porterias_cero: Number(row.porterias_cero),
             tarjetas_amarillas: Number(row.tarjetas_amarillas),
             tarjetas_rojas: Number(row.tarjetas_rojas),
-            capitanias: Number(row.capitanias)
+            capitanias: Number(row.capitanias),
+            pases_clave: Number(row.pases_clave),
+            tiros_totales: Number(row.tiros_totales),
+            tiros_puerta: Number(row.tiros_puerta),
+            toques: Number(row.toques),
+            toques_area_rival: Number(row.toques_area_rival),
+            pases_completados: Number(row.pases_completados),
+            pases_totales: Number(row.pases_totales),
+            pases_ultimo_tercio_completados: Number(row.pases_ultimo_tercio_completados),
+            pases_largo_completados: Number(row.pases_largo_completados),
+            centros_completados: Number(row.centros_completados),
+            regates_completados: Number(row.regates_completados),
+            regates_totales: Number(row.regates_totales),
+            duelos_suelo_ganados: Number(row.duelos_suelo_ganados),
+            duelos_aereos_ganados: Number(row.duelos_aereos_ganados),
+            intercepciones: Number(row.intercepciones),
+            despejes: Number(row.despejes),
+            bloqueos: Number(row.bloqueos),
+            entradas: Number(row.entradas),
+            recuperaciones: Number(row.recuperaciones),
         }));
 
     } catch (error) {

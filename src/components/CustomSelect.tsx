@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface Option {
     value: string;
@@ -13,6 +13,7 @@ interface CustomSelectProps {
 }
 
 export default function CustomSelect({ options, value, onChange, id }: CustomSelectProps) {
+    const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const selectRef = useRef<HTMLSelectElement>(null);
 
@@ -22,17 +23,36 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
         }
     }, [value]);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     const selectedOption = options.find(opt => opt.value === value) || options[0];
+
+    const handleOptionClick = (val: string) => {
+        onChange(val);
+        setIsOpen(false);
+    };
 
     return (
         <div
-            className="custom-select-container"
+            className={`custom-select-container ${isOpen ? 'open' : ''}`}
             id={id}
             ref={containerRef}
             data-custom-select="true"
         >
             <div
                 className="custom-select-trigger"
+                onClick={() => setIsOpen(!isOpen)}
                 style={{ cursor: 'pointer' }}
             >
                 <span className="selected-text">{selectedOption ? selectedOption.label : 'Seleccionar'}</span>
@@ -68,6 +88,7 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
                     <div
                         key={option.value}
                         className={`custom-select-option ${option.value === value ? 'selected' : ''}`}
+                        onClick={() => handleOptionClick(option.value)}
                         data-value={option.value}
                     >
                         {option.label}

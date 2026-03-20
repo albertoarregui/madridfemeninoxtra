@@ -24,6 +24,22 @@ import ClubStatsDashboard from "../components/ClubStatsDashboard";
 const gamesData = await fetchGamesDirectly();
 const allGoals = await fetchAllGoals();
 
+let latestNews: any[] = [];
+try {
+    const { contentfulClient } = await import("../lib/contentful");
+    const entries = await contentfulClient.getEntries({
+        content_type: "noticia",
+        limit: 3,
+        order: ["-fields.publishDate"],
+    });
+    latestNews = entries.items.map((item: any) => ({
+        ...item.fields,
+        id: item.sys.id,
+    }));
+} catch (e) {
+    console.error("Error fetching news for home:", e);
+}
+
 const uniqueSeasons = [
 	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
 ]
@@ -103,6 +119,57 @@ const schema = {
 	<div class="content-layout">
 		<main class="welcome-area">
 			<section class="news-content">
+				<div class="news-header-row">
+					<h2 class="section-title">ÚLTIMAS NOTICIAS</h2>
+					<a href="/noticias" class="view-all-news">VER TODAS →</a>
+				</div>
+
+				<div class="news-home-grid">
+					{
+						latestNews.map((noticia) => (
+							<a
+								href={`/noticias/${noticia.slug}`}
+								class="news-home-card"
+							>
+								<div class="news-home-image">
+									<img
+										src={
+											noticia.featuredImage?.fields?.file
+												?.url
+												? `https:${noticia.featuredImage.fields.file.url}`
+												: getAssetUrl(
+														"background",
+														"stadium.webp",
+													)
+										}
+										alt={noticia.title}
+										loading="lazy"
+									/>
+									<span class="news-home-category">
+										{noticia.category || "ACTUALIDAD"}
+									</span>
+								</div>
+								<div class="news-home-info">
+									<time class="news-home-date">
+										{new Date(
+											noticia.publishDate,
+										).toLocaleDateString("es-ES", {
+											day: "2-digit",
+											month: "long",
+											year: "numeric",
+										})}
+									</time>
+									<h3 class="news-home-title">
+										{noticia.title}
+									</h3>
+									<p class="news-home-excerpt">
+										{noticia.subtitle}
+									</p>
+								</div>
+							</a>
+						))
+					}
+				</div>
 
 				<div
 					class="season-stats-section mb-[4rem] w-full"
