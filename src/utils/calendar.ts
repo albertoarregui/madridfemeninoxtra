@@ -39,7 +39,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         const client = await getPlayersDbClient();
         if (!client) return [];
 
-        // Consultamos la tabla partidos para obtener todos los partidos (jugados y futuros)
         const query = `
             SELECT
                 p.id_partido as id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio,
@@ -77,7 +76,7 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         return result.rows.map((row: any) => {
             const clubLocal = String(row.club_local || 'Real Madrid Femenino');
             const clubVisitante = String(row.club_visitante || 'Rival');
-            
+
             const rmIsLocal = isRealMadrid(clubLocal);
             const homeaway: 'home' | 'away' | 'neutral' = rmIsLocal ? 'home' : 'away';
 

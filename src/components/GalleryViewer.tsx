@@ -11,6 +11,30 @@ interface GalleryViewerProps {
     children?: React.ReactNode;
 }
 
+const DynamicImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+    const [currentSrc, setCurrentSrc] = useState(src);
+    const [triedExtensions, setTriedExtensions] = useState<string[]>([]);
+    const extensions = ['.webp', '.jpg', '.png'];
+
+    const handleError = () => {
+        const currentExt = extensions.find(ext => currentSrc.toLowerCase().endsWith(ext));
+        const nextExt = extensions.find(ext => !triedExtensions.includes(ext) && ext !== currentExt);
+
+        if (nextExt) {
+            const baseUrl = currentSrc.substring(0, currentSrc.lastIndexOf('.'));
+            setTriedExtensions(prev => [...prev, currentExt || '']);
+            setCurrentSrc(`${baseUrl}${nextExt}`);
+        }
+    };
+
+    useEffect(() => {
+        setCurrentSrc(src);
+        setTriedExtensions([]);
+    }, [src]);
+
+    return <img src={currentSrc} alt={alt} className={className} onError={handleError} loading="lazy" />;
+};
+
 const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -23,7 +47,6 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
         setCurrentIndex((prev) => (prev - 1 + album.photos.length) % album.photos.length);
     };
 
-    // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft') prevPhoto();
@@ -33,7 +56,6 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex]);
 
-    // Auto-scroll thumbnails
     useEffect(() => {
         if (scrollRef.current) {
             const activeThumb = scrollRef.current.children[currentIndex] as HTMLElement;
@@ -60,15 +82,14 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 </div>
             </div>
 
-            {/* Main Stage */}
             <div className="main-stage">
                 <button className="nav-arrow left" onClick={prevPhoto}>
                     <ChevronLeft size={32} />
                 </button>
-                
+
                 <div className="image-container">
-                    <img 
-                        src={album.photos[currentIndex]} 
+                    <DynamicImage
+                        src={album.photos[currentIndex]}
                         alt={`Foto ${currentIndex + 1} de ${album.title}`}
                         className="main-photo"
                     />
@@ -79,23 +100,23 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 </button>
             </div>
 
-            {/* Thumbnail Strip */}
             <div className="thumbnails-wrapper">
                 <div className="thumbnails-scroll no-scrollbar" ref={scrollRef}>
                     {album.photos.map((photo, index) => (
-                        <div 
-                            key={index} 
+                        <div
+                            key={index}
                             className={`thumb-item ${index === currentIndex ? 'active' : ''}`}
                             onClick={() => setCurrentIndex(index)}
                         >
-                            <img src={photo} alt={`Miniatura ${index + 1}`} />
+                            <DynamicImage src={photo} alt={`Miniatura ${index + 1}`} />
                             {index === currentIndex && <div className="active-overlay"></div>}
                         </div>
                     ))}
                 </div>
             </div>
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .gallery-viewer-container {
                     background: #fff;
                     min-height: calc(100vh - 80px);

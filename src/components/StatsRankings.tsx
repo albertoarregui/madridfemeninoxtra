@@ -350,7 +350,6 @@ export default function StatsRankings({
                 }
             ` }} />
 
-            {/* Filters */}
             <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container">
                 <CustomSelect options={TYPE_OPTIONS} value={selectedType} onChange={setSelectedType} id="filtro-tipo" />
                 <CustomSelect options={[{ value: "todos", label: "Todas las Temporadas" }, ...seasons.map(s => ({ value: s, label: s }))]} value={selectedSeason} onChange={setSelectedSeason} id="filtro-temporada" />
@@ -359,10 +358,8 @@ export default function StatsRankings({
                 )}
             </div>
 
-            {/* Podium */}
             {sortedPlayers.length > 0 && (
                 <div className="podium-container flex items-end justify-center px-4">
-                    {/* 2nd Place */}
                     {podium[1] && (
                         <div className="podium-spot spot-2 flex flex-col justify-end">
                             <div className="flex flex-col items-center mb-[-10px]">
@@ -387,7 +384,6 @@ export default function StatsRankings({
                         </div>
                     )}
 
-                    {/* 1st Place */}
                     {podium[0] && (
                         <div className="podium-spot spot-1 flex flex-col justify-end">
                             <div className="flex flex-col items-center mb-[-10px] z-10">
@@ -413,7 +409,6 @@ export default function StatsRankings({
                         </div>
                     )}
 
-                    {/* 3rd Place */}
                     {podium[2] && (
                         <div className="podium-spot spot-3 flex flex-col justify-end">
                             <div className="flex flex-col items-center mb-[-10px]">
@@ -440,7 +435,6 @@ export default function StatsRankings({
                 </div>
             )}
 
-            {/* Table */}
             <div id="ranking-table-top" className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-12">
                 <div className="ranking-title-header">
                     <h2>{currentConfig.title}</h2>
@@ -496,7 +490,6 @@ export default function StatsRankings({
                     </table>
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 p-8 bg-gray-50/50 border-t border-gray-100">
                         <button

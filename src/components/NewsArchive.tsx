@@ -22,9 +22,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const noticiasPerPage = 20;
 
-    // Get unique categories
     const categories = useMemo(() => {
-        const cats = ['TODAS'];
+        const cats: string[] = [];
         noticias.forEach(n => {
             const cat = (n.category || 'ACTUALIDAD').toUpperCase();
             if (!cats.includes(cat)) cats.push(cat);
@@ -32,15 +31,10 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
         return cats;
     }, [noticias]);
 
-    // Filter noticias
     const filteredNoticias = useMemo(() => {
-        return noticias.filter(n => {
-            if (selectedCategory === 'TODAS') return true;
-            return (n.category || 'ACTUALIDAD').toUpperCase() === selectedCategory;
-        });
+        if (!selectedCategory || selectedCategory === 'TODAS') return noticias;
+        return noticias.filter(n => (n.category || 'ACTUALIDAD').toUpperCase() === selectedCategory);
     }, [noticias, selectedCategory]);
-
-    // Pagination logic
     const totalPages = Math.ceil(filteredNoticias.length / noticiasPerPage);
     const paginatedNoticias = useMemo(() => {
         const start = (currentPage - 1) * noticiasPerPage;
@@ -48,21 +42,20 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     }, [filteredNoticias, currentPage]);
 
     const handleCategoryChange = (cat: string) => {
-        setSelectedCategory(cat);
+        setSelectedCategory(prev => prev === cat ? 'TODAS' : cat);
         setCurrentPage(1);
     };
 
     return (
         <div className="news-archive-react">
-            {/* Filter Capsules */}
-            <div className="flex flex-wrap justify-start gap-3 mb-12 px-2">
+            <div className="flex flex-wrap justify-center gap-3 mb-12 px-2">
                 {categories.map(cat => (
                     <button
                         key={cat}
                         onClick={() => handleCategoryChange(cat)}
                         className={`px-6 py-2 rounded-full font-bold text-sm tracking-wider transition-all border-2 
-                            ${selectedCategory === cat 
-                                ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md' 
+                            ${selectedCategory === cat
+                                ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md'
                                 : 'bg-white border-gray-200 text-gray-500 hover:border-[#ffde59] hover:text-[#151e42]'}`}
                     >
                         {cat}
@@ -70,14 +63,13 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 ))}
             </div>
 
-            {/* News List */}
             <div className="news-list-container flex flex-col gap-8 mb-16">
                 {paginatedNoticias.length > 0 ? (
                     paginatedNoticias.map((noticia) => (
                         <a href={`/noticias/${noticia.slug}`} className="archive-card group" key={noticia.id}>
                             <div className="archive-image">
-                                <img 
-                                    src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}` : "/assets/background/stadium.webp"} 
+                                <img
+                                    src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}` : "/assets/background/stadium.webp"}
                                     alt={noticia.title}
                                     loading="lazy"
                                 />
@@ -104,7 +96,6 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 )}
             </div>
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-3 py-12 border-t border-gray-100">
                     <button
@@ -114,15 +105,15 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     >
                         <ChevronLeft size={24} />
                     </button>
-                    
+
                     <div className="flex gap-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                             <button
                                 key={page}
                                 onClick={() => setCurrentPage(page)}
                                 className={`w-12 h-12 flex items-center justify-center rounded-xl font-black text-lg transition-all border-2
-                                    ${currentPage === page 
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110' 
+                                    ${currentPage === page
+                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110'
                                         : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
                             >
                                 {page}
@@ -140,7 +131,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 </div>
             )}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .archive-card {
                     display: flex;
                     background: white;

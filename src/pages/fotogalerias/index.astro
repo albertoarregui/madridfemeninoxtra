@@ -9,28 +9,45 @@ export const prerender = false;
 let albums: any[] = [];
 try {
     const entries = await contentfulClient.getEntries({
-        content_type: "galeria",
-        order: ["-fields.fecha" as any], 
+        content_type: "gallery",
+        order: ["-sys.createdAt"],
     });
 
-    console.log(`Galerías encontradas: ${entries.items.length}`);
-
     albums = entries.items.map((item: any) => {
-        const f = item.fields;
+        const f = item.fields as any;
+
+        const getV = (label: string) => {
+            const search = label.toLowerCase().replace(/\s/g, "");
+            const key = Object.keys(f).find((k) => k.toLowerCase() === search);
+            return key ? f[key] : null;
+        };
+
+        const title = getV("titulo") || getV("title") || "Sin Título";
+        const subtitle = getV("competicion") || getV("competition") || "";
+        const slug = getV("slug") || "";
+        const dateRaw = getV("fecha") || getV("date");
+        const total =
+            getV("totalFotos") || getV("totalPhotos") || getV("count") || 0;
+        const cover = getV("imagenDePortada") || getV("cover") || getV("image");
+
         return {
             id: item.sys.id,
-            slug: f.slug || "",
-            title: f.titulo || f.title || f.Titulo || "Sin Título",
-            subtitle: f.competicion || f.competition || f.Competición || "",
-            date: f.fecha ? new Date(f.fecha).toLocaleDateString("es-ES", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric"
-            }).toUpperCase() : "SIN FECHA",
-            cover: f.imagenDePortada?.fields?.file?.url 
-                ? `https:${f.imagenDePortada.fields.file.url}` 
+            slug: slug,
+            title: title,
+            subtitle: subtitle,
+            date: dateRaw
+                ? new Date(dateRaw)
+                      .toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                      })
+                      .toUpperCase()
+                : "SIN FECHA",
+            cover: cover?.fields?.file?.url
+                ? `https:${cover.fields.file.url}`
                 : "/assets/background/stadium.webp",
-            count: f.totalFotos || f.totalPhotos || 0
+            count: Number(total),
         };
     });
 } catch (e) {
@@ -38,14 +55,18 @@ try {
 }
 
 const title = "Galería | Madrid Femenino Xtra";
-const description = "Explora las mejores imágenes del Real Madrid Femenino: partidos, entrenamientos y momentos exclusivos.";
+const description =
+    "Explora las mejores imágenes del Real Madrid Femenino: partidos, entrenamientos y momentos exclusivos.";
 ---
 
 <Layout title={title} description={description}>
     <main class="gallery-archive-page">
         <header class="page-header-container">
             <h1 class="landing-title">FOTOGALERÍAS</h1>
-            <p class="landing-subtitle">Los mejores momentos del Real Madrid Femenino capturados en alta resolución</p>
+            <p class="landing-subtitle">
+                Los mejores momentos del Real Madrid Femenino capturados en alta
+                resolución
+            </p>
         </header>
 
         <section class="gallery-grid-section">

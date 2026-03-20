@@ -35,19 +35,14 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const matchesPerPage = 20;
 
-    // Sort matches by date (oldest first for calendar?)
-    // Actually calendar usually shows future ones too. 
-    // Let's sort by date ASC.
     const sortedMatches = useMemo(() => {
         return [...matches].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
     }, [matches]);
 
-    // Use all months as requested
     const availableMonths = useMemo(() => {
         return ['TODOS', ...MONTHS];
     }, []);
 
-    // All Competitions
     const ALL_COMPS = ["LIGA F", "UWCL", "COPA DE LA REINA", "SUPERCOPA DE ESPAÑA", "AMISTOSOS"];
     const availableComps = useMemo(() => {
         return ['TODAS', ...ALL_COMPS];
@@ -64,24 +59,21 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
         return 'bg-white border-gray-100 text-gray-400';
     };
 
-    // Filter matches
     const filteredMatches = useMemo(() => {
         return sortedMatches.filter(m => {
             const date = new Date(m.fecha);
             const mName = (m.competicion_nombre || '').toUpperCase();
             const sComp = selectedComp.toUpperCase();
-            
+
             const monthMatches = selectedMonth === 'TODOS' || MONTHS[date.getMonth()] === selectedMonth;
-            
-            // Handle AMISTOSOS vs AMISTOSO
+
             const targetComp = sComp === 'AMISTOSOS' ? 'AMISTOSO' : sComp;
             const compMatches = selectedComp === 'TODAS' || mName.includes(targetComp);
-            
+
             return monthMatches && compMatches;
         });
     }, [sortedMatches, selectedMonth, selectedComp]);
 
-    // Pagination
     const totalPages = Math.ceil(filteredMatches.length / matchesPerPage);
     const paginatedMatches = useMemo(() => {
         const start = (currentPage - 1) * matchesPerPage;
@@ -90,20 +82,19 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
     return (
         <div className="calendar-archive-react">
-            {/* Months Filter - Wrapping Grid */}
             <div className="filter-group mb-12 px-4 sm:px-6">
                 <div className="max-w-5xl mx-auto py-2">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 w-full justify-items-center">
                         {MONTHS.map(month => (
                             <button
                                 key={month}
-                                onClick={() => { 
-                                    setSelectedMonth(prev => prev === month ? 'TODOS' : month); 
-                                    setCurrentPage(1); 
+                                onClick={() => {
+                                    setSelectedMonth(prev => prev === month ? 'TODOS' : month);
+                                    setCurrentPage(1);
                                 }}
                                 className={`w-full max-w-[160px] px-2 sm:px-4 py-3 sm:py-4 rounded-[18px] sm:rounded-[22px] font-black text-[10px] sm:text-xs tracking-widest transition-all border-2 
-                                    ${selectedMonth === month 
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]' 
+                                    ${selectedMonth === month
+                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]'
                                         : 'bg-white border-gray-100 text-gray-400 hover:border-[#ffde59] hover:text-[#151e42] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
                             >
                                 {month}
@@ -113,20 +104,19 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 </div>
             </div>
 
-            {/* Competitions Filter - Wrapping Flex */}
             <div className="filter-group mb-16 sm:mb-20 px-4 sm:px-6">
                 <div className="max-w-5xl mx-auto">
                     <div className="flex flex-wrap gap-3 sm:gap-4 justify-center py-4">
                         {ALL_COMPS.map(comp => (
                             <button
                                 key={comp}
-                                onClick={() => { 
-                                    setSelectedComp(prev => prev === comp ? 'TODAS' : comp); 
-                                    setCurrentPage(1); 
+                                onClick={() => {
+                                    setSelectedComp(prev => prev === comp ? 'TODAS' : comp);
+                                    setCurrentPage(1);
                                 }}
                                 className={`min-w-[130px] sm:min-w-[160px] px-4 sm:px-8 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] font-black text-[10px] sm:text-sm tracking-[0.05em] transition-all border-2 whitespace-nowrap
-                                    ${selectedComp === comp 
-                                        ? getCompColor(comp) + ' shadow-2xl translate-y-[-2px] sm:translate-y-[-4px]' 
+                                    ${selectedComp === comp
+                                        ? getCompColor(comp) + ' shadow-2xl translate-y-[-2px] sm:translate-y-[-4px]'
                                         : 'bg-white border-gray-100 text-gray-400 hover:border-[#151e42] hover:text-[#151e42] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
                             >
                                 {comp}
@@ -136,103 +126,101 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 </div>
             </div>
 
-            {/* Matches List */}
             <div className="matches-list flex flex-col gap-6 mb-16">
                 {paginatedMatches.length > 0 ? (
                     paginatedMatches.map((match) => {
-                                const isHome = (match.club_local || '').toLowerCase().includes('real madrid');
-                                const formattedJornada = match.jornada && !isNaN(Number(match.jornada)) 
-                                    ? `JORNADA ${match.jornada}` 
-                                    : (match.jornada || '').toUpperCase();
-                                    
-                                return (
-                                    <a href={`/partidos/${match.slug}`} className="match-archive-card group" key={match.id_partido}>
-                                        <div className="match-date-box">
-                                            <div className="venue-icon-wrapper mb-2">
-                                                {isHome ? (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
+                        const isHome = (match.club_local || '').toLowerCase().includes('real madrid');
+                        const formattedJornada = match.jornada && !isNaN(Number(match.jornada))
+                            ? `JORNADA ${match.jornada}`
+                            : (match.jornada || '').toUpperCase();
+
+                        return (
+                            <a href={`/partidos/${match.slug}`} className="match-archive-card group" key={match.id_partido}>
+                                <div className="match-date-box">
+                                    <div className="venue-icon-wrapper mb-2">
+                                        {isHome ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l-2 0l9 -9l9 9l-2 0" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /></svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14.639 10.258l4.83 -1.294a2 2 0 1 1 1.035 3.863l-14.489 3.883l-4.45 -5.02l2.897 -.776l2.45 1.414l2.897 -.776l-3.743 -6.244l2.898 -.777l5.675 5.727z" /><path d="M3 21h18" /></svg>
+                                        )}
+                                    </div>
+                                    <span className="m-day">{new Date(match.fecha).getDate()}</span>
+                                    <span className="m-month">{MONTHS[new Date(match.fecha).getMonth()].substring(0, 3)}</span>
+                                </div>
+
+                                <div className="match-main-content">
+                                    <div className="teams-interaction-row">
+                                        <div className="team-side local">
+                                            <span className="team-name">{match.club_local}</span>
+                                        </div>
+
+                                        <div className="central-block">
+                                            <img src={match.local_shield_url} alt={match.club_local} className="team-shield" />
+                                            <div className="match-score-box">
+                                                {match.isPlayed ? (
+                                                    <div className="score-display">
+                                                        <span>{match.goles_rm}</span>
+                                                        <span className="score-separator">-</span>
+                                                        <span>{match.goles_rival}</span>
+                                                    </div>
                                                 ) : (
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.639 10.258l4.83 -1.294a2 2 0 1 1 1.035 3.863l-14.489 3.883l-4.45 -5.02l2.897 -.776l2.45 1.414l2.897 -.776l-3.743 -6.244l2.898 -.777l5.675 5.727z" /><path d="M3 21h18" /></svg>
+                                                    <div className="time-display">
+                                                        <Clock size={16} />
+                                                        <span>{match.hora || 'TBD'}</span>
+                                                    </div>
                                                 )}
                                             </div>
-                                            <span className="m-day">{new Date(match.fecha).getDate()}</span>
-                                            <span className="m-month">{MONTHS[new Date(match.fecha).getMonth()].substring(0, 3)}</span>
-                                        </div>
-                                        
-                                        <div className="match-main-content">
-                                            <div className="teams-interaction-row">
-                                                <div className="team-side local">
-                                                    <span className="team-name">{match.club_local}</span>
-                                                </div>
-                                                
-                                                <div className="central-block">
-                                                    <img src={match.local_shield_url} alt={match.club_local} className="team-shield" />
-                                                    <div className="match-score-box">
-                                                        {match.isPlayed ? (
-                                                            <div className="score-display">
-                                                                <span>{match.goles_rm}</span>
-                                                                <span className="score-separator">-</span>
-                                                                <span>{match.goles_rival}</span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="time-display">
-                                                                <Clock size={16} />
-                                                                <span>{match.hora || 'TBD'}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <img src={match.visitante_shield_url} alt={match.club_visitante} className="team-shield" />
-                                                </div>
-
-                                                <div className="team-side visitor">
-                                                    <span className="team-name">{match.club_visitante}</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="match-meta-container mt-3 w-full">
-                                                <div className="meta-row flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden">
-                                                    <div className="meta-item flex items-center gap-2">
-                                                        <Trophy size={11} className="opacity-40" />
-                                                        <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
-                                                            {match.competicion_nombre} {formattedJornada ? `• ${formattedJornada}` : ''}
-                                                        </span>
-                                                    </div>
-                                                    <span className="opacity-20 text-[10px]">|</span>
-                                                    <div className="meta-item flex items-center gap-2">
-                                                        <MapPin size={11} className="opacity-40" />
-                                                        <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
-                                                            {match.estadio}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <img src={match.visitante_shield_url} alt={match.club_visitante} className="team-shield" />
                                         </div>
 
-                                        <div className="match-comp-logo-right">
-                                            {match.competicion_foto_url ? (
-                                                <img src={match.competicion_foto_url} alt={match.competicion_nombre} className="comp-logo-large" />
-                                            ) : (
-                                                <Trophy size={32} className="opacity-10" />
-                                            )}
+                                        <div className="team-side visitor">
+                                            <span className="team-name">{match.club_visitante}</span>
                                         </div>
-                                    </a>
-                                );
-                            })
+                                    </div>
+
+                                    <div className="match-meta-container mt-3 w-full">
+                                        <div className="meta-row flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden">
+                                            <div className="meta-item flex items-center gap-2">
+                                                <Trophy size={11} className="opacity-40" />
+                                                <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
+                                                    {match.competicion_nombre} {formattedJornada ? `• ${formattedJornada}` : ''}
+                                                </span>
+                                            </div>
+                                            <span className="opacity-20 text-[10px]">|</span>
+                                            <div className="meta-item flex items-center gap-2">
+                                                <MapPin size={11} className="opacity-40" />
+                                                <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
+                                                    {match.estadio}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="match-comp-logo-right">
+                                    {match.competicion_foto_url ? (
+                                        <img src={match.competicion_foto_url} alt={match.competicion_nombre} className="comp-logo-large" />
+                                    ) : (
+                                        <Trophy size={32} className="opacity-10" />
+                                    )}
+                                </div>
+                            </a>
+                        );
+                    })
                 ) : (
                     <div className="py-24 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100 mx-4">
                         <CalendarIcon className="mx-auto text-gray-100 mb-6" size={80} />
                         <p className="text-gray-400 font-bold text-xl max-w-md mx-auto px-6 italic uppercase tracking-wider opacity-60">
-                            {selectedMonth !== 'TODOS' && selectedComp === 'TODAS' 
+                            {selectedMonth !== 'TODOS' && selectedComp === 'TODAS'
                                 ? "No hay partidos programados en este mes"
                                 : selectedComp !== 'TODAS' && selectedMonth === 'TODOS'
-                                ? "No hay partidos programados de esta competición"
-                                : "No hay partidos programados con estos filtros"}
+                                    ? "No hay partidos programados de esta competición"
+                                    : "No hay partidos programados con estos filtros"}
                         </p>
                     </div>
                 )}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-3 py-10 border-t border-gray-100/50">
                     <button
@@ -245,7 +233,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    
+
                     <div className="flex gap-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                             <button
@@ -255,8 +243,8 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
                                 className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black transition-all border-2 text-sm
-                                    ${currentPage === page 
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110' 
+                                    ${currentPage === page
+                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110'
                                         : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
                             >
                                 {page}
@@ -277,7 +265,8 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 </div>
             )}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .match-archive-card {
                     display: flex;
                     background: #ffde59;

@@ -61,7 +61,6 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
                 <div className="pagination-container">
                     <button
@@ -71,7 +70,7 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     >
                         <ChevronLeft size={24} />
                     </button>
-                    
+
                     <div className="pagination-numbers">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                             <button
@@ -94,7 +93,8 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 </div>
             )}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .gallery-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

@@ -26,30 +26,38 @@ const allGoals = await fetchAllGoals();
 
 let spotlightNews: any[] = [];
 try {
-    const { contentfulClient } = await import("../lib/contentful");
+	const { contentfulClient } = await import("../lib/contentful");
 
-    // Fetch latest Cronica and Previa
-    const cronicaEntry = await contentfulClient.getEntries({
-        content_type: "noticia",
-        limit: 1,
-        "fields.category": "CRÓNICA",
-        order: ["-sys.createdAt"],
-    });
-    const previaEntry = await contentfulClient.getEntries({
-        content_type: "noticia",
-        limit: 1,
-        "fields.category": "PREVIA",
-        order: ["-sys.createdAt"],
-    });
+	const cronicaEntry = await contentfulClient.getEntries({
+		content_type: "noticia",
+		limit: 1,
+		"fields.category": "CRÓNICA",
+		order: ["-sys.createdAt"],
+	});
+	const previaEntry = await contentfulClient.getEntries({
+		content_type: "noticia",
+		limit: 1,
+		"fields.category": "PREVIA",
+		order: ["-sys.createdAt"],
+	});
 
-    const cronica = cronicaEntry.items[0];
-    const previa = previaEntry.items[0];
-    
-    if (previa) spotlightNews.push({ ...previa.fields, id: previa.sys.id, createdAt: previa.sys.createdAt });
-    if (cronica) spotlightNews.push({ ...cronica.fields, id: cronica.sys.id, createdAt: cronica.sys.createdAt });
+	const cronica = cronicaEntry.items[0];
+	const previa = previaEntry.items[0];
 
+	if (previa)
+		spotlightNews.push({
+			...previa.fields,
+			id: previa.sys.id,
+			createdAt: previa.sys.createdAt,
+		});
+	if (cronica)
+		spotlightNews.push({
+			...cronica.fields,
+			id: cronica.sys.id,
+			createdAt: cronica.sys.createdAt,
+		});
 } catch (e) {
-    console.error("Error fetching news for home:", e);
+	console.error("Error fetching news for home:", e);
 }
 
 const uniqueSeasons = [
@@ -131,37 +139,63 @@ const schema = {
 	<div class="content-layout">
 		<main class="welcome-area">
 			<section class="news-content">
-				{spotlightNews.length > 0 && (
-					<div class="spotlight-news-grid mb-[4rem]">
-						{spotlightNews.map((noticia) => (
-							<a href={`/noticias/${noticia.slug}`} class="spotlight-card">
-								<div class="spotlight-image">
-									<img 
-										src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}` : getAssetUrl("background", "stadium.webp")} 
-										alt={noticia.title}
-										loading="lazy"
-									/>
-									<span class={`spotlight-tag ${(noticia.category || "").toLowerCase()}`}>
-										{noticia.category}
-									</span>
-								</div>
-								<div class="spotlight-content">
-                                    <time class="spotlight-date">
-										{new Date(noticia.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" }).toUpperCase()}
-									</time>
-									<h3 class="spotlight-title">{noticia.title}</h3>
-								</div>
-							</a>
-						))}
-					</div>
-				)}
+				{
+					spotlightNews.length > 0 && (
+						<div class="spotlight-news-grid mb-[4rem]">
+							{spotlightNews.map((noticia) => (
+								<a
+									href={`/noticias/${noticia.slug}`}
+									class="spotlight-card"
+								>
+									<div class="spotlight-image">
+										<img
+											src={
+												noticia.featuredImage?.fields
+													?.file?.url
+													? `https:${noticia.featuredImage.fields.file.url}`
+													: getAssetUrl(
+															"background",
+															"stadium.webp",
+														)
+											}
+											alt={noticia.title}
+											loading="lazy"
+										/>
+										<span
+											class={`spotlight-tag ${(noticia.category || "").toLowerCase()}`}
+										>
+											{noticia.category}
+										</span>
+									</div>
+									<div class="spotlight-content">
+										<time class="spotlight-date">
+											{new Date(noticia.createdAt)
+												.toLocaleDateString("es-ES", {
+													day: "2-digit",
+													month: "long",
+													year: "numeric",
+												})
+												.toUpperCase()}
+										</time>
+										<h3 class="spotlight-title">
+											{noticia.title}
+										</h3>
+									</div>
+								</a>
+							))}
+						</div>
+					)
+				}
 
 				<div
 					class="season-stats-section mb-[4rem] w-full"
 					id="stats-dashboard"
 				>
 					<h2 class="landing-title">ESTADÍSTICAS</h2>
-					<p class="landing-subtitle">Balance histórico, goles y resultados por temporada del Real Madrid Femenino</p>
+					<p class="landing-subtitle">
+						Balance histórico, goles y resultados por temporada del
+						Real Madrid Femenino
+					</p>
 					<ClubStatsDashboard
 						matches={gamesData}
 						goals={allGoals}
@@ -231,5 +265,3 @@ const schema = {
 		</aside>
 	</div>
 </Layout>
-
-

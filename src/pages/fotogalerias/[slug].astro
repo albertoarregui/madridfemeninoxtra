@@ -11,27 +11,48 @@ const { slug } = Astro.params;
 let albumData: any = null;
 try {
     const entries = await contentfulClient.getEntries({
-        content_type: "galeria",
+        content_type: "gallery",
         "fields.slug": slug,
         limit: 1,
     });
 
     if (entries && entries.items.length > 0) {
-        const item = entries.items[0].fields as any;
-        const total = item.totalFotos || item.totalPhotos || item.TotalFotos || 0;
-        const folder = item.rutaDeCarpetas || item.rutaDeCarpeta || item.folderPath || "";
-        
+        const f = entries.items[0].fields as any;
+
+        const getV = (label: string) => {
+            const search = label.toLowerCase().replace(/\s/g, "");
+            const key = Object.keys(f).find((k) => k.toLowerCase() === search);
+            return key ? f[key] : null;
+        };
+
+        const total =
+            getV("totalFotos") || getV("totalPhotos") || getV("count") || 0;
+        const folder =
+            getV("rutaDeCarpetas") ||
+            getV("rutaDeCarpeta") ||
+            getV("folderPath") ||
+            "";
+        const title = getV("titulo") || getV("title") || "Sin Título";
+        const subtitle = getV("competicion") || getV("competition") || "";
+        const dateRaw = getV("fecha") || getV("date");
+
         albumData = {
-            title: item.titulo || item.title || item.Titulo || "Sin Título",
-            subtitle: item.competicion || item.competition || item.Competición || "",
-            date: item.fecha ? new Date(item.fecha).toLocaleDateString("es-ES", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric"
-            }).toUpperCase() : "SIN FECHA",
-            photos: Array.from({ length: total }, (_, i) => 
-                `https://media.madridfemeninoxtra.com/galeria/${folder}/${i + 1}.jpg`
-            )
+            title: title,
+            subtitle: subtitle,
+            date: dateRaw
+                ? new Date(dateRaw)
+                      .toLocaleDateString("es-ES", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                      })
+                      .toUpperCase()
+                : "SIN FECHA",
+            photos: Array.from(
+                { length: Number(total) },
+                (_, i) =>
+                    `https://media.madridfemeninoxtra.com/galeria/${folder}/${i + 1}.jpg`,
+            ),
         };
     }
 } catch (e) {
@@ -43,14 +64,17 @@ if (!albumData) {
 }
 ---
 
-<Layout 
-    title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`} 
+<Layout
+    title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`}
     description={`Explora las fotos de ${albumData.title} del Real Madrid Femenino.`}
 >
     <main class="gallery-detail-page bg-white pt-32">
         <div class="container mx-auto px-6">
             <div class="gallery-back-link-wrapper mb-8">
-                <a href="/fotogalerias" class="gallery-back-link flex items-center gap-2 font-black text-xs uppercase tracking-widest text-gray-400 hover:text-[#151e42] transition-colors group">
+                <a
+                    href="/fotogalerias"
+                    class="gallery-back-link flex items-center gap-2 font-black text-xs uppercase tracking-widest text-gray-400 hover:text-[#151e42] transition-colors group"
+                >
                     <svg
                         width="16"
                         height="16"
@@ -71,13 +95,19 @@ if (!albumData) {
 
             <GalleryViewer album={albumData} client:only="react">
                 <header class="gallery-inner-header mb-12">
-                    <h1 class="landing-title text-left !mb-4">FOTOGALERÍAS</h1>
+                    <h1 class="landing-title text-left !mb-10">FOTOGALERÍAS</h1>
                     <div class="border-l-4 border-[#ffde59] pl-6 py-2">
-                        <h2 class="text-2xl sm:text-4xl font-black text-[#151e42] uppercase italic mb-2 tracking-tighter leading-none">
+                        <h2
+                            class="text-2xl sm:text-4xl font-black text-[#151e42] uppercase italic mb-2 tracking-tighter leading-none"
+                        >
                             {albumData.title}
                         </h2>
-                        <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">
-                            {albumData.subtitle} <span class="mx-2 text-[#ffde59]">•</span> {albumData.date}
+                        <p
+                            class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                        >
+                            {albumData.subtitle}
+                            <span class="mx-2 text-[#ffde59]">•</span>
+                            {albumData.date}
                         </p>
                     </div>
                 </header>
