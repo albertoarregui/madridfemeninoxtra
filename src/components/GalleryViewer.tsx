@@ -123,7 +123,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                             className={`thumb-item ${index === currentIndex ? 'active' : ''}`}
                             onClick={() => setCurrentIndex(index)}
                         >
-                            <DynamicImage src={photo} alt={`Miniatura ${index + 1}`} />
+                            <DynamicImage src={photo} alt={`Miniatura ${index + 1}`} className="thumb-img" />
                             {index === currentIndex && <div className="active-overlay"></div>}
                         </div>
                     ))}
@@ -220,7 +220,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     border: 2px solid transparent;
                     background: #eee;
                 }
-                .thumb-item img {
+                .thumb-img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
@@ -232,7 +232,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     transform: scale(1.05);
                     opacity: 1;
                 }
-                .thumb-item.active img {
+                .thumb-item.active .thumb-img {
                     opacity: 1;
                 }
                 .active-overlay {
@@ -247,7 +247,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     .nav-arrow.left { left: 1rem; }
                     .nav-arrow.right { right: 1rem; }
                     .image-container { max-width: 100%; border: none; box-shadow: none; }
-                    .thumb-item { min-width: 70px; height: 50px; }
+                    .thumb-item { min-width: 80px; height: 55px; }
                     .thumbnails-wrapper { padding: 0.5rem 0; }
                 }
             ` }} />
