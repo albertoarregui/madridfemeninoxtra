@@ -157,21 +157,20 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     justify-content: center;
                     background: transparent;
                     padding: 0;
-                    min-height: 60vh;
+                    height: 60vh;
+                    min-height: 400px;
                 }
                 .image-container {
                     position: relative;
-                    max-width: 100%;
-                    max-height: 85vh;
+                    width: 100%;
+                    height: 100%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                 }
                 .main-photo {
-                    width: auto;
-                    height: auto;
                     max-width: 100%;
-                    max-height: 85vh;
+                    max-height: 100%;
                     object-fit: contain;
                 }
                 .nav-arrow {
@@ -201,16 +200,17 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 .thumbnails-wrapper {
                     padding: 1.5rem 0;
                     background: transparent;
+                    width: 100%;
                 }
                 .thumbnails-scroll {
                     display: flex;
                     gap: 0.75rem;
                     overflow-x: auto;
-                    padding-bottom: 0.5rem;
+                    padding: 0.5rem;
                     -webkit-overflow-scrolling: touch;
                 }
                 .thumb-item {
-                    min-width: 100px;
+                    width: 100px;
                     height: 65px;
                     border-radius: 6px;
                     overflow: hidden;
@@ -219,6 +219,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     transition: all 0.3s;
                     border: 2px solid transparent;
                     background: #eee;
+                    position: relative;
                 }
                 .thumb-img {
                     width: 100%;
@@ -242,13 +243,14 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 }
 
                 @media (max-width: 768px) {
-                    .main-stage { padding: 0.25rem; min-height: 40vh; }
+                    .gallery-viewer-container { min-height: auto; }
+                    .main-stage { height: 50vh; min-height: 300px; padding: 0.5rem; }
                     .nav-arrow { width: 44px; height: 44px; }
                     .nav-arrow.left { left: 1rem; }
                     .nav-arrow.right { right: 1rem; }
                     .image-container { max-width: 100%; border: none; box-shadow: none; }
-                    .thumb-item { min-width: 80px; height: 55px; }
-                    .thumbnails-wrapper { padding: 0.5rem 0; }
+                    .thumb-item { width: 80px; height: 55px; }
+                    .thumbnails-wrapper { padding: 1rem 0; }
                 }
             ` }} />
         </div>
