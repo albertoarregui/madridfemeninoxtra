@@ -242,12 +242,13 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 }
 
                 @media (max-width: 768px) {
-                    .main-stage { padding: 1rem; min-height: 40vh; }
+                    .main-stage { padding: 0.25rem; min-height: 40vh; }
                     .nav-arrow { width: 44px; height: 44px; }
                     .nav-arrow.left { left: 1rem; }
                     .nav-arrow.right { right: 1rem; }
-                    .image-container { max-width: 100%; border-width: 4px; }
-                    .thumb-item { min-width: 80px; height: 60px; }
+                    .image-container { max-width: 100%; border: none; box-shadow: none; }
+                    .thumb-item { min-width: 70px; height: 50px; }
+                    .thumbnails-wrapper { padding: 0.5rem 0; }
                 }
             ` }} />
         </div>
