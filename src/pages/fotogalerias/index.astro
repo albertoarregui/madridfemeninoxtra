@@ -1,0 +1,84 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GalleryArchive from "../../components/GalleryArchive";
+import { contentfulClient } from "../../lib/contentful";
+import "../../styles/global.css";
+
+export const prerender = false;
+
+let albums: any[] = [];
+try {
+    const entries = await contentfulClient.getEntries({
+        content_type: "galeria",
+        order: ["-fields.fecha" as any], 
+    });
+
+    console.log(`Galerías encontradas: ${entries.items.length}`);
+
+    albums = entries.items.map((item: any) => {
+        const f = item.fields;
+        return {
+            id: item.sys.id,
+            slug: f.slug || "",
+            title: f.titulo || f.title || f.Titulo || "Sin Título",
+            subtitle: f.competicion || f.competition || f.Competición || "",
+            date: f.fecha ? new Date(f.fecha).toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }).toUpperCase() : "SIN FECHA",
+            cover: f.imagenDePortada?.fields?.file?.url 
+                ? `https:${f.imagenDePortada.fields.file.url}` 
+                : "/assets/background/stadium.webp",
+            count: f.totalFotos || f.totalPhotos || 0
+        };
+    });
+} catch (e) {
+    console.error("Error fetching galleries:", e);
+}
+
+const title = "Galería | Madrid Femenino Xtra";
+const description = "Explora las mejores imágenes del Real Madrid Femenino: partidos, entrenamientos y momentos exclusivos.";
+---
+
+<Layout title={title} description={description}>
+    <main class="gallery-archive-page">
+        <header class="page-header-container">
+            <h1 class="landing-title">FOTOGALERÍAS</h1>
+            <p class="landing-subtitle">Los mejores momentos del Real Madrid Femenino capturados en alta resolución</p>
+        </header>
+
+        <section class="gallery-grid-section">
+            <div class="container">
+                <GalleryArchive initialAlbums={albums} client:load />
+            </div>
+        </section>
+    </main>
+</Layout>
+
+<style>
+    .gallery-archive-page {
+        background-color: #fdfdfd;
+        min-height: 100vh;
+        padding-bottom: 5rem;
+    }
+
+    .container {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+
+    .gallery-grid-section {
+        margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .gallery-archive-page {
+            padding-top: 1rem;
+        }
+        .container {
+            padding: 0 1rem;
+        }
+    }
+</style>

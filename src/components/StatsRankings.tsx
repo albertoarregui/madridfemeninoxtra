@@ -451,7 +451,7 @@ export default function StatsRankings({
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
                                 {currentConfig.headers.map((h: string, i: number) => (
-                                    <th key={i} className={`px-6 py-5 text-left text-xs font-black uppercase tracking-widest text-gray-500 ${i !== 1 ? 'text-center' : ''}`}>
+                                    <th key={i} className="px-6 py-5 text-center text-xs font-black uppercase tracking-widest text-gray-500">
                                         {h}
                                     </th>
                                 ))}
@@ -469,8 +469,8 @@ export default function StatsRankings({
                                         <td className="px-6 py-5 text-center">
                                             <span className="text-sm font-bold text-gray-400">{globalIndex}</span>
                                         </td>
-                                        <td className="px-6 py-5">
-                                            <a href={`/jugadoras/${player.slug}`} className="flex items-center gap-4">
+                                        <td className="px-6 py-5 text-center">
+                                            <a href={`/jugadoras/${player.slug}`} className="flex items-center justify-center gap-4">
                                                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
                                                     <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
                                                 </div>

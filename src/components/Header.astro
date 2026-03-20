@@ -64,58 +64,47 @@ const currentPath = pathname === "/" ? "/home" : pathname;
                     <span>Inicio</span>
                 </a>
             </li>
-            <li>
-                <a
-                    href="/plantilla"
-                    class={currentPath === "/plantilla" ? "active" : ""}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="nav-icon"
-                        ><path stroke="none" d="M0 0h24v24H0z" fill="none"
-                        ></path><path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"
-                        ></path><path
-                            d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1"
-                        ></path><path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"
-                        ></path><path d="M17 10h2a2 2 0 0 1 2 2v1"></path><path
-                            d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path
-                            d="M3 13v-1a2 2 0 0 1 2 -2h2"></path></svg
+            <li class="has-submenu">
+                <div class="submenu-header">
+                    <a
+                        href="#"
+                        aria-expanded="false"
+                        aria-controls="submenu-actualidad"
+                        class={currentPath.startsWith("/noticias") || currentPath.startsWith("/plantilla") || currentPath.startsWith("/calendario") || currentPath.startsWith("/galeria") ? "active" : ""}
                     >
-                    <span>Plantilla</span>
-                </a>
-            </li>
-            <li>
-                <a
-                    href="/noticias"
-                    class={currentPath.startsWith("/noticias") ? "active" : ""}
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="nav-icon"
-                        ><path stroke="none" d="M0 0h24v24H0z" fill="none"
-                        ></path><path
-                            d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0v-13a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1v12a3 3 0 0 0 3 3h11"
-                        ></path><path d="M8 8l4 0"></path><path d="M8 12l4 0"
-                        ></path><path d="M8 16l4 0"></path></svg
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="nav-icon"
+                            ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                            ></path><path
+                                d="M16 6h3a1 1 0 0 1 1 1v11a2 2 0 0 1 -4 0v-13a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1v12a3 3 0 0 0 3 3h11"
+                            ></path><path d="M8 8l4 0"></path><path d="M8 12l4 0"
+                            ></path><path d="M8 16l4 0"></path></svg
+                        >
+                        <span>Actualidad</span>
+                    </a>
+                    <button
+                        class="submenu-toggle"
+                        aria-expanded="false"
+                        aria-controls="submenu-actualidad"
+                        aria-label="Abrir submenú de actualidad">▼</button
                     >
-                    <span>Noticias</span>
-                </a>
+                </div>
+
+                <ul class="submenu" id="submenu-actualidad">
+                    <li><a href="/noticias"><span>Noticias</span></a></li>
+                    <li><a href="/plantilla"><span>Plantilla</span></a></li>
+                    <li><a href="/calendario"><span>Calendario</span></a></li>
+                    <li><a href="/fotogalerias"><span>Fotogalerías</span></a></li>
+                </ul>
             </li>
             <li class="has-submenu">
                 <div class="submenu-header">
@@ -340,7 +329,6 @@ const currentPath = pathname === "/" ? "/home" : pathname;
         left: 0;
         right: 0;
         width: 100%;
-        gap: 3rem;
         z-index: 1000000;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
@@ -358,6 +346,7 @@ const currentPath = pathname === "/" ? "/home" : pathname;
         height: 70px;
         position: relative;
         overflow: visible;
+        justify-self: start;
     }
 
     @media (max-width: 1024px) {
@@ -400,12 +389,14 @@ const currentPath = pathname === "/" ? "/home" : pathname;
     .main-nav {
         display: flex;
         justify-content: center;
+        justify-self: center;
     }
 
     .desktop-social-icons {
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
+        justify-self: end;
     }
 
     .desktop-social-icons a {
@@ -496,18 +487,16 @@ const currentPath = pathname === "/" ? "/home" : pathname;
     .nav-list a::after {
         content: "";
         position: absolute;
-        bottom: -4px;
+        bottom: 0;
         left: 0;
         width: 0;
         height: 2px;
         background-color: var(--header-accent);
         transition: width 0.3s ease;
-        z-index: 5;
     }
 
     .nav-list a:hover {
         color: var(--header-accent);
-        text-shadow: 0 0 8px rgba(255, 222, 89, 0.3);
     }
 
     .nav-list a:hover::after,

@@ -1,7 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { contentfulClient } from "../../lib/contentful";
-import { getAssetUrl } from "../../utils/assets";
+import NewsArchive from "../../components/NewsArchive";
 
 export const prerender = false;
 
@@ -11,11 +11,12 @@ let error = null;
 try {
     const entries = await contentfulClient.getEntries({
         content_type: "noticia",
-        order: ["-fields.publishDate"],
+        order: ["-sys.createdAt"],
     });
     noticias = entries.items.map((item: any) => ({
         ...item.fields,
         id: item.sys.id,
+        createdAt: item.sys.createdAt,
         updatedAt: item.sys.updatedAt,
     }));
 } catch (e: any) {
@@ -29,47 +30,16 @@ const description = "Todas las noticias, actualidad y última hora del Real Madr
 
 <Layout title={title} description={description}>
     <main class="news-archive-page">
-        <header class="news-archive-header">
-            <div class="container">
-                <h1 class="section-title">NOTICIAS</h1>
-                <p class="section-subtitle">Toda la actualidad del Real Madrid Femenino</p>
-            </div>
+        <header class="page-header-container">
+            <h1 class="landing-title">NOTICIAS</h1>
+            <p class="landing-subtitle">Toda la actualidad del Real Madrid Femenino</p>
         </header>
 
         <section class="news-grid-section">
             <div class="container">
                 {error && <p class="error-message">Error cargando las noticias: {error}</p>}
                 
-                <div class="news-grid">
-                    {noticias.length > 0 ? (
-                        noticias.map((noticia) => (
-                            <a href={`/noticias/${noticia.slug}`} class="news-card-v2" key={noticia.id}>
-                                <div class="news-card-image">
-                                    <img 
-                                        src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}` : getAssetUrl("background", "stadium.webp")} 
-                                        alt={noticia.title}
-                                        loading="lazy"
-                                    />
-                                    <span class="news-card-category">{noticia.category || "ACTUALIDAD"}</span>
-                                </div>
-                                <div class="news-card-content">
-                                    <time class="news-card-date">
-                                        {new Date(noticia.publishDate || noticia.updatedAt).toLocaleDateString("es-ES", {
-                                            day: "2-digit",
-                                            month: "long",
-                                            year: "numeric"
-                                        }).toUpperCase()}
-                                    </time>
-                                    <h2 class="news-card-title">{noticia.title}</h2>
-                                    <p class="news-card-excerpt">{noticia.subtitle}</p>
-                                    <span class="news-card-more">LEER MÁS →</span>
-                                </div>
-                            </a>
-                        ))
-                    ) : (
-                        !error && <p class="no-news">No se han encontrado noticias en este momento.</p>
-                    )}
-                </div>
+                <NewsArchive noticias={noticias} client:load />
             </div>
         </section>
     </main>
@@ -77,14 +47,8 @@ const description = "Todas las noticias, actualidad y última hora del Real Madr
 
 <style>
     .news-archive-page {
-        padding-top: 2rem;
-        background-color: #f9f9f9;
+        background-color: #fdfdfd;
         min-height: 100vh;
-    }
-
-    .news-archive-header {
-        text-align: center;
-        margin-bottom: 3rem;
     }
 
     .container {
@@ -93,129 +57,9 @@ const description = "Todas las noticias, actualidad y última hora del Real Madr
         padding: 0 1.5rem;
     }
 
-    .section-title {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: 4rem;
-        color: #1a1a1a;
-        margin-bottom: 0.5rem;
-        letter-spacing: 2px;
-    }
-
-    .section-subtitle {
-        font-size: 1.2rem;
-        color: #666;
-        font-weight: 500;
-    }
-
-    .news-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 2.5rem;
-        margin-bottom: 5rem;
-    }
-
-    .news-card-v2 {
-        display: flex;
-        flex-direction: column;
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        text-decoration: none;
-        color: inherit;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .news-card-v2:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-    }
-
-    .news-card-image {
-        position: relative;
-        height: 220px;
-        overflow: hidden;
-    }
-
-    .news-card-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-
-    .news-card-v2:hover .news-card-image img {
-        transform: scale(1.05);
-    }
-
-    .news-card-category {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #ffde59;
-        color: #1a1a1a;
-        padding: 0.4rem 1rem;
-        font-family: "Bebas Neue", sans-serif;
-        font-size: 0.9rem;
-        border-radius: 4px;
-        letter-spacing: 1px;
-    }
-
-    .news-card-content {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
-
-    .news-card-date {
-        font-size: 0.75rem;
-        color: #888;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-        letter-spacing: 0.5px;
-    }
-
-    .news-card-title {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: 1.75rem;
-        line-height: 1.1;
-        color: #1a1a1a;
-        margin-bottom: 1rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .news-card-excerpt {
-        font-size: 0.95rem;
-        color: #555;
-        line-height: 1.5;
-        margin-bottom: 1.5rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        flex-grow: 1;
-    }
-
-    .news-card-more {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: 1rem;
-        color: #d1b131;
-        letter-spacing: 1px;
-        margin-top: auto;
-    }
-
     @media (max-width: 768px) {
-        .section-title {
-            font-size: 3rem;
-        }
-        
-        .news-grid {
-            grid-template-columns: 1fr;
-            gap: 2rem;
+        .news-archive-page {
+            padding-top: 1rem;
         }
     }
 </style>

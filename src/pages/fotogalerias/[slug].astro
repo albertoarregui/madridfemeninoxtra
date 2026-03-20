@@ -1,0 +1,97 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GalleryViewer from "../../components/GalleryViewer";
+import { contentfulClient } from "../../lib/contentful";
+import "../../styles/global.css";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+let albumData: any = null;
+try {
+    const entries = await contentfulClient.getEntries({
+        content_type: "galeria",
+        "fields.slug": slug,
+        limit: 1,
+    });
+
+    if (entries && entries.items.length > 0) {
+        const item = entries.items[0].fields as any;
+        const total = item.totalFotos || item.totalPhotos || item.TotalFotos || 0;
+        const folder = item.rutaDeCarpetas || item.rutaDeCarpeta || item.folderPath || "";
+        
+        albumData = {
+            title: item.titulo || item.title || item.Titulo || "Sin Título",
+            subtitle: item.competicion || item.competition || item.Competición || "",
+            date: item.fecha ? new Date(item.fecha).toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }).toUpperCase() : "SIN FECHA",
+            photos: Array.from({ length: total }, (_, i) => 
+                `https://media.madridfemeninoxtra.com/galeria/${folder}/${i + 1}.jpg`
+            )
+        };
+    }
+} catch (e) {
+    console.error("Error fetching gallery detail:", e);
+}
+
+if (!albumData) {
+    return Astro.redirect("/404");
+}
+---
+
+<Layout 
+    title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`} 
+    description={`Explora las fotos de ${albumData.title} del Real Madrid Femenino.`}
+>
+    <main class="gallery-detail-page bg-white pt-32">
+        <div class="container mx-auto px-6">
+            <div class="gallery-back-link-wrapper mb-8">
+                <a href="/fotogalerias" class="gallery-back-link flex items-center gap-2 font-black text-xs uppercase tracking-widest text-gray-400 hover:text-[#151e42] transition-colors group">
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        class="group-hover:-translate-x-1 transition-transform"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="3"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Volver a Fotogalerías
+                </a>
+            </div>
+
+            <GalleryViewer album={albumData} client:only="react">
+                <header class="gallery-inner-header mb-12">
+                    <h1 class="landing-title text-left !mb-4">FOTOGALERÍAS</h1>
+                    <div class="border-l-4 border-[#ffde59] pl-6 py-2">
+                        <h2 class="text-2xl sm:text-4xl font-black text-[#151e42] uppercase italic mb-2 tracking-tighter leading-none">
+                            {albumData.title}
+                        </h2>
+                        <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">
+                            {albumData.subtitle} <span class="mx-2 text-[#ffde59]">•</span> {albumData.date}
+                        </p>
+                    </div>
+                </header>
+            </GalleryViewer>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .gallery-detail-page {
+        min-height: 100vh;
+        padding-bottom: 5rem;
+    }
+    .container {
+        max-width: 1240px;
+    }
+</style>
