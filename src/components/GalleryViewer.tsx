@@ -57,6 +57,21 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
     }, [currentIndex]);
 
     useEffect(() => {
+        const carousel = scrollRef.current;
+        if (!carousel) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                carousel.scrollLeft += e.deltaY;
+            }
+        };
+
+        carousel.addEventListener('wheel', handleWheel, { passive: false });
+        return () => carousel.removeEventListener('wheel', handleWheel);
+    }, []);
+
+    useEffect(() => {
         if (scrollRef.current) {
             const activeThumb = scrollRef.current.children[currentIndex] as HTMLElement;
             if (activeThumb) {
@@ -83,21 +98,21 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
             </div>
 
             <div className="main-stage">
-                <button className="nav-arrow left" onClick={prevPhoto}>
-                    <ChevronLeft size={32} />
-                </button>
-
                 <div className="image-container">
+                    <button className="nav-arrow left" onClick={prevPhoto}>
+                        <ChevronLeft size={32} />
+                    </button>
+
                     <DynamicImage
                         src={album.photos[currentIndex]}
                         alt={`Foto ${currentIndex + 1} de ${album.title}`}
                         className="main-photo"
                     />
-                </div>
 
-                <button className="nav-arrow right" onClick={nextPhoto}>
-                    <ChevronRight size={32} />
-                </button>
+                    <button className="nav-arrow right" onClick={nextPhoto}>
+                        <ChevronRight size={32} />
+                    </button>
+                </div>
             </div>
 
             <div className="thumbnails-wrapper">
@@ -140,86 +155,82 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: #fdfdfd;
-                    padding: 2rem;
+                    background: transparent;
+                    padding: 0;
                     min-height: 60vh;
                 }
                 .image-container {
                     position: relative;
-                    max-width: 90%;
-                    max-height: 75vh;
-                    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
-                    border: 8px solid white;
-                    border-radius: 4px;
-                    overflow: hidden;
+                    max-width: 100%;
+                    max-height: 85vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 .main-photo {
                     width: auto;
                     height: auto;
                     max-width: 100%;
-                    max-height: 75vh;
+                    max-height: 85vh;
                     object-fit: contain;
                 }
                 .nav-arrow {
                     position: absolute;
                     top: 50%;
                     transform: translateY(-50%);
-                    z-index: 10;
-                    width: 60px;
-                    height: 60px;
-                    border-radius: 50%;
-                    background: white;
+                    z-index: 50;
+                    width: 50px;
+                    height: 50px;
+                    background: transparent;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #151e42;
-                    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+                    color: #ffde59;
                     transition: all 0.3s;
+                    border: none;
+                    cursor: pointer;
+                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
                 }
                 .nav-arrow:hover {
-                    background: #ffde59;
-                    transform: translateY(-50%) scale(1.1);
-                    box-shadow: 0 15px 30px rgba(255, 222, 89, 0.3);
+                    color: #fff;
+                    transform: translateY(-50%) scale(1.2);
                 }
-                .nav-arrow.left { left: 2rem; }
-                .nav-arrow.right { right: 2rem; }
+                .nav-arrow.left { left: 20px; }
+                .nav-arrow.right { right: 20px; }
 
                 .thumbnails-wrapper {
                     padding: 1.5rem 0;
-                    border-top: 1px solid #f0f0f0;
-                    background: #fff;
+                    background: transparent;
                 }
                 .thumbnails-scroll {
                     display: flex;
-                    gap: 1rem;
+                    gap: 0.75rem;
                     overflow-x: auto;
                     padding-bottom: 0.5rem;
                     -webkit-overflow-scrolling: touch;
                 }
                 .thumb-item {
-                    position: relative;
-                    min-width: 120px;
-                    height: 80px;
-                    border-radius: 8px;
+                    min-width: 100px;
+                    height: 65px;
+                    border-radius: 6px;
                     overflow: hidden;
                     cursor: pointer;
                     flex-shrink: 0;
                     transition: all 0.3s;
-                    border: 3px solid transparent;
+                    border: 2px solid transparent;
+                    background: #eee;
                 }
                 .thumb-item img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    opacity: 0.6;
+                    opacity: 0.5;
                     transition: all 0.3s;
-                }
-                .thumb-item:hover img {
-                    opacity: 1;
                 }
                 .thumb-item.active {
                     border-color: #ffde59;
                     transform: scale(1.05);
+                    opacity: 1;
                 }
                 .thumb-item.active img {
                     opacity: 1;
