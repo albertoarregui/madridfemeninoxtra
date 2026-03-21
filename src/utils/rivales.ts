@@ -31,7 +31,7 @@ export function getRivalShieldUrl(rival: any): string {
 
     const cleanName = normalizeFileName(name || '');
     if (cleanName) {
-        return `https://media.madridfemeninoxtra.com/escudos/${cleanName}.png`;
+        return `https://media.madridfemeninoxtra.com/escudos/${cleanName}.webp`;
     }
     return localUrl;
 }

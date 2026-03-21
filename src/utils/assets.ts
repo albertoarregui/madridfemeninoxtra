@@ -74,7 +74,7 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
         let normalizedFallback = normalizeName(cleanFileName);
 
         if (!normalizedFallback.includes('.')) {
-            normalizedFallback += '.png';
+            normalizedFallback += '.webp';
         }
         
         return `https://media.madridfemeninoxtra.com/${folder}/${normalizedFallback}`;
