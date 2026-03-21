@@ -563,9 +563,9 @@ export default function StatsRankings({
                                         <td className="px-6 py-5 text-center">
                                             <span className="text-sm font-bold text-gray-400">{globalIndex}</span>
                                         </td>
-                                        <td className="px-6 py-5 text-center">
-                                            <a href={`/jugadoras/${player.slug}`} className="flex items-center justify-center gap-4">
-                                                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
+                                        <td className="px-6 py-5 text-left border-l-4 border-l-transparent hover:border-l-yellow-400">
+                                            <a href={`/jugadoras/${player.slug}`} className="flex items-center justify-start gap-4">
+                                                <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
                                                     <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
                                                 </div>
                                                 <span className="text-base font-bold text-gray-800">{player.nombre}</span>
