@@ -41,11 +41,19 @@ interface RankingStat {
     regates_totales?: number;
     duelos_suelo_ganados?: number;
     duelos_aereos_ganados?: number;
-    intercepciones?: number;
-    despejes?: number;
-    bloqueos?: number;
-    entradas?: number;
     recuperaciones?: number;
+    valoracion?: number;
+    valoracion_count?: number;
+    perdidas?: number;
+    fueras_juego?: number;
+    regateada?: number;
+    faltas_recibidas?: number;
+    faltas_cometidas?: number;
+    pases_largo_totales?: number;
+    centros_totales?: number;
+    duelos_suelo_totales?: number;
+    duelos_aereos_totales?: number;
+    pases_ultimo_tercio_totales?: number;
     img_url?: string;
 }
 
@@ -80,6 +88,7 @@ interface StatsRankingsProps {
 }
 
 const TYPE_OPTIONS = [
+    { value: "valoracion", label: "Mejor valoración media" },
     { value: "goles", label: "Máximas goleadoras" },
     { value: "asistencias", label: "Máximas asistentes" },
     { value: "goles_generados", label: "Más goles generados" },
@@ -87,7 +96,26 @@ const TYPE_OPTIONS = [
     { value: "tiros_totales", label: "Más tiros totales" },
     { value: "tiros_puerta", label: "Más tiros a puerta" },
     { value: "regates_completados", label: "Más regates completados" },
+    { value: "porcentaje_regates", label: "% Regates con éxito" },
+    { value: "toques", label: "Más toques de balón" },
     { value: "toques_area_rival", label: "Toques en área rival" },
+    { value: "perdidas", label: "Más pérdidas de balón" },
+    { value: "fueras_juego", label: "Más fueras de juego" },
+    { value: "pases_completados", label: "Más pases completados" },
+    { value: "porcentaje_pases", label: "% Pases completados" },
+    { value: "pases_ultimo_tercio", label: "Pases al último tercio" },
+    { value: "pases_largo_completados", label: "Pases en largo completados" },
+    { value: "porcentaje_pases_largo", label: "% Pases en largo" },
+    { value: "centros_completados", label: "Centros completados" },
+    { value: "porcentaje_centros", label: "% Centros completados" },
+    { value: "bloqueos", label: "Más bloqueos" },
+    { value: "intercepciones", label: "Más intercepciones" },
+    { value: "recuperaciones", label: "Más recuperaciones" },
+    { value: "regateada", label: "Más veces regateada" },
+    { value: "porcentaje_duelos", label: "% Duelos ganados" },
+    { value: "porcentaje_duelos_aereos", label: "% Duelos aéreos ganados" },
+    { value: "faltas_recibidas", label: "Más faltas recibidas" },
+    { value: "faltas_cometidas", label: "Más faltas cometidas" },
     { value: "goles_victoria", label: "Match winners" },
     { value: "goles_empate", label: "Goles del empate" },
     { value: "goles_abrelatas", label: "Goles abrelatas" },
@@ -148,6 +176,7 @@ export default function StatsRankings({
 
     const currentConfig = useMemo(() => {
         const configs: Record<string, any> = {
+            valoracion: { title: "Mejor valoración media", headers: ["Pos", "Jugadora", "Nota Media"], dataKeys: ["valoracion"], primaryKey: "valoracion", icon: <LucideStar className="text-yellow-500" /> },
             goles: { title: "Máximas goleadoras", headers: ["Pos", "Jugadora", "Goles"], dataKeys: ["goles"], primaryKey: "goles", icon: <Target className="text-red-500" /> },
             asistencias: { title: "Máximas asistentes", headers: ["Pos", "Jugadora", "Asistencias"], dataKeys: ["asistencias"], primaryKey: "asistencias", icon: <Zap className="text-yellow-500" /> },
             goles_generados: { title: "Participación en Goles", headers: ["Pos", "Jugadora", "Goles", "Asist.", "G+A"], dataKeys: ["goles", "asistencias", "goles_generados"], primaryKey: "goles_generados", icon: <TrendingUp className="text-green-500" /> },
@@ -155,9 +184,26 @@ export default function StatsRankings({
             tiros_totales: { title: "Máximos remates", headers: ["Pos", "Jugadora", "Remates"], dataKeys: ["tiros_totales"], primaryKey: "tiros_totales", icon: <Target className="text-red-400" /> },
             tiros_puerta: { title: "Remates a puerta", headers: ["Pos", "Jugadora", "A Puerta"], dataKeys: ["tiros_puerta"], primaryKey: "tiros_puerta", icon: <Target className="text-red-600" /> },
             regates_completados: { title: "Más regates completados", headers: ["Pos", "Jugadora", "Regates"], dataKeys: ["regates_completados"], primaryKey: "regates_completados", icon: <Zap className="text-yellow-400" /> },
+            porcentaje_regates: { title: "% Éxito en Regates", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_regates"], primaryKey: "porcentaje_regates", icon: <Zap className="text-yellow-600" /> },
+            toques: { title: "Más toques de balón", headers: ["Pos", "Jugadora", "Toques"], dataKeys: ["toques"], primaryKey: "toques", icon: <Activity className="text-blue-400" /> },
             toques_area_rival: { title: "Toques en área rival", headers: ["Pos", "Jugadora", "Toques"], dataKeys: ["toques_area_rival"], primaryKey: "toques_area_rival", icon: <TrendingUp className="text-emerald-500" /> },
+            perdidas: { title: "Más pérdidas de posesión", headers: ["Pos", "Jugadora", "Pérdidas"], dataKeys: ["perdidas"], primaryKey: "perdidas", icon: <Activity className="text-red-500" /> },
+            fueras_juego: { title: "Más fueras de juego", headers: ["Pos", "Jugadora", "F. Juego"], dataKeys: ["fueras_juego"], primaryKey: "fueras_juego", icon: <Activity className="text-gray-400" /> },
+            pases_completados: { title: "Más pases completados", headers: ["Pos", "Jugadora", "Pases"], dataKeys: ["pases_completados"], primaryKey: "pases_completados", icon: <TrendingUp className="text-blue-500" /> },
+            porcentaje_pases: { title: "% Pases completados", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_pases"], primaryKey: "porcentaje_pases", icon: <TrendingUp className="text-blue-300" /> },
+            pases_ultimo_tercio: { title: "Pases al último tercio", headers: ["Pos", "Jugadora", "Pases"], dataKeys: ["pases_ultimo_tercio_completados"], primaryKey: "pases_ultimo_tercio_completados", icon: <Zap className="text-indigo-400" /> },
+            pases_largo_completados: { title: "Pases en largo completados", headers: ["Pos", "Jugadora", "Pases"], dataKeys: ["pases_largo_completados"], primaryKey: "pases_largo_completados", icon: <TrendingUp className="text-purple-400" /> },
+            porcentaje_pases_largo: { title: "% Pases en largo", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_pases_largo"], primaryKey: "porcentaje_pases_largo", icon: <TrendingUp className="text-purple-300" /> },
+            centros_completados: { title: "Centros completados", headers: ["Pos", "Jugadora", "Centros"], dataKeys: ["centros_completados"], primaryKey: "centros_completados", icon: <Zap className="text-rose-400" /> },
+            porcentaje_centros: { title: "% Centros completados", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_centros"], primaryKey: "porcentaje_centros", icon: <Zap className="text-rose-300" /> },
+            bloqueos: { title: "Más bloqueos", headers: ["Pos", "Jugadora", "Bloqueos"], dataKeys: ["bloqueos"], primaryKey: "bloqueos", icon: <Shield className="text-gray-600" /> },
             recuperaciones: { title: "Más recuperaciones", headers: ["Pos", "Jugadora", "Recuperac."], dataKeys: ["recuperaciones"], primaryKey: "recuperaciones", icon: <Shield className="text-blue-600" /> },
             intercepciones: { title: "Más intercepciones", headers: ["Pos", "Jugadora", "Intercep."], dataKeys: ["intercepciones"], primaryKey: "intercepciones", icon: <Shield className="text-indigo-600" /> },
+            regateada: { title: "Más veces regateada", headers: ["Pos", "Jugadora", "Regateada"], dataKeys: ["regateada"], primaryKey: "regateada", icon: <Activity className="text-orange-500" /> },
+            porcentaje_duelos: { title: "% Duelos ganados", headers: ["Pos", "Jugadora", "G/T", "%"], dataKeys: ["display_ratio", "porcentaje_duelos"], primaryKey: "porcentaje_duelos", icon: <Shield className="text-indigo-400" /> },
+            porcentaje_duelos_aereos: { title: "% Duelos aéreos ganados", headers: ["Pos", "Jugadora", "G/T", "%"], dataKeys: ["display_ratio", "porcentaje_duelos_aereos"], primaryKey: "porcentaje_duelos_aereos", icon: <LucideStar className="text-sky-300" /> },
+            faltas_recibidas: { title: "Más faltas recibidas", headers: ["Pos", "Jugadora", "Faltas"], dataKeys: ["faltas_recibidas"], primaryKey: "faltas_recibidas", icon: <LucideStar className="text-yellow-400" /> },
+            faltas_cometidas: { title: "Más faltas cometidas", headers: ["Pos", "Jugadora", "Faltas"], dataKeys: ["faltas_cometidas"], primaryKey: "faltas_cometidas", icon: <Activity className="text-red-400" /> },
             entradas: { title: "Más entradas realizadas", headers: ["Pos", "Jugadora", "Entradas"], dataKeys: ["entradas"], primaryKey: "entradas", icon: <Activity className="text-blue-500" /> },
             despejes: { title: "Más despejes", headers: ["Pos", "Jugadora", "Despejes"], dataKeys: ["despejes"], primaryKey: "despejes", icon: <Shield className="text-emerald-600" /> },
             duelos_suelo_ganados: { title: "Duelos en suelo ganados", headers: ["Pos", "Jugadora", "Duelos S."], dataKeys: ["duelos_suelo_ganados"], primaryKey: "duelos_suelo_ganados", icon: <Activity className="text-orange-600" /> },
@@ -241,15 +287,70 @@ export default function StatsRankings({
                         nombre: item.nombre,
                         slug: item.slug,
                         posicion: item.posicion,
-                        ...Object.fromEntries(config.dataKeys.map((k: string) => [k, 0]))
+                        // Store all numeric fields for percentage calculations
+                        pases_completados: 0, pases_totales: 0,
+                        regates_completados: 0, regates_totales: 0,
+                        pases_largo_completados: 0, pases_largo_totales: 0,
+                        centros_completados: 0, centros_totales: 0,
+                        duelos_suelo_ganados: 0, duelos_suelo_totales: 0,
+                        duelos_aereos_ganados: 0, duelos_aereos_totales: 0,
+                        valoracion_sum: 0, valoracion_count: 0,
+                        ...Object.fromEntries(config.dataKeys.filter((k: string) => k !== 'display_ratio' && k !== 'porcentaje_pases' && k !== 'porcentaje_regates' && k !== 'porcentaje_centros' && k !== 'porcentaje_pases_largo' && k !== 'porcentaje_duelos' && k !== 'porcentaje_duelos_aereos').map((k: string) => [k, 0]))
                     };
                 }
 
+                const p = playerMap[item.id_jugadora];
+                p.pases_completados += item.pases_completados || 0;
+                p.pases_totales += item.pases_totales || 0;
+                p.regates_completados += item.regates_completados || 0;
+                p.regates_totales += item.regates_totales || 0;
+                p.pases_largo_completados += item.pases_largo_completados || 0;
+                p.pases_largo_totales += item.pases_largo_totales || 0;
+                p.centros_completados += item.centros_completados || 0;
+                p.centros_totales += item.centros_totales || 0;
+                p.duelos_suelo_ganados += item.duelos_suelo_ganados || 0;
+                p.duelos_suelo_totales += item.duelos_suelo_totales || 0;
+                p.duelos_aereos_ganados += item.duelos_aereos_ganados || 0;
+                p.duelos_aereos_totales += item.duelos_aereos_totales || 0;
+                p.valoracion_sum += item.valoracion || 0;
+                p.valoracion_count += (item as any).valoracion_count || 0;
+
                 config.dataKeys.forEach((key: string) => {
-                    playerMap[item.id_jugadora][key] += (item as any)[key] || 0;
+                    if (key !== 'display_ratio' && !key.startsWith('porcentaje_')) {
+                        p[key] += (item as any)[key] || 0;
+                    }
                 });
             });
-            players = Object.values(playerMap);
+
+            players = Object.values(playerMap).map(p => {
+                const calcPct = (num: number, den: number) => den > 0 ? parseFloat(((num / den) * 100).toFixed(1)) : 0;
+                const calcRatio = (num: number, den: number) => `${num}/${den}`;
+
+                if (selectedType === "porcentaje_pases") {
+                    p.porcentaje_pases = calcPct(p.pases_completados, p.pases_totales);
+                    p.display_ratio = calcRatio(p.pases_completados, p.pases_totales);
+                } else if (selectedType === "porcentaje_regates") {
+                    p.porcentaje_regates = calcPct(p.regates_completados, p.regates_totales);
+                    p.display_ratio = calcRatio(p.regates_completados, p.regates_totales);
+                } else if (selectedType === "porcentaje_centros") {
+                    p.porcentaje_centros = calcPct(p.centros_completados, p.centros_totales);
+                    p.display_ratio = calcRatio(p.centros_completados, p.centros_totales);
+                } else if (selectedType === "porcentaje_pases_largo") {
+                    p.porcentaje_pases_largo = calcPct(p.pases_largo_completados, p.pases_largo_totales);
+                    p.display_ratio = calcRatio(p.pases_largo_completados, p.pases_largo_totales);
+                } else if (selectedType === "porcentaje_duelos") {
+                    const totalG = p.duelos_suelo_ganados + p.duelos_aereos_ganados;
+                    const totalT = p.duelos_suelo_totales + p.duelos_aereos_totales;
+                    p.porcentaje_duelos = calcPct(totalG, totalT);
+                    p.display_ratio = calcRatio(totalG, totalT);
+                } else if (selectedType === "porcentaje_duelos_aereos") {
+                    p.porcentaje_duelos_aereos = calcPct(p.duelos_aereos_ganados, p.duelos_aereos_totales);
+                    p.display_ratio = calcRatio(p.duelos_aereos_ganados, p.duelos_aereos_totales);
+                } else if (selectedType === "valoracion") {
+                    p.valoracion = p.valoracion_count > 0 ? parseFloat((p.valoracion_sum / p.valoracion_count).toFixed(2)) : 0;
+                }
+                return p;
+            });
         }
 
         return players
@@ -471,11 +572,15 @@ export default function StatsRankings({
                                                 <span className="text-base font-bold text-gray-800">{player.nombre}</span>
                                             </a>
                                         </td>
-                                        {currentConfig.dataKeys.map((key: string) => (
-                                            <td key={key} className="px-6 py-5 text-center">
-                                                <span className="text-lg font-black text-[#151e42]">{player[key]}</span>
-                                            </td>
-                                        ))}
+                                        {currentConfig.dataKeys.map((key: string) => {
+                                            let val = player[key];
+                                            if (key.startsWith('porcentaje_')) val = `${val}%`;
+                                            return (
+                                                <td key={key} className="px-6 py-5 text-center">
+                                                    <span className="text-lg font-black text-[#151e42]">{val}</span>
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                 );
                             }) : (

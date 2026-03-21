@@ -42,16 +42,26 @@ export interface RankingStat {
     pases_totales?: number;
     pases_ultimo_tercio_completados?: number;
     pases_largo_completados?: number;
+    pases_largo_totales?: number;
     centros_completados?: number;
+    centros_totales?: number;
     regates_completados?: number;
     regates_totales?: number;
     duelos_suelo_ganados?: number;
+    duelos_suelo_totales?: number;
     duelos_aereos_ganados?: number;
+    duelos_aereos_totales?: number;
     intercepciones?: number;
     despejes?: number;
     bloqueos?: number;
     entradas?: number;
     recuperaciones?: number;
+    valoracion?: number;
+    perdidas?: number;
+    fueras_juego?: number;
+    regateada?: number;
+    faltas_recibidas?: number;
+    faltas_cometidas?: number;
 }
 
 export interface StreakData {
@@ -194,16 +204,28 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(COALESCE(ej.pases_totales, 0)) as pases_totales,
                     SUM(COALESCE(ej.pases_ultimo_tercio_completados, 0)) as pases_ultimo_tercio_completados,
                     SUM(COALESCE(ej.pases_largo_completados, 0)) as pases_largo_completados,
+                    SUM(COALESCE(ej.pases_largo_totales, 0)) as pases_largo_totales,
                     SUM(COALESCE(ej.centros_completados, 0)) as centros_completados,
+                    SUM(COALESCE(ej.centros_totales, 0)) as centros_totales,
                     SUM(COALESCE(ej.regates_completados, 0)) as regates_completados,
                     SUM(COALESCE(ej.regates_totales, 0)) as regates_totales,
                     SUM(COALESCE(ej.duelos_suelo_ganados, 0)) as duelos_suelo_ganados,
+                    SUM(COALESCE(ej.duelos_suelo_totales, 0)) as duelos_suelo_totales,
                     SUM(COALESCE(ej.duelos_aereos_ganados, 0)) as duelos_aereos_ganados,
+                    SUM(COALESCE(ej.duelos_aereos_totales, 0)) as duelos_aereos_totales,
                     SUM(COALESCE(ej.intercepciones, 0)) as intercepciones,
                     SUM(COALESCE(ej.despejes, 0)) as despejes,
                     SUM(COALESCE(ej.bloqueos, 0)) as bloqueos,
                     SUM(COALESCE(ej.entradas, 0)) as entradas,
-                    SUM(COALESCE(ej.recuperaciones, 0)) as recuperaciones
+                    SUM(COALESCE(ej.recuperaciones, 0)) as recuperaciones,
+                    SUM(COALESCE(ej.valoracion, 0)) as valoracion,
+                    SUM(CASE WHEN ej.valoracion > 0 THEN 1 ELSE 0 END) as valoracion_count,
+                    SUM(COALESCE(ej.perdidas, 0)) as perdidas,
+                    SUM(COALESCE(ej.fueras_juego, 0)) as fueras_juego,
+                    SUM(COALESCE(ej.regateada, 0)) as regateada,
+                    SUM(COALESCE(ej.faltas_recibidas, 0)) as faltas_recibidas,
+                    SUM(COALESCE(ej.faltas_cometidas, 0)) as faltas_cometidas,
+                    SUM(COALESCE(ej.pases_ultimo_tercio_totales, 0)) as pases_ultimo_tercio_totales
                 FROM estadisticas_jugadoras ej
                 JOIN partidos p ON ej.id_partido = p.id_partido
                 GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
@@ -240,17 +262,30 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(s.pases_completados, 0) as pases_completados,
                 COALESCE(s.pases_totales, 0) as pases_totales,
                 COALESCE(s.pases_ultimo_tercio_completados, 0) as pases_ultimo_tercio_completados,
+                COALESCE(s.pases_ultimo_tercio_completados, 0) as pases_ultimo_tercio_completados,
+                COALESCE(s.pases_ultimo_tercio_totales, 0) as pases_ultimo_tercio_totales,
                 COALESCE(s.pases_largo_completados, 0) as pases_largo_completados,
+                COALESCE(s.pases_largo_totales, 0) as pases_largo_totales,
                 COALESCE(s.centros_completados, 0) as centros_completados,
+                COALESCE(s.centros_totales, 0) as centros_totales,
                 COALESCE(s.regates_completados, 0) as regates_completados,
                 COALESCE(s.regates_totales, 0) as regates_totales,
                 COALESCE(s.duelos_suelo_ganados, 0) as duelos_suelo_ganados,
+                COALESCE(s.duelos_suelo_totales, 0) as duelos_suelo_totales,
                 COALESCE(s.duelos_aereos_ganados, 0) as duelos_aereos_ganados,
+                COALESCE(s.duelos_aereos_totales, 0) as duelos_aereos_totales,
                 COALESCE(s.intercepciones, 0) as intercepciones,
                 COALESCE(s.despejes, 0) as despejes,
                 COALESCE(s.bloqueos, 0) as bloqueos,
                 COALESCE(s.entradas, 0) as entradas,
-                COALESCE(s.recuperaciones, 0) as recuperaciones
+                COALESCE(s.recuperaciones, 0) as recuperaciones,
+                COALESCE(s.valoracion, 0) as valoracion,
+                COALESCE(s.valoracion_count, 0) as valoracion_count,
+                COALESCE(s.perdidas, 0) as perdidas,
+                COALESCE(s.fueras_juego, 0) as fueras_juego,
+                COALESCE(s.regateada, 0) as regateada,
+                COALESCE(s.faltas_recibidas, 0) as faltas_recibidas,
+                COALESCE(s.faltas_cometidas, 0) as faltas_cometidas
             FROM jugadoras j
             CROSS JOIN temporadas t
             CROSS JOIN competiciones c
@@ -302,17 +337,29 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             pases_completados: Number(row.pases_completados),
             pases_totales: Number(row.pases_totales),
             pases_ultimo_tercio_completados: Number(row.pases_ultimo_tercio_completados),
+            pases_ultimo_tercio_totales: Number(row.pases_ultimo_tercio_totales),
             pases_largo_completados: Number(row.pases_largo_completados),
+            pases_largo_totales: Number(row.pases_largo_totales),
             centros_completados: Number(row.centros_completados),
+            centros_totales: Number(row.centros_totales),
             regates_completados: Number(row.regates_completados),
             regates_totales: Number(row.regates_totales),
             duelos_suelo_ganados: Number(row.duelos_suelo_ganados),
+            duelos_suelo_totales: Number(row.duelos_suelo_totales),
             duelos_aereos_ganados: Number(row.duelos_aereos_ganados),
+            duelos_aereos_totales: Number(row.duelos_aereos_totales),
             intercepciones: Number(row.intercepciones),
             despejes: Number(row.despejes),
             bloqueos: Number(row.bloqueos),
             entradas: Number(row.entradas),
             recuperaciones: Number(row.recuperaciones),
+            valoracion: Number(row.valoracion),
+            valoracion_count: Number(row.valoracion_count),
+            perdidas: Number(row.perdidas),
+            fueras_juego: Number(row.fueras_juego),
+            regateada: Number(row.regateada),
+            faltas_recibidas: Number(row.faltas_recibidas),
+            faltas_cometidas: Number(row.faltas_cometidas),
         }));
 
     } catch (error) {
