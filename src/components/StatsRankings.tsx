@@ -545,7 +545,7 @@ export default function StatsRankings({
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
                                 {currentConfig.headers.map((h: string, i: number) => (
-                                    <th key={i} className="px-6 py-5 text-center text-xs font-black uppercase tracking-widest text-gray-500">
+                                    <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-black uppercase tracking-widest text-gray-500`}>
                                         {h}
                                     </th>
                                 ))}
@@ -557,13 +557,13 @@ export default function StatsRankings({
                                 return (
                                     <tr
                                         key={player.id_jugadora}
-                                        className="ranking-table-row transition-colors cursor-pointer"
+                                        className="ranking-table-row group transition-colors cursor-pointer"
                                         onClick={() => window.location.href = `/jugadoras/${player.slug}`}
                                     >
-                                        <td className="px-6 py-5 text-center">
+                                        <td className="px-6 py-5 text-center border-l-[6px] border-l-transparent transition-all group-hover:border-l-[#ffde59]">
                                             <span className="text-sm font-bold text-gray-400">{globalIndex}</span>
                                         </td>
-                                        <td className="px-6 py-5 text-left border-l-4 border-l-transparent hover:border-l-yellow-400">
+                                        <td className="px-6 py-5 text-left">
                                             <a href={`/jugadoras/${player.slug}`} className="flex items-center justify-start gap-4">
                                                 <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
                                                     <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
