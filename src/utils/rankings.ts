@@ -32,7 +32,6 @@ export interface RankingStat {
     goles_empate: number;
     goles_abrelatas: number;
     penaltis: number;
-    // New Advanced Stats
     pases_clave?: number;
     tiros_totales?: number;
     tiros_puerta?: number;

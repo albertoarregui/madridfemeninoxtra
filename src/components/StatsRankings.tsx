@@ -287,7 +287,6 @@ export default function StatsRankings({
                         nombre: item.nombre,
                         slug: item.slug,
                         posicion: item.posicion,
-                        // Store all numeric fields for percentage calculations
                         pases_completados: 0, pases_totales: 0,
                         regates_completados: 0, regates_totales: 0,
                         pases_largo_completados: 0, pases_largo_totales: 0,
