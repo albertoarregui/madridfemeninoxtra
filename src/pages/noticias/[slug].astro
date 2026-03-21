@@ -9,14 +9,14 @@ import {
 } from "../../utils/entrenadores";
 import { fetchRefereesDirectly } from "../../utils/arbitras";
 import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
-import { fetchGames } from "../../utils/partidos";
+import { fetchGamesDirectly } from "../../utils/partidos";
 import { getFlagSrc } from "../../utils/flags";
 
 export const prerender = false;
 
 const { slug } = Astro.params;
 
-let noticia = null;
+let noticia: any = null;
 
 try {
     const { contentfulClient } = await import("../../lib/contentful");
@@ -37,23 +37,23 @@ if (!noticia) {
     return Astro.redirect("/404");
 }
 
-const { title, subtitle, player, category, focusType, referenceId, id } =
-    noticia;
+const n = noticia as any;
+const { title, subtitle, player, category, focusType, referenceId, id } = n;
 
 const contentReferenceId = referenceId || id;
 
-const featuredImageUrl = noticia.featuredImage?.fields?.file?.url
-    ? `https:${noticia.featuredImage.fields.file.url}`
+const featuredImageUrl = n.featuredImage?.fields?.file?.url
+    ? `https:${n.featuredImage.fields.file.url}`
     : "https://media.madridfemeninoxtra.com/background/stadium.webp";
 
 let bodyHtml = ``;
 
-if (noticia.body) {
+if (n.body) {
     try {
-        if (typeof noticia.body === "string") {
-            bodyHtml = `<p>${noticia.body}</p>`;
-        } else if (noticia.body.nodeType === "document") {
-            bodyHtml = documentToHtmlString(noticia.body);
+        if (typeof n.body === "string") {
+            bodyHtml = `<p>${n.body}</p>`;
+        } else if (n.body.nodeType === "document") {
+            bodyHtml = documentToHtmlString(n.body);
         } else {
             bodyHtml = `<p>Error de formato.</p>`;
         }
@@ -75,10 +75,13 @@ if (focusType === "player" && (contentReferenceId || player)) {
     const allPlayers = await fetchPlayersDirectly();
     playerData =
         allPlayers.find(
-            (p) => p.nombre.toLowerCase() === player?.toLowerCase(),
+            (p) =>
+                String(p.nombre).toLowerCase() === String(player).toLowerCase(),
         ) ||
         allPlayers.find((p) =>
-            p.nombre.toLowerCase().includes(player?.toLowerCase() || ""),
+            String(p.nombre)
+                .toLowerCase()
+                .includes(String(player || "").toLowerCase()),
         ) ||
         allPlayers.find(
             (p) => String(p.id_jugadora) === String(contentReferenceId),
@@ -90,20 +93,18 @@ if (focusType === "player" && (contentReferenceId || player)) {
             playerData.posicion === "Portera",
         );
 
-        if (statsResponse?.estadisticas?.length > 0) {
-            const sortedSeasons = [...statsResponse.estadisticas].sort(
-                (a: any, b: any) =>
-                    (b.temporada || "").localeCompare(a.temporada || ""),
-            );
-            const currentSeason = sortedSeasons[0];
-
+        if (statsResponse) {
             playerStats = {
                 ...statsResponse,
-                current_official: currentSeason.official_total,
-                season_name: currentSeason.temporada,
+                current_official: statsResponse.total_official || {
+                    partidos: 0,
+                    minutos: 0,
+                    goles: 0,
+                    asistencias: 0,
+                    porterias_cero: 0,
+                },
+                season_name: "TOTAL (OFICIAL)",
             };
-        } else {
-            playerStats = statsResponse;
         }
     }
 }
@@ -114,44 +115,69 @@ if (focusType === "coach") {
         ? coaches.find(
               (c) => String(c.id_entrenador) === String(contentReferenceId),
           )
-        : coaches.find((c) => c.nombre?.toLowerCase().includes("toril"));
+        : coaches.find((c) => String(c.nombre).toLowerCase().includes("toril"));
 
     if (coachData) {
         const statsResp = await fetchCoachStats(coachData.id_entrenador);
         if (statsResp?.estadisticas?.length > 0) {
-            const sorted = [...statsResp.estadisticas].sort((a: any, b: any) =>
-                (b.temporada || "").localeCompare(a.temporada || ""),
-            );
-            const currentSeason = sorted[0];
             const officialComps = [
                 "Liga F",
                 "UWCL",
                 "Copa de la Reina",
                 "Supercopa de España",
             ];
-            const officialTotal = currentSeason.competiciones
-                .filter((c: any) => officialComps.includes(c.competicion))
-                .reduce(
-                    (acc: any, c: any) => ({
-                        partidos: acc.partidos + c.partidos,
-                        victorias: acc.victorias + c.victorias,
-                        empates: acc.empates + c.empates,
-                        derrotas: acc.derrotas + c.derrotas,
-                        goles_favor: acc.goles_favor + c.goles_favor,
-                        goles_contra: acc.goles_contra + c.goles_contra,
-                    }),
-                    {
-                        partidos: 0,
-                        victorias: 0,
-                        empates: 0,
-                        derrotas: 0,
-                        goles_favor: 0,
-                        goles_contra: 0,
-                    },
-                );
+
+            const officialTotal = (statsResp.estadisticas as any[]).reduce(
+                (accTotal: any, season: any) => {
+                    const comps = (season.competiciones || []) as any[];
+                    const seasonOfficial = comps
+                        .filter((c: any) =>
+                            officialComps.includes(c.competicion),
+                        )
+                        .reduce(
+                            (acc: any, c: any) => ({
+                                partidos: acc.partidos + c.partidos,
+                                victorias: acc.victorias + c.victorias,
+                                empates: acc.empates + c.empates,
+                                derrotas: acc.derrotas + c.derrotas,
+                                goles_favor: acc.goles_favor + c.goles_favor,
+                                goles_contra: acc.goles_contra + c.goles_contra,
+                            }),
+                            {
+                                partidos: 0,
+                                victorias: 0,
+                                empates: 0,
+                                derrotas: 0,
+                                goles_favor: 0,
+                                goles_contra: 0,
+                            },
+                        );
+
+                    return {
+                        partidos: accTotal.partidos + seasonOfficial.partidos,
+                        victorias:
+                            accTotal.victorias + seasonOfficial.victorias,
+                        empates: accTotal.empates + seasonOfficial.empates,
+                        derrotas: accTotal.derrotas + seasonOfficial.derrotas,
+                        goles_favor:
+                            accTotal.goles_favor + seasonOfficial.goles_favor,
+                        goles_contra:
+                            accTotal.goles_contra + seasonOfficial.goles_contra,
+                    };
+                },
+                {
+                    partidos: 0,
+                    victorias: 0,
+                    empates: 0,
+                    derrotas: 0,
+                    goles_favor: 0,
+                    goles_contra: 0,
+                },
+            );
+
             coachStats = {
                 current_official: officialTotal,
-                season_name: currentSeason.temporada,
+                season_name: "TOTAL (OFICIAL)",
             };
         }
     }
@@ -172,8 +198,13 @@ if (focusType === "club") {
         ? rivals.find((r) => String(r.id_club) === String(contentReferenceId))
         : rivals[0];
 
-    // Si es Real Madrid (ID 1), o no se encontró en rivales, lo buscamos directo en la DB
-    if (!clubData && (String(contentReferenceId) === "1" || String(player).toLowerCase().includes("madrid"))) {
+    const isRMRequested =
+        String(contentReferenceId) === "1" ||
+        String(player || "")
+            .toLowerCase()
+            .includes("madrid");
+
+    if (!clubData || (isRMRequested && String(clubData.id_club) !== "1")) {
         const { getPlayersDbClient } = await import("../../db/client");
         const client = await getPlayersDbClient();
         if (client) {
@@ -181,39 +212,58 @@ if (focusType === "club") {
                 sql: `SELECT c.*, e.nombre as estadio, e.capacidad, e.lat as estadio_lat, e.lng as estadio_lng 
                       FROM clubes c 
                       LEFT JOIN estadios e ON c.estadio = e.id_estadio 
-                      WHERE c.id_club = 1`,
-                args: []
+                      WHERE ${isRMRequested ? "c.id_club = 1" : "c.id_club = ?"}`,
+                args: isRMRequested ? [] : [contentReferenceId as any],
             });
             if (clubRes.rows.length > 0) {
                 const row = clubRes.rows[0];
-                const allMatches = await fetchGames(); // fetchGames o fetchGamesDirectly
-                const playedMatches = allMatches.filter(m => m.resultado !== 'P' && !m.competicion_nombre?.toLowerCase().includes('amistoso'));
-                
-                let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0, cleanSheets = 0;
-                playedMatches.forEach(m => {
+                const cleanNombre = row.nombre || "Real Madrid";
+                const allMatches = await fetchGamesDirectly();
+                const playedMatches = allMatches.filter(
+                    (m: any) =>
+                        m.resultado !== "P" &&
+                        !String(m.competicion_nombre)
+                            .toLowerCase()
+                            .includes("amistoso"),
+                );
+
+                let wins = 0,
+                    draws = 0,
+                    losses = 0,
+                    gf = 0,
+                    ga = 0,
+                    cleanSheets = 0;
+                playedMatches.forEach((m: any) => {
                     const gRM = Number(m.goles_rm) || 0;
                     const gRiv = Number(m.goles_rival) || 0;
-                    gf += gRM; ga += gRiv;
+                    gf += gRM;
+                    ga += gRiv;
                     if (gRiv === 0) cleanSheets++;
-                    if (m.resultado === 'V') wins++;
-                    else if (m.resultado === 'D') losses++;
+                    if (m.resultado === "V") wins++;
+                    else if (m.resultado === "D") losses++;
                     else draws++;
                 });
 
                 clubData = {
-                    id_club: 1,
-                    nombre: "Real Madrid",
+                    id_club: row.id_club,
+                    nombre: cleanNombre,
                     ciudad: row.ciudad || "Madrid",
                     pais: row.pais || "España",
                     iso: row.iso || "ES",
-                    slug: "real-madrid",
+                    slug: row.slug || "real-madrid",
                     estadio: row.estadio || "Alfredo Di Stéfano",
+                    shieldUrl:
+                        "https://media.madridfemeninoxtra.com/escudos/real_madrid.png",
                     stats: {
                         played: playedMatches.length,
-                        wins, draws, losses, gf, ga,
+                        wins,
+                        draws,
+                        losses,
+                        gf,
+                        ga,
                         gd: gf - ga,
-                        cleanSheets
-                    }
+                        cleanSheets,
+                    },
                 };
             }
         }
@@ -222,7 +272,7 @@ if (focusType === "club") {
 
 if (focusType === "match" && contentReferenceId) {
     try {
-        const allMatches = await fetchGames();
+        const allMatches = await fetchGamesDirectly();
         matchData = allMatches.find(
             (m: any) => String(m.id_partido) === String(contentReferenceId),
         );
@@ -320,7 +370,6 @@ Promise.allSettled([
         set:html={JSON.stringify(newsSchema)}
         slot="head"
     />
-    <!-- Override og:type y og:url específicos para artículos de noticias -->
     <meta property="og:type" content="article" slot="head" />
     <meta property="og:url" content={articleUrl} slot="head" />
     <meta
@@ -387,7 +436,6 @@ Promise.allSettled([
                         </p>
 
                         <div class="news-social-icons">
-                            <!-- X / Twitter -->
                             <a
                                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}`}
                                 class="social-circle share-btn"
@@ -403,7 +451,6 @@ Promise.allSettled([
                                 />
                             </a>
 
-                            <!-- Facebook -->
                             <a
                                 href={`https://www.facebook.com/sharer.php?u=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}&t=${encodeURIComponent(title)}`}
                                 class="social-circle share-btn"
@@ -431,7 +478,6 @@ Promise.allSettled([
                                 >
                             </a>
 
-                            <!-- WhatsApp -->
                             <a
                                 href={`https://wa.me/?text=${encodeURIComponent(`${title} https://www.madridfemeninoxtra.com/noticias/${slug}`)}`}
                                 class="social-circle share-btn"
@@ -461,7 +507,6 @@ Promise.allSettled([
                                 >
                             </a>
 
-                            <!-- Telegram -->
                             <a
                                 href={`https://t.me/share/url?url=${encodeURIComponent(`https://www.madridfemeninoxtra.com/noticias/${slug}`)}&text=${encodeURIComponent(title)}`}
                                 class="social-circle share-btn"
@@ -489,7 +534,6 @@ Promise.allSettled([
                                 >
                             </a>
 
-                            <!-- Copiar enlace -->
                             <button
                                 id="copyLinkBtn"
                                 class="social-circle share-btn"
@@ -869,7 +913,10 @@ Promise.allSettled([
                                 <div class="dashboard-widget-card-refined club-widget">
                                     <div class="club-widget-header">
                                         <img
-                                            src={getRivalShieldUrl(clubData)}
+                                            src={
+                                                clubData.shieldUrl ||
+                                                getRivalShieldUrl(clubData)
+                                            }
                                             alt={clubData.nombre}
                                             class="club-shield"
                                             onerror="this.style.display='none'"
@@ -932,10 +979,20 @@ Promise.allSettled([
                                         </div>
                                     </div>
                                     <a
-                                        href={`/rivales/${clubData.slug}`}
+                                        href={
+                                            clubData.nombre
+                                                ?.toLowerCase()
+                                                .includes("real madrid")
+                                                ? "/partidos"
+                                                : `/rivales/${clubData.slug}`
+                                        }
                                         class="widget-cta-btn-premium"
                                     >
-                                        VER BALANCE COMPLETO
+                                        {clubData.nombre
+                                            ?.toLowerCase()
+                                            .includes("real madrid")
+                                            ? "VER TODOS LOS PARTIDOS"
+                                            : "VER BALANCE COMPLETO"}
                                     </a>
                                 </div>
                             )
@@ -1251,6 +1308,27 @@ Promise.allSettled([
         text-align: justify;
     }
 
+    .news-article-rich-text :global(ul) {
+        margin: 0 0 1.8rem 2rem;
+        list-style: disc;
+    }
+
+    .news-article-rich-text :global(ol) {
+        margin: 0 0 1.8rem 2rem;
+        list-style: decimal;
+    }
+
+    .news-article-rich-text :global(li) {
+        margin-bottom: 0.75rem;
+        padding-left: 0.5rem;
+        text-align: left;
+    }
+
+    .news-article-rich-text :global(li p) {
+        margin-bottom: 0px;
+        display: inline;
+    }
+
     .news-article-rich-text :global(p) {
         margin-bottom: 1.8rem;
         text-align: justify;
@@ -1288,7 +1366,6 @@ Promise.allSettled([
         background-size: 100% 100%;
     }
 
-    /* Centrado de medios embebidos en el cuerpo del artículo */
     .news-article-rich-text :global(img) {
         display: block;
         margin: 2rem auto;
@@ -1425,7 +1502,6 @@ Promise.allSettled([
         color: #fff;
     }
 
-    /* Flag badge next to name */
     .widget-name-row {
         display: flex;
         align-items: center;
@@ -1678,8 +1754,6 @@ Promise.allSettled([
         }
     }
 
-    /* ─── Widget extras ─── */
-
     .widget-season-label {
         font-family: "Bebas Neue", sans-serif;
         font-size: 0.85rem;
@@ -1689,7 +1763,6 @@ Promise.allSettled([
         margin: -0.5rem 0 1rem;
     }
 
-    /* Club widget */
     .club-widget-header {
         display: flex;
         align-items: center;
@@ -1704,7 +1777,6 @@ Promise.allSettled([
         flex-shrink: 0;
     }
 
-    /* Referee cards pills */
     .widget-cards-row {
         display: flex;
         flex-direction: column;
@@ -1738,8 +1810,6 @@ Promise.allSettled([
     .card-sep {
         color: #ccc;
     }
-
-    /* ─── Match / XI inicial widget ─── */
 
     .match-widget-full {
         width: 100%;
@@ -1811,7 +1881,6 @@ Promise.allSettled([
         text-align: center;
     }
 
-    /* Football pitch */
     .football-pitch {
         background: #2d7a3a;
         background-image: repeating-linear-gradient(
@@ -2003,4 +2072,3 @@ Promise.allSettled([
         }
     }
 </style>
-
