@@ -55,7 +55,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
             const mes = date.toLocaleDateString('es-ES', { month: 'long' });
 
             const mesNumero = date.getMonth() + 1;
-            const temporada = mesNumero >= 8 ? `${año}-${año + 1}` : `${año - 1}-${año}`;
+            const temporada = mesNumero >= 8 ? `${año}/${año + 1}` : `${año - 1}/${año}`;
 
             return {
                 id_premio: row.id_premio,

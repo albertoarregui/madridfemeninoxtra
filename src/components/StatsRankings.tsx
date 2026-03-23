@@ -93,58 +93,58 @@ interface StatsRankingsProps {
 }
 
 const TYPE_OPTIONS = [
-    { value: "valoracion", label: "Mejor valoración media" },
+    { value: "convocatorias", label: "Más convocatorias" },
+    { value: "partidos", label: "Más partidos jugados" },
+    { value: "minutos", label: "Más minutos jugados" },
+    { value: "titularidades", label: "Más titularidades" },
+    { value: "cambios_entrada", label: "Más cambios (Entrada)" },
+    { value: "cambios_salida", label: "Más cambios (Salida)" },
+    { value: "victorias", label: "Más victorias" },
+    { value: "capitanias", label: "Más capitanías" },
+    { value: "tarjetas_amarillas", label: "Más amarillas" },
+    { value: "tarjetas_rojas", label: "Más rojas" },
     { value: "goles", label: "Máximas goleadoras" },
     { value: "asistencias", label: "Máximas asistentes" },
     { value: "goles_generados", label: "Más goles generados" },
     { value: "porterias_cero", label: "Más porterías a cero" },
-    { value: "pases_clave", label: "Más pases clave" },
+    { value: "goles_victoria", label: "Más match winners" },
+    { value: "goles_empate", label: "Más goles para empatar" },
+    { value: "goles_abrelatas", label: "Más goles para abrir el marcador" },
+    { value: "streak_scoring", label: "Mayor racha marcando" },
+    { value: "streak_assisting", label: "Mayor racha asistiendo" },
+    { value: "streak_ga", label: "Mayor racha con gol o asistencia" },
+    { value: "streak_clean_sheet", label: "Mayor racha de portería a cero" },
+    { value: "award_monthly", label: "Más veces Jugadora del Mes" },
+    { value: "award_season", label: "Mejor Jugadora de la Temporada" },
+    { value: "valoracion", label: "Mejor valoración media" },
     { value: "tiros_totales", label: "Más tiros totales" },
     { value: "tiros_puerta", label: "Más tiros a puerta" },
-    { value: "regates_completados", label: "Más regates completados" },
-    { value: "porcentaje_regates", label: "% Regates con éxito" },
     { value: "toques", label: "Más toques de balón" },
-    { value: "toques_area_rival", label: "Toques en área rival" },
-    { value: "perdidas", label: "Más pérdidas de balón" },
-    { value: "fueras_juego", label: "Más fueras de juego" },
+    { value: "toques_area_rival", label: "Más toques en área rival" },
     { value: "pases_completados", label: "Más pases completados" },
     { value: "porcentaje_pases", label: "% Pases completados" },
-    { value: "pases_ultimo_tercio", label: "Pases al último tercio" },
-    { value: "pases_largo_completados", label: "Pases en largo completados" },
+    { value: "pases_clave", label: "Más pases clave" },
+    { value: "pases_ultimo_tercio", label: "Más pases al último tercio" },
+    { value: "pases_largo_completados", label: "Más pases en largo completados" },
     { value: "porcentaje_pases_largo", label: "% Pases en largo" },
-    { value: "centros_completados", label: "Centros completados" },
+    { value: "regates_completados", label: "Más regates completados" },
+    { value: "centros_completados", label: "Más centros completados" },
     { value: "porcentaje_centros", label: "% Centros completados" },
-    { value: "bloqueos", label: "Más bloqueos" },
-    { value: "recuperaciones", label: "Más recuperaciones" },
-    { value: "intercepciones", label: "Más intercepciones" },
-    { value: "despejes", label: "Más despejes" },
-    { value: "entradas", label: "Más entradas" },
-    { value: "regateada", label: "Más veces regateada" },
+    { value: "porcentaje_regates", label: "% Regates con éxito" },
+    { value: "duelos_suelo_ganados", label: "Más duelos en el suelo ganados" },
+    { value: "duelos_aereos_ganados", label: "Más duelos aéreos ganados" },
     { value: "porcentaje_duelos", label: "% Duelos ganados" },
     { value: "porcentaje_duelos_aereos", label: "% Duelos aéreos ganados" },
+    { value: "entradas", label: "Más entradas" },
+    { value: "intercepciones", label: "Más intercepciones" },
+    { value: "despejes", label: "Más despejes" },
+    { value: "bloqueos", label: "Más bloqueos" },
+    { value: "recuperaciones", label: "Más recuperaciones" },
     { value: "faltas_recibidas", label: "Más faltas recibidas" },
     { value: "faltas_cometidas", label: "Más faltas cometidas" },
-    { value: "goles_victoria", label: "Match winners" },
-    { value: "goles_empate", label: "Goles del empate" },
-    { value: "goles_abrelatas", label: "Goles abrelatas" },
-    { value: "partidos", label: "Más partidos jugados" },
-    { value: "minutos", label: "Más minutos jugados" },
-    { value: "titularidades", label: "Más titularidades" },
-    { value: "convocatorias", label: "Más convocatorias" },
-    { value: "cambios_entrada", label: "Más cambios (Entrada)" },
-    { value: "cambios_salida", label: "Más cambios (Salida)" },
-    { value: "victorias", label: "Más victorias" },
-    { value: "duelos_suelo_ganados", label: "Duelos suelo ganados" },
-    { value: "duelos_aereos_ganados", label: "Duelos aéreos ganados" },
-    { value: "capitanias", label: "Más capitanías" },
-    { value: "tarjetas_amarillas", label: "Más amarillas" },
-    { value: "tarjetas_rojas", label: "Más rojas" },
-    { value: "streak_scoring", label: "Racha marcando" },
-    { value: "streak_assisting", label: "Racha asistiendo" },
-    { value: "streak_ga", label: "Racha G+A" },
-    { value: "streak_clean_sheet", label: "Racha P.Cero" },
-    { value: "award_monthly", label: "Mejor Jugadora del Mes" },
-    { value: "award_season", label: "Mejor Jugadora de la Temporada" },
+    { value: "perdidas", label: "Más pérdidas de balón" },
+    { value: "fueras_juego", label: "Más fueras de juego" },
+    { value: "regateada", label: "Más veces regateada" },
 ];
 
 const MainStarIcon = ({ className, color }: { className?: string, color: string }) => (
@@ -216,6 +216,9 @@ export default function StatsRankings({
             porterias_cero: { title: "Más porterías a cero", headers: ["Pos", "Jugadora", "P. Cero"], dataKeys: ["porterias_cero"], primaryKey: "porterias_cero", icon: <Shield className="text-green-600" /> },
             goles_victoria: { title: "Match winners", headers: ["Pos", "Jugadora", "G. Victoria"], dataKeys: ["goles_victoria"], primaryKey: "goles_victoria", icon: <Award className="text-yellow-600" /> },
             streak_scoring: { title: "Racha de partidos marcando", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_scoring"], primaryKey: "streak_scoring", isStreak: true, icon: <Zap className="text-orange-500" /> },
+            streak_assisting: { title: "Mayor racha asistiendo", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_assisting"], primaryKey: "streak_assisting", isStreak: true, icon: <Zap className="text-yellow-500" /> },
+            streak_ga: { title: "Mayor racha con gol o asistencia", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_ga"], primaryKey: "streak_ga", isStreak: true, icon: <Zap className="text-green-500" /> },
+            streak_clean_sheet: { title: "Mayor racha de portería a cero", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_clean_sheet"], primaryKey: "streak_clean_sheet", isStreak: true, icon: <Shield className="text-blue-500" /> },
             award_monthly: { title: "MVP del Mes", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "mes", icon: <Award className="text-purple-500" /> },
             award_season: { title: "MVP de la Temporada", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "temporada", icon: <Crown className="text-yellow-600" /> },
         };
@@ -256,9 +259,9 @@ export default function StatsRankings({
             awardsData.forEach(award => {
                 const tipo = (award.tipo || "").toUpperCase();
                 if (selectedType === "award_monthly") {
-                    if (!tipo.includes("MES") && !tipo.includes("MENSUAL") && tipo !== "") return;
+                    if (!tipo.includes("MES") && !tipo.includes("MENSUAL")) return;
                 } else {
-                    if (!tipo.includes("TEMPORADA") && !tipo.includes("SEASON") && !tipo.includes("MVP")) return;
+                    if (!tipo.includes("TEMPORADA") && !tipo.includes("SEASON") && !tipo.includes("AÑO")) return;
                 }
 
                 const matchSeason = selectedSeason === "todos" || award.temporada === selectedSeason;
@@ -351,6 +354,8 @@ export default function StatsRankings({
                     p.display_ratio = calcRatio(p.duelos_aereos_ganados, p.duelos_aereos_totales);
                 } else if (selectedType === "valoracion") {
                     p.valoracion = p.valoracion_count > 0 ? parseFloat((p.valoracion_sum / p.valoracion_count).toFixed(2)) : 0;
+                } else if (selectedType === "goles_generados") {
+                    p.goles_generados = (p.goles || 0) + (p.asistencias || 0);
                 }
                 return p;
             });
@@ -423,7 +428,7 @@ export default function StatsRankings({
                 }
                 
                 @media (max-width: 768px) {
-                    .podium-container { flex-direction: column; align-items: center; min-height: auto; gap: 40px; margin-bottom: 60px; padding: 0 10px; }
+                    .podium-container { flex-direction: column; align-items: center; min-height: auto; gap: 40px; margin-bottom: 60px; padding: 0 20px; }
                     .podium-spot { width: 100%; max-width: 100%; }
                     .spot-1 { order: 1; }
                     .spot-2 { order: 2; }
@@ -434,6 +439,7 @@ export default function StatsRankings({
                     .spot-2 .podium-img-wrapper { width: 140px; height: 140px; }
                     .spot-3 .podium-img-wrapper { width: 120px; height: 120px; }
                 }
+                .podium-stat-value { margin-bottom: 2rem; }
                 ` }} />
 
             <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container">
@@ -449,7 +455,7 @@ export default function StatsRankings({
                     <div className="podium-container flex items-end justify-center px-4">
                         {podium[1] && (
                             <div className="podium-spot spot-2 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-[-10px]">
+                                <div className="flex flex-col items-center mb-4">
                                     <div className="podium-img-wrapper">
                                         <a href={`/jugadoras/${podium[1].slug}`}>
                                             <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} className="w-full h-full object-cover object-top" />
@@ -471,7 +477,7 @@ export default function StatsRankings({
 
                         {podium[0] && (
                             <div className="podium-spot spot-1 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-[-10px] z-10">
+                                <div className="flex flex-col items-center mb-4 z-10">
                                     <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
                                     <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4 ring-offset-white">
                                         <a href={`/jugadoras/${podium[0].slug}`}>
@@ -494,7 +500,7 @@ export default function StatsRankings({
 
                         {podium[2] && (
                             <div className="podium-spot spot-3 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-[-10px]">
+                                <div className="flex flex-col items-center mb-4">
                                     <div className="podium-img-wrapper">
                                         <a href={`/jugadoras/${podium[2].slug}`}>
                                             <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} className="w-full h-full object-cover object-top" />
