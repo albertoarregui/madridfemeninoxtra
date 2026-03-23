@@ -99,7 +99,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 py-16 flex flex-col items-center" id="players-grid" ref={gridRef}>
             {/* Filters Section */}
-            <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001] mb-12 md:mb-12">
+            <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001] mb-12 md:mb-24">
                 <div className="custom-select-container" data-custom-select="true">
                     <div className="custom-select-trigger" style={{ cursor: 'pointer' }}>
                         <span className="selected-text whitespace-nowrap overflow-hidden text-ellipsis">
@@ -182,7 +182,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
             </div>
 
             {/* Grid wrapper with huge top padding on mobile to push cards down from filters */}
-            <div className="w-full relative z-0 mt-8 pt-20 px-4 md:px-0 md:pt-0">
+            <div className="w-full relative z-0 mt-8 pt-20 px-4 md:px-0 md:pt-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-32 gap-x-4 md:gap-x-8 md:gap-y-48">
                     {filteredPlayers.map((player, index) => (
                         <div key={player.id_jugadora || player.slug} className="relative pt-16 pb-6 md:pt-24 md:pb-8 h-full flex flex-col">
@@ -219,7 +219,7 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                         </span>
                                     </div>
 
-                                    <h3 className="text-xl md:text-3xl font-black font-bebas text-white uppercase tracking-wider mb-1 md:mb-2 leading-none group-hover:text-[#ffde59] transition-colors truncate drop-shadow-lg">
+                                    <h3 className="text-xl md:text-3xl font-black font-bebas text-white uppercase tracking-wider mb-1 md:mb-2 leading-none group-hover:text-[#ffde59] transition-colors drop-shadow-lg break-words text-balance">
                                         {player.nombre}
                                     </h3>
 
