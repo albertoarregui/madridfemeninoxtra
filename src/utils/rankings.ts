@@ -297,7 +297,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             LEFT JOIN u_captain_data cp ON j.id_jugadora = cp.id_jugadora AND t.id_temporada = cp.id_temporada AND c.id_competicion = cp.id_competicion
             LEFT JOIN individual_stats s ON j.id_jugadora = s.id_jugadora AND t.id_temporada = s.id_temporada AND c.id_competicion = s.id_competicion
             WHERE 
-                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0 OR s.pases_clave > 0 OR s.tiros_totales > 0 OR s.toques > 0 OR l.porterias_cero > 0
+                l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0 OR s.pases_clave > 0 OR s.tiros_totales > 0 OR s.toques > 0 OR l.porterias_cero > 0 OR s.recuperaciones > 0 OR s.intercepciones > 0 OR s.despejes > 0 OR s.bloqueos > 0 OR s.entradas > 0
             ORDER BY j.nombre
         `;
 

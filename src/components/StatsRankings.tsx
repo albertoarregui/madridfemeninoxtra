@@ -42,6 +42,10 @@ interface RankingStat {
     duelos_suelo_ganados?: number;
     duelos_aereos_ganados?: number;
     recuperaciones?: number;
+    intercepciones?: number;
+    despejes?: number;
+    bloqueos?: number;
+    entradas?: number;
     valoracion?: number;
     valoracion_count?: number;
     perdidas?: number;
@@ -55,6 +59,7 @@ interface RankingStat {
     duelos_aereos_totales?: number;
     pases_ultimo_tercio_totales?: number;
     img_url?: string;
+    [key: string]: any;
 }
 
 interface StreakData {
@@ -112,6 +117,8 @@ const TYPE_OPTIONS = [
     { value: "bloqueos", label: "Más bloqueos" },
     { value: "recuperaciones", label: "Más recuperaciones" },
     { value: "intercepciones", label: "Más intercepciones" },
+    { value: "despejes", label: "Más despejes" },
+    { value: "entradas", label: "Más entradas" },
     { value: "regateada", label: "Más veces regateada" },
     { value: "porcentaje_duelos", label: "% Duelos ganados" },
     { value: "porcentaje_duelos_aereos", label: "% Duelos aéreos ganados" },
@@ -127,8 +134,6 @@ const TYPE_OPTIONS = [
     { value: "cambios_entrada", label: "Más cambios (Entrada)" },
     { value: "cambios_salida", label: "Más cambios (Salida)" },
     { value: "victorias", label: "Más victorias" },
-    { value: "entradas", label: "Más entradas" },
-    { value: "despejes", label: "Más despejes" },
     { value: "duelos_suelo_ganados", label: "Duelos suelo ganados" },
     { value: "duelos_aereos_ganados", label: "Duelos aéreos ganados" },
     { value: "capitanias", label: "Más capitanías" },
@@ -209,6 +214,7 @@ export default function StatsRankings({
             partidos: { title: "Más partidos jugados", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["partidos"], primaryKey: "partidos", icon: <LucideStar className="text-blue-500" /> },
             minutos: { title: "Más minutos jugados", headers: ["Pos", "Jugadora", "Minutos"], dataKeys: ["minutos"], primaryKey: "minutos", icon: <Clock className="text-indigo-500" /> },
             porterias_cero: { title: "Más porterías a cero", headers: ["Pos", "Jugadora", "P. Cero"], dataKeys: ["porterias_cero"], primaryKey: "porterias_cero", icon: <Shield className="text-green-600" /> },
+            goles_victoria: { title: "Match winners", headers: ["Pos", "Jugadora", "G. Victoria"], dataKeys: ["goles_victoria"], primaryKey: "goles_victoria", icon: <Award className="text-yellow-600" /> },
             streak_scoring: { title: "Racha de partidos marcando", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_scoring"], primaryKey: "streak_scoring", isStreak: true, icon: <Zap className="text-orange-500" /> },
             award_monthly: { title: "MVP del Mes", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "mes", icon: <Award className="text-purple-500" /> },
             award_season: { title: "MVP de la Temporada", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "temporada", icon: <Crown className="text-yellow-600" /> },
@@ -292,7 +298,7 @@ export default function StatsRankings({
                         duelos_suelo_ganados: 0, duelos_suelo_totales: 0,
                         duelos_aereos_ganados: 0, duelos_aereos_totales: 0,
                         valoracion_sum: 0, valoracion_count: 0,
-                        ...Object.fromEntries(config.dataKeys.filter((k: string) => k !== 'display_ratio' && k !== 'porcentaje_pases' && k !== 'porcentaje_regates' && k !== 'porcentaje_centros' && k !== 'porcentaje_pases_largo' && k !== 'porcentaje_duelos' && k !== 'porcentaje_duelos_aereos').map((k: string) => [k, 0]))
+                        ...Object.fromEntries(config.dataKeys.filter((k: string) => k !== 'display_ratio' && !k.startsWith('porcentaje_')).map((k: string) => [k, 0]))
                     };
                 }
 
@@ -336,8 +342,8 @@ export default function StatsRankings({
                     p.porcentaje_pases_largo = calcPct(p.pases_largo_completados, p.pases_largo_totales);
                     p.display_ratio = calcRatio(p.pases_largo_completados, p.pases_largo_totales);
                 } else if (selectedType === "porcentaje_duelos") {
-                    const totalG = p.duelos_suelo_ganados + p.duelos_aereos_ganados;
-                    const totalT = p.duelos_suelo_totales + p.duelos_aereos_totales;
+                    const totalG = (p.duelos_suelo_ganados || 0) + (p.duelos_aereos_ganados || 0);
+                    const totalT = (p.duelos_suelo_totales || 0) + (p.duelos_aereos_totales || 0);
                     p.porcentaje_duelos = calcPct(totalG, totalT);
                     p.display_ratio = calcRatio(totalG, totalT);
                 } else if (selectedType === "porcentaje_duelos_aereos") {
@@ -399,9 +405,6 @@ export default function StatsRankings({
                 .spot-2 .podium-img-wrapper { width: 160px; height: 160px; border-color: #C0C0C0; }
                 .spot-3 .podium-img-wrapper { width: 140px; height: 140px; border-color: #CD7F32; }
                 .ranking-table-row:hover { background-color: rgba(255, 222, 89, 0.15) !important; cursor: pointer; }
-                .pagination-btn { padding: 8px 14px; border-radius: 8px; border: 2px solid #e5e7eb; font-weight: 700; transition: all 0.2s; }
-                .pagination-btn.active { background: #ffde59; border-color: #ffde59; color: #151e42; }
-                .pagination-btn:hover:not(.active) { border-color: #ffde59; background: #fffdf0; }
                 .ranking-title-header { 
                     padding: 2.5rem 1.5rem;
                     text-align: left;
@@ -411,14 +414,13 @@ export default function StatsRankings({
                     font-family: 'Bebas Neue', sans-serif;
                     text-transform: uppercase;
                     line-height: 1;
-                    color: #333;
+                    color: #2b2b2b;
                     margin: 0;
                     padding-left: 1.5rem;
                     font-weight: 800;
                     border-left: 6.5px solid #ffde59;
                     display: inline-block;
                 }
-                .podium-stat-value { margin-bottom: 2rem; }
                 
                 @media (max-width: 768px) {
                     .podium-container { flex-direction: column; align-items: center; min-height: auto; gap: 40px; margin-bottom: 60px; padding: 0 10px; }
@@ -428,25 +430,11 @@ export default function StatsRankings({
                     .spot-3 { order: 3; }
                     .podium-base { height: auto !important; padding: 25px 0; border-radius: 12px; }
                     .ranking-title-header h2 { font-size: 1.6rem; }
-                    .overflow-x-auto { 
-                        overflow-x: auto; 
-                        -webkit-overflow-scrolling: touch; 
-                        width: 100%; 
-                    }
                     .spot-1 .podium-img-wrapper { width: 170px; height: 170px; }
                     .spot-2 .podium-img-wrapper { width: 140px; height: 140px; }
                     .spot-3 .podium-img-wrapper { width: 120px; height: 120px; }
                 }
-                
-                @media (max-width: 480px) {
-                    .ranking-title-header h2 { font-size: 1.4rem; padding-left: 1rem; border-left-width: 4px; }
-                    .podium-stat-value h3 { font-size: 1.1rem !important; }
-                    .podium-stat-value p { font-size: 2.2rem !important; }
-                    .stats-rankings-react { overflow-x: hidden; }
-                    .filters-container { flex-direction: column; width: 100%; padding: 0 1rem; }
-                    .filters-container > div { width: 100% !important; max-width: 100% !important; }
-                }
-            ` }} />
+                ` }} />
 
             <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container">
                 <CustomSelect options={TYPE_OPTIONS} value={selectedType} onChange={setSelectedType} id="filtro-tipo" />
@@ -456,174 +444,133 @@ export default function StatsRankings({
                 )}
             </div>
 
-            {sortedPlayers.length > 0 && (
-                <div className="podium-container flex items-end justify-center px-4">
-                    {podium[1] && (
-                        <div className="podium-spot spot-2 flex flex-col justify-end">
-                            <div className="flex flex-col items-center mb-[-10px]">
-                                <div className="podium-img-wrapper">
-                                    <a href={`/jugadoras/${podium[1].slug}`}>
-                                        <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} className="w-full h-full object-cover object-top" />
-                                    </a>
-                                </div>
-                                <div className="text-center mt-4 podium-stat-value">
-                                    <h3 className="font-bold text-[#151e42] text-lg leading-tight truncate px-2 mb-1">
-                                        <a href={`/jugadoras/${podium[1].slug}`} className="hover:text-[#C0C0C0] transition-colors">
-                                            {podium[1].nombre}
+            {sortedPlayers.length > 0 ? (
+                <>
+                    <div className="podium-container flex items-end justify-center px-4">
+                        {podium[1] && (
+                            <div className="podium-spot spot-2 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-[-10px]">
+                                    <div className="podium-img-wrapper">
+                                        <a href={`/jugadoras/${podium[1].slug}`}>
+                                            <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} className="w-full h-full object-cover object-top" />
                                         </a>
-                                    </h3>
-                                    <p className="text-3xl font-black text-gray-500">{podium[1][currentConfig.primaryKey]}</p>
+                                    </div>
+                                    <div className="text-center mt-4 podium-stat-value">
+                                        <h3 className="font-bold text-[#151e42] text-lg leading-tight truncate px-2 mb-1">
+                                            <a href={`/jugadoras/${podium[1].slug}`} className="hover:text-[#C0C0C0] transition-colors">{podium[1].nombre}</a>
+                                        </h3>
+                                        <p className="text-3xl font-black text-gray-500">{podium[1][currentConfig.primaryKey]}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base bg-gray-100 h-40 shadow-inner">
+                                    <SpotStarIcon color="#C0C0C0" />
+                                    <span className="text-gray-400 font-bold text-4xl mt-3">2</span>
                                 </div>
                             </div>
-                            <div className="podium-base bg-gray-100 h-40 shadow-inner">
-                                <SpotStarIcon color="#C0C0C0" />
-                                <span className="text-gray-400 font-bold text-4xl mt-3">2</span>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-                    {podium[0] && (
-                        <div className="podium-spot spot-1 flex flex-col justify-end">
-                            <div className="flex flex-col items-center mb-[-10px] z-10">
-                                <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
-                                <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4 ring-offset-white">
-                                    <a href={`/jugadoras/${podium[0].slug}`}>
-                                        <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} className="w-full h-full object-cover object-top" />
-                                    </a>
-                                </div>
-                                <div className="text-center mt-6 podium-stat-value">
-                                    <h3 className="font-black text-[#151e42] text-2xl leading-tight truncate px-2 mb-1">
-                                        <a href={`/jugadoras/${podium[0].slug}`} className="hover:text-[#FFD700] transition-colors">
-                                            {podium[0].nombre}
+                        {podium[0] && (
+                            <div className="podium-spot spot-1 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-[-10px] z-10">
+                                    <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
+                                    <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4 ring-offset-white">
+                                        <a href={`/jugadoras/${podium[0].slug}`}>
+                                            <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} className="w-full h-full object-cover object-top" />
                                         </a>
-                                    </h3>
-                                    <p className="text-5xl font-black text-yellow-500">{podium[0][currentConfig.primaryKey]}</p>
+                                    </div>
+                                    <div className="text-center mt-6 podium-stat-value">
+                                        <h3 className="font-black text-[#151e42] text-2xl leading-tight truncate px-2 mb-1">
+                                            <a href={`/jugadoras/${podium[0].slug}`} className="hover:text-[#FFD700] transition-colors">{podium[0].nombre}</a>
+                                        </h3>
+                                        <p className="text-5xl font-black text-yellow-500">{podium[0][currentConfig.primaryKey]}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base bg-yellow-400 h-64 shadow-lg border-b-4 border-yellow-500">
+                                    <MainStarIcon color="#FFD700" className="drop-shadow-sm" />
+                                    <span className="text-white font-black text-6xl mt-4 drop-shadow-md">1</span>
                                 </div>
                             </div>
-                            <div className="podium-base bg-yellow-400 h-64 shadow-lg border-b-4 border-yellow-500">
-                                <MainStarIcon color="#FFD700" className="drop-shadow-sm" />
-                                <span className="text-white font-black text-6xl mt-4 drop-shadow-md">1</span>
-                            </div>
-                        </div>
-                    )}
+                        )}
 
-                    {podium[2] && (
-                        <div className="podium-spot spot-3 flex flex-col justify-end">
-                            <div className="flex flex-col items-center mb-[-10px]">
-                                <div className="podium-img-wrapper">
-                                    <a href={`/jugadoras/${podium[2].slug}`}>
-                                        <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} className="w-full h-full object-cover object-top" />
-                                    </a>
-                                </div>
-                                <div className="text-center mt-4 podium-stat-value">
-                                    <h3 className="font-bold text-[#151e42] text-base leading-tight truncate px-2 mb-1">
-                                        <a href={`/jugadoras/${podium[2].slug}`} className="hover:text-[#CD7F32] transition-colors">
-                                            {podium[2].nombre}
+                        {podium[2] && (
+                            <div className="podium-spot spot-3 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-[-10px]">
+                                    <div className="podium-img-wrapper">
+                                        <a href={`/jugadoras/${podium[2].slug}`}>
+                                            <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} className="w-full h-full object-cover object-top" />
                                         </a>
-                                    </h3>
-                                    <p className="text-2xl font-black text-amber-700">{podium[2][currentConfig.primaryKey]}</p>
+                                    </div>
+                                    <div className="text-center mt-4 podium-stat-value">
+                                        <h3 className="font-bold text-[#151e42] text-base leading-tight truncate px-2 mb-1">
+                                            <a href={`/jugadoras/${podium[2].slug}`} className="hover:text-[#CD7F32] transition-colors">{podium[2].nombre}</a>
+                                        </h3>
+                                        <p className="text-2xl font-black text-amber-700">{podium[2][currentConfig.primaryKey]}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base bg-[#F8E8D5] h-32 shadow-inner">
+                                    <SpotStarIcon color="#CD7F32" />
+                                    <span className="text-amber-800/40 font-bold text-3xl mt-2">3</span>
                                 </div>
                             </div>
-                            <div className="podium-base bg-[#F8E8D5] h-32 shadow-inner">
-                                <SpotStarIcon color="#CD7F32" />
-                                <span className="text-amber-800/40 font-bold text-3xl mt-2">3</span>
-                            </div>
+                        )}
+                    </div>
+
+                    <div id="ranking-table-top" className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-12">
+                        <div className="ranking-title-header"><h2>{currentConfig.title}</h2></div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-50 border-b border-gray-100">
+                                        {currentConfig.headers.map((h: string, i: number) => (
+                                            <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-black uppercase tracking-widest text-gray-400`}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {paginatedPlayers.map((player, idx) => {
+                                        const globalIndex = (currentPage - 1) * playersPerPage + idx + 4;
+                                        return (
+                                            <tr key={player.id_jugadora} className="ranking-table-row group transition-colors cursor-pointer" onClick={() => window.location.href = `/jugadoras/${player.slug}`}>
+                                                <td className="px-6 py-5 text-center border-l-[6px] border-l-transparent transition-all group-hover:border-l-[#ffde59]">
+                                                    <span className="text-sm font-bold text-gray-300">{globalIndex}</span>
+                                                </td>
+                                                <td className="px-6 py-5 text-left">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200">
+                                                            <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
+                                                        </div>
+                                                        <span className="text-base font-bold text-gray-700">{player.nombre}</span>
+                                                    </div>
+                                                </td>
+                                                {currentConfig.dataKeys.map((key: string) => {
+                                                    let val = player[key];
+                                                    if (key.startsWith('porcentaje_')) val = `${val}%`;
+                                                    return <td key={key} className="px-6 py-5 text-center"><span className="text-lg font-black text-[#151e42]">{val}</span></td>;
+                                                })}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 p-8 bg-gray-50/50 border-t border-gray-100">
+                                <button onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border-2 border-gray-200 disabled:opacity-30 hover:border-yellow-400 transition-colors"><ChevronLeft size={20} /></button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <button key={page} onClick={() => handlePageChange(page)} className={`w-10 h-10 rounded-lg font-bold transition-all ${currentPage === page ? 'bg-[#ffde59] text-[#151e42]' : 'hover:bg-gray-100 text-gray-500'}`}>{page}</button>
+                                ))}
+                                <button onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border-2 border-gray-200 disabled:opacity-30 hover:border-yellow-400 transition-colors"><ChevronRight size={20} /></button>
+                            </div>
+                        )}
+                    </div>
+                </>
+            ) : (
+                <div className="text-center py-40 bg-white/5 rounded-3xl border-2 border-dashed border-white/10">
+                    <Activity className="mx-auto text-gray-300 mb-6" size={80} />
+                    <h2 className="text-2xl font-bold text-gray-400">Sin datos registrados</h2>
+                    <p className="text-gray-500 mt-2">No se encontraron estadísticas para los filtros seleccionados.</p>
                 </div>
             )}
-
-            <div id="ranking-table-top" className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-12">
-                <div className="ranking-title-header">
-                    <h2>{currentConfig.title}</h2>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
-                                {currentConfig.headers.map((h: string, i: number) => (
-                                    <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-black uppercase tracking-widest text-gray-500`}>
-                                        {h}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {paginatedPlayers.length > 0 ? paginatedPlayers.map((player, idx) => {
-                                const globalIndex = (currentPage - 1) * playersPerPage + idx + 4;
-                                return (
-                                    <tr
-                                        key={player.id_jugadora}
-                                        className="ranking-table-row group transition-colors cursor-pointer"
-                                        onClick={() => window.location.href = `/jugadoras/${player.slug}`}
-                                    >
-                                        <td className="px-6 py-5 text-center border-l-[6px] border-l-transparent transition-all group-hover:border-l-[#ffde59]">
-                                            <span className="text-sm font-bold text-gray-400">{globalIndex}</span>
-                                        </td>
-                                        <td className="px-6 py-5 text-left">
-                                            <a href={`/jugadoras/${player.slug}`} className="flex items-center justify-start gap-4">
-                                                <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-gray-100 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                                                    <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
-                                                </div>
-                                                <span className="text-base font-bold text-gray-800">{player.nombre}</span>
-                                            </a>
-                                        </td>
-                                        {currentConfig.dataKeys.map((key: string) => {
-                                            let val = player[key];
-                                            if (key.startsWith('porcentaje_')) val = `${val}%`;
-                                            return (
-                                                <td key={key} className="px-6 py-5 text-center">
-                                                    <span className="text-lg font-black text-[#151e42]">{val}</span>
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                );
-                            }) : (
-                                <tr>
-                                    <td colSpan={currentConfig.headers.length} className="px-6 py-32 text-center">
-                                        <Activity className="mx-auto text-gray-200 mb-4" size={64} />
-                                        <p className="text-gray-400 font-bold text-xl">Sin datos registrados</p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-2 p-8 bg-gray-50/50 border-t border-gray-100">
-                        <button
-                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                            disabled={currentPage === 1}
-                            className="p-2 rounded-lg border-2 border-gray-200 disabled:opacity-30 hover:border-yellow-400 transition-colors"
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-
-                        <div className="flex gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                <button
-                                    key={page}
-                                    onClick={() => handlePageChange(page)}
-                                    className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-2 rounded-lg border-2 border-gray-200 disabled:opacity-30 hover:border-yellow-400 transition-colors"
-                        >
-                            <ChevronRight size={20} />
-                        </button>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }
