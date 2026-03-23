@@ -212,34 +212,37 @@ const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
                                 </div>
 
                                 {/* Content Area */}
-                                <div className="relative pt-16 md:pt-28 pb-4 md:pb-8 px-4 md:px-8 z-20 flex flex-col h-full">
+                                <div className="relative pt-16 md:pt-28 pb-4 md:pb-8 px-4 md:px-8 z-20 flex flex-col h-full items-center text-center">
                                     <div className="mb-2 md:mb-4">
-                                        <span className="inline-block px-3 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] text-[#ffde59] group-hover:bg-[#ffde59] group-hover:text-black transition-all">
+                                        <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white group-hover:bg-[#ffde59] group-hover:text-black transition-colors">
                                             {player.posicion}
                                         </span>
                                     </div>
 
-                                    <h3 className="text-xl md:text-3xl font-black font-bebas text-white uppercase tracking-wider mb-1 md:mb-2 leading-none group-hover:text-[#ffde59] transition-colors drop-shadow-lg break-words text-balance">
+                                    <h3 className="text-xl md:text-3xl font-black font-bebas text-white uppercase tracking-wider mb-2 leading-none group-hover:text-[#ffde59] transition-colors drop-shadow-lg break-words text-balance text-center w-full mt-2">
                                         {player.nombre}
                                     </h3>
 
-                                    <div className="flex items-center gap-2 md:gap-3 mt-auto">
+                                    <div className="flex items-center justify-center gap-2 mt-auto pb-4">
                                         <img
                                             src={player.flagUrl}
                                             alt={player.countryName}
-                                            className="w-4 md:w-6 h-auto shadow-md grayscale group-hover:grayscale-0 transition-all duration-700"
+                                            className="w-4 md:w-5 h-auto object-cover shadow-sm"
                                             loading="lazy"
+                                            decoding="async"
                                             width={24}
                                             height={24}
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                            }}
                                         />
-                                        <span className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest truncate">{player.countryName}</span>
+                                        <span className="text-[10px] md:text-sm font-medium text-gray-300 uppercase tracking-widest">{player.countryName}</span>
                                     </div>
 
-                                    <div className="mt-4 md:mt-8 pt-4 md:pt-6 border-t border-white/10 flex justify-between items-center group-hover:border-white/20 transition-all">
-                                        <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.3em] text-[#ffde59] group-hover:text-white transition-all">
-                                            Ficha
+                                    <div className="w-full mt-4 pt-4 border-t border-white/10 flex justify-end group-hover:border-white/20 transition-all">
+                                        <span className="text-xs font-bold uppercase tracking-wider text-[#ffde59] flex items-center gap-1 transition-colors group-hover:text-white">
+                                            Ver Perfil <span className="text-lg">→</span>
                                         </span>
-                                        <span className="text-xl md:text-2xl text-[#ffde59] group-hover:translate-x-2 transition-transform duration-500">→</span>
                                     </div>
                                 </div>
                             </a>
