@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import { Image } from "astro:assets";
+import { GET } from "./api/search.ts";
 
 const query = Astro.url.searchParams.get("q") || "";
 
@@ -24,9 +25,9 @@ let error = "";
 
 if (query) {
     try {
-        const response = await fetch(
-            `${Astro.url.origin}/api/search?q=${encodeURIComponent(query)}`,
-        );
+        const url = new URL(`http://localhost/api/search?q=${encodeURIComponent(query)}`);
+        const response = await GET({ url } as any) as Response;
+        
         if (response.ok) {
             const data = await response.json();
             results = data.results || [];
