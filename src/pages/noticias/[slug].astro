@@ -24,6 +24,7 @@ try {
     const entries = await contentfulClient.getEntries({
         content_type: "noticia",
         "fields.slug": slug,
+        include: 3,
         limit: 1,
     });
 
@@ -54,75 +55,33 @@ if (n.body) {
         if (typeof n.body === "string") {
             bodyHtml = `<p>${n.body}</p>`;
         } else if (n.body.nodeType === "document") {
-            bodyHtml = documentToHtmlString(n.body);
+            const options = {
+                renderNode: {
+                    "embedded-asset-block": (node: any) => {
+                        const file = node.data?.target?.fields?.file;
+                        const title = node.data?.target?.fields?.title || '';
+                        const description = node.data?.target?.fields?.description || '';
+                        if (file && file.url) {
+                            const url = file.url.startsWith('//') ? `https:${file.url}` : file.url;
+                            return `<figure class="media-centered"><img src="${url}" alt="${title}" />${description ? `<figcaption class="photo-caption">${description}</figcaption>` : ''}</figure>`;
+                        }
+                        return '';
+                    }
+                }
+            };
+            bodyHtml = documentToHtmlString(n.body, options);
 
-            // Twitter
-            const tweetEmbed = (url: string) => `
-                <div class="tweet-embed-wrapper">
-                    <blockquote class="twitter-tweet" data-theme="light" data-align="center">
-                        <a href="${url}">${url}</a>
-                    </blockquote>
-                </div>`;
-            bodyHtml = bodyHtml.replace(
-                /<a[^>]*href=["'](https:\/\/(?:twitter|x)\.com\/[^/]+\/status\/\d+[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
-                (match: string, url: string) => tweetEmbed(url)
-            );
-            bodyHtml = bodyHtml.replace(
-                /<p>\s*(https:\/\/(?:twitter|x)\.com\/[^/]+\/status\/\d+[^\s<]*)\s*<\/p>/gi, 
-                (match: string, url: string) => tweetEmbed(url)
-            );
-
-            // YouTube
-            const ytEmbed = (url: string, videoId: string) => `
-                <div class="youtube-embed-wrapper" style="position: relative; padding-bottom: 56.25%; height: 0; margin: 2.5rem auto; width: 100%; max-width: 800px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                    <iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                </div>`;
-            bodyHtml = bodyHtml.replace(
-                /<a[^>]*href=["'](https:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^"&?]+)[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
-                (match: string, url: string, videoId: string) => ytEmbed(url, videoId)
-            );
-            bodyHtml = bodyHtml.replace(
-                /<p>\s*(https:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^&?\s<]+)[^\s<]*)\s*<\/p>/gi, 
-                (match: string, url: string, videoId: string) => ytEmbed(url, videoId)
-            );
-
-            // Instagram
-            const igEmbed = (url: string) => `
-                <div class="instagram-embed-wrapper" style="display:flex; justify-content:center; margin: 2.5rem auto; width: 100%; max-width: 540px;">
-                    <blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);">
-                    </blockquote>
-                </div>`;
-            bodyHtml = bodyHtml.replace(
-                /<a[^>]*href=["'](https:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/[^"/'\s]+(?:\/)?(?:[^"']+)?)["'][^>]*>[\s\S]*?<\/a>/gi, 
-                (match: string, url: string) => igEmbed(url)
-            );
-            bodyHtml = bodyHtml.replace(
-                /<p>\s*(https:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/[^\s<]+(?:\/)?(?:[^\s<]+)?)\s*<\/p>/gi, 
-                (match: string, url: string) => igEmbed(url)
-            );
-
-            // TikTok
-            const tiktokEmbed = (url: string, videoId: string) => `
-                <div class="tiktok-embed-wrapper" style="display:flex; justify-content:center; margin: 2.5rem auto; width: 100%; max-width: 605px;">
-                    <blockquote class="tiktok-embed" cite="${url}" data-video-id="${videoId}" style="max-width: 605px;min-width: 325px;">
-                        <section></section>
-                    </blockquote>
-                </div>`;
-            bodyHtml = bodyHtml.replace(
-                /<a[^>]*href=["'](https:\/\/(?:www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
-                (match: string, url: string, videoId: string) => tiktokEmbed(url, videoId)
-            );
-            bodyHtml = bodyHtml.replace(
-                /<p>\s*(https:\/\/(?:www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)[^\s<]*)\s*<\/p>/gi, 
-                (match: string, url: string, videoId: string) => tiktokEmbed(url, videoId)
-            );
-
-            // Permitir pegar Códigos Embed (iframes, blockquotes de Twitter) directamente
-            bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section)[^&>]*?)&gt;/gi, (m, content) => {
+            // Permitir pegar Códigos HTML Embed (YouTube Iframes, Twitter Blockquotes, etc)
+            bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section|span)[^&>]*?)&gt;/gi, (m: string, content: string) => {
                 const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
                 return `<${unescaped}>`;
             });
-
+            
+            // Reemplazar saltos de línea de Contentful alrededor de los embeds para que no rompa el diseño
+            bodyHtml = bodyHtml.replace(/<p>\s*<iframe/gi, '<iframe');
+            bodyHtml = bodyHtml.replace(/<\/iframe>\s*<\/p>/gi, '</iframe>');
+            bodyHtml = bodyHtml.replace(/<p>\s*<blockquote/gi, '<blockquote');
+            bodyHtml = bodyHtml.replace(/<\/blockquote>\s*<\/p>/gi, '</blockquote>');
         } else {
             bodyHtml = `<p>Error de formato.</p>`;
         }
@@ -434,9 +393,6 @@ Promise.allSettled([
     description={subtitle || `${title} - Madrid Femenino Xtra`}
     image={featuredImageUrl || undefined}
 >
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8" slot="head"></script>
-    <script async src="//www.instagram.com/embed.js" slot="head"></script>
-    <script async src="https://www.tiktok.com/embed.js" slot="head"></script>
     <script
         type="application/ld+json"
         set:html={JSON.stringify(newsSchema)}
@@ -1245,30 +1201,30 @@ Promise.allSettled([
 
 <script is:inline>
     function loadEmbeds() {
-        // Twitter re-init
+        // Inicializador de Twitter (twttr.widgets.load)
         if (window.twttr && window.twttr.widgets) {
             window.twttr.widgets.load();
-        } else if (!document.getElementById("twitter-wjs")) {
+        } else if (document.querySelector('.twitter-tweet') && !document.getElementById("twttr-wjs")) {
             const s = document.createElement("script");
-            s.id = "twitter-wjs";
+            s.id = "twttr-wjs";
             s.src = "https://platform.twitter.com/widgets.js";
             s.async = true;
             document.head.appendChild(s);
         }
 
-        // Instagram re-init
+        // Inicializador de Instagram
         if (window.instgrm && window.instgrm.Embeds) {
             window.instgrm.Embeds.process();
-        } else if (!document.getElementById("instagram-wjs")) {
+        } else if (document.querySelector('.instagram-media') && !document.getElementById("instgrm-wjs")) {
             const s = document.createElement("script");
-            s.id = "instagram-wjs";
+            s.id = "instgrm-wjs";
             s.src = "//www.instagram.com/embed.js";
             s.async = true;
             document.head.appendChild(s);
         }
 
-        // TikTok re-init
-        if (!document.getElementById("tiktok-wjs")) {
+        // Inicializador de TikTok
+        if (document.querySelector('.tiktok-embed') && !document.getElementById("tiktok-wjs")) {
             const s = document.createElement("script");
             s.id = "tiktok-wjs";
             s.src = "https://www.tiktok.com/embed.js";
@@ -1277,18 +1233,14 @@ Promise.allSettled([
         }
     }
 
-    // Ejecutar al cargar la página
+    // Ejecutar al cargar y en cada cambio de vista dinámica (ViewTransitions si lo hay)
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", loadEmbeds);
     } else {
         loadEmbeds();
     }
-    
-    // Ejecutar en navegaciones de cliente (ViewTransitions)
     document.addEventListener("astro:page-load", loadEmbeds);
-    
-    // Intervalo de seguridad por si el componente rico tarda en renderizar en el cliente
-    setTimeout(loadEmbeds, 1000);
+    setTimeout(loadEmbeds, 1000); // Doble validación de carga
 </script>
 
 <style>
@@ -1520,19 +1472,29 @@ Promise.allSettled([
         background-size: 100% 100%;
     }
 
+    .news-article-rich-text :global(iframe) {
+        display: block;
+        margin: 2.5rem auto;
+        max-width: 100%;
+        width: 100%;
+        min-height: 400px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Adaptación para la altura de YouTube en móviles */
+    @media (max-width: 768px) {
+        .news-article-rich-text :global(iframe) {
+            min-height: 250px;
+        }
+    }
+
     .news-article-rich-text :global(img) {
         display: block;
         margin: 2rem auto;
         max-width: 100%;
         border-radius: 8px;
         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .news-article-rich-text :global(iframe) {
-        display: block;
-        margin: 2.5rem auto;
-        max-width: 100%;
-        border-radius: 12px;
     }
 
     .news-article-rich-text :global(figure) {
@@ -1571,15 +1533,6 @@ Promise.allSettled([
         margin-top: 0.75rem;
         text-align: center;
         font-weight: 500;
-    }
-
-    .tweet-embed-wrapper {
-        display: flex;
-        justify-content: center;
-        margin: 2.5rem auto;
-        width: 100%;
-        max-width: 550px;
-        min-height: 250px;
     }
 
     .tweet-placeholder {
