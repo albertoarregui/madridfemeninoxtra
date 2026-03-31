@@ -76,6 +76,9 @@ if (n.body) {
                 return `<${unescaped}>`;
             });
             
+            // Sustituir automáticamente etiquetas de Twitter para que salgan centradas independientemente del código que pegue
+            bodyHtml = bodyHtml.replace(/<blockquote(.*?)class="twitter-tweet"(.*?)>/gi, '<blockquote$1class="twitter-tweet" data-align="center" data-theme="light"$2>');
+            
             // Reemplazar saltos de línea de Contentful alrededor de los embeds para que no rompa el diseño
             bodyHtml = bodyHtml.replace(/<p>\s*<iframe/gi, '<iframe');
             bodyHtml = bodyHtml.replace(/<\/iframe>\s*<\/p>/gi, '</iframe>');
@@ -1499,6 +1502,10 @@ Promise.allSettled([
     .news-article-rich-text :global(figure) {
         margin: 2.5rem auto;
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     .news-article-rich-text :global(figcaption) {
@@ -1508,6 +1515,13 @@ Promise.allSettled([
         font-style: italic;
         text-align: center;
         font-family: inherit;
+        width: 100%;
+        display: block;
+    }
+
+    .news-article-rich-text :global(.twitter-tweet) {
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
     .news-article-rich-text :global(blockquote p) {
