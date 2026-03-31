@@ -67,6 +67,10 @@ if (n.body) {
                 /<a[^>]*href=["'](https:\/\/(?:twitter|x)\.com\/[^/]+\/status\/\d+[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
                 (match: string, url: string) => tweetEmbed(url)
             );
+            bodyHtml = bodyHtml.replace(
+                /<p>\s*(https:\/\/(?:twitter|x)\.com\/[^/]+\/status\/\d+[^\s<]*)\s*<\/p>/gi, 
+                (match: string, url: string) => tweetEmbed(url)
+            );
 
             // YouTube
             const ytEmbed = (url: string, videoId: string) => `
@@ -75,6 +79,10 @@ if (n.body) {
                 </div>`;
             bodyHtml = bodyHtml.replace(
                 /<a[^>]*href=["'](https:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^"&?]+)[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
+                (match: string, url: string, videoId: string) => ytEmbed(url, videoId)
+            );
+            bodyHtml = bodyHtml.replace(
+                /<p>\s*(https:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^&?\s<]+)[^\s<]*)\s*<\/p>/gi, 
                 (match: string, url: string, videoId: string) => ytEmbed(url, videoId)
             );
 
@@ -86,6 +94,10 @@ if (n.body) {
                 </div>`;
             bodyHtml = bodyHtml.replace(
                 /<a[^>]*href=["'](https:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/[^"/'\s]+(?:\/)?(?:[^"']+)?)["'][^>]*>[\s\S]*?<\/a>/gi, 
+                (match: string, url: string) => igEmbed(url)
+            );
+            bodyHtml = bodyHtml.replace(
+                /<p>\s*(https:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/[^\s<]+(?:\/)?(?:[^\s<]+)?)\s*<\/p>/gi, 
                 (match: string, url: string) => igEmbed(url)
             );
 
@@ -100,6 +112,16 @@ if (n.body) {
                 /<a[^>]*href=["'](https:\/\/(?:www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)[^"']*)["'][^>]*>[\s\S]*?<\/a>/gi, 
                 (match: string, url: string, videoId: string) => tiktokEmbed(url, videoId)
             );
+            bodyHtml = bodyHtml.replace(
+                /<p>\s*(https:\/\/(?:www\.)?tiktok\.com\/@[^/]+\/video\/(\d+)[^\s<]*)\s*<\/p>/gi, 
+                (match: string, url: string, videoId: string) => tiktokEmbed(url, videoId)
+            );
+
+            // Permitir pegar Códigos Embed (iframes, blockquotes de Twitter) directamente
+            bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section)[^&>]*?)&gt;/gi, (m, content) => {
+                const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+                return `<${unescaped}>`;
+            });
 
         } else {
             bodyHtml = `<p>Error de formato.</p>`;
