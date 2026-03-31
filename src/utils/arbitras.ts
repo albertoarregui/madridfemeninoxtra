@@ -73,20 +73,18 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                 ) as penalties_against,
                 (
                     SELECT COUNT(*) 
-                    FROM tarjetas t 
+                    FROM tarjetas_rival t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
                     WHERE p2.id_arbitra = a.id_arbitra 
-                      AND t.id_jugadora IS NULL
                       AND (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%')
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
                 ) as yellow_cards_against,
                 (
                     SELECT COUNT(*) 
-                    FROM tarjetas t 
+                    FROM tarjetas_rival t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
                     WHERE p2.id_arbitra = a.id_arbitra 
-                      AND t.id_jugadora IS NULL
                       AND (
                           UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
                           OR UPPER(t.tipo_tarjeta) LIKE '%RED%'
@@ -206,18 +204,16 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
                 ) as penalties_against,
                 (
                     SELECT COUNT(*) 
-                    FROM tarjetas tr 
+                    FROM tarjetas_rival tr 
                     WHERE tr.id_partido = p.id_partido 
-                      AND tr.id_jugadora IS NULL
                       AND (UPPER(tr.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(tr.tipo_tarjeta) LIKE '%YELLOW%')
                       AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOBLE%'
                       AND UPPER(tr.tipo_tarjeta) NOT LIKE '%DOUBLE%'
                 ) as yellow_cards_against,
                 (
                     SELECT COUNT(*) 
-                    FROM tarjetas tr 
+                    FROM tarjetas_rival tr 
                     WHERE tr.id_partido = p.id_partido 
-                      AND tr.id_jugadora IS NULL
                       AND (
                           UPPER(tr.tipo_tarjeta) LIKE '%ROJA%' 
                           OR UPPER(tr.tipo_tarjeta) LIKE '%RED%'
