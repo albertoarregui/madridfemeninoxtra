@@ -23,9 +23,7 @@ if (!nextMatch) return null;
 
 const targetDate =
     nextMatch && nextMatch.fecha
-        ? new Date(
-              `${nextMatch.fecha}T${nextMatch.hora?.includes(":") ? (nextMatch.hora.split(":").length === 2 ? `${nextMatch.hora}:00` : nextMatch.hora) : "00:00:00"}`,
-          ).toISOString()
+        ? `${nextMatch.fecha}T${nextMatch.hora?.includes(":") ? (nextMatch.hora.split(":").length === 2 ? `${nextMatch.hora}:00` : nextMatch.hora) : "00:00:00"}`
         : "";
 const matchTimeDisplay = nextMatch.hora?.replace(/[^0-9:]/g, "") || "00:00";
 
@@ -675,9 +673,24 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         if (!targetTimeStr) return;
 
         function tick() {
-            const now = new Date().getTime();
+            // Obtener la hora actual exacta en Madrid
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Europe/Madrid',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false
+            });
+            const parts = formatter.formatToParts(new Date());
+            const m: any = {};
+            parts.forEach(p => { m[p.type] = p.value; });
+            
+            // Reconstruir la hora de Madrid en un string ISO puro para comparar manzanas con manzanas
+            const nowMadridTime = new Date(`${m.year}-${m.month}-${m.day}T${m.hour}:${m.minute}:${m.second}`).getTime();
+            
+            // targetTimeStr ya es un string ISO puro (ej: "2024-05-15T18:00:00") correspondiente a la hora local en Madrid
             const targetTime = new Date(targetTimeStr).getTime();
-            const diff = targetTime - now;
+            
+            const diff = targetTime - nowMadridTime;
 
             if (diff <= 0) {
                 return;
