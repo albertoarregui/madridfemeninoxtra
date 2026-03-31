@@ -188,6 +188,16 @@ const redArc =
     totalCards > 0
         ? Math.round((totalStats.tr / totalCards) * circumference)
         : 0;
+
+const totalCardsFavor = totalStats.ta_c + totalStats.tr_c;
+const yellowArcFavor =
+    totalCardsFavor > 0
+        ? Math.round((totalStats.ta_c / totalCardsFavor) * circumference)
+        : 0;
+const redArcFavor =
+    totalCardsFavor > 0
+        ? Math.round((totalStats.tr_c / totalCardsFavor) * circumference)
+        : 0;
 ---
 
 <Layout
@@ -304,23 +314,23 @@ const redArc =
                                 <span class="value gap-3">
                                     <div class="flex flex-col gap-1">
                                         <div class="flex items-center gap-3">
-                                            <span class="text-[10px] text-gray-500 font-bold uppercase w-16">Al Madrid:</span>
-                                            <span class="flex items-center gap-2 text-yellow-600 font-bold" title="Amarillas al RM">
+                                            <span class="text-[10px] text-gray-500 font-bold uppercase w-16">EN CONTRA:</span>
+                                            <span class="flex items-center gap-2 text-yellow-600 font-bold" title="Amarillas en contra">
                                                 <span class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"></span>
                                                 {totalStats.ta}
                                             </span>
-                                            <span class="flex items-center gap-2 text-red-600 font-bold" title="Rojas al RM">
+                                            <span class="flex items-center gap-2 text-red-600 font-bold" title="Rojas en contra">
                                                 <span class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"></span>
                                                 {totalStats.tr}
                                             </span>
                                         </div>
                                         <div class="flex items-center gap-3">
-                                            <span class="text-[10px] text-gray-500 font-bold uppercase w-16">A Rivales:</span>
-                                            <span class="flex items-center gap-2 text-yellow-600 font-bold opacity-80" title="Amarillas a Rivales">
+                                            <span class="text-[10px] text-gray-500 font-bold uppercase w-16">A FAVOR:</span>
+                                            <span class="flex items-center gap-2 text-yellow-600 font-bold opacity-80" title="Amarillas a favor">
                                                 <span class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"></span>
                                                 {totalStats.ta_c}
                                             </span>
-                                            <span class="flex items-center gap-2 text-red-600 font-bold opacity-80" title="Rojas a Rivales">
+                                            <span class="flex items-center gap-2 text-red-600 font-bold opacity-80" title="Rojas a favor">
                                                 <span class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"></span>
                                                 {totalStats.tr_c}
                                             </span>
@@ -703,13 +713,12 @@ const redArc =
                         </div>
 
                         <div class="chart-item">
-                            <h4 class="text-sm font-bold mb-2">TARJETAS</h4>
+                            <h4 class="text-xs font-bold mb-2">TARJETAS EN CONTRA</h4>
                             <svg
                                 viewBox="0 0 100 100"
                                 class="pie-chart"
                                 id="cards-chart"
                             >
-                                {}
                                 <circle
                                     cx="50"
                                     cy="50"
@@ -739,6 +748,47 @@ const redArc =
                                 <div>
                                     <span class="dot red"></span> Rojas ({
                                         totalStats.tr
+                                    })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-item">
+                            <h4 class="text-xs font-bold mb-2">TARJETAS A FAVOR</h4>
+                            <svg
+                                viewBox="0 0 100 100"
+                                class="pie-chart"
+                                id="cards-favor-chart"
+                            >
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#fff9c4"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${yellowArcFavor} ${circumference - yellowArcFavor}`}
+                                    transform="rotate(-90 50 50)"></circle>
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="35"
+                                    fill="none"
+                                    stroke="#ffcdd2"
+                                    stroke-width="20"
+                                    stroke-dasharray={`${redArcFavor} ${circumference - redArcFavor}`}
+                                    stroke-dashoffset={-yellowArcFavor}
+                                    transform="rotate(-90 50 50)"></circle>
+                            </svg>
+                            <div class="chart-legend" id="cards-favor-legend">
+                                <div>
+                                    <span class="dot yellow"></span> Amarillas ({
+                                        totalStats.ta_c
+                                    })
+                                </div>
+                                <div>
+                                    <span class="dot red"></span> Rojas ({
+                                        totalStats.tr_c
                                     })
                                 </div>
                             </div>
