@@ -11,9 +11,10 @@ interface GalleryViewerProps {
     children?: React.ReactNode;
 }
 
-const DynamicImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+const DynamicImage = ({ src, alt, className, originalIndex }: { src: string; alt: string; className?: string; originalIndex?: number }) => {
     const [currentSrc, setCurrentSrc] = useState(src);
     const [triedExtensions, setTriedExtensions] = useState<string[]>([]);
+    const [triedFallback, setTriedFallback] = useState(false);
     const extensions = ['.webp', '.jpg', '.png'];
 
     const handleError = () => {
@@ -24,12 +25,19 @@ const DynamicImage = ({ src, alt, className }: { src: string; alt: string; class
             const baseUrl = currentSrc.substring(0, currentSrc.lastIndexOf('.'));
             setTriedExtensions(prev => [...prev, currentExt || '']);
             setCurrentSrc(`${baseUrl}${nextExt}`);
+        } else if (!triedFallback && originalIndex) {
+            setTriedFallback(true);
+            setTriedExtensions([]);
+            const parts = src.split('/');
+            parts[parts.length - 1] = `1%20(${originalIndex}).webp`;
+            setCurrentSrc(parts.join('/'));
         }
     };
 
     useEffect(() => {
         setCurrentSrc(src);
         setTriedExtensions([]);
+        setTriedFallback(false);
     }, [src]);
 
     return <img src={currentSrc} alt={alt} className={className} onError={handleError} loading="lazy" />;
@@ -107,6 +115,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                         src={album.photos[currentIndex]}
                         alt={`Foto ${currentIndex + 1} de ${album.title}`}
                         className="main-photo"
+                        originalIndex={currentIndex + 1}
                     />
 
                     <button className="nav-arrow right" onClick={nextPhoto}>
@@ -123,7 +132,12 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                             className={`thumb-item ${index === currentIndex ? 'active' : ''}`}
                             onClick={() => setCurrentIndex(index)}
                         >
-                            <DynamicImage src={photo} alt={`Miniatura ${index + 1}`} className="thumb-img" />
+                            <DynamicImage 
+                                src={photo} 
+                                alt={`Miniatura ${index + 1}`} 
+                                className="thumb-img" 
+                                originalIndex={index + 1}
+                            />
                             {index === currentIndex && <div className="active-overlay"></div>}
                         </div>
                     ))}

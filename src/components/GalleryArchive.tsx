@@ -40,7 +40,21 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 {paginatedAlbums.map((album) => (
                     <a href={`/fotogalerias/${album.slug}`} className="gallery-card group" key={album.id}>
                         <div className="gallery-image-wrapper">
-                            <img src={album.cover} alt={album.title} loading="lazy" />
+                            <img 
+                                src={album.cover} 
+                                alt={album.title} 
+                                loading="lazy"
+                                onError={(e) => {
+                                    const img = e.currentTarget;
+                                    const match = img.src.match(/1\.[a-z]+$/i);
+                                    if (match && !img.dataset.triedFallback) {
+                                        img.dataset.triedFallback = 'true';
+                                        const parts = img.src.split('/');
+                                        parts[parts.length - 1] = '1%20(1).webp';
+                                        img.src = parts.join('/');
+                                    }
+                                }}
+                            />
                             <div className="photo-count-badge">
                                 <Camera size={14} />
                                 <span>{album.count}</span>
