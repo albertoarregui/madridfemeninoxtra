@@ -60,10 +60,9 @@ if (n.body) {
                     "embedded-asset-block": (node: any) => {
                         const file = node.data?.target?.fields?.file;
                         const title = node.data?.target?.fields?.title || '';
-                        const description = node.data?.target?.fields?.description || '';
                         if (file && file.url) {
                             const url = file.url.startsWith('//') ? `https:${file.url}` : file.url;
-                            return `<figure class="media-centered"><img src="${url}" alt="${title}" />${description ? `<figcaption class="photo-caption">${description}</figcaption>` : ''}</figure>`;
+                            return `<figure class="media-centered"><img src="${url}" alt="${title}" />${title ? `<figcaption class="photo-caption">${title}</figcaption>` : ''}</figure>`;
                         }
                         return '';
                     }
@@ -72,8 +71,8 @@ if (n.body) {
             bodyHtml = documentToHtmlString(n.body, options);
 
             // Permitir pegar Códigos HTML Embed (YouTube Iframes, Twitter Blockquotes, etc)
-            bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section|span)[^&>]*?)&gt;/gi, (m: string, content: string) => {
-                const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+            bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section|span|br)[\s\S]*?)&gt;/gi, (m: string, content: string) => {
+                const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&mdash;/g, "—");
                 return `<${unescaped}>`;
             });
             
@@ -1504,9 +1503,11 @@ Promise.allSettled([
 
     .news-article-rich-text :global(figcaption) {
         font-size: 0.85rem;
-        color: #888;
-        margin-top: 0.5rem;
+        color: #777;
+        margin-top: 0.8rem;
         font-style: italic;
+        text-align: center;
+        font-family: inherit;
     }
 
     .news-article-rich-text :global(blockquote p) {
