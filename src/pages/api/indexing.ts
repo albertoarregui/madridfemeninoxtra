@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { google } from 'googleapis'; // Requires 'googleapis' to be installed or use 'google-auth-library'
+import { google } from 'googleapis';
 
 export const prerender = false;
 
@@ -8,7 +8,7 @@ export const POST: APIRoute = async ({ request }) => {
         const body = await request.json();
         const { url, secret } = body;
 
-        // Validar el secreto para que nadie pueda abusar de tu API de indexación
+
         const ASSIGNED_SECRET = import.meta.env.INDEXING_SECRET;
         if (!ASSIGNED_SECRET || secret !== ASSIGNED_SECRET) {
             return new Response(JSON.stringify({ error: "No autorizado. Secreto inválido." }), {
@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
             });
         }
 
-        // Obtener credenciales desde las variables de entorno de Vercel
+
         const clientEmail = import.meta.env.GOOGLE_CLIENT_EMAIL;
         const privateKey = import.meta.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
@@ -35,18 +35,16 @@ export const POST: APIRoute = async ({ request }) => {
             });
         }
 
-        const jwtClient = new google.auth.JWT(
-            clientEmail,
-            undefined, // No file path
-            privateKey,
-            ["https://www.googleapis.com/auth/indexing"],
-            undefined
-        );
+        const jwtClient = new google.auth.JWT({
+            email: clientEmail,
+            key: privateKey,
+            scopes: ["https://www.googleapis.com/auth/indexing"]
+        });
 
-        // Autenticar la cuenta de servicio
+
         await jwtClient.authorize();
 
-        // Enviar la notificación de indexación
+
         const response = await fetch("https://indexing.googleapis.com/v3/urlNotifications:publish", {
             method: "POST",
             headers: {
@@ -55,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
             },
             body: JSON.stringify({
                 url: url,
-                type: "URL_UPDATED", // Usa URL_DELETED si alguna vez borraste algo
+                type: "URL_UPDATED",
             }),
         });
 

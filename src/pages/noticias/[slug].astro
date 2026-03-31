@@ -70,16 +70,16 @@ if (n.body) {
             };
             bodyHtml = documentToHtmlString(n.body, options);
 
-            // Permitir pegar Códigos HTML Embed (YouTube Iframes, Twitter Blockquotes, etc)
+
             bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section|span|br)[\s\S]*?)&gt;/gi, (m: string, content: string) => {
                 const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&mdash;/g, "—");
                 return `<${unescaped}>`;
             });
             
-            // Sustituir automáticamente etiquetas de Twitter para que salgan centradas independientemente del código que pegue
+
             bodyHtml = bodyHtml.replace(/<blockquote(.*?)class="twitter-tweet"(.*?)>/gi, '<blockquote$1class="twitter-tweet" data-align="center" data-theme="light"$2>');
             
-            // Reemplazar saltos de línea de Contentful alrededor de los embeds para que no rompa el diseño
+
             bodyHtml = bodyHtml.replace(/<p>\s*<iframe/gi, '<iframe');
             bodyHtml = bodyHtml.replace(/<\/iframe>\s*<\/p>/gi, '</iframe>');
             bodyHtml = bodyHtml.replace(/<p>\s*<blockquote/gi, '<blockquote');
@@ -381,7 +381,7 @@ const newsSchema = {
         .join(", "),
 };
 
-// Ping automático a los buscadores (método sin registro previo)
+
 const sitemapUrl = encodeURIComponent(
     "https://www.madridfemeninoxtra.com/sitemap.xml",
 );
@@ -1204,7 +1204,7 @@ Promise.allSettled([
 
 <script is:inline>
     function loadEmbeds() {
-        // Inicializador de Twitter (twttr.widgets.load)
+
         if (window.twttr && window.twttr.widgets) {
             window.twttr.widgets.load();
         } else if (document.querySelector('.twitter-tweet') && !document.getElementById("twttr-wjs")) {
@@ -1215,7 +1215,7 @@ Promise.allSettled([
             document.head.appendChild(s);
         }
 
-        // Inicializador de Instagram
+
         if (window.instgrm && window.instgrm.Embeds) {
             window.instgrm.Embeds.process();
         } else if (document.querySelector('.instagram-media') && !document.getElementById("instgrm-wjs")) {
@@ -1226,7 +1226,7 @@ Promise.allSettled([
             document.head.appendChild(s);
         }
 
-        // Inicializador de TikTok
+
         if (document.querySelector('.tiktok-embed') && !document.getElementById("tiktok-wjs")) {
             const s = document.createElement("script");
             s.id = "tiktok-wjs";
@@ -1236,7 +1236,7 @@ Promise.allSettled([
         }
     }
 
-    // Ejecutar al cargar y en cada cambio de vista dinámica (ViewTransitions si lo hay)
+
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", loadEmbeds);
     } else {
