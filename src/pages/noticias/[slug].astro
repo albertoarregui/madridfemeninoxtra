@@ -60,7 +60,7 @@ if (n.body) {
             const tweetEmbed = (url) => `
                 <div class="tweet-embed-wrapper">
                     <blockquote class="twitter-tweet" data-theme="light" data-align="center">
-                        <a href="${url}"></a>
+                        <a href="${url}">${url}</a>
                     </blockquote>
                 </div>`;
             bodyHtml = bodyHtml.replace(
@@ -1236,6 +1236,54 @@ Promise.allSettled([
         </div>
     </article>
 </Layout>
+
+<script is:inline>
+    function loadEmbeds() {
+        // Twitter re-init
+        if (window.twttr && window.twttr.widgets) {
+            window.twttr.widgets.load();
+        } else if (!document.getElementById("twitter-wjs")) {
+            const s = document.createElement("script");
+            s.id = "twitter-wjs";
+            s.src = "https://platform.twitter.com/widgets.js";
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        // Instagram re-init
+        if (window.instgrm && window.instgrm.Embeds) {
+            window.instgrm.Embeds.process();
+        } else if (!document.getElementById("instagram-wjs")) {
+            const s = document.createElement("script");
+            s.id = "instagram-wjs";
+            s.src = "//www.instagram.com/embed.js";
+            s.async = true;
+            document.head.appendChild(s);
+        }
+
+        // TikTok re-init
+        if (!document.getElementById("tiktok-wjs")) {
+            const s = document.createElement("script");
+            s.id = "tiktok-wjs";
+            s.src = "https://www.tiktok.com/embed.js";
+            s.async = true;
+            document.head.appendChild(s);
+        }
+    }
+
+    // Ejecutar al cargar la página
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", loadEmbeds);
+    } else {
+        loadEmbeds();
+    }
+    
+    // Ejecutar en navegaciones de cliente (ViewTransitions)
+    document.addEventListener("astro:page-load", loadEmbeds);
+    
+    // Intervalo de seguridad por si el componente rico tarda en renderizar en el cliente
+    setTimeout(loadEmbeds, 1000);
+</script>
 
 <style>
     .news-detail-page {
