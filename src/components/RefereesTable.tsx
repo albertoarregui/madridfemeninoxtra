@@ -3,6 +3,19 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 import { getFlagSrc } from '../utils/flags';
 
+function generateSlug(text: string | null | undefined): string {
+    if (!text) return 'desconocido';
+    return text.toString().toLowerCase()
+        .trim()
+        .replace(/\u00f8/g, 'o').replace(/\u00d8/g, 'O')
+        .replace(/\u00f6/g, 'o').replace(/\u00d6/g, 'O')
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 interface Referee {
     id_arbitra: string | number;
     nombre: string;
@@ -145,7 +158,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                     {index + 1}
                                 </td>
                                 <td className="sticky left-[50px] bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r border-gray-100 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate min-w-[200px]" title={referee.nombre}>
-                                    <a href={`/arbitras/${referee.nombre.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} className="hover:text-[#ffde59] transition-colors whitespace-normal break-words leading-tight block">
+                                    <a href={`/arbitras/${generateSlug(referee.nombre)}`} className="hover:text-[#ffde59] transition-colors whitespace-normal break-words leading-tight block">
                                         {referee.nombre}
                                     </a>
                                 </td>
