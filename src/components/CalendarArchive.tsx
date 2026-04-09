@@ -70,6 +70,10 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
             const targetComp = sComp === 'AMISTOSOS' ? 'AMISTOSO' : sComp;
             const compMatches = selectedComp === 'TODAS' || mName.includes(targetComp);
 
+            if (selectedMonth === 'TODOS' && selectedComp === 'TODAS') {
+                return !m.isPlayed && monthMatches && compMatches;
+            }
+
             return monthMatches && compMatches;
         });
     }, [sortedMatches, selectedMonth, selectedComp]);
@@ -159,9 +163,9 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                             <div className="match-score-box">
                                                 {match.isPlayed ? (
                                                     <div className="score-display">
-                                                        <span>{match.goles_rm}</span>
+                                                        <span>{isHome ? match.goles_rm : match.goles_rival}</span>
                                                         <span className="score-separator">-</span>
-                                                        <span>{match.goles_rival}</span>
+                                                        <span>{isHome ? match.goles_rival : match.goles_rm}</span>
                                                     </div>
                                                 ) : (
                                                     <div className="time-display">

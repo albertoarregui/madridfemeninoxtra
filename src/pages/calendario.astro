@@ -11,15 +11,34 @@ let error = null;
 
 try {
     const allMatches = await fetchGamesDirectly();
-    matches = allMatches.filter((m) => !m.isPlayed);
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    const currentYear = now.getFullYear();
+
+    let startYear, endYearAbbrev;
+    if (currentMonth >= 7) {
+        startYear = currentYear;
+        endYearAbbrev = (currentYear + 1).toString().slice(-2);
+    } else {
+        startYear = currentYear - 1;
+        endYearAbbrev = currentYear.toString().slice(-2);
+    }
+    const currentSeason = `${startYear}/${endYearAbbrev}`;
+
+    matches = allMatches.filter(
+        (m) =>
+            m.temporada_nombre === currentSeason ||
+            (!m.temporada_nombre && !m.isPlayed),
+    );
 } catch (e: any) {
     console.error("Error fetching matches for calendar:", e);
     error = e.message;
 }
 
-const title = "Calendario Real Madrid Femenino | Madrid Femenino Xtra";
+const title = "Calendario | Madrid Femenino Xtra";
 const description =
-    "Explora el próximo calendario del Real Madrid Femenino: partidos confirmados, horarios y competiciones.";
+    "Explora el calendario del Real Madrid Femenino: partidos confirmados, horarios y competiciones.";
 ---
 
 <Layout title={title} description={description}>
@@ -31,7 +50,9 @@ const description =
             </p>
         </header>
 
-        <section class="calendar-content-section max-w-7xl mx-auto px-6 md:px-0">
+        <section
+            class="calendar-content-section max-w-7xl mx-auto px-6 md:px-0"
+        >
             {
                 error && (
                     <div class="p-10 bg-red-50 text-red-600 rounded-3xl border border-red-100 font-bold">
