@@ -429,14 +429,21 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
         const playersIn = rows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
 
         const usedPlayersOut = new Set();
+        const usedPlayersIn = new Set<any>();
+
+        const playersInIds = new Set(playersIn.map((r: any) => r.id_alineacion));
 
         playersIn.forEach((pIn: any) => {
+            if (usedPlayersIn.has(pIn.id_alineacion)) return;
+            usedPlayersIn.add(pIn.id_alineacion);
+
             const minute = pIn.minuto_entrada;
 
             const pOut = rows.find((r: any) =>
                 r.minuto_salida === minute &&
                 r.id_alineacion !== pIn.id_alineacion &&
-                !usedPlayersOut.has(r.id_alineacion)
+                !usedPlayersOut.has(r.id_alineacion) &&
+                !playersInIds.has(r.id_alineacion)
             );
 
             if (pOut) {
