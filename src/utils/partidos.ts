@@ -424,8 +424,6 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
             args: [matchId]
         });
 
-        // Deduplicate rows by id_alineacion to handle potential JOIN duplicates
-        // (e.g. a player with multiple dorsales entries for the same season)
         const seenAlineacion = new Set<any>();
         const uniqueRows = result.rows.filter((r: any) => {
             if (seenAlineacion.has(r.id_alineacion)) return false;
