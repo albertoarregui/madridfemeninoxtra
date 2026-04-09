@@ -424,26 +424,27 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
             args: [matchId]
         });
 
-        const rows = result.rows;
+        // Deduplicate rows by id_alineacion to handle potential JOIN duplicates
+        // (e.g. a player with multiple dorsales entries for the same season)
+        const seenAlineacion = new Set<any>();
+        const uniqueRows = result.rows.filter((r: any) => {
+            if (seenAlineacion.has(r.id_alineacion)) return false;
+            seenAlineacion.add(r.id_alineacion);
+            return true;
+        });
+
         const substitutions: any[] = [];
-        const playersIn = rows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
+        const playersIn = uniqueRows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
 
         const usedPlayersOut = new Set();
-        const usedPlayersIn = new Set<any>();
-
-        const playersInIds = new Set(playersIn.map((r: any) => r.id_alineacion));
 
         playersIn.forEach((pIn: any) => {
-            if (usedPlayersIn.has(pIn.id_alineacion)) return;
-            usedPlayersIn.add(pIn.id_alineacion);
-
             const minute = pIn.minuto_entrada;
 
-            const pOut = rows.find((r: any) =>
+            const pOut = uniqueRows.find((r: any) =>
                 r.minuto_salida === minute &&
                 r.id_alineacion !== pIn.id_alineacion &&
-                !usedPlayersOut.has(r.id_alineacion) &&
-                !playersInIds.has(r.id_alineacion)
+                !usedPlayersOut.has(r.id_alineacion)
             );
 
             if (pOut) {
