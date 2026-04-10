@@ -336,25 +336,31 @@ export default function StatsRankings({
                 };
 
                 if (selectedType === "porcentaje_pases") {
-                    p.porcentaje_pases = calcPct(p.pases_completados, p.pases_totales);
-                    p.display_ratio = calcRatio(p.pases_completados, p.pases_totales);
+                    const t = Math.max(p.pases_totales || 0, p.pases_completados || 0);
+                    p.porcentaje_pases = calcPct(p.pases_completados, t);
+                    p.display_ratio = calcRatio(p.pases_completados, t);
                 } else if (selectedType === "porcentaje_regates") {
-                    p.porcentaje_regates = calcPct(p.regates_completados, p.regates_totales);
-                    p.display_ratio = calcRatio(p.regates_completados, p.regates_totales);
+                    const t = Math.max(p.regates_totales || 0, p.regates_completados || 0);
+                    p.porcentaje_regates = calcPct(p.regates_completados, t);
+                    p.display_ratio = calcRatio(p.regates_completados, t);
                 } else if (selectedType === "porcentaje_centros") {
-                    p.porcentaje_centros = calcPct(p.centros_completados, p.centros_totales);
-                    p.display_ratio = calcRatio(p.centros_completados, p.centros_totales);
+                    const t = Math.max(p.centros_totales || 0, p.centros_completados || 0);
+                    p.porcentaje_centros = calcPct(p.centros_completados, t);
+                    p.display_ratio = calcRatio(p.centros_completados, t);
                 } else if (selectedType === "porcentaje_pases_largo") {
-                    p.porcentaje_pases_largo = calcPct(p.pases_largo_completados, p.pases_largo_totales);
-                    p.display_ratio = calcRatio(p.pases_largo_completados, p.pases_largo_totales);
+                    const t = Math.max(p.pases_largo_totales || 0, p.pases_largo_completados || 0);
+                    p.porcentaje_pases_largo = calcPct(p.pases_largo_completados, t);
+                    p.display_ratio = calcRatio(p.pases_largo_completados, t);
                 } else if (selectedType === "porcentaje_duelos") {
                     const totalG = (p.duelos_suelo_ganados || 0) + (p.duelos_aereos_ganados || 0);
-                    const totalT = (p.duelos_suelo_totales || 0) + (p.duelos_aereos_totales || 0);
+                    const totalT = Math.max((p.duelos_suelo_totales || 0) + (p.duelos_aereos_totales || 0), totalG);
                     p.porcentaje_duelos = calcPct(totalG, totalT);
                     p.display_ratio = calcRatio(totalG, totalT);
                 } else if (selectedType === "porcentaje_duelos_aereos") {
-                    p.porcentaje_duelos_aereos = calcPct(p.duelos_aereos_ganados, p.duelos_aereos_totales);
-                    p.display_ratio = calcRatio(p.duelos_aereos_ganados, p.duelos_aereos_totales);
+                    const totalG = p.duelos_aereos_ganados || 0;
+                    const totalT = Math.max(p.duelos_aereos_totales || 0, totalG);
+                    p.porcentaje_duelos_aereos = calcPct(totalG, totalT);
+                    p.display_ratio = calcRatio(totalG, totalT);
                 } else if (selectedType === "valoracion") {
                     p.valoracion = p.valoracion_count > 0 ? parseFloat((p.valoracion_sum / p.valoracion_count).toFixed(2)) : 0;
                 } else if (selectedType === "goles_generados") {
