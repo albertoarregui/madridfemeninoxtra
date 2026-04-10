@@ -312,7 +312,20 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
             args: [matchId]
         });
 
-        return result.rows.map((row: any) => {
+        const rowsById = new Map<number, any>();
+        for (const row of result.rows) {
+            const existing = rowsById.get(row.id_alineacion);
+            if (!existing) {
+                rowsById.set(row.id_alineacion, row);
+            } else {
+                const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
+                if (countData(row) > countData(existing)) {
+                    rowsById.set(row.id_alineacion, row);
+                }
+            }
+        }
+
+        return Array.from(rowsById.values()).map((row: any) => {
 
             let fileName: string | null = null;
             if (row.nombre) {
@@ -424,12 +437,19 @@ export async function fetchMatchSubstitutions(matchId: string | number): Promise
             args: [matchId]
         });
 
-        const seenAlineacion = new Set<any>();
-        const uniqueRows = result.rows.filter((r: any) => {
-            if (seenAlineacion.has(r.id_alineacion)) return false;
-            seenAlineacion.add(r.id_alineacion);
-            return true;
-        });
+        const rowsById = new Map<number, any>();
+        for (const row of result.rows) {
+            const existing = rowsById.get(row.id_alineacion);
+            if (!existing) {
+                rowsById.set(row.id_alineacion, row);
+            } else {
+                const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
+                if (countData(row) > countData(existing)) {
+                    rowsById.set(row.id_alineacion, row);
+                }
+            }
+        }
+        const uniqueRows = Array.from(rowsById.values());
 
         const substitutions: any[] = [];
         const playersIn = uniqueRows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);

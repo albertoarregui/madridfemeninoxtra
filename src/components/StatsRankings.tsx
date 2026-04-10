@@ -330,7 +330,10 @@ export default function StatsRankings({
 
             players = Object.values(playerMap).map(p => {
                 const calcPct = (num: number, den: number) => den > 0 ? parseFloat(((num / den) * 100).toFixed(1)) : 0;
-                const calcRatio = (num: number, den: number) => `${num}/${den}`;
+                const calcRatio = (num: number, den: number) => {
+                    if (den === 0) return `${num}/${den}`;
+                    return `${num}/${den} (${Math.round((num/den)*100)}%)`;
+                };
 
                 if (selectedType === "porcentaje_pases") {
                     p.porcentaje_pases = calcPct(p.pases_completados, p.pases_totales);
