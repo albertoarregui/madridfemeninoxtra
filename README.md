@@ -1,8 +1,45 @@
 # ⚪️ Madrid Femenino Xtra 🟣
 
+<div align="center">
+  <img src="https://i.gyazo.com/bb389c0a7b32f71b7c5657668f7c174c.jpg" alt="Madrid Femenino Xtra - Página principal" width="800" />
+</div>
+
 Bienvenido al repositorio oficial de **Madrid Femenino Xtra**, la base de datos histórica más grande del Real Madrid Femenino.
 
 Este proyecto es una aplicación web moderna construida con **Astro**, diseñada para ser extremadamente rápida, visualmente atractiva y fácil de mantener.
+
+
+# 📊 Datos en cifras
+
+<div align="center">
+
+| Estadística | Valor |
+|---|---|
+| ⚽ Temporadas | 6 |
+| 🗓️ Partidos | 248 |
+| ✅ Victorias | 170 |
+| 🤝 Empates | 24 |
+| ❌ Derrotas | 54 |
+| 🥅 Goles a favor | 552 |
+| 👟 Jugadoras | 86 |
+| 🏟️ Estadios | 62 |
+| 🆚 Rivales | 51 |
+| 👩‍⚖️ Árbitras | 58 |
+
+</div>
+
+<div align="center">
+  <img src="https://i.gyazo.com/5e1a1ceec396f55ead64e170d1afdb9d.png" alt="Madrid Femenino Xtra - Estadísticas" width="800" />
+</div>
+
+## ✨ Funcionalidades
+
+- 📰 **Noticias y actualidad** — Cobertura completa del equipo
+- 📅 **Calendario y resultados** — Todos los partidos, pasados y futuros
+- 📈 **Estadísticas históricas** — Balance por temporada y competición
+- 👩 **Fichas de jugadoras** — Partidos, goles, asistencias y más
+- 🏟️ **Estadios y árbitras** — Base de datos completa
+- 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
 
 ## 🚀 Tecnologías Principales
 
