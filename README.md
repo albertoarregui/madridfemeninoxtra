@@ -1,11 +1,17 @@
 # ⚪️ Madrid Femenino Xtra 🟣
 
+<div align="center">
+  <img src="https://i.gyazo.com/bb389c0a7b32f71b7c5657668f7c174c.jpg" alt="Madrid Femenino Xtra - Página principal" width="800" />
+</div>
+
 Bienvenido al repositorio oficial de **Madrid Femenino Xtra**, la base de datos histórica más grande del Real Madrid Femenino.
 
 Este proyecto es una aplicación web moderna construida con **Astro**, diseñada para ser extremadamente rápida, visualmente atractiva y fácil de mantener.
 
 
-📊 Datos en cifras
+# 📊 Datos en cifras
+
+<div align="center">
 
 | Estadística | Valor |
 |---|---|
@@ -20,7 +26,11 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 | 🆚 Rivales | 51 |
 | 👩‍⚖️ Árbitras | 58 |
 
-✨ Funcionalidades
+</div>
+
+<div align="center">
+  <img src="https://i.gyazo.com/5e1a1ceec396f55ead64e170d1afdb9d.png" alt="Madrid Femenino Xtra - Estadísticas" width="800" />
+</div>
 
 ## ✨ Funcionalidades
 
