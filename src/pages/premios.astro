@@ -1,0 +1,1505 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { fetchPlayersDirectly, getPlayerImageUrl } from '../utils/players';
+
+const allPlayers = await fetchPlayersDirectly();
+const allSeasons  = allPlayers.flatMap((p: any) => p.temporadas || []);
+const latestSeason = [...new Set(allSeasons)].sort().reverse()[0] as string;
+
+const squadPlayers = allPlayers.filter((p: any) => {
+    const d = p.dorsales?.[latestSeason];
+    return d !== undefined && Number(d) >= 1 && Number(d) <= 24;
+});
+
+function getNormPos(pos: string): string {
+    const p = (pos || '').toLowerCase();
+    if (p.includes('portera')) return 'portera';
+    if (p.includes('defensa') || p.includes('lateral') || p.includes('central')) return 'defensa';
+    if (p.includes('medio') || p.includes('centro') || p.includes('pivote') || p.includes('interior')) return 'centrocampista';
+    if (p.includes('delantera') || p.includes('extremo') || p.includes('punta') || p.includes('ariete')) return 'delantera';
+    return 'otros';
+}
+
+const players = squadPlayers.map((p: any) => {
+    const profilePhoto = p.profile_photos?.[latestSeason];
+    const seasonPhoto  = p.season_photos?.[latestSeason];
+    const birthYear    = p.fecha_nacimiento ? new Date(p.fecha_nacimiento).getFullYear() : 0;
+    return {
+        id:       String(p.id_jugadora),
+        name:     p.nombre as string,
+        slug:     p.slug as string,
+        number:   String(p.dorsales[latestSeason] ?? ''),
+        position: getNormPos(p.posicion || ''),
+        imageUrl: getPlayerImageUrl({ ...p, foto_url: seasonPhoto || profilePhoto }),
+        isU21:    birthYear >= 2004,
+    };
+}).sort((a: any, b: any) => Number(a.number) - Number(b.number));
+
+const porteras        = players.filter((p: any) => p.position === 'portera');
+const defensas        = players.filter((p: any) => p.position === 'defensa');
+const centrocampistas = players.filter((p: any) => p.position === 'centrocampista');
+const delanteras      = players.filter((p: any) => p.position === 'delantera');
+const sub21Players    = players.filter((p: any) => p.isU21);
+const outfield        = players.filter((p: any) => p.position !== 'portera');
+
+function norm(s: string) {
+    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Busca en ALL el DB (no solo temporada actual) y construye el objeto jugadora
+function findAnyPlayer(name: string): any | null {
+    const needle = norm(name.split(' ').pop()!);
+    // 1. Buscar en el squad de temporada (tienen foto actual)
+    const fromSquad = players.find((p: any) => norm(p.name).includes(needle));
+    if (fromSquad) return fromSquad;
+    // 2. Buscar en todos los registros del DB (sin restricción de dorsal/temporada)
+    const raw = allPlayers.find((p: any) => norm(p.nombre).includes(needle));
+    if (!raw) return null;
+    // Foto: intentar temporada actual, luego la más reciente disponible
+    const seasons = Object.keys({ ...(raw.season_photos || {}), ...(raw.profile_photos || {}) }).sort().reverse();
+    const bestSeason = seasons.find(s => raw.season_photos?.[s]) || seasons[0];
+    const foto = raw.season_photos?.[bestSeason] || raw.profile_photos?.[bestSeason];
+    return {
+        id:       String(raw.id_jugadora),
+        name:     raw.nombre as string,
+        slug:     raw.slug as string,
+        number:   String(raw.dorsales?.[latestSeason] ?? ''),
+        position: getNormPos(raw.posicion || ''),
+        imageUrl: getPlayerImageUrl({ ...raw, foto_url: foto }),
+        isU21:    false,
+    };
+}
+
+function byNames(names: string[]): any[] {
+    return names.map(findAnyPlayer).filter(Boolean);
+}
+
+// Listas curatoriales
+const mejorJugadoraList = byNames([
+    'Misa Rodríguez', 'María Méndez', 'Eva Navarro', 'Caroline Weir', 'Linda Caicedo',
+]);
+const mejorFichajeList = byNames([
+    'Merle Frohms', 'Sara Holmgaard', 'Bella Andersson', 'Sara Däbritz', 'Hanna Bennison', 'Lotte Keukelaar',
+]);
+
+// Sub-21: base + extras (sin duplicados)
+const mejorSub21List = (() => {
+    const ids = new Set(sub21Players.map((p: any) => p.id));
+    const extras = byNames(['Silvia Cristóbal', 'Irune Dorado', 'Iris Ashley'])
+        .filter((p: any) => !ids.has(p.id));
+    return [...sub21Players, ...extras];
+})();
+
+// XI con jugadoras extra por posición (sin duplicados)
+function mergeUnique(base: any[], names: string[]): any[] {
+    const ids = new Set(base.map((p: any) => p.id));
+    const extras = byNames(names).filter((p: any) => !ids.has(p.id));
+    return [...base, ...extras];
+}
+const defensasXI        = mergeUnique(defensas,        ['Silvia Cristóbal']);
+const centrocampistasXI = mergeUnique(centrocampistas, ['Irune Dorado']);
+const delanterasXI      = mergeUnique(delanteras,      ['Iris Ashley']);
+
+// Goals para "Mejor Gol" — mapping id_gol → video_id + info
+const goalsData = [
+    { id: '536', videoId: '8M8Z7OrDRcU', scorer: 'Sara Däbritz',   rival: 'Atlético de Madrid', date: 'Temporada 2025/26' },
+    { id: '553', videoId: 'ZOljp2g2vUU', scorer: 'Caroline Weir',  rival: 'Arsenal',            date: 'Temporada 2025/26' },
+    { id: '558', videoId: 'G93cBJD-ng0', scorer: 'María Méndez',   rival: 'Wolfsburgo',        date: 'Temporada 2025/26' },
+    { id: '585', videoId: 'ozJVLFglRAs', scorer: 'Linda Caicedo',  rival: 'París FC',          date: 'Temporada 2025/26' },
+    { id: '598', videoId: 'TKfpDbVdUGg', scorer: 'Linda Caicedo',  rival: 'París FC',          date: 'Temporada 2025/26' },
+];
+---
+
+<Layout
+    title="Premios Madrid Femenino Xtra 2025/26"
+    description="Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26."
+    noindex={true}
+>
+
+<canvas id="particles-canvas" aria-hidden="true"></canvas>
+
+<main class="premios-page">
+
+    <!-- ══ HERO ══ -->
+    <header class="premios-hero">
+        <h1 class="premios-main-title">PREMIOS<br/>MADRID FEMENINO XTRA</h1>
+        <p class="premios-subtitle">Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26.</p>
+    </header>
+
+    <!-- ══ VOTING GATE ══ -->
+    <div id="voting-gate" style="display:none">
+        <div class="gate-box">
+            <div class="gate-lock" id="gate-lock-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-lock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3"/></svg>
+            </div>
+            <p class="gate-label" id="gate-label">VOTACIONES CERRADAS</p>
+            <div class="gate-countdown" id="gate-countdown" style="display:none">
+                <div class="cd-unit"><span class="cd-num" id="cd-days">00</span><span class="cd-name">días</span></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-unit"><span class="cd-num" id="cd-hours">00</span><span class="cd-name">horas</span></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-unit"><span class="cd-num" id="cd-mins">00</span><span class="cd-name">min</span></div>
+                <span class="cd-sep">:</span>
+                <div class="cd-unit"><span class="cd-num" id="cd-secs">00</span><span class="cd-name">seg</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="premios-body" id="premios-body">
+
+        <!-- ── MEJOR JUGADORA ── -->
+        <section class="award-section">
+            <h2 class="award-title">MEJOR JUGADORA</h2>
+            <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-jugadora">0 / 1</span></p>
+            <div class="players-scroll">
+                {mejorJugadoraList.map((p: any) => (
+                    <button class="pcard" data-id={p.id} data-category="mejor-jugadora" title={p.name}>
+                        <div class="pcard-photo"><img src={p.imageUrl} alt={p.name} loading="lazy" /></div>
+                        <span class="pcard-name"><span class="pcard-fname">{p.name.split(' ')[0]}</span><span class="pcard-lname">{p.name.split(' ').slice(1).join(' ')}</span></span>
+                        <span class="pcard-check">✓</span>
+                    </button>
+                ))}
+            </div>
+        </section>
+
+        <!-- ── MEJOR FICHAJE ── -->
+        <section class="award-section">
+            <h2 class="award-title">MEJOR FICHAJE</h2>
+            <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-fichaje">0 / 1</span></p>
+            <div class="players-scroll">
+                {mejorFichajeList.map((p: any) => (
+                    <button class="pcard" data-id={p.id} data-category="mejor-fichaje" title={p.name}>
+                        <div class="pcard-photo"><img src={p.imageUrl} alt={p.name} loading="lazy" /></div>
+                        <span class="pcard-name"><span class="pcard-fname">{p.name.split(' ')[0]}</span><span class="pcard-lname">{p.name.split(' ').slice(1).join(' ')}</span></span>
+                        <span class="pcard-check">✓</span>
+                    </button>
+                ))}
+            </div>
+        </section>
+
+        <!-- ── MEJOR SUB-21 ── -->
+        <section class="award-section">
+            <h2 class="award-title">MEJOR JUGADORA SUB-21</h2>
+            <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-sub21">0 / 1</span></p>
+            <div class="players-scroll">
+                {mejorSub21List.length > 0
+                    ? mejorSub21List.map((p: any) => (
+                        <button class="pcard" data-id={p.id} data-category="mejor-sub21" title={p.name}>
+                            <div class="pcard-photo"><img src={p.imageUrl} alt={p.name} loading="lazy" /></div>
+                            <span class="pcard-name"><span class="pcard-fname">{p.name.split(' ')[0]}</span><span class="pcard-lname">{p.name.split(' ').slice(1).join(' ')}</span></span>
+                            <span class="pcard-check">✓</span>
+                        </button>
+                    ))
+                    : <p class="empty-msg">No hay jugadoras sub-21 en la plantilla actual.</p>
+                }
+            </div>
+        </section>
+
+        <!-- ── MEJOR GOL ── -->
+        <section class="award-section">
+            <h2 class="award-title">MEJOR GOL</h2>
+            <p class="award-hint">¿Cuál fue el mejor gol de la temporada? · <span class="sel-count" data-for="mejor-gol">0 / 1</span></p>
+            <div class="goals-scroll">
+                {goalsData.map((goal: any) => (
+                    <button class="goal-card" data-id={goal.id} data-category="mejor-gol" data-video-id={goal.videoId} title={`Gol de ${goal.scorer}`}>
+                        <div class="goal-thumbnail">
+                            <img src={`https://img.youtube.com/vi/${goal.videoId}/mqdefault.jpg`} alt={`Gol de ${goal.scorer}`} loading="lazy" />
+                            <div class="play-overlay">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-player-play"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg>
+                            </div>
+                        </div>
+                        <div class="goal-info">
+                            <span class="goal-scorer">{goal.scorer}</span>
+                            <span class="goal-rival">{goal.rival}</span>
+                            <span class="goal-date">{goal.date}</span>
+                        </div>
+                        <span class="goal-check">✓</span>
+                    </button>
+                ))}
+            </div>
+        </section>
+
+        <!-- ══ XI DE LA TEMPORADA ══ -->
+        <section class="award-section xi-section">
+            <h2 class="award-title">XI DE LA TEMPORADA</h2>
+            <p class="award-hint">Elige tu once ideal de la temporada</p>
+
+            <div class="formation-board">
+                <div class="formation-rows">
+                    <div class="formation-row">
+                        {[0,1,2].map(i => <div class="form-slot empty" data-slot={`delantera-${i}`}><span>DEL</span></div>)}
+                    </div>
+                    <div class="formation-row">
+                        {[0,1,2].map(i => <div class="form-slot empty" data-slot={`centrocampista-${i}`}><span>MED</span></div>)}
+                    </div>
+                    <div class="formation-row">
+                        {[0,1,2,3].map(i => <div class="form-slot empty" data-slot={`defensa-${i}`}><span>DEF</span></div>)}
+                    </div>
+                    <div class="formation-row">
+                        <div class="form-slot empty" data-slot="portera-0"><span>POR</span></div>
+                    </div>
+                </div>
+            </div>
+
+            {[
+                { pos: 'portera',        label: 'PORTERA',         max: 1, list: porteras },
+                { pos: 'defensa',        label: 'DEFENSAS',        max: 4, list: defensasXI },
+                { pos: 'centrocampista', label: 'CENTROCAMPISTAS', max: 3, list: centrocampistasXI },
+                { pos: 'delantera',      label: 'DELANTERAS',      max: 3, list: delanterasXI },
+            ].map(({ pos, label, max, list }) => (
+                <div class="xi-group">
+                    <div class="xi-group-header">
+                        <h3 class="xi-pos-label">{label}</h3>
+                        <span class="xi-counter" data-xi-counter={pos}>0 / {max}</span>
+                    </div>
+                    <div class="players-scroll">
+                        {list.map((p: any) => (
+                            <button class="pcard pcard-xi" data-id={p.id} data-xi-pos={pos} data-xi-max={max} title={p.name}>
+                                <div class="pcard-photo"><img src={p.imageUrl} alt={p.name} loading="lazy" /></div>
+                                <span class="pcard-name"><span class="pcard-fname">{p.name.split(' ')[0]}</span><span class="pcard-lname">{p.name.split(' ').slice(1).join(' ')}</span></span>
+                                <span class="pcard-check">✓</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </section>
+
+        <!-- SUBMIT -->
+        <div class="premios-submit">
+            <div class="submit-summary" id="submit-summary"></div>
+            <button class="submit-btn" id="submit-btn" style="display:none">ENVIAR VOTOS</button>
+            <button class="submit-btn login-btn" id="login-btn" data-action="signin-google" style="display:none">INICIA SESIÓN PARA VOTAR</button>
+            <p class="submit-note" id="submit-note">Debes estar registrado para participar</p>
+        </div>
+
+    </div>
+</main>
+
+<!-- ── GOAL VIDEO MODAL ── -->
+<div id="goal-modal" class="goal-modal" style="display:none">
+    <div class="modal-backdrop"></div>
+    <div class="modal-container">
+        <button class="modal-close" id="modal-close" aria-label="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>
+        </button>
+        <div class="modal-content">
+            <iframe id="goal-video" class="goal-video" width="100%" height="100%" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+</Layout>
+
+<script is:inline define:vars={{ playersData: players }}>
+(function () {
+
+    function checkAuthAndUpdateUI() {
+        if (window.Clerk && typeof window.Clerk.session !== 'undefined') {
+            var isAuth = window.Clerk.session !== null;
+        } else {
+            var isAuth = document.cookie.indexOf('__session') !== -1;
+        }
+
+        var submitBtn = document.getElementById('submit-btn');
+        var loginBtn = document.getElementById('login-btn');
+        var submitNote = document.getElementById('submit-note');
+
+        if (isAuth) {
+            submitBtn.style.display = '';
+            loginBtn.style.display = 'none';
+            submitNote.textContent = 'Solo se contabilizará un voto por usuario';
+        } else {
+            submitBtn.style.display = 'none';
+            loginBtn.style.display = '';
+            submitNote.textContent = 'Debes estar registrado para participar';
+        }
+    }
+
+    checkAuthAndUpdateUI();
+
+    var VOTE_OPEN  = new Date('2026-04-01T00:00:00Z').getTime();
+    var VOTE_CLOSE = new Date('2026-12-31T23:59:00Z').getTime();
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function updateGate() {
+        var now   = Date.now();
+        var gate  = document.getElementById('voting-gate');
+        var body  = document.getElementById('premios-body');
+        var label = document.getElementById('gate-label');
+        var cd    = document.getElementById('gate-countdown');
+
+        if (now >= VOTE_OPEN && now <= VOTE_CLOSE) {
+            gate.style.display = 'none';
+            body.style.display = '';
+            return false;
+        }
+
+        gate.style.display = 'flex';
+        body.style.display = 'none';
+
+        if (now < VOTE_OPEN) {
+            label.textContent = 'VOTACIONES ABIERTAS EN';
+            cd.style.display  = 'flex';
+            var diff = VOTE_OPEN - now;
+            var days  = Math.floor(diff / 86400000);
+            var hours = Math.floor((diff % 86400000) / 3600000);
+            var mins  = Math.floor((diff % 3600000) / 60000);
+            var secs  = Math.floor((diff % 60000) / 1000);
+            document.getElementById('cd-days').textContent  = pad2(days);
+            document.getElementById('cd-hours').textContent = pad2(hours);
+            document.getElementById('cd-mins').textContent  = pad2(mins);
+            document.getElementById('cd-secs').textContent  = pad2(secs);
+        } else {
+            label.textContent = 'VOTACIONES CERRADAS';
+            cd.style.display  = 'none';
+        }
+        return true;
+    }
+
+    if (updateGate()) {
+        var gateInterval = setInterval(function () {
+            if (!updateGate()) clearInterval(gateInterval);
+        }, 1000);
+    }
+
+    var canvas = document.getElementById('particles-canvas');
+    var ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    var pts = Array.from({ length: 80 }, function () {
+        return {
+            x:          Math.random() * window.innerWidth,
+            y:          Math.random() * window.innerHeight,
+            r:          Math.random() * 2.8 + 0.6,
+            speed:      Math.random() * 0.9 + 0.3,
+            swing:      Math.random() * Math.PI * 2,
+            swingSpeed: Math.random() * 0.022 + 0.004,
+            opacity:    Math.random() * 0.6 + 0.15,
+            isRect:     Math.random() > 0.45,
+        };
+    });
+
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pts.forEach(function (p) {
+            p.y     += p.speed;
+            p.swing += p.swingSpeed;
+            p.x     += Math.sin(p.swing) * 0.45;
+            if (p.y > canvas.height + 12) { p.y = -12; p.x = Math.random() * canvas.width; }
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.fillStyle   = Math.random() > 0.35 ? '#ffde59' : '#b8860b';
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.swing * 1.5);
+            if (p.isRect) {
+                ctx.fillRect(-p.r * 1.8, -p.r * 0.5, p.r * 3.6, p.r);
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+        requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+
+    var glitterDataUrl = (function () {
+        var gc = document.createElement('canvas');
+        gc.width = 200; gc.height = 200;
+        var gx = gc.getContext('2d');
+        var colors = ['#ffde59','#ffd700','#f0c040','#d4af37','#ffe87c','#c8960c','#ffb400'];
+        for (var i = 0; i < 1800; i++) {
+            var x = Math.random() * gc.width;
+            var y = Math.pow(Math.random(), 1.4) * gc.height;
+            var r = Math.random() * 2.2 + 0.3;
+            var alpha = (1 - y / gc.height) * (Math.random() * 0.85 + 0.15);
+            gx.save();
+            gx.globalAlpha = Math.max(alpha, 0.06);
+            gx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+            if (Math.random() > 0.48) {
+                gx.translate(x, y);
+                gx.rotate(Math.random() * Math.PI);
+                gx.fillRect(-r * 1.8, -r * 0.45, r * 3.6, r * 0.9);
+            } else {
+                gx.beginPath();
+                gx.arc(x, y, r, 0, Math.PI * 2);
+                gx.fill();
+            }
+            gx.restore();
+        }
+        return gc.toDataURL('image/png');
+    })();
+
+    function applyGlitter(el) {
+        el.style.backgroundImage = 'url(' + glitterDataUrl + ')';
+        el.style.backgroundSize  = 'cover';
+    }
+
+    document.querySelectorAll('.pcard-photo').forEach(applyGlitter);
+
+    var SVG_LEFT  = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6"/></svg>';
+    var SVG_RIGHT = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6"/></svg>';
+
+    document.querySelectorAll('.players-scroll, .goals-scroll').forEach(function (scroll) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'scroll-wrapper';
+        scroll.parentNode.insertBefore(wrapper, scroll);
+        wrapper.appendChild(scroll);
+
+        var btnL = document.createElement('button');
+        btnL.className = 'scroll-arrow scroll-arrow-left';
+        btnL.setAttribute('aria-label', 'Anterior');
+        btnL.innerHTML = SVG_LEFT;
+
+        var btnR = document.createElement('button');
+        btnR.className = 'scroll-arrow scroll-arrow-right';
+        btnR.setAttribute('aria-label', 'Siguiente');
+        btnR.innerHTML = SVG_RIGHT;
+
+        wrapper.insertBefore(btnL, scroll);
+        wrapper.appendChild(btnR);
+
+        var STEP = 320;
+        btnL.addEventListener('click', function () { scroll.scrollBy({ left: -STEP, behavior: 'smooth' }); });
+        btnR.addEventListener('click', function () { scroll.scrollBy({ left:  STEP, behavior: 'smooth' }); });
+
+        function updateArrows() {
+            var needsScroll = scroll.scrollWidth > scroll.clientWidth + 4;
+            btnL.style.display = needsScroll ? 'flex' : 'none';
+            btnR.style.display = needsScroll ? 'flex' : 'none';
+            scroll.style.justifyContent = needsScroll ? 'flex-start' : 'center';
+            if (needsScroll) {
+                btnL.style.opacity = scroll.scrollLeft > 4 ? '1' : '0.25';
+                btnR.style.opacity = scroll.scrollLeft < scroll.scrollWidth - scroll.clientWidth - 4 ? '1' : '0.25';
+            }
+        }
+        updateArrows();
+        scroll.addEventListener('scroll', updateArrows, { passive: true });
+        window.addEventListener('resize', updateArrows, { passive: true });
+
+        var isDown = false, startX = 0, startScrollLeft = 0;
+        scroll.addEventListener('mousedown', function (e) {
+            isDown = true;
+            scroll.classList.add('dragging');
+            startX = e.pageX - scroll.getBoundingClientRect().left;
+            startScrollLeft = scroll.scrollLeft;
+        });
+        document.addEventListener('mouseup',   function () { isDown = false; scroll.classList.remove('dragging'); });
+        scroll.addEventListener('mouseleave',  function () { isDown = false; scroll.classList.remove('dragging'); });
+        scroll.addEventListener('mousemove',   function (e) {
+            if (!isDown) return;
+            e.preventDefault();
+            var x    = e.pageX - scroll.getBoundingClientRect().left;
+            var walk = (x - startX) * 1.4;
+            scroll.scrollLeft = startScrollLeft - walk;
+        });
+    });
+
+    var votes  = { 'mejor-jugadora': null, 'mejor-fichaje': null, 'mejor-sub21': null, 'mejor-gol': null };
+    var xi     = { portera: [], defensa: [], centrocampista: [], delantera: [] };
+    var xiMax  = { portera: 1, defensa: 4, centrocampista: 3, delantera: 3 };
+
+    document.querySelectorAll('.pcard:not(.pcard-xi)').forEach(function (card) {
+        card.addEventListener('click', function () {
+            var cat = card.dataset.category;
+            var id  = card.dataset.id;
+            if (votes[cat] === id) {
+                votes[cat] = null;
+                card.classList.remove('selected');
+            } else {
+                if (votes[cat]) {
+                    var prev = document.querySelector('.pcard[data-category="' + cat + '"][data-id="' + votes[cat] + '"]');
+                    if (prev) prev.classList.remove('selected');
+                }
+                votes[cat] = id;
+                card.classList.add('selected');
+            }
+            updateCount(cat);
+            updateSummary();
+        });
+    });
+    var modalEl = document.getElementById('goal-modal');
+    var iframeEl = document.getElementById('goal-video');
+    var modalCloseBtn = document.getElementById('modal-close');
+    var isSelectingGoal = false;
+
+    document.querySelectorAll('.goal-card').forEach(function (card) {
+        card.addEventListener('click', function (e) {
+            e.preventDefault();
+            var cat = card.dataset.category;
+            var id = card.dataset.id;
+            var videoId = card.dataset.videoId;
+
+            // Si hace doble click o en el play, abrir modal
+            if (isSelectingGoal && votes[cat] === id) {
+                // Doble click → abrir video modal
+                iframeEl.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1';
+                modalEl.style.display = 'flex';
+                isSelectingGoal = false;
+                return;
+            }
+
+            // Primer click: seleccionar gol
+            isSelectingGoal = votes[cat] === id;
+            if (votes[cat] === id) {
+                votes[cat] = null;
+                card.classList.remove('selected');
+                isSelectingGoal = false;
+            } else {
+                if (votes[cat]) {
+                    var prev = document.querySelector('.goal-card[data-category="' + cat + '"][data-id="' + votes[cat] + '"]');
+                    if (prev) prev.classList.remove('selected');
+                }
+                votes[cat] = id;
+                card.classList.add('selected');
+                isSelectingGoal = true;
+            }
+            updateCount(cat);
+            updateSummary();
+        });
+
+        // Click en thumbnail: abrir modal
+        var thumbnail = card.querySelector('.goal-thumbnail');
+        if (thumbnail) {
+            thumbnail.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var videoId = card.dataset.videoId;
+                iframeEl.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1';
+                modalEl.style.display = 'flex';
+            });
+        }
+    });
+
+    // Cerrar modal
+    modalCloseBtn.addEventListener('click', function () {
+        modalEl.style.display = 'none';
+        iframeEl.src = '';
+    });
+
+    // Cerrar modal al hacer click en backdrop
+    document.querySelector('.modal-backdrop').addEventListener('click', function () {
+        modalEl.style.display = 'none';
+        iframeEl.src = '';
+    });
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modalEl.style.display === 'flex') {
+            modalEl.style.display = 'none';
+            iframeEl.src = '';
+        }
+    });
+
+
+    function updateCount(cat) {
+        var el = document.querySelector('.sel-count[data-for="' + cat + '"]');
+        if (!el) return;
+        el.textContent = (votes[cat] ? '1' : '0') + ' / 1';
+        el.style.color = votes[cat] ? '#4ade80' : '';
+    }
+    document.querySelectorAll('.pcard-xi').forEach(function (card) {
+        card.addEventListener('click', function () {
+            var pos = card.dataset.xiPos;
+            var id  = card.dataset.id;
+            var arr = xi[pos];
+            var idx = arr.indexOf(id);
+            if (idx > -1) {
+                // Ya seleccionada → deseleccionar
+                arr.splice(idx, 1);
+                card.classList.remove('selected');
+                rebuildFormSlots(pos);
+            } else {
+                if (arr.length >= xiMax[pos]) {
+                    // Cupo lleno → quitar la más antigua y sustituir
+                    var removedId = arr.shift();
+                    var prevCard = document.querySelector('.pcard-xi[data-xi-pos="' + pos + '"][data-id="' + removedId + '"]');
+                    if (prevCard) prevCard.classList.remove('selected');
+                }
+                arr.push(id);
+                card.classList.add('selected');
+                rebuildFormSlots(pos);
+            }
+            updateXiCounter(pos);
+            updateSummary();
+        });
+    });
+
+    function fillFormSlot(pos, idx, id) {
+        var slot = document.querySelector('.form-slot[data-slot="' + pos + '-' + idx + '"]');
+        if (!slot) return;
+        var p = playersData.find(function (pl) { return pl.id === id; });
+        // Si no está en playersData, buscar en las tarjetas XI (Silvia, Irune, Iris)
+        if (!p) {
+            var xiCard = document.querySelector('.pcard-xi[data-id="' + id + '"]');
+            if (!xiCard) return;
+            var nameSpan = xiCard.querySelector('.pcard-name');
+            var photoDiv = xiCard.querySelector('.pcard-photo img');
+            if (!nameSpan || !photoDiv) return;
+            p = {
+                name: nameSpan.textContent.trim(),
+                imageUrl: photoDiv.src
+            };
+        }
+        slot.classList.remove('empty');
+        slot.innerHTML = '<div class="fs-img-wrap"><img src="' + p.imageUrl + '" alt="' + p.name + '" /></div><span>' + p.name + '</span>';
+        var wrap = slot.querySelector('.fs-img-wrap');
+        if (wrap) applyGlitter(wrap);
+    }
+
+    function rebuildFormSlots(pos) {
+        var lbl = { portera: 'POR', defensa: 'DEF', centrocampista: 'MED', delantera: 'DEL' };
+        document.querySelectorAll('.form-slot[data-slot^="' + pos + '-"]').forEach(function (slot, i) {
+            var id = xi[pos][i];
+            if (id) { fillFormSlot(pos, i, id); }
+            else { slot.classList.add('empty'); slot.innerHTML = '<span>' + lbl[pos] + '</span>'; }
+        });
+    }
+
+    function updateXiCounter(pos) {
+        var el = document.querySelector('.xi-counter[data-xi-counter="' + pos + '"]');
+        if (!el) return;
+        var n = xi[pos].length;
+        el.textContent = n + ' / ' + xiMax[pos];
+        el.style.color = n === xiMax[pos] ? '#4ade80' : '';
+    }
+
+    var catLabels = { 'mejor-jugadora': 'Mejor Jugadora', 'mejor-fichaje': 'Mejor Fichaje', 'mejor-sub21': 'Mejor Sub-21', 'mejor-gol': 'Mejor Gol' };
+    function updateSummary() {
+        var el = document.getElementById('submit-summary');
+        if (!el) return;
+        var parts = [];
+        Object.keys(votes).forEach(function (cat) {
+            if (!votes[cat]) return;
+            var p = playersData.find(function (pl) { return pl.id === votes[cat]; });
+            if (p) parts.push('<span class="sum-item"><b>' + catLabels[cat] + ':</b> ' + p.name + '</span>');
+        });
+        var tot = xi.portera.length + xi.defensa.length + xi.centrocampista.length + xi.delantera.length;
+        if (tot) parts.push('<span class="sum-item"><b>XI:</b> ' + tot + ' / 11</span>');
+        el.innerHTML = parts.join('');
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', async function () {
+        var btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'ENVIANDO...';
+
+        try {
+            var res = await fetch('/api/season-awards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ votes: votes, xi: xi }),
+            });
+
+            if (res.ok) {
+                localStorage.setItem('premios_mfx_2526', JSON.stringify({ votes: votes, xi: xi, ts: Date.now() }));
+                btn.textContent = 'VOTO ENVIADO';
+                btn.style.background = '#16a34a';
+                btn.style.color = '#ffffff';
+                btn.style.boxShadow = '0 4px 24px rgba(22,163,74,0.4)';
+            } else {
+                btn.textContent = 'ERROR — INTÉNTALO DE NUEVO';
+                btn.style.background = '#dc2626';
+                btn.style.color = '#ffffff';
+                btn.disabled = false;
+            }
+        } catch (err) {
+            btn.textContent = 'ERROR — INTÉNTALO DE NUEVO';
+            btn.style.background = '#dc2626';
+            btn.style.color = '#ffffff';
+            btn.disabled = false;
+        }
+    });
+    try {
+        var saved = JSON.parse(localStorage.getItem('premios_mfx_2526') || 'null');
+        if (saved) {
+            Object.keys(saved.votes || {}).forEach(function (cat) {
+                var id = saved.votes[cat]; if (!id) return;
+                votes[cat] = id;
+                // Try pcard first (regular awards)
+                var c = document.querySelector('.pcard[data-category="' + cat + '"][data-id="' + id + '"]');
+                // If not found and it's mejor-gol, try goal-card
+                if (!c && cat === 'mejor-gol') c = document.querySelector('.goal-card[data-category="' + cat + '"][data-id="' + id + '"]');
+                if (c) c.classList.add('selected');
+                updateCount(cat);
+            });
+            Object.keys(saved.xi || {}).forEach(function (pos) {
+                (saved.xi[pos] || []).forEach(function (id) {
+                    xi[pos].push(id);
+                    var c = document.querySelector('.pcard-xi[data-xi-pos="' + pos + '"][data-id="' + id + '"]');
+                    if (c) c.classList.add('selected');
+                    fillFormSlot(pos, xi[pos].length - 1, id);
+                });
+                updateXiCounter(pos);
+            });
+            updateSummary();
+        }
+    } catch (e) {}
+
+})();
+</script>
+
+<style>
+    #voting-gate {
+        justify-content: center;
+        align-items: center;
+        padding: 4rem 2rem 6rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .gate-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        background-color: #080f1d;
+        background-image:
+            radial-gradient(ellipse 80% 40% at 50% 0%, rgba(212,175,55,0.14) 0%, transparent 70%),
+            radial-gradient(circle at 20% 60%, rgba(255,222,89,0.07) 0%, transparent 40%);
+        border: 1px solid rgba(212,175,55,0.28);
+        border-radius: 24px;
+        padding: 3.5rem 4rem;
+        box-shadow: 0 8px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.14);
+        max-width: 540px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .gate-lock {
+        color: #d4af37;
+        filter: drop-shadow(0 0 18px rgba(212,175,55,0.55));
+    }
+
+    .gate-label {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(1.6rem, 4vw, 2.4rem);
+        color: #d4af37;
+        letter-spacing: 0.08em;
+        margin: 0;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+    }
+
+    .gate-countdown {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+
+    .cd-unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .cd-num {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(2.8rem, 7vw, 4rem);
+        line-height: 1;
+        color: #ffffff;
+        text-shadow: 0 0 20px rgba(255,222,89,0.35);
+        min-width: 2ch;
+        display: block;
+        text-align: center;
+    }
+
+    .cd-name {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+    }
+
+    .cd-sep {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(2.4rem, 6vw, 3.5rem);
+        color: rgba(212,175,55,0.6);
+        line-height: 1;
+        margin-top: 0.1rem;
+        user-select: none;
+    }
+    #particles-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .premios-page {
+        background: #070e1a;
+        min-height: 100vh;
+        padding-bottom: 6rem;
+        position: relative;
+        z-index: 1;
+    }
+    .premios-hero {
+        text-align: center;
+        padding: 5rem 2rem 4rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .premios-main-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(4.5rem, 11vw, 8.5rem);
+        font-weight: 400;
+        line-height: 1.05;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 1.5rem;
+        /* Efecto metálico plata/cromo como "NUESTRO LEGADO" */
+        background: linear-gradient(
+            180deg,
+            #ffffff   0%,
+            #f2f2f2  12%,
+            #c8c8c8  28%,
+            #e8e8e8  42%,
+            #a8a8a8  58%,
+            #d0d0d0  72%,
+            #888888  88%,
+            #b0b0b0 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter:
+            drop-shadow(0 2px 4px rgba(0,0,0,0.9))
+            drop-shadow(0 0 30px rgba(200,200,255,0.15));
+    }
+
+    .premios-subtitle {
+        font-size: clamp(1rem, 2.4vw, 1.35rem);
+        color: rgba(255,255,255,0.75);
+        font-weight: 400;
+        font-style: italic;
+        text-shadow: 1px 1px 8px rgba(0,0,0,0.8);
+        margin: 0;
+        max-width: 580px;
+        margin-inline: auto;
+        line-height: 1.6;
+        letter-spacing: 0.01em;
+    }
+    .premios-body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+        position: relative;
+        z-index: 2;
+    }
+    .award-section {
+        border-radius: 20px;
+        border: 1px solid rgba(212,175,55,0.25);
+        padding: 2rem;
+        position: relative;
+        box-shadow: 0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,175,55,0.12);
+        /* fondo: azul oscuro + partículas doradas CSS */
+        background-color: #080f1d;
+        background-image:
+            radial-gradient(ellipse 80% 40% at 50% 0%, rgba(212,175,55,0.12) 0%, transparent 70%),
+            radial-gradient(circle at 15% 20%, rgba(255,222,89,0.08) 0%, transparent 35%),
+            radial-gradient(circle at 80% 15%, rgba(212,175,55,0.07) 0%, transparent 30%),
+            radial-gradient(circle at 45% 35%, rgba(255,222,89,0.05) 0%, transparent 25%),
+            radial-gradient(circle at 70% 55%, rgba(212,175,55,0.06) 0%, transparent 20%);
+    }
+    .award-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(2.2rem, 5vw, 3.2rem);
+        color: #d4af37;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        line-height: 1;
+        margin: 0 0 0.4rem;
+        text-shadow: 1px 1px 8px rgba(0,0,0,0.6);
+    }
+
+    .award-hint {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.4);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0 0 1.5rem;
+    }
+
+    .sel-count { font-weight: 900; }
+
+    .empty-msg {
+        color: rgba(255,255,255,0.35);
+        font-size: 0.9rem;
+        padding: 1rem 0;
+    }
+    :global(.scroll-wrapper) {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    /* difuminado en los bordes del scroll */
+    :global(.scroll-wrapper .players-scroll) {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 6%,
+            black 94%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 6%,
+            black 94%,
+            transparent 100%
+        );
+    }
+
+    :global(.scroll-arrow) {
+        flex-shrink: 0;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: #ffde59;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        padding: 0;
+        z-index: 2;
+        /* centrar con el círculo de la foto (130px) + padding-top scroll (0.5rem) + padding-top pcard (0.75rem) - mitad flecha (18px) */
+        margin-top: calc(0.5rem + 0.75rem + 65px - 18px);
+    }
+
+    :global(.scroll-arrow:hover) { opacity: 0.75; }
+    .players-scroll {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        gap: 1.25rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        padding-top: 0.5rem;
+        scrollbar-width: none;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .players-scroll.dragging { cursor: grabbing; }
+    .players-scroll::-webkit-scrollbar { display: none; }
+    .pcard {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.55rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.75rem 0.5rem;
+        border-radius: 16px;
+        transition: transform 0.2s ease;
+        position: relative;
+        width: 150px;
+    }
+
+    .pcard:hover { transform: translateY(-5px); }
+    .pcard-photo {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2.5px solid #d4af37;
+        position: relative;
+        flex-shrink: 0;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        background-color: #0d1828;  /* fallback; JS sobreescribe con glitter data-URL */
+        background-size: cover;
+    }
+
+    .pcard.selected .pcard-photo {
+        border-color: #ffde59;
+        box-shadow: 0 0 0 3px rgba(255,222,89,0.3), 0 0 24px rgba(255,222,89,0.45);
+    }
+
+    .pcard-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+        display: block;
+    }
+
+    .pcard-name {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.1rem;
+        text-align: center;
+        width: 140px;
+    }
+
+    .pcard-fname,
+    .pcard-lname {
+        font-style: italic;
+        font-weight: 400;
+        color: rgba(255,255,255,0.75);
+        letter-spacing: 0.01em;
+        line-height: 1.25;
+        word-break: break-word;
+        text-transform: none;
+    }
+
+    .pcard-fname { font-size: 0.72rem; }
+    .pcard-lname { font-size: 0.78rem; }
+
+    .pcard.selected .pcard-fname,
+    .pcard.selected .pcard-lname { color: rgba(255,222,89,0.9); }
+
+    .pcard-check {
+        position: absolute;
+        top: 6px; right: 6px;
+        width: 22px; height: 22px;
+        background: #16a34a;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: 900;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .pcard.selected .pcard-check { display: flex; }
+    .goals-scroll {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        gap: 1.25rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        padding-top: 0.5rem;
+        scrollbar-width: none;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .goals-scroll.dragging { cursor: grabbing; }
+    .goals-scroll::-webkit-scrollbar { display: none; }
+
+    :global(.scroll-wrapper .goals-scroll) {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 6%,
+            black 94%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 6%,
+            black 94%,
+            transparent 100%
+        );
+    }
+
+    .goal-card {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.6rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.75rem 0.5rem;
+        border-radius: 16px;
+        transition: transform 0.2s ease;
+        position: relative;
+        width: 150px;
+    }
+
+    .goal-card:hover { transform: translateY(-5px); }
+
+    .goal-thumbnail {
+        width: 130px;
+        height: 73px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2.5px solid #d4af37;
+        position: relative;
+        flex-shrink: 0;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        background-color: #0d1828;
+        cursor: pointer;
+    }
+
+    .goal-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+    }
+
+    .play-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0.8;
+        transition: opacity 0.2s ease, background 0.2s ease;
+        color: #ffde59;
+    }
+
+    .goal-card:hover .play-overlay {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .play-overlay svg {
+        filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.6));
+    }
+
+    .goal-card.selected .goal-thumbnail {
+        border-color: #ffde59;
+        box-shadow: 0 0 0 3px rgba(255,222,89,0.3), 0 0 24px rgba(255,222,89,0.45);
+    }
+
+    .goal-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+        text-align: center;
+        width: 140px;
+    }
+
+    .goal-scorer,
+    .goal-rival,
+    .goal-date {
+        font-size: 0.75rem;
+        font-style: italic;
+        font-weight: 400;
+        color: rgba(255,255,255,0.75);
+        letter-spacing: 0.01em;
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .goal-scorer { font-size: 0.78rem; font-weight: 500; }
+    .goal-rival { font-size: 0.7rem; }
+    .goal-date { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+
+    .goal-card.selected .goal-scorer,
+    .goal-card.selected .goal-rival,
+    .goal-card.selected .goal-date { color: rgba(255,222,89,0.9); }
+
+    .goal-check {
+        position: absolute;
+        top: 6px; right: 6px;
+        width: 22px; height: 22px;
+        background: #16a34a;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: 900;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .goal-card.selected .goal-check { display: flex; }
+    .goal-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.92);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    .modal-container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 900px;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 2;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: transparent;
+        border: none;
+        color: #ffde59;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+
+    .modal-close:hover {
+        opacity: 0.7;
+    }
+
+    .modal-content {
+        width: 100%;
+        height: 100%;
+    }
+
+    .goal-video {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    .xi-section { gap: 0; display: flex; flex-direction: column; }
+
+    .formation-board {
+        background: linear-gradient(180deg, #162b0a 0%, #1f3d0f 50%, #162b0a 100%);
+        border-radius: 16px;
+        padding: 2rem 1rem;
+        margin: 1.5rem 0 2.5rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.07);
+    }
+
+.formation-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .formation-row {
+        display: flex;
+        justify-content: center;
+        gap: clamp(1rem, 5vw, 3rem);
+    }
+
+    .form-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .form-slot.empty {
+        width: 82px; height: 82px;
+        border-radius: 50%;
+        border: 2px dashed rgba(212,175,55,0.4);
+        background: rgba(212,175,55,0.04);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-slot.empty span {
+        color: rgba(212,175,55,0.45);
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+    }
+
+    .form-slot:not(.empty) { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+
+    /* contenedor redondo para la foto en el XI */
+    :global(.fs-img-wrap) {
+        width: 82px; height: 82px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #d4af37;
+        box-shadow: 0 0 16px rgba(212,175,55,0.45);
+        flex-shrink: 0;
+        background-color: #0d1828;
+        background-size: cover;
+    }
+
+    :global(.fs-img-wrap img) {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        object-position: top;
+        display: block;
+    }
+
+    /* el span lo inserta JS → necesita :global para saltarse el scope de Astro */
+    :global(.form-slot:not(.empty) span) {
+        font-size: 0.62rem;
+        font-style: italic;
+        font-weight: 400;
+        color: rgba(255,255,255,0.75);
+        letter-spacing: 0.01em;
+        max-width: 84px;
+        text-align: center;
+        line-height: 1.25;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .xi-group {
+        padding: 0;
+        margin-bottom: 2.5rem;
+    }
+
+    .xi-group-header {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .xi-pos-label {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        color: #d4af37;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        line-height: 1;
+        margin: 0;
+        text-shadow: 1px 1px 8px rgba(0,0,0,0.5);
+    }
+
+    .xi-counter {
+        font-size: 0.8rem;
+        font-weight: 900;
+        color: rgba(255,255,255,0.35);
+        letter-spacing: 0.04em;
+    }
+    .premios-submit {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1rem 0;
+    }
+
+    .submit-summary {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 2rem;
+    }
+
+    :global(.sum-item) {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.7);
+        background: rgba(212,175,55,0.1);
+        border: 1px solid rgba(212,175,55,0.25);
+        padding: 0.3rem 0.9rem;
+        border-radius: 20px;
+    }
+
+    .submit-btn {
+        background: #d4af37;
+        color: #0a0e18;
+        border: none;
+        border-radius: 50px;
+        padding: 1.1rem 3.5rem;
+        font-size: 1.05rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        box-shadow: 0 4px 24px rgba(212,175,55,0.4);
+        transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        background: #f0c842;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 32px rgba(212,175,55,0.55);
+    }
+
+    .login-btn {
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    .submit-note {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.22);
+        margin: 0;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    :global(body) { background: #070e1a; }
+    @media (max-width: 768px) {
+        .premios-hero  { padding: 3.5rem 1.25rem 3rem; }
+        .premios-body  { padding: 0 1.25rem; gap: 3rem; }
+        .pcard         { width: 120px; }
+        .pcard-photo   { width: 100px; height: 100px; }
+        .pcard-name    { width: 110px; }
+        .pcard-lname   { font-size: 0.72rem; }
+        .goal-card     { width: 120px; }
+        .goal-thumbnail { width: 120px; height: 67px; }
+        .goal-info     { width: 110px; }
+        .formation-board { padding: 1.5rem 0.5rem; }
+        .form-slot.empty { width: 66px; height: 66px; }
+        :global(.fs-img-wrap) { width: 66px; height: 66px; }
+        .formation-row { gap: 0.6rem; }
+        /* flechas centradas con foto 100px */
+        :global(.scroll-arrow) { margin-top: calc(0.5rem + 0.75rem + 50px - 18px); }
+        .modal-container { max-width: 85vw; }
+    }
+
+    @media (max-width: 480px) {
+        .premios-body  { padding: 0 1rem; gap: 2.5rem; }
+        .pcard         { width: 100px; }
+        .pcard-photo   { width: 84px; height: 84px; }
+        .pcard-name    { width: 92px; }
+        .pcard-lname   { font-size: 0.68rem; }
+        .goal-card     { width: 100px; }
+        .goal-thumbnail { width: 100px; height: 56px; }
+        .goal-info     { width: 92px; }
+        .goal-scorer   { font-size: 0.72rem; }
+        .goal-rival    { font-size: 0.65rem; }
+        .goal-date     { font-size: 0.6rem; }
+        /* flechas centradas con foto 84px */
+        :global(.scroll-arrow) { margin-top: calc(0.5rem + 0.75rem + 42px - 18px); }
+        .modal-close { width: 36px; height: 36px; top: 12px; right: 12px; }
+        .modal-close svg { width: 20px; height: 20px; }
+        .modal-container { max-width: 95vw; aspect-ratio: auto; min-height: 50vh; }
+    }
+</style>

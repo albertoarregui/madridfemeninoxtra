@@ -5,13 +5,15 @@ import TikTok from "../assets/redes/tiktok.svg";
 import Youtube from "../assets/redes/youtube.svg";
 import Facebook from "../assets/redes/facebook.svg";
 import LinkedIn from "../assets/redes/linkedin.svg";
-import { Image } from "astro:assets";
-import { getAssetUrl } from "../utils/assets";
+import { Show } from "@clerk/astro/components";
 const Logo = "/logo-final-trans.png";
-const vsImagen = "https://media.madridfemeninoxtra.com/main/vs.png";
 
 const pathname = new URL(Astro.request.url).pathname;
 const currentPath = pathname === "/" ? "/home" : pathname;
+
+const clerkUser = await Astro.locals.currentUser();
+const userName = clerkUser?.firstName || clerkUser?.fullName || 'Usuario';
+const userPhoto = clerkUser?.imageUrl || '';
 ---
 
 <header class="header">
@@ -40,6 +42,21 @@ const currentPath = pathname === "/" ? "/home" : pathname;
                 />
             </a>
         </div>
+        <div class="mobile-auth-zone">
+            <Show when="signed-in">
+                <button class="mobile-login-btn auth-user-btn" data-action="signout">
+                    {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
+                    <span class="auth-user-name">{userName}</span>
+                </button>
+            </Show>
+            <Show when="signed-out">
+                <button class="mobile-login-btn" data-action="signin-google">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                    INICIAR SESIÓN
+                </button>
+            </Show>
+        </div>
+
         <ul class="nav-list">
             <li>
                 <a href="/home" class={currentPath === "/home" ? "active" : ""}>
@@ -104,6 +121,7 @@ const currentPath = pathname === "/" ? "/home" : pathname;
                     <li><a href="/plantilla"><span>Plantilla</span></a></li>
                     <li><a href="/calendario"><span>Calendario</span></a></li>
                     <li><a href="/fotogalerias"><span>Fotogalerías</span></a></li>
+                    <li><a href="/premios"><span>Premios 2025/26</span></a></li>
                 </ul>
             </li>
             <li class="has-submenu">
@@ -237,6 +255,20 @@ const currentPath = pathname === "/" ? "/home" : pathname;
     </nav>
 
     <div class="social-icons desktop-social-icons">
+        <div class="auth-zone">
+            <Show when="signed-in">
+                <button class="auth-login-btn auth-user-btn" data-action="signout">
+                    {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
+                    <span class="auth-user-name">{userName}</span>
+                </button>
+            </Show>
+            <Show when="signed-out">
+                <button class="auth-login-btn" data-action="signin-google">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                    INICIAR SESIÓN
+                </button>
+            </Show>
+        </div>
         <a href="https://x.com/madridfemxtra" target="_blank"><X /></a>
         <a
             href="https://instagram.com/madridfemxtra"
@@ -253,20 +285,6 @@ const currentPath = pathname === "/" ? "/home" : pathname;
             target="_blank"
             rel="noopener noreferrer"><Youtube /></a
         >
-        <a
-            href="https://www.facebook.com/madridfemxtra"
-            target="_blank"
-            rel="noopener noreferrer"><Facebook /></a
-        >
-        <a
-            href="https://www.linkedin.com/company/madrid-femenino-xtra"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn"><LinkedIn /></a
-        >
-        <a href="https://discord.gg/Q7qGW3RP" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-discord"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M14 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M15.5 17c0 1 1.5 3 2 3c1.5 0 2.833 -1.667 3.5 -3c.667 -1.667 .5 -5.833 -1.5 -11.5c-1.457 -1.015 -3 -1.34 -4.5 -1.5l-.972 1.923a11.913 11.913 0 0 0 -4.053 0l-.975 -1.923c-1.5 .16 -3.043 .485 -4.5 1.5c-2 5.667 -2.167 9.833 -1.5 11.5c.667 1.333 2 3 3.5 3c.5 0 2 -2 2 -3" /><path d="M7 16.5c3.5 1 6.5 1 10 0" /></svg>
-        </a>
     </div>
 
     <button
@@ -281,7 +299,7 @@ const currentPath = pathname === "/" ? "/home" : pathname;
         <span class="line"></span>
     </button>
     <div id="nav-overlay" class="nav-overlay"></div>
-    <script type="application/ld+json">
+    <script is:inline type="application/ld+json">
         {
             "@context": "https://schema.org",
             "@type": "ItemList",
@@ -313,6 +331,33 @@ const currentPath = pathname === "/" ? "/home" : pathname;
 </header>
 
 <script src="../scripts/menu.js"></script>
+
+<script is:inline>
+    document.addEventListener('click', async function(e) {
+        var btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        var action = btn.dataset.action;
+
+        if (action === 'signin-google') {
+            if (window.innerWidth <= 1024) {
+                window.Clerk.redirectToSignIn({ afterSignInUrl: window.location.href });
+            } else {
+                window.Clerk.openSignIn({
+                    afterSignInUrl: window.location.href,
+                    afterSignUpUrl: window.location.href,
+                });
+            }
+        } else if (action === 'signout') {
+            try {
+                await window.Clerk.signOut();
+                window.location.reload();
+            } catch (err) {
+                console.error('Error al cerrar sesión:', err);
+            }
+        }
+    });
+</script>
 
 <style>
     :root {
@@ -662,7 +707,7 @@ const currentPath = pathname === "/" ? "/home" : pathname;
 
         .mobile-menu-logo {
             display: block;
-            margin-bottom: 2rem;
+            margin-bottom: 0;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid rgba(255, 222, 89, 0.2);
             width: 80%;
@@ -916,6 +961,146 @@ const currentPath = pathname === "/" ? "/home" : pathname;
     :global(body.nav-open) :global(.footer-container) {
         filter: blur(8px);
         transition: filter 0.4s ease;
+    }
+
+    /* Auth zone — desktop */
+    .mobile-auth-zone {
+        display: none;
+    }
+
+    .auth-zone {
+        display: flex;
+        align-items: center;
+        margin-right: 0.5rem;
+        padding-right: 0.75rem;
+        border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .auth-profile-link {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+    }
+
+    .auth-profile-link:hover {
+        transform: scale(1.08);
+    }
+
+    .auth-login-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: #ffde59;
+        color: #1a1a1a;
+        padding: 0.6rem 1.4rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        font-weight: 900;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .auth-login-btn:hover {
+        background: #ffcc00;
+        transform: translateY(-3px);
+    }
+
+    .auth-user-avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 2px solid rgba(0, 0, 0, 0.15);
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .auth-user-name {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Auth zone — mobile */
+    @media (max-width: 1024px) {
+        .mobile-auth-zone {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 222, 89, 0.1);
+        }
+
+        .mobile-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: #ffde59;
+            color: #1a1a1a;
+            padding: 0.85rem 1.4rem;
+            border-radius: 50px;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .mobile-login-btn:hover {
+            background: #ffcc00;
+            transform: translateY(-3px);
+        }
+
+        .mobile-perfil-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            background: rgba(255, 222, 89, 0.15);
+            color: #ffde59;
+            padding: 0.85rem 1.4rem;
+            border-radius: 50px;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-perfil-btn:hover {
+            background: rgba(255, 222, 89, 0.25);
+        }
+    }
+
+    /* Clerk modal — centrado y por encima del header */
+    :global(.cl-modalBackdrop) {
+        z-index: 2000000 !important;
+        position: fixed !important;
+        inset: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    :global(.cl-modalContent) {
+        position: relative !important;
+        margin: auto !important;
+        transform: none !important;
+        top: auto !important;
+        left: auto !important;
     }
 </style>
 

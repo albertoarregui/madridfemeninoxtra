@@ -27,6 +27,23 @@ export async function getDbClient(): Promise<Client | null> {
     }
 }
 
+export async function getSeasonAwardsDbClient(): Promise<Client | null> {
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url       = import.meta.env?.TURSO_DATABASE_URL_2  || process.env.TURSO_DATABASE_URL_2;
+        const authToken = import.meta.env?.TURSO_AUTH_TOKEN_2     || process.env.TURSO_AUTH_TOKEN_2;
+        if (!url || !authToken) {
+            console.error('[DB CLIENT] SEASON-AWARDS: Credenciales no configuradas');
+            return null;
+        }
+        console.log(`[DB CLIENT] Connecting to SEASON-AWARDS DB: ${url}`);
+        return createClient({ url, authToken });
+    } catch (e) {
+        console.error('[DB CLIENT] SEASON-AWARDS: Error creating client:', e);
+        return null;
+    }
+}
+
 export async function getPlayersDbClient(): Promise<Client | null> {
     if (statsClientInstance) {
         return statsClientInstance;

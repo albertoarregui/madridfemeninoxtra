@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 import react from '@astrojs/react';
 import vercel from '@astrojs/vercel';
+import clerk from '@clerk/astro';
 
 export default defineConfig({
   site: 'https://www.madridfemeninoxtra.com',
@@ -16,5 +17,5 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
 
-  integrations: [react()]
+  integrations: [clerk(), react()]
 });
