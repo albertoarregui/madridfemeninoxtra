@@ -13,6 +13,7 @@ import {
 import { fetchCalendarFromDb } from "../../utils/calendar";
 import { getPlayerImage } from "../../utils/player-images";
 import { getAssetUrl } from "../../utils/assets";
+import { getMatchStatus } from "../../utils/date-helper";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 
 const { slug } = Astro.params;
@@ -163,6 +164,52 @@ const isLocalRM =
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
+const matchStatus = getMatchStatus(game.fecha, game.hora, game.isPlayed);
+
+const now = new Date();
+const kickoffHora = game.hora
+    ? (game.hora.split(':').length === 2 ? `${game.hora}:00` : game.hora)
+    : '00:00:00';
+const kickoffTime = game.fecha ? new Date(`${game.fecha}T${kickoffHora}`) : null;
+const isWithinOneHour = kickoffTime
+    ? (kickoffTime.getTime() - now.getTime()) <= 60 * 60 * 1000
+    : false;
+
+// H2H stats — solo para partidos no jugados y más de 1 hora antes del inicio
+let h2hStats: { totalMatches: number; wins: number; draws: number; losses: number; rmGoals: number; rivalGoals: number; } | null = null;
+if (!game.isPlayed && !isWithinOneHour) {
+    try {
+        const { getPlayersDbClient } = await import('../../db/client');
+        const client = await getPlayersDbClient();
+        if (client) {
+            const rivalName = isLocalRM ? game.club_visitante : game.club_local;
+            const rivalKeyword = `%${rivalName}%`;
+            const result = await client.execute({
+                sql: `SELECT p.goles_rm, p.goles_rival
+                      FROM partidos p
+                      LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+                      LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
+                      WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL
+                        AND (LOWER(cl.nombre) LIKE '%real madrid%' OR LOWER(cv.nombre) LIKE '%real madrid%')
+                        AND (LOWER(cl.nombre) LIKE LOWER(?) OR LOWER(cv.nombre) LIKE LOWER(?))`,
+                args: [rivalKeyword, rivalKeyword]
+            });
+            const rows = result.rows || [];
+            if (rows.length > 0) {
+                h2hStats = { totalMatches: rows.length, wins: 0, draws: 0, losses: 0, rmGoals: 0, rivalGoals: 0 };
+                for (const m of rows) {
+                    const rg = Number(m.goles_rm) || 0;
+                    const ag = Number(m.goles_rival) || 0;
+                    h2hStats.rmGoals += rg;
+                    h2hStats.rivalGoals += ag;
+                    if (rg > ag) h2hStats.wins++;
+                    else if (rg < ag) h2hStats.losses++;
+                    else h2hStats.draws++;
+                }
+            }
+        }
+    } catch (_) { h2hStats = null; }
+}
 
 ---
 
@@ -207,6 +254,11 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
                             <span class="bullet">•</span>
                             {formatDate(game.fecha)} - {formatTime(game.hora)}
                         </span>
+                        <div class="match-status-row">
+                            <span class={`match-status-badge match-status-${matchStatus.status}`}>
+                                {matchStatus.label.toUpperCase()}
+                            </span>
+                        </div>
                     </div>
                     <div class="match-main-content">
                         <div class="team-block-large">
@@ -224,29 +276,37 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
                             <span class="team-name-xl">{game.club_local}</span>
                         </div>
                         <div class="score-block-large">
-                            <span class="score-xl">
-                                {
-                                    game.isPlayed ? (
-                                        <>
-                                            {
-                                                game.club_local
-                                                    .toLowerCase()
-                                                    .includes("real madrid")
-                                                    ? game.goles_rm
-                                                    : game.goles_rival
-                                            } - {
-                                                game.club_local
-                                                    .toLowerCase()
-                                                    .includes("real madrid")
-                                                    ? game.goles_rival
-                                                    : game.goles_rm
-                                            }
-                                        </>
-                                    ) : (
-                                        "VS"
-                                    )
-                                }
-                            </span>
+                            {game.isPlayed ? (
+                                <span class="score-xl">
+                                    {game.club_local.toLowerCase().includes("real madrid") ? game.goles_rm : game.goles_rival}
+                                    {" - "}
+                                    {game.club_local.toLowerCase().includes("real madrid") ? game.goles_rival : game.goles_rm}
+                                </span>
+                            ) : (
+                                <div class="countdown-block" data-fecha={game.fecha} data-hora={game.hora || "00:00"}>
+                                    <div class="countdown-units">
+                                        <div class="countdown-unit">
+                                            <span class="countdown-num" id="cd-days">--</span>
+                                            <span class="countdown-label">días</span>
+                                        </div>
+                                        <div class="countdown-sep">:</div>
+                                        <div class="countdown-unit">
+                                            <span class="countdown-num" id="cd-hours">--</span>
+                                            <span class="countdown-label">horas</span>
+                                        </div>
+                                        <div class="countdown-sep">:</div>
+                                        <div class="countdown-unit">
+                                            <span class="countdown-num" id="cd-mins">--</span>
+                                            <span class="countdown-label">min</span>
+                                        </div>
+                                        <div class="countdown-sep">:</div>
+                                        <div class="countdown-unit">
+                                            <span class="countdown-num" id="cd-secs">--</span>
+                                            <span class="countdown-label">seg</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div class="team-block-large">
                             <div class="shield-container-large">
@@ -393,6 +453,28 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
                 </div>
             </section>
         </div>
+        {!game.isPlayed && !isWithinOneHour && h2hStats && h2hStats.totalMatches > 0 && (
+            <div class="h2h-row">
+                <div class="h2h-bare">
+                    <div class="h2h-bar">
+                        <div class="h2h-seg h2h-seg-win" style={`width:${Math.round((h2hStats.wins/h2hStats.totalMatches)*100)}%`}>
+                            {h2hStats.wins > 0 && <span class="h2h-seg-label">{h2hStats.wins}</span>}
+                        </div>
+                        <div class="h2h-seg h2h-seg-draw" style={`width:${Math.round((h2hStats.draws/h2hStats.totalMatches)*100)}%`}>
+                            {h2hStats.draws > 0 && <span class="h2h-seg-label">{h2hStats.draws}</span>}
+                        </div>
+                        <div class="h2h-seg h2h-seg-loss" style={`width:${Math.round((h2hStats.losses/h2hStats.totalMatches)*100)}%`}>
+                            {h2hStats.losses > 0 && <span class="h2h-seg-label">{h2hStats.losses}</span>}
+                        </div>
+                    </div>
+                    <div class="h2h-bar-bottom">
+                        <span class="h2h-meta-label">{h2hStats.totalMatches} partidos</span>
+                        <span class="h2h-meta-label">{h2hStats.rmGoals} goles a favor · {h2hStats.rivalGoals} en contra</span>
+                    </div>
+                </div>
+                <div></div>
+            </div>
+        )}
         <div class="match-grid">
             <div class="left-column">
                 <div
@@ -2354,11 +2436,14 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
         background: #ffde59;
         color: #2b2b2b;
         padding: 1rem 1.5rem;
-        margin: 0;
+        margin: 0 !important;
         font-size: 1rem;
         font-weight: 800;
         text-transform: uppercase;
         text-align: left;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
     }
     .match-card-new {
         background: white;
@@ -3604,4 +3689,103 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
             font-size: 0.9rem;
         }
     }
+    /* Match status badge */
+    .match-status-row { display: flex; justify-content: center; margin-top: 6px; }
+    .match-status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .match-status-in-progress { background: #D9E8F5; color: #1a5f9f; }
+    .match-status-not-started { background: #E8D9F5; color: #6b3fa0; }
+    .match-status-finished { background: #FFE5D9; color: #a0572c; }
+
+    /* Countdown */
+    .countdown-block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .countdown-units {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .countdown-unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 3.5rem;
+    }
+    .countdown-num {
+        font-size: 3.2rem;
+        font-weight: 900;
+        color: #2b2b2b;
+        line-height: 1;
+        font-family: "Bebas Neue", sans-serif;
+        letter-spacing: 2px;
+    }
+    .countdown-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+    }
+    .countdown-sep {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #ccc;
+        font-family: "Bebas Neue", sans-serif;
+        line-height: 1;
+        padding-bottom: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
+        .countdown-unit { min-width: 2.5rem; }
+        .countdown-num { font-size: 2rem; }
+        .countdown-sep { font-size: 1.8rem; padding-bottom: 0.9rem; }
+    }
+    @media (max-width: 480px) {
+        .countdown-unit { min-width: 2rem; }
+        .countdown-num { font-size: 1.6rem; }
+        .countdown-sep { font-size: 1.4rem; padding-bottom: 0.7rem; }
+        .countdown-label { font-size: 0.55rem; }
+    }
 </style>
+
+<script>
+    const block = document.querySelector<HTMLElement>('.countdown-block');
+    if (block) {
+        const fecha = block.dataset.fecha!;
+        const hora  = block.dataset.hora!;
+        const target = new Date(`${fecha}T${hora}:00`);
+
+        function pad(n: number) { return String(n).padStart(2, '0'); }
+
+        function tick() {
+            const diff = target.getTime() - Date.now();
+            if (diff <= 0) {
+                document.getElementById('cd-days')!.textContent  = '00';
+                document.getElementById('cd-hours')!.textContent = '00';
+                document.getElementById('cd-mins')!.textContent  = '00';
+                document.getElementById('cd-secs')!.textContent  = '00';
+                return;
+            }
+            const days  = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const mins  = Math.floor((diff % 3600000)  / 60000);
+            const secs  = Math.floor((diff % 60000)    / 1000);
+            document.getElementById('cd-days')!.textContent  = pad(days);
+            document.getElementById('cd-hours')!.textContent = pad(hours);
+            document.getElementById('cd-mins')!.textContent  = pad(mins);
+            document.getElementById('cd-secs')!.textContent  = pad(secs);
+        }
+        tick();
+        setInterval(tick, 1000);
+    }
+</script>

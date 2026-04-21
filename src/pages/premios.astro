@@ -46,16 +46,12 @@ function norm(s: string) {
     return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-// Busca en ALL el DB (no solo temporada actual) y construye el objeto jugadora
 function findAnyPlayer(name: string): any | null {
     const needle = norm(name.split(' ').pop()!);
-    // 1. Buscar en el squad de temporada (tienen foto actual)
     const fromSquad = players.find((p: any) => norm(p.name).includes(needle));
     if (fromSquad) return fromSquad;
-    // 2. Buscar en todos los registros del DB (sin restricción de dorsal/temporada)
     const raw = allPlayers.find((p: any) => norm(p.nombre).includes(needle));
     if (!raw) return null;
-    // Foto: intentar temporada actual, luego la más reciente disponible
     const seasons = Object.keys({ ...(raw.season_photos || {}), ...(raw.profile_photos || {}) }).sort().reverse();
     const bestSeason = seasons.find(s => raw.season_photos?.[s]) || seasons[0];
     const foto = raw.season_photos?.[bestSeason] || raw.profile_photos?.[bestSeason];
@@ -74,7 +70,6 @@ function byNames(names: string[]): any[] {
     return names.map(findAnyPlayer).filter(Boolean);
 }
 
-// Listas curatoriales
 const mejorJugadoraList = byNames([
     'Misa Rodríguez', 'María Méndez', 'Eva Navarro', 'Caroline Weir', 'Linda Caicedo',
 ]);
@@ -82,7 +77,6 @@ const mejorFichajeList = byNames([
     'Merle Frohms', 'Sara Holmgaard', 'Bella Andersson', 'Sara Däbritz', 'Hanna Bennison', 'Lotte Keukelaar',
 ]);
 
-// Sub-21: base + extras (sin duplicados)
 const mejorSub21List = (() => {
     const ids = new Set(sub21Players.map((p: any) => p.id));
     const extras = byNames(['Silvia Cristóbal', 'Irune Dorado', 'Iris Ashley'])
@@ -90,7 +84,6 @@ const mejorSub21List = (() => {
     return [...sub21Players, ...extras];
 })();
 
-// XI con jugadoras extra por posición (sin duplicados)
 function mergeUnique(base: any[], names: string[]): any[] {
     const ids = new Set(base.map((p: any) => p.id));
     const extras = byNames(names).filter((p: any) => !ids.has(p.id));
@@ -100,7 +93,6 @@ const defensasXI        = mergeUnique(defensas,        ['Silvia Cristóbal']);
 const centrocampistasXI = mergeUnique(centrocampistas, ['Irune Dorado']);
 const delanterasXI      = mergeUnique(delanteras,      ['Iris Ashley']);
 
-// Goals para "Mejor Gol" — mapping id_gol → video_id + info
 const goalsData = [
     { id: '536', videoId: '8M8Z7OrDRcU', scorer: 'Sara Däbritz',   rival: 'Atlético de Madrid', date: 'Temporada 2025/26' },
     { id: '553', videoId: 'ZOljp2g2vUU', scorer: 'Caroline Weir',  rival: 'Arsenal',            date: 'Temporada 2025/26' },
@@ -120,13 +112,11 @@ const goalsData = [
 
 <main class="premios-page">
 
-    <!-- ══ HERO ══ -->
     <header class="premios-hero">
         <h1 class="premios-main-title">PREMIOS<br/>MADRID FEMENINO XTRA</h1>
         <p class="premios-subtitle">Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26.</p>
     </header>
 
-    <!-- ══ VOTING GATE ══ -->
     <div id="voting-gate" style="display:none">
         <div class="gate-box">
             <div class="gate-lock" id="gate-lock-icon">
@@ -147,7 +137,6 @@ const goalsData = [
 
     <div class="premios-body" id="premios-body">
 
-        <!-- ── MEJOR JUGADORA ── -->
         <section class="award-section">
             <h2 class="award-title">MEJOR JUGADORA</h2>
             <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-jugadora">0 / 1</span></p>
@@ -162,7 +151,6 @@ const goalsData = [
             </div>
         </section>
 
-        <!-- ── MEJOR FICHAJE ── -->
         <section class="award-section">
             <h2 class="award-title">MEJOR FICHAJE</h2>
             <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-fichaje">0 / 1</span></p>
@@ -177,7 +165,6 @@ const goalsData = [
             </div>
         </section>
 
-        <!-- ── MEJOR SUB-21 ── -->
         <section class="award-section">
             <h2 class="award-title">MEJOR JUGADORA SUB-21</h2>
             <p class="award-hint">Selecciona una jugadora · <span class="sel-count" data-for="mejor-sub21">0 / 1</span></p>
@@ -195,7 +182,6 @@ const goalsData = [
             </div>
         </section>
 
-        <!-- ── MEJOR GOL ── -->
         <section class="award-section">
             <h2 class="award-title">MEJOR GOL</h2>
             <p class="award-hint">¿Cuál fue el mejor gol de la temporada? · <span class="sel-count" data-for="mejor-gol">0 / 1</span></p>
@@ -219,7 +205,6 @@ const goalsData = [
             </div>
         </section>
 
-        <!-- ══ XI DE LA TEMPORADA ══ -->
         <section class="award-section xi-section">
             <h2 class="award-title">XI DE LA TEMPORADA</h2>
             <p class="award-hint">Elige tu once ideal de la temporada</p>
@@ -265,7 +250,6 @@ const goalsData = [
             ))}
         </section>
 
-        <!-- SUBMIT -->
         <div class="premios-submit">
             <div class="submit-summary" id="submit-summary"></div>
             <button class="submit-btn" id="submit-btn" style="display:none">ENVIAR VOTOS</button>
@@ -276,7 +260,6 @@ const goalsData = [
     </div>
 </main>
 
-<!-- ── GOAL VIDEO MODAL ── -->
 <div id="goal-modal" class="goal-modal" style="display:none">
     <div class="modal-backdrop"></div>
     <div class="modal-container">
@@ -540,7 +523,6 @@ const goalsData = [
             var id = card.dataset.id;
             var videoId = card.dataset.videoId;
 
-            // Si hace doble click o en el play, abrir modal
             if (isSelectingGoal && votes[cat] === id) {
                 // Doble click → abrir video modal
                 iframeEl.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1';
@@ -549,7 +531,6 @@ const goalsData = [
                 return;
             }
 
-            // Primer click: seleccionar gol
             isSelectingGoal = votes[cat] === id;
             if (votes[cat] === id) {
                 votes[cat] = null;
@@ -568,7 +549,6 @@ const goalsData = [
             updateSummary();
         });
 
-        // Click en thumbnail: abrir modal
         var thumbnail = card.querySelector('.goal-thumbnail');
         if (thumbnail) {
             thumbnail.addEventListener('click', function (e) {
@@ -580,19 +560,16 @@ const goalsData = [
         }
     });
 
-    // Cerrar modal
     modalCloseBtn.addEventListener('click', function () {
         modalEl.style.display = 'none';
         iframeEl.src = '';
     });
 
-    // Cerrar modal al hacer click en backdrop
     document.querySelector('.modal-backdrop').addEventListener('click', function () {
         modalEl.style.display = 'none';
         iframeEl.src = '';
     });
 
-    // Cerrar modal con ESC
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && modalEl.style.display === 'flex') {
             modalEl.style.display = 'none';
@@ -859,7 +836,6 @@ const goalsData = [
         text-transform: uppercase;
         letter-spacing: 0.04em;
         margin: 0 0 1.5rem;
-        /* Efecto metálico plata/cromo como "NUESTRO LEGADO" */
         background: linear-gradient(
             180deg,
             #ffffff   0%,
@@ -950,7 +926,6 @@ const goalsData = [
         gap: 0.5rem;
     }
 
-    /* difuminado en los bordes del scroll */
     :global(.scroll-wrapper .players-scroll) {
         mask-image: linear-gradient(
             to right,
@@ -982,7 +957,6 @@ const goalsData = [
         transition: opacity 0.2s;
         padding: 0;
         z-index: 2;
-        /* centrar con el círculo de la foto (130px) + padding-top scroll (0.5rem) + padding-top pcard (0.75rem) - mitad flecha (18px) */
         margin-top: calc(0.5rem + 0.75rem + 65px - 18px);
     }
 
@@ -1344,7 +1318,6 @@ const goalsData = [
 
     .form-slot:not(.empty) { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
 
-    /* contenedor redondo para la foto en el XI */
     :global(.fs-img-wrap) {
         width: 82px; height: 82px;
         border-radius: 50%;
@@ -1363,7 +1336,6 @@ const goalsData = [
         display: block;
     }
 
-    /* el span lo inserta JS → necesita :global para saltarse el scope de Astro */
     :global(.form-slot:not(.empty) span) {
         font-size: 0.62rem;
         font-style: italic;

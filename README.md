@@ -40,6 +40,77 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 👩 **Fichas de jugadoras** — Partidos, goles, asistencias y más
 - 🏟️ **Estadios y árbitras** — Base de datos completa
 - 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
+- 🔴 **Livescore en tiempo real** — Marcador, minuto y timeline en directo
+
+---
+
+## 🔴 Livescore — Sincronización automática con SofaScore
+
+Madrid Femenino Xtra incluye un sistema completo de livescore que sincroniza datos en tiempo real desde **SofaScore** y los escribe automáticamente en la base de datos **Turso**, respetando los IDs propios del proyecto.
+
+### Cómo funciona
+
+```
+SofaScore JSON API  →  sofascore-scraper.ts  →  sofascore-mapper.ts  →  Turso DB
+       ↑                    (fetch puro)           (mapeo a IDs propios)
+  api.sofascore.com
+```
+
+El sistema usa la **API JSON pública de SofaScore** (la misma que alimenta su web y apps) en vez de scraping HTML, lo que lo hace estable, rápido y sin necesidad de navegador headless.
+
+### Activación automática
+
+El script se activa **1 hora antes del partido** y sincroniza cada 30 segundos hasta el final:
+
+```bash
+# Con URL directa del partido en SofaScore
+npx tsx scripts/sync-sofascore.ts --sofascore-url "https://www.sofascore.com/match/12345678" --watch
+
+# Buscando automáticamente por rival
+npx tsx scripts/sync-sofascore.ts --away "Athletic Bilbao" --watch
+```
+
+### Qué se escribe en la BD
+
+| Tabla | Datos |
+|---|---|
+| `partidos` | `goles_rm`, `goles_rival`, `tiempo_partido` (minuto vivo) |
+| `alineaciones` | Titulares, suplentes, minutos jugados, minuto de cambio |
+| `estadisticas_jugadoras` | Valoración, pases, tiros, duelos, regates, faltas… |
+| `estadisticas_partidos` | Posesión, tiros, pases, córners, fueras de juego… |
+| `goles_y_asistencias` | Goleadoras de RM con `id_jugadora` real de la BD |
+| `goles_rival` | Goles del rival con `id_club` real de la BD |
+| `tarjetas` | Tarjetas de RM con `id_jugadora` real de la BD |
+| `tarjetas_rival` | Tarjetas del rival con `id_club` real de la BD |
+
+### Respeto de IDs propios
+
+El mapper busca cada jugadora en la BD con tres niveles de coincidencia:
+1. **Nombre completo** — `%Misa Rodríguez%`
+2. **Nombre + apellido por separado** — `%Misa%` AND `%Rodríguez%`
+3. **Solo apellido** — `%Rodríguez%`
+
+El club rival se busca en la tabla `clubes` por palabras clave del nombre, devolviendo su `id_club` real. El partido se identifica filtrando por fecha (`DATE(p.fecha)`) y nombre del rival.
+
+### Detección automática local/visitante
+
+El sistema detecta automáticamente si el Real Madrid figura como equipo local o visitante en SofaScore y asigna `goles_rm`/`goles_rival` correctamente, independientemente del orden en la URL.
+
+### Visualización en la web
+
+- **Home**: Durante las 2 horas del partido, la cuenta atrás se sustituye por el marcador en vivo con el minuto entre los números
+- **Ficha del partido**: Marcador, estado (no comenzado / en curso / finalizado) y timeline en directo
+- **H2H**: El historial de enfrentamientos desaparece automáticamente 1 hora antes del inicio (cuando el script arranca con la alineación)
+
+### Preparación de la BD
+
+Antes del primer partido en vivo, ejecutar en Turso:
+
+```bash
+turso db shell realmadridfem-database "ALTER TABLE partidos ADD COLUMN tiempo_partido TEXT;"
+```
+
+---
 
 ## 🚀 Tecnologías Principales
 
@@ -85,8 +156,9 @@ La aplicación estará disponible en [http://localhost:4321](http://localhost:43
 - `/src/pages`: Rutas de la aplicación (incluye slugs dinámicos para jugadoras, hitos, etc.)
 - `/src/components`: Componentes reutilizables (Astro y React).
 - `/src/db`: Clientes de base de datos y configuración de Turso.
-- `/src/utils`: Lógica de negocio (formateo de fechas, cálculo de estadísticas, etc.)
+- `/src/utils`: Lógica de negocio, mapeo de datos, cliente SofaScore.
 - `/src/assets`: Recursos estáticos (escudos, banderas, iconos).
+- `/scripts`: Scripts de sincronización en vivo (`sync-sofascore.ts`).
 
 ## 📄 Licencia
 

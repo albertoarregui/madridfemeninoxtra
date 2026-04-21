@@ -31,12 +31,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
         return new Response(JSON.stringify({ error: 'Debes iniciar sesión para votar.' }), { status: 401, headers: HEADERS });
     }
 
-    // Build rows: one row per category
     const rows: { category_id: string; candidate_id: string }[] = [];
 
     const SUFFIX = '-2526';
 
-    // Award votes
     const awardMap: Record<string, string> = {
         'mejor-jugadora':  'mejor-jugadora'  + SUFFIX,
         'mejor-fichaje':   'mejor-fichaje'   + SUFFIX,
@@ -48,7 +46,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
         if (val) rows.push({ category_id: categoryId, candidate_id: String(val) });
     }
 
-    // XI votes — each position slot gets its own category_id
     const xiPositions: Record<string, any[]> = {
         portera:        xi.portera        ?? [],
         defensa:        xi.defensa        ?? [],
@@ -66,7 +63,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     try {
-        // Insert one row per category; replace if user already voted for that category
         const stmts = rows.map(({ category_id, candidate_id }) => ({
             sql: `INSERT OR REPLACE INTO votes (user_id, category_id, candidate_id)
                   VALUES (?, ?, ?)`,

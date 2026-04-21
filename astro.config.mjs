@@ -14,7 +14,7 @@ export default defineConfig({
     imageService: true,
   }),
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
   },
 
   integrations: [clerk(), react()]

@@ -64,4 +64,52 @@ export function isMatchActive(dateStr: string, timeStr: string): boolean {
     return matchEndTime > now;
 }
 
+export function getMatchStatus(
+    dateStr: string,
+    timeStr: string,
+    isPlayed?: boolean,
+    currentMinute?: string
+): {
+    status: 'not-started' | 'in-progress' | 'finished';
+    label: string;
+    color: string; // Pastel color
+} {
+    const now = new Date();
+    const matchDate = parseMatchDate(dateStr, timeStr);
+    const matchDuration = 90 * 60 * 1000;
+    const matchEndTime = new Date(matchDate.getTime() + matchDuration);
+    
+    if (isPlayed) {
+        return {
+            status: 'finished',
+            label: 'Partido finalizado',
+            color: '#FFE5D9', // Pastel peach
+        };
+    }
+    
+    if (now >= matchDate && now <= matchEndTime) {
+        // Calculate current minute
+        const minutesElapsed = Math.floor((now.getTime() - matchDate.getTime()) / (60 * 1000));
+        return {
+            status: 'in-progress',
+            label: `En vivo: ${minutesElapsed}'`,
+            color: '#D9E8F5', // Pastel blue
+        };
+    }
+    
+    if (now < matchDate) {
+        return {
+            status: 'not-started',
+            label: 'Partido no comenzado',
+            color: '#E8D9F5', // Pastel purple
+        };
+    }
+    
+    return {
+        status: 'finished',
+        label: 'Partido finalizado',
+        color: '#FFE5D9', // Pastel peach
+    };
+}
+
 

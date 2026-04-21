@@ -177,14 +177,118 @@ export async function fetchGames(): Promise<any[]> {
     }
 }
 
-export interface RivalStats {
+export interface H2HStats {
+    totalMatches: number;
+    homeWins: number;
+    awayWins: number;
+    draws: number;
+    homeGoals: number;
+    awayGoals: number;
+    recentMatches: any[];
+}
+
+export async function fetchH2HStats(homeTeam: string, awayTeam: string): Promise<H2HStats> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+
+        if (!client) {
+            return {
+                totalMatches: 0,
+                homeWins: 0,
+                awayWins: 0,
+                draws: 0,
+                homeGoals: 0,
+                awayGoals: 0,
+                recentMatches: []
+            };
+        }
+
+        // Get all matches between these two teams
+        const result = await client.execute({
+            sql: `
+                SELECT
+                    id_partido,
+                    club_local,
+                    club_visitante,
+                    goles_rm,
+                    goles_rival,
+                    fecha,
+                    competicion_nombre
+                FROM partidos
+                WHERE
+                    (LOWER(club_local) = LOWER(?) AND LOWER(club_visitante) = LOWER(?))
+                    OR
+                    (LOWER(club_local) = LOWER(?) AND LOWER(club_visitante) = LOWER(?))
+                ORDER BY fecha DESC
+                LIMIT 10
+            `,
+            args: [homeTeam, awayTeam, awayTeam, homeTeam]
+        });
+
+        const matches = result.rows || [];
+        const stats: H2HStats = {
+            totalMatches: matches.length,
+            homeWins: 0,
+            awayWins: 0,
+            draws: 0,
+            homeGoals: 0,
+            awayGoals: 0,
+            recentMatches: []
+        };
+
+        // Calculate stats
+        for (const match of matches) {
+            const isHome = match.club_local?.toLowerCase() === homeTeam.toLowerCase();
+            const homeGoals = isHome ? match.goles_rm : match.goles_rival;
+            const awayGoals = isHome ? match.goles_rival : match.goles_rm;
+
+            stats.homeGoals += homeGoals || 0;
+            stats.awayGoals += awayGoals || 0;
+
+            if (homeGoals > awayGoals) {
+                stats.homeWins++;
+            } else if (awayGoals > homeGoals) {
+                stats.awayWins++;
+            } else {
+                stats.draws++;
+            }
+        }
+
+        // Get recent matches (last 5)
+        stats.recentMatches = matches.slice(0, 5).map(match => ({
+            date: match.fecha,
+            homeTeam: match.club_local,
+            awayTeam: match.club_visitante,
+            homeScore: match.goles_rm,
+            awayScore: match.goles_rival,
+            competition: match.competicion_nombre
+        }));
+
+        return stats;
+
+    } catch (error) {
+        console.error('Error fetching H2H stats:', error);
+        return {
+            totalMatches: 0,
+            homeWins: 0,
+            awayWins: 0,
+            draws: 0,
+            homeGoals: 0,
+            awayGoals: 0,
+            recentMatches: []
+        };
+    }
+}
+
+interface RivalStats {
     wins: number;
     draws: number;
     losses: number;
     total: number;
 }
 
-export function calculateRivalStats(matches: any[], rivalName: string): RivalStats {
+export function calculateRivalStats(matches: any[], rivalName: string = '') {
     const stats: RivalStats = {
         wins: 0,
         draws: 0,
@@ -1061,6 +1165,4 @@ export async function fetchAllGoals(): Promise<any[]> {
         return [];
     }
 }
-
-
 

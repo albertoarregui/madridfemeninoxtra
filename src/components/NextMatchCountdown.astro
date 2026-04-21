@@ -1,13 +1,36 @@
 ---
 import { fetchCalendarFromDb } from "../utils/calendar";
+import { fetchGamesDirectly } from "../utils/partidos";
 import { slugify } from "../utils/partidos";
+import { getMatchStatus } from "../utils/date-helper";
 import "@fontsource/bowlby-one-sc";
 
+// Get all games to check for live matches
+const allGames = await fetchGamesDirectly();
 const calendarMatches = await fetchCalendarFromDb();
 const now = new Date();
+const matchDuration = 120 * 60 * 1000; // 2 hours window for live display
 
-const nextMatch =
-    calendarMatches.length > 0
+// Check if there's a live match
+const liveMatch = allGames.find((game) => {
+    if (!game.fecha || !game.hora) return false;
+    
+    const h = game.hora?.includes(":")
+        ? game.hora.split(":").length === 2
+            ? `${game.hora}:00`
+            : game.hora
+        : "00:00:00";
+    
+    const matchDate = new Date(`${game.fecha}T${h}`);
+    const matchEndTime = new Date(matchDate.getTime() + matchDuration);
+    
+    // Check if we're in the middle of the match
+    return now >= matchDate && now <= matchEndTime;
+});
+
+// If there's a live match, use it; otherwise find next upcoming match
+const nextMatch = liveMatch ||
+    (calendarMatches.length > 0
         ? calendarMatches.find((match) => {
               const h = match.hora?.includes(":")
                   ? match.hora.split(":").length === 2
@@ -17,7 +40,7 @@ const nextMatch =
               const matchDate = new Date(`${match.fecha}T${h}`);
               return matchDate >= now;
           }) || calendarMatches[0]
-        : null;
+        : null);
 
 if (!nextMatch) return null;
 
@@ -35,6 +58,29 @@ const matchDateShort = `${day}/${month}/${year}`;
 
 const dateSlug = nextMatch.fecha.split(" ")[0];
 const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_visitante)}-${dateSlug}`;
+
+// Get match status
+const matchStatus = getMatchStatus(
+    nextMatch.fecha,
+    nextMatch.hora,
+    nextMatch.isPlayed
+);
+
+// Fetch tiempo_partido separately for live matches (column may not exist yet — safe fallback)
+let tiempoPartido: string | null = null;
+if (matchStatus.status === 'in-progress' && liveMatch?.id_partido) {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const dbClient = await getPlayersDbClient();
+        if (dbClient) {
+            const r = await dbClient.execute({
+                sql: `SELECT tiempo_partido FROM partidos WHERE id_partido = ? LIMIT 1`,
+                args: [liveMatch.id_partido],
+            });
+            tiempoPartido = (r.rows[0]?.tiempo_partido as string) ?? null;
+        }
+    } catch (_) { tiempoPartido = null; }
+}
 ---
 
 <div
@@ -115,56 +161,78 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
             </div>
 
             <div class="center-infography-v5">
-                <div class="countdown-circular-stack-v5">
-                    <div class="c-unit-v5" id="v5-days">
-                        <div class="c-svg-v5">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="bg" cx="50" cy="50" r="45"
-                                ></circle>
-                                <circle class="prog" cx="50" cy="50" r="45"
-                                ></circle>
-                            </svg>
-                            <span class="v5-val" id="v5-d">00</span>
+                {matchStatus.status === 'in-progress' ? (
+                    <div class="live-score-display-v5">
+                        <div class="live-score-main-v5">
+                            <span class="live-score-number">{
+                                nextMatch.club_local?.toLowerCase().includes('real madrid')
+                                    ? (nextMatch.goles_rm ?? 0)
+                                    : (nextMatch.goles_rival ?? 0)
+                            }</span>
+                            <span class="live-minute-v5">{
+                                tiempoPartido
+                                    ? tiempoPartido
+                                    : `${Math.min(Math.floor((now.getTime() - new Date(`${nextMatch.fecha}T${nextMatch.hora?.includes(":") ? (nextMatch.hora.split(":").length === 2 ? `${nextMatch.hora}:00` : nextMatch.hora) : "00:00:00"}`).getTime()) / 60000), 90)}'`
+                            }</span>
+                            <span class="live-score-number">{
+                                nextMatch.club_local?.toLowerCase().includes('real madrid')
+                                    ? (nextMatch.goles_rival ?? 0)
+                                    : (nextMatch.goles_rm ?? 0)
+                            }</span>
                         </div>
-                        <span class="v5-lab">DÍAS</span>
                     </div>
-                    <div class="c-unit-v5" id="v5-hours">
-                        <div class="c-svg-v5">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="bg" cx="50" cy="50" r="45"
-                                ></circle>
-                                <circle class="prog" cx="50" cy="50" r="45"
-                                ></circle>
-                            </svg>
-                            <span class="v5-val" id="v5-h">00</span>
+                ) : (
+                    <div class="countdown-circular-stack-v5">
+                        <div class="c-unit-v5" id="v5-days">
+                            <div class="c-svg-v5">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="bg" cx="50" cy="50" r="45"
+                                    ></circle>
+                                    <circle class="prog" cx="50" cy="50" r="45"
+                                    ></circle>
+                                </svg>
+                                <span class="v5-val" id="v5-d">00</span>
+                            </div>
+                            <span class="v5-lab">DÍAS</span>
                         </div>
-                        <span class="v5-lab">HORAS</span>
-                    </div>
-                    <div class="c-unit-v5" id="v5-minutes">
-                        <div class="c-svg-v5">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="bg" cx="50" cy="50" r="45"
-                                ></circle>
-                                <circle class="prog" cx="50" cy="50" r="45"
-                                ></circle>
-                            </svg>
-                            <span class="v5-val" id="v5-m">00</span>
+                        <div class="c-unit-v5" id="v5-hours">
+                            <div class="c-svg-v5">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="bg" cx="50" cy="50" r="45"
+                                    ></circle>
+                                    <circle class="prog" cx="50" cy="50" r="45"
+                                    ></circle>
+                                </svg>
+                                <span class="v5-val" id="v5-h">00</span>
+                            </div>
+                            <span class="v5-lab">HORAS</span>
                         </div>
-                        <span class="v5-lab">MIN</span>
-                    </div>
-                    <div class="c-unit-v5" id="v5-seconds">
-                        <div class="c-svg-v5">
-                            <svg viewBox="0 0 100 100">
-                                <circle class="bg" cx="50" cy="50" r="45"
-                                ></circle>
-                                <circle class="prog" cx="50" cy="50" r="45"
-                                ></circle>
-                            </svg>
-                            <span class="v5-val" id="v5-s">00</span>
+                        <div class="c-unit-v5" id="v5-minutes">
+                            <div class="c-svg-v5">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="bg" cx="50" cy="50" r="45"
+                                    ></circle>
+                                    <circle class="prog" cx="50" cy="50" r="45"
+                                    ></circle>
+                                </svg>
+                                <span class="v5-val" id="v5-m">00</span>
+                            </div>
+                            <span class="v5-lab">MIN</span>
                         </div>
-                        <span class="v5-lab">SEG</span>
+                        <div class="c-unit-v5" id="v5-seconds">
+                            <div class="c-svg-v5">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="bg" cx="50" cy="50" r="45"
+                                    ></circle>
+                                    <circle class="prog" cx="50" cy="50" r="45"
+                                    ></circle>
+                                </svg>
+                                <span class="v5-val" id="v5-s">00</span>
+                            </div>
+                            <span class="v5-lab">SEG</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <div class="info-pills-stack-v5">
@@ -660,6 +728,79 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
         .info-pills-stack-v5,
         .team-name-v5 {
             display: none !important;
+        }
+    }
+
+    /* Live Score Display Styles */
+    .live-score-display-v5 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        flex: none;
+        width: auto;
+        height: 100%;
+    }
+
+    .live-score-main-v5 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        font-family: "Bowlby One SC", sans-serif;
+        font-size: 3rem;
+        color: white;
+        line-height: 1;
+    }
+
+    .live-score-number {
+        min-width: 80px;
+        text-align: center;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
+    .live-minute-v5 {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.2rem;
+        color: white;
+        letter-spacing: 1px;
+        font-weight: 700;
+        min-width: auto;
+        text-align: center;
+        background: #FFD9D9;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .live-score-main-v5 {
+            font-size: 2.2rem;
+            gap: 16px;
+        }
+        .live-score-number {
+            min-width: 60px;
+        }
+        .live-minute-v5 {
+            font-size: 1rem;
+            padding: 5px 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .live-score-main-v5 {
+            font-size: 1.8rem;
+            gap: 12px;
+        }
+        .live-score-number {
+            min-width: 50px;
+        }
+        .live-minute-v5 {
+            font-size: 0.9rem;
+            padding: 4px 10px;
         }
     }
 </style>
