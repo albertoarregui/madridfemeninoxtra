@@ -1,0 +1,49 @@
+export interface Props {
+  matchId: number | string;
+}
+
+const { matchId } = Astro.props;
+---
+
+<div class="live-score-container">
+  <div client:load>
+  </div>
+
+  <noscript>
+    <p>
+      JavaScript es necesario para ver actualización en vivo. Por favor,
+      recarga la página con JavaScript habilitado.
+    </p>
+  </noscript>
+
+  <style>
+    .live-score-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  </style>
+</div>
+
+<script define:vars={{ matchId }}>
+  import LiveScoreStream from '../components/LiveScoreStream';
+  import React from 'react';
+  import ReactDOM from 'react-dom';
+
+  const container = document.querySelector('[client\\:load]')?.parentElement;
+
+  if (container) {
+    ReactDOM.createRoot(container).render(
+      React.createElement(LiveScoreStream, {
+        matchId,
+        homeTeam: 'Real Madrid Femenino',
+        onGoal: (data) => {
+          console.log('⚽ Goal!', data);
+        },
+        onCard: (data) => {
+          console.log('🟨 Card!', data);
+        },
+      })
+    );
+  }
+</script>
