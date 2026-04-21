@@ -1,5 +1,7 @@
-import { broadcastMatchUpdate } from './live-stream';
 import { createClient } from '@libsql/client';
+
+// No-op in standalone/CI context — SSE broadcast only works inside Vercel serverless
+function broadcastMatchUpdate(_matchId: any, _event: string, _data: any) {}
 
 export interface ChangeEvent {
   field: string;

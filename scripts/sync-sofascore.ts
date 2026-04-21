@@ -35,6 +35,7 @@ interface StoredMatchState {
 const args = process.argv.slice(2);
 const softascoreUrl = args.find(a => a.startsWith('--sofascore-url'))?.split('=')[1];
 const isWatch = args.includes('--watch');
+const isAutoWatch = args.includes('--auto-watch');
 const homeTeam = args.find(a => a.startsWith('--home'))?.split('=')[1] || 'Real Madrid Femenino';
 const awayTeam = args.find(a => a.startsWith('--away'))?.split('=')[1];
 
@@ -326,16 +327,97 @@ async function syncToDatabase(mappedData: any, client: any): Promise<{ success: 
  */
 async function main() {
   try {
+    // ── Auto-watch mode (for GitHub Actions cron) ──────────────────────────
+    if (isAutoWatch) {
+      const today = new Date().toISOString().split('T')[0];
+      console.log(`\n🤖 Auto-watch mode | ${today}\n`);
+
+      const dbClient = await getDatabaseClient();
+      const result = await dbClient.execute({
+        sql: `SELECT p.id_partido, p.fecha, p.hora,
+                     cl.nombre AS club_local, cv.nombre AS club_visitante
+              FROM partidos p
+              LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+              LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
+              WHERE DATE(p.fecha) = ? AND (p.goles_rm IS NULL OR p.goles_rm = '')
+              ORDER BY p.hora ASC LIMIT 1`,
+        args: [today],
+      });
+
+      if (!result.rows.length) {
+        console.log('No unplayed match today. Exiting.');
+        process.exit(0);
+      }
+
+      const match = result.rows[0] as any;
+      const hora = ((match.hora as string) || '20:00').replace(/[^0-9:]/g, '').substring(0, 5);
+
+      const { parseMatchDate } = await import('../src/utils/date-helper');
+      const kickoffTime = parseMatchDate(today, hora);
+      const now = new Date();
+      const diffMs = kickoffTime.getTime() - now.getTime();
+      const matchEndTime = new Date(kickoffTime.getTime() + 2 * 60 * 60 * 1000);
+
+      if (diffMs > 2 * 60 * 60 * 1000) {
+        console.log(`⏰ Match in ${Math.round(diffMs / 3600000 * 10) / 10}h — outside watch window. Exiting.`);
+        process.exit(0);
+      }
+      if (now > matchEndTime) {
+        console.log('Match has already ended. Exiting.');
+        process.exit(0);
+      }
+
+      const isLocalRM = ((match.club_local as string) || '').toLowerCase().includes('real madrid');
+      const rival = (isLocalRM ? match.club_visitante : match.club_local) as string;
+
+      console.log(`📅 ${match.club_local} vs ${match.club_visitante} @ ${hora}`);
+      console.log(`🔍 Finding match vs ${rival} on SofaScore...`);
+
+      let autoMatchUrl: string | null = null;
+      for (let attempt = 1; attempt <= 5 && !autoMatchUrl; attempt++) {
+        autoMatchUrl = await findRMFemeninoMatch(today, rival);
+        if (!autoMatchUrl) {
+          console.log(`  SofaScore lookup failed (${attempt}/5). Retrying in 5 min...`);
+          await new Promise(r => setTimeout(r, 5 * 60 * 1000));
+        }
+      }
+      if (!autoMatchUrl) {
+        console.error('Could not find match on SofaScore. Exiting.');
+        process.exit(1);
+      }
+      console.log(`✓ Found: ${autoMatchUrl}`);
+
+      // Sleep until 1h before kickoff if we're too early
+      const windowStart = new Date(kickoffTime.getTime() - 60 * 60 * 1000);
+      if (new Date() < windowStart) {
+        const sleepMs = windowStart.getTime() - Date.now();
+        console.log(`⏳ Waiting ${Math.floor(sleepMs / 60000)} min until active window...`);
+        await new Promise(r => setTimeout(r, sleepMs));
+      }
+
+      console.log('🔴 Starting live sync loop (every 30s)...\n');
+      while (new Date() < matchEndTime) {
+        await performSync(autoMatchUrl);
+        if (new Date() < matchEndTime) {
+          await new Promise(r => setTimeout(r, 30000));
+        }
+      }
+
+      console.log('✅ Match window closed. Auto-watch complete.');
+      process.exit(0);
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     let matchUrl = softascoreUrl;
 
     if (!matchUrl && awayTeam) {
       console.log(`🔍 Finding SofaScore match: ${homeTeam} vs ${awayTeam}`);
-      matchUrl = await findRMFemeninoMatch(new Date().toISOString().split('T')[0], awayTeam);
-      
-      if (!matchUrl) {
+      const found = await findRMFemeninoMatch(new Date().toISOString().split('T')[0], awayTeam);
+      if (!found) {
         console.error('Could not find match. Please provide --sofascore-url');
         process.exit(1);
       }
+      matchUrl = found;
     }
 
     if (!matchUrl) {
