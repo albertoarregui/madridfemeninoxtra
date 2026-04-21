@@ -11,7 +11,9 @@ const Logo = "/logo-final-trans.png";
 const pathname = new URL(Astro.request.url).pathname;
 const currentPath = pathname === "/" ? "/home" : pathname;
 
-const clerkUser = await Astro.locals.currentUser();
+const clerkUser = typeof Astro.locals.currentUser === 'function'
+    ? await Astro.locals.currentUser()
+    : null;
 const userName = clerkUser?.firstName || clerkUser?.fullName || 'Usuario';
 const userPhoto = clerkUser?.imageUrl || '';
 ---
