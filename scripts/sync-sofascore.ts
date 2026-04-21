@@ -50,8 +50,8 @@ async function getDatabaseClient() {
   }
   
   return createClient({
-    url: TURSO_DATABASE_URL,
-    authToken: TURSO_AUTH_TOKEN
+    url: TURSO_DATABASE_URL.trim(),
+    authToken: TURSO_AUTH_TOKEN.trim()
   });
 }
 
