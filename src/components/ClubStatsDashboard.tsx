@@ -78,11 +78,13 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
         let redsRM = 0, redsRival = 0, penaltisRM = 0, penaltisRival = 0;
         const scoreFrequencies: Record<string, number> = {};
 
+        const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
         filteredMatches.forEach(m => {
-            if (m.goles_rm === null || m.goles_rm === undefined || m.goles_rival === null || m.goles_rival === undefined) return;
-            played++;
+            if (!hasScore(m.goles_rm) || !hasScore(m.goles_rival)) return;
             const gRM = Number(m.goles_rm);
             const gRiv = Number(m.goles_rival);
+            if (isNaN(gRM) || isNaN(gRiv)) return;
+            played++;
             gf += gRM; ga += gRiv;
             if (gRiv === 0) cleanSheets++;
             foulsCommitted += Number(m.faltas_cometidas || 0);

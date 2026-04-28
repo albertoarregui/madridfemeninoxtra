@@ -67,48 +67,40 @@ export function isMatchActive(dateStr: string, timeStr: string): boolean {
 export function getMatchStatus(
     dateStr: string,
     timeStr: string,
-    isPlayed?: boolean,
-    currentMinute?: string
+    _isPlayed?: boolean,
+    _currentMinute?: string
 ): {
     status: 'not-started' | 'in-progress' | 'finished';
     label: string;
-    color: string; // Pastel color
+    color: string;
 } {
     const now = new Date();
     const matchDate = parseMatchDate(dateStr, timeStr);
-    const matchDuration = 90 * 60 * 1000;
-    const matchEndTime = new Date(matchDate.getTime() + matchDuration);
-    
-    if (isPlayed) {
-        return {
-            status: 'finished',
-            label: 'Partido finalizado',
-            color: '#FFE5D9', // Pastel peach
-        };
-    }
-    
+    // Use 2h window (same as sync) so goles_rm=0 doesn't prematurely mark as finished
+    const matchEndTime = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000);
+
+    // Time window check first — isPlayed (derived from goles_rm) is unreliable during a live match
     if (now >= matchDate && now <= matchEndTime) {
-        // Calculate current minute
         const minutesElapsed = Math.floor((now.getTime() - matchDate.getTime()) / (60 * 1000));
         return {
             status: 'in-progress',
             label: `En vivo: ${minutesElapsed}'`,
-            color: '#D9E8F5', // Pastel blue
+            color: '#D9E8F5',
         };
     }
-    
+
     if (now < matchDate) {
         return {
             status: 'not-started',
             label: 'Partido no comenzado',
-            color: '#E8D9F5', // Pastel purple
+            color: '#E8D9F5',
         };
     }
-    
+
     return {
         status: 'finished',
         label: 'Partido finalizado',
-        color: '#FFE5D9', // Pastel peach
+        color: '#FFE5D9',
     };
 }
 

@@ -91,11 +91,14 @@ const formatTime = (timeString: string | null | undefined): string => {
     return timeString.substring(0, 5);
 };
 
-const lineup = game.isPlayed ? await fetchMatchLineups(game.id_partido) : [];
-const subs = game.isPlayed ? await fetchMatchSubstitutions(game.id_partido) : [];
-const timelineEvents = game.isPlayed ? await fetchMatchEvents(game.id_partido, game.goles_rm) : [];
+const matchStatus = getMatchStatus(game.fecha, game.hora);
+const isLiveOrPlayed = game.isPlayed || matchStatus.status === 'in-progress';
+
+const lineup = isLiveOrPlayed ? await fetchMatchLineups(game.id_partido) : [];
+const subs = isLiveOrPlayed ? await fetchMatchSubstitutions(game.id_partido) : [];
+const timelineEvents = isLiveOrPlayed ? await fetchMatchEvents(game.id_partido, game.goles_rm) : [];
 const stadiumStats = await fetchStadiumStats(game.estadio);
-const matchKit = game.isPlayed ? await fetchMatchKit(game.id_partido) : null;
+const matchKit = isLiveOrPlayed ? await fetchMatchKit(game.id_partido) : null;
 
 let mvpPlayer;
 
@@ -163,8 +166,6 @@ const isLocalRM =
 
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
-
-const matchStatus = getMatchStatus(game.fecha, game.hora, game.isPlayed);
 
 const now = new Date();
 const kickoffHora = game.hora
@@ -255,7 +256,13 @@ if (!game.isPlayed && !isWithinOneHour) {
                             {formatDate(game.fecha)} - {formatTime(game.hora)}
                         </span>
                         <div class="match-status-row">
-                            <span class={`match-status-badge match-status-${matchStatus.status}`}>
+                            <span
+                                class={`match-status-badge match-status-${matchStatus.status}`}
+                                id="live-status-badge"
+                                data-status={matchStatus.status}
+                                data-fecha={game.fecha}
+                                data-hora={game.hora || "00:00"}
+                            >
                                 {matchStatus.label.toUpperCase()}
                             </span>
                         </div>
@@ -276,11 +283,11 @@ if (!game.isPlayed && !isWithinOneHour) {
                             <span class="team-name-xl">{game.club_local}</span>
                         </div>
                         <div class="score-block-large">
-                            {game.isPlayed ? (
+                            {isLiveOrPlayed ? (
                                 <span class="score-xl">
-                                    {game.club_local.toLowerCase().includes("real madrid") ? game.goles_rm : game.goles_rival}
+                                    {game.club_local.toLowerCase().includes("real madrid") ? (game.goles_rm ?? 0) : (game.goles_rival ?? 0)}
                                     {" - "}
-                                    {game.club_local.toLowerCase().includes("real madrid") ? game.goles_rival : game.goles_rm}
+                                    {game.club_local.toLowerCase().includes("real madrid") ? (game.goles_rival ?? 0) : (game.goles_rm ?? 0)}
                                 </span>
                             ) : (
                                 <div class="countdown-block" data-fecha={game.fecha} data-hora={game.hora || "00:00"}>
@@ -545,7 +552,7 @@ if (!game.isPlayed && !isWithinOneHour) {
                         </div>
                     </div>
                 </div>
-                {game.isPlayed && (
+                {isLiveOrPlayed && (
                     <section class="lineup-card">
                         <h2 class="section-header">XI TITULAR</h2>
                         <div class="lineup-list">
@@ -709,7 +716,7 @@ if (!game.isPlayed && !isWithinOneHour) {
                         </div>
                     </section>
                 )}
-                {game.isPlayed && (
+                {isLiveOrPlayed && (
                     <section class="subs-card">
                         <h2 class="section-header">Sustituciones</h2>
                         <div class="lineup-list">
@@ -1067,7 +1074,7 @@ if (!game.isPlayed && !isWithinOneHour) {
                         </div>
                     </section>
                 )}
-                {game.isPlayed && (
+                {isLiveOrPlayed && (
                     <section class="timeline-card">
                     <h2 class="section-header">Timeline</h2>
                     <div class="timeline-container">
@@ -3841,5 +3848,22 @@ if (!game.isPlayed && !isWithinOneHour) {
         }
         tick();
         setInterval(tick, 1000);
+    }
+
+    // Live minute badge — updates every 10s during in-progress matches
+    const badge = document.getElementById('live-status-badge') as HTMLElement | null;
+    if (badge && badge.dataset.status === 'in-progress') {
+        const fecha = badge.dataset.fecha!;
+        const hora  = badge.dataset.hora!;
+        const kickoff = new Date(`${fecha}T${hora.length === 5 ? hora + ':00' : hora}`);
+
+        function updateMinute() {
+            const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60000);
+            if (elapsed >= 0 && elapsed <= 120) {
+                badge!.textContent = `EN VIVO: ${elapsed}'`;
+            }
+        }
+        updateMinute();
+        setInterval(updateMinute, 10000);
     }
 </script>

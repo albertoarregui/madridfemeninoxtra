@@ -8,6 +8,7 @@ import Calendar from "../components/Calendar.astro";
 import Searcher from "../components/Searcher.astro";
 import YoutubeSection from "../components/YoutubeSection.astro";
 import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
+import NewsletterWidget from "../components/NewsletterWidget.astro";
 import HistoryCarousel from "../components/HistoryCarousel.astro";
 import { getAssetUrl } from "../utils/assets";
 import NextMatchCountdown from "../components/NextMatchCountdown.astro";
@@ -96,6 +97,35 @@ const schema = {
 		"query-input": "required name=search_term_string",
 	},
 };
+
+let masLeidas: { slug: string; title: string; category?: string }[] = [];
+try {
+	const { getAnalyticsDbClient } = await import("../db/client");
+	const analyticsClient = await getAnalyticsDbClient();
+	if (analyticsClient) {
+		const topResult = await analyticsClient.execute({
+			sql: `SELECT slug FROM article_views ORDER BY views DESC LIMIT 5`,
+			args: [],
+		});
+		const topSlugs = topResult.rows.map((r: any) => String(r.slug));
+		if (topSlugs.length > 0) {
+			const { contentfulClient } = await import("../lib/contentful");
+			const related = await contentfulClient.getEntries({
+				content_type: "noticia",
+				"fields.slug[in]": topSlugs.join(","),
+				select: ["sys.id", "fields.slug", "fields.title", "fields.category"] as any,
+				limit: 5,
+			});
+			const bySlug = Object.fromEntries(
+				related.items.map((i: any) => [i.fields.slug, i.fields])
+			);
+			masLeidas = topSlugs
+				.map((s: string) => bySlug[s])
+				.filter(Boolean)
+				.map((f: any) => ({ slug: f.slug, title: f.title, category: f.category }));
+		}
+	}
+} catch (_) {}
 ---
 
 <Layout
@@ -217,6 +247,28 @@ const schema = {
 
 			<h2 class="section-title">JUGADORA DEL MES</h2>
 			<PlayerOfTheMonthWidget />
+
+			<h2 class="section-title">NEWSLETTER</h2>
+			<NewsletterWidget />
+
+			{masLeidas.length > 0 && (
+				<>
+					<h2 class="section-title">MÁS LEÍDAS</h2>
+					<ol class="mas-leidas-list">
+						{masLeidas.map((n, i) => (
+							<li class="mas-leidas-item">
+								<a href={`/noticias/${n.slug}`} class="mas-leidas-link">
+									<span class="mas-leidas-rank">{i + 1}</span>
+									<div class="mas-leidas-info">
+										{n.category && <span class="mas-leidas-cat">{n.category.toUpperCase()}</span>}
+										<span class="mas-leidas-title">{n.title}</span>
+									</div>
+								</a>
+							</li>
+						))}
+					</ol>
+				</>
+			)}
 
 			<h2 class="section-title">MAPA DE JUGADORAS</h2>
 			<a href="/jugadoras" class="stats-link">

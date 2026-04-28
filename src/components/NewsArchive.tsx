@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Activity, Search, X } from 'lucide-react';
+
 
 interface Noticia {
     id: string;
@@ -17,10 +18,13 @@ interface NewsArchiveProps {
     noticias: Noticia[];
 }
 
+const PAGE_SIZE = 20;
+
 const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     const [selectedCategory, setSelectedCategory] = useState<string>('TODAS');
-    const [currentPage, setCurrentPage] = useState(1);
-    const noticiasPerPage = 20;
+    const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const sentinelRef = useRef<HTMLDivElement>(null);
 
     const categories = useMemo(() => {
         const cats: string[] = [];
@@ -32,28 +36,77 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     }, [noticias]);
 
     const filteredNoticias = useMemo(() => {
-        if (!selectedCategory || selectedCategory === 'TODAS') return noticias;
-        return noticias.filter(n => (n.category || 'ACTUALIDAD').toUpperCase() === selectedCategory);
-    }, [noticias, selectedCategory]);
-    const totalPages = Math.ceil(filteredNoticias.length / noticiasPerPage);
-    const paginatedNoticias = useMemo(() => {
-        const start = (currentPage - 1) * noticiasPerPage;
-        return filteredNoticias.slice(start, start + noticiasPerPage);
-    }, [filteredNoticias, currentPage]);
+        let result = noticias;
+        if (selectedCategory && selectedCategory !== 'TODAS') {
+            result = result.filter(n => (n.category || 'ACTUALIDAD').toUpperCase() === selectedCategory);
+        }
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            result = result.filter(n =>
+                n.title?.toLowerCase().includes(q) ||
+                n.subtitle?.toLowerCase().includes(q)
+            );
+        }
+        return result;
+    }, [noticias, selectedCategory, searchQuery]);
+
+    const visibleNoticias = filteredNoticias.slice(0, visibleCount);
+    const hasMore = visibleCount < filteredNoticias.length;
+
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [selectedCategory, searchQuery]);
+
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el || !hasMore) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount(prev => prev + PAGE_SIZE);
+                }
+            },
+            { rootMargin: '300px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [visibleCount, hasMore]);
 
     const handleCategoryChange = (cat: string) => {
         setSelectedCategory(prev => prev === cat ? 'TODAS' : cat);
-        setCurrentPage(1);
+    };
+
+    const handleSearch = (q: string) => {
+        setSearchQuery(q);
     };
 
     return (
         <div className="news-archive-react">
+            <div className="news-search-wrapper">
+                <div className="news-search-box">
+                    <input
+                        type="text"
+                        placeholder="Buscar noticias..."
+                        value={searchQuery}
+                        onChange={e => handleSearch(e.target.value)}
+                        className="news-search-input"
+                    />
+                    <button
+                        onClick={() => searchQuery ? handleSearch('') : undefined}
+                        className="news-search-clear"
+                        aria-label={searchQuery ? 'Limpiar búsqueda' : 'Buscar'}
+                    >
+                        {searchQuery ? <X size={20} /> : <Search size={20} />}
+                    </button>
+                </div>
+            </div>
+
             <div className="flex flex-wrap justify-center gap-3 mb-12 px-2">
                 {categories.map(cat => (
                     <button
                         key={cat}
                         onClick={() => handleCategoryChange(cat)}
-                        className={`px-6 py-2 rounded-full font-bold text-sm tracking-wider transition-all border-2 
+                        className={`px-6 py-2 rounded-full font-bold text-sm tracking-wider transition-all border-2
                             ${selectedCategory === cat
                                 ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md'
                                 : 'bg-white border-gray-200 text-gray-500 hover:border-[#ffde59] hover:text-[#151e42]'}`}
@@ -64,12 +117,12 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
             </div>
 
             <div className="news-list-container flex flex-col gap-8 mb-16">
-                {paginatedNoticias.length > 0 ? (
-                    paginatedNoticias.map((noticia) => (
+                {visibleNoticias.length > 0 ? (
+                    visibleNoticias.map((noticia: Noticia) => (
                         <a href={`/noticias/${noticia.slug}`} className="archive-card group" key={noticia.id}>
                             <div className="archive-image">
                                 <img
-                                    src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}` : "/assets/background/stadium.webp"}
+                                    src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}?fm=webp&w=760&h=480&q=80&fit=fill` : "/assets/background/stadium.webp"}
                                     alt={noticia.title}
                                     loading="lazy"
                                 />
@@ -91,45 +144,16 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 ) : (
                     <div className="py-24 text-center">
                         <Activity className="mx-auto text-gray-200 mb-4" size={64} />
-                        <p className="text-gray-400 font-bold text-xl">No hay noticias en esta sección</p>
+                        <p className="text-gray-400 font-bold text-xl">
+                            {searchQuery.trim()
+                                ? `No hay resultados para "${searchQuery}"`
+                                : 'No hay noticias en esta sección'}
+                        </p>
                     </div>
                 )}
             </div>
 
-            {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-3 py-12 border-t border-gray-100">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="p-3 rounded-xl border-2 border-gray-100 disabled:opacity-20 hover:border-[#ffde59] transition-all bg-white shadow-sm"
-                    >
-                        <ChevronLeft size={24} />
-                    </button>
-
-                    <div className="flex gap-2">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`w-12 h-12 flex items-center justify-center rounded-xl font-black text-lg transition-all border-2
-                                    ${currentPage === page
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110'
-                                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="p-3 rounded-xl border-2 border-gray-100 disabled:opacity-20 hover:border-[#ffde59] transition-all bg-white shadow-sm"
-                    >
-                        <ChevronRight size={24} />
-                    </button>
-                </div>
-            )}
+            <div ref={sentinelRef} className="h-4" />
 
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -239,6 +263,56 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     .archive-card:hover {
                         transform: translateY(-5px);
                     }
+                }
+                .news-search-wrapper {
+                    display: flex;
+                    justify-content: center;
+                    padding: 1rem 0 1.5rem;
+                }
+                .news-search-box {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    max-width: 600px;
+                    border: 2px solid #ccc;
+                    border-radius: 25px;
+                    overflow: hidden;
+                    transition: border-color 0.3s ease;
+                    background: #fff;
+                }
+                .news-search-box:hover,
+                .news-search-box:focus-within {
+                    border-color: #ffde59;
+                }
+                .news-search-icon {
+                    display: none;
+                }
+                .news-search-input {
+                    flex-grow: 1;
+                    padding: 0.75rem 1.5rem;
+                    border: none;
+                    outline: none;
+                    font-size: 1rem;
+                    font-family: 'Inter', sans-serif;
+                    color: #151e42;
+                    background: transparent;
+                }
+                .news-search-input::placeholder {
+                    color: #aaa;
+                }
+                .news-search-clear {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    color: #aaa;
+                    padding: 0.75rem 1.25rem;
+                    transition: color 0.3s ease;
+                }
+                .news-search-clear:hover {
+                    color: #ffde59;
                 }
             ` }} />
         </div>

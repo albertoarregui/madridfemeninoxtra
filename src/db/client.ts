@@ -2,6 +2,7 @@ import type { Client } from '@libsql/client';
 
 let clientInstance: Client | null = null;
 let statsClientInstance: Client | null = null;
+let analyticsClientInstance: Client | null = null;
 
 export async function getDbClient(): Promise<Client | null> {
     if (clientInstance) {
@@ -68,4 +69,27 @@ export async function getPlayersDbClient(): Promise<Client | null> {
     }
 }
 
+export async function getAnalyticsDbClient(): Promise<Client | null> {
+    if (analyticsClientInstance) {
+        return analyticsClientInstance;
+    }
+
+    try {
+        const { createClient } = await import('@libsql/client');
+        const url       = import.meta.env?.TURSO_NEWS_DATABASE_URL || process.env.TURSO_NEWS_DATABASE_URL;
+        const authToken = import.meta.env?.TURSO_NEWS_AUTH_TOKEN   || process.env.TURSO_NEWS_AUTH_TOKEN;
+
+        if (!url || !authToken) {
+            console.warn('[DB CLIENT] NEWS: Credenciales no configuradas (TURSO_NEWS_DATABASE_URL / TURSO_NEWS_AUTH_TOKEN)');
+            return null;
+        }
+
+        console.log(`[DB CLIENT] Connecting to NEWS DB: ${url}`);
+        analyticsClientInstance = createClient({ url, authToken });
+        return analyticsClientInstance;
+    } catch (e) {
+        console.error('[DB CLIENT] NEWS: Error creating client:', e);
+        return null;
+    }
+}
 

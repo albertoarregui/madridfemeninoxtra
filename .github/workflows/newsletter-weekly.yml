@@ -1,0 +1,38 @@
+name: Weekly Newsletter
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: newsletter-weekly
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Send weekly newsletter
+        env:
+          CONTENTFUL_SPACE_ID:      ${{ secrets.CONTENTFUL_SPACE_ID }}
+          CONTENTFUL_ACCESS_TOKEN:  ${{ secrets.CONTENTFUL_ACCESS_TOKEN }}
+          TURSO_NEWS_DATABASE_URL:  ${{ secrets.TURSO_NEWS_DATABASE_URL }}
+          TURSO_NEWS_AUTH_TOKEN:    ${{ secrets.TURSO_NEWS_AUTH_TOKEN }}
+          RESEND_API_KEY:           ${{ secrets.RESEND_API_KEY }}
+        run: npx tsx scripts/send-newsletter-weekly.ts

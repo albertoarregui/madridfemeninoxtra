@@ -1,0 +1,134 @@
+<form class="nl-form" id="newsletterWidgetForm" autocomplete="off">
+    <input
+        type="email"
+        name="email"
+        placeholder="Introduce el mail..."
+        required
+        class="nl-input"
+        autocomplete="email"
+    />
+    <button type="submit" class="nl-btn">SUSCRIBIRME</button>
+    <p class="nl-feedback" id="newsletterWidgetFeedback" hidden></p>
+</form>
+
+<style>
+    .nl-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    .nl-input {
+        width: 100%;
+        padding: 0.7rem 1.1rem;
+        border: 2px solid #ffde59;
+        border-radius: 50px;
+        background: rgba(255, 255, 255, 0.07);
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-family: "Inter", sans-serif;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    .nl-input::placeholder { color: rgba(0, 0, 0, 0.45); }
+    .nl-input:focus { border-color: #ffde59; }
+
+    .nl-btn {
+        width: 100%;
+        padding: 15px 25px;
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+        color: #2b2b2b;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-sizing: border-box;
+    }
+
+    .nl-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        color: #000;
+    }
+
+    .nl-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .nl-feedback {
+        font-family: "Inter", sans-serif;
+        font-size: 0.85rem;
+        margin: 0.25rem 0 0;
+        text-align: center;
+    }
+
+    @media (max-width: 480px) {
+        .nl-input {
+            font-size: 0.9rem;
+            padding: 0.65rem 1rem;
+        }
+
+        .nl-btn {
+            font-size: 1rem;
+            padding: 12px 20px;
+        }
+    }
+</style>
+
+<script>
+    const form     = document.getElementById('newsletterWidgetForm')     as HTMLFormElement | null;
+    const feedback = document.getElementById('newsletterWidgetFeedback') as HTMLElement     | null;
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn   = form.querySelector('button') as HTMLButtonElement;
+        const email = (form.querySelector('input[type=email]') as HTMLInputElement).value.trim();
+
+        btn.disabled    = true;
+        btn.textContent = 'ENVIANDO...';
+
+        try {
+            const res  = await fetch('/api/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await res.json();
+
+            if (feedback) {
+                feedback.hidden = false;
+                if (res.ok) {
+                    feedback.style.color = '#4ade80';
+                    feedback.textContent = '¡Revisa tu email para confirmar!';
+                    form.reset();
+                } else if (data.error === 'already_subscribed') {
+                    feedback.style.color = '#facc15';
+                    feedback.textContent = 'Este email ya está suscrito.';
+                } else {
+                    feedback.style.color = '#f87171';
+                    feedback.textContent = 'Algo salió mal. Inténtalo de nuevo.';
+                }
+            }
+        } catch {
+            if (feedback) {
+                feedback.hidden = false;
+                feedback.style.color = '#f87171';
+                feedback.textContent = 'Algo salió mal. Inténtalo de nuevo.';
+            }
+        } finally {
+            btn.disabled    = false;
+            btn.textContent = 'SUSCRIBIRME';
+        }
+    });
+</script>

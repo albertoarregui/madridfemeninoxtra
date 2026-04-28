@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { Image } from "astro:assets";
 import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
 import { getAssetUrl } from "../../utils/assets";
 import { fetchPlayersDirectly, fetchPlayerStats } from "../../utils/players";
@@ -12,12 +13,16 @@ import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
 import { fetchGamesDirectly } from "../../utils/partidos";
 import { getFlagSrc } from "../../utils/flags";
 import { generateSlug } from "../../utils/url-helper";
+import NewsletterWidget from "../../components/NewsletterWidget.astro";
 
 export const prerender = false;
 
 const { slug } = Astro.params;
 
 let noticia: any = null;
+let noticiaId: string | null = null;
+let noticiaCreatedAt: string | null = null;
+let relatedNoticias: any[] = [];
 
 try {
     const { contentfulClient } = await import("../../lib/contentful");
@@ -30,6 +35,27 @@ try {
 
     if (entries && entries.items.length > 0) {
         noticia = entries.items[0].fields;
+        noticiaId = entries.items[0].sys.id;
+        noticiaCreatedAt = entries.items[0].sys.createdAt;
+
+        if (noticia?.category && noticiaId) {
+            try {
+                const relatedEntries = await contentfulClient.getEntries({
+                    content_type: "noticia",
+                    "fields.category": noticia.category,
+                    "sys.id[ne]": noticiaId,
+                    order: ["-sys.createdAt"],
+                    limit: 3,
+                });
+                relatedNoticias = relatedEntries.items.map((item: any) => ({
+                    ...item.fields,
+                    id: item.sys.id,
+                    createdAt: item.sys.createdAt,
+                }));
+            } catch (e) {
+                console.warn("Error fetching related news:", e);
+            }
+        }
     }
 } catch (e: any) {
     console.warn("Error consultando Contentful:", e);
@@ -40,13 +66,16 @@ if (!noticia) {
 }
 
 const n = noticia as any;
-const { title, subtitle, player, category, focusType, referenceId, id } = n;
+const { title, subtitle, player, category, focusType, referenceId, id, author } = n;
 
 const contentReferenceId = referenceId || id;
 
 const featuredImageUrl = n.featuredImage?.fields?.file?.url
     ? `https:${n.featuredImage.fields.file.url}`
     : "https://media.madridfemeninoxtra.com/background/stadium.webp";
+const featuredImageWidth: number = n.featuredImage?.fields?.file?.details?.image?.width ?? 1200;
+const featuredImageHeight: number = n.featuredImage?.fields?.file?.details?.image?.height ?? 630;
+const hasCfImage = Boolean(n.featuredImage?.fields?.file?.url);
 
 let bodyHtml = ``;
 
@@ -91,6 +120,10 @@ if (n.body) {
         bodyHtml = `<p>Ocurrió un error leyendo el contenido.</p>`;
     }
 }
+
+const plainText = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const wordCount = plainText.split(' ').filter((w: string) => w.length > 0).length;
+const readTime = Math.max(1, Math.round(wordCount / 200));
 
 let playerData: any = null;
 let playerStats: any = null;
@@ -342,10 +375,20 @@ matchLineup.forEach((p: any) => {
 const matchRowsOrdered = posOrder
     .map((k) => ({ key: k, players: matchRows[k] || [] }))
     .filter((r) => r.players.length > 0);
-const publishDateISO = noticia?.publishDate
-    ? new Date(noticia.publishDate).toISOString()
-    : new Date().toISOString();
+const publishDateISO = new Date(noticia?.publishDate || noticiaCreatedAt || '').toISOString();
 const articleUrl = `https://www.madridfemeninoxtra.com/noticias/${slug}`;
+const categorySlug = (category || 'actualidad').toLowerCase().replace(/\s+/g, '-');
+
+const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://www.madridfemeninoxtra.com" },
+        { "@type": "ListItem", "position": 2, "name": "Noticias", "item": "https://www.madridfemeninoxtra.com/noticias" },
+        ...(category ? [{ "@type": "ListItem", "position": 3, "name": category, "item": `https://www.madridfemeninoxtra.com/noticias/categoria/${categorySlug}` }] : []),
+        { "@type": "ListItem", "position": category ? 4 : 3, "name": title, "item": articleUrl },
+    ],
+};
 
 const newsSchema = {
     "@context": "https://schema.org",
@@ -355,11 +398,9 @@ const newsSchema = {
     image: featuredImageUrl ? [featuredImageUrl] : [],
     datePublished: publishDateISO,
     dateModified: publishDateISO,
-    author: {
-        "@type": "Organization",
-        name: "Madrid Femenino Xtra",
-        url: "https://www.madridfemeninoxtra.com",
-    },
+    author: author
+        ? { "@type": "Person", name: author }
+        : { "@type": "Organization", name: "Madrid Femenino Xtra", url: "https://www.madridfemeninoxtra.com" },
     publisher: {
         "@type": "Organization",
         name: "Madrid Femenino Xtra",
@@ -372,6 +413,7 @@ const newsSchema = {
     mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
     url: articleUrl,
     inLanguage: "es",
+    wordCount,
     keywords: [
         "Real Madrid Femenino",
         category || "fútbol femenino",
@@ -389,6 +431,23 @@ Promise.allSettled([
     fetch(`https://www.google.com/ping?sitemap=${sitemapUrl}`),
     fetch(`https://www.bing.com/ping?sitemap=${sitemapUrl}`),
 ]).catch(() => {});
+
+(async () => {
+    try {
+        const { getAnalyticsDbClient } = await import("../../db/client");
+        const client = await getAnalyticsDbClient();
+        if (client) {
+            await client.execute({
+                sql: `INSERT INTO article_views (slug, views, updated_at)
+                      VALUES (?, 1, datetime('now'))
+                      ON CONFLICT (slug) DO UPDATE SET
+                          views = views + 1,
+                          updated_at = datetime('now')`,
+                args: [slug as string],
+            });
+        }
+    } catch (_) {}
+})();
 ---
 
 <Layout
@@ -399,6 +458,11 @@ Promise.allSettled([
     <script
         type="application/ld+json"
         set:html={JSON.stringify(newsSchema)}
+        slot="head"
+    />
+    <script
+        type="application/ld+json"
+        set:html={JSON.stringify(breadcrumbSchema)}
         slot="head"
     />
     <meta property="og:type" content="article" slot="head" />
@@ -427,38 +491,45 @@ Promise.allSettled([
     <article class="news-detail-page">
         <div class="news-full-white-row">
             <div class="news-content-limit">
-                <div class="news-back-link-wrapper">
-                    <a href="https://www.madridfemeninoxtra.com/noticias" class="news-back-link">
-                        <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Ver todas las noticias
-                    </a>
-                </div>
+                <nav class="news-breadcrumb" aria-label="Ruta de navegación">
+                    <a href="/">INICIO</a>
+                    <span aria-hidden="true">›</span>
+                    <a href="/noticias">NOTICIAS</a>
+                    {category && (
+                        <>
+                            <span aria-hidden="true">›</span>
+                            <a href={`/noticias/categoria/${categorySlug}`}>{category.toUpperCase()}</a>
+                        </>
+                    )}
+                    <span aria-hidden="true">›</span>
+                    <span class="breadcrumb-current">{title}</span>
+                </nav>
 
                 <div class="news-featured-photo">
-                    <img
-                        src={featuredImageUrl}
-                        alt={title}
-                        class="featured-news-img"
-                    />
+                    {hasCfImage ? (
+                        <Image
+                            src={featuredImageUrl}
+                            alt={title}
+                            width={featuredImageWidth}
+                            height={featuredImageHeight}
+                            format="webp"
+                            quality={85}
+                            loading="eager"
+                            class="featured-news-img"
+                        />
+                    ) : (
+                        <img src={featuredImageUrl} alt={title} class="featured-news-img" loading="eager" />
+                    )}
                 </div>
 
                 <div class="news-main-body-content">
                     <header class="news-header-section centered">
-                        <span class="news-category-capsule">
+                        <a
+                            href={`/noticias/categoria/${(category || 'actualidad').toLowerCase().replace(/\s+/g, '-')}`}
+                            class="news-category-capsule"
+                        >
                             {category}
-                        </span>
+                        </a>
 
                         <h1 class="news-main-title">{title}</h1>
 
@@ -622,17 +693,17 @@ Promise.allSettled([
                         <div class="news-meta-row">
                             <time class="news-publish-date">
                                 {
-                                    noticia.publishDate
-                                        ? new Date(noticia.publishDate)
-                                              .toLocaleDateString("es-ES", {
-                                                  year: "numeric",
-                                                  month: "long",
-                                                  day: "numeric",
-                                              })
-                                              .toUpperCase()
-                                        : "7 DE AGOSTO DE 2026"
+                                    new Date(noticia.publishDate || noticiaCreatedAt || '')
+                                        .toLocaleDateString("es-ES", {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                        })
+                                        .toUpperCase()
                                 }
                             </time>
+                            <span class="news-read-time">· {readTime} MIN DE LECTURA</span>
+                            {author && <span class="news-author">· {author}</span>}
                         </div>
 
                         <div class="news-separator-thin"></div>
@@ -1196,6 +1267,35 @@ Promise.allSettled([
                             )
                         }
                     </div>
+
+                    <div class="article-newsletter-wrap">
+                        <NewsletterWidget />
+                    </div>
+
+                    {relatedNoticias.length > 0 && (
+                        <div class="related-news-section">
+                            <h3 class="related-news-heading">MÁS NOTICIAS DE {category?.toUpperCase()}</h3>
+                            <div class="related-news-grid">
+                                {relatedNoticias.map((r: any) => (
+                                    <a href={`/noticias/${r.slug}`} class="related-card">
+                                        <div class="related-card-image">
+                                            <img
+                                                src={r.featuredImage?.fields?.file?.url ? `https:${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill` : "https://media.madridfemeninoxtra.com/background/stadium.webp"}
+                                                alt={r.title}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div class="related-card-info">
+                                            <time class="related-card-date">
+                                                {new Date(r.createdAt || '').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}
+                                            </time>
+                                            <h4 class="related-card-title">{r.title}</h4>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -1243,7 +1343,7 @@ Promise.allSettled([
         loadEmbeds();
     }
     document.addEventListener("astro:page-load", loadEmbeds);
-    setTimeout(loadEmbeds, 1000); // Doble validación de carga
+    setTimeout(loadEmbeds, 1000);
 </script>
 
 <style>
@@ -1269,26 +1369,42 @@ Promise.allSettled([
         padding: 0 1rem;
     }
 
-    .news-back-link-wrapper {
-        margin-bottom: 1.5rem;
+    .news-breadcrumb {
         display: flex;
-        justify-content: flex-start;
-    }
-
-    .news-back-link {
-        display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        font-family: "Bebas Neue", sans-serif;
         font-size: 0.9rem;
+        letter-spacing: 1px;
+        color: #bbb;
+        margin-bottom: 1.5rem;
     }
 
-    .news-back-link:hover {
-        color: #ffd700;
-        transform: translateX(-5px);
+    .news-breadcrumb a {
+        color: #999;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .news-breadcrumb a:hover {
+        color: #ffde59;
+    }
+
+    .breadcrumb-current {
+        color: #333;
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    @media (max-width: 600px) {
+        .breadcrumb-current {
+            max-width: 160px;
+        }
     }
 
     .news-featured-photo {
@@ -1332,6 +1448,13 @@ Promise.allSettled([
         display: inline-block;
         margin-bottom: 1.5rem;
         font-weight: 800;
+        text-decoration: none;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .news-category-capsule:hover {
+        background: #f5d000;
+        transform: translateY(-1px);
     }
 
     .news-main-title {
@@ -1367,6 +1490,22 @@ Promise.allSettled([
         color: #777;
         font-size: 1.2rem;
         letter-spacing: 1.5px;
+    }
+
+    .news-read-time {
+        font-family: "Bebas Neue", sans-serif;
+        color: #aaa;
+        font-size: 1.2rem;
+        letter-spacing: 1.5px;
+        margin-left: 0.6rem;
+    }
+
+    .news-author {
+        font-family: "Inter", sans-serif;
+        color: #aaa;
+        font-size: 0.85rem;
+        margin-left: 0.6rem;
+        font-style: italic;
     }
 
     .news-article-rich-text {
@@ -1485,7 +1624,6 @@ Promise.allSettled([
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
 
-    /* Adaptación para la altura de YouTube en móviles */
     @media (max-width: 768px) {
         .news-article-rich-text :global(iframe) {
             min-height: 250px;
@@ -2228,6 +2366,103 @@ Promise.allSettled([
         .pp-avatar {
             width: 38px;
             height: 38px;
+        }
+    }
+
+    .article-newsletter-wrap {
+        max-width: 540px;
+        margin: 2rem 0;
+    }
+
+    .related-news-section {
+        padding: 3rem 0 2rem;
+        border-top: 1px solid #f0f0f0;
+        margin-top: 2rem;
+    }
+
+    .related-news-heading {
+        font-family: "Archivo Black", sans-serif;
+        font-size: 1.4rem;
+        color: #151e42;
+        text-transform: uppercase;
+        text-align: center;
+        letter-spacing: 0.5px;
+        margin-bottom: 2rem;
+    }
+
+    .related-news-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .related-card {
+        text-decoration: none;
+        color: inherit;
+        border: 2px solid #f0f0f0;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        display: block;
+    }
+
+    .related-card:hover {
+        border-color: #ffde59;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .related-card-image {
+        height: 160px;
+        overflow: hidden;
+    }
+
+    .related-card-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .related-card:hover .related-card-image img {
+        transform: scale(1.05);
+    }
+
+    .related-card-info {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+
+    .related-card-date {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #999;
+        letter-spacing: 1px;
+        display: block;
+        margin-bottom: 0.4rem;
+    }
+
+    .related-card-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        color: #151e42;
+        text-transform: uppercase;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .related-news-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .related-news-section {
+            padding: 2rem 0 1rem;
         }
     }
 </style>

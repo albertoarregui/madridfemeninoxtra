@@ -13,6 +13,9 @@ export default defineConfig({
   adapter: vercel({
     imageService: true,
   }),
+  image: {
+    domains: ['images.ctfassets.net', 'downloads.ctfassets.net', 'media.madridfemeninoxtra.com'],
+  },
   vite: {
     plugins: [tailwindcss()],
   },
