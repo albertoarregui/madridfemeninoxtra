@@ -171,7 +171,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 .archive-card:hover {
                     transform: translateY(-10px);
                     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    border-color: #d1b131; /* Subtle darken on hover */
+                    border-color: #d1b131;
                 }
                 .archive-image {
                     width: 380px;

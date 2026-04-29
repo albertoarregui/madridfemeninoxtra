@@ -123,11 +123,6 @@ mvpPlayer = {
     id: game.mvp ? String(game.mvp) : "unknown",
 };
 
-const isRMEstadio =
-    game.estadio &&
-    (game.estadio.toLowerCase().includes("alfredo di stefano") ||
-        game.estadio.toLowerCase().includes("santiago bernabeu"));
-
 const stadiumUrl = game.estadio_foto_url;
 const hasExternalStadium =
     stadiumUrl &&
@@ -157,10 +152,6 @@ const visitorShield = getShieldSrc(
     game.visitante_foto_url,
 );
 
-const refereeStats = game.id_arbitra
-    ? await fetchRefereeStats(game.id_arbitra)
-    : null;
-
 const isLocalRM =
     game.club_local?.toLowerCase().includes("real madrid") ?? false;
 
@@ -176,7 +167,6 @@ const isWithinOneHour = kickoffTime
     ? (kickoffTime.getTime() - now.getTime()) <= 60 * 60 * 1000
     : false;
 
-// H2H stats — solo para partidos no jugados y más de 1 hora antes del inicio
 let h2hStats: { totalMatches: number; wins: number; draws: number; losses: number; rmGoals: number; rivalGoals: number; } | null = null;
 if (!game.isPlayed && !isWithinOneHour) {
     try {
@@ -3172,10 +3162,10 @@ if (!game.isPlayed && !isWithinOneHour) {
         transition: width 0.3s ease;
     }
     .stat-bar.rm {
-        background: #111827; /* Barra Negra */
+        background: #111827;
     }
     .stat-bar.rival {
-        background: #9ca3af; /* Barra Gris */
+        background: #9ca3af;
     }
     .no-data-msg {
         text-align: center;
@@ -3750,7 +3740,6 @@ if (!game.isPlayed && !isWithinOneHour) {
             font-size: 0.9rem;
         }
     }
-    /* Match status badge */
     .match-status-row { display: flex; justify-content: center; margin-top: 6px; }
     .match-status-badge {
         display: inline-block;
@@ -3764,7 +3753,6 @@ if (!game.isPlayed && !isWithinOneHour) {
     .match-status-not-started { background: #E8D9F5; color: #6b3fa0; }
     .match-status-finished { background: #FFE5D9; color: #a0572c; }
 
-    /* Countdown */
     .countdown-block {
         display: flex;
         align-items: center;
@@ -3850,7 +3838,6 @@ if (!game.isPlayed && !isWithinOneHour) {
         setInterval(tick, 1000);
     }
 
-    // Live minute badge — updates every 10s during in-progress matches
     const badge = document.getElementById('live-status-badge') as HTMLElement | null;
     if (badge && badge.dataset.status === 'in-progress') {
         const fecha = badge.dataset.fecha!;
