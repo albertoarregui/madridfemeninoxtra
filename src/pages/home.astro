@@ -98,7 +98,7 @@ const schema = {
 	},
 };
 
-let masLeidas: { slug: string; title: string; category?: string }[] = [];
+let masLeidas: { slug: string; title: string; subtitle?: string; category?: string; imageUrl?: string }[] = [];
 try {
 	const { getAnalyticsDbClient } = await import("../db/client");
 	const analyticsClient = await getAnalyticsDbClient();
@@ -113,7 +113,7 @@ try {
 			const related = await contentfulClient.getEntries({
 				content_type: "noticia",
 				"fields.slug[in]": topSlugs.join(","),
-				select: ["sys.id", "fields.slug", "fields.title", "fields.category"] as any,
+				select: ["sys.id", "fields.slug", "fields.title", "fields.subtitle", "fields.category", "fields.featuredImage"] as any,
 				limit: 5,
 			});
 			const bySlug = Object.fromEntries(
@@ -122,7 +122,15 @@ try {
 			masLeidas = topSlugs
 				.map((s: string) => bySlug[s])
 				.filter(Boolean)
-				.map((f: any) => ({ slug: f.slug, title: f.title, category: f.category }));
+				.map((f: any) => ({
+					slug: f.slug,
+					title: f.title,
+					subtitle: f.subtitle ?? '',
+					category: f.category,
+					imageUrl: f.featuredImage?.fields?.file?.url
+						? `https:${f.featuredImage.fields.file.url}?fm=webp&w=120&h=80&q=75&fit=fill`
+						: undefined,
+				}));
 		}
 	}
 } catch (_) {}
@@ -259,9 +267,20 @@ try {
 							<li class="mas-leidas-item">
 								<a href={`/noticias/${n.slug}`} class="mas-leidas-link">
 									<span class="mas-leidas-rank">{i + 1}</span>
+									{n.imageUrl && (
+										<img
+											src={n.imageUrl}
+											alt={n.title}
+											class="mas-leidas-thumb"
+											width="60"
+											height="40"
+											loading="lazy"
+										/>
+									)}
 									<div class="mas-leidas-info">
 										{n.category && <span class="mas-leidas-cat">{n.category.toUpperCase()}</span>}
 										<span class="mas-leidas-title">{n.title}</span>
+										{n.subtitle && <span class="mas-leidas-sub">{n.subtitle}</span>}
 									</div>
 								</a>
 							</li>
