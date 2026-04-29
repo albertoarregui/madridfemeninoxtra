@@ -3,9 +3,12 @@ import { fetchPlayersDirectly } from '../../../utils/players';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, url }) => {
     const { slug } = params;
     if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 });
+
+    const season      = url.searchParams.get('season')      ?? '';
+    const competition = url.searchParams.get('competition') ?? '';
 
     try {
         const players = await fetchPlayersDirectly();
@@ -18,63 +21,118 @@ export const GET: APIRoute = async ({ params }) => {
 
         const id = player.id_jugadora;
 
-        const [lineupRow, golesRow, asistRow, cardsRow, ejRow] = await Promise.all([
-            client.execute({
-                sql: `SELECT
-                        SUM(CASE WHEN al.minutos_jugados > 0 THEN 1 ELSE 0 END) AS partidos,
-                        SUM(CASE WHEN al.titular = 1 THEN 1 ELSE 0 END)         AS titularidades,
-                        SUM(al.minutos_jugados)                                  AS minutos,
-                        SUM(CASE WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN 1 ELSE 0 END) AS porterias_cero,
-                        SUM(CASE WHEN al.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) AS victorias
-                      FROM alineaciones al
-                      JOIN partidos p ON al.id_partido = p.id_partido
-                      WHERE al.id_jugadora = ?`,
-                args: [id],
-            }),
-            client.execute({
-                sql: `SELECT COUNT(*) AS goles FROM goles_y_asistencias WHERE goleadora = ?`,
-                args: [id],
-            }),
-            client.execute({
-                sql: `SELECT COUNT(*) AS asistencias FROM goles_y_asistencias WHERE asistente = ?`,
-                args: [id],
-            }),
-            client.execute({
-                sql: `SELECT
-                        SUM(CASE WHEN UPPER(tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) AS amarillas,
-                        SUM(CASE WHEN UPPER(tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tipo_tarjeta) LIKE '%DOBLE%' THEN 1 ELSE 0 END) AS rojas
-                      FROM tarjetas WHERE id_jugadora = ?`,
-                args: [id],
-            }),
-            client.execute({
-                sql: `SELECT
-                        SUM(COALESCE(ej.pases_clave, 0))               AS pases_clave,
-                        SUM(COALESCE(ej.tiros_totales, 0))              AS tiros_totales,
-                        SUM(COALESCE(ej.tiros_puerta, 0))               AS tiros_puerta,
-                        SUM(COALESCE(ej.toques, 0))                     AS toques,
-                        SUM(COALESCE(ej.toques_area_rival, 0))          AS toques_area_rival,
-                        SUM(COALESCE(ej.pases_completados, 0))          AS pases_completados,
-                        SUM(COALESCE(ej.pases_totales, 0))              AS pases_totales,
-                        SUM(COALESCE(ej.regates_completados, 0))        AS regates_completados,
-                        SUM(COALESCE(ej.regates_totales, 0))            AS regates_totales,
-                        SUM(COALESCE(ej.duelos_suelo_ganados, 0))       AS duelos_suelo_ganados,
-                        SUM(COALESCE(ej.duelos_suelo_totales, 0))       AS duelos_suelo_totales,
-                        SUM(COALESCE(ej.duelos_aereos_ganados, 0))      AS duelos_aereos_ganados,
-                        SUM(COALESCE(ej.duelos_aereos_totales, 0))      AS duelos_aereos_totales,
-                        SUM(COALESCE(ej.intercepciones, 0))             AS intercepciones,
-                        SUM(COALESCE(ej.entradas, 0))                   AS entradas,
-                        SUM(COALESCE(ej.bloqueos, 0))                   AS bloqueos,
-                        SUM(COALESCE(ej.recuperaciones, 0))             AS recuperaciones,
-                        SUM(COALESCE(ej.perdidas, 0))                   AS perdidas,
-                        SUM(COALESCE(ej.faltas_recibidas, 0))           AS faltas_recibidas,
-                        SUM(COALESCE(ej.faltas_cometidas, 0))           AS faltas_cometidas,
-                        SUM(COALESCE(ej.valoracion, 0))                 AS valoracion_total,
-                        SUM(CASE WHEN ej.valoracion > 0 THEN 1 ELSE 0 END) AS valoracion_count
-                      FROM estadisticas_jugadoras ej
-                      WHERE ej.id_jugadora = ?`,
-                args: [id],
-            }),
-        ]);
+        // Build optional filter fragments
+        const seasonFilter      = season      ? `AND t.temporada = ?`       : '';
+        const competitionFilter = competition ? `AND c.competicion = ?`     : '';
+        const filterArgs = [
+            ...(season      ? [season]      : []),
+            ...(competition ? [competition] : []),
+        ];
+
+        // ── Lineup stats ────────────────────────────────────────────
+        const lineupRow = await client.execute({
+            sql: `
+                SELECT
+                    SUM(CASE WHEN al.minutos_jugados > 0 THEN 1 ELSE 0 END) AS partidos,
+                    SUM(CASE WHEN al.titular = 1 THEN 1 ELSE 0 END)         AS titularidades,
+                    SUM(al.minutos_jugados)                                  AS minutos,
+                    SUM(CASE WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN 1 ELSE 0 END) AS porterias_cero,
+                    SUM(CASE WHEN al.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) AS victorias
+                FROM alineaciones al
+                JOIN partidos p ON al.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE al.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+            args: [id, ...filterArgs],
+        });
+
+        // ── Goals ───────────────────────────────────────────────────
+        const golesRow = await client.execute({
+            sql: `
+                SELECT COUNT(*) AS goles
+                FROM goles_y_asistencias g
+                JOIN partidos p ON g.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE g.goleadora = ? ${seasonFilter} ${competitionFilter}`,
+            args: [id, ...filterArgs],
+        });
+
+        // ── Assists ─────────────────────────────────────────────────
+        const asistRow = await client.execute({
+            sql: `
+                SELECT COUNT(*) AS asistencias
+                FROM goles_y_asistencias g
+                JOIN partidos p ON g.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE g.asistente = ? ${seasonFilter} ${competitionFilter}`,
+            args: [id, ...filterArgs],
+        });
+
+        // ── Cards ───────────────────────────────────────────────────
+        const cardsRow = await client.execute({
+            sql: `
+                SELECT
+                    SUM(CASE WHEN UPPER(tk.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) AS amarillas,
+                    SUM(CASE WHEN UPPER(tk.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(tk.tipo_tarjeta) LIKE '%DOBLE%' THEN 1 ELSE 0 END) AS rojas
+                FROM tarjetas tk
+                JOIN partidos p ON tk.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE tk.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+            args: [id, ...filterArgs],
+        });
+
+        // ── Advanced stats ──────────────────────────────────────────
+        const ejRow = await client.execute({
+            sql: `
+                SELECT
+                    SUM(COALESCE(ej.pases_clave, 0))               AS pases_clave,
+                    SUM(COALESCE(ej.tiros_totales, 0))              AS tiros_totales,
+                    SUM(COALESCE(ej.tiros_puerta, 0))               AS tiros_puerta,
+                    SUM(COALESCE(ej.toques, 0))                     AS toques,
+                    SUM(COALESCE(ej.toques_area_rival, 0))          AS toques_area_rival,
+                    SUM(COALESCE(ej.pases_completados, 0))          AS pases_completados,
+                    SUM(COALESCE(ej.pases_totales, 0))              AS pases_totales,
+                    SUM(COALESCE(ej.regates_completados, 0))        AS regates_completados,
+                    SUM(COALESCE(ej.regates_totales, 0))            AS regates_totales,
+                    SUM(COALESCE(ej.duelos_suelo_ganados, 0))       AS duelos_suelo_ganados,
+                    SUM(COALESCE(ej.duelos_suelo_totales, 0))       AS duelos_suelo_totales,
+                    SUM(COALESCE(ej.duelos_aereos_ganados, 0))      AS duelos_aereos_ganados,
+                    SUM(COALESCE(ej.duelos_aereos_totales, 0))      AS duelos_aereos_totales,
+                    SUM(COALESCE(ej.intercepciones, 0))             AS intercepciones,
+                    SUM(COALESCE(ej.entradas, 0))                   AS entradas,
+                    SUM(COALESCE(ej.bloqueos, 0))                   AS bloqueos,
+                    SUM(COALESCE(ej.recuperaciones, 0))             AS recuperaciones,
+                    SUM(COALESCE(ej.perdidas, 0))                   AS perdidas,
+                    SUM(COALESCE(ej.faltas_recibidas, 0))           AS faltas_recibidas,
+                    SUM(COALESCE(ej.faltas_cometidas, 0))           AS faltas_cometidas,
+                    SUM(COALESCE(ej.valoracion, 0))                 AS valoracion_total,
+                    SUM(CASE WHEN ej.valoracion > 0 THEN 1 ELSE 0 END) AS valoracion_count
+                FROM estadisticas_jugadoras ej
+                JOIN partidos p ON ej.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE ej.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+            args: [id, ...filterArgs],
+        });
+
+        // ── Available options (for dropdowns) ───────────────────────
+        const optionsRow = await client.execute({
+            sql: `
+                SELECT DISTINCT t.temporada, c.competicion
+                FROM alineaciones al
+                JOIN partidos p ON al.id_partido = p.id_partido
+                JOIN temporadas t ON p.id_temporada = t.id_temporada
+                JOIN competiciones c ON p.id_competicion = c.id_competicion
+                WHERE al.id_jugadora = ? AND al.minutos_jugados > 0
+                ORDER BY t.temporada DESC, c.competicion ASC`,
+            args: [id],
+        });
+
+        const seasons = [...new Set((optionsRow.rows as any[]).map(r => r.temporada))];
+        const competitions = [...new Set((optionsRow.rows as any[]).map(r => r.competicion))];
 
         const l  = lineupRow.rows[0]  as any;
         const g  = golesRow.rows[0]   as any;
@@ -86,9 +144,11 @@ export const GET: APIRoute = async ({ params }) => {
 
         return Response.json({
             slug,
-            nombre:   player.nombre,
-            imageUrl: player.imageUrl,
-            posicion: player.posicion,
+            nombre:       player.nombre,
+            imageUrl:     player.imageUrl,
+            posicion:     player.posicion,
+            seasons,
+            competitions,
             stats: {
                 partidos:            Number(l?.partidos        ?? 0),
                 titularidades:       Number(l?.titularidades   ?? 0),
