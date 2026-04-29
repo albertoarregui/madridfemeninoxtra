@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Hash, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
+import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 import CustomSelect from './CustomSelect';
 

@@ -332,7 +332,46 @@ const userPhoto = clerkUser?.imageUrl || '';
     </script>
 </header>
 
-<script src="../scripts/menu.js"></script>
+<script>
+    const toggle = document.getElementById('menu-toggle') as HTMLButtonElement | null;
+    const nav    = document.getElementById('main-nav') as HTMLElement | null;
+    const overlay = document.getElementById('nav-overlay') as HTMLElement | null;
+
+    function openNav() {
+        document.body.classList.add('nav-open');
+        toggle?.setAttribute('aria-expanded', 'true');
+    }
+    function closeNav() {
+        document.body.classList.remove('nav-open');
+        toggle?.setAttribute('aria-expanded', 'false');
+        document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
+            btn.setAttribute('aria-expanded', 'false');
+        });
+        document.querySelectorAll<HTMLElement>('.submenu').forEach(sub => {
+            sub.style.display = '';
+        });
+    }
+
+    toggle?.addEventListener('click', () => {
+        document.body.classList.contains('nav-open') ? closeNav() : openNav();
+    });
+
+    overlay?.addEventListener('click', closeNav);
+
+    document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const expanded = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', String(!expanded));
+            const targetId = btn.getAttribute('aria-controls');
+            const submenu = targetId ? document.getElementById(targetId) : null;
+            if (submenu) submenu.style.display = expanded ? '' : 'block';
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeNav();
+    });
+</script>
 
 <script is:inline>
     document.addEventListener('click', async function(e) {
