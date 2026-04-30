@@ -424,12 +424,41 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
             if (tableHeader) tableHeader.style.position = '';
             imgs.forEach((img, i) => { img.src = origSrcs[i]; });
 
-            const link = document.createElement('a');
             const nameA = dataA?.nombre.replace(/\s+/g, '-') ?? 'A';
             const nameB = dataB?.nombre.replace(/\s+/g, '-') ?? 'B';
-            link.download = `comparativa-${nameA}-vs-${nameB}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            const filename = `comparativa-${nameA}-vs-${nameB}.png`;
+
+            // iOS Safari ignores the download attribute on blob/data URLs — show overlay instead
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                const dataUrl = canvas.toDataURL('image/png');
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.25rem';
+                const hint = document.createElement('p');
+                hint.textContent = 'Mantén pulsada la imagen para guardarla';
+                hint.style.cssText = 'color:#fff;font-family:sans-serif;font-size:0.875rem;text-align:center;margin:0';
+                const imgEl = document.createElement('img');
+                imgEl.src = dataUrl;
+                imgEl.style.cssText = 'max-width:100%;max-height:75vh;border-radius:10px;display:block';
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = 'Cerrar';
+                closeBtn.style.cssText = 'background:#ffde59;color:#2b2b2b;border:none;padding:0.6rem 2rem;border-radius:20px;font-weight:700;font-size:0.9rem;cursor:pointer;font-family:sans-serif';
+                closeBtn.onclick = () => document.body.removeChild(overlay);
+                overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
+                overlay.append(hint, imgEl, closeBtn);
+                document.body.appendChild(overlay);
+            } else {
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.download = filename;
+                    a.href = url;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }, 'image/png');
+            }
         } catch (err) {
             console.error('Error generating screenshot:', err);
         } finally {
@@ -562,7 +591,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                                         <polyline points="7 10 12 15 17 10"/>
                                         <line x1="12" y1="15" x2="12" y2="3"/>
                                     </svg>
-                                    Descargar imagen
+                                    {/iPad|iPhone|iPod/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '') ? 'Ver imagen' : 'Descargar imagen'}
                                 </>
                             )}
                         </button>
