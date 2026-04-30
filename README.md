@@ -41,6 +41,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 🏟️ **Estadios y árbitras** — Base de datos completa
 - 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
 - 📧 **Newsletter semanal** — Digest automático cada lunes con las noticias de la semana
+- ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
 
 ---
 
@@ -81,6 +82,7 @@ pnpm dev
 ## 📁 Estructura del Proyecto
 
 - `/src/pages` — Rutas de la aplicación
+- `/src/pages/api/img-proxy.ts` — Proxy server-side para imágenes del CDN (necesario para la descarga de capturas con html2canvas)
 - `/src/components` — Componentes reutilizables (Astro y React)
 - `/src/db` — Clientes de base de datos Turso
 - `/src/utils` — Lógica de negocio y helpers

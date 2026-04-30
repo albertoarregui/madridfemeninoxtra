@@ -21,15 +21,19 @@ export const GET: APIRoute = async ({ params, url }) => {
 
         const id = player.id_jugadora;
 
-        // Build optional filter fragments
-        const seasonFilter      = season      ? `AND t.temporada = ?`       : '';
-        const competitionFilter = competition ? `AND c.competicion = ?`     : '';
+        const OFFICIAL_COMPS = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
+        const isOfficial = competition === 'Partidos oficiales';
+
+        const seasonFilter = season ? `AND t.temporada = ?` : '';
+        const competitionFilter = isOfficial
+            ? `AND c.competicion IN (${OFFICIAL_COMPS.map(() => '?').join(',')})`
+            : competition ? `AND c.competicion = ?` : '';
+        const compArgs = isOfficial ? OFFICIAL_COMPS : competition ? [competition] : [];
         const filterArgs = [
-            ...(season      ? [season]      : []),
-            ...(competition ? [competition] : []),
+            ...(season ? [season] : []),
+            ...compArgs,
         ];
 
-        // ── Lineup stats ────────────────────────────────────────────
         const lineupRow = await client.execute({
             sql: `
                 SELECT
@@ -46,7 +50,6 @@ export const GET: APIRoute = async ({ params, url }) => {
             args: [id, ...filterArgs],
         });
 
-        // ── Goals ───────────────────────────────────────────────────
         const golesRow = await client.execute({
             sql: `
                 SELECT COUNT(*) AS goles
@@ -58,7 +61,6 @@ export const GET: APIRoute = async ({ params, url }) => {
             args: [id, ...filterArgs],
         });
 
-        // ── Assists ─────────────────────────────────────────────────
         const asistRow = await client.execute({
             sql: `
                 SELECT COUNT(*) AS asistencias
@@ -70,7 +72,6 @@ export const GET: APIRoute = async ({ params, url }) => {
             args: [id, ...filterArgs],
         });
 
-        // ── Cards ───────────────────────────────────────────────────
         const cardsRow = await client.execute({
             sql: `
                 SELECT
@@ -84,7 +85,6 @@ export const GET: APIRoute = async ({ params, url }) => {
             args: [id, ...filterArgs],
         });
 
-        // ── Advanced stats ──────────────────────────────────────────
         const ejRow = await client.execute({
             sql: `
                 SELECT
@@ -118,7 +118,6 @@ export const GET: APIRoute = async ({ params, url }) => {
             args: [id, ...filterArgs],
         });
 
-        // ── Available options (for dropdowns) ───────────────────────
         const optionsRow = await client.execute({
             sql: `
                 SELECT DISTINCT t.temporada, c.competicion
@@ -168,8 +167,10 @@ export const GET: APIRoute = async ({ params, url }) => {
                 pases_totales:       Number(ej?.pases_totales        ?? 0),
                 regates_completados: Number(ej?.regates_completados  ?? 0),
                 regates_totales:     Number(ej?.regates_totales      ?? 0),
-                duelos_suelo_ganados:  Number(ej?.duelos_suelo_ganados  ?? 0),
-                duelos_aereos_ganados: Number(ej?.duelos_aereos_ganados ?? 0),
+                duelos_suelo_ganados:   Number(ej?.duelos_suelo_ganados   ?? 0),
+                duelos_suelo_totales:   Number(ej?.duelos_suelo_totales  ?? 0),
+                duelos_aereos_ganados:  Number(ej?.duelos_aereos_ganados ?? 0),
+                duelos_aereos_totales:  Number(ej?.duelos_aereos_totales ?? 0),
                 intercepciones:      Number(ej?.intercepciones       ?? 0),
                 entradas:            Number(ej?.entradas             ?? 0),
                 bloqueos:            Number(ej?.bloqueos             ?? 0),
