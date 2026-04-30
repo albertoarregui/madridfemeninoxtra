@@ -388,8 +388,12 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
 
             const capHeader = captureRef.current.querySelector('.cmp-cap-header') as HTMLElement | null;
             const tableHeader = captureRef.current.querySelector('.cmp-table-header') as HTMLElement | null;
+            const tableAvatars = Array.from(captureRef.current.querySelectorAll('.cmp-table-avatar')) as HTMLElement[];
+            const tablePlayers = Array.from(captureRef.current.querySelectorAll('.cmp-table-player')) as HTMLElement[];
             if (capHeader) capHeader.style.display = 'flex';
             if (tableHeader) tableHeader.style.position = 'relative';
+            tableAvatars.forEach(el => { el.style.display = 'block'; });
+            tablePlayers.forEach(el => { el.style.padding = '0.65rem 0.5rem'; });
 
             const imgs = Array.from(captureRef.current.querySelectorAll('img'));
             const origSrcs = imgs.map(img => img.src);
@@ -422,6 +426,8 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
 
             if (capHeader) capHeader.style.display = '';
             if (tableHeader) tableHeader.style.position = '';
+            tableAvatars.forEach(el => { el.style.display = ''; });
+            tablePlayers.forEach(el => { el.style.padding = ''; });
             imgs.forEach((img, i) => { img.src = origSrcs[i]; });
 
             const nameA = dataA?.nombre.replace(/\s+/g, '-') ?? 'A';
