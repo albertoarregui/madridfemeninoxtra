@@ -42,7 +42,8 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
 - 📧 **Newsletter semanal** — Digest automático cada lunes con las noticias de la semana
 - ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
-- 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición
+- 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición, con soporte táctil y diseño adaptado a móvil
+- 🔍 **Buscador Avanzado** — Tabla de estadísticas individual filtrable por temporada, competición (incluyendo "Partidos Oficiales"), posición, titularidad, fecha y partido; ordenación por columna, modo totales/por 90 minutos y búsqueda en tiempo real
 
 ---
 
@@ -90,7 +91,21 @@ pnpm dev
 - `/src/assets` — Recursos estáticos
 - `/scripts` — Scripts de automatización (newsletter semanal)
 
-## 📄 Licencia
+## � Cambios Recientes (Mayo 2026)
+
+### Buscador Avanzado
+- ✅ **Conteo de jugadoras**: Arreglado el filtrado para mostrar todas las 86 jugadoras en la BD (incluyendo convocadas sin minutos)
+- ✅ **Layout de filtros**: Reorganizado en 2 líneas (grid 2 columnas) para mejor usabilidad
+- ✅ **Filtros de fecha**: Añadida la funcionalidad de limpiar fechas con botón X
+- ✅ **Estilos de fechas**: Consistencia visual con el resto de la web (amarillo #ffde59, sombras y bordes redondeados)
+- ✅ **Color encabezado tabla**: Cambiado de #2b2b2b a #f0f0f0 (gris claro) para mayor contraste y coherencia visual
+
+### Limpieza de Código
+- ✅ **Archivos no usados eliminados**: 
+  - `src/scripts/form.js`
+  - `src/scripts/menu.js`
+
+## �📄 Licencia
 
 Este proyecto está bajo la licencia [MIT](LICENSE).
 

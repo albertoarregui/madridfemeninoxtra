@@ -81,28 +81,57 @@ function XGTooltip({ active, payload }: any) {
 }
 
 function XGChart({ data }: { data: MatchPoint[] }) {
+    const [chartH, setChartH] = useState(300);
+
+    useEffect(() => {
+        const update = () => {
+            const w = window.innerWidth;
+            setChartH(w < 480 ? 220 : w < 768 ? 260 : 300);
+        };
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
+
     return (
-        <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={data} margin={{ top: 8, right: 20, left: -10, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                <XAxis dataKey="matchNum" tick={{ fontFamily: 'Inter', fontSize: 10, fill: '#9ca3af' }} />
-                <YAxis tick={{ fontFamily: 'Inter', fontSize: 10, fill: '#9ca3af' }} allowDecimals />
-                <RTooltip content={<XGTooltip />} cursor={{ fill: 'rgba(255,222,89,0.08)' }} />
-                <Legend
-                    wrapperStyle={{ fontFamily: 'Inter', fontSize: 12, paddingTop: '10px' }}
-                    formatter={v => v === 'xg' ? 'xG' : 'Goles'}
-                />
-                <Bar dataKey="goles" name="goles" barSize={14} radius={[3, 3, 0, 0]}>
-                    {data.map((d, i) => (
-                        <Cell key={i} fill={d.goles >= d.xg ? '#1a1a1a' : '#d1d5db'} opacity={0.88} />
-                    ))}
-                </Bar>
-                <Line type="monotone" dataKey="xg" name="xg"
-                    stroke="#ffde59" strokeWidth={2.5}
-                    dot={{ r: 3, fill: '#ffde59', strokeWidth: 0 }}
-                    activeDot={{ r: 6, fill: '#ffde59' }} />
-            </ComposedChart>
-        </ResponsiveContainer>
+        <div style={{ touchAction: 'pan-y' }}>
+            <ResponsiveContainer width="100%" height={chartH}>
+                <ComposedChart data={data} margin={{ top: 8, right: 10, left: -22, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                    <XAxis
+                        dataKey="matchNum"
+                        tick={{ fontFamily: 'Inter', fontSize: 10, fill: '#9ca3af' }}
+                        tickLine={false}
+                        axisLine={false}
+                    />
+                    <YAxis
+                        tick={{ fontFamily: 'Inter', fontSize: 10, fill: '#9ca3af' }}
+                        allowDecimals
+                        width={30}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <RTooltip
+                        content={<XGTooltip />}
+                        cursor={{ fill: 'rgba(255,222,89,0.08)' }}
+                        trigger="click"
+                    />
+                    <Legend
+                        wrapperStyle={{ fontFamily: 'Inter', fontSize: 11, paddingTop: '8px' }}
+                        formatter={v => v === 'xg' ? 'xG esperado' : 'Goles reales'}
+                    />
+                    <Bar dataKey="goles" name="goles" barSize={12} radius={[3, 3, 0, 0]}>
+                        {data.map((d, i) => (
+                            <Cell key={i} fill={d.goles >= d.xg ? '#1a1a1a' : '#d1d5db'} opacity={0.88} />
+                        ))}
+                    </Bar>
+                    <Line type="monotone" dataKey="xg" name="xg"
+                        stroke="#ffde59" strokeWidth={2.5}
+                        dot={{ r: 3, fill: '#ffde59', strokeWidth: 0 }}
+                        activeDot={{ r: 7, fill: '#ffde59' }} />
+                </ComposedChart>
+            </ResponsiveContainer>
+        </div>
     );
 }
 
@@ -110,6 +139,7 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
     const svgRef       = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef   = useRef<HTMLDivElement>(null);
+    const simRef       = useRef<d3.Simulation<SimNode, SimLink> | null>(null);
     const [graphW, setGraphW]         = useState(0);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -127,9 +157,14 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
         if (!svgRef.current || !nodes.length || graphW === 0) return;
 
         const W = graphW;
-        const H = Math.max(300, Math.min(540, W * 0.7));
+        const isMobile = W < 600;
+        const H = Math.max(340, Math.min(580, W * (isMobile ? 0.85 : 0.7)));
 
-        const svg = d3.select(svgRef.current).attr('width', W).attr('height', H);
+        const svg = d3.select(svgRef.current)
+            .attr('width', W)
+            .attr('height', H)
+            .style('touch-action', 'none');
+
         svg.selectAll('*').remove();
 
         const defs = svg.append('defs');
@@ -152,18 +187,38 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
 
         const maxW = Math.max(...simLinks.map(l => l.weight), 1);
 
+        const baseCharge   = isMobile ? -340 : -460;
+        const baseLinkDist = isMobile ? 110  : 150;
+
         const simulation = d3.forceSimulation<SimNode>(simNodes)
-            .force('link', d3.forceLink<SimNode, SimLink>(simLinks).id(d => d.id).distance(140).strength(0.3))
-            .force('charge', d3.forceManyBody<SimNode>().strength(-420))
+            .force('link', d3.forceLink<SimNode, SimLink>(simLinks)
+                .id(d => d.id).distance(baseLinkDist).strength(0.3))
+            .force('charge', d3.forceManyBody<SimNode>().strength(baseCharge))
             .force('center', d3.forceCenter(W / 2, H / 2))
-            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + 16));
+            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + (isMobile ? 20 : 16)));
+
+        simRef.current = simulation;
 
         const g = svg.append('g');
-        svg.call(
-            d3.zoom<SVGSVGElement, unknown>()
-                .scaleExtent([0.2, 4])
-                .on('zoom', ev => g.attr('transform', ev.transform))
-        );
+
+        let zoomTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
+            .scaleExtent([0.15, 5])
+            .on('zoom', ev => {
+                g.attr('transform', ev.transform);
+                const k = ev.transform.k;
+                if (zoomTimer) clearTimeout(zoomTimer);
+                zoomTimer = setTimeout(() => {
+                    (simulation.force('charge') as d3.ForceManyBody<SimNode>)
+                        .strength(baseCharge * Math.max(0.5, k));
+                    (simulation.force('link') as d3.ForceLink<SimNode, SimLink>)
+                        .distance(baseLinkDist * Math.max(1, k * 0.8));
+                    simulation.alpha(0.15).restart();
+                }, 350);
+            });
+
+        svg.call(zoomBehavior);
         svg.on('click', () => setSelectedId(null));
 
         const linkVisG = g.append('g');
@@ -180,22 +235,32 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
         const linkHit = linkHitG.selectAll<SVGLineElement, SimLink>('line')
             .data(simLinks).join('line')
             .attr('stroke', 'transparent')
-            .attr('stroke-width', 18)
+            .attr('stroke-width', 20)
             .style('cursor', 'default')
-            .on('mouseenter', (_, d) => {
-                tooltip.style('display', 'block')
-                    .html(`<strong>${d.fromName}</strong> → <strong>${d.toName}</strong><br/>${d.weight} asistencia${d.weight > 1 ? 's' : ''}`);
+            .on('pointerenter', (ev, d) => {
+                if (ev.pointerType !== 'touch') {
+                    tooltip.style('display', 'block')
+                        .html(`<strong>${d.fromName}</strong> → <strong>${d.toName}</strong><br/>${d.weight} asistencia${d.weight > 1 ? 's' : ''}`);
+                }
             })
-            .on('mousemove', ev => {
-                const rect = svgRef.current!.getBoundingClientRect();
-                tooltip.style('left', `${ev.clientX - rect.left + 14}px`).style('top', `${ev.clientY - rect.top - 52}px`);
+            .on('pointermove', ev => {
+                if (ev.pointerType !== 'touch') {
+                    const rect = svgRef.current!.getBoundingClientRect();
+                    tooltip.style('left', `${ev.clientX - rect.left + 14}px`).style('top', `${ev.clientY - rect.top - 52}px`);
+                }
             })
-            .on('mouseleave', () => tooltip.style('display', 'none'));
+            .on('pointerleave', () => tooltip.style('display', 'none'));
 
         const drag = d3.drag<SVGGElement, SimNode>()
-            .on('start', (ev, d) => { if (!ev.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-            .on('drag',  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
-            .on('end',   (ev, d) => { if (!ev.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; });
+            .on('start', (ev, d) => {
+                if (!ev.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x; d.fy = d.y;
+            })
+            .on('drag', (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+            .on('end', (ev, d) => {
+                if (!ev.active) simulation.alphaTarget(0);
+                d.fx = null; d.fy = null;
+            });
 
         const nodeG = g.append('g').selectAll<SVGGElement, SimNode>('g')
             .data(simNodes).join('g')
@@ -243,22 +308,26 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
         });
 
         nodeG
-            .on('mouseenter', (_, d) => {
-                tooltip.style('display', 'block')
-                    .html(`<strong>${d.name}</strong><br/>${d.assists} asist. · ${d.goals} goles recibidos`);
+            .on('pointerenter', (ev, d) => {
+                if (ev.pointerType !== 'touch') {
+                    tooltip.style('display', 'block')
+                        .html(`<strong>${d.name}</strong><br/>${d.assists} asist. · ${d.goals} goles recibidos`);
+                }
             })
-            .on('mousemove', ev => {
-                const rect = svgRef.current!.getBoundingClientRect();
-                tooltip.style('left', `${ev.clientX - rect.left + 14}px`).style('top', `${ev.clientY - rect.top - 52}px`);
+            .on('pointermove', ev => {
+                if (ev.pointerType !== 'touch') {
+                    const rect = svgRef.current!.getBoundingClientRect();
+                    tooltip.style('left', `${ev.clientX - rect.left + 14}px`).style('top', `${ev.clientY - rect.top - 52}px`);
+                }
             })
-            .on('mouseleave', () => tooltip.style('display', 'none'))
+            .on('pointerleave', () => tooltip.style('display', 'none'))
             .on('click', (ev, d) => {
                 ev.stopPropagation();
                 setSelectedId(prev => prev === d.id ? null : d.id);
             });
 
         simulation.on('tick', () => {
-            const pad = 30;
+            const pad = 32;
             simNodes.forEach(d => {
                 const r = nodeR(d);
                 d.x = Math.max(r + pad, Math.min(W - r - pad, d.x ?? W / 2));
@@ -273,7 +342,10 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
             nodeG.attr('transform', d => `translate(${d.x ?? 0},${d.y ?? 0})`);
         });
 
-        return () => { simulation.stop(); };
+        return () => {
+            simulation.stop();
+            if (zoomTimer) clearTimeout(zoomTimer);
+        };
     }, [nodes, edges, graphW]);
 
     useEffect(() => {
@@ -295,8 +367,8 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
 
     return (
         <div className="adv-graph-outer">
-            <div ref={containerRef} className="adv-graph-wrap">
-                <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+            <div ref={containerRef} className="adv-graph-wrap" style={{ touchAction: 'none' }}>
+                <svg ref={svgRef} style={{ width: '100%', display: 'block', touchAction: 'none' }} />
                 <div ref={tooltipRef} className="adv-graph-tooltip" />
             </div>
             {info && (
@@ -416,7 +488,7 @@ export default function AdvancedStats() {
             <section className="adv-section">
                 <div className="adv-section-header">
                     <h2 className="adv-section-title">TRACKER XG</h2>
-                    <p className="adv-section-sub">Goles reales (barras) vs xG esperado (línea) por partido</p>
+                    <p className="adv-section-sub">Goles reales (barras) vs xG esperado (línea) · Toca las barras para ver el detalle</p>
                 </div>
                 <div className="adv-card">
                     {xgLoading  ? <Spinner />
@@ -428,7 +500,7 @@ export default function AdvancedStats() {
             <section className="adv-section">
                 <div className="adv-section-header">
                     <h2 className="adv-section-title">RED DE ASISTENCIAS</h2>
-                    <p className="adv-section-sub">Arrastra los nodos · Rueda para zoom · Grosor = nº de asistencias · Pulsa un nodo para ver sus conexiones</p>
+                    <p className="adv-section-sub">Arrastra los nodos · Pellizca o usa la rueda para hacer zoom (los nodos se separan) · Toca un nodo para ver sus conexiones</p>
                 </div>
                 <div className="adv-card adv-card-graph">
                     {netLoading ? <Spinner />
