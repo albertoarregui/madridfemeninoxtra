@@ -174,9 +174,16 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
                 .append('circle').attr('r', r);
         });
 
-        const simNodes: SimNode[] = nodes.map(n => ({ ...n }));
+        const simNodes: SimNode[] = nodes.map((n, i) => {
+            const angle = (i / nodes.length) * 2 * Math.PI;
+            const radius = Math.min(W, H) * 0.35;
+            return { 
+                ...n, 
+                x: W / 2 + radius * Math.cos(angle),
+                y: H / 2 + radius * Math.sin(angle)
+            };
+        });
         const byId = new Map(simNodes.map(n => [n.id, n]));
-
         const simLinks: SimLink[] = edges
             .filter(e => byId.has(e.from) && byId.has(e.to) && e.from !== e.to)
             .map(e => ({
@@ -186,16 +193,17 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
             }));
 
         const maxW = Math.max(...simLinks.map(l => l.weight), 1);
-
-        const baseCharge   = isMobile ? -340 : -460;
-        const baseLinkDist = isMobile ? 110  : 150;
+        const baseCharge   = isMobile ? -320 : -480;
+        const baseLinkDist = isMobile ? 120  : 160;
 
         const simulation = d3.forceSimulation<SimNode>(simNodes)
+            .alphaDecay(0.045) // Settle even faster
+            .velocityDecay(0.5) // Higher friction
             .force('link', d3.forceLink<SimNode, SimLink>(simLinks)
-                .id(d => d.id).distance(baseLinkDist).strength(0.3))
+                .id(d => d.id).distance(baseLinkDist).strength(0.4))
             .force('charge', d3.forceManyBody<SimNode>().strength(baseCharge))
             .force('center', d3.forceCenter(W / 2, H / 2))
-            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + (isMobile ? 20 : 16)));
+            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + (isMobile ? 24 : 18)));
 
         simRef.current = simulation;
 
