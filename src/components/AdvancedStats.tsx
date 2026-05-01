@@ -197,13 +197,16 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
         const baseLinkDist = isMobile ? 120  : 160;
 
         const simulation = d3.forceSimulation<SimNode>(simNodes)
-            .alphaDecay(0.045) // Settle even faster
-            .velocityDecay(0.5) // Higher friction
+            .alphaDecay(0.06) // Even faster settling
+            .velocityDecay(0.6) // More friction
             .force('link', d3.forceLink<SimNode, SimLink>(simLinks)
-                .id(d => d.id).distance(baseLinkDist).strength(0.4))
+                .id(d => d.id).distance(baseLinkDist).strength(0.5))
             .force('charge', d3.forceManyBody<SimNode>().strength(baseCharge))
             .force('center', d3.forceCenter(W / 2, H / 2))
-            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + (isMobile ? 24 : 18)));
+            .force('collision', d3.forceCollide<SimNode>().radius(d => nodeR(d) + (isMobile ? 26 : 20)));
+
+        // Pre-tick simulation to settle before first render
+        for (let i = 0; i < 60; i++) simulation.tick();
 
         simRef.current = simulation;
 
@@ -215,6 +218,8 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
             .scaleExtent([0.15, 5])
             .on('zoom', ev => {
                 g.attr('transform', ev.transform);
+                if (isMobile) return; // Don't restart simulation on mobile zoom to avoid "crazy" movement
+                
                 const k = ev.transform.k;
                 if (zoomTimer) clearTimeout(zoomTimer);
                 zoomTimer = setTimeout(() => {
@@ -222,8 +227,8 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
                         .strength(baseCharge * Math.max(0.5, k));
                     (simulation.force('link') as d3.ForceLink<SimNode, SimLink>)
                         .distance(baseLinkDist * Math.max(1, k * 0.8));
-                    simulation.alpha(0.15).restart();
-                }, 350);
+                    simulation.alpha(0.1).restart();
+                }, 400);
             });
 
         svg.call(zoomBehavior);
