@@ -42,6 +42,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
 - 📧 **Newsletter semanal** — Digest automático cada lunes con las noticias de la semana
 - ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
+- 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición
 
 ---
 
