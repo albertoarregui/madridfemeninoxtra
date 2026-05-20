@@ -7,26 +7,13 @@ import {
 } from "../../utils/entrenadores";
 import { fetchCoachRecords } from "../../utils/coach-records";
 import { fetchCoachStreaks } from "../../utils/coach-streaks";
-
-import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
-
-const competitionLogos: Record<string, any> = {
-    "Liga F": getAssetMetadata("competiciones", "liga_f"),
-    UWCL: getAssetMetadata("competiciones", "uwcl"),
-    "Copa de la Reina": getAssetMetadata("competiciones", "copa_de_la_reina"),
-    "Supercopa de España": getAssetMetadata(
-        "competiciones",
-        "supercopa_de_espana",
-    ),
-};
+import { getAssetUrl } from "../../utils/assets";
 
 const { slug } = Astro.params;
 
 const allCoaches = await fetchCoachesDirectly();
 const coach = allCoaches.find(
-    (c) =>
-        c.slug.toLowerCase() === slug?.toLowerCase() ||
-        c.id?.toLowerCase() === slug?.toLowerCase(),
+    (c) => c.slug?.toLowerCase() === slug?.toLowerCase() || c.id?.toLowerCase() === slug?.toLowerCase(),
 );
 
 if (!coach) {
@@ -39,308 +26,214 @@ const coachStreaks = await fetchCoachStreaks(coach.id_entrenador);
 const trajectory = await fetchCoachTrajectory(coach.id_entrenador);
 
 const flagUrl = coach.flagUrl || "";
+const nombre = coach.nombre || coach.name || "";
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
     try {
         const date = new Date(dateString.split("T")[0]);
         if (isNaN(date.getTime())) return "-";
-        return date.toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    } catch {
-        return "-";
-    }
+        return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch { return "-"; }
 };
 
 const fechaNacimiento = formatDate(coach.fecha_nacimiento);
+
+const quickStats = coachStats ? [
+    { value: coachStats.total_carrera.partidos, label: 'PARTIDOS' },
+    { value: coachStats.total_carrera.victorias, label: 'VICTORIAS' },
+    { value: `${coachStats.total_carrera.porcentaje_victorias}%`, label: '% VIC.' },
+    { value: coachStats.total_carrera.empates, label: 'EMPATES' },
+    { value: coachStats.total_carrera.derrotas, label: 'DERROTAS' },
+] : [];
 ---
 
 <Layout
-    title={`${coach.nombre} | Madrid Femenino Xtra`}
-    description={`Perfil completo de ${coach.nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`}
+    title={`${nombre} | Madrid Femenino Xtra`}
+    description={`Perfil completo de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`}
 >
-    <main class="coach-details-page">
-        <a href="/entrenadores" class="back-link">
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Volver al resto de entrenadores
-        </a>
+    <section class="coach-hero">
+        <div class="hero-bg-glow" aria-hidden="true"></div>
 
-        <div class="coach-grid-layout">
-            <section class="ficha-section">
-                <h2 class="section-header">Ficha de {coach.nombre}</h2>
-                <div class="ficha-content">
-                    <div class="player-photo-container">
-                        <img
-                            src={coach.imageUrl ||
-                                getAssetUrl("entrenadores", "placeholder")}
-                            alt={`Foto de ${coach.nombre}`}
-                            class="player-photo"
-                        />
+        <a href={`/entrenadores#card-${slug}`} class="hero-back-link">← VOLVER A ENTRENADORES</a>
+
+        <div class="hero-inner">
+            <div class="hero-photo-col" transition:name={`coach-${slug}`}>
+                <img
+                    src={coach.imageUrl}
+                    alt={`Foto de ${nombre}`}
+                    class="hero-coach-photo"
+                    loading="eager"
+                    decoding="async"
+                    width={460}
+                    height={560}
+                    onerror="this.src='/assets/entrenadores/placeholder.png'"
+                />
+            </div>
+
+            <div class="hero-info-col">
+                <div class="hero-chips">
+                    <span class="hero-chip hero-chip-gold">♦ ENTRENADOR ♦</span>
+                    {(coach.pais || coach.country) && (
+                        <span class="hero-chip">
+                            {flagUrl && <img src={flagUrl} alt="" class="chip-flag" width="16" height="16" loading="lazy" />}
+                            {coach.pais || coach.country}
+                        </span>
+                    )}
+                </div>
+
+                <h1 class="hero-coach-name">{nombre}</h1>
+
+                {quickStats.length > 0 && (
+                    <div class="hero-quick-stats">
+                        {quickStats.map(qs => (
+                            <div class="qs-card">
+                                <span class="qs-number">{qs.value}</span>
+                                <span class="qs-label">{qs.label}</span>
+                            </div>
+                        ))}
                     </div>
-                    <div class="player-info">
+                )}
+            </div>
+        </div>
+    </section>
+
+    <main class="coach-content">
+        <div class="content-grid">
+
+            <section class="profile-card full-col">
+                <h2 class="card-title">FICHA PERSONAL</h2>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Nombre completo</span>
+                        <span class="info-value">{nombre}</span>
+                    </div>
+                    {coach.fecha_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Nombre completo:</span>
-                            <span class="info-value">{coach.nombre}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Fecha de nacimiento:</span>
+                            <span class="info-label">Fecha de nac.</span>
                             <span class="info-value">{fechaNacimiento}</span>
                         </div>
+                    )}
+                    {coach.ciudad && (
                         <div class="info-row">
-                            <span class="info-label">Lugar de nacimiento:</span>
-                            <span class="info-value">{coach.ciudad || "-"}</span
-                            >
+                            <span class="info-label">Lugar de nac.</span>
+                            <span class="info-value">{coach.ciudad}</span>
                         </div>
+                    )}
+                    {(coach.pais || coach.country) && (
                         <div class="info-row">
-                            <span class="info-label">Nacionalidad:</span>
-                            <span class="info-value">
-                                {coach.pais || "-"}
-                                {
-                                    flagUrl && (
-                                        <img
-                                            src={flagUrl}
-                                            alt={`Bandera de ${coach.pais}`}
-                                            class="country-flag"
-                                        />
-                                    )
-                                }
+                            <span class="info-label">Nacionalidad</span>
+                            <span class="info-value" style="display:flex;align-items:center;gap:0.5rem;">
+                                {coach.pais || coach.country}
+                                {flagUrl && <img src={flagUrl} alt="" width="20" height="20" loading="lazy" style="border-radius:2px;" />}
                             </span>
                         </div>
-                    </div>
+                    )}
                 </div>
             </section>
 
-            <section class="teams-card">
-                <h2 class="section-header">TRAYECTORIA</h2>
-                <div class="teams-content">
-                    {
-                        trajectory && trajectory.length > 0 ? (
-                            <div class="trajectory-timeline">
-                                {trajectory.map((item) => (
-                                    <div class="timeline-item">
-                                        <div class="timeline-marker" />
-                                        <div class="timeline-content">
-                                            <div class="timeline-years">
-                                                {item.anio_inicio} -{" "}
-                                                {item.anio_fin || "Act."}
-                                            </div>
-                                            <div class="timeline-club">
-                                                {item.club}
-                                            </div>
-                                        </div>
+            <section class="profile-card">
+                <h2 class="card-title">TRAYECTORIA</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {trajectory && trajectory.length > 0 ? (
+                        <div class="trajectory-timeline">
+                            {trajectory.map((item: any) => (
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-body">
+                                        <span class="timeline-years">{item.anio_inicio} – {item.anio_fin || 'Act.'}</span>
+                                        <span class="timeline-club">{item.club}</span>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p class="no-data">Sin datos disponibles</p>
-                        )
-                    }
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
                 </div>
             </section>
 
-            <section class="records-card">
-                <h2 class="section-header">RÉCORDS</h2>
-                <div class="records-list">
-                    {
-                        coachRecords ? (
-                            <div class="records-grid">
-                                {coachRecords.mas_partido && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Más partidos:
-                                        </span>
-                                        <span class="record-value">
-                                            {coachRecords.mas_partido.rival} -{" "}
-                                            {coachRecords.mas_partido.partidos}
-                                        </span>
-                                    </div>
-                                )}
-                                {coachRecords.mas_victorias && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Más victorias:
-                                        </span>
-                                        <span class="record-value">
-                                            {coachRecords.mas_victorias.rival} -{" "}
-                                            {
-                                                coachRecords.mas_victorias
-                                                    .victorias
-                                            }
-                                        </span>
-                                    </div>
-                                )}
-                                {coachRecords.mas_empates && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Más empates:
-                                        </span>
-                                        <span class="record-value">
-                                            {coachRecords.mas_empates.rival} -{" "}
-                                            {coachRecords.mas_empates.empates}
-                                        </span>
-                                    </div>
-                                )}
-                                {coachRecords.mayor_victoria && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Mayor victoria:
-                                        </span>
-                                        <span class="record-value">
-                                            {
-                                                coachRecords.mayor_victoria
-                                                    .goles_rm
-                                            }
-                                            -
-                                            {
-                                                coachRecords.mayor_victoria
-                                                    .goles_rival
-                                            }{" "}
-                                            vs{" "}
-                                            {coachRecords.mayor_victoria.rival}
-                                        </span>
-                                    </div>
-                                )}
-                                {coachRecords.mayor_derrota && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Mayor derrota:
-                                        </span>
-                                        <span class="record-value">
-                                            {
-                                                coachRecords.mayor_derrota
-                                                    .goles_rm
-                                            }
-                                            -
-                                            {
-                                                coachRecords.mayor_derrota
-                                                    .goles_rival
-                                            }{" "}
-                                            vs{" "}
-                                            {coachRecords.mayor_derrota.rival}
-                                        </span>
-                                    </div>
-                                )}
-                                {coachRecords.mas_repetido && (
-                                    <div class="record-item">
-                                        <span class="record-label">
-                                            Más repetido:
-                                        </span>
-                                        <span class="record-value">
-                                            {
-                                                coachRecords.mas_repetido
-                                                    .resultado
-                                            }{" "}
-                                            - {coachRecords.mas_repetido.veces}{" "}
-                                            veces
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <p class="no-data">Sin datos disponibles</p>
-                        )
-                    }
+            <section class="profile-card">
+                <h2 class="card-title">RÉCORDS</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {coachRecords ? (
+                        <div class="records-list">
+                            {coachRecords.mas_partido && (
+                                <div class="record-row">
+                                    <span class="record-label">Más partidos</span>
+                                    <span class="record-value">{coachRecords.mas_partido.rival} · {coachRecords.mas_partido.partidos}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_victorias && (
+                                <div class="record-row">
+                                    <span class="record-label">Más victorias</span>
+                                    <span class="record-value">{coachRecords.mas_victorias.rival} · {coachRecords.mas_victorias.victorias}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_empates && (
+                                <div class="record-row">
+                                    <span class="record-label">Más empates</span>
+                                    <span class="record-value">{coachRecords.mas_empates.rival} · {coachRecords.mas_empates.empates}</span>
+                                </div>
+                            )}
+                            {coachRecords.mayor_victoria && (
+                                <div class="record-row">
+                                    <span class="record-label">Mayor victoria</span>
+                                    <span class="record-value">{coachRecords.mayor_victoria.goles_rm}-{coachRecords.mayor_victoria.goles_rival} vs {coachRecords.mayor_victoria.rival}</span>
+                                </div>
+                            )}
+                            {coachRecords.mayor_derrota && (
+                                <div class="record-row">
+                                    <span class="record-label">Mayor derrota</span>
+                                    <span class="record-value">{coachRecords.mayor_derrota.goles_rm}-{coachRecords.mayor_derrota.goles_rival} vs {coachRecords.mayor_derrota.rival}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_repetido && (
+                                <div class="record-row">
+                                    <span class="record-label">Resultado más repetido</span>
+                                    <span class="record-value">{coachRecords.mas_repetido.resultado} · {coachRecords.mas_repetido.veces} veces</span>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
                 </div>
             </section>
 
-            <section class="streaks-card">
-                <h2 class="section-header">RACHAS</h2>
-                <div class="streaks-content">
-                    {
-                        coachStreaks ? (
-                            <div class="streaks-list">
-                                <div class="streak-item">
-                                    <span class="streak-label">Ganando</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.ganando}
-                                    </span>
+            <section class="profile-card">
+                <h2 class="card-title">RACHAS</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {coachStreaks ? (
+                        <div class="records-list">
+                            {[
+                                ['Ganando', coachStreaks.best.ganando],
+                                ['Sin perder', coachStreaks.best.sin_perder],
+                                ['Empatando', coachStreaks.best.empatando],
+                                ['Sin ganar', coachStreaks.best.sin_ganar],
+                                ['Perdiendo', coachStreaks.best.perdiendo],
+                                ['Marcando', coachStreaks.best.marcando],
+                                ['Sin marcar', coachStreaks.best.sin_marcar],
+                                ['Sin encajar', coachStreaks.best.sin_encajar],
+                                ['Encajando', coachStreaks.best.encajando],
+                            ].map(([label, value]) => (
+                                <div class="record-row">
+                                    <span class="record-label">{label}</span>
+                                    <span class="record-value">{value}</span>
                                 </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Empatando</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.empatando}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Perdiendo</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.perdiendo}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Sin perder</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.sin_perder}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Sin ganar</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.sin_ganar}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Sin marcar</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.sin_marcar}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Marcando</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.marcando}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Encajando</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.encajando}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">
-                                        Sin encajar
-                                    </span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.sin_encajar}
-                                    </span>
-                                </div>
-                                <div class="streak-item">
-                                    <span class="streak-label">Sin goles</span>
-                                    <span class="streak-value">
-                                        {coachStreaks.best.sin_goles}
-                                    </span>
-                                </div>
-                            </div>
-                        ) : (
-                            <p class="no-data">Sin datos disponibles</p>
-                        )
-                    }
+                            ))}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
                 </div>
             </section>
 
-            <section class="stats-card full-width">
-                <h2 class="section-header">ESTADÍSTICAS</h2>
-                <div class="stats-table-wrapper">
-                    {
-                        coachStats &&
-                        coachStats.estadisticas &&
-                        coachStats.estadisticas.length > 0 ? (
+            {coachStats && coachStats.estadisticas && coachStats.estadisticas.length > 0 && (
+                <section class="profile-card full-col">
+                    <h2 class="card-title">ESTADÍSTICAS</h2>
+                    <div class="card-body" style="padding:0;">
+                        <div class="stats-table-wrapper">
                             <table class="stats-table">
                                 <thead>
                                     <tr>
@@ -359,788 +252,471 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {coachStats.estadisticas.map(
-                                        (season: any) => (
-                                            <>
-                                                <tr
-                                                    class="season-total-row clickable"
-                                                    data-season={season.temporada.replace(
-                                                        /\//g,
-                                                        "-",
-                                                    )}
-                                                >
-                                                    <td>
-                                                        <div class="flex items-center justify-start gap-2 w-full">
-                                                            <strong>
-                                                                {
-                                                                    season.temporada
-                                                                }
-                                                            </strong>
-                                                            <span class="toggle-icon">
-                                                                &#9660;
-                                                            </span>
+                                    {coachStats.estadisticas.map((season: any) => (
+                                        <>
+                                            <tr class="season-total-row" onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`} style="cursor:pointer;">
+                                                <td><div class="flex items-center justify-start gap-2 w-full"><strong>{season.temporada}</strong><span class="toggle-icon">▼</span></div></td>
+                                                <td><strong>{season.total.partidos}</strong></td>
+                                                <td><strong>{season.total.victorias}</strong></td>
+                                                <td><strong>{season.total.porcentaje_victorias}%</strong></td>
+                                                <td><strong>{season.total.empates}</strong></td>
+                                                <td><strong>{season.total.porcentaje_empates}%</strong></td>
+                                                <td><strong>{season.total.derrotas}</strong></td>
+                                                <td><strong>{season.total.porcentaje_derrotas}%</strong></td>
+                                                <td><strong>{season.total.goles_favor}</strong></td>
+                                                <td><strong>{season.total.goles_contra}</strong></td>
+                                                <td><strong>{season.total.goles_favor - season.total.goles_contra}</strong></td>
+                                                <td><strong>{season.total.porterias_cero}</strong></td>
+                                            </tr>
+                                            {season.competiciones.map((comp: any) => (
+                                                <tr class={`competition-row season-${season.temporada.replace(/\//g, "-")}`} style="display:none;">
+                                                    <td class="competition-name">
+                                                        <div class="competition-name-wrapper">
+                                                            {getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion) && (
+                                                                <img src={getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion)} alt={comp.competicion} class="competition-logo" />
+                                                            )}
+                                                            {comp.competicion}
                                                         </div>
                                                     </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .partidos
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .victorias
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .porcentaje_victorias
-                                                            }
-                                                            %
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .empates
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .porcentaje_empates
-                                                            }
-                                                            %
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .derrotas
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .porcentaje_derrotas
-                                                            }
-                                                            %
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .goles_favor
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .goles_contra
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total
-                                                                .goles_favor -
-                                                                season.total
-                                                                    .goles_contra}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .porterias_cero
-                                                            }
-                                                        </strong>
-                                                    </td>
+                                                    <td>{comp.partidos}</td>
+                                                    <td>{comp.victorias}</td>
+                                                    <td>{comp.porcentaje_victorias}%</td>
+                                                    <td>{comp.empates}</td>
+                                                    <td>{comp.porcentaje_empates}%</td>
+                                                    <td>{comp.derrotas}</td>
+                                                    <td>{comp.porcentaje_derrotas}%</td>
+                                                    <td>{comp.goles_favor}</td>
+                                                    <td>{comp.goles_contra}</td>
+                                                    <td>{comp.goles_favor - comp.goles_contra}</td>
+                                                    <td>{comp.porterias_cero}</td>
                                                 </tr>
-
-                                                {season.competiciones.map(
-                                                    (comp: any) => (
-                                                        <tr
-                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
-                                                            style="display: none;"
-                                                        >
-                                                            <td class="competition-name">
-                                                                <div class="competition-name-wrapper">
-                                                                    {getAssetUrl(
-                                                                        "competiciones",
-                                                                        comp.competicion
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                "amistoso",
-                                                                            )
-                                                                            ? "amistoso"
-                                                                            : comp.competicion,
-                                                                    ) && (
-                                                                        <img
-                                                                            src={getAssetUrl(
-                                                                                "competiciones",
-                                                                                comp.competicion
-                                                                                    .toLowerCase()
-                                                                                    .includes(
-                                                                                        "amistoso",
-                                                                                    )
-                                                                                    ? "amistoso"
-                                                                                    : comp.competicion,
-                                                                            )}
-                                                                            alt={
-                                                                                comp.competicion
-                                                                            }
-                                                                            class="competition-logo"
-                                                                        />
-                                                                    )}
-                                                                    {
-                                                                        comp.competicion
-                                                                    }
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                {comp.partidos}
-                                                            </td>
-                                                            <td>
-                                                                {comp.victorias}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.porcentaje_victorias
-                                                                }
-                                                                %
-                                                            </td>
-                                                            <td>
-                                                                {comp.empates}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.porcentaje_empates
-                                                                }
-                                                                %
-                                                            </td>
-                                                            <td>
-                                                                {comp.derrotas}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.porcentaje_derrotas
-                                                                }
-                                                                %
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.goles_favor
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.goles_contra
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.goles_favor -
-                                                                    comp.goles_contra}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.porterias_cero
-                                                                }
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                            </>
-                                        ),
-                                    )}
-
+                                            ))}
+                                        </>
+                                    ))}
                                     <tr class="career-total-row">
-                                        <td>
-                                            <strong>TOTAL</strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .partidos
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .victorias
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .porcentaje_victorias
-                                                }
-                                                %
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .empates
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .porcentaje_empates
-                                                }
-                                                %
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .derrotas
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .porcentaje_derrotas
-                                                }
-                                                %
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .goles_favor
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .goles_contra
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {coachStats.total_carrera
-                                                    .goles_favor -
-                                                    coachStats.total_carrera
-                                                        .goles_contra}
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    coachStats.total_carrera
-                                                        .porterias_cero
-                                                }
-                                            </strong>
-                                        </td>
+                                        <td style="text-align:left!important;"><strong>TOTAL</strong></td>
+                                        <td><strong>{coachStats.total_carrera.partidos}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.victorias}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.porcentaje_victorias}%</strong></td>
+                                        <td><strong>{coachStats.total_carrera.empates}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.porcentaje_empates}%</strong></td>
+                                        <td><strong>{coachStats.total_carrera.derrotas}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.porcentaje_derrotas}%</strong></td>
+                                        <td><strong>{coachStats.total_carrera.goles_favor}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.goles_contra}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.goles_favor - coachStats.total_carrera.goles_contra}</strong></td>
+                                        <td><strong>{coachStats.total_carrera.porterias_cero}</strong></td>
                                     </tr>
                                 </tbody>
                             </table>
-                        ) : (
-                            <table class="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Temporada</th>
-                                        <th>PJ</th>
-                                        <th>V</th>
-                                        <th>E</th>
-                                        <th>D</th>
-                                        <th>GF</th>
-                                        <th>GC</th>
-                                        <th>Dif</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td colspan="8" class="no-data-cell">
-                                            Sin datos disponibles
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        )
-                    }
-                </div>
-            </section>
+                        </div>
+                    </div>
+                </section>
+            )}
+
         </div>
     </main>
 
     <script is:inline>
-        (function () {
-            const seasonRows = document.querySelectorAll(
-                ".season-total-row.clickable",
-            );
-
-            seasonRows.forEach((row) => {
-                row.addEventListener("click", function () {
-                    const season = this.getAttribute("data-season");
-                    const competitionRows = document.querySelectorAll(
-                        `.competition-row.season-${season}`,
-                    );
-                    const icon = this.querySelector(".toggle-icon");
-
-                    competitionRows.forEach((compRow) => {
-                        if (
-                            compRow.style.display === "none" ||
-                            compRow.style.display === ""
-                        ) {
-                            compRow.style.display = "table-row";
-                        } else {
-                            compRow.style.display = "none";
-                        }
-                    });
-
-                    if (icon) {
-                        icon.innerHTML =
-                            icon.innerHTML.trim() === "▼" ? "▲" : "▼";
-                    }
-                });
+        function toggleSeason(season) {
+            const rows = document.querySelectorAll(`.competition-row.season-${season}`);
+            const icon = document.querySelector(`.season-total-row[onclick*="${season}"] .toggle-icon`);
+            rows.forEach(row => {
+                if (row.style.display === "none") { row.style.display = "table-row"; if (icon) icon.textContent = "▲"; }
+                else { row.style.display = "none"; if (icon) icon.textContent = "▼"; }
             });
-        })();
+        }
     </script>
-
-    <style>
-        .coach-details-page {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #666;
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            transition: color 0.3s;
-        }
-
-        .back-link:hover {
-            color: #ffde59;
-        }
-
-        .coach-grid-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        .ficha-section {
-            grid-column: 1 / -1;
-            grid-row: 1;
-        }
-
-        .teams-card {
-            grid-column: 1;
-            grid-row: 2;
-        }
-
-        .records-card {
-            grid-column: 2;
-            grid-row: 2;
-        }
-
-        .streaks-card {
-            grid-column: 3;
-            grid-row: 2;
-        }
-
-        .stats-card {
-            grid-column: 1 / -1;
-            grid-row: 3;
-        }
-
-        .trajectory-timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            position: relative;
-            padding-left: 1.5rem;
-            border-left: 2px solid #eee;
-            margin-top: 1rem;
-        }
-
-        .timeline-item {
-            position: relative;
-        }
-
-        .timeline-marker {
-            position: absolute;
-            left: -1.85rem;
-            top: 0.4rem;
-            width: 0.7rem;
-            height: 0.7rem;
-            background: #ffde59;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 0 1px #eee;
-        }
-
-        .timeline-content {
-            display: flex;
-            flex-direction: column;
-            gap: 0.2rem;
-        }
-
-        .timeline-years {
-            font-size: 0.9rem;
-            color: #666;
-            font-weight: 500;
-        }
-
-        .timeline-club {
-            font-weight: 700;
-            font-size: 1rem;
-            color: #333;
-        }
-        .section-header {
-            background: #ffde59;
-            color: #2b2b2b;
-            padding: 1rem 1.25rem;
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .coach-card,
-        .stats-card,
-        .teams-card,
-        .records-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .full-width {
-            width: 100%;
-        }
-
-        .ficha-section {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .ficha-content {
-            padding: 1.5rem;
-            display: flex;
-            gap: 1.5rem;
-            align-items: stretch;
-        }
-
-        .player-photo-container {
-            margin-bottom: 0;
-            text-align: center;
-            flex-shrink: 0;
-            display: flex;
-        }
-
-        .player-photo {
-            max-width: 280px;
-            height: 100%;
-            width: auto;
-            object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .player-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            flex: 1;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .info-value {
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .country-flag {
-            width: 24px;
-            height: 16px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-        }
-
-        .teams-content,
-        .records-list {
-            padding: 1.5rem;
-        }
-
-        .no-data {
-            color: #999;
-            font-style: italic;
-            text-align: center;
-            padding: 2rem;
-            margin: 0;
-        }
-
-        .no-data-cell {
-            text-align: center;
-            padding: 2rem;
-            color: #999;
-            font-style: italic;
-        }
-
-        .clickable {
-            cursor: pointer;
-        }
-
-        .toggle-icon {
-            display: inline-block;
-            width: 1.5em;
-            text-align: center;
-            font-size: 0.8em;
-            color: #666;
-        }
-
-        .toggle-cell {
-            text-align: center;
-            width: 40px;
-        }
-
-        .stats-table .career-total-row {
-            background: #ffde59;
-            font-weight: bold;
-            border-top: 3px solid #333;
-        }
-
-        .stats-table .career-total-row:hover td:first-child {
-            background: #ffd940 !important;
-        }
-
-        .stats-table td.highlight {
-            background: #fff8dc;
-        }
-
-        .competition-logo {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        .competition-name {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            white-space: normal !important;
-            min-width: 150px !important;
-            line-height: 1.2;
-            text-align: left !important;
-        }
-
-        @media (max-width: 1024px) {
-            .coach-grid-layout {
-                grid-template-columns: 1fr 1fr;
-            }
-            .ficha-section,
-            .stats-card {
-                grid-column: 1 / -1;
-            }
-            .teams-card {
-                grid-column: 1;
-                grid-row: auto;
-            }
-            .records-card {
-                grid-column: 2;
-                grid-row: auto;
-            }
-            .streaks-card {
-                grid-column: 1 / -1;
-                grid-row: auto;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .coach-grid-layout {
-                grid-template-columns: 1fr;
-            }
-            .ficha-section,
-            .teams-card,
-            .records-card,
-            .streaks-card,
-            .stats-card {
-                grid-column: 1 / -1;
-                grid-row: auto;
-            }
-        }
-
-        .streaks-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .streaks-content {
-            padding: 1.5rem;
-        }
-
-        .streaks-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .streak-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .streak-item:last-child {
-            border-bottom: none;
-        }
-
-        .streak-label {
-            font-weight: 500;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .streak-value {
-            font-weight: 700;
-            color: #333;
-            font-size: 1.1rem;
-        }
-
-        .record-list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .record-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .record-item:last-child {
-            border-bottom: none;
-        }
-
-        .record-label {
-            font-weight: 500;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .record-value {
-            font-weight: 700;
-            color: #333;
-            font-size: 1.1rem;
-        }
-
-        @media (max-width: 768px) {
-            .ficha-content {
-                flex-direction: column;
-                align-items: center;
-                padding: 1.5rem 1.25rem;
-            }
-
-            .player-photo-container {
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 2rem;
-            }
-
-            .player-photo {
-                max-width: 320px;
-                width: 100%;
-                height: auto;
-            }
-
-            .player-info {
-                width: 100%;
-            }
-
-            .coach-info {
-                flex-direction: column;
-            }
-
-            .coach-photo img {
-                width: 100%;
-                max-width: 200px;
-                margin: 0 auto;
-            }
-
-            .info-row {
-                flex-direction: column;
-            }
-
-            .info-row .label {
-                width: 100%;
-                margin-bottom: 0.25rem;
-            }
-
-            .stats-section {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .stats-table {
-                min-width: 800px;
-                width: 100%;
-            }
-        }
-    </style>
 </Layout>
 
+<style>
+.coach-hero {
+    width: 100%;
+    min-height: 80vh;
+    background: #060d1c;
+    position: relative;
+    overflow: hidden;
+}
+.coach-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, #060d1c);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.hero-bg-glow {
+    position: absolute;
+    right: 15%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(212,168,67,0.035) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-back-link {
+    position: absolute;
+    top: 1.75rem;
+    left: 2rem;
+    z-index: 20;
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(212,168,67,0.55);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.hero-back-link:hover { color: #d4a843; }
+
+.hero-inner {
+    display: grid;
+    grid-template-columns: min(40vw, 460px) 1fr;
+    min-height: 80vh;
+    align-items: end;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-photo-col {
+    position: relative;
+    align-self: end;
+}
+.hero-photo-col::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(to top, #060d1c 0%, rgba(6,8,15,0.5) 55%, transparent 100%);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.hero-coach-photo {
+    width: 100%;
+    max-height: 78vh;
+    object-fit: contain;
+    object-position: bottom center;
+    display: block;
+    filter: drop-shadow(0 0 70px rgba(0,0,0,0.5));
+}
+
+.hero-info-col {
+    padding: 5rem 5rem 4rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 80vh;
+    position: relative;
+}
+
+.hero-chips {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+}
+
+.hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    border: 1px solid rgba(212,168,67,0.22);
+    background: rgba(6,13,28,0.55);
+    backdrop-filter: blur(6px);
+    font-family: 'Cinzel', serif;
+    font-size: 0.57rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(200,210,220,0.65);
+}
+
+.hero-chip-gold {
+    border-color: rgba(212,168,67,0.5);
+    background: linear-gradient(135deg, rgba(212,168,67,0.14), rgba(212,168,67,0.04));
+    color: #d4a843;
+}
+
+.chip-flag {
+    width: 16px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hero-coach-name {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.8rem, 5.5vw, 7.5rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 0.88;
+    letter-spacing: 0.01em;
+    background: linear-gradient(180deg, #f5f0e8 20%, #d4a843 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.75rem 0 2.5rem;
+}
+
+.hero-quick-stats {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.qs-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.85rem 1.1rem;
+    background: rgba(212,168,67,0.04);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 3px;
+    min-width: 75px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.qs-card:hover { background: rgba(212,168,67,0.08); border-color: rgba(212,168,67,0.35); }
+
+.qs-number {
+    font-family: 'Cinzel', serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #d4a843;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+}
+
+.qs-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.52rem;
+    letter-spacing: 0.12em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.coach-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem 5rem;
+    width: 100%;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.full-col { grid-column: 1 / -1; }
+
+.profile-card {
+    background: rgba(8,16,34,0.85);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.profile-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 12px; height: 12px;
+    border-top: 1px solid rgba(212,168,67,0.5);
+    border-left: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+.profile-card::after {
+    content: '';
+    position: absolute; bottom: 0; right: 0;
+    width: 12px; height: 12px;
+    border-bottom: 1px solid rgba(212,168,67,0.5);
+    border-right: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+
+.card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: rgba(212,168,67,0.75);
+    text-transform: uppercase;
+    padding: 0.85rem 1.25rem;
+    margin: 0;
+    border-bottom: 1px solid rgba(212,168,67,0.12);
+    background: rgba(212,168,67,0.03);
+}
+
+.card-body { padding: 0; }
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid rgba(212,168,67,0.07);
+    gap: 1rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.info-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: #f0f0f0;
+    text-align: right;
+}
+
+.trajectory-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-left: 1px solid rgba(212,168,67,0.2);
+    margin-left: 0.5rem;
+}
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    position: relative;
+}
+.timeline-dot {
+    width: 8px; height: 8px;
+    background: #d4a843;
+    border-radius: 50%;
+    border: 2px solid rgba(6,13,28,0.9);
+    box-shadow: 0 0 0 1px rgba(212,168,67,0.35);
+    flex-shrink: 0;
+    margin-left: -4.5px;
+    margin-top: 0.35rem;
+}
+.timeline-body { display: flex; flex-direction: column; gap: 0.1rem; }
+.timeline-years {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+}
+.timeline-club {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+.records-list { display: flex; flex-direction: column; }
+.record-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(212,168,67,0.07);
+    gap: 1rem;
+}
+.record-row:last-child { border-bottom: none; }
+.record-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.record-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: #d4a843;
+    font-weight: 600;
+    text-align: right;
+}
+
+.stats-table-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212,168,67,0.25) transparent;
+}
+.competition-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 140px;
+    text-align: left;
+}
+.competition-logo { width: 22px; height: 22px; object-fit: contain; }
+.toggle-icon { font-size: 0.7em; color: rgba(150,160,175,0.5); display: inline-block; width: 1.2em; }
+.season-total-row:hover { background: rgba(212,168,67,0.04) !important; }
+.career-total-row {
+    background: rgba(212,168,67,0.12) !important;
+    border-top: 2px solid rgba(212,168,67,0.35) !important;
+    color: #d4a843;
+}
+
+.no-data {
+    color: rgba(150,160,175,0.5);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 1.5rem 0;
+    margin: 0;
+}
+
+@media (max-width: 1024px) {
+    .content-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+    .coach-hero {
+        padding-top: 56px;
+        min-height: auto;
+    }
+    .hero-back-link {
+        top: calc(56px + 1rem);
+    }
+    .hero-inner {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    .hero-photo-col {
+        max-height: 55vw;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .hero-coach-photo {
+        max-height: 55vw;
+        width: auto;
+        max-width: 100%;
+    }
+    .hero-info-col {
+        min-height: auto;
+        padding: 1.5rem 1.5rem 1.5rem;
+    }
+    .hero-chips { justify-content: center; }
+    .hero-quick-stats { justify-content: center; }
+    .coach-content { padding: 0 1.25rem 3rem; }
+    .content-grid { grid-template-columns: 1fr; }
+    .full-col { grid-column: 1; }
+}
+
+@media (max-width: 480px) {
+    .hero-info-col { padding: 1.5rem 1.25rem 2.5rem; }
+    .qs-card { min-width: 60px; padding: 0.65rem 0.75rem; }
+    .qs-number { font-size: 1.4rem; }
+}
+</style>

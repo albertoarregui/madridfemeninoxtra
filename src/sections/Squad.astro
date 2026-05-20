@@ -1,10 +1,6 @@
 ---
 import { getFlagSrc } from "../utils/flags";
-import {
-    fetchAndCleanPlayers,
-    fetchPlayersDirectly,
-    getPlayerImageUrl,
-} from "../utils/players";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 
 const allPlayersDb = await fetchPlayersDirectly();
 
@@ -16,7 +12,6 @@ const squadPlayers = allPlayersDb.filter((player) => {
     return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
 });
 
-
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin, iso } = player;
     const dorsal = player.dorsales[latestSeason];
@@ -24,7 +19,6 @@ const listofPlayers = squadPlayers.map((player) => {
         player.profile_photos && player.profile_photos[latestSeason];
     const seasonPhoto =
         player.season_photos && player.season_photos[latestSeason];
-    const countryName = pais_origin || "";
 
     return {
         ...player,
@@ -34,7 +28,7 @@ const listofPlayers = squadPlayers.map((player) => {
         position: player.posicion,
         country: pais_origin,
         iso,
-        countryName,
+        countryName: pais_origin || "",
         flagUrl: getFlagSrc(iso || pais_origin),
         date_birth: player.fecha_nacimiento,
         height: player.altura,
@@ -59,265 +53,173 @@ const getNormalizedPosition = (pos: string) => {
     if (p.includes("portera")) return "Portera";
     if (p.includes("defensa") || p.includes("lateral") || p.includes("central"))
         return "Defensa";
-    if (
-        p.includes("medio") ||
-        p.includes("centro") ||
-        p.includes("pivote") ||
-        p.includes("interior")
-    )
+    if (p.includes("medio") || p.includes("centro") || p.includes("pivote") || p.includes("interior"))
         return "Centrocampista";
-    if (
-        p.includes("delantera") ||
-        p.includes("extremo") ||
-        p.includes("punta") ||
-        p.includes("ariete")
-    )
+    if (p.includes("delantera") || p.includes("extremo") || p.includes("punta") || p.includes("ariete"))
         return "Delantera";
     return "Otros";
 };
 
-const porteras = listofPlayers.filter(
-    (p) => getNormalizedPosition(p.position) === "Portera",
-);
-const defensas = listofPlayers.filter(
-    (p) => getNormalizedPosition(p.position) === "Defensa",
-);
-const medios = listofPlayers.filter(
-    (p) => getNormalizedPosition(p.position) === "Centrocampista",
-);
-const delanteras = listofPlayers.filter(
-    (p) => getNormalizedPosition(p.position) === "Delantera",
-);
-const otros = listofPlayers.filter(
-    (p) => getNormalizedPosition(p.position) === "Otros",
-);
+const porteras  = listofPlayers.filter(p => getNormalizedPosition(p.position) === "Portera");
+const defensas  = listofPlayers.filter(p => getNormalizedPosition(p.position) === "Defensa");
+const medios    = listofPlayers.filter(p => getNormalizedPosition(p.position) === "Centrocampista");
+const delanteras = listofPlayers.filter(p => getNormalizedPosition(p.position) === "Delantera");
+const otros     = listofPlayers.filter(p => getNormalizedPosition(p.position) === "Otros");
 
 const rows = [
-    { title: "PORTERAS", players: porteras },
-    { title: "DEFENSAS", players: defensas },
+    { title: "PORTERAS",        players: porteras },
+    { title: "DEFENSAS",        players: defensas },
     { title: "CENTROCAMPISTAS", players: medios },
-    { title: "DELANTERAS", players: delanteras },
-].filter((row) => row.players.length > 0);
+    { title: "DELANTERAS",      players: delanteras },
+].filter(row => row.players.length > 0);
 
-if (otros.length > 0) {
-    rows.push({ title: "OTRAS", players: otros });
-}
+if (otros.length > 0) rows.push({ title: "OTRAS", players: otros });
 
 function calculateAge(birthDateString: string): number {
     const birthDate = new Date(birthDateString);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-        age--;
-    }
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     return age;
 }
 ---
 
 <section class="player-selector">
-    <div class="player-container">
+    <div class="scanline-overlay" aria-hidden="true"></div>
+
+    <div class="sf-inner">
+
         <div class="main-player-display">
+            <div class="player-main-image-container">
+                <span class="player-number-bg" id="player-number-ghost">
+                    {listofPlayers.length > 0 ? listofPlayers[0].number : ""}
+                </span>
+                {listofPlayers.length > 0 && (
+                    <img
+                        id="player-main-image"
+                        src={listofPlayers[0].imageUrl}
+                        alt={listofPlayers[0].name}
+                        class="player-main-image"
+                    />
+                )}
+            </div>
+
+            <span class="player-dorsal" id="player-number">
+                {listofPlayers.length > 0 ? listofPlayers[0].number : ""}
+            </span>
+
+            <h2 class="player-name" id="player-name">
+                {listofPlayers.length > 0 ? listofPlayers[0].name : "Selecciona jugadora"}
+            </h2>
+
             <div class="player-info-top">
-                <span class="player-position" id="player-position"
-                    >{
-                        listofPlayers.length > 0
-                            ? listofPlayers[0].position
-                            : "-"
-                    }</span
-                >
+                <span class="player-position" id="player-position">
+                    {listofPlayers.length > 0 ? listofPlayers[0].position : "-"}
+                </span>
                 <div class="player-country-flat">
                     <img
                         id="player-flag"
-                        src={listofPlayers.length > 0
-                            ? listofPlayers[0].flagUrl
-                            : ""}
-                        alt={listofPlayers.length > 0
-                            ? listofPlayers[0].countryName
-                            : ""}
+                        src={listofPlayers.length > 0 ? listofPlayers[0].flagUrl : ""}
+                        alt={listofPlayers.length > 0 ? listofPlayers[0].countryName : ""}
                         class="country-flag"
                     />
-                    <span id="player-country-name"
-                        >{
-                            listofPlayers.length > 0
-                                ? listofPlayers[0].countryName
-                                : "-"
-                        }</span
-                    >
+                    <span id="player-country-name">
+                        {listofPlayers.length > 0 ? listofPlayers[0].countryName : "-"}
+                    </span>
                 </div>
             </div>
-            <div class="player-main-image-container">
-                {
-                    listofPlayers.length > 0 && (
-                        <img
-                            id="player-main-image"
-                            src={listofPlayers[0].imageUrl}
-                            alt={listofPlayers[0].name}
-                            class="player-main-image"
-                        />
-                    )
-                }
-            </div>
-            <h2 class="player-name" id="player-name">
-                {
-                    listofPlayers.length > 0
-                        ? listofPlayers[0].name
-                        : "Seleccione jugadora"
-                }
-            </h2>
+
             <div class="player-stats">
                 <div class="stat-item">
                     <span class="stat-label">Edad</span>
-                    <span class="stat-value" id="player-age"
-                        >{
-                            listofPlayers.length > 0
-                                ? calculateAge(listofPlayers[0].date_birth)
-                                : "-"
-                        }</span
-                    >
+                    <span class="stat-value" id="player-age">
+                        {listofPlayers.length > 0 ? calculateAge(listofPlayers[0].date_birth) : "-"}
+                    </span>
                 </div>
+                <div class="stat-sep" aria-hidden="true"></div>
                 <div class="stat-item">
                     <span class="stat-label">Altura</span>
-                    <span class="stat-value" id="player-height"
-                        >{
-                            listofPlayers.length > 0
-                                ? `${listofPlayers[0].height}m`
-                                : "-"
-                        }</span
-                    >
+                    <span class="stat-value" id="player-height">
+                        {listofPlayers.length > 0 ? `${listofPlayers[0].height}m` : "-"}
+                    </span>
                 </div>
+                <div class="stat-sep" aria-hidden="true"></div>
                 <div class="stat-item">
                     <span class="stat-label">Peso</span>
-                    <span class="stat-value" id="player-weight"
-                        >{
-                            listofPlayers.length > 0
-                                ? `${listofPlayers[0].weight}kg`
-                                : "-"
-                        }</span
-                    >
+                    <span class="stat-value" id="player-weight">
+                        {listofPlayers.length > 0 ? `${listofPlayers[0].weight}kg` : "-"}
+                    </span>
                 </div>
             </div>
 
             <div class="player-actions">
-                {
-                    listofPlayers.length > 0 && (
-                        <a
-                            href={`/jugadoras/${listofPlayers[0].slug}`}
-                            id="player-profile-link"
-                            class="btn-profile"
-                        >
-                            Ver perfil
-                        </a>
-                    )
-                }
+                {listofPlayers.length > 0 && (
+                    <a href={`/jugadoras/${listofPlayers[0].slug}`} id="player-profile-link" class="btn-profile">
+                        VER PERFIL
+                    </a>
+                )}
             </div>
         </div>
 
+        <div class="selector-divider" aria-hidden="true"></div>
+
         <div class="player-rows-container">
-            {
-                rows.map((row) => (
-                    <div class="player-row-section">
-                        <h4 class="section-title">{row.title}</h4>
-                        <div class="player-row">
-                            {row.players.map((player) => {
-                                const globalIndex = listofPlayers.findIndex(
-                                    (p) => p.id === player.id,
-                                );
-                                return (
-                                    <button
-                                        class={`player-thumbnail desktop-thumb ${globalIndex === 0 ? "active" : ""}`}
-                                        data-player-id={player.id}
-                                        data-player-index={globalIndex}
-                                        data-profile-image={player.imageUrl}
-                                        aria-label={`Select ${player.name}`}
-                                    >
-                                        <span class="thumbnail-number">
-                                            {player.number}
-                                        </span>
-                                        <div class="thumbnail-image-wrapper">
-                                            <img
-                                                src={player.thumbnailUrl}
-                                                alt={player.name}
-                                                class="thumbnail-image"
-                                            />
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+            {rows.map(row => (
+                <div class="player-row-section">
+                    <h4 class="section-title">
+                        <span class="section-title-pip" aria-hidden="true"></span>
+                        {row.title}
+                    </h4>
+                    <div class="player-row">
+                        {row.players.map(player => {
+                            const globalIndex = listofPlayers.findIndex(p => p.id === player.id);
+                            return (
+                                <button
+                                    class={`player-thumbnail desktop-thumb ${globalIndex === 0 ? "active" : ""}`}
+                                    data-player-id={player.id}
+                                    data-player-index={globalIndex}
+                                    data-profile-image={player.imageUrl}
+                                    aria-label={player.name}
+                                >
+                                    <span class="thumbnail-number">{player.number}</span>
+                                    <div class="thumbnail-image-wrapper">
+                                        <img src={player.thumbnailUrl} alt={player.name} class="thumbnail-image" />
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
-                ))
-            }
+                </div>
+            ))}
         </div>
+
     </div>
 
     <div class="mobile-player-carousel">
-        <button
-            class="carousel-arrow left"
-            id="carousel-prev"
-            aria-label="Previous player"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg
-            >
+        <button class="carousel-arrow" id="carousel-prev" aria-label="Previous player">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-
         <div class="mobile-thumbnails-wrapper">
             <div class="mobile-thumbnails-track">
-                {
-                    listofPlayers.map((player, index) => {
-                        return (
-                            <button
-                                class={`player-thumbnail mobile-thumb ${index === 0 ? "active" : ""}`}
-                                data-player-id={player.id}
-                                data-player-index={index}
-                                data-profile-image={player.imageUrl}
-                                aria-label={`Select ${player.name}`}
-                            >
-                                <span class="thumbnail-number">
-                                    {player.number}
-                                </span>
-                                <div class="thumbnail-image-wrapper">
-                                    <img
-                                        src={player.thumbnailUrl}
-                                        alt={player.name}
-                                        class="thumbnail-image"
-                                    />
-                                </div>
-                            </button>
-                        );
-                    })
-                }
+                {listofPlayers.map((player, index) => (
+                    <button
+                        class={`player-thumbnail mobile-thumb ${index === 0 ? "active" : ""}`}
+                        data-player-id={player.id}
+                        data-player-index={index}
+                        data-profile-image={player.imageUrl}
+                        aria-label={player.name}
+                    >
+                        <span class="thumbnail-number">{player.number}</span>
+                        <div class="thumbnail-image-wrapper">
+                            <img src={player.thumbnailUrl} alt={player.name} class="thumbnail-image" />
+                        </div>
+                    </button>
+                ))}
             </div>
         </div>
-
-        <button
-            class="carousel-arrow right"
-            id="carousel-next"
-            aria-label="Next player"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg
-            >
+        <button class="carousel-arrow" id="carousel-next" aria-label="Next player">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
     </div>
 </section>
@@ -327,628 +229,558 @@ function calculateAge(birthDateString: string): number {
         const birthDate = new Date(birthDateString);
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (
-            monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < birthDate.getDate())
-        ) {
-            age--;
-        }
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
         return age;
     }
 
-    let selectedIndex = 0;
+    document.addEventListener('astro:page-load', () => {
+        let selectedIndex = 0;
 
-    function updatePlayerDisplay(index, isSelection = false) {
-        const player = players[index];
-        if (!player) return;
+        function updatePlayerDisplay(index, isSelection = false) {
+            const player = players[index];
+            if (!player) return;
+            if (isSelection) selectedIndex = index;
 
-        if (isSelection) {
-            selectedIndex = index;
-        }
+            const setContent = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
 
-        const setContent = (id, text) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = text;
-        };
+            setContent("player-position", player.position);
+            setContent("player-country-name", player.countryName);
+            setContent("player-name", player.name);
+            setContent("player-height", `${player.height}m`);
+            setContent("player-number", player.number);
+            setContent("player-number-ghost", player.number);
+            setContent("player-weight", `${player.weight}kg`);
+            setContent("player-age", calculateAge(player.date_birth));
 
-        setContent("player-position", player.position);
-        setContent("player-country-name", player.countryName);
-        setContent("player-name", player.name);
-        setContent("player-height", `${player.height}m`);
-        setContent("player-number", player.number);
-        setContent("player-weight", `${player.weight}kg`);
-        setContent("player-age", calculateAge(player.date_birth));
+            const flag = document.getElementById("player-flag");
+            if (flag) { flag.src = player.flagUrl; flag.alt = player.countryName; }
 
-        const flag = document.getElementById("player-flag");
-        if (flag) {
-            flag.src = player.flagUrl;
-            flag.alt = player.countryName;
-        }
-
-        const imgElement = document.getElementById("player-main-image");
-        if (imgElement) {
-            let thumbButton = document.querySelector(
-                `.desktop-thumb[data-player-id="${player.id}"]`,
-            );
-            if (!thumbButton) {
-                thumbButton = document.querySelector(
-                    `.mobile-thumb[data-player-id="${player.id}"]`,
-                );
+            const imgEl = document.getElementById("player-main-image");
+            if (imgEl) {
+                const thumb =
+                    document.querySelector(`.desktop-thumb[data-player-id="${player.id}"]`) ||
+                    document.querySelector(`.mobile-thumb[data-player-id="${player.id}"]`);
+                if (thumb?.dataset.profileImage) imgEl.src = thumb.dataset.profileImage;
+                imgEl.alt = player.name;
             }
 
-            if (thumbButton && thumbButton.dataset.profileImage) {
-                imgElement.src = thumbButton.dataset.profileImage;
-            }
-            imgElement.alt = player.name;
+            const link = document.getElementById("player-profile-link");
+            if (link) link.href = `/jugadoras/${player.slug}`;
+
+            document.querySelectorAll(".player-thumbnail").forEach(thumb => {
+                const i = parseInt(thumb.dataset.playerIndex || "-1");
+                thumb.classList.toggle("active", i === selectedIndex);
+            });
         }
 
-        const link = document.getElementById("player-profile-link");
-        if (link) {
-            link.href = `/jugadoras/${player.slug}`;
+        const rowsContainer = document.querySelector(".player-rows-container");
+        const wrapper = document.querySelector(".mobile-thumbnails-wrapper");
+        const prevBtn = document.getElementById("carousel-prev");
+        const nextBtn = document.getElementById("carousel-next");
+
+        if (prevBtn) prevBtn.addEventListener("click", () => wrapper?.scrollBy({ left: -96, behavior: "smooth" }));
+        if (nextBtn) nextBtn.addEventListener("click", () => wrapper?.scrollBy({ left: 96, behavior: "smooth" }));
+        if (wrapper) {
+            wrapper.addEventListener("wheel", e => {
+                e.preventDefault();
+                wrapper.scrollBy({ left: e.deltaX || e.deltaY, behavior: "smooth" });
+            }, { passive: false });
         }
 
-        document.querySelectorAll(".player-thumbnail").forEach((thumb) => {
-            const thumbIndex = parseInt(thumb.dataset.playerIndex || "-1");
-            thumb.classList.toggle("active", thumbIndex === selectedIndex);
-        });
-    }
-
-    const rowsContainer = document.querySelector(".player-rows-container");
-
-    const wrapper = document.querySelector(".mobile-thumbnails-wrapper");
-    const prevBtn = document.getElementById("carousel-prev");
-    const nextBtn = document.getElementById("carousel-next");
-
-    function scrollCarousel(direction) {
-        if (!wrapper) return;
-        const itemSize = 96;
-        const scrollAmount = direction * itemSize;
-        wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-
-    if (prevBtn) {
-        prevBtn.addEventListener("click", () => scrollCarousel(-1));
-    }
-
-    if (nextBtn) {
-        nextBtn.addEventListener("click", () => scrollCarousel(1));
-    }
-
-    if (wrapper) {
-        wrapper.addEventListener("wheel", (e) => {
-            e.preventDefault();
-            const scrollAmount = e.deltaY;
-            wrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
-        });
-    }
-
-    document.querySelectorAll(".player-thumbnail").forEach((thumb) => {
-        thumb.addEventListener("mouseenter", (e) => {
-            if (window.innerWidth > 768) {
-                const target = e.currentTarget;
-                if (target && target.dataset.playerIndex) {
-                    const index = parseInt(target.dataset.playerIndex);
-                    updatePlayerDisplay(index, false);
-                }
-            }
+        document.querySelectorAll(".player-thumbnail").forEach(thumb => {
+            thumb.addEventListener("mouseenter", e => {
+                if (window.innerWidth > 768 && e.currentTarget?.dataset.playerIndex)
+                    updatePlayerDisplay(parseInt(e.currentTarget.dataset.playerIndex), false);
+            });
+            thumb.addEventListener("click", e => {
+                if (e.currentTarget?.dataset.playerIndex)
+                    updatePlayerDisplay(parseInt(e.currentTarget.dataset.playerIndex), true);
+            });
         });
 
-        thumb.addEventListener("click", (e) => {
-            const target = e.currentTarget;
-            if (target && target.dataset.playerIndex) {
-                const index = parseInt(target.dataset.playerIndex);
-                updatePlayerDisplay(index, true);
-            }
-        });
+        if (rowsContainer) {
+            rowsContainer.addEventListener("mouseleave", () => {
+                if (window.innerWidth > 768) updatePlayerDisplay(selectedIndex, false);
+            });
+        }
     });
-
-    if (rowsContainer) {
-        rowsContainer.addEventListener("mouseleave", () => {
-            if (window.innerWidth > 768) {
-                updatePlayerDisplay(selectedIndex, false);
-            }
-        });
-    }
 </script>
 
 <style>
     .player-selector {
         width: 100%;
-        margin: 0 auto;
-        padding: 0;
+        position: relative;
+        background: rgba(4, 10, 24, 0.95);
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        border-radius: 10px;
         overflow: hidden;
     }
 
-    .mobile-player-carousel {
-        display: none;
+    .scanline-overlay {
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+            0deg, transparent, transparent 3px,
+            rgba(0, 0, 0, 0.1) 3px, rgba(0, 0, 0, 0.1) 4px
+        );
+        pointer-events: none;
+        z-index: 0;
     }
 
-    .player-container {
+    .sf-inner {
+        position: relative;
+        z-index: 2;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 2.5rem 2.5rem 2.5rem;
         display: flex;
         flex-direction: column;
-        gap: 3rem;
+        align-items: center;
+        gap: 0;
+    }
+
+    .main-player-display {
         width: 100%;
-        max-width: 1700px;
-        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
     }
-    @media (min-width: 1024px) {
-        .player-container {
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 4rem;
-            justify-content: center;
-        }
 
-        .main-player-display {
-            flex: 1;
-            position: sticky;
-            top: 5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 0;
-            padding: 0 1rem 2rem;
-            height: fit-content;
-        }
-
-        .player-rows-container {
-            flex: 1;
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 3rem 2rem;
-            align-items: start !important;
-            min-width: 0;
-            padding: 0;
-        }
-
-        .player-row-section {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 1.5rem !important;
-            width: 100% !important;
-        }
-
-        .section-title {
-            font-size: 2.8rem !important;
-            font-weight: 800 !important;
-            font-family: "Bebas Neue", sans-serif !important;
-            color: #1a1a1a;
-            margin: 0 0 1.2rem 0 !important;
-            padding-left: 1rem;
-            border-left: 4px solid #ffde59;
-            text-transform: uppercase;
-            line-height: 1;
-        }
-
-        .player-row {
-            display: grid !important;
-            grid-template-columns: repeat(4, 1fr) !important;
-            gap: 10px;
-            width: 100%;
-            justify-items: center;
-        }
+    .player-main-image-container {
+        position: relative;
+        height: 480px;
+        width: 360px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
     }
+
+    .player-number-bg {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Cinzel', serif;
+        font-size: 14rem;
+        font-weight: 900;
+        color: rgba(212, 168, 67, 0.05);
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: -0.05em;
+        white-space: nowrap;
+    }
+
+    .player-main-image {
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+        display: block;
+        position: relative;
+        z-index: 1;
+        filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.7));
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
+        transition: transform 0.4s ease;
+    }
+
+    .player-dorsal {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+        font-weight: 700;
+        color: #d4a843;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        opacity: 0.7;
+        line-height: 1;
+        margin-bottom: 0.4rem;
+    }
+
+    .player-name {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(2rem, 5vw, 4rem);
+        font-weight: 700;
+        color: #d4a843;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        line-height: 1.1;
+        margin: 0 0 1.2rem;
+        text-shadow: 0 0 40px rgba(212, 168, 67, 0.2);
+    }
+
     .player-info-top {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        width: 100%;
-        margin-bottom: 2.5rem;
-        padding: 0 1rem;
+        justify-content: center;
+        gap: 1.2rem;
+        margin-bottom: 1.2rem;
         flex-wrap: wrap;
-        gap: 0.5rem;
     }
 
     .player-position {
-        font-size: 1.8rem;
-        font-family: "Archivo Black", sans-serif;
+        font-family: 'Cinzel', serif;
+        font-size: 0.62rem;
+        letter-spacing: 0.25em;
+        color: rgba(212, 168, 67, 0.6);
         text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #1a1a1a;
-        font-weight: 800;
+        font-weight: 600;
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        padding: 0.18rem 0.55rem;
+        background: rgba(212, 168, 67, 0.06);
     }
 
     .player-country-flat {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.45rem;
     }
 
     .country-flag {
-        width: 48px;
+        width: 20px;
         height: auto;
-        border-radius: 0;
+        border-radius: 2px;
+        opacity: 0.8;
     }
 
     #player-country-name {
-        font-size: 1.6rem;
-        font-weight: 800;
-        font-family: "Archivo Black", sans-serif;
+        font-family: 'Cinzel', serif;
+        font-size: 0.62rem;
+        font-weight: 600;
         text-transform: uppercase;
-        color: #1a1a1a;
-    }
-
-    .player-main-image-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 380px;
-        margin-bottom: 1.5rem;
-        position: relative;
-    }
-
-    .player-main-image {
-        height: 380px;
-        width: auto;
-        max-width: 100%;
-        object-fit: contain;
-        display: block;
-        margin: 0 auto;
-        transition: transform 0.5s ease;
-        filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
-        -webkit-mask-image: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 1) 60%,
-            rgba(0, 0, 0, 0) 100%
-        );
-        mask-image: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 1) 60%,
-            rgba(0, 0, 0, 0) 100%
-        );
-    }
-
-    .player-name {
-        text-align: center;
-        font-size: clamp(2.5rem, 5vw, 5rem);
-        font-weight: 900;
-        font-family: "Permanent Marker", cursive;
-        color: #ffde59;
-        margin-bottom: 2rem;
-        text-transform: uppercase;
-        line-height: 1;
-        min-height: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        color: rgba(240, 240, 240, 0.6);
+        letter-spacing: 0.1em;
     }
 
     .player-stats {
         display: flex;
-        justify-content: center;
-        gap: 3rem;
-        margin-bottom: 2.5rem;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 1.8rem;
+        background: rgba(212, 168, 67, 0.04);
+        border: 1px solid rgba(212, 168, 67, 0.12);
+        border-radius: 4px;
+        overflow: hidden;
+        width: 100%;
+        max-width: 420px;
     }
 
     .stat-item {
         display: flex;
         flex-direction: column;
         align-items: center;
+        padding: 0.85rem 0;
+        flex: 1;
+    }
+
+    .stat-sep {
+        width: 1px;
+        height: 36px;
+        background: rgba(212, 168, 67, 0.13);
+        flex-shrink: 0;
     }
 
     .stat-label {
-        font-size: 0.9rem;
-        font-family: "Archivo Black", sans-serif;
-        color: #1a1a1a;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.62rem;
+        color: rgba(212, 168, 67, 0.5);
         text-transform: uppercase;
-        font-style: italic;
-        opacity: 0.7;
+        letter-spacing: 0.15em;
+        margin-bottom: 0.15rem;
     }
 
     .stat-value {
-        font-size: 3.5rem;
-        font-weight: 900;
-        font-family: "Archivo Black", sans-serif;
-        color: #ffde59;
+        font-family: 'Cinzel', serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #f0f0f0;
         line-height: 1;
-    }
-
-    .btn-profile {
-        background: #ffde59;
-        color: #1a1a1a;
-        padding: 1.2rem 3.5rem;
-        border-radius: 50px;
-        text-transform: uppercase;
-        font-weight: 900;
-        font-size: 1.2rem;
-        text-decoration: none;
-        box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
-        transition: all 0.3s ease;
-    }
-
-    .btn-profile:hover {
-        background: #ffcc00;
-        transform: translateY(-3px);
     }
 
     .player-actions {
         display: flex;
         justify-content: center;
+    }
+
+    .btn-profile {
+        background: transparent;
+        border: 1px solid rgba(212, 168, 67, 0.55);
+        color: #d4a843;
+        padding: 0.6rem 2.2rem;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+    }
+
+    .btn-profile:hover {
+        color: #060d1c;
+        background: #d4a843;
+        border-color: #d4a843;
+    }
+
+    .selector-divider {
         width: 100%;
+        height: 1px;
+        margin: 1.8rem 0;
+        background: linear-gradient(
+            to right,
+            transparent,
+            rgba(212, 168, 67, 0.28) 25%,
+            rgba(212, 168, 67, 0.28) 75%,
+            transparent
+        );
+    }
+
+    .player-rows-container {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem 2.5rem;
+    }
+
+    @media (max-width: 520px) {
+        .player-rows-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .player-row-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .section-title {
+        font-family: 'Cinzel', serif;
+        font-size: 0.56rem;
+        font-weight: 700;
+        letter-spacing: 0.38em;
+        color: rgba(212, 168, 67, 0.45);
+        text-transform: uppercase;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .section-title-pip {
+        display: inline-block;
+        width: 4px;
+        height: 4px;
+        background: rgba(212, 168, 67, 0.4);
+        transform: rotate(45deg);
+        flex-shrink: 0;
+    }
+
+    .player-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
     }
 
     .player-thumbnail {
-        width: 85px;
-        height: 85px;
-        background: rgba(0, 0, 0, 0.02);
+        width: 92px;
+        height: 114px;
+        background: transparent;
         border: none;
         cursor: pointer;
         position: relative;
         display: flex;
         align-items: flex-end;
         justify-content: center;
-        transition: all 0.3s ease;
+        transition: background 0.2s ease;
+        padding: 0;
+        flex-shrink: 0;
     }
 
     .player-thumbnail::before,
     .player-thumbnail::after {
-        content: "";
+        content: '';
         position: absolute;
-        width: 20px;
-        height: 20px;
-        border: 4px solid #ffde59;
+        width: 8px;
+        height: 8px;
+        border-color: rgba(212, 168, 67, 0.45);
+        border-style: solid;
         opacity: 0;
-        transition: all 0.3s ease;
+        transition: opacity 0.2s ease, border-color 0.2s ease;
+        z-index: 3;
     }
 
     .player-thumbnail::before {
-        top: -6px;
-        left: -6px;
-        border-bottom: none;
-        border-right: none;
-    }
-    .player-thumbnail::after {
-        bottom: -6px;
-        right: -6px;
-        border-top: none;
-        border-left: none;
+        top: 3px;
+        left: 3px;
+        border-width: 1.5px 0 0 1.5px;
     }
 
-    .player-thumbnail.active::before,
-    .player-thumbnail.active::after,
+    .player-thumbnail::after {
+        bottom: 3px;
+        right: 3px;
+        border-width: 0 1.5px 1.5px 0;
+    }
+
+    .player-thumbnail:hover,
+    .player-thumbnail.active {
+        background: rgba(212, 168, 67, 0.07);
+    }
+
     .player-thumbnail:hover::before,
     .player-thumbnail:hover::after {
         opacity: 1;
     }
 
-    .player-thumbnail.active,
-    .player-thumbnail:hover {
-        background: rgba(255, 222, 89, 0.1);
-        box-shadow: 0 0 20px rgba(255, 222, 89, 0.3);
+    .player-thumbnail.active::before,
+    .player-thumbnail.active::after {
+        opacity: 1;
+        border-color: #d4a843;
+    }
+
+    @keyframes sf-pulse {
+        0%, 100% { box-shadow: 0 0 6px rgba(212, 168, 67, 0.18); }
+        50%       { box-shadow: 0 0 16px rgba(212, 168, 67, 0.4); }
+    }
+
+    .player-thumbnail.active {
+        animation: sf-pulse 1.8s ease-in-out infinite;
     }
 
     .thumbnail-number {
         position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: #ffde59;
-        font-size: 3.5rem;
-        font-weight: 900;
-        font-family: "Permanent Marker", cursive;
-        z-index: 10;
+        top: 4px;
+        right: 5px;
+        font-family: 'Cinzel', serif;
+        color: rgba(212, 168, 67, 0.65);
+        font-size: 0.55rem;
+        font-weight: 700;
+        z-index: 4;
         line-height: 1;
-        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+        transition: color 0.2s ease;
+    }
+
+    .player-thumbnail:hover .thumbnail-number,
+    .player-thumbnail.active .thumbnail-number {
+        color: #d4a843;
     }
 
     .thumbnail-image-wrapper {
-        width: 100%;
-        height: 100%;
-        position: relative;
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
     }
 
     .thumbnail-image {
-        width: 110%;
-        height: auto;
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        filter: grayscale(80%);
-        transition: all 0.3s ease;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        filter: grayscale(55%) brightness(0.7);
+        transition: filter 0.25s ease, transform 0.3s ease;
     }
 
-    .player-thumbnail.active .thumbnail-image,
-    .player-thumbnail:hover .thumbnail-image {
-        filter: grayscale(0%);
-        transform: translateX(-50%);
-    }
-    /* ========== TABLET (max-width: 1023px) ========== */
-    @media (max-width: 1023px) {
-        .player-selector {
-            padding: 2rem 1rem;
-        }
-        .main-player-display {
-            margin-bottom: 3rem;
-        }
-        .player-rows-container {
-            gap: 2rem;
-        }
-        .player-row {
-            grid-template-columns: repeat(
-                auto-fill,
-                minmax(80px, 1fr)
-            ) !important;
-        }
-        .player-thumbnail {
-            width: 85px;
-            height: 85px;
-        }
-        .thumbnail-number {
-            font-size: 2.5rem;
-            bottom: 5px;
-        }
-        .stat-value {
-            font-size: 2.5rem;
-        }
+    .player-thumbnail:hover .thumbnail-image,
+    .player-thumbnail.active .thumbnail-image {
+        filter: grayscale(0%) brightness(0.92);
+        transform: scale(1.05);
     }
 
-    /* ========== MÓVIL (max-width: 768px) ========== */
+    .mobile-player-carousel {
+        display: none;
+    }
+
     @media (max-width: 768px) {
-        /* Ocultar grilla de escritorio y mostrar carrusel móvil */
+        .sf-inner {
+            padding: 1.5rem 1rem 0.5rem;
+        }
+
         .player-rows-container {
             display: none !important;
         }
+
         .mobile-player-carousel {
             display: flex;
             align-items: center;
-            gap: 1.5rem; /* Gap simétrico para ambas flechas */
+            gap: 0.6rem;
             width: 100%;
-            margin-top: 0; /* Eliminado margin-top para usar padding del botón */
-            padding: 0 0.5rem;
+            padding: 0 1rem 1.5rem;
             box-sizing: border-box;
+            position: relative;
+            z-index: 2;
         }
 
-        /* Wrapper con scroll horizontal */
         .mobile-thumbnails-wrapper {
             flex: 1;
             overflow-x: auto;
-            overflow-y: visible; /* Cambiado de hidden a visible para no cortar cabezas/marcos */
+            overflow-y: visible;
             scroll-snap-type: x mandatory;
-            scroll-padding: 0 2rem; /* Espacio extra para que el snap no pegue la jugadora al borde */
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+            overscroll-behavior-x: contain;
             scrollbar-width: none;
-            position: relative;
-        }
-        .mobile-thumbnails-wrapper::-webkit-scrollbar {
-            display: none;
         }
 
-        /* Track interior */
+        .mobile-thumbnails-wrapper::-webkit-scrollbar { display: none; }
+
         .mobile-thumbnails-track {
             display: flex;
-            gap: 1.5rem;
-            padding: 3.5rem 2.5rem 1rem; /* Padding lateral simétrico */
+            gap: 5px;
+            padding: 0.5rem;
             width: max-content;
             align-items: flex-end;
-            overflow: visible;
         }
 
-        /* Cada thumbnail en el carrusel */
         .mobile-thumbnails-track .player-thumbnail {
-            width: 80px;
-            height: 80px;
+            width: 62px;
+            height: 76px;
             flex-shrink: 0;
             scroll-snap-align: start;
-            overflow: visible; /* Permitir que la imagen sobresalga */
-        }
-        .mobile-thumbnails-track .thumbnail-image-wrapper {
-            overflow: visible;
-        }
-        .mobile-thumbnails-track .thumbnail-image {
-            width: 155%; /* Ligeramente más grande */
-            height: auto;
-            bottom: -5px;
-        }
-        .mobile-thumbnails-track .thumbnail-number {
-            font-size: 2.2rem;
-            bottom: 4px;
         }
 
-        /* Botones flechas del carrusel */
         .carousel-arrow {
-            background: transparent !important;
-            border: none;
-            width: 44px; /* Más grandes */
-            height: 44px;
-            min-width: 44px;
+            background: transparent;
+            border: 1px solid rgba(212, 168, 67, 0.22);
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            color: #ffde59; /* Amarillo por defecto */
-            box-shadow: none !important;
-            transition: color 0.3s ease;
+            color: rgba(212, 168, 67, 0.6);
+            transition: color 0.2s ease, border-color 0.2s ease;
             padding: 0;
-            z-index: 20;
-        }
-        .carousel-arrow:hover svg {
-            stroke: #000000 !important; /* Forzar el color del trazo en hover */
-        }
-        .carousel-arrow svg {
-            width: 32px; /* Icono más grande */
-            height: 32px;
-            transition: stroke 0.3s ease;
         }
 
-        /* Sección principal jugadora */
-        .player-selector {
-            padding: 1.5rem 1rem;
-        }
-        .player-container {
-            gap: 0;
-        }
-        .main-player-display {
-            margin-bottom: 0;
-            width: 100%;
+        .carousel-arrow:hover {
+            color: #d4a843;
+            border-color: rgba(212, 168, 67, 0.5);
         }
 
-        /* Barra superior posición + bandera */
-        .player-info-top {
-            display: flex; /* Añadido flex para que justify-content funcione */
-            margin-bottom: 1.5rem;
-            padding: 0 0.5rem;
-            justify-content: center;
-            align-items: center;
-            gap: 6rem;
-        }
-        .player-position {
-            font-size: 1rem;
-            letter-spacing: 1px;
-            white-space: nowrap;
-        }
-        .player-country-flat {
-            gap: 0.5rem;
-        }
-        .country-flag {
-            width: 28px;
-        }
-        #player-country-name {
-            font-size: 1rem;
-        }
-
-        /* Imagen principal */
         .player-main-image-container {
-            height: 300px;
-            margin-bottom: 1rem;
-        }
-        .player-main-image {
-            height: 300px;
+            height: 260px;
+            width: 200px;
         }
 
-        /* Nombre jugadora */
+        .player-number-bg {
+            font-size: 9rem;
+        }
+
         .player-name {
-            font-size: clamp(1.8rem, 8vw, 3rem);
-            min-height: 60px;
-            margin-bottom: 1rem;
+            font-size: clamp(1.3rem, 6vw, 2rem);
         }
 
-        /* Stats: edad, altura, peso */
-        .player-stats {
-            gap: 1.5rem;
-            margin-bottom: 0; /* Eliminado para simetría perfecta con el padding del botón */
-        }
-        .stat-value {
-            font-size: 2rem;
-        }
-        .stat-label {
-            font-size: 0.75rem;
-        }
-
-        /* Botón ver perfil */
-        .player-actions {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            padding: 5rem 0; /* Padding EXACTAMENTE IGUAL arriba y abajo */
-        }
-        .btn-profile {
-            padding: 0.9rem 2.5rem;
-            font-size: 1rem;
-            margin: 0 auto;
+        .player-dorsal {
+            font-size: clamp(0.9rem, 3vw, 1.3rem);
         }
     }
 </style>
-
-

@@ -1,19 +1,31 @@
 ---
+import { ClientRouter } from "astro:transitions";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import CookieConsent from "../components/CookieConsent.astro";
-import TopBar from "../components/TopBar.astro";
 import ScrollToTop from "../components/ScrollToTop.astro";
+import NextMatchCountdown from "../components/NextMatchCountdown.astro";
 import { getAssetUrl } from "../utils/assets";
 import "../styles/global.css";
-import "@fontsource/permanent-marker";
-import "@fontsource/bebas-neue";
-import "@fontsource/archivo-black";
-import "@fontsource/poppins";
+// @ts-ignore
+import "@fontsource/cormorant-garamond/400.css";
+// @ts-ignore
+import "@fontsource/cormorant-garamond/400-italic.css";
+// @ts-ignore
+import "@fontsource/cormorant-garamond/700.css";
+// @ts-ignore
+import "@fontsource/cinzel/400.css";
+// @ts-ignore
+import "@fontsource/cinzel/700.css";
+// @ts-ignore
+import "@fontsource/dm-sans/400.css";
+// @ts-ignore
+import "@fontsource/dm-sans/500.css";
+// @ts-ignore
+import "@fontsource/dm-sans/700.css";
 
 const ogImage = "https://media.madridfemeninoxtra.com/background/og.png";
-const favicon = "/favicon-transparent-final.png";
-const faviconIco = "/favicon.ico";
+const favicon = "/icon.webp";
 
 interface Props {
 	title?: string;
@@ -22,6 +34,7 @@ interface Props {
 	noindex?: boolean;
 	showAds?: boolean;
 	author?: string;
+	noBg?: boolean;
 }
 const {
 	title = "Noticias, actualidad y estadísticas del Real Madrid femenino | Madrid Femenino Xtra",
@@ -30,7 +43,10 @@ const {
 	noindex = false,
 	showAds = true,
 	author = "Madrid Femenino Xtra",
+	noBg = false,
 } = Astro.props;
+
+const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
 ---
 
 <!doctype html>
@@ -39,15 +55,14 @@ const {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>{title}</title>
-		<link rel="icon" type="image/x-icon" href={faviconIco} />
-		<link rel="icon" type="image/png" href={favicon} />
+		<link rel="icon" type="image/webp" href={favicon} />
 		<link rel="canonical" href={Astro.url.href} />
 		<link rel="alternate" type="application/rss+xml" title="Madrid Femenino Xtra Noticias" href="/rss.xml" />
 		<link rel="preconnect" href="https://i.ytimg.com" />
 		<meta name="description" content={description} />
 		<meta name="author" content={author} />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="theme-color" content="#2b2b2b" />
+		<meta name="theme-color" content="#090909" />
 		<meta property="og:url" content="https://www.madridfemeninoxtra.com" />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Madrid Femenino Xtra" />
@@ -62,14 +77,16 @@ const {
 		<meta name="twitter:image" content={image} />
 		<meta name="robots" content={noindex ? "noindex" : "index, follow"} />
 		<slot name="head" />
+		<ClientRouter />
 	</head>
 	<body>
-		<TopBar />
+		{bgUrl && <div class="global-bg" style={`background-image:url(${bgUrl})`}></div>}
 		<Header />
 		<div class="page-wrapper">
 			<slot />
 		</div>
 		<Footer />
+		<NextMatchCountdown />
 		<CookieConsent showAds={showAds} />
 		<ScrollToTop />
 		<script is:inline>
@@ -160,6 +177,22 @@ const {
 			document.addEventListener("astro:page-load", setupGlobalSelects);
 
 			setInterval(setupGlobalSelects, 1000);
+
+			function setupSectionTitles() {
+				document.querySelectorAll('.section-title, .landing-title').forEach(function(el) {
+					if (!el.getAttribute('data-title')) {
+						var text = el.textContent ? el.textContent.trim().toUpperCase() : '';
+						if (text) el.setAttribute('data-title', text);
+					}
+				});
+			}
+
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", setupSectionTitles);
+			} else {
+				setupSectionTitles();
+			}
+			document.addEventListener("astro:page-load", setupSectionTitles);
 		</script>
 	</body>
 </html>

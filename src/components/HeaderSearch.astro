@@ -1,0 +1,407 @@
+---
+---
+
+
+<button class="hs-btn" id="headerSearchBtn" aria-label="Buscar" aria-expanded="false">
+    <svg class="hs-desktop-icon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
+        <path d="M21 21l-6 -6"/>
+    </svg>
+    <svg class="hs-mobile-icon nav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
+        <path d="M21 21l-6 -6"/>
+    </svg>
+    <span class="hs-mobile-label">Buscar</span>
+</button>
+
+<div class="hs-overlay" id="headerSearchOverlay" aria-hidden="true">
+    <div class="hs-panel" role="search">
+        <div class="hs-input-wrap">
+            <svg class="hs-lupa" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
+                <path d="M21 21l-6 -6"/>
+            </svg>
+            <input
+                id="headerSearchInput"
+                class="hs-input"
+                type="search"
+                placeholder="Buscar jugadoras, partidos, rivales..."
+                autocomplete="off"
+                aria-label="Campo de búsqueda"
+            />
+            <button class="hs-close-btn" id="headerSearchClose" aria-label="Cerrar búsqueda">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M18 6l-12 12"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="headerSearchDropdown" class="hs-dropdown"></div>
+    </div>
+</div>
+
+<style>
+    .hs-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(212, 168, 67, 0.4);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        padding: 0;
+        flex-shrink: 0;
+        transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+    }
+
+    .hs-btn:hover,
+    .hs-btn[aria-expanded="true"] {
+        border-color: #d4a843;
+        color: #d4a843;
+        background: rgba(212, 168, 67, 0.1);
+    }
+
+    .hs-mobile-icon,
+    .hs-mobile-label { display: none; }
+
+    .hs-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 13, 28, 0.84);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 2000001;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 88px;
+        padding-inline: 1.5rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.22s ease;
+    }
+
+    .hs-overlay.is-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .hs-panel {
+        width: 100%;
+        max-width: 640px;
+        background: rgba(8, 16, 34, 0.98);
+        border: 1px solid rgba(212, 168, 67, 0.3);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(212, 168, 67, 0.04);
+        transform: translateY(-10px);
+        transition: transform 0.22s ease;
+    }
+
+    .hs-overlay.is-open .hs-panel {
+        transform: translateY(0);
+    }
+
+    .hs-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0 1.1rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+    }
+
+    .hs-lupa {
+        color: rgba(212, 168, 67, 0.65);
+        flex-shrink: 0;
+    }
+
+    .hs-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #f0f0f0;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.05rem;
+        padding: 1rem 0;
+        min-width: 0;
+    }
+
+    .hs-input::placeholder { color: rgba(255, 255, 255, 0.28); }
+    .hs-input::-webkit-search-cancel-button { display: none; }
+
+    .hs-close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.35);
+        cursor: pointer;
+        padding: 0.25rem;
+        flex-shrink: 0;
+        transition: color 0.2s ease;
+    }
+
+    .hs-close-btn:hover { color: #d4a843; }
+
+    .hs-dropdown {
+        max-height: 420px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(212, 168, 67, 0.3) transparent;
+    }
+
+    @media (max-width: 1024px) {
+        .hs-btn {
+            width: 100%;
+            height: auto;
+            border-radius: 0;
+            border: none;
+            background: transparent;
+            padding: 0.8rem 0;
+            justify-content: flex-start;
+            gap: 1rem;
+            color: #ffffff;
+            font-size: 1.15rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hs-btn:hover,
+        .hs-btn[aria-expanded="true"] {
+            border: none;
+            background: transparent;
+            color: #d4a843;
+        }
+
+        .hs-desktop-icon { display: none; }
+        .hs-mobile-icon  { display: block; }
+        .hs-mobile-label { display: inline; }
+
+        .hs-overlay { padding-top: 0; align-items: center; }
+        .hs-panel { border-radius: 10px; }
+    }
+</style>
+
+<style is:global>
+    .hs-item {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.7rem 1.1rem;
+        text-decoration: none;
+        color: #e0e0e0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .hs-item:last-of-type { border-bottom: none; }
+    .hs-item:hover        { background: rgba(212, 168, 67, 0.08); }
+
+    .hs-av {
+        width: 38px; height: 38px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(212, 168, 67, 0.12);
+    }
+    .hs-av--square { border-radius: 6px; }
+    .hs-av img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .hs-av--square img { object-fit: contain; padding: 3px; }
+    .hs-av-initial {
+        font-family: 'Cinzel', serif;
+        font-size: 1rem; font-weight: 700; color: #d4a843;
+    }
+
+    .hs-text {
+        display: flex; flex-direction: column; gap: 0.3rem;
+        min-width: 0; flex: 1;
+    }
+    .hs-meta { display: flex; align-items: center; gap: 0.4rem; }
+    .hs-badge {
+        font-family: 'Cinzel', serif;
+        font-size: 0.58rem; letter-spacing: 0.5px;
+        background: rgba(212, 168, 67, 0.18);
+        color: #d4a843;
+        padding: 0.1rem 0.5rem;
+        border-radius: 2px; white-space: nowrap;
+    }
+    .hs-sub {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.7rem; color: rgba(200,200,200,0.5);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hs-title {
+        font-family: 'Cinzel', serif;
+        font-size: 0.82rem; color: #f0f0f0;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hs-all {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.7rem 1.1rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.75rem; letter-spacing: 0.5px;
+        color: #d4a843;
+        background: rgba(212, 168, 67, 0.06);
+        border-top: 1px solid rgba(212, 168, 67, 0.15);
+        cursor: pointer; text-decoration: none;
+        transition: background 0.15s ease;
+    }
+    .hs-all:hover { background: rgba(212, 168, 67, 0.12); }
+    .hs-empty {
+        padding: 1.25rem 1.1rem;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.9rem; color: rgba(200,200,200,0.45); text-align: center;
+    }
+    .hs-comp {
+        font-family: 'Cinzel', serif;
+        font-size: 0.58rem; letter-spacing: 0.5px;
+        background: rgba(255,255,255,0.1); color: #e0e0e0;
+        padding: 0.1rem 0.45rem; border-radius: 2px; white-space: nowrap;
+    }
+    .hs-date {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.65rem; color: rgba(200,200,200,0.4); white-space: nowrap;
+    }
+    .hs-match-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+</style>
+
+<script>
+    const btn      = document.getElementById('headerSearchBtn')      as HTMLButtonElement | null;
+    const overlay  = document.getElementById('headerSearchOverlay')  as HTMLDivElement    | null;
+    const input    = document.getElementById('headerSearchInput')    as HTMLInputElement  | null;
+    const closeBtn = document.getElementById('headerSearchClose')    as HTMLButtonElement | null;
+    const dd       = document.getElementById('headerSearchDropdown') as HTMLDivElement    | null;
+
+    if (btn && overlay && input && closeBtn && dd) {
+        function openSearch() {
+            overlay!.classList.add('is-open');
+            overlay!.setAttribute('aria-hidden', 'false');
+            btn!.setAttribute('aria-expanded', 'true');
+            setTimeout(() => input!.focus(), 50);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSearch() {
+            overlay!.classList.remove('is-open');
+            overlay!.setAttribute('aria-hidden', 'true');
+            btn!.setAttribute('aria-expanded', 'false');
+            dd!.innerHTML = '';
+            input!.value = '';
+            document.body.style.overflow = '';
+        }
+
+        btn.addEventListener('click', openSearch);
+        closeBtn.addEventListener('click', closeSearch);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSearch(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay!.classList.contains('is-open')) closeSearch();
+        });
+
+        const LABELS: Record<string, string> = {
+            player: 'Jugadora', coach: 'Entrenadora', rival: 'Rival',
+            match: 'Partido', referee: 'Árbitra', stadium: 'Estadio',
+        };
+        const SQUARE_TYPES = new Set(['rival', 'stadium', 'match']);
+        const COMP_COLORS: Record<string, string> = {
+            'liga f': '#0ea5c8', 'uwcl': '#1e3a6e',
+            'copa de la reina': '#f97316', 'supercopa de españa': '#dc2626',
+            'amistosos': '#9ca3af',
+        };
+
+        function esc(s: string) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function compStyle(comp: string) {
+            const k = comp.toLowerCase();
+            for (const [key, color] of Object.entries(COMP_COLORS)) {
+                if (k.includes(key)) return `background:${color};`;
+            }
+            return '';
+        }
+
+        function avatar(r: any) {
+            const src = r.imageUrl || r.shieldUrl || '';
+            const square = SQUARE_TYPES.has(r.type);
+            const letter = (r.title ?? '?').charAt(0).toUpperCase();
+            const cls = `hs-av${square ? ' hs-av--square' : ''}`;
+            return src
+                ? `<div class="${cls}"><img src="${src}" alt="" loading="lazy"></div>`
+                : `<div class="${cls}"><span class="hs-av-initial">${letter}</span></div>`;
+        }
+
+        const SKIP_SUB = new Set(['rival', 'coach', 'referee']);
+
+        function subtitle(r: any) {
+            if (!r.subtitle || SKIP_SUB.has(r.type)) return '';
+            if (r.type === 'stadium' && r.subtitle.toLowerCase() === 'estadio') return '';
+            if (r.type === 'match') {
+                const dash = r.subtitle.indexOf(' - ');
+                if (dash !== -1) {
+                    const fecha = r.subtitle.slice(0, dash);
+                    const comp  = r.subtitle.slice(dash + 3);
+                    return `<div class="hs-match-row"><span class="hs-date">${esc(fecha)}</span><span class="hs-comp" style="${compStyle(comp)}">${esc(comp)}</span></div>`;
+                }
+            }
+            return `<span class="hs-sub">${esc(r.subtitle)}</span>`;
+        }
+
+        function render(results: any[], q: string) {
+            if (!results.length) {
+                dd!.innerHTML = `<p class="hs-empty">Sin resultados para "<b>${esc(q)}</b>"</p>`;
+                return;
+            }
+            const rows = results.slice(0, 7).map((r: any) => `
+                <div class="hs-item" data-href="${esc(r.url)}">
+                    ${avatar(r)}
+                    <div class="hs-text">
+                        <div class="hs-meta">
+                            <span class="hs-badge">${esc(LABELS[r.type] ?? r.type)}</span>
+                            ${subtitle(r)}
+                        </div>
+                        <span class="hs-title">${esc(r.title ?? '')}</span>
+                    </div>
+                </div>`).join('');
+            dd!.innerHTML = rows + `<a class="hs-all" href="/search?q=${encodeURIComponent(q)}"><span>Ver todos los resultados</span><span>→</span></a>`;
+        }
+
+        dd.addEventListener('click', (e) => {
+            const el = (e.target as Element).closest('[data-href]') as HTMLElement | null;
+            if (el?.dataset.href) { closeSearch(); window.location.href = el.dataset.href; }
+        });
+
+        let timer: ReturnType<typeof setTimeout>;
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const q = input!.value.trim();
+            if (q.length < 2) { dd!.innerHTML = ''; return; }
+            timer = setTimeout(async () => {
+                try {
+                    const res  = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    render(data.results ?? [], q);
+                } catch (_) {}
+            }, 280);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const q = input!.value.trim();
+                if (q) { closeSearch(); window.location.href = `/search?q=${encodeURIComponent(q)}`; }
+            }
+        });
+    }
+</script>

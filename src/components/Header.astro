@@ -2,11 +2,9 @@
 import X from "../assets/redes/x.svg";
 import Instagram from "../assets/redes/instagram.svg";
 import TikTok from "../assets/redes/tiktok.svg";
-import Youtube from "../assets/redes/youtube.svg";
-import Facebook from "../assets/redes/facebook.svg";
-import LinkedIn from "../assets/redes/linkedin.svg";
 import { Show } from "@clerk/astro/components";
-const Logo = "/logo-final-trans.png";
+import HeaderSearch from "./HeaderSearch.astro";
+const LogoIcon = "/icon.webp";
 
 const pathname = new URL(Astro.request.url).pathname;
 const currentPath = pathname === "/" ? "/home" : pathname;
@@ -22,25 +20,21 @@ const userPhoto = clerkUser?.imageUrl || '';
     <div class="logo">
         <a href="/home">
             <img
-                src={Logo}
+                src={LogoIcon}
                 alt="Madrid Femenino Xtra"
-                width="150"
-                height="150"
                 loading="eager"
-                class="header-logo-img"
+                class="header-logo-icon"
             />
         </a>
     </div>
-
     <nav id="main-nav" class="main-nav">
         <div class="mobile-menu-logo">
             <a href="/home">
                 <img
-                    src={Logo}
+                    src={LogoIcon}
                     alt="Madrid Femenino Xtra"
-                    width="120"
-                    height="60"
                     loading="lazy"
+                    class="header-logo-icon"
                 />
             </a>
         </div>
@@ -59,7 +53,16 @@ const userPhoto = clerkUser?.imageUrl || '';
             </Show>
         </div>
 
-        <ul class="nav-list">
+        <div class="nav-island">
+            <a href="/home" class="island-logo-link">
+                <img
+                    src={LogoIcon}
+                    alt="Madrid Femenino Xtra"
+                    loading="eager"
+                    class="island-logo-img"
+                />
+            </a>
+            <ul class="nav-list">
             <li>
                 <a href="/home" class={currentPath === "/home" ? "active" : ""}>
                     <svg
@@ -131,7 +134,8 @@ const userPhoto = clerkUser?.imageUrl || '';
                     <a
                         href="#"
                         aria-expanded="false"
-                        aria-controls="submenu-estadisticas"
+                        aria-controls="submenu-hub"
+                        class={currentPath.startsWith("/estadisticas") || currentPath.startsWith("/jugadoras") || currentPath.startsWith("/entrenadores") || currentPath.startsWith("/arbitras") || currentPath.startsWith("/partidos") || currentPath.startsWith("/rivales") || currentPath.startsWith("/estadios") || currentPath.startsWith("/rankings") || currentPath.startsWith("/records") || currentPath.startsWith("/comparador") ? "active" : ""}
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -153,30 +157,34 @@ const userPhoto = clerkUser?.imageUrl || '';
                                 d="M15 12v-2"></path><path d="M12 12v-1"
                             ></path></svg
                         >
-                        <span>Estadísticas</span>
+                        <span>Hub</span>
                     </a>
                     <button
                         class="submenu-toggle"
                         aria-expanded="false"
-                        aria-controls="submenu-estadisticas"
-                        aria-label="Abrir submenú de estadísticas">▼</button
+                        aria-controls="submenu-hub"
+                        aria-label="Abrir submenú de hub">▼</button
                     >
                 </div>
 
-                <ul class="submenu" id="submenu-estadisticas">
-                    <li><a href="/jugadoras"><span>Jugadoras</span></a></li>
-                    <li>
-                        <a href="/entrenadores"><span>Entrenadores</span></a>
+                <ul class="submenu" id="submenu-hub">
+                    <li class="has-nested-submenu">
+                        <div class="nested-submenu-header">
+                            <a href="/estadisticas" class="nested-submenu-label">Estadísticas</a>
+                        </div>
+                        <ul class="nested-submenu">
+                            <li><a href="/jugadoras"><span>Jugadoras</span></a></li>
+                            <li><a href="/entrenadores"><span>Entrenadores</span></a></li>
+                            <li><a href="/arbitras"><span>Árbitras</span></a></li>
+                            <li><a href="/partidos"><span>Partidos</span></a></li>
+                            <li><a href="/rivales"><span>Rivales</span></a></li>
+                            <li><a href="/estadios"><span>Estadios</span></a></li>
+                        </ul>
                     </li>
-                    <li><a href="/arbitras"><span>Árbitras</span></a></li>
-                    <li><a href="/partidos"><span>Partidos</span></a></li>
-                    <li><a href="/rivales"><span>Rivales</span></a></li>
-                    <li><a href="/estadios"><span>Estadios</span></a></li>
                     <li><a href="/rankings"><span>Rankings</span></a></li>
+                    <li><a href="/estadisticas/buscador"><span>Buscador</span></a></li>
                     <li><a href="/records"><span>Récords</span></a></li>
                     <li><a href="/comparador"><span>Comparador</span></a></li>
-                    <li><a href="/estadisticas/avanzadas"><span>Avanzadas</span></a></li>
-                    <li><a href="/estadisticas/buscador"><span>Buscador avanzado</span></a></li>
                 </ul>
             </li>
             <li>
@@ -223,74 +231,32 @@ const userPhoto = clerkUser?.imageUrl || '';
                     <span>Contacto</span>
                 </a>
             </li>
+            <li class="hs-nav-li">
+                <HeaderSearch />
+            </li>
         </ul>
+            <div class="nav-auth-item">
+                <Show when="signed-in">
+                    <button class="island-auth-btn auth-user-btn" data-action="signout">
+                        {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
+                        <span class="auth-user-name">{userName}</span>
+                    </button>
+                </Show>
+                <Show when="signed-out">
+                    <button class="island-auth-btn" data-action="signin-google">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                        ENTRAR
+                    </button>
+                </Show>
+            </div>
+        </div>
 
         <div class="mobile-social-icons">
-            <a href="https://x.com/madridfemxtra" target="_blank"><X /></a>
-            <a
-                href="https://instagram.com/madridfemxtra"
-                target="_blank"
-                rel="noopener noreferrer"><Instagram /></a
-            >
-            <a
-                href="https://tiktok.com/@madridfemeninoxtra"
-                target="_blank"
-                rel="noopener noreferrer"><TikTok /></a
-            >
-            <a
-                href="https://www.youtube.com/@madridfemxtra"
-                target="_blank"
-                rel="noopener noreferrer"><Youtube /></a
-            >
-            <a
-                href="https://www.facebook.com/madridfemxtra"
-                target="_blank"
-                rel="noopener noreferrer"><Facebook /></a
-            >
-            <a
-                href="https://www.linkedin.com/company/madrid-femenino-xtra"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"><LinkedIn /></a
-            >
-            <a href="https://discord.gg/Q7qGW3RP" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-discord"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M14 12a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M15.5 17c0 1 1.5 3 2 3c1.5 0 2.833 -1.667 3.5 -3c.667 -1.667 .5 -5.833 -1.5 -11.5c-1.457 -1.015 -3 -1.34 -4.5 -1.5l-.972 1.923a11.913 11.913 0 0 0 -4.053 0l-.975 -1.923c-1.5 .16 -3.043 .485 -4.5 1.5c-2 5.667 -2.167 9.833 -1.5 11.5c.667 1.333 2 3 3.5 3c.5 0 2 -2 2 -3" /><path d="M7 16.5c3.5 1 6.5 1 10 0" /></svg>
-            </a>
+            <a href="https://x.com/madridfemxtra" target="_blank" rel="noopener noreferrer" aria-label="X / Twitter"><X /></a>
+            <a href="https://instagram.com/madridfemxtra" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram /></a>
+            <a href="https://tiktok.com/@madridfemeninoxtra" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><TikTok /></a>
         </div>
     </nav>
-
-    <div class="social-icons desktop-social-icons">
-        <div class="auth-zone">
-            <Show when="signed-in">
-                <button class="auth-login-btn auth-user-btn" data-action="signout">
-                    {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
-                    <span class="auth-user-name">{userName}</span>
-                </button>
-            </Show>
-            <Show when="signed-out">
-                <button class="auth-login-btn" data-action="signin-google">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
-                    INICIAR SESIÓN
-                </button>
-            </Show>
-        </div>
-        <a href="https://x.com/madridfemxtra" target="_blank"><X /></a>
-        <a
-            href="https://instagram.com/madridfemxtra"
-            target="_blank"
-            rel="noopener noreferrer"><Instagram /></a
-        >
-        <a
-            href="https://tiktok.com/@madridfemeninoxtra"
-            target="_blank"
-            rel="noopener noreferrer"><TikTok /></a
-        >
-        <a
-            href="https://www.youtube.com/@madridfemxtra"
-            target="_blank"
-            rel="noopener noreferrer"><Youtube /></a
-        >
-    </div>
 
     <button
         class="menu-toggle"
@@ -336,45 +302,64 @@ const userPhoto = clerkUser?.imageUrl || '';
 </header>
 
 <script>
-    const toggle = document.getElementById('menu-toggle') as HTMLButtonElement | null;
-    const nav    = document.getElementById('main-nav') as HTMLElement | null;
-    const overlay = document.getElementById('nav-overlay') as HTMLElement | null;
+    function initNav() {
+        const toggle = document.getElementById('menu-toggle') as HTMLButtonElement | null;
+        const nav    = document.getElementById('main-nav') as HTMLElement | null;
+        const overlay = document.getElementById('nav-overlay') as HTMLElement | null;
 
-    function openNav() {
-        document.body.classList.add('nav-open');
-        nav?.classList.add('is-open');
-        toggle?.setAttribute('aria-expanded', 'true');
-    }
-    function closeNav() {
-        document.body.classList.remove('nav-open');
-        nav?.classList.remove('is-open');
-        toggle?.setAttribute('aria-expanded', 'false');
+        if (!toggle) return;
+
+        function openNav() {
+            document.body.classList.add('nav-open');
+            nav?.classList.add('is-open');
+            toggle?.setAttribute('aria-expanded', 'true');
+        }
+        function closeNav() {
+            document.body.classList.remove('nav-open');
+            nav?.classList.remove('is-open');
+            toggle?.setAttribute('aria-expanded', 'false');
+            document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
+                btn.setAttribute('aria-expanded', 'false');
+            });
+            document.querySelectorAll<HTMLElement>('.submenu').forEach(sub => {
+                sub.style.display = '';
+            });
+        }
+
+        toggle.addEventListener('click', () => {
+            document.body.classList.contains('nav-open') ? closeNav() : openNav();
+        });
+
+        overlay?.addEventListener('click', closeNav);
+
         document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
-            btn.setAttribute('aria-expanded', 'false');
-        });
-        document.querySelectorAll<HTMLElement>('.submenu').forEach(sub => {
-            sub.style.display = '';
+            btn.addEventListener('click', () => {
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!expanded));
+                const targetId = btn.getAttribute('aria-controls');
+                const submenu = targetId ? document.getElementById(targetId) : null;
+                if (submenu) submenu.style.display = expanded ? '' : 'block';
+            });
         });
     }
 
-    toggle?.addEventListener('click', () => {
-        document.body.classList.contains('nav-open') ? closeNav() : openNav();
-    });
-
-    overlay?.addEventListener('click', closeNav);
-
-    document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const expanded = btn.getAttribute('aria-expanded') === 'true';
-            btn.setAttribute('aria-expanded', String(!expanded));
-            const targetId = btn.getAttribute('aria-controls');
-            const submenu = targetId ? document.getElementById(targetId) : null;
-            if (submenu) submenu.style.display = expanded ? '' : 'block';
-        });
-    });
+    document.addEventListener('astro:page-load', initNav);
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeNav();
+        if (e.key !== 'Escape') return;
+        const nav = document.getElementById('main-nav');
+        const toggle = document.getElementById('menu-toggle') as HTMLButtonElement | null;
+        if (nav?.classList.contains('is-open')) {
+            document.body.classList.remove('nav-open');
+            nav.classList.remove('is-open');
+            toggle?.setAttribute('aria-expanded', 'false');
+            document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
+                btn.setAttribute('aria-expanded', 'false');
+            });
+            document.querySelectorAll<HTMLElement>('.submenu').forEach(sub => {
+                sub.style.display = '';
+            });
+        }
     });
 </script>
 
@@ -407,43 +392,48 @@ const userPhoto = clerkUser?.imageUrl || '';
 
 <style>
     :root {
-        --header-bg: #2b2b2b;
-        --header-bg-gradient: linear-gradient(to right, #2b2b2b, #1f1f1f);
+        --header-bg: #060d1c;
+        --header-bg-gradient: linear-gradient(to right, #060d1c, #0a1428);
         --header-text: #ffffff;
-        --header-accent: #ffde59;
-        --header-hover-bg: rgba(255, 222, 89, 0.1);
+        --header-accent: #d4a843;
+        --header-hover-bg: rgba(212, 168, 67, 0.1);
     }
 
     .header {
-        display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        display: flex;
+        justify-content: center;
         align-items: center;
-        padding: 0.5rem 2.5rem;
-        background: var(--header-bg-gradient);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        position: relative;
+        padding: 0.75rem 2.5rem;
+        background: transparent;
+        box-shadow: none;
+        border-bottom: none;
+        position: fixed;
         top: 0;
         left: 0;
-        right: 0;
         width: 100%;
         z-index: 1000000;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @media (max-width: 1440px) {
-        .header { gap: 1.5rem; padding: 0.5rem 1.5rem; }
-        .nav-list { gap: 1.5rem; }
+    .header--hidden {
+        transform: translateY(-160%);
     }
 
     .logo {
+        display: none;
+    }
+
+    .logo a {
         display: flex;
-        justify-content: flex-start;
         align-items: center;
-        width: 160px;
-        height: 70px;
-        position: relative;
-        overflow: visible;
-        justify-self: start;
+    }
+
+    .header-logo-icon {
+        height: 48px !important;
+        width: auto !important;
+        object-fit: contain;
+        mix-blend-mode: screen;
+        flex-shrink: 0;
     }
 
     @media (max-width: 1024px) {
@@ -459,20 +449,76 @@ const userPhoto = clerkUser?.imageUrl || '';
         }
     }
 
-    .logo a {
-        display: flex;
-        align-items: center;
-    }
-
     .logo a:hover {
         transform: none;
     }
 
-    .header-logo-img {
+    .nav-island {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem clamp(0.75rem, 2vw, 1.75rem);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 50px;
+        background: rgba(4, 10, 24, 0.72);
+        backdrop-filter: blur(24px) saturate(1.6);
+        -webkit-backdrop-filter: blur(24px) saturate(1.6);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .island-logo-link {
+        display: flex;
+        align-items: center;
+        padding-right: 1.25rem;
+        margin-right: 1.25rem;
+        border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .island-logo-img {
+        height: 36px !important;
         width: auto !important;
-        height: 70px !important;
-        max-width: 100% !important;
         object-fit: contain;
+        display: block;
+    }
+
+    .island-logo-link::after {
+        display: none !important;
+    }
+
+    .island-logo-link:hover {
+        transform: none;
+    }
+
+    .nav-auth-item {
+        display: flex;
+        align-items: center;
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        padding-left: 1.25rem;
+        margin-left: 1.25rem;
+    }
+
+    .island-auth-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--header-accent);
+        color: #1a1a1a;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        text-transform: uppercase;
+        font-weight: 900;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 12px rgba(212, 168, 67, 0.3);
+    }
+
+    .island-auth-btn:hover {
+        background: #c49030;
+        transform: translateY(-2px);
     }
 
     .custom-select-container.open {
@@ -487,44 +533,6 @@ const userPhoto = clerkUser?.imageUrl || '';
         display: flex;
         justify-content: center;
         justify-self: center;
-    }
-
-    .desktop-social-icons {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-        justify-self: end;
-        flex-wrap: wrap;
-    }
-
-    .desktop-social-icons a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.05);
-        transition: all 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #ffffff !important;
-    }
-
-    .desktop-social-icons a svg {
-        width: 1.2rem;
-        height: 1.2rem;
-        transition: all 0.3s ease;
-    }
-
-    .desktop-social-icons a:hover {
-        background: var(--header-accent);
-        transform: translateY(-2px);
-        border-color: var(--header-accent);
-        color: #2b2b2b !important;
-    }
-
-    .desktop-social-icons a:hover svg {
-        color: #ffffff !important;
     }
 
     .icon-tabler-brand-linkedin {
@@ -542,7 +550,6 @@ const userPhoto = clerkUser?.imageUrl || '';
         transition: all 0.3s ease;
     }
 
-    .desktop-social-icons a:hover .icon-tabler-brand-linkedin,
     .mobile-social-icons a:hover .icon-tabler-brand-linkedin {
         stroke: #ffffff !important;
         fill: none !important;
@@ -555,19 +562,23 @@ const userPhoto = clerkUser?.imageUrl || '';
     .nav-list {
         display: flex;
         list-style: none;
-        padding: 0;
+        padding: 0.45rem 0;
         margin: 0;
-        gap: 2.5rem;
+        gap: clamp(1rem, 2vw, 2.5rem);
+        flex: 1;
+        justify-content: center;
+        background: transparent;
+        border: none;
     }
 
     .nav-list a {
         color: var(--header-text);
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: clamp(0.78rem, 1.1vw, 0.95rem);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        transition: color 0.3s ease;
+        transition: color 0.3s ease, font-size 0.3s ease;
         padding: 0.5rem 0;
         position: relative;
         white-space: nowrap;
@@ -626,7 +637,7 @@ const userPhoto = clerkUser?.imageUrl || '';
         list-style: none;
         padding: 0.5rem;
         min-width: 200px;
-        background: #2b2b2b;
+        background: #0a1428;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         border-radius: 8px;
@@ -642,6 +653,86 @@ const userPhoto = clerkUser?.imageUrl || '';
         opacity: 1;
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
+    }
+
+    .submenu-divider {
+        height: 1px;
+        background: rgba(212,168,67,0.12);
+        margin: 0.35rem 0.75rem;
+    }
+
+    .has-nested-submenu {
+        position: relative;
+    }
+
+    .nested-submenu-header {
+        cursor: pointer;
+    }
+
+    .nested-submenu-label {
+        display: block;
+        padding: 0.75rem 1rem;
+        color: #e0e0e0;
+        border-radius: 4px;
+        font-weight: 500;
+        text-align: center;
+        font-size: 0.95rem;
+        text-transform: none;
+        transition: background 0.2s, color 0.2s;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .has-nested-submenu:hover .nested-submenu-label,
+    .has-nested-submenu:focus-within .nested-submenu-label {
+        background: rgba(255,255,255,0.05);
+        color: var(--header-accent);
+    }
+
+    .nested-submenu {
+        position: absolute;
+        top: 0;
+        left: 100%;
+        list-style: none;
+        padding: 0.5rem;
+        min-width: 180px;
+        background: #0a1428;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border-radius: 8px;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 30;
+        margin-left: 4px;
+    }
+
+    .has-nested-submenu:hover .nested-submenu,
+    .has-nested-submenu:focus-within .nested-submenu {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .nested-submenu a {
+        display: block;
+        padding: 0.65rem 1rem;
+        color: #e0e0e0;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: 500;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .nested-submenu a::after {
+        display: none;
+    }
+
+    .nested-submenu a:hover {
+        background: rgba(255,255,255,0.05);
+        color: var(--header-accent);
     }
 
     .submenu a {
@@ -673,49 +764,70 @@ const userPhoto = clerkUser?.imageUrl || '';
             display: flex;
             justify-content: space-between;
             padding: 0.5rem 1.5rem;
-            top: 0;
+            background: linear-gradient(to right, #060d1c, #0a1428);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .logo {
+            display: flex;
+            align-items: center;
             margin: 0;
             order: 1;
-            width: 140px;
-            height: 60px;
+            width: auto;
+            height: 56px;
         }
 
-        .desktop-social-icons {
+        .nav-auth-item,
+        .island-logo-link {
             display: none;
         }
 
+        .nav-island {
+            display: contents;
+        }
+
         .menu-toggle {
-            display: block;
-            background: none;
-            border: none;
-            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            background: rgba(212, 168, 67, 0.05);
+            border: 1px solid rgba(212, 168, 67, 0.25);
+            border-radius: 8px;
+            padding: 9px 11px;
             z-index: 100;
             cursor: pointer;
             order: 3;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(212, 168, 67, 0.12);
+            border-color: rgba(212, 168, 67, 0.5);
         }
 
         .menu-toggle .line {
             display: block;
-            width: 25px;
+            width: 22px;
             height: 2px;
-            background-color: var(--header-text);
-            margin: 6px 0;
+            background-color: rgba(212, 168, 67, 0.75);
+            margin: 3px 0;
+            border-radius: 2px;
             transition:
                 transform 0.3s,
                 opacity 0.3s,
-                background-color 0.3s;
+                background-color 0.3s,
+                width 0.2s;
         }
 
         .menu-toggle:hover .line {
-            background-color: var(--header-accent);
-            width: 30px;
+            background-color: #d4a843;
         }
 
         .menu-toggle:active {
-            transform: scale(0.9);
+            transform: scale(0.93);
         }
 
         .menu-toggle[aria-expanded="true"] .line:nth-child(1) {
@@ -737,7 +849,7 @@ const userPhoto = clerkUser?.imageUrl || '';
             width: 85%;
             max-width: 320px;
             height: 100vh;
-            background: #2b2b2b;
+            background: #060d1c;
             box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
             z-index: 999999;
             display: flex;
@@ -756,15 +868,20 @@ const userPhoto = clerkUser?.imageUrl || '';
             display: block;
             margin-bottom: 0;
             padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255, 222, 89, 0.2);
+            border-bottom: 1px solid rgba(212, 168, 67, 0.2);
             width: 80%;
             text-align: center;
         }
 
-        .mobile-menu-logo img {
-            height: 60px;
-            width: auto;
-            margin: 0 auto;
+        .mobile-menu-logo a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-menu-logo .header-logo-icon {
+            height: 48px !important;
         }
 
         .main-nav.is-open {
@@ -779,10 +896,12 @@ const userPhoto = clerkUser?.imageUrl || '';
             height: auto;
             gap: 0.5rem;
             text-align: left;
+            flex: none;
+            justify-content: flex-start;
         }
 
         .nav-list > li {
-            border-bottom: 1px solid rgba(255, 222, 89, 0.1);
+            border-bottom: 1px solid rgba(212, 168, 67, 0.1);
             padding-bottom: 1rem;
             width: 100%;
         }
@@ -792,8 +911,10 @@ const userPhoto = clerkUser?.imageUrl || '';
         }
 
         .nav-list a {
-            font-size: 1.15rem;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
             font-weight: 700;
+            letter-spacing: 0.08em;
             display: flex;
             width: 100%;
             padding: 0.8rem 0;
@@ -818,50 +939,36 @@ const userPhoto = clerkUser?.imageUrl || '';
         .mobile-social-icons {
             display: flex;
             justify-content: center;
-            gap: 1rem;
+            gap: 0.85rem;
             width: 100%;
-            padding: 2rem 1rem;
+            padding: 1.75rem 1rem;
             margin-top: auto;
-            border-top: 1px solid rgba(255, 222, 89, 0.1);
-            flex-wrap: wrap;
+            border-top: 1px solid rgba(212, 168, 67, 0.15);
         }
 
         .mobile-social-icons a {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #ffffff !important;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(212, 168, 67, 0.05);
+            border: 1px solid rgba(212, 168, 67, 0.25);
+            color: rgba(212, 168, 67, 0.7);
+            transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
         }
 
         .mobile-social-icons a svg {
-            width: 1.15rem;
-            height: 1.15rem;
-            transition: all 0.3s ease;
+            width: 1.1rem;
+            height: 1.1rem;
         }
 
         .mobile-social-icons a:hover {
-            background: var(--header-accent);
-            transform: translateY(-3px);
-            border-color: var(--header-accent);
-        }
-
-        .mobile-social-icons a:hover svg {
-            color: #ffffff !important;
-            stroke: #ffffff !important;
-        }
-
-        .mobile-social-icons a .linkedin-stroke {
-            width: 1.4rem;
-            height: 1.4rem;
-            fill: none !important;
-            stroke: currentColor !important;
-            stroke-width: 2 !important;
+            background: rgba(212, 168, 67, 0.14);
+            border-color: #d4a843;
+            color: #d4a843;
+            transform: translateY(-2px);
         }
 
         .submenu-header a {
@@ -875,7 +982,7 @@ const userPhoto = clerkUser?.imageUrl || '';
             align-items: center;
             justify-content: center;
             border: none;
-            background: rgba(255, 222, 89, 0.2);
+            background: rgba(212, 168, 67, 0.2);
             cursor: pointer;
             font-size: 0.85rem;
             color: var(--header-accent);
@@ -891,13 +998,13 @@ const userPhoto = clerkUser?.imageUrl || '';
 
         .submenu-toggle:hover {
             background: var(--header-accent);
-            color: #2b2b2b;
+            color: #1a1a1a;
         }
 
         .submenu-toggle[aria-expanded="true"] {
             transform: rotate(180deg);
             background: var(--header-accent);
-            color: #2b2b2b;
+            color: #1a1a1a;
         }
 
         .submenu {
@@ -929,6 +1036,49 @@ const userPhoto = clerkUser?.imageUrl || '';
 
         .submenu li:last-child {
             margin-bottom: 0;
+        }
+
+        .submenu .submenu-divider {
+            margin: 0.35rem 0;
+        }
+
+        .has-nested-submenu { position: static; }
+
+        .nested-submenu-label {
+            font-size: 0.95rem;
+            padding: 0.5rem 0 0.25rem;
+            color: var(--header-accent);
+            text-align: left;
+            background: transparent;
+            font-family: 'Cinzel', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .nested-submenu {
+            position: static;
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0 0 0 1rem;
+            margin: 0;
+            border-left: 1px solid rgba(212,168,67,0.2);
+        }
+
+        .nested-submenu a {
+            font-size: 0.88rem;
+            padding: 0.4rem 0;
+            text-align: left;
+            color: rgba(255,255,255,0.65);
+        }
+
+        .nested-submenu a:hover {
+            background: transparent;
+            color: var(--header-accent);
         }
 
         .submenu a {
@@ -1010,52 +1160,8 @@ const userPhoto = clerkUser?.imageUrl || '';
         transition: filter 0.4s ease;
     }
 
-    /* Auth zone — desktop */
     .mobile-auth-zone {
         display: none;
-    }
-
-    .auth-zone {
-        display: flex;
-        align-items: center;
-        margin-right: 0.5rem;
-        padding-right: 0.75rem;
-        border-right: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .auth-profile-link {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        border-radius: 50%;
-        transition: transform 0.2s ease;
-    }
-
-    .auth-profile-link:hover {
-        transform: scale(1.08);
-    }
-
-    .auth-login-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.45rem;
-        background: #ffde59;
-        color: #1a1a1a;
-        padding: 0.6rem 1.4rem;
-        border-radius: 50px;
-        text-transform: uppercase;
-        font-weight: 900;
-        font-size: 0.85rem;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
-        transition: all 0.3s ease;
-        white-space: nowrap;
-    }
-
-    .auth-login-btn:hover {
-        background: #ffcc00;
-        transform: translateY(-3px);
     }
 
     .auth-user-avatar {
@@ -1075,7 +1181,6 @@ const userPhoto = clerkUser?.imageUrl || '';
         white-space: nowrap;
     }
 
-    /* Auth zone — mobile */
     @media (max-width: 1024px) {
         .mobile-auth-zone {
             display: flex;
@@ -1083,7 +1188,7 @@ const userPhoto = clerkUser?.imageUrl || '';
             justify-content: center;
             width: 100%;
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 222, 89, 0.1);
+            border-bottom: 1px solid rgba(212, 168, 67, 0.1);
         }
 
         .mobile-login-btn {
@@ -1091,7 +1196,7 @@ const userPhoto = clerkUser?.imageUrl || '';
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            background: #ffde59;
+            background: #d4a843;
             color: #1a1a1a;
             padding: 0.85rem 1.4rem;
             border-radius: 50px;
@@ -1100,13 +1205,13 @@ const userPhoto = clerkUser?.imageUrl || '';
             font-size: 0.95rem;
             border: none;
             cursor: pointer;
-            box-shadow: 0 4px 20px rgba(255, 222, 89, 0.4);
+            box-shadow: 0 4px 20px rgba(212, 168, 67, 0.4);
             transition: all 0.3s ease;
             white-space: nowrap;
         }
 
         .mobile-login-btn:hover {
-            background: #ffcc00;
+            background: #c49030;
             transform: translateY(-3px);
         }
 
@@ -1116,8 +1221,8 @@ const userPhoto = clerkUser?.imageUrl || '';
             justify-content: center;
             gap: 0.5rem;
             width: 100%;
-            background: rgba(255, 222, 89, 0.15);
-            color: #ffde59;
+            background: rgba(212, 168, 67, 0.15);
+            color: #d4a843;
             padding: 0.85rem 1.4rem;
             border-radius: 50px;
             text-transform: uppercase;
@@ -1128,11 +1233,10 @@ const userPhoto = clerkUser?.imageUrl || '';
         }
 
         .mobile-perfil-btn:hover {
-            background: rgba(255, 222, 89, 0.25);
+            background: rgba(212, 168, 67, 0.25);
         }
     }
 
-    /* Clerk modal — centrado y por encima del header */
     :global(.cl-modalBackdrop) {
         z-index: 2000000 !important;
         position: fixed !important;

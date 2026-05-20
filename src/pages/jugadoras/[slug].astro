@@ -1,6 +1,5 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { Image } from "astro:assets";
 import {
     fetchPlayersDirectly,
     fetchPlayerStats,
@@ -12,13 +11,14 @@ import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 import { fetchAllGoals } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
-import PlayerEvolutionCharts from "../../components/PlayerEvolutionCharts";
+
 const { slug } = Astro.params;
 const allPlayers = await fetchPlayersDirectly();
 const player = allPlayers.find((p) => p.slug === slug);
 if (!player) {
     return Astro.redirect("/404");
 }
+
 const resolvedImage = getAssetUrl("jugadoras", player.imageUrl);
 const seasonPhotosData = Object.entries(player.season_photos || {})
     .sort((a, b) => b[0].localeCompare(a[0]))
@@ -34,40 +34,28 @@ const currentSeasonName =
     seasonPhotosData.length > 0
         ? seasonPhotosData[initialSeasonIndex].season
         : player.temporada || "Actualidad";
+
 const isGoalkeeper = player.posicion === "Portera";
 const playerStats = await fetchPlayerStats(player.id_jugadora, isGoalkeeper);
 if (playerStats) {
     playerStats.jugadora = { id: player.id_jugadora, nombre: player.nombre };
 }
 
-const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return "-";
-    try {
-        const date = new Date(dateString.split("T")[0]);
-        if (isNaN(date.getTime())) return "-";
-        return date.toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        });
-    } catch {
-        return "-";
-    }
-};
+const allSeasonKeys = allPlayers.flatMap(p => Object.keys(p.dorsales || {}));
+const latestRegisteredSeason = [...new Set(allSeasonKeys)].sort().reverse()[0];
+const latestDorsal = latestRegisteredSeason && player.dorsales?.[latestRegisteredSeason]
+    ? String(player.dorsales[latestRegisteredSeason])
+    : null;
+
+const flagUrl = getFlagSrc(player.iso || player.pais_origin || player.pais_origen);
 
 const formatShortDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
     try {
         const date = new Date(dateString.split("T")[0]);
         if (isNaN(date.getTime())) return "-";
-        return date.toLocaleDateString("es-ES", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    } catch {
-        return "-";
-    }
+        return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch { return "-"; }
 };
 
 const calculateAge = (dateString: string | null | undefined): number | null => {
@@ -77,53 +65,34 @@ const calculateAge = (dateString: string | null | undefined): number | null => {
         if (isNaN(birthDate.getTime())) return null;
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (
-            monthDiff < 0 ||
-            (monthDiff === 0 && today.getDate() < birthDate.getDate())
-        ) {
-            age--;
-        }
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
         return age;
-    } catch {
-        return null;
-    }
+    } catch { return null; }
 };
+
 const fechaNacimiento = formatShortDate(player.fecha_nacimiento);
 const edad = calculateAge(player.fecha_nacimiento);
-const alturaDisplay = player.altura ? `${player.altura} m.` : "-";
-const pesoDisplay = player.peso ? `${player.peso} kg` : "-";
+const alturaDisplay = player.altura ? `${player.altura} m.` : null;
 const debutInfo = await fetchPlayerDebut(player.id_jugadora);
 const debutDisplay =
     debutInfo && debutInfo.fecha_debut
-        ? `${formatShortDate(debutInfo.fecha_debut)}${
-              debutInfo.rival ? ` (${debutInfo.rival})` : ""
-          }`
+        ? `${formatShortDate(debutInfo.fecha_debut)}${debutInfo.rival ? ` vs ${debutInfo.rival}` : ""}`
         : "-";
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 
 const allGoals = await fetchAllGoals();
-const officialComps = [
-    "Liga F",
-    "UWCL",
-    "Copa de la Reina",
-    "Supercopa de España",
-];
+const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
 const clubShields = await fetchAllClubShields();
 
 const milestones = allGoals
     .filter((g) => {
-        const isCurrentPlayer =
-            g.goleadora === player.id_jugadora ||
-            g.nombre_goleadora === player.nombre;
-        const isOfficial = officialComps.includes(g.competicion);
-        return isCurrentPlayer && isOfficial;
+        const isCurrentPlayer = g.goleadora === player.id_jugadora || g.nombre_goleadora === player.nombre;
+        return isCurrentPlayer && officialComps.includes(g.competicion);
     })
     .sort((a, b) => {
-        const dateA = new Date(a.fecha).getTime();
-        const dateB = new Date(b.fecha).getTime();
-        if (dateA !== dateB) return dateA - dateB;
-        return parseInt(a.minuto) - parseInt(b.minuto);
+        const diff = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+        return diff !== 0 ? diff : parseInt(a.minuto) - parseInt(b.minuto);
     })
     .map((g, index) => ({
         ...g,
@@ -134,41 +103,17 @@ const milestones = allGoals
 
 const getPlayerCoordinates = (pos: string) => {
     const p = pos.toLowerCase();
-    let left = "50%";
-    let top = "50%";
-
-    if (p.includes("portera")) {
-        left = "10%";
-    } else if (p.includes("defensa") || p.includes("central")) {
+    let left = "50%", top = "50%";
+    if (p.includes("portera")) { left = "10%"; }
+    else if (p.includes("defensa") || p.includes("central")) { left = "30%"; }
+    else if (p.includes("lateral")) {
         left = "30%";
-    } else if (p.includes("lateral")) {
-        left = "30%";
-
-        if (p.includes("izquierd")) {
-            top = "20%";
-        } else if (p.includes("derech")) {
-            top = "80%";
-        } else {
-            top = "20%";
-        }
-    } else if (
-        p.includes("centrocampista") ||
-        p.includes("pivote") ||
-        p.includes("interior") ||
-        p.includes("mediapunta")
-    ) {
-        left = "55%";
-    } else if (p.includes("delantera") || p.includes("ariete")) {
+        top = p.includes("izquierd") ? "20%" : p.includes("derech") ? "80%" : "20%";
+    } else if (p.includes("centrocampista") || p.includes("pivote") || p.includes("interior") || p.includes("mediapunta")) { left = "55%"; }
+    else if (p.includes("delantera") || p.includes("ariete")) { left = "80%"; }
+    else if (p.includes("extremo")) {
         left = "80%";
-    } else if (p.includes("extremo")) {
-        left = "80%";
-        if (p.includes("izquierd")) {
-            top = "20%";
-        } else if (p.includes("derech")) {
-            top = "80%";
-        } else {
-            top = "20%";
-        }
+        top = p.includes("izquierd") ? "20%" : p.includes("derech") ? "80%" : "20%";
     }
     return { left, top };
 };
@@ -179,317 +124,246 @@ const schema = {
     "@type": "Person",
     name: player.nombre,
     jobTitle: "Jugadora de Fútbol",
-    affiliation: {
-        "@type": "SportsTeam",
-        name: "Real Madrid Femenino",
-    },
+    affiliation: { "@type": "SportsTeam", name: "Real Madrid Femenino" },
     image: resolvedImage || player.imageUrl,
     birthDate: player.fecha_nacimiento,
-    birthPlace: {
-        "@type": "Place",
-        name: player.lugar_nacimiento,
-    },
+    birthPlace: { "@type": "Place", name: player.lugar_nacimiento },
     height: player.altura ? `${player.altura} m` : undefined,
     weight: player.peso ? `${player.peso} kg` : undefined,
     nationality: player.pais_origin,
 };
+
+const quickStats = playerStats ? [
+    { value: playerStats.total_carrera_oficial.partidos, label: 'PARTIDOS' },
+    { value: playerStats.total_carrera_oficial.titularidades, label: 'TITULAR' },
+    ...(!isGoalkeeper ? [
+        { value: playerStats.total_carrera_oficial.goles, label: 'GOLES' },
+        { value: playerStats.total_carrera_oficial.asistencias, label: 'ASIST.' },
+    ] : [
+        { value: playerStats.total_carrera_oficial.porterias_cero ?? 0, label: 'P. A CERO' },
+    ]),
+    { value: playerStats.total_carrera_oficial.victorias, label: 'VICT.' },
+] : [];
 ---
 
 <Layout
     title={`${player.nombre} | Madrid Femenino Xtra`}
-    description={`Ficha completa de ${player.nombre}, jugadora del Real Madrid Femenino. Consulta sus estadísticas, posición, biografía y récords.`}
+    description={`Ficha completa de ${player.nombre}, jugadora del Real Madrid Femenino. Estadísticas, posición, trayectoria y récords.`}
 >
     <script type="application/ld+json" set:html={JSON.stringify(schema)} />
-    <main class="player-profile-page">
-        <a href="/jugadoras" class="back-link">
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Volver al resto de jugadoras
-        </a>
-        <div class="profile-grid">
-            <section class="ficha-section">
-                <h1 class="section-header">Ficha de {player.nombre}</h1>
-                <div class="ficha-content">
-                    <div class="player-photo-container">
-                        <div class="photo-carousel-wrapper">
-                            <div class="current-photo-box">
-                                <button
-                                    id="prev-photo"
-                                    class="carousel-nav-btn prev"
-                                    aria-label="Ver fotos anteriores"
-                                    disabled={seasonPhotosData.length <= 1}
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="40"
-                                        height="40"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="white"
-                                        stroke-width="2.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
-                                        ><path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"></path><path
-                                            d="M15 6l-6 6l6 6"></path></svg
-                                    >
-                                </button>
 
-                                <img
-                                    id="main-player-photo"
-                                    src={currentImageUrl}
-                                    alt={`Foto de ${player.nombre}`}
-                                    class="player-photo"
-                                    loading="lazy"
-                                />
-                                <div
-                                    id="photo-season-badge"
-                                    class="photo-season-badge"
-                                >
-                                    {currentSeasonName}
-                                </div>
+    <section class="player-hero">
+        <div class="hero-bg-glow" aria-hidden="true"></div>
 
-                                <button
-                                    id="next-photo"
-                                    class="carousel-nav-btn next"
-                                    aria-label="Ver fotos más recientes"
-                                    disabled={seasonPhotosData.length <= 1}
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="40"
-                                        height="40"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="white"
-                                        stroke-width="2.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
-                                        ><path
-                                            stroke="none"
-                                            d="M0 0h24v24H0z"
-                                            fill="none"></path><path
-                                            d="M9 6l6 6l-6 6"></path></svg
-                                    >
-                                </button>
+        <a href={`/jugadoras#card-${slug}`} class="hero-back-link">← VOLVER A JUGADORAS</a>
+
+        <div class="hero-inner">
+            <div class="hero-photo-col" transition:name={`player-${slug}`}>
+                {seasonPhotosData.length > 1 && (
+                    <button id="prev-photo" class="hero-nav-btn hero-nav-prev" aria-label="Foto anterior">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+                    </button>
+                )}
+                <img
+                    id="main-player-photo"
+                    src={currentImageUrl}
+                    alt={`Foto de ${player.nombre}`}
+                    class="hero-player-photo"
+                    loading="eager"
+                    decoding="async"
+                    width={460}
+                    height={640}
+                />
+                <div id="photo-season-badge" class="hero-season-badge">{currentSeasonName}</div>
+                {seasonPhotosData.length > 1 && (
+                    <button id="next-photo" class="hero-nav-btn hero-nav-next" aria-label="Foto siguiente">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                )}
+            </div>
+
+            <div class="hero-info-col">
+                {latestDorsal && (
+                    <span class="hero-ghost-dorsal" aria-hidden="true">{latestDorsal}</span>
+                )}
+
+                <div class="hero-chips">
+                    <span class="hero-chip hero-chip-gold">♦ {player.posicion} ♦</span>
+                    {(player.pais_origin || player.pais_origen) && (
+                        <span class="hero-chip">
+                            {flagUrl && <img src={flagUrl} alt="" class="chip-flag" width="16" height="16" loading="lazy" />}
+                            {player.pais_origin || player.pais_origen}
+                        </span>
+                    )}
+                    {edad && <span class="hero-chip">{edad} años</span>}
+                </div>
+
+                <h1 class="hero-player-name" data-dorsal={latestDorsal || undefined}>{player.nombre}</h1>
+
+                {quickStats.length > 0 && (
+                    <div class="hero-quick-stats">
+                        {quickStats.map(qs => (
+                            <div class="qs-card">
+                                <span class="qs-number">{qs.value}</span>
+                                <span class="qs-label">{qs.label}</span>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                    <div class="player-info">
+                )}
+            </div>
+        </div>
+    </section>
+
+    <main class="player-content">
+        <div class="content-grid">
+
+            <section class="profile-card ficha-card full-col">
+                <h2 class="card-title">FICHA PERSONAL</h2>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Nombre completo</span>
+                        <span class="info-value">{player.nombre}</span>
+                    </div>
+                    {player.fecha_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Nombre completo:</span>
-                            <span class="info-value">{player.nombre}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Fecha de nacimiento:</span>
+                            <span class="info-label">Fecha de nac.</span>
                             <span class="info-value">{fechaNacimiento}</span>
                         </div>
+                    )}
+                    {player.lugar_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Lugar de nacimiento:</span>
-                            <span class="info-value"
-                                >{player.lugar_nacimiento || "-"}</span
-                            >
+                            <span class="info-label">Lugar de nac.</span>
+                            <span class="info-value">{player.lugar_nacimiento}</span>
                         </div>
+                    )}
+                    {player.pais_origin && (
                         <div class="info-row">
-                            <span class="info-label">Nacionalidad:</span>
-                            <span class="info-value">
+                            <span class="info-label">Nacionalidad</span>
+                            <span class="info-value" style="display:flex;align-items:center;gap:0.5rem;">
                                 {player.pais_origin}
-                                {
-                                    getFlagSrc(
-                                        player.iso ||
-                                            player.pais_origin ||
-                                            player.pais_origen,
-                                    ) && (
-                                        <img
-                                            class="flag-icon"
-                                            src={getFlagSrc(
-                                                player.iso ||
-                                                    player.pais_origin ||
-                                                    player.pais_origen,
-                                            )}
-                                            alt={`Bandera de ${player.pais_origin}`}
-                                            width="24"
-                                            height="24"
-                                            loading="lazy"
-                                        />
-                                    )
-                                }
+                                {flagUrl && <img class="flag-icon" src={flagUrl} alt="" width="20" height="20" loading="lazy" />}
                             </span>
                         </div>
+                    )}
+                    {player.altura && (
                         <div class="info-row">
-                            <span class="info-label">Altura / Peso:</span>
-                            <span class="info-value"
-                                >{alturaDisplay} / {pesoDisplay}</span
-                            >
+                            <span class="info-label">Altura</span>
+                            <span class="info-value">{player.altura} m.</span>
                         </div>
+                    )}
+                    {player.peso && (
                         <div class="info-row">
-                            <span class="info-label">Debut:</span>
-                            <span class="info-value">{debutDisplay}</span>
+                            <span class="info-label">Peso</span>
+                            <span class="info-value">{player.peso} kg</span>
                         </div>
+                    )}
+                    <div class="info-row">
+                        <span class="info-label">Debut</span>
+                        <span class="info-value">{debutDisplay}</span>
                     </div>
+                    {latestDorsal && (
+                        <div class="info-row">
+                            <span class="info-label">Dorsal</span>
+                            <span class="info-value" style="color:#d4a843;font-family:'Cinzel',serif;font-weight:700;">#{latestDorsal}</span>
+                        </div>
+                    )}
                 </div>
             </section>
-            <section class="position-section">
-                <h2 class="section-header">Posición</h2>
-                <div class="field-diagram">
-                    <svg viewBox="0 0 100 65" class="field-svg">
-                        <rect x="0" y="0" width="100" height="65" fill="#4a7c35"
-                        ></rect>
-                        <rect
-                            x="0"
-                            y="0"
-                            width="10"
-                            height="65"
-                            fill="#3d6b2e"
-                            opacity="0.3"></rect>
-                        <rect
-                            x="20"
-                            y="0"
-                            width="10"
-                            height="65"
-                            fill="#3d6b2e"
-                            opacity="0.3"></rect>
-                        <rect
-                            x="40"
-                            y="0"
-                            width="10"
-                            height="65"
-                            fill="#3d6b2e"
-                            opacity="0.3"></rect>
-                        <rect
-                            x="60"
-                            y="0"
-                            width="10"
-                            height="65"
-                            fill="#3d6b2e"
-                            opacity="0.3"></rect>
-                        <rect
-                            x="80"
-                            y="0"
-                            width="10"
-                            height="65"
-                            fill="#3d6b2e"
-                            opacity="0.3"></rect>
-                        <rect
-                            x="0"
-                            y="0"
-                            width="100"
-                            height="65"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></rect>
-                        <line
-                            x1="50"
-                            y1="0"
-                            x2="50"
-                            y2="65"
-                            stroke="white"
-                            stroke-width="0.3"></line>
-                        <circle
-                            cx="50"
-                            cy="32.5"
-                            r="8"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></circle>
-                        <rect
-                            x="0"
-                            y="20"
-                            width="15"
-                            height="25"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></rect>
-                        <rect
-                            x="0"
-                            y="26"
-                            width="5"
-                            height="13"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></rect>
-                        <rect
-                            x="85"
-                            y="20"
-                            width="15"
-                            height="25"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></rect>
-                        <rect
-                            x="95"
-                            y="26"
-                            width="5"
-                            height="13"
-                            fill="none"
-                            stroke="white"
-                            stroke-width="0.3"></rect>
-                    </svg>
-                    <div
-                        class="player-marker"
-                        style={`left: ${playerPosition.left}; top: ${playerPosition.top};`}
-                    >
-                        <div class="marker-icon"></div>
+
+            <section class="profile-card position-card">
+                <h2 class="card-title">POSICIÓN</h2>
+                <div class="card-body" style="padding:1.25rem;">
+                    <div class="field-diagram">
+                        <svg viewBox="0 0 100 65" class="field-svg">
+                            <rect x="0" y="0" width="100" height="65" fill="#2d5a1b"/>
+                            <rect x="0" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="20" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="40" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="60" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="80" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="0" y="0" width="100" height="65" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <line x1="50" y1="0" x2="50" y2="65" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <circle cx="50" cy="32.5" r="8" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="0" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="0" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="85" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="95" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                        </svg>
+                        <div class="player-marker" style={`left: ${playerPosition.left}; top: ${playerPosition.top};`}>
+                            <div class="marker-icon"></div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;margin-top:0.75rem;">
+                        <span style="font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:rgba(212,168,67,0.7);text-transform:uppercase;">{player.posicion}</span>
                     </div>
                 </div>
             </section>
 
-            <section class="teams-section">
-                <h2 class="section-header">TRAYECTORIA</h2>
-                <div class="teams-content">
-                    {
-                        trajectory && trajectory.length > 0 ? (
-                            <div class="trajectory-timeline">
-                                <div class="trajectory-vertical-line" />
-                                {trajectory.map((item) => (
-                                    <div class="timeline-item">
-                                        <div class="timeline-marker" />
-                                        <div class="timeline-content">
-                                            <div class="timeline-years">
-                                                {item.anio_inicio} -
-                                                {item.anio_fin || "Act."}
+            <section class="profile-card trajectory-card">
+                <h2 class="card-title">TRAYECTORIA</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {trajectory && trajectory.length > 0 ? (
+                        <div class="trajectory-timeline">
+                            {trajectory.map((item: any) => (
+                                <div class="timeline-item">
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-body">
+                                        <span class="timeline-years">{item.anio_inicio} – {item.anio_fin || 'Act.'}</span>
+                                        <span class="timeline-club">{item.club}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
+                </div>
+            </section>
+
+            {milestones.length > 0 && (
+                <section class="profile-card full-col">
+                    <h2 class="card-title">HITOS GOLEADORES</h2>
+                    <div class="card-body" style="padding:1.25rem;">
+                        <div class="milestones-grid">
+                            {milestones.map((g) => {
+                                const rivalShield = clubShields[g.rival];
+                                return (
+                                    <div class={`milestone-card${g.video_url ? ' has-video' : ''}`}
+                                        onclick={g.video_url ? `openVideoModal('${g.video_url}','${player.nombre}')` : undefined}>
+                                        {g.video_url && (
+                                            <div class="video-indicator">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
                                             </div>
-                                            <div class="timeline-club">
-                                                {item.club}
+                                        )}
+                                        <div class="milestone-number">
+                                            <span class="m-count">⚽{g.goalNumber}</span>
+                                            <span class="m-label">GOL</span>
+                                        </div>
+                                        <div class="milestone-content">
+                                            <div class="m-match-info">
+                                                {rivalShield && (
+                                                    <div class="m-rival-shield">
+                                                        <img src={rivalShield} alt={g.rival} />
+                                                    </div>
+                                                )}
+                                                <div class="m-details">
+                                                    <span class="m-rival-name">{g.rival}</span>
+                                                    <span class="m-date">{g.fecha ? new Date(g.fecha).toLocaleDateString('es-ES') : ''} · {g.competicion}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p class="no-data">Sin datos disponibles</p>
-                        )
-                    }
-                </div>
-            </section>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+            )}
 
-            <div class="charts-section">
-                <PlayerEvolutionCharts
-                    stats={playerStats.estadisticas}
-                    isGoalkeeper={isGoalkeeper}
-                    client:load
-                />
-            </div>
-
-            <section class="stats-section">
-                <h2 class="section-header">ESTADÍSTICAS</h2>
-                {
-                    playerStats ? (
+            {playerStats && (
+                <section class="profile-card full-col">
+                    <h2 class="card-title">ESTADÍSTICAS OFICIALES</h2>
+                    <div class="card-body" style="padding:0;">
                         <div class="stats-table-wrapper">
                             <table class="stats-table">
                                 <thead>
@@ -505,11 +379,7 @@ const schema = {
                                         <th title="Asistencias">Asist.</th>
                                         <th title="Goles + Asistencias">G+A</th>
                                         <th title="Victorias">Vict.</th>
-                                        {playerStats.jugadora.es_portera && (
-                                            <th title="Porterías a cero">
-                                                P.0
-                                            </th>
-                                        )}
+                                        {playerStats.jugadora.es_portera && <th title="Porterías a cero">P.0</th>}
                                         <th title="Tarjetas Amarillas">TA</th>
                                         <th title="Tarjetas Rojas">TR</th>
                                         <th title="Capitanías">Cap.</th>
@@ -517,1318 +387,127 @@ const schema = {
                                 </thead>
                                 <tbody>
                                     {playerStats.estadisticas
-                                        .filter(
-                                            (s: any) => s.total.partidos > 0,
-                                        )
+                                        .filter((s: any) => s.total.partidos > 0)
                                         .map((season: any) => (
                                             <>
-                                                <tr
-                                                    class="season-total-row"
-                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
-                                                    style="cursor: pointer;"
-                                                >
-                                                    <td>
-                                                        <div class="flex items-center justify-start gap-2 w-full">
-                                                            <strong>
-                                                                {
-                                                                    season.temporada
-                                                                }
-                                                            </strong>
-                                                            <span class="toggle-icon">
-                                                                ▼
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .convocatorias
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .partidos
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .titularidades
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .minutos
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .cambio_entrada
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .cambio_salida
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.goles}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .asistencias
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .goles_asistencias
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .victorias
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    {playerStats.jugadora
-                                                        .es_portera && (
-                                                        <td>
-                                                            <strong>
-                                                                {
-                                                                    season.total
-                                                                        .porterias_cero
-                                                                }
-                                                            </strong>
-                                                        </td>
-                                                    )}
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .tarjetas_amarillas
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .tarjetas_rojas
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                season.total
-                                                                    .capitanias
-                                                            }
-                                                        </strong>
-                                                    </td>
+                                                <tr class="season-total-row" onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`} style="cursor:pointer;">
+                                                    <td><div class="flex items-center justify-start gap-2 w-full"><strong>{season.temporada}</strong><span class="toggle-icon">▼</span></div></td>
+                                                    <td><strong>{season.total.convocatorias}</strong></td>
+                                                    <td><strong>{season.total.partidos}</strong></td>
+                                                    <td><strong>{season.total.titularidades}</strong></td>
+                                                    <td><strong>{season.total.minutos}</strong></td>
+                                                    <td><strong>{season.total.cambio_entrada}</strong></td>
+                                                    <td><strong>{season.total.cambio_salida}</strong></td>
+                                                    <td><strong>{season.total.goles}</strong></td>
+                                                    <td><strong>{season.total.asistencias}</strong></td>
+                                                    <td><strong>{season.total.goles_asistencias}</strong></td>
+                                                    <td><strong>{season.total.victorias}</strong></td>
+                                                    {playerStats.jugadora.es_portera && <td><strong>{season.total.porterias_cero}</strong></td>}
+                                                    <td><strong>{season.total.tarjetas_amarillas}</strong></td>
+                                                    <td><strong>{season.total.tarjetas_rojas}</strong></td>
+                                                    <td><strong>{season.total.capitanias}</strong></td>
                                                 </tr>
-                                                {season.competiciones.map(
-                                                    (comp: any) => (
-                                                        <tr
-                                                            class={`competition-row season-${season.temporada.replace(
-                                                                /\//g,
-                                                                "-",
-                                                            )}`}
-                                                            style="display: none;"
-                                                        >
-                                                            <td class="competition-name">
-                                                                <div class="competition-name-wrapper">
-                                                                    {getAssetUrl(
-                                                                        "competiciones",
-                                                                        comp.competicion
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                "amistoso",
-                                                                            )
-                                                                            ? "amistoso"
-                                                                            : comp.competicion,
-                                                                    ) && (
-                                                                        <img
-                                                                            src={getAssetUrl(
-                                                                                "competiciones",
-                                                                                comp.competicion
-                                                                                    .toLowerCase()
-                                                                                    .includes(
-                                                                                        "amistoso",
-                                                                                    )
-                                                                                    ? "amistoso"
-                                                                                    : comp.competicion,
-                                                                            )}
-                                                                            alt={
-                                                                                comp.competicion
-                                                                            }
-                                                                            class="competition-logo"
-                                                                        />
-                                                                    )}
-                                                                    {
-                                                                        comp.competicion
-                                                                    }
-                                                                </div>
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.convocatorias
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.partidos}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.titularidades
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.minutos}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.cambio_entrada
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.cambio_salida
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.goles}
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.asistencias
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.goles_asistencias
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {comp.victorias}
-                                                            </td>
-                                                            {playerStats
-                                                                .jugadora
-                                                                .es_portera && (
-                                                                <td>
-                                                                    {
-                                                                        comp.porterias_cero
-                                                                    }
-                                                                </td>
-                                                            )}
-                                                            <td>
-                                                                {
-                                                                    comp.tarjetas_amarillas
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.tarjetas_rojas
-                                                                }
-                                                            </td>
-                                                            <td>
-                                                                {
-                                                                    comp.capitanias
-                                                                }
-                                                            </td>
-                                                        </tr>
-                                                    ),
-                                                )}
+                                                {season.competiciones.map((comp: any) => (
+                                                    <tr class={`competition-row season-${season.temporada.replace(/\//g, "-")}`} style="display:none;">
+                                                        <td class="competition-name">
+                                                            <div class="competition-name-wrapper">
+                                                                {getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion) && (
+                                                                    <img src={getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion)} alt={comp.competicion} class="competition-logo" />
+                                                                )}
+                                                                {comp.competicion}
+                                                            </div>
+                                                        </td>
+                                                        <td>{comp.convocatorias}</td>
+                                                        <td>{comp.partidos}</td>
+                                                        <td>{comp.titularidades}</td>
+                                                        <td>{comp.minutos}</td>
+                                                        <td>{comp.cambio_entrada}</td>
+                                                        <td>{comp.cambio_salida}</td>
+                                                        <td>{comp.goles}</td>
+                                                        <td>{comp.asistencias}</td>
+                                                        <td>{comp.goles_asistencias}</td>
+                                                        <td>{comp.victorias}</td>
+                                                        {playerStats.jugadora.es_portera && <td>{comp.porterias_cero}</td>}
+                                                        <td>{comp.tarjetas_amarillas}</td>
+                                                        <td>{comp.tarjetas_rojas}</td>
+                                                        <td>{comp.capitanias}</td>
+                                                    </tr>
+                                                ))}
                                             </>
                                         ))}
                                     <tr class="career-total-row">
-                                        <td style="text-align: left !important;">
-                                            <strong>TOTAL</strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .convocatorias
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .partidos
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .titularidades
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .minutos
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .cambio_entrada
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .cambio_salida
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .goles
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .asistencias
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .goles_asistencias
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .victorias
-                                                }
-                                            </strong>
-                                        </td>
-                                        {playerStats.jugadora.es_portera && (
-                                            <td>
-                                                <strong>
-                                                    {
-                                                        playerStats
-                                                            .total_carrera_oficial
-                                                            .porterias_cero
-                                                    }
-                                                </strong>
-                                            </td>
-                                        )}
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .tarjetas_amarillas
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .tarjetas_rojas
-                                                }
-                                            </strong>
-                                        </td>
-                                        <td>
-                                            <strong>
-                                                {
-                                                    playerStats
-                                                        .total_carrera_oficial
-                                                        .capitanias
-                                                }
-                                            </strong>
-                                        </td>
+                                        <td style="text-align:left!important;"><strong>TOTAL</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.convocatorias}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.partidos}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.titularidades}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.minutos}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.cambio_entrada}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.cambio_salida}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.goles}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.asistencias}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.goles_asistencias}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.victorias}</strong></td>
+                                        {playerStats.jugadora.es_portera && <td><strong>{playerStats.total_carrera_oficial.porterias_cero}</strong></td>}
+                                        <td><strong>{playerStats.total_carrera_oficial.tarjetas_amarillas}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.tarjetas_rojas}</strong></td>
+                                        <td><strong>{playerStats.total_carrera_oficial.capitanias}</strong></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                    ) : (
-                        <p class="no-data">
-                            No hay estadísticas disponibles para esta jugadora.
-                        </p>
-                    )
-                }
-            </section>
-        </div>
+                    </div>
+                </section>
+            )}
 
-        <script define:vars={{ seasonPhotos: seasonPhotosData }}>
-            let currentIdx = 0;
-            const photoEl = document.getElementById("main-player-photo");
-            const badgeEl = document.getElementById("photo-season-badge");
-            const prevBtn = document.getElementById("prev-photo");
-            const nextBtn = document.getElementById("next-photo");
-
-            function updateCarousel() {
-                if (!photoEl || !badgeEl || seasonPhotos.length === 0) return;
-
-                const current = seasonPhotos[currentIdx];
-                photoEl.src = current.url;
-                badgeEl.textContent = current.season;
-
-                if (prevBtn)
-                    prevBtn.disabled = currentIdx === seasonPhotos.length - 1;
-                if (nextBtn) nextBtn.disabled = currentIdx === 0;
-            }
-
-            if (prevBtn) {
-                prevBtn.addEventListener("click", () => {
-                    if (currentIdx < seasonPhotos.length - 1) {
-                        currentIdx++;
-                        updateCarousel();
-                    }
-                });
-            }
-
-            if (nextBtn) {
-                nextBtn.addEventListener("click", () => {
-                    if (currentIdx > 0) {
-                        currentIdx--;
-                        updateCarousel();
-                    }
-                });
-            }
-
-            updateCarousel();
-        </script>
-        <script is:inline>
-            function toggleSeason(season) {
-                const rows = document.querySelectorAll(
-                    `.competition-row.season-${season}`,
-                );
-                const icon = document.querySelector(
-                    `.season-total-row[onclick*="${season}"] .toggle-icon`,
-                );
-                rows.forEach((row) => {
-                    if (row.style.display === "none") {
-                        row.style.display = "table-row";
-                        if (icon) icon.textContent = "▲";
-                    } else {
-                        row.style.display = "none";
-                        if (icon) icon.textContent = "▼";
-                    }
-                });
-            }
-        </script>
-        <style>
-            .player-profile-page {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 2rem 1.5rem;
-            }
-            .player-details-page {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 2rem 1.5rem;
-            }
-            @media (max-width: 768px) {
-                .player-profile-page {
-                    padding: 1rem 1.5rem;
-                }
-                .player-details-page {
-                    padding: 1rem 1.5rem;
-                }
-            }
-            .back-link {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                color: #666;
-                text-decoration: none;
-                font-weight: 600;
-                margin-bottom: 1.5rem;
-                transition: color 0.3s;
-            }
-            .back-link:hover {
-                color: #ffde59;
-            }
-            .profile-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1.5rem;
-            }
-            .section-header {
-                background: #ffde59;
-                color: #2b2b2b;
-                padding: 1rem 1.25rem;
-                margin: 0;
-                font-size: 1.1rem;
-                font-weight: bold;
-                text-transform: uppercase;
-            }
-            .ficha-section {
-                grid-column: 1 / -1;
-                grid-row: 1;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .ficha-content {
-                padding: 1.5rem;
-                display: flex;
-                gap: 1.5rem;
-                align-items: stretch;
-            }
-            .player-photo-container {
-                margin-bottom: 0;
-                text-align: left;
-                flex-shrink: 0;
-                display: flex;
-                justify-content: flex-start;
-                overflow: visible;
-            }
-            .photo-carousel-wrapper {
-                display: flex;
-                align-items: center;
-                gap: 0;
-                width: auto;
-                justify-content: flex-start;
-                position: relative;
-            }
-            .carousel-nav-btn {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                width: auto;
-                height: auto;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                padding: 0.5rem;
-                z-index: 10;
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-            }
-            .carousel-nav-btn.prev {
-                left: 0.5rem;
-            }
-            .carousel-nav-btn.next {
-                right: 0.5rem;
-                left: auto;
-            }
-            .carousel-nav-btn:hover:not(:disabled) {
-                background: none;
-                transform: translateY(-50%) scale(1.1);
-            }
-            .carousel-nav-btn:disabled {
-                opacity: 0;
-                pointer-events: none;
-            }
-            .current-photo-box {
-                position: relative;
-                width: 380px;
-                max-width: 100%;
-                background: #fdfdfd;
-                border-radius: 16px;
-                border: none;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-                overflow: visible;
-            }
-            .photo-season-badge {
-                position: absolute;
-                bottom: 1rem;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(43, 43, 43, 0.7);
-                color: #ffde59;
-                padding: 0.35rem 1rem;
-                border-radius: 30px;
-                font-size: 0.85rem;
-                font-weight: 800;
-                backdrop-filter: blur(4px);
-                border: 1px solid rgba(255, 222, 89, 0.3);
-                white-space: nowrap;
-                z-index: 5;
-            }
-            .player-photo {
-                width: 100%;
-                height: 520px;
-                object-fit: contain;
-                object-position: bottom;
-                display: block;
-                transition: opacity 0.3s ease;
-                background: transparent;
-                pointer-events: none;
-                filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
-            }
-            .player-info {
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-                flex: 1;
-            }
-            .info-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 0.5rem 0;
-                border-bottom: 1px solid #eee;
-            }
-            .info-label {
-                font-weight: 600;
-                color: #333;
-            }
-            .info-value {
-                color: #666;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-            }
-            .flag-icon {
-                width: 20px;
-                height: auto;
-            }
-            .position-section {
-                grid-column: 1;
-                grid-row: 2;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .field-diagram {
-                position: relative;
-                padding: 1.5rem;
-                min-height: 300px;
-            }
-            .field-svg {
-                width: 100%;
-                height: auto;
-                border-radius: 4px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            }
-            .player-marker {
-                position: absolute;
-                transform: translate(-50%, -50%);
-            }
-            .marker-icon {
-                width: 30px;
-                height: 30px;
-                background: white;
-                border: 3px solid #ffde59;
-                border-radius: 50%;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            }
-            .teams-section {
-                grid-column: 2;
-                grid-row: 2;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .teams-content {
-                padding: 1.5rem;
-            }
-            .records-section {
-                grid-column: 1 / -1;
-                grid-row: 4;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .records-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1rem;
-                padding: 1.5rem;
-            }
-            .record-item {
-                display: flex;
-                justify-content: space-between;
-                padding: 0.75rem;
-                background: #f9f9f9;
-                border-radius: 4px;
-            }
-            .record-label {
-                font-weight: 600;
-                color: #333;
-            }
-            .record-value {
-                color: #ffde59;
-                font-weight: bold;
-            }
-            .stats-section {
-                grid-column: 1 / -1;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            .stats-loading,
-            .stats-error {
-                padding: 2rem;
-                text-align: center;
-                color: #666;
-            }
-            .stats-error {
-                color: #d32f2f;
-            }
-            .competition-name-wrapper {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                white-space: normal !important;
-                min-width: 150px !important;
-                line-height: 1.2;
-                text-align: left !important;
-            }
-            .toggle-icon {
-                display: inline-block;
-                width: 1.5em;
-                text-align: center;
-                font-size: 0.8em;
-                color: #666;
-            }
-            .stats-table .career-total-row {
-                background: #ffde59;
-                font-weight: bold;
-                border-top: 3px solid #333;
-            }
-            .stats-table td.highlight {
-                background: #fff8dc;
-            }
-            .competition-logo {
-                width: 24px;
-                height: 24px;
-                object-fit: contain;
-                margin-right: 8px;
-                vertical-align: middle;
-            }
-            .competition-name {
-                text-align: left;
-            }
-            .no-data {
-                color: #999;
-                font-style: italic;
-                text-align: center;
-                padding: 2rem;
-            }
-            .trajectory-timeline {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-                position: relative;
-                padding-left: 1.5rem;
-                border-left: 2px solid #eee;
-            }
-            .timeline-item {
-                position: relative;
-            }
-            .timeline-marker {
-                position: absolute;
-                left: -1.85rem;
-                top: 0.4rem;
-                width: 0.7rem;
-                height: 0.7rem;
-                background: #ffde59;
-                border-radius: 50%;
-                border: 2px solid white;
-                box-shadow: 0 0 0 1px #eee;
-            }
-            .timeline-content {
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
-            }
-            .timeline-years {
-                font-size: 0.9rem;
-                color: #666;
-                font-weight: 500;
-            }
-            .timeline-club {
-                font-weight: 700;
-                font-size: 1rem;
-                color: #333;
-            }
-            @media (max-width: 768px) {
-                .profile-grid {
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                    padding: 0;
-                }
-                .ficha-content {
-                    flex-direction: column;
-                    align-items: center;
-                    padding: 1.5rem 1.25rem;
-                }
-                .current-photo-box {
-                    width: 100%;
-                    max-width: 340px;
-                    margin-bottom: 2rem;
-                }
-                .player-photo {
-                    height: auto;
-                    max-height: 450px;
-                }
-                .player-info {
-                    width: 100%;
-                    padding: 0;
-                }
-                .info-row {
-                    padding: 0.85rem 0;
-                    flex-direction: column;
-                }
-                .info-row .info-label {
-                    margin-bottom: 0.25rem;
-                }
-                .ficha-section,
-                .position-section,
-                .teams-section,
-                .biography-section,
-                .records-section,
-                .charts-section,
-                .stats-section {
-                    grid-column: 1;
-                    min-width: 0;
-                }
-                .ficha-section {
-                    grid-row: 1;
-                }
-                .position-section {
-                    grid-row: 2;
-                }
-                .teams-section {
-                    grid-row: 3;
-                }
-                .biography-section {
-                    grid-row: 4;
-                }
-                .records-section {
-                    grid-row: 5;
-                }
-                .stats-section {
-                    grid-row: auto;
-                }
-                .stats-controls {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
-                .control-group {
-                    flex-direction: column;
-                    align-items: flex-start;
-                }
-                .stats-table {
-                    min-width: 800px;
-                }
-            }
-            .charts-section {
-                grid-column: 1 / -1;
-                width: 100%;
-                min-height: 400px;
-            }
-            .awards-section {
-                grid-column: 1 / -1;
-                background: white;
-                border-radius: 0;
-                overflow: hidden;
-            }
-
-            .awards-content {
-                padding: 1.5rem;
-            }
-
-            .award-category {
-                margin-bottom: 2.5rem;
-            }
-
-            .award-category:last-child {
-                margin-bottom: 0;
-            }
-
-            .award-category-title {
-                font-size: 1.1rem;
-                font-weight: 700;
-                color: #2c3e50;
-                margin-bottom: 1.2rem;
-                padding-bottom: 0.5rem;
-                border-bottom: 2px solid #fbbf24;
-                text-transform: none;
-            }
-
-            .awards-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 1.25rem;
-                margin-top: 1rem;
-            }
-
-            .award-card {
-                position: relative;
-                background: #fff;
-                border-radius: 12px;
-                overflow: hidden;
-                aspect-ratio: 3 / 4;
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                cursor: pointer;
-            }
-
-            .award-card:hover {
-                transform: translateY(-8px);
-                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-            }
-
-            .award-card.monthly {
-                border: 3px solid #fbbf24;
-            }
-
-            .award-card.monthly:hover {
-                border-color: #f59e0b;
-                box-shadow: 0 12px 24px rgba(251, 191, 36, 0.3);
-            }
-
-            .award-card.seasonal {
-                border: 3px solid #ef4444;
-            }
-
-            .award-card.seasonal:hover {
-                border-color: #dc2626;
-                box-shadow: 0 12px 24px rgba(239, 68, 68, 0.3);
-            }
-
-            .award-image-bg {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                z-index: 1;
-            }
-
-            .award-overlay {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(
-                    to bottom,
-                    rgba(0, 0, 0, 0.1) 0%,
-                    rgba(0, 0, 0, 0.3) 50%,
-                    rgba(0, 0, 0, 0.7) 100%
-                );
-                z-index: 2;
-            }
-
-            .award-card.monthly .award-overlay {
-                background: linear-gradient(
-                    to bottom,
-                    rgba(251, 191, 36, 0.1) 0%,
-                    rgba(251, 191, 36, 0.3) 50%,
-                    rgba(0, 0, 0, 0.8) 100%
-                );
-            }
-
-            .award-card.seasonal .award-overlay {
-                background: linear-gradient(
-                    to bottom,
-                    rgba(239, 68, 68, 0.1) 0%,
-                    rgba(239, 68, 68, 0.3) 50%,
-                    rgba(0, 0, 0, 0.8) 100%
-                );
-            }
-
-            @media (max-width: 768px) {
-                .equipo-grid {
-                    gap: 1.5rem;
-                    padding: 0 1rem;
-                }
-                .team-card {
-                    padding: 1.5rem;
-                }
-            }
-
-            .award-content {
-                position: relative;
-                z-index: 3;
-                height: 100%;
-                padding: 1.5rem;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-end;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .award-icon {
-                font-size: 3rem;
-                line-height: 1;
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-                margin-bottom: 0.5rem;
-            }
-
-            .award-details {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-                width: 100%;
-            }
-
-            .award-period {
-                font-size: 1.25rem;
-                font-weight: 800;
-                color: #ffffff;
-                text-transform: uppercase;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-                letter-spacing: 0.5px;
-            }
-
-            .award-title {
-                font-size: 0.95rem;
-                color: #f0f0f0;
-                line-height: 1.4;
-                font-weight: 600;
-                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-            }
-            @media (max-width: 768px) {
-                .awards-section {
-                    grid-row: auto;
-                }
-
-                .awards-content {
-                    padding: 1rem;
-                }
-
-                .awards-grid {
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                }
-
-                .award-card {
-                    aspect-ratio: 5 / 3;
-                }
-
-                .award-icon {
-                    font-size: 2.5rem;
-                }
-
-                .award-period {
-                    font-size: 1.1rem;
-                }
-
-                .award-title {
-                    font-size: 0.85rem;
-                }
-            }
-            .milestones-section {
-                grid-column: 1 / -1;
-                background: #f8f9fa;
-                border: 1px solid #eee;
-                border-radius: 12px;
-                overflow: hidden;
-                margin-bottom: 2rem;
-            }
-            .milestones-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 1.5rem;
-                padding: 1.5rem;
-            }
-            .milestone-card {
-                display: flex;
-                background: white;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                border: 1px solid #f0f0f0;
-                transition: transform 0.2s ease;
-            }
-            .milestone-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            }
-            .milestone-number {
-                background: #151e42;
-                color: white;
-                padding: 1rem;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                min-width: 80px;
-                text-align: center;
-            }
-            .m-count {
-                font-size: 2rem;
-                font-weight: 900;
-                line-height: 1;
-                color: #ffde59;
-            }
-            .m-label {
-                font-size: 0.7rem;
-                font-weight: 700;
-                letter-spacing: 1px;
-                margin-top: 4px;
-            }
-            .milestone-content {
-                display: flex;
-                padding: 1rem;
-                gap: 1rem;
-                flex: 1;
-                align-items: center;
-            }
-            .m-player-photo {
-                width: 60px;
-                height: 60px;
-                border-radius: 50%;
-                overflow: hidden;
-                border: 2px solid #ffde59;
-                background: #f0f0f0;
-                flex-shrink: 0;
-            }
-            .m-player-photo img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                object-top: center;
-            }
-            .m-match-info {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
-            .m-rival-shield {
-                width: 40px;
-                height: 40px;
-                flex-shrink: 0;
-            }
-            .m-rival-shield img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-            }
-            .m-details {
-                display: flex;
-                flex-direction: column;
-            }
-            .m-rival-name {
-                font-weight: 800;
-                font-size: 0.9rem;
-                color: #151e42;
-                line-height: 1.2;
-            }
-            .m-date {
-                font-size: 0.75rem;
-                color: #666;
-                font-weight: 500;
-            }
-            @media (max-width: 480px) {
-                .milestone-card {
-                    flex-direction: column;
-                }
-                .milestone-number {
-                    flex-direction: row;
-                    padding: 0.5rem;
-                    gap: 1rem;
-                    min-width: auto;
-                }
-                .m-count {
-                    font-size: 1.5rem;
-                }
-            }
-
-            .video-modal-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.9);
-                z-index: 9999;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                backdrop-filter: blur(5px);
-            }
-            .video-modal-container {
-                background: #151e42;
-                width: 100%;
-                max-width: 1000px;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-                border: 1px solid rgba(255, 222, 89, 0.2);
-            }
-            .video-modal-header {
-                padding: 0.875rem 1.5rem;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                background: #ffde59;
-                color: #2b2b2b;
-                position: relative;
-                min-height: 56px;
-            }
-            .video-modal-header h3 {
-                margin: 0;
-                font-size: 1.2rem;
-                font-weight: 800;
-                text-transform: uppercase;
-                text-align: center;
-                line-height: 1.2;
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            .video-close-btn {
-                position: absolute;
-                right: 1rem;
-                top: 50%;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                color: #2b2b2b;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 4px;
-                transition: transform 0.2s;
-            }
-            .video-close-btn:hover {
-                transform: translateY(-50%) scale(1.1);
-            }
-            .video-modal-body {
-                position: relative;
-                padding-top: 56.25%;
-            }
-            .goal-video-element {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
-
-            .milestone-card.has-video {
-                cursor: pointer;
-                position: relative;
-            }
-            .milestone-card.has-video:hover {
-                border-color: #ffde59;
-                transform: translateY(-4px);
-            }
-            .video-indicator {
-                position: absolute;
-                top: 8px;
-                right: 8px;
-                background: #ffde59;
-                color: #151e42;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            }
-        </style>
-        <div id="video-modal" class="video-modal-overlay">
-            <div class="video-modal-container">
-                <div class="video-modal-header">
-                    <h3 id="video-modal-title">Gol</h3>
-                    <button class="video-close-btn" onclick="closeVideoModal()">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="video-modal-body">
-                    <video
-                        id="goal-video-player"
-                        controls
-                        class="goal-video-element"
-                    >
-                        <source id="video-source" src="" type="video/mp4" />
-                        Tu navegador no soporta el elemento de video.
-                    </video>
-                </div>
-            </div>
         </div>
     </main>
 
+    <div id="video-modal" class="video-modal-overlay">
+        <div class="video-modal-container">
+            <div class="video-modal-header">
+                <h3 id="video-modal-title">Gol</h3>
+                <button class="video-close-btn" onclick="closeVideoModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="video-modal-body">
+                <video id="goal-video-player" controls class="goal-video-element">
+                    <source id="video-source" src="" type="video/mp4" />
+                </video>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline define:vars={{ seasonPhotos: seasonPhotosData }}>
+        let currentIdx = 0;
+        const photoEl = document.getElementById("main-player-photo");
+        const badgeEl = document.getElementById("photo-season-badge");
+        const prevBtn = document.getElementById("prev-photo");
+        const nextBtn = document.getElementById("next-photo");
+        function updateCarousel() {
+            if (!photoEl || !badgeEl || seasonPhotos.length === 0) return;
+            const current = seasonPhotos[currentIdx];
+            photoEl.src = current.url;
+            badgeEl.textContent = current.season;
+            if (prevBtn) prevBtn.disabled = currentIdx === seasonPhotos.length - 1;
+            if (nextBtn) nextBtn.disabled = currentIdx === 0;
+        }
+        if (prevBtn) prevBtn.addEventListener("click", () => { if (currentIdx < seasonPhotos.length - 1) { currentIdx++; updateCarousel(); } });
+        if (nextBtn) nextBtn.addEventListener("click", () => { if (currentIdx > 0) { currentIdx--; updateCarousel(); } });
+        updateCarousel();
+    </script>
+
     <script is:inline>
+        function toggleSeason(season) {
+            const rows = document.querySelectorAll(`.competition-row.season-${season}`);
+            const icon = document.querySelector(`.season-total-row[onclick*="${season}"] .toggle-icon`);
+            rows.forEach(row => {
+                if (row.style.display === "none") { row.style.display = "table-row"; if (icon) icon.textContent = "▲"; }
+                else { row.style.display = "none"; if (icon) icon.textContent = "▼"; }
+            });
+        }
         function openVideoModal(url, scorer) {
             const modal = document.getElementById("video-modal");
             const video = document.getElementById("goal-video-player");
@@ -1838,12 +517,8 @@ const schema = {
             source.src = url;
             video.load();
             modal.style.display = "flex";
-            video.play().catch((e) => console.log("Auto-play prevented", e));
-            modal.onclick = function (e) {
-                if (e.target === modal) {
-                    closeVideoModal();
-                }
-            };
+            video.play().catch(() => {});
+            modal.onclick = (e) => { if (e.target === modal) closeVideoModal(); };
         }
         function closeVideoModal() {
             const modal = document.getElementById("video-modal");
@@ -1854,3 +529,588 @@ const schema = {
     </script>
 </Layout>
 
+<style>
+.player-hero {
+    width: 100%;
+    min-height: 90vh;
+    background: #060d1c;
+    position: relative;
+    overflow: hidden;
+}
+.player-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, #060d1c);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.hero-bg-glow {
+    position: absolute;
+    right: 15%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(212,168,67,0.038) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-back-link {
+    position: absolute;
+    top: 1.75rem;
+    left: 2rem;
+    z-index: 20;
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(212,168,67,0.55);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.hero-back-link:hover { color: #d4a843; }
+
+.hero-inner {
+    display: grid;
+    grid-template-columns: min(44vw, 520px) 1fr;
+    min-height: 90vh;
+    align-items: end;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-photo-col {
+    position: relative;
+    align-self: end;
+}
+.hero-photo-col::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(to top, #060d1c 0%, rgba(6,13,28,0.6) 45%, transparent 100%);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.hero-player-photo {
+    width: 100%;
+    max-height: 86vh;
+    object-fit: contain;
+    object-position: bottom center;
+    display: block;
+    filter: drop-shadow(0 0 80px rgba(0,0,0,0.55));
+}
+
+.hero-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(6,13,28,0.7);
+    border: 1px solid rgba(212,168,67,0.25);
+    border-radius: 2px;
+    color: rgba(212,168,67,0.8);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 5;
+}
+.hero-nav-btn:hover { background: rgba(212,168,67,0.15); border-color: rgba(212,168,67,0.6); color: #d4a843; }
+.hero-nav-btn:disabled { opacity: 0; pointer-events: none; }
+.hero-nav-prev { left: 0.5rem; }
+.hero-nav-next { right: 0.5rem; }
+
+.hero-season-badge {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6,13,28,0.85);
+    color: rgba(212,168,67,0.8);
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid rgba(212,168,67,0.22);
+    border-radius: 2px;
+    white-space: nowrap;
+    z-index: 4;
+    backdrop-filter: blur(4px);
+}
+
+.hero-info-col {
+    padding: 5rem 5rem 4rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 90vh;
+    position: relative;
+}
+
+.hero-ghost-dorsal {
+    position: absolute;
+    bottom: 6rem;
+    right: 8rem;
+    white-space: nowrap;
+    font-family: 'Cinzel', serif;
+    font-size: clamp(12rem, 28vw, 26rem);
+    font-weight: 900;
+    color: rgba(212,168,67,0.10);
+    -webkit-text-stroke: 2px rgba(212,168,67,0.32);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+}
+
+.hero-chips {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    border: 1px solid rgba(212,168,67,0.22);
+    background: rgba(6,13,28,0.55);
+    backdrop-filter: blur(6px);
+    font-family: 'Cinzel', serif;
+    font-size: 0.57rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(200,210,220,0.65);
+}
+
+.hero-chip-gold {
+    border-color: rgba(212,168,67,0.5);
+    background: linear-gradient(135deg, rgba(212,168,67,0.14), rgba(212,168,67,0.04));
+    color: #d4a843;
+}
+
+.chip-flag {
+    width: 16px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hero-player-name {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.2rem, 6.5vw, 9rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    background: linear-gradient(180deg, #f5f0e8 20%, #d4a843 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.75rem 0 2.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-quick-stats {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.qs-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.85rem 1.1rem;
+    background: rgba(212,168,67,0.04);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 3px;
+    min-width: 75px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.qs-card:hover { background: rgba(212,168,67,0.08); border-color: rgba(212,168,67,0.35); }
+
+.qs-number {
+    font-family: 'Cinzel', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #d4a843;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+}
+
+.qs-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.52rem;
+    letter-spacing: 0.12em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.player-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem 5rem;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.full-col {
+    grid-column: 1 / -1;
+}
+
+.profile-card {
+    background: rgba(8,16,34,0.85);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.profile-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 12px; height: 12px;
+    border-top: 1px solid rgba(212,168,67,0.5);
+    border-left: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+.profile-card::after {
+    content: '';
+    position: absolute; bottom: 0; right: 0;
+    width: 12px; height: 12px;
+    border-bottom: 1px solid rgba(212,168,67,0.5);
+    border-right: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+
+.card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: rgba(212,168,67,0.75);
+    text-transform: uppercase;
+    padding: 0.85rem 1.25rem;
+    margin: 0;
+    border-bottom: 1px solid rgba(212,168,67,0.12);
+    background: rgba(212,168,67,0.03);
+}
+
+.card-body {
+    padding: 0;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid rgba(212,168,67,0.07);
+    gap: 1rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.info-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: #f0f0f0;
+    text-align: right;
+}
+.flag-icon { width: 18px; height: auto; }
+
+.field-diagram {
+    position: relative;
+    padding: 0;
+}
+.field-svg {
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+}
+.player-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.marker-icon {
+    width: 22px;
+    height: 22px;
+    background: rgba(8,16,34,0.9);
+    border: 2.5px solid #d4a843;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(212,168,67,0.4);
+}
+
+.trajectory-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-left: 1px solid rgba(212,168,67,0.2);
+    margin-left: 0.5rem;
+    padding-left: 0;
+}
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0;
+    position: relative;
+}
+.timeline-dot {
+    width: 8px;
+    height: 8px;
+    background: #d4a843;
+    border-radius: 50%;
+    border: 2px solid rgba(6,13,28,0.9);
+    box-shadow: 0 0 0 1px rgba(212,168,67,0.35);
+    flex-shrink: 0;
+    margin-left: -4.5px;
+    margin-top: 0.35rem;
+}
+.timeline-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.timeline-years {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+}
+.timeline-club {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+.stats-table-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212,168,67,0.25) transparent;
+}
+.competition-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 140px;
+    text-align: left;
+}
+.competition-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+.toggle-icon {
+    font-size: 0.7em;
+    color: rgba(150,160,175,0.5);
+    display: inline-block;
+    width: 1.2em;
+}
+.season-total-row:hover { background: rgba(212,168,67,0.04) !important; }
+.career-total-row {
+    background: rgba(212,168,67,0.12) !important;
+    border-top: 2px solid rgba(212,168,67,0.35) !important;
+    color: #d4a843;
+}
+
+.milestones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.milestone-card {
+    display: flex;
+    background: rgba(6,13,28,0.6);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(212,168,67,0.12);
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+}
+.milestone-card.has-video { cursor: pointer; }
+.milestone-card:hover { transform: translateY(-3px); border-color: rgba(212,168,67,0.4); }
+.milestone-number {
+    background: rgba(212,168,67,0.1);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    border-right: 1px solid rgba(212,168,67,0.15);
+}
+.m-count {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #d4a843;
+    line-height: 1;
+}
+.m-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 3px;
+    color: rgba(200,210,220,0.5);
+}
+.milestone-content { padding: 0.75rem; flex: 1; display: flex; align-items: center; }
+.m-match-info { display: flex; align-items: center; gap: 0.65rem; }
+.m-rival-shield { width: 36px; height: 36px; flex-shrink: 0; }
+.m-rival-shield img { width: 100%; height: 100%; object-fit: contain; }
+.m-details { display: flex; flex-direction: column; gap: 0.1rem; }
+.m-rival-name { font-weight: 700; font-size: 0.85rem; color: #f0f0f0; }
+.m-date { font-size: 0.68rem; color: rgba(150,160,175,0.55); }
+.video-indicator {
+    position: absolute; top: 6px; right: 6px;
+    background: #d4a843; color: rgba(6,13,28,0.95);
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.video-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92); z-index: 9999;
+    align-items: center; justify-content: center;
+    padding: 20px; backdrop-filter: blur(6px);
+}
+.video-modal-container {
+    background: rgba(8,16,34,0.98); width: 100%; max-width: 960px;
+    border-radius: 4px; overflow: hidden;
+    border: 1px solid rgba(212,168,67,0.25);
+}
+.video-modal-header {
+    padding: 0.8rem 1.25rem;
+    display: flex; justify-content: center; align-items: center;
+    background: rgba(212,168,67,0.08); color: #d4a843;
+    position: relative; border-bottom: 1px solid rgba(212,168,67,0.2);
+}
+.video-modal-header h3 {
+    margin: 0; font-family: 'Cinzel', serif;
+    font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.video-close-btn {
+    position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: rgba(200,210,220,0.5);
+    cursor: pointer; transition: color 0.2s;
+}
+.video-close-btn:hover { color: #d4a843; }
+.video-modal-body { position: relative; padding-top: 56.25%; }
+.goal-video-element { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.no-data {
+    color: rgba(150,160,175,0.5);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 1.5rem 0;
+}
+
+@media (max-width: 1024px) {
+    .content-grid { grid-template-columns: 1fr 1fr; }
+    .player-content { padding: 1.5rem 1.5rem 4rem; }
+}
+
+@media (max-width: 900px) {
+    .player-hero {
+        padding-top: 1.5rem;
+        min-height: auto;
+    }
+    .player-hero::after {
+        display: none !important;
+    }
+    .hero-inner {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    .hero-photo-col {
+        max-height: 75vw;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+    }
+    .hero-player-photo {
+        max-height: 75vw;
+        width: auto;
+        max-width: 100%;
+    }
+    .hero-back-link {
+        top: 1rem;
+    }
+    .hero-info-col {
+        min-height: auto;
+        padding: 1.5rem 1.5rem 2.5rem;
+    }
+    .hero-ghost-dorsal {
+        display: none;
+    }
+    .hero-player-name[data-dorsal]::after {
+        content: attr(data-dorsal);
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: 0;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(4rem, 22vw, 6rem);
+        font-weight: 900;
+        color: rgba(212,168,67,0.10);
+        -webkit-text-stroke: 2px rgba(212,168,67,0.32);
+        line-height: 1;
+        pointer-events: none;
+        user-select: none;
+        white-space: nowrap;
+        z-index: 0;
+    }
+    .hero-quick-stats { justify-content: center; z-index: 3; }
+    .hero-chips {
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .player-content { padding: 0 1.25rem 3rem; }
+    .content-grid { grid-template-columns: 1fr; }
+    .full-col { grid-column: 1; }
+}
+
+@media (max-width: 480px) {
+    .hero-player-name { font-size: clamp(2.2rem, 10vw, 3.5rem); }
+    .hero-info-col { padding: 1.5rem 1.25rem 2.5rem; }
+    .qs-card { min-width: 60px; padding: 0.65rem 0.75rem; }
+    .qs-number { font-size: 1.5rem; }
+    .milestones-grid { grid-template-columns: 1fr; }
+}
+</style>

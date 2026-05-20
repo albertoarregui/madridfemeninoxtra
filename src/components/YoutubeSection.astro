@@ -33,8 +33,8 @@ try {
             }
         }
     }
-} catch (error) {
-    console.error("Error fetching YouTube feed:", error);
+} catch (e) {
+    videos = [];
 }
 
 const mainVideo = videos[0];
@@ -42,126 +42,70 @@ const otherVideos = videos.slice(1);
 ---
 
 <section class="youtube-section-container">
-    <h2 class="landing-title">ÚLTIMOS VÍDEOS</h2>
+    <h2 class="landing-title" data-title="ÚLTIMOS VÍDEOS">ÚLTIMOS VÍDEOS</h2>
     <p class="landing-subtitle">
         Partidos completos, declaraciones, Ruedas de Prensa, análisis y toda la
-        actualidad delReal Madrid Femenino
+        actualidad del Real Madrid Femenino
     </p>
 
     <div class="youtube-content">
-        {
-            mainVideo ? (
-                <div class="main-video">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${mainVideo.id}`}
-                        title={mainVideo.title}
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen
+        {mainVideo && (
+            <div class="main-video-col">
+                <div class="main-video" id="main-video-wrapper" data-video-id={mainVideo.id} data-video-title={mainVideo.title}>
+                    <img
+                        class="main-thumb"
+                        src={`https://i.ytimg.com/vi/${mainVideo.id}/maxresdefault.jpg`}
+                        alt={mainVideo.title}
                         loading="lazy"
+                        onerror={`this.onerror=null;this.src='https://i.ytimg.com/vi/${mainVideo.id}/hqdefault.jpg'`}
                     />
-                </div>
-            ) : (
-                <p>Cargando vídeos...</p>
-            )
-        }
-
-        {
-            otherVideos.length > 0 && (
-                <div class="scroll-wrapper">
-                    <button
-                        class="scroll-btn left"
-                        id="scrollLeft"
-                        aria-label="Scroll left"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"
-                        >
-                            <>
-                                <path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"
-                                />
-                                <path d="M15 6l-6 6l6 6" />
-                            </>
-                        </svg>
-                    </button>
-
-                    <div class="video-scroll-container" id="videoScroll">
-                        {otherVideos.map((video) => (
-                            <a
-                                href={video.link}
-                                target="_blank"
-                                class="video-card-small"
-                            >
-                                <div class="video-thumbnail">
-                                    <img
-                                        src={video.thumbnail}
-                                        alt={video.title}
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <h3 class="video-title-small">{video.title}</h3>
-                            </a>
-                        ))}
-                    </div>
-
-                    <button
-                        class="scroll-btn right"
-                        id="scrollRight"
-                        aria-label="Scroll right"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"
-                        >
-                            <>
-                                <path
-                                    stroke="none"
-                                    d="M0 0h24v24H0z"
-                                    fill="none"
-                                />
-                                <path d="M9 6l6 6l-6 6" />
-                            </>
+                    <button class="play-btn-main" aria-label="Reproducir vídeo">
+                        <svg width="46" height="46" viewBox="0 0 46 46" fill="none" aria-hidden="true">
+                            <polygon points="14,6 40,23 14,40" fill="white" />
                         </svg>
                     </button>
                 </div>
-            )
-        }
+                <p class="main-video-title">{mainVideo.title}</p>
+            </div>
+        )}
+
+        {otherVideos.length > 0 && (
+            <div class="video-grid-sidebar">
+                {otherVideos.slice(0, 4).map((video) => (
+                    <a href={video.link} target="_blank" rel="noopener noreferrer" class="video-card-small">
+                        <div class="video-thumbnail">
+                            <img src={video.thumbnail} alt={video.title} loading="lazy" />
+                            <div class="play-overlay" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                    <polygon points="5,2 16,9 5,16" fill="white" />
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="video-title-small">{video.title}</h3>
+                    </a>
+                ))}
+            </div>
+        )}
     </div>
 </section>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const scrollContainer = document.getElementById("videoScroll");
-        const scrollLeftBtn = document.getElementById("scrollLeft");
-        const scrollRightBtn = document.getElementById("scrollRight");
-
-        if (scrollContainer && scrollLeftBtn && scrollRightBtn) {
-            scrollLeftBtn.addEventListener("click", () => {
-                scrollContainer.scrollBy({ left: -300, behavior: "smooth" });
-            });
-
-            scrollRightBtn.addEventListener("click", () => {
-                scrollContainer.scrollBy({ left: 300, behavior: "smooth" });
+    document.addEventListener("astro:page-load", () => {
+        const wrapper = document.getElementById("main-video-wrapper");
+        if (wrapper) {
+            wrapper.addEventListener("click", () => {
+                const videoId = wrapper.dataset.videoId;
+                const videoTitle = wrapper.dataset.videoTitle;
+                const iframe = document.createElement("iframe");
+                iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                iframe.title = videoTitle || "";
+                iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
+                iframe.setAttribute("allowfullscreen", "");
+                iframe.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;border:none;";
+                wrapper.querySelector(".main-thumb")?.remove();
+                wrapper.querySelector(".play-btn-main")?.remove();
+                wrapper.appendChild(iframe);
+                wrapper.style.cursor = "default";
             });
         }
     });
@@ -169,150 +113,225 @@ const otherVideos = videos.slice(1);
 
 <style>
     .youtube-section-container {
-        padding: 0;
-        margin-top: 0;
+        padding: 3.5rem 0 0;
+        margin-top: 2.5rem;
+        clip-path: inset(0 -9999px -9999px -9999px);
+    }
+
+    .landing-title::before {
+        white-space: nowrap;
+    }
+
+    .youtube-content {
+        display: grid;
+        grid-template-columns: 1fr 0.55fr;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .main-video-col {
+        display: flex;
+        flex-direction: column;
     }
 
     .main-video {
         width: 100%;
         position: relative;
-        padding-bottom: 56.25%;
-        height: 0;
-        border-radius: 12px;
+        aspect-ratio: 16 / 9;
+        border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
         background: #000;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
     }
 
-    .main-video iframe {
+    .main-video-title {
+        font-family: 'Cinzel', serif;
+        font-size: 0.9rem;
+        color: #f0f0f0;
+        margin: 0.6rem 0 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+    }
+
+    .main-thumb {
         position: absolute;
-        top: 0;
-        left: 0;
+        inset: 0;
         width: 100%;
         height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: filter 0.3s ease;
     }
 
-    .scroll-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
+    .main-video:hover .main-thumb {
+        filter: brightness(0.72);
     }
 
-    .video-scroll-container {
-        display: flex;
-        gap: 1.5rem;
-        overflow-x: auto;
-        padding-bottom: 1.5rem;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
-        flex: 1;
-        scroll-snap-type: x mandatory;
-    }
-
-    .video-scroll-container::-webkit-scrollbar {
-        display: none;
-    }
-
-    .scroll-btn {
-        background: transparent;
+    .play-btn-main {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: rgba(212, 168, 67, 0.28);
         border: none;
-        width: 40px;
-        height: 40px;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        box-shadow: none;
+        padding-left: 5px;
+        transition: transform 0.25s ease;
         z-index: 2;
-        flex-shrink: 0;
-        color: #333;
     }
 
-    .scroll-btn:hover {
-        background: transparent;
-        transform: none;
-        color: #ffde59;
+    .play-btn-main::after {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #d4a843;
+        border-right-color: rgba(212, 168, 67, 0.4);
+        animation: spin-arc 0.85s linear infinite paused;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
     }
 
-    .scroll-btn:active {
-        transform: scale(0.95);
+    .main-video:hover .play-btn-main {
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    .main-video:hover .play-btn-main::after {
+        opacity: 1;
+        animation-play-state: running;
+    }
+
+    @keyframes spin-arc {
+        to { transform: rotate(360deg); }
+    }
+
+    .video-grid-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
 
     .video-card-small {
-        flex: 0 0 280px;
+        display: flex;
+        flex-direction: row;
+        gap: 0.65rem;
+        align-items: flex-start;
         text-decoration: none;
         color: inherit;
-        transition: transform 0.3s ease;
-        scroll-snap-align: start;
+        transition: transform 0.2s ease;
     }
 
     .video-card-small:hover {
-        transform: translateY(-5px);
+        transform: translateY(-2px);
     }
 
     .video-thumbnail {
-        position: relative;
-        width: 100%;
-        height: 157px;
-        border-radius: 8px;
+        flex-shrink: 0;
+        width: 110px;
+        aspect-ratio: 16 / 9;
+        border-radius: 6px;
         overflow: hidden;
-        margin-bottom: 0.75rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
+        background: #0a1428;
     }
 
     .video-thumbnail img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, filter 0.3s ease;
+        filter: brightness(0.85);
+        display: block;
     }
 
     .video-card-small:hover .video-thumbnail img {
-        transform: scale(1.05);
+        transform: scale(1.03);
+        filter: brightness(1);
+    }
+
+    .play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(212, 168, 67, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        padding-left: 2px;
+        transition: background 0.2s ease;
+    }
+
+    .video-card-small:hover .play-overlay {
+        background: rgba(212, 168, 67, 0.5);
     }
 
     .video-title-small {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #2b2b2b;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: #c8c8c8;
         margin: 0;
         line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        transition: color 0.2s ease;
+    }
+
+    .video-card-small:hover .video-title-small {
+        color: #d4a843;
     }
 
     @media (max-width: 768px) {
-        .scroll-wrapper {
-            gap: 0.5rem;
+        .youtube-section-container {
+            padding: 2rem 0 0;
+        }
+
+        .youtube-content {
+            grid-template-columns: 1fr;
+        }
+
+        .video-grid-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
         }
 
         .video-card-small {
-            flex: 0 0 220px;
+            flex-direction: column;
         }
 
         .video-thumbnail {
-            height: 124px;
+            width: 100%;
         }
 
-        .scroll-btn {
-            display: flex;
-            width: 32px;
-            height: 32px;
+        .play-btn-main {
+            width: 72px;
+            height: 72px;
         }
+    }
 
-        .scroll-btn svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .video-scroll-container {
-            scrollbar-width: none;
+    @media (max-width: 480px) {
+        .video-title-small {
+            font-size: 0.72rem;
         }
     }
 </style>

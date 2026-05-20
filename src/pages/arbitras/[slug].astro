@@ -195,635 +195,347 @@ const redArcFavor =
     title={`Ficha de ${referee.nombre} | Madrid Femenino Xtra`}
     description={`Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`}
 >
-    <main class="rival-details-page">
-        <a href="/arbitras" class="back-link">
-            <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
-            Volver a Árbitras
-        </a>
+    <section class="referee-hero">
+        <div class="hero-bg-glow" aria-hidden="true"></div>
 
-        <div class="rival-grid">
-            <div class="left-column">
-                <section class="rival-card">
-                    <h2 class="section-header">
-                        FICHA DE {referee.nombre.toUpperCase()}
-                    </h2>
-                    <div class="ficha-content">
-                        <div class="player-photo-container">
-                            {
-                                referee.foto_url ? (
-                                    <img
-                                        src={
-                                            referee.foto_url.startsWith("http")
-                                                ? referee.foto_url
-                                                : `https://media.madridfemeninoxtra.com${referee.foto_url}`
-                                        }
-                                        alt={referee.nombre}
-                                        class="player-photo"
-                                        onerror="this.src='/assets/jugadoras/placeholder.png'"
-                                    />
-                                ) : (
-                                    <div class="player-photo flex items-center justify-center bg-gray-100">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="50%"
-                                            height="50%"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="1.5"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            class="text-gray-300"
-                                        >
-                                            <path
-                                                stroke="none"
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                                        </svg>
-                                    </div>
-                                )
-                            }
+        <a href="/arbitras" class="hero-back-link">← VOLVER A ÁRBITRAS</a>
+
+        <div class="hero-inner">
+            <div class="hero-photo-col">
+                <div class="hero-photo-frame">
+                    {referee.foto_url ? (
+                        <img
+                            src={referee.foto_url.startsWith("http") ? referee.foto_url : `https://media.madridfemeninoxtra.com${referee.foto_url}`}
+                            alt={`Foto de ${referee.nombre}`}
+                            class="hero-player-photo"
+                            loading="eager"
+                            decoding="async"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        />
+                    ) : null}
+                    <div class="hero-photo-placeholder" style={referee.foto_url ? "display:none" : ""}>
+                        <div class="placeholder-initials">
+                            {referee.nombre.split(" ").slice(0,2).map((w: string) => w[0]).join("")}
                         </div>
-                        <div class="player-info w-full">
-                            <div class="info-row">
-                                <span class="label">Nombre:</span>
-                                <span class="value">{referee.nombre}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">País:</span>
-                                <span class="value flex items-center gap-2">
-                                    {
-                                        referee.iso ? (
-                                            <>
-                                                <img
-                                                    src={getFlagSrc(
-                                                        referee.iso,
-                                                    )}
-                                                    alt={referee.iso}
-                                                    class="w-4 h-auto rounded-sm shadow-sm"
-                                                />
-                                                {referee.pais_origen && (
-                                                    <span>
-                                                        {referee.pais_origen}
-                                                    </span>
-                                                )}
-                                            </>
-                                        ) : (
-                                            "-"
-                                        )
-                                    }
-                                </span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Colegio:</span>
-                                <span class="value"
-                                    >{referee.colegio || "-"}</span
-                                >
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Partidos:</span>
-                                {}
-                                <span class="value">{totalStats.pj}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Total Tarjetas:</span>
-                                <span class="value gap-3">
-                                    <div class="flex flex-col gap-2 items-end">
-                                        <div
-                                            class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1"
-                                        >
-                                            <span
-                                                class="text-[10px] sm:text-[11px] text-gray-500 font-bold uppercase w-16 sm:w-20 text-right whitespace-nowrap flex-shrink-0"
-                                                >EN CONTRA:</span
-                                            >
-                                            <span
-                                                class="flex items-center gap-2 text-yellow-600 font-bold"
-                                                title="Amarillas en contra"
-                                            >
-                                                <span
-                                                    class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"
-                                                ></span>
-                                                {totalStats.ta}
-                                            </span>
-                                            <span
-                                                class="flex items-center gap-2 text-red-600 font-bold"
-                                                title="Rojas en contra"
-                                            >
-                                                <span
-                                                    class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"
-                                                ></span>
-                                                {totalStats.tr}
-                                            </span>
-                                        </div>
-                                        <div
-                                            class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1"
-                                        >
-                                            <span
-                                                class="text-[10px] sm:text-[11px] text-gray-500 font-bold uppercase w-16 sm:w-20 text-right whitespace-nowrap flex-shrink-0"
-                                                >A FAVOR:</span
-                                            >
-                                            <span
-                                                class="flex items-center gap-2 text-yellow-600 font-bold opacity-80"
-                                                title="Amarillas a favor"
-                                            >
-                                                <span
-                                                    class="w-3 h-4 bg-yellow-400 rounded-sm inline-block border border-yellow-500"
-                                                ></span>
-                                                {totalStats.ta_c}
-                                            </span>
-                                            <span
-                                                class="flex items-center gap-2 text-red-600 font-bold opacity-80"
-                                                title="Rojas a favor"
-                                            >
-                                                <span
-                                                    class="w-3 h-4 bg-red-600 rounded-sm inline-block border border-red-700"
-                                                ></span>
-                                                {totalStats.tr_c}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </span>
-                            </div>
-                        </div>
+                        <div class="placeholder-role">Árbitra</div>
                     </div>
-                </section>
+                    <div class="photo-frame-corner tl"></div>
+                    <div class="photo-frame-corner tr"></div>
+                    <div class="photo-frame-corner bl"></div>
+                    <div class="photo-frame-corner br"></div>
+                </div>
+            </div>
 
-                <section class="stats-table-card">
-                    <h3 class="section-subheader">ESTADÍSTICAS</h3>
-                    <div class="table-wrapper">
-                        {
-                            refereeDeepStats.length > 0 ? (
-                                <table class="stats-table detailed-table">
-                                    <thead>
-                                        <tr>
-                                            <th>TEMPORADA</th>
-                                            <th>PJ</th>
-                                            <th>PG</th>
-                                            <th>PE</th>
-                                            <th>PP</th>
-                                            <th>TA (F)</th>
-                                            <th>TR (F)</th>
-                                            <th>PF</th>
-                                            <th>PC</th>
-                                            <th>TA (C)</th>
-                                            <th>TR (C)</th>
-                                            <th>FC</th>
-                                            <th>FR</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {refereeDeepStats.map((season) => (
-                                            <>
+            <div class="hero-info-col">
+                <div class="hero-chips">
+                    <span class="hero-chip hero-chip-gold">♦ Árbitra ♦</span>
+                    {referee.iso && (
+                        <span class="hero-chip">
+                            <img src={getFlagSrc(referee.iso)} alt={referee.iso} class="chip-flag" width="16" height="16" loading="lazy" />
+                            {referee.pais_origen || referee.iso}
+                        </span>
+                    )}
+                    {referee.colegio && (
+                        <span class="hero-chip">{referee.colegio}</span>
+                    )}
+                </div>
+
+                <h1 class="hero-player-name">{referee.nombre}</h1>
+
+                <div class="hero-quick-stats">
+                    <div class="qs-card">
+                        <span class="qs-number">{totalStats.pj}</span>
+                        <span class="qs-label">Partidos</span>
+                    </div>
+                    <div class="qs-card">
+                        <span class="qs-number">{totalStats.pg}</span>
+                        <span class="qs-label">Victorias</span>
+                    </div>
+                    <div class="qs-card">
+                        <span class="qs-number">{totalStats.pe}</span>
+                        <span class="qs-label">Empates</span>
+                    </div>
+                    <div class="qs-card">
+                        <span class="qs-number">{totalStats.pp}</span>
+                        <span class="qs-label">Derrotas</span>
+                    </div>
+                    <div class="qs-card">
+                        <span class="qs-number" style="color:rgba(212,168,67,0.9)">{totalStats.ta}</span>
+                        <span class="qs-label">T. Amarillas</span>
+                    </div>
+                    <div class="qs-card">
+                        <span class="qs-number" style="color:rgba(248,113,113,0.9)">{totalStats.tr}</span>
+                        <span class="qs-label">T. Rojas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="referee-content">
+        <div class="content-grid">
+
+            <section class="profile-card full-col">
+                <h2 class="card-title">FICHA DE {referee.nombre.toUpperCase()}</h2>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">Nombre</span>
+                        <span class="info-value">{referee.nombre}</span>
+                    </div>
+                    {referee.pais_origen && (
+                        <div class="info-row">
+                            <span class="info-label">País</span>
+                            <span class="info-value" style="display:flex;align-items:center;gap:0.5rem;justify-content:flex-end;">
+                                {referee.pais_origen}
+                                {referee.iso && <img src={getFlagSrc(referee.iso)} alt={referee.iso} class="flag-icon" width="18" height="auto" loading="lazy" />}
+                            </span>
+                        </div>
+                    )}
+                    {referee.colegio && (
+                        <div class="info-row">
+                            <span class="info-label">Colegio</span>
+                            <span class="info-value">{referee.colegio}</span>
+                        </div>
+                    )}
+                    <div class="info-row">
+                        <span class="info-label">Partidos dirigidos</span>
+                        <span class="info-value" style="color:#d4a843;font-family:'Cinzel',serif;font-weight:700;">{totalStats.pj}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Balance (V/E/D)</span>
+                        <span class="info-value">
+                            <span style="color:rgba(74,222,128,0.9);font-weight:700;">{totalStats.pg}V</span>
+                            <span style="color:rgba(212,168,67,0.8);font-weight:700;margin:0 0.35rem;">{totalStats.pe}E</span>
+                            <span style="color:rgba(248,113,113,0.85);font-weight:700;">{totalStats.pp}D</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tarjetas en contra</span>
+                        <span class="info-value" style="display:flex;align-items:center;gap:0.75rem;justify-content:flex-end;">
+                            <span style="display:flex;align-items:center;gap:0.35rem;">
+                                <span style="width:10px;height:14px;background:#d4a843;border-radius:2px;display:inline-block;"></span>
+                                <span style="color:rgba(212,168,67,0.9);font-weight:700;">{totalStats.ta}</span>
+                            </span>
+                            <span style="display:flex;align-items:center;gap:0.35rem;">
+                                <span style="width:10px;height:14px;background:rgba(220,50,50,0.9);border-radius:2px;display:inline-block;"></span>
+                                <span style="color:rgba(248,113,113,0.9);font-weight:700;">{totalStats.tr}</span>
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tarjetas a favor</span>
+                        <span class="info-value" style="display:flex;align-items:center;gap:0.75rem;justify-content:flex-end;">
+                            <span style="display:flex;align-items:center;gap:0.35rem;">
+                                <span style="width:10px;height:14px;background:#d4a843;border-radius:2px;display:inline-block;opacity:0.65;"></span>
+                                <span style="color:rgba(212,168,67,0.75);font-weight:700;">{totalStats.ta_c}</span>
+                            </span>
+                            <span style="display:flex;align-items:center;gap:0.35rem;">
+                                <span style="width:10px;height:14px;background:rgba(220,50,50,0.9);border-radius:2px;display:inline-block;opacity:0.65;"></span>
+                                <span style="color:rgba(248,113,113,0.75);font-weight:700;">{totalStats.tr_c}</span>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="profile-card full-col">
+                <h2 class="card-title">ESTADÍSTICAS POR TEMPORADA</h2>
+                <div class="card-body" style="padding:0;">
+                    <div class="stats-table-wrapper">
+                        {refereeDeepStats.length > 0 ? (
+                            <table class="stats-table detailed-table">
+                                <thead>
+                                    <tr>
+                                        <th>TEMPORADA</th>
+                                        <th>PJ</th>
+                                        <th>PG</th>
+                                        <th>PE</th>
+                                        <th>PP</th>
+                                        <th>TA (F)</th>
+                                        <th>TR (F)</th>
+                                        <th>PF</th>
+                                        <th>PC</th>
+                                        <th>TA (C)</th>
+                                        <th>TR (C)</th>
+                                        <th>FC</th>
+                                        <th>FR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {refereeDeepStats.map((season) => (
+                                        <>
+                                            <tr
+                                                class="season-total-row"
+                                                onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
+                                                style="cursor:pointer;"
+                                            >
+                                                <td>
+                                                    <div class="flex items-center justify-start gap-2 w-full">
+                                                        <strong>{season.temporada}</strong>
+                                                        <span class="toggle-icon">▼</span>
+                                                    </div>
+                                                </td>
+                                                <td><strong>{season.total.pj}</strong></td>
+                                                <td><strong>{season.total.pg}</strong></td>
+                                                <td><strong>{season.total.pe}</strong></td>
+                                                <td><strong>{season.total.pp}</strong></td>
+                                                <td><strong>{season.total.ta}</strong></td>
+                                                <td><strong>{season.total.tr}</strong></td>
+                                                <td><strong>{season.total.pf}</strong></td>
+                                                <td><strong>{season.total.pc}</strong></td>
+                                                <td><strong>{season.total.ta_c}</strong></td>
+                                                <td><strong>{season.total.tr_c}</strong></td>
+                                                <td><strong>{season.total.fc}</strong></td>
+                                                <td><strong>{season.total.fr}</strong></td>
+                                            </tr>
+                                            {season.competiciones.map((comp: any) => (
                                                 <tr
-                                                    class="season-total-row"
-                                                    onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`}
-                                                    style="cursor: pointer;"
+                                                    class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
+                                                    style="display:none;"
                                                 >
-                                                    <td>
-                                                        <div class="flex items-center justify-start gap-2 w-full">
-                                                            <strong>
-                                                                {
-                                                                    season.temporada
-                                                                }
-                                                            </strong>
-                                                            <span class="toggle-icon">
-                                                                ▼
-                                                            </span>
+                                                    <td class="competition-name">
+                                                        <div class="competition-name-wrapper">
+                                                            {competitionLogos[comp.competicion] && (
+                                                                <img
+                                                                    src={competitionLogos[comp.competicion]}
+                                                                    alt={comp.competicion}
+                                                                    class="competition-logo"
+                                                                />
+                                                            )}
+                                                            {comp.competicion}
                                                         </div>
                                                     </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pj}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pg}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pe}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pp}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.ta}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.tr}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pf}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.pc}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.ta_c}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.tr_c}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.fc}
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {season.total.fr}
-                                                        </strong>
-                                                    </td>
+                                                    <td>{comp.pj}</td>
+                                                    <td>{comp.pg}</td>
+                                                    <td>{comp.pe}</td>
+                                                    <td>{comp.pp}</td>
+                                                    <td>{comp.ta}</td>
+                                                    <td>{comp.tr}</td>
+                                                    <td>{comp.pf}</td>
+                                                    <td>{comp.pc}</td>
+                                                    <td>{comp.ta_c}</td>
+                                                    <td>{comp.tr_c}</td>
+                                                    <td>{comp.fc}</td>
+                                                    <td>{comp.fr}</td>
                                                 </tr>
-                                                {season.competiciones.map(
-                                                    (comp: any) => (
-                                                        <tr
-                                                            class={`competition-row season-${season.temporada.replace(/\//g, "-")}`}
-                                                            style="display: none;"
-                                                        >
-                                                            <td class="competition-name">
-                                                                <div class="competition-name-wrapper">
-                                                                    {competitionLogos[
-                                                                        comp
-                                                                            .competicion
-                                                                    ] && (
-                                                                        <img
-                                                                            src={
-                                                                                competitionLogos[
-                                                                                    comp
-                                                                                        .competicion
-                                                                                ]
-                                                                            }
-                                                                            alt={
-                                                                                comp.competicion
-                                                                            }
-                                                                            class="competition-logo"
-                                                                        />
-                                                                    )}
-                                                                    {
-                                                                        comp.competicion
-                                                                    }
-                                                                </div>
-                                                            </td>
-                                                            <td>{comp.pj}</td>
-                                                            <td>{comp.pg}</td>
-                                                            <td>{comp.pe}</td>
-                                                            <td>{comp.pp}</td>
-                                                            <td>{comp.ta}</td>
-                                                            <td>{comp.tr}</td>
-                                                            <td>{comp.pf}</td>
-                                                            <td>{comp.pc}</td>
-                                                            <td>{comp.ta_c}</td>
-                                                            <td>{comp.tr_c}</td>
-                                                            <td>{comp.fc}</td>
-                                                            <td>{comp.fr}</td>
-                                                        </tr>
-                                                    ),
-                                                )}
-                                            </>
-                                        ))}
-                                        <tr class="total-row">
-                                            <td>
-                                                <strong>TOTAL</strong>
-                                            </td>
-                                            <td>{totalStats.pj}</td>
-                                            <td>{totalStats.pg}</td>
-                                            <td>{totalStats.pe}</td>
-                                            <td>{totalStats.pp}</td>
-                                            <td class="font-bold">
-                                                {totalStats.ta}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.tr}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.pf}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.pc}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.ta_c}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.tr_c}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.fc}
-                                            </td>
-                                            <td class="font-bold">
-                                                {totalStats.fr}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <div class="p-4 text-center text-gray-500">
-                                    No hay estadísticas disponibles
-                                </div>
-                            )
-                        }
+                                            ))}
+                                        </>
+                                    ))}
+                                    <tr class="career-total-row">
+                                        <td style="text-align:left!important;"><strong>TOTAL</strong></td>
+                                        <td><strong>{totalStats.pj}</strong></td>
+                                        <td><strong>{totalStats.pg}</strong></td>
+                                        <td><strong>{totalStats.pe}</strong></td>
+                                        <td><strong>{totalStats.pp}</strong></td>
+                                        <td><strong>{totalStats.ta}</strong></td>
+                                        <td><strong>{totalStats.tr}</strong></td>
+                                        <td><strong>{totalStats.pf}</strong></td>
+                                        <td><strong>{totalStats.pc}</strong></td>
+                                        <td><strong>{totalStats.ta_c}</strong></td>
+                                        <td><strong>{totalStats.tr_c}</strong></td>
+                                        <td><strong>{totalStats.fc}</strong></td>
+                                        <td><strong>{totalStats.fr}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p style="color:rgba(150,160,175,0.5);font-style:italic;font-size:0.85rem;padding:1.5rem;">No hay estadísticas disponibles</p>
+                        )}
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section class="charts-card">
-                    <h2 class="section-header">GRÁFICAS</h2>
+            <section class="profile-card full-col">
+                <h2 class="card-title">GRÁFICAS</h2>
+                <div class="card-body">
                     <div class="filters-container">
-                        <div
-                            class="custom-select-container"
-                            id="container-temporada"
-                        >
-                            <div
-                                class="custom-select-trigger"
-                                id="trigger-temporada"
-                            >
-                                <span class="selected-text"
-                                    >Todas las Temporadas</span
-                                >
+                        <div class="custom-select-container" id="container-temporada">
+                            <div class="custom-select-trigger" id="trigger-temporada">
+                                <span class="selected-text">Todas las Temporadas</span>
                                 <div class="custom-select-arrow">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path d="m6 9 6 6 6-6"></path>
-                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                                 </div>
                             </div>
                             <div class="custom-select-options">
-                                <div
-                                    class="custom-select-option selected"
-                                    data-value="all"
-                                >
-                                    Todas las Temporadas
-                                </div>
-                                {
-                                    uniqueSeasons.map((season) => (
-                                        <div
-                                            class="custom-select-option"
-                                            data-value={season}
-                                        >
-                                            {season}
-                                        </div>
-                                    ))
-                                }
+                                <div class="custom-select-option selected" data-value="all">Todas las Temporadas</div>
+                                {uniqueSeasons.map((season) => (
+                                    <div class="custom-select-option" data-value={season}>{season}</div>
+                                ))}
                             </div>
-                            <select id="season-filter" style="display: none;">
-                                <option value="all">Todas las Temporadas</option
-                                >
-                                {
-                                    uniqueSeasons.map((season) => (
-                                        <option value={season}>{season}</option>
-                                    ))
-                                }
+                            <select id="season-filter" style="display:none;">
+                                <option value="all">Todas las Temporadas</option>
+                                {uniqueSeasons.map((season) => (
+                                    <option value={season}>{season}</option>
+                                ))}
                             </select>
                         </div>
-                        <div
-                            class="custom-select-container"
-                            id="container-competicion"
-                        >
-                            <div
-                                class="custom-select-trigger"
-                                id="trigger-competicion"
-                            >
-                                <span class="selected-text"
-                                    >Todas las Competiciones</span
-                                >
+                        <div class="custom-select-container" id="container-competicion">
+                            <div class="custom-select-trigger" id="trigger-competicion">
+                                <span class="selected-text">Todas las Competiciones</span>
                                 <div class="custom-select-arrow">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path d="m6 9 6 6 6-6"></path>
-                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
                                 </div>
                             </div>
                             <div class="custom-select-options">
-                                <div
-                                    class="custom-select-option selected"
-                                    data-value="all"
-                                >
-                                    Todas las Competiciones
-                                </div>
-                                {
-                                    uniqueCompetitions.map((comp) => (
-                                        <div
-                                            class="custom-select-option"
-                                            data-value={comp}
-                                        >
-                                            {comp}
-                                        </div>
-                                    ))
-                                }
+                                <div class="custom-select-option selected" data-value="all">Todas las Competiciones</div>
+                                {uniqueCompetitions.map((comp) => (
+                                    <div class="custom-select-option" data-value={comp}>{comp}</div>
+                                ))}
                             </div>
-                            <select
-                                id="competition-filter"
-                                style="display: none;"
-                            >
-                                <option value="all"
-                                    >Todas las Competiciones</option
-                                >
-                                {
-                                    uniqueCompetitions.map((comp) => (
-                                        <option value={comp}>{comp}</option>
-                                    ))
-                                }
+                            <select id="competition-filter" style="display:none;">
+                                <option value="all">Todas las Competiciones</option>
+                                {uniqueCompetitions.map((comp) => (
+                                    <option value={comp}>{comp}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
                     <div class="charts-row">
                         <div class="chart-item">
-                            <h4 class="text-sm font-bold mb-2">RESULTADOS</h4>
-                            <svg
-                                viewBox="0 0 100 100"
-                                class="pie-chart"
-                                id="results-chart"
-                            >
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#c8e6c9"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${winsArc} ${circumference - winsArc}`}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#fff9c4"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`}
-                                    stroke-dashoffset={-winsArc}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#ffcdd2"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`}
-                                    stroke-dashoffset={-(winsArc + drawsArc)}
-                                    transform="rotate(-90 50 50)"></circle>
+                            <h4 class="chart-label">RESULTADOS</h4>
+                            <svg viewBox="0 0 100 100" class="pie-chart" id="results-chart">
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(74,222,128,0.75)" stroke-width="20" stroke-dasharray={`${winsArc} ${circumference - winsArc}`} transform="rotate(-90 50 50)"></circle>
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(212,168,67,0.7)" stroke-width="20" stroke-dasharray={`${drawsArc} ${circumference - drawsArc}`} stroke-dashoffset={-winsArc} transform="rotate(-90 50 50)"></circle>
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(248,113,113,0.75)" stroke-width="20" stroke-dasharray={`${lossesArc} ${circumference - lossesArc}`} stroke-dashoffset={-(winsArc + drawsArc)} transform="rotate(-90 50 50)"></circle>
                             </svg>
                             <div class="chart-legend" id="results-legend">
-                                <div>
-                                    <span class="dot green"></span> Ganados ({
-                                        totalStats.pg
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot orange"></span> Empatados ({
-                                        totalStats.pe
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot red"></span> Perdidos ({
-                                        totalStats.pp
-                                    })
-                                </div>
+                                <div><span class="dot green"></span> Ganados ({totalStats.pg})</div>
+                                <div><span class="dot orange"></span> Empatados ({totalStats.pe})</div>
+                                <div><span class="dot red"></span> Perdidos ({totalStats.pp})</div>
                             </div>
                         </div>
 
                         <div class="chart-item">
-                            <h4 class="text-xs font-bold mb-2">
-                                TARJETAS EN CONTRA
-                            </h4>
-                            <svg
-                                viewBox="0 0 100 100"
-                                class="pie-chart"
-                                id="cards-chart"
-                            >
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#fff9c4"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${yellowArc} ${circumference - yellowArc}`}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#ffcdd2"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${redArc} ${circumference - redArc}`}
-                                    stroke-dashoffset={-yellowArc}
-                                    transform="rotate(-90 50 50)"></circle>
+                            <h4 class="chart-label">TARJETAS EN CONTRA</h4>
+                            <svg viewBox="0 0 100 100" class="pie-chart" id="cards-chart">
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(212,168,67,0.8)" stroke-width="20" stroke-dasharray={`${yellowArc} ${circumference - yellowArc}`} transform="rotate(-90 50 50)"></circle>
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(248,113,113,0.8)" stroke-width="20" stroke-dasharray={`${redArc} ${circumference - redArc}`} stroke-dashoffset={-yellowArc} transform="rotate(-90 50 50)"></circle>
                             </svg>
                             <div class="chart-legend" id="cards-legend">
-                                <div>
-                                    <span class="dot yellow"></span> Amarillas ({
-                                        totalStats.ta
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot red"></span> Rojas ({
-                                        totalStats.tr
-                                    })
-                                </div>
+                                <div><span class="dot yellow"></span> Amarillas ({totalStats.ta})</div>
+                                <div><span class="dot red"></span> Rojas ({totalStats.tr})</div>
                             </div>
                         </div>
 
                         <div class="chart-item">
-                            <h4 class="text-xs font-bold mb-2">
-                                TARJETAS A FAVOR
-                            </h4>
-                            <svg
-                                viewBox="0 0 100 100"
-                                class="pie-chart"
-                                id="cards-favor-chart"
-                            >
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#fff9c4"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${yellowArcFavor} ${circumference - yellowArcFavor}`}
-                                    transform="rotate(-90 50 50)"></circle>
-                                <circle
-                                    cx="50"
-                                    cy="50"
-                                    r="35"
-                                    fill="none"
-                                    stroke="#ffcdd2"
-                                    stroke-width="20"
-                                    stroke-dasharray={`${redArcFavor} ${circumference - redArcFavor}`}
-                                    stroke-dashoffset={-yellowArcFavor}
-                                    transform="rotate(-90 50 50)"></circle>
+                            <h4 class="chart-label">TARJETAS A FAVOR</h4>
+                            <svg viewBox="0 0 100 100" class="pie-chart" id="cards-favor-chart">
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(212,168,67,0.8)" stroke-width="20" stroke-dasharray={`${yellowArcFavor} ${circumference - yellowArcFavor}`} transform="rotate(-90 50 50)"></circle>
+                                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(248,113,113,0.8)" stroke-width="20" stroke-dasharray={`${redArcFavor} ${circumference - redArcFavor}`} stroke-dashoffset={-yellowArcFavor} transform="rotate(-90 50 50)"></circle>
                             </svg>
                             <div class="chart-legend" id="cards-favor-legend">
-                                <div>
-                                    <span class="dot yellow"></span> Amarillas ({
-                                        totalStats.ta_c
-                                    })
-                                </div>
-                                <div>
-                                    <span class="dot red"></span> Rojas ({
-                                        totalStats.tr_c
-                                    })
-                                </div>
+                                <div><span class="dot yellow"></span> Amarillas ({totalStats.ta_c})</div>
+                                <div><span class="dot red"></span> Rojas ({totalStats.tr_c})</div>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <section class="matches-card">
-                    <h3 class="section-subheader">PARTIDOS DIRIGIDOS</h3>
-                    <div class="table-wrapper">
+            <section class="profile-card full-col">
+                <h2 class="card-title">PARTIDOS DIRIGIDOS</h2>
+                <div class="card-body" style="padding:0;">
+                    <div class="stats-table-wrapper">
                         <table class="matches-table">
                             <thead>
                                 <tr>
@@ -836,105 +548,43 @@ const redArcFavor =
                                 </tr>
                             </thead>
                             <tbody>
-                                {
-                                    matches.map((match, index) => (
-                                        <tr
-                                            class={`match-row ${index >= 10 ? "hidden-match" : ""}`}
-                                            style={
-                                                index >= 10
-                                                    ? "display: none;"
-                                                    : ""
-                                            }
-                                        >
-                                            <td>
-                                                {new Date(
-                                                    match.fecha,
-                                                ).toLocaleDateString("es-ES")}
-                                            </td>
-                                            <td>
-                                                {competitionLogos[
-                                                    match.competicion
-                                                ] && (
-                                                    <img
-                                                        src={
-                                                            competitionLogos[
-                                                                match
-                                                                    .competicion
-                                                            ]
-                                                        }
-                                                        alt={match.competicion}
-                                                        class="competition-logo-small"
-                                                        title={
-                                                            match.competicion
-                                                        }
-                                                    />
-                                                )}
-                                                {!competitionLogos[
-                                                    match.competicion
-                                                ] && match.competicion}
-                                            </td>
-                                            <td
-                                                class={
-                                                    match.club_local
-                                                        .toLowerCase()
-                                                        .includes("real madrid")
-                                                        ? "font-bold"
-                                                        : ""
-                                                }
-                                            >
-                                                {match.club_local}
-                                            </td>
-                                            <td
-                                                class={`${
-                                                    match.resultado === "V"
-                                                        ? "resultado-victoria"
-                                                        : match.resultado ===
-                                                            "E"
-                                                          ? "resultado-empate"
-                                                          : "resultado-derrota"
-                                                }`}
-                                            >
-                                                {match.goles_rm} -{" "}
-                                                {match.goles_rival}
-                                            </td>
-                                            <td
-                                                class={
-                                                    match.club_visitante
-                                                        .toLowerCase()
-                                                        .includes("real madrid")
-                                                        ? "font-bold"
-                                                        : ""
-                                                }
-                                            >
-                                                {match.club_visitante}
-                                            </td>
-                                            <td>
-                                                {match.estadio && (
-                                                    <a
-                                                        href={`/estadios/${generateSlug(match.estadio)}`}
-                                                        class="hover:text-[#ffde59] transition-colors"
-                                                    >
-                                                        {match.estadio}
-                                                    </a>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                }
+                                {matches.map((match, index) => (
+                                    <tr
+                                        class={`match-row ${index >= 10 ? "hidden-match" : ""}`}
+                                        style={index >= 10 ? "display:none;" : ""}
+                                    >
+                                        <td>{new Date(match.fecha).toLocaleDateString("es-ES")}</td>
+                                        <td>
+                                            {competitionLogos[match.competicion] && (
+                                                <img src={competitionLogos[match.competicion]} alt={match.competicion} class="competition-logo-small" title={match.competicion} />
+                                            )}
+                                            {!competitionLogos[match.competicion] && match.competicion}
+                                        </td>
+                                        <td class={match.club_local.toLowerCase().includes("real madrid") ? "font-bold" : ""}>{match.club_local}</td>
+                                        <td class={match.resultado === "V" ? "resultado-victoria" : match.resultado === "E" ? "resultado-empate" : "resultado-derrota"}>
+                                            {match.goles_rm} - {match.goles_rival}
+                                        </td>
+                                        <td class={match.club_visitante.toLowerCase().includes("real madrid") ? "font-bold" : ""}>{match.club_visitante}</td>
+                                        <td>
+                                            {match.estadio && (
+                                                <a href={`/estadios/${generateSlug(match.estadio)}`} class="estadio-link">{match.estadio}</a>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
-                    {
-                        matches.length > 10 && (
-                            <div class="matches-footer">
-                                <button id="show-more-matches" class="btn-more">
-                                    Ver todos los partidos ({matches.length})
-                                </button>
-                            </div>
-                        )
-                    }
-                </section>
-            </div>
+                    {matches.length > 10 && (
+                        <div class="matches-footer">
+                            <button id="show-more-matches" class="btn-more">
+                                Ver todos los partidos ({matches.length})
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+
         </div>
     </main>
 </Layout>
@@ -1137,535 +787,645 @@ const redArcFavor =
 </script>
 
 <style>
-    .rival-details-page {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 2rem 1.5rem;
-        overflow-x: hidden;
-    }
+.referee-hero {
+    width: 100%;
+    background: linear-gradient(to bottom, rgba(3,7,18,0.98) 0%, rgba(6,13,28,0.95) 100%);
+    position: relative;
+    overflow: hidden;
+}
 
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        text-decoration: none;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        transition: color 0.3s;
-    }
+.hero-bg-glow {
+    position: absolute;
+    right: 15%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(212,168,67,0.038) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+}
 
-    .back-link:hover {
-        color: #ffde59;
-    }
+.hero-back-link {
+    position: absolute;
+    top: 1.75rem;
+    left: 2rem;
+    z-index: 20;
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(200,210,220,0.55);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.hero-back-link:hover { color: #d4a843; }
 
-    .rival-grid {
+.hero-inner {
+    display: grid;
+    grid-template-columns: min(44vw, 520px) 1fr;
+    align-items: start;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-photo-col {
+    position: relative;
+    padding: 4.5rem 2rem 3rem 3rem;
+}
+
+.hero-photo-frame {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 3/4;
+    border: 1px solid rgba(212,168,67,0.22);
+    overflow: hidden;
+    background: rgba(6,13,28,0.9);
+    box-shadow: 0 0 60px rgba(0,0,0,0.6), inset 0 0 40px rgba(0,0,0,0.3);
+}
+
+.hero-player-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    transition: transform 0.6s ease;
+}
+.hero-photo-frame:hover .hero-player-photo {
+    transform: scale(1.03);
+}
+
+.hero-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: linear-gradient(160deg, rgba(8,16,34,0.98) 0%, rgba(14,24,50,0.95) 100%);
+}
+.placeholder-initials {
+    font-family: 'Cinzel', serif;
+    font-size: 5rem;
+    font-weight: 700;
+    color: rgba(212,168,67,0.18);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    -webkit-text-stroke: 1px rgba(212,168,67,0.25);
+}
+.placeholder-role {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(212,168,67,0.35);
+}
+
+.photo-frame-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 4;
+}
+.photo-frame-corner.tl { top: -1px; left: -1px; border-top: 2px solid #d4a843; border-left: 2px solid #d4a843; }
+.photo-frame-corner.tr { top: -1px; right: -1px; border-top: 2px solid #d4a843; border-right: 2px solid #d4a843; }
+.photo-frame-corner.bl { bottom: -1px; left: -1px; border-bottom: 2px solid #d4a843; border-left: 2px solid #d4a843; }
+.photo-frame-corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid #d4a843; border-right: 2px solid #d4a843; }
+
+.hero-photo-frame::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 30%;
+    background: linear-gradient(to top, rgba(6,13,28,0.7) 0%, transparent 100%);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.hero-info-col {
+    padding: 4.5rem 5rem 3rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+}
+
+.hero-chips {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    border: 1px solid rgba(212,168,67,0.22);
+    background: rgba(6,13,28,0.55);
+    backdrop-filter: blur(6px);
+    font-family: 'Cinzel', serif;
+    font-size: 0.57rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(200,210,220,0.65);
+}
+
+.hero-chip-gold {
+    border-color: rgba(212,168,67,0.5);
+    background: linear-gradient(135deg, rgba(212,168,67,0.14), rgba(212,168,67,0.04));
+    color: #d4a843;
+}
+
+.chip-flag {
+    width: 16px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hero-player-name {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.2rem, 6.5vw, 9rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 0.88;
+    letter-spacing: 0.01em;
+    background: linear-gradient(180deg, #f5f0e8 20%, #d4a843 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.75rem 0 2.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-quick-stats {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.qs-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.85rem 1.1rem;
+    background: rgba(212,168,67,0.04);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 3px;
+    min-width: 75px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.qs-card:hover { background: rgba(212,168,67,0.08); border-color: rgba(212,168,67,0.35); }
+
+.qs-number {
+    font-family: 'Cinzel', serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #d4a843;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+}
+
+.qs-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.52rem;
+    letter-spacing: 0.12em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.referee-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 2.5rem 5rem;
+    width: 100%;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+}
+
+.full-col {
+    grid-column: 1 / -1;
+}
+
+.profile-card {
+    background: rgba(8,16,34,0.85);
+    border: 1px solid rgba(212,168,67,0.18);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+.profile-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 12px; height: 12px;
+    border-top: 1px solid rgba(212,168,67,0.5);
+    border-left: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+.profile-card::after {
+    content: '';
+    position: absolute; bottom: 0; right: 0;
+    width: 12px; height: 12px;
+    border-bottom: 1px solid rgba(212,168,67,0.5);
+    border-right: 1px solid rgba(212,168,67,0.5);
+    pointer-events: none;
+}
+
+.card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: rgba(212,168,67,0.75);
+    text-transform: uppercase;
+    padding: 0.85rem 1.25rem;
+    margin: 0;
+    border-bottom: 1px solid rgba(212,168,67,0.12);
+    background: rgba(212,168,67,0.03);
+}
+
+.card-body {
+    padding: 0;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid rgba(212,168,67,0.07);
+    gap: 1rem;
+}
+.info-row:last-child { border-bottom: none; }
+
+.info-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: rgba(200,210,220,0.45);
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.info-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: #f0f0f0;
+    text-align: right;
+}
+
+.flag-icon { width: 18px; height: auto; }
+
+.stats-table-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212,168,67,0.25) transparent;
+}
+
+.competition-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 140px;
+    text-align: left;
+}
+
+.competition-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.toggle-icon {
+    font-size: 0.7em;
+    color: rgba(150,160,175,0.5);
+    display: inline-block;
+    width: 1.2em;
+}
+
+.season-total-row:hover { background: rgba(212,168,67,0.04) !important; }
+
+.career-total-row {
+    background: rgba(212,168,67,0.18) !important;
+    border-top: 2px solid rgba(212,168,67,0.35) !important;
+    color: #d4a843;
+}
+
+.career-total-row td {
+    background: rgba(212,168,67,0.18) !important;
+    font-weight: 800;
+    color: #d4a843;
+}
+
+.filters-container {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 1.5rem;
+}
+
+.filters-container select {
+    width: 100%;
+    padding: 0.875rem 3rem 0.875rem 1.5rem;
+    background: rgba(8,16,34,0.85);
+    color: rgba(200,210,220,0.65);
+    border: 1px solid rgba(212,168,67,0.2);
+    border-radius: 9999px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-align: center;
+}
+
+.filters-container select:hover { border-color: rgba(212,168,67,0.5); }
+.filters-container select:focus {
+    border-color: rgba(212,168,67,0.6);
+    box-shadow: 0 0 0 4px rgba(212,168,67,0.1);
+    background: rgba(8,16,34,0.92);
+}
+
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 1.5rem;
+    gap: 2rem;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.chart-item {
+    flex: 1;
+    min-width: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.chart-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: rgba(212,168,67,0.7);
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+}
+
+.pie-chart {
+    width: 150px;
+    height: 150px;
+    transform: rotate(-90deg);
+}
+
+.chart-legend {
+    margin-top: 1rem;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(200,210,220,0.65);
+}
+
+.chart-legend div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.dot.green { background-color: rgba(74,222,128,0.9); }
+.dot.orange { background-color: rgba(212,168,67,0.8); }
+.dot.red { background-color: rgba(248,113,113,0.85); }
+.dot.yellow { background-color: rgba(212,168,67,0.8); }
+
+.matches-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    min-width: 700px;
+}
+
+.matches-table th,
+.matches-table td {
+    padding: 0.55rem 0.6rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(212,168,67,0.07);
+    font-size: 0.8rem;
+    color: rgba(200,210,220,0.65);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.matches-table th {
+    background: rgba(212,168,67,0.1);
+    color: rgba(212,168,67,0.85);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid rgba(212,168,67,0.2);
+}
+
+.matches-table tbody tr {
+    background: rgba(6,13,28,0.85);
+}
+
+.matches-table tbody tr:hover {
+    background: rgba(212,168,67,0.06);
+}
+
+.competition-logo-small {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.matches-table .resultado-victoria {
+    background-color: rgba(74,222,128,0.12) !important;
+    color: rgba(74,222,128,0.9) !important;
+    font-weight: 700;
+}
+.matches-table .resultado-empate {
+    background-color: rgba(212,168,67,0.12) !important;
+    color: rgba(212,168,67,0.9) !important;
+    font-weight: 700;
+    border: 1px solid rgba(212,168,67,0.3) !important;
+}
+.matches-table .resultado-derrota {
+    background-color: rgba(248,113,113,0.08) !important;
+    color: rgba(248,113,113,0.85) !important;
+    font-weight: 700;
+}
+
+.estadio-link {
+    color: rgba(200,210,220,0.65);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.estadio-link:hover { color: #d4a843; }
+
+.matches-footer {
+    padding: 1rem;
+    text-align: center;
+    background: rgba(6,13,28,0.6);
+    border-top: 1px solid rgba(212,168,67,0.1);
+}
+
+.btn-more {
+    display: inline-block;
+    padding: 0.65rem 1.5rem;
+    background: rgba(212,168,67,0.1);
+    color: #d4a843;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 3px;
+    border: 1px solid rgba(212,168,67,0.3);
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    cursor: pointer;
+}
+
+.btn-more:hover {
+    background: rgba(212,168,67,0.18);
+    border-color: rgba(212,168,67,0.6);
+    transform: translateY(-1px);
+}
+
+.hidden-match { display: none; }
+
+.selected-text {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-select-container {
+    position: relative;
+    min-width: 280px;
+}
+
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(8,16,34,0.85);
+    color: rgba(200,210,220,0.65);
+    border: 1px solid rgba(212,168,67,0.2);
+    border-radius: 9999px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+    user-select: none;
+}
+.custom-select-trigger:hover { border-color: rgba(212,168,67,0.5); }
+
+.custom-select-arrow { color: rgba(212,168,67,0.6); flex-shrink: 0; transition: transform 0.2s; }
+.custom-select-container.open .custom-select-arrow { transform: rotate(180deg); }
+
+.custom-select-options {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: rgba(8,16,34,0.97);
+    border: 1px solid rgba(212,168,67,0.25);
+    border-radius: 8px;
+    z-index: 100;
+    max-height: 280px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.custom-select-container.open .custom-select-options { display: block; }
+
+.custom-select-option {
+    padding: 0.65rem 1.25rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(200,210,220,0.65);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.custom-select-option:hover { background: rgba(212,168,67,0.08); color: #d4a843; }
+.custom-select-option.selected { color: #d4a843; font-weight: 600; }
+
+@media (max-width: 900px) {
+    .hero-inner {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    .hero-photo-col {
+        padding: 1.5rem 1.5rem 0;
         display: flex;
         justify-content: center;
     }
-
-    .left-column {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
+    .hero-photo-frame {
+        max-width: 220px;
     }
-
-    .right-column {
-        display: none;
+    .hero-info-col {
+        min-height: auto;
+        padding: 2rem 1.75rem 3rem;
     }
+    .hero-quick-stats { justify-content: center; }
+    .hero-chips { justify-content: center; }
+    .referee-content { padding: 1.5rem 1.25rem 3rem; }
+    .content-grid { grid-template-columns: 1fr; }
+    .full-col { grid-column: 1; }
+    .filters-container { flex-direction: column; align-items: center; }
+    .custom-select-container { width: 100%; }
+}
 
-    @media (max-width: 1024px) {
-        .rival-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .section-header {
-        background: #ffde59;
-        color: #2b2b2b;
-        padding: 0.75rem 1rem;
-        margin: 0;
-        font-size: 1rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-
-    .section-subheader {
-        background: #ffde59;
-        color: #000;
-        padding: 0.75rem 1rem;
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-
-    .rival-card,
-    .stats-table-card,
-    .charts-card,
-    .matches-card,
-    .stadium-card {
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: visible;
-    }
-
-    .ficha-content {
-        padding: 1.5rem;
-        display: flex;
-        gap: 1.5rem;
-        align-items: flex-start;
-        flex-direction: row;
-    }
-
-    @media (max-width: 900px) {
-        .ficha-content {
-            flex-direction: column;
-            text-align: left;
-            align-items: flex-start;
-        }
-
-        .player-info {
-            width: 100%;
-        }
-
-        .info-row {
-            align-items: flex-start !important;
-        }
-
-        .info-row .value {
-            justify-content: flex-start;
-            text-align: left;
-        }
-    }
-
-    .player-photo-container {
-        margin-bottom: 0;
-        text-align: center;
-        flex-shrink: 0;
-        display: flex;
-    }
-
-    .player-photo {
-        max-width: 280px;
-        height: 100%;
-        width: auto;
-        object-fit: cover;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .player-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        flex: 1;
-    }
-
-    .player-info.w-full {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    .info-row {
-        display: flex;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
-        align-items: center;
-    }
-
-    .info-row .label {
-        font-weight: 600;
-        width: 150px;
-    }
-
-    .info-row .value {
-        flex: 1;
-        text-align: right;
-        display: flex;
-        justify-content: flex-end;
-    }
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-    .competition-row {
-        background-color: #fcfcfc !important;
-    }
-    .competition-row td {
-        font-size: 0.75rem;
-        color: #555;
-    }
-
-    .competition-logo {
-        width: 20px;
-        height: 20px;
-        object-fit: contain;
-        margin-right: 8px;
-        vertical-align: middle;
-        display: inline-block;
-    }
-
-    .season-total-row {
-        background-color: #f0f0f0 !important;
-        font-weight: bold;
-        border-top: 2px solid #333;
-        cursor: pointer;
-    }
-    .season-total-row:hover {
-        background-color: #e8e8e8 !important;
-    }
-
-    .career-total-row {
-        background-color: #eef2f7 !important;
-        font-weight: bold;
-        border-top: 2px solid #333;
-    }
-
-    .detailed-table tr.total-row {
-        background: #ffde59 !important;
-        font-weight: bold;
-        border-top: 3px solid #333;
-    }
-
-    .detailed-table .total-row td {
-        background: #ffde59 !important;
-        font-weight: 800;
-        color: #111827;
-    }
-
-    .toggle-icon {
-        font-size: 0.7rem;
-        color: #999;
-    }
-    .filters-container {
-        display: flex;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding-top: 1.5rem;
-    }
-
-    .filter-wrapper {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        min-width: 240px;
-    }
-
-    .filter-icon {
-        position: absolute;
-        right: 1.25rem;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: #6b7280;
-        width: 18px;
-        height: 18px;
-        z-index: 2;
-    }
-
-    .filters-container select {
-        width: 100%;
-        padding: 0.875rem 3rem 0.875rem 1.5rem;
-        background: #ffffff;
-        color: #1f2937;
-        border: 1px solid #d1d5db;
-        border-radius: 9999px;
-        font-size: 0.95rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        outline: none;
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        text-align: center;
-    }
-
-    .filters-container select:hover {
-        border-color: #fbbf24;
-        background: #fffdf5;
-    }
-
-    .filters-container select:focus {
-        border-color: #fbbf24;
-        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.15);
-        background: #ffffff;
-    }
-
-    .charts-row {
-        display: flex;
-        flex-wrap: wrap;
-        padding: 1.5rem;
-        gap: 2rem;
-        justify-content: center;
-        align-items: flex-start;
-    }
-
-    .chart-item {
-        flex: 1;
-        min-width: 250px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .pie-chart {
-        width: 150px;
-        height: 150px;
-        transform: rotate(-90deg);
-    }
-
-    .chart-legend {
-        margin-top: 1rem;
-        text-align: left;
-        font-size: 0.9rem;
-    }
-
-    .chart-legend div {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.25rem;
-    }
-
-    .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 0.5rem;
-    }
-
-    .dot.green {
-        background-color: #c8e6c9;
-    }
-    .dot.orange {
-        background-color: #fff9c4;
-    }
-    .dot.red {
-        background-color: #e57373;
-    }
-    .dot.yellow {
-        background-color: #fff9c4;
-    }
-
-    .matches-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family:
-            "Inter",
-            system-ui,
-            -apple-system,
-            sans-serif;
-    }
-
-    .matches-table th,
-    .matches-table td {
-        padding: 0.5rem 0.25rem;
-        text-align: center;
-        border: 1px solid #e5e7eb;
-        font-size: 0.8rem;
-        color: #374151;
-        white-space: nowrap;
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .matches-table th {
-        background: #333;
-        color: white;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.05em;
-    }
-
-    .matches-table tbody tr:nth-child(even) {
-        background: #f9fafb;
-    }
-
-    .matches-table tbody tr:hover {
-        background: #f3f4f6;
-    }
-
-    .competition-logo-small {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
-        display: inline-block;
-        vertical-align: middle;
-    }
-
-    .matches-table .resultado-victoria {
-        background-color: #c8e6c9 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-    .matches-table .resultado-empate {
-        background-color: #fff9c4 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-    .matches-table .resultado-derrota {
-        background-color: #ffcdd2 !important;
-        color: #000000 !important;
-        font-weight: 700;
-    }
-
-    .matches-footer {
-        padding: 1rem;
-        text-align: center;
-        background: #f8f9fa;
-        border-top: 1px solid #eee;
-    }
-
-    .btn-more {
-        display: inline-block;
-        margin-top: 1.5rem;
-        padding: 0.75rem 1.5rem;
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        color: #2b2b2b;
-        font-weight: 700;
-        text-decoration: none;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.9rem;
-        cursor: pointer;
-        border: none;
-    }
-
-    .btn-more:hover {
-        background: linear-gradient(
-            135deg,
-            #ffd700 0%,
-            #ffed4e 50%,
-            #ffd700 100%
-        );
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        color: #000;
-    }
-
-    .hidden-match {
-        display: none;
-    }
-
-    @media (max-width: 768px) {
-        .filters-container {
-            flex-direction: column;
-            align-items: center;
-        }
-        .filter-wrapper {
-            width: 100%;
-        }
-
-        .ficha-content {
-            flex-direction: column;
-            align-items: center;
-            padding: 1.5rem 1.25rem;
-        }
-
-        .player-photo-container {
-            width: 100%;
-            justify-content: center;
-            margin-bottom: 2rem;
-        }
-
-        .player-photo {
-            max-width: 320px;
-            width: 100%;
-            height: auto;
-        }
-
-        .player-info {
-            width: 100%;
-            padding: 0;
-        }
-
-        .info-row {
-            padding: 1rem 0;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .info-row .label {
-            width: 100%;
-            margin-bottom: 0.25rem;
-            text-align: left;
-        }
-
-        .info-row .value {
-            width: 100%;
-            justify-content: flex-start;
-            text-align: left;
-        }
-
-        .referee-icon-container {
-            margin-bottom: 1rem;
-        }
-
-        .stats-table,
-        .detailed-table,
-        .matches-table {
-            font-size: 0.75rem;
-        }
-
-        .detailed-table th,
-        .detailed-table td,
-        .matches-table th,
-        .matches-table td {
-            padding: 0.5rem 0.25rem;
-        }
-
-        .table-wrapper {
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 0.5rem;
-            width: 100%;
-        }
-
-        .stats-table,
-        .detailed-table,
-        .matches-table {
-            min-width: 800px;
-        }
-
-        .detailed-table td:first-child {
-            font-weight: 600;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .section-header,
-        .section-subheader {
-            font-size: 0.85rem;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .chart-item {
-            min-width: 200px;
-        }
-
-        .pie-chart {
-            width: 120px;
-            height: 120px;
-        }
-    }
+@media (max-width: 480px) {
+    .hero-player-name { font-size: clamp(2.2rem, 10vw, 3.5rem); }
+    .qs-card { min-width: 60px; padding: 0.65rem 0.75rem; }
+    .qs-number { font-size: 1.5rem; }
+    .chart-item { min-width: 200px; }
+    .pie-chart { width: 120px; height: 120px; }
+}
 </style>

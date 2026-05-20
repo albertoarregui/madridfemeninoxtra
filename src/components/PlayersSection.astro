@@ -1,0 +1,249 @@
+---
+interface Props {
+    players: any[];
+}
+const { players } = Astro.props;
+
+const POSITION_ORDER: Record<string, number> = {
+    'Portera': 1, 'Lateral izquierda': 2, 'Defensa central': 3, 'Defensa': 3,
+    'Lateral derecha': 4, 'Centrocampista': 5, 'Extremo izquierdo': 6,
+    'Extremo derecho': 6, 'Extremo': 6, 'Delantera': 7,
+};
+
+const POSITION_ABBREV: Record<string, string> = {
+    'Portera': 'POR', 'Lateral izquierda': 'LI', 'Defensa central': 'DC',
+    'Defensa': 'DEF', 'Lateral derecha': 'LD', 'Centrocampista': 'MC',
+    'Extremo izquierdo': 'EI', 'Extremo derecho': 'ED', 'Extremo': 'EXT', 'Delantera': 'DEL',
+};
+
+const positionMap: Record<string, number> = {};
+players.forEach(p => { if (p.posicion) positionMap[p.posicion] = (positionMap[p.posicion] || 0) + 1; });
+const positions = Object.entries(positionMap).sort((a, b) => (POSITION_ORDER[a[0]] || 99) - (POSITION_ORDER[b[0]] || 99));
+
+const countryMap: Record<string, { count: number; flagUrl: string }> = {};
+players.forEach(p => {
+    const country = p.pais_origin || p.pais_origen;
+    if (country) {
+        if (!countryMap[country]) countryMap[country] = { count: 0, flagUrl: p.flagUrl };
+        countryMap[country].count++;
+    }
+});
+const countries = Object.entries(countryMap).sort((a, b) => b[1].count - a[1].count);
+
+const seasonSet = new Set<string>();
+players.forEach(p => { if (Array.isArray(p.temporadas)) p.temporadas.forEach((s: string) => seasonSet.add(s)); });
+const seasons = Array.from(seasonSet).sort().reverse();
+
+const sortedPlayers = [...players].sort((a, b) => {
+    const diff = (POSITION_ORDER[a.posicion] || 99) - (POSITION_ORDER[b.posicion] || 99);
+    return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+});
+---
+
+<div class="pg-layout">
+    <aside class="pg-sidebar" data-pg-sidebar>
+        <div class="pg-sidebar-header">♦ FILTROS ♦</div>
+
+        <span class="pg-section-label">♦ Posición</span>
+        <div data-filter-group="posicion">
+            <button class="pg-filter-btn pg-active" data-filter="posicion" data-value="">
+                <span class="pg-filter-label">Todas</span>
+                <span class="pg-filter-badge">{players.length}</span>
+            </button>
+            {positions.map(([pos, count]) => (
+                <button class="pg-filter-btn" data-filter="posicion" data-value={pos}>
+                    <span class="pg-filter-label">{pos}</span>
+                    <span class="pg-filter-badge">{count}</span>
+                </button>
+            ))}
+        </div>
+
+        <span class="pg-section-label">♦ País</span>
+        <div data-filter-group="pais">
+            <button class="pg-filter-btn pg-active" data-filter="pais" data-value="">
+                <span class="pg-filter-label">Todos</span>
+                <span class="pg-filter-badge">{players.length}</span>
+            </button>
+            {countries.map(([country, { count, flagUrl }]) => (
+                <button class="pg-filter-btn" data-filter="pais" data-value={country}>
+                    {flagUrl && <img src={flagUrl} alt="" class="pg-filter-flag" loading="lazy" onerror="this.style.display='none'" />}
+                    <span class="pg-filter-label" title={country}>{country}</span>
+                    <span class="pg-filter-badge">{count}</span>
+                </button>
+            ))}
+        </div>
+
+        {seasons.length > 0 && (
+            <>
+                <span class="pg-section-label">♦ Temporada</span>
+                <div class="pg-season-list" data-filter-group="temporada">
+                    <button class="pg-filter-btn pg-active" data-filter="temporada" data-value="">
+                        <span class="pg-filter-label">Todas</span>
+                    </button>
+                    {seasons.map(s => (
+                        <button class="pg-filter-btn" data-filter="temporada" data-value={s}>
+                            <span class="pg-filter-label">{s.replace('-', '/')}</span>
+                        </button>
+                    ))}
+                </div>
+            </>
+        )}
+    </aside>
+
+    <main class="pg-main">
+        <div class="pg-sort-bar">
+            <span class="pg-sort-eyebrow">♦ Ordenar Por</span>
+            <button class="pg-sort-btn pg-active" data-sort="posicion">Por Posición</button>
+            <button class="pg-sort-btn" data-sort="az">A → Z</button>
+            <button class="pg-sort-btn" data-sort="za">Z → A</button>
+            <span class="pg-count" data-pg-count>{players.length} jugadoras</span>
+        </div>
+
+        <div class="pg-no-results" data-pg-no-results hidden>
+            <p>No hay resultados</p>
+            <button class="pg-reset-btn" data-pg-reset>Reiniciar filtros</button>
+        </div>
+
+        <div class="pg-card-grid" data-pg-grid>
+            {sortedPlayers.map((player, index) => {
+                const posAbbrev = POSITION_ABBREV[player.posicion] || player.posicion?.slice(0, 3)?.toUpperCase() || '–';
+                const country = player.pais_origin || player.pais_origen;
+                return (
+                    <a
+                        id={`card-${player.slug}`}
+                        href={`/jugadoras/${player.slug}`}
+                        class="player-portrait-card"
+                        data-posicion={player.posicion || ''}
+                        data-pais={country || ''}
+                        data-temporadas={(player.temporadas || []).join(',')}
+                        data-nombre={player.nombre}
+                        data-default-order={index}
+                        style={`animation-delay: ${Math.min(index * 18, 500)}ms`}
+                        data-astro-prefetch="hover"
+                        aria-label={`Ver ficha de ${player.nombre}`}
+                    >
+                        <span class="pg-corner pg-corner-tl" aria-hidden="true" />
+                        <span class="pg-corner pg-corner-tr" aria-hidden="true" />
+                        <span class="pg-corner pg-corner-bl" aria-hidden="true" />
+                        <span class="pg-corner pg-corner-br" aria-hidden="true" />
+                        <div class="pg-card-glow" aria-hidden="true" />
+                        <span class="pg-pos-label" aria-hidden="true">♦ {posAbbrev}</span>
+                        <div class="pg-card-photo" transition:name={`player-${player.slug}`}>
+                            <img
+                                src={player.imageUrl}
+                                alt={player.nombre}
+                                loading={index < 16 ? 'eager' : 'lazy'}
+                                decoding="async"
+                                width={200}
+                                height={267}
+                                onerror="this.src='/assets/jugadoras-perfil/placeholder.png'"
+                            />
+                        </div>
+                        <div class="pg-card-overlay">
+                            <span class="pg-card-divider" aria-hidden="true"></span>
+                            <div class="pg-card-name">{player.nombre}</div>
+                            <div class="pg-card-country">
+                                {player.flagUrl && <img src={player.flagUrl} alt="" width="14" height="14" loading="lazy" onerror="this.style.display='none'" />}
+                                <span>{player.countryName}</span>
+                            </div>
+                        </div>
+                    </a>
+                );
+            })}
+        </div>
+    </main>
+</div>
+
+<script>
+  function setupPlayersGrid() {
+    const grid = document.querySelector<HTMLElement>('[data-pg-grid]');
+    if (!grid) return;
+    const gridEl = grid;
+
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('[data-posicion]'));
+    const filterBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+    const sortBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-sort]'));
+    const countDisplay = document.querySelector('[data-pg-count]');
+    const noResults = document.querySelector<HTMLElement>('[data-pg-no-results]');
+    const resetBtn = document.querySelector('[data-pg-reset]');
+
+    const state: Record<string, string> = { posicion: '', pais: '', temporada: '' };
+    let sortMode = 'posicion';
+
+    function applyFilters() {
+      let visible = 0;
+      for (const card of cards) {
+        const matchesPos = state.posicion === '' || card.dataset.posicion === state.posicion;
+        const matchesPais = state.pais === '' || card.dataset.pais === state.pais;
+        const temporadas = card.dataset.temporadas ? card.dataset.temporadas.split(',') : [];
+        const matchesSeason = state.temporada === '' || temporadas.includes(state.temporada);
+        const matches = matchesPos && matchesPais && matchesSeason;
+        card.style.display = matches ? '' : 'none';
+        if (matches) visible++;
+      }
+      if (countDisplay) countDisplay.textContent = `${visible} jugadoras`;
+      if (noResults) noResults.hidden = visible > 0;
+    }
+
+    function applySort() {
+      const sorted = [...cards].sort((a, b) => {
+        if (sortMode === 'az') return (a.dataset.nombre ?? '').localeCompare(b.dataset.nombre ?? '');
+        if (sortMode === 'za') return (b.dataset.nombre ?? '').localeCompare(a.dataset.nombre ?? '');
+        return Number(a.dataset.defaultOrder ?? 0) - Number(b.dataset.defaultOrder ?? 0);
+      });
+      for (const card of sorted) gridEl.appendChild(card);
+    }
+
+    for (const btn of filterBtns) {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.filter!;
+        const value = btn.dataset.value ?? '';
+        state[group] = value;
+        for (const b of filterBtns) {
+          if (b.dataset.filter === group) {
+            b.classList.toggle('pg-active', (b.dataset.value ?? '') === value);
+          }
+        }
+        applyFilters();
+      });
+    }
+
+    for (const btn of sortBtns) {
+      btn.addEventListener('click', () => {
+        sortMode = btn.dataset.sort ?? 'posicion';
+        for (const b of sortBtns) b.classList.toggle('pg-active', b.dataset.sort === sortMode);
+        applySort();
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        state.posicion = '';
+        state.pais = '';
+        state.temporada = '';
+        for (const btn of filterBtns) {
+          btn.classList.toggle('pg-active', (btn.dataset.value ?? '') === '');
+        }
+        applyFilters();
+      });
+    }
+  }
+
+  document.addEventListener('astro:after-swap', () => {
+    const hash = window.location.hash;
+    if (hash?.startsWith('#card-')) {
+      const el = document.querySelector<HTMLElement>(hash);
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  });
+
+  document.addEventListener('astro:before-swap', (e: any) => {
+    const from = window.location.pathname;
+    const to = e.to?.pathname ?? '';
+    const returningToGrid = to === '/jugadoras' && from.startsWith('/jugadoras/');
+    e.newDocument.documentElement.toggleAttribute('data-skip-players-enter', returningToGrid);
+  });
+
+  document.addEventListener('astro:page-load', setupPlayersGrid);
+</script>

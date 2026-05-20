@@ -107,6 +107,7 @@ const goalsData = [
     title="Premios Madrid Femenino Xtra 2025/26"
     description="Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26."
     noindex={true}
+    noBg={true}
 >
 
 <canvas id="particles-canvas" aria-hidden="true"></canvas>
@@ -114,12 +115,15 @@ const goalsData = [
 <main class="premios-page">
 
     <header class="premios-hero">
-        <h1 class="premios-main-title">PREMIOS<br/>MADRID FEMENINO XTRA</h1>
-        <p class="premios-subtitle">Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26.</p>
+        <h1 class="premios-main-title" data-title="PREMIOS MFX">PREMIOS MFX</h1>
+        <p class="premios-subtitle">Vota por las mejores jugadoras del Real Madrid Femenino de la temporada 2025/26</p>
     </header>
 
     <div id="voting-gate" style="display:none">
         <div class="gate-box">
+            <button class="gate-min-btn" id="gate-min-btn" onclick="window._gateMinimize()" aria-label="Minimizar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+            </button>
             <div class="gate-lock" id="gate-lock-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-lock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3"/></svg>
             </div>
@@ -134,6 +138,14 @@ const goalsData = [
                 <div class="cd-unit"><span class="cd-num" id="cd-secs">00</span><span class="cd-name">seg</span></div>
             </div>
         </div>
+    </div>
+
+    <div id="gate-mini" class="gate-mini" style="display:none" aria-live="polite">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" class="gate-mini-lock" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2a5 5 0 0 1 5 5v3a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3v-3a5 5 0 0 1 5 -5m0 12a2 2 0 0 0 -1.995 1.85l-.005 .15a2 2 0 1 0 2 -2m0 -10a3 3 0 0 0 -3 3v3h6v-3a3 3 0 0 0 -3 -3"/></svg>
+        <span id="gate-mini-text">VOTACIONES CERRADAS</span>
+        <button class="gate-mini-expand" onclick="window._gateExpand()" aria-label="Ver cuenta atrás">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15l7-7 7 7"/></svg>
+        </button>
     </div>
 
     <div class="premios-body" id="premios-body">
@@ -275,6 +287,33 @@ const goalsData = [
 
 </Layout>
 
+<script is:inline>
+(function () {
+    window._gateIsMinimized = false;
+    window._gateMinimize = function () {
+        window._gateIsMinimized = true;
+        var g = document.getElementById('voting-gate');
+        var b = document.getElementById('premios-body');
+        var m = document.getElementById('gate-mini');
+        var l = document.getElementById('gate-label');
+        var t = document.getElementById('gate-mini-text');
+        if (g) g.style.display = 'none';
+        if (b) b.style.display = '';
+        if (t && l) t.textContent = l.textContent;
+        if (m) m.style.display = 'flex';
+    };
+    window._gateExpand = function () {
+        window._gateIsMinimized = false;
+        var g = document.getElementById('voting-gate');
+        var b = document.getElementById('premios-body');
+        var m = document.getElementById('gate-mini');
+        if (m) m.style.display = 'none';
+        if (g) g.style.display = 'flex';
+        if (b) b.style.display = 'none';
+    };
+})();
+</script>
+
 <script is:inline define:vars={{ playersData: players }}>
 (function () {
 
@@ -313,15 +352,20 @@ const goalsData = [
         var body  = document.getElementById('premios-body');
         var label = document.getElementById('gate-label');
         var cd    = document.getElementById('gate-countdown');
+        var mini  = document.getElementById('gate-mini');
 
         if (now >= VOTE_OPEN && now <= VOTE_CLOSE) {
+            if (mini) mini.style.display = 'none';
             gate.style.display = 'none';
             body.style.display = '';
             return false;
         }
 
-        gate.style.display = 'flex';
-        body.style.display = 'none';
+        if (!window._gateIsMinimized) {
+            gate.style.display = 'flex';
+            body.style.display = 'none';
+            if (mini) mini.style.display = 'none';
+        }
 
         if (now < VOTE_OPEN) {
             label.textContent = 'VOTACIONES ABIERTAS EN';
@@ -339,6 +383,12 @@ const goalsData = [
             label.textContent = 'VOTACIONES CERRADAS';
             cd.style.display  = 'none';
         }
+
+        if (window._gateIsMinimized) {
+            var miniText = document.getElementById('gate-mini-text');
+            if (miniText) miniText.textContent = label.textContent;
+        }
+
         return true;
     }
 
@@ -347,6 +397,7 @@ const goalsData = [
             if (!updateGate()) clearInterval(gateInterval);
         }, 1000);
     }
+
 
     var canvas = document.getElementById('particles-canvas');
     var ctx = canvas.getContext('2d');
@@ -525,7 +576,6 @@ const goalsData = [
             var videoId = card.dataset.videoId;
 
             if (isSelectingGoal && votes[cat] === id) {
-                // Doble click → abrir video modal
                 iframeEl.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1';
                 modalEl.style.display = 'flex';
                 isSelectingGoal = false;
@@ -592,13 +642,11 @@ const goalsData = [
             var arr = xi[pos];
             var idx = arr.indexOf(id);
             if (idx > -1) {
-                // Ya seleccionada → deseleccionar
                 arr.splice(idx, 1);
                 card.classList.remove('selected');
                 rebuildFormSlots(pos);
             } else {
                 if (arr.length >= xiMax[pos]) {
-                    // Cupo lleno → quitar la más antigua y sustituir
                     var removedId = arr.shift();
                     var prevCard = document.querySelector('.pcard-xi[data-xi-pos="' + pos + '"][data-id="' + removedId + '"]');
                     if (prevCard) prevCard.classList.remove('selected');
@@ -616,7 +664,6 @@ const goalsData = [
         var slot = document.querySelector('.form-slot[data-slot="' + pos + '-' + idx + '"]');
         if (!slot) return;
         var p = playersData.find(function (pl) { return pl.id === id; });
-        // Si no está en playersData, buscar en las tarjetas XI (Silvia, Irune, Iris)
         if (!p) {
             var xiCard = document.querySelector('.pcard-xi[data-id="' + id + '"]');
             if (!xiCard) return;
@@ -703,9 +750,7 @@ const goalsData = [
             Object.keys(saved.votes || {}).forEach(function (cat) {
                 var id = saved.votes[cat]; if (!id) return;
                 votes[cat] = id;
-                // Try pcard first (regular awards)
                 var c = document.querySelector('.pcard[data-category="' + cat + '"][data-id="' + id + '"]');
-                // If not found and it's mejor-gol, try goal-card
                 if (!c && cat === 'mejor-gol') c = document.querySelector('.goal-card[data-category="' + cat + '"][data-id="' + id + '"]');
                 if (c) c.classList.add('selected');
                 updateCount(cat);
@@ -735,22 +780,114 @@ const goalsData = [
         z-index: 2;
     }
 
+    .gate-min-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: rgba(212,175,55,0.08);
+        border: 1px solid rgba(212,175,55,0.22);
+        color: rgba(212,175,55,0.6);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, color 0.2s;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .gate-min-btn:hover {
+        background: rgba(212,175,55,0.18);
+        color: #d4af37;
+    }
+
+    .gate-mini {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1.5rem;
+        margin: 0 auto 2rem;
+        max-width: 540px;
+        width: calc(100% - 4rem);
+        background: rgba(8,15,29,0.7);
+        border: 1px solid rgba(212,175,55,0.28);
+        border-radius: 12px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .gate-mini-lock {
+        color: rgba(212,175,55,0.5);
+        flex-shrink: 0;
+    }
+    #gate-mini-text {
+        font-family: 'Cinzel', serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        color: rgba(212,175,55,0.75);
+        text-transform: uppercase;
+        flex: 1;
+        text-align: center;
+    }
+    .gate-mini-expand {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background: rgba(212,175,55,0.08);
+        border: 1px solid rgba(212,175,55,0.28);
+        color: rgba(212,175,55,0.7);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        flex-shrink: 0;
+        transition: background 0.2s, color 0.2s;
+    }
+    .gate-mini-expand:hover {
+        background: rgba(212,175,55,0.18);
+        color: #d4af37;
+    }
+
     .gate-box {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 1.5rem;
-        background-color: #080f1d;
+        background-color: #060d1c;
+        position: relative;
         background-image:
             radial-gradient(ellipse 80% 40% at 50% 0%, rgba(212,175,55,0.14) 0%, transparent 70%),
             radial-gradient(circle at 20% 60%, rgba(255,222,89,0.07) 0%, transparent 40%);
         border: 1px solid rgba(212,175,55,0.28);
-        border-radius: 24px;
+        border-radius: 4px;
         padding: 3.5rem 4rem;
         box-shadow: 0 8px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(212,175,55,0.14);
         max-width: 540px;
         width: 100%;
         text-align: center;
+    }
+    .gate-box::before,
+    .gate-box::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-color: #d4a843;
+        border-style: solid;
+        pointer-events: none;
+    }
+    .gate-box::before {
+        top: -1px; left: -1px;
+        border-width: 2px 0 0 2px;
+        border-radius: 2px 0 0 0;
+    }
+    .gate-box::after {
+        bottom: -1px; right: -1px;
+        border-width: 0 2px 2px 0;
+        border-radius: 0 0 2px 0;
     }
 
     .gate-lock {
@@ -759,10 +896,10 @@ const goalsData = [
     }
 
     .gate-label {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(1.6rem, 4vw, 2.4rem);
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.2rem, 3vw, 1.8rem);
         color: #d4af37;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         margin: 0;
         text-shadow: 0 2px 12px rgba(0,0,0,0.7);
     }
@@ -781,8 +918,8 @@ const goalsData = [
     }
 
     .cd-num {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(2.8rem, 7vw, 4rem);
+        font-family: 'Cinzel', serif;
+        font-size: clamp(2.4rem, 6vw, 3.5rem);
         line-height: 1;
         color: #ffffff;
         text-shadow: 0 0 20px rgba(255,222,89,0.35);
@@ -800,8 +937,8 @@ const goalsData = [
     }
 
     .cd-sep {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(2.4rem, 6vw, 3.5rem);
+        font-family: 'Cinzel', serif;
+        font-size: clamp(2rem, 5vw, 3rem);
         color: rgba(212,175,55,0.6);
         line-height: 1;
         margin-top: 0.1rem;
@@ -816,7 +953,7 @@ const goalsData = [
         z-index: 0;
     }
     .premios-page {
-        background: #070e1a;
+        background: #060d1c;
         min-height: 100vh;
         padding-bottom: 6rem;
         position: relative;
@@ -830,43 +967,49 @@ const goalsData = [
     }
 
     .premios-main-title {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(4.5rem, 11vw, 8.5rem);
-        font-weight: 400;
-        line-height: 1.05;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(2.8rem, 8vw, 5.5rem);
+        font-weight: 700;
+        line-height: 1.1;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin: 0 0 1.5rem;
-        background: linear-gradient(
-            180deg,
-            #ffffff   0%,
-            #f2f2f2  12%,
-            #c8c8c8  28%,
-            #e8e8e8  42%,
-            #a8a8a8  58%,
-            #d0d0d0  72%,
-            #888888  88%,
-            #b0b0b0 100%
-        );
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter:
-            drop-shadow(0 2px 4px rgba(0,0,0,0.9))
-            drop-shadow(0 0 30px rgba(200,200,255,0.15));
+        letter-spacing: 0.12em;
+        margin: 0 0 1rem;
+        color: #d4a843;
+        position: relative;
+        display: inline-block;
+        filter: drop-shadow(0 2px 24px rgba(212,168,67,0.25));
+    }
+
+    .premios-main-title::before {
+        content: attr(data-title);
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: min(1.8em, 9vw);
+        font-weight: 700;
+        font-family: 'Cinzel', serif;
+        color: #d4a843;
+        opacity: 0.09;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: 0.12em;
+        z-index: -1;
+        line-height: 1;
     }
 
     .premios-subtitle {
-        font-size: clamp(1rem, 2.4vw, 1.35rem);
-        color: rgba(255,255,255,0.75);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.88rem;
+        color: rgba(200, 200, 200, 0.65);
         font-weight: 400;
-        font-style: italic;
-        text-shadow: 1px 1px 8px rgba(0,0,0,0.8);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
         margin: 0;
         max-width: 580px;
         margin-inline: auto;
         line-height: 1.6;
-        letter-spacing: 0.01em;
     }
     .premios-body {
         max-width: 1200px;
@@ -879,13 +1022,12 @@ const goalsData = [
         z-index: 2;
     }
     .award-section {
-        border-radius: 20px;
+        border-radius: 4px;
         border: 1px solid rgba(212,175,55,0.25);
         padding: 2rem;
         position: relative;
         box-shadow: 0 4px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212,175,55,0.12);
-        /* fondo: azul oscuro + partículas doradas CSS */
-        background-color: #080f1d;
+        background-color: #060d1c;
         background-image:
             radial-gradient(ellipse 80% 40% at 50% 0%, rgba(212,175,55,0.12) 0%, transparent 70%),
             radial-gradient(circle at 15% 20%, rgba(255,222,89,0.08) 0%, transparent 35%),
@@ -893,9 +1035,30 @@ const goalsData = [
             radial-gradient(circle at 45% 35%, rgba(255,222,89,0.05) 0%, transparent 25%),
             radial-gradient(circle at 70% 55%, rgba(212,175,55,0.06) 0%, transparent 20%);
     }
+    .award-section::before,
+    .award-section::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-color: #d4a843;
+        border-style: solid;
+        pointer-events: none;
+        z-index: 1;
+    }
+    .award-section::before {
+        top: -1px; left: -1px;
+        border-width: 2px 0 0 2px;
+        border-radius: 2px 0 0 0;
+    }
+    .award-section::after {
+        bottom: -1px; right: -1px;
+        border-width: 0 2px 2px 0;
+        border-radius: 0 0 2px 0;
+    }
     .award-title {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(2.2rem, 5vw, 3.2rem);
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.6rem, 4vw, 2.4rem);
         color: #d4af37;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -1362,8 +1525,8 @@ const goalsData = [
     }
 
     .xi-pos-label {
-        font-family: "Bebas Neue", sans-serif;
-        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.3rem, 3vw, 1.8rem);
         color: #d4af37;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -1437,7 +1600,7 @@ const goalsData = [
         letter-spacing: 0.06em;
         text-transform: uppercase;
     }
-    :global(body) { background: #070e1a; }
+    :global(body) { background: #060d1c; }
     @media (max-width: 768px) {
         .premios-hero  { padding: 3.5rem 1.25rem 3rem; }
         .premios-body  { padding: 0 1.25rem; gap: 3rem; }
@@ -1452,7 +1615,6 @@ const goalsData = [
         .form-slot.empty { width: 66px; height: 66px; }
         :global(.fs-img-wrap) { width: 66px; height: 66px; }
         .formation-row { gap: 0.6rem; }
-        /* flechas centradas con foto 100px */
         :global(.scroll-arrow) { margin-top: calc(0.5rem + 0.75rem + 50px - 18px); }
         .modal-container { max-width: 85vw; }
     }
@@ -1469,7 +1631,6 @@ const goalsData = [
         .goal-scorer   { font-size: 0.72rem; }
         .goal-rival    { font-size: 0.65rem; }
         .goal-date     { font-size: 0.6rem; }
-        /* flechas centradas con foto 84px */
         :global(.scroll-arrow) { margin-top: calc(0.5rem + 0.75rem + 42px - 18px); }
         .modal-close { width: 36px; height: 36px; top: 12px; right: 12px; }
         .modal-close svg { width: 20px; height: 20px; }

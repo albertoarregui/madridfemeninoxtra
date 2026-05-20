@@ -1,21 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { Image } from "astro:assets";
 import "../styles/global.css";
 import "../styles/home.css";
 import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
 import Calendar from "../components/Calendar.astro";
-import Searcher from "../components/Searcher.astro";
 import YoutubeSection from "../components/YoutubeSection.astro";
 import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
-import NewsletterWidget from "../components/NewsletterWidget.astro";
 import HistoryCarousel from "../components/HistoryCarousel.astro";
 import { getAssetUrl } from "../utils/assets";
-import NextMatchCountdown from "../components/NextMatchCountdown.astro";
-import ProximoPartido from "../components/ProximoPartido.astro";
 
 import heroVideo from "../assets/main/intro-home.webm";
-const heroPoster = getAssetUrl("background", "background.jpg");
+const heroPoster = getAssetUrl("background", "background.webp");
 const mapaJugadoras = getAssetUrl("sidebar", "mapa_jugadoras.png");
 const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
 
@@ -142,8 +137,6 @@ try {
 >
 	<script type="application/ld+json" set:html={JSON.stringify(schema)} />
 
-	<NextMatchCountdown />
-	<HistoryCarousel />
 	<link rel="preload" as="image" href={heroPoster} fetchpriority="high" />
 
 	<section class="hero">
@@ -167,19 +160,24 @@ try {
 			<source src={heroVideo} type="video/webm" />
 		</video>
 		<div class="hero-text">
-			<h1>MADRID FEMENINO XTRA</h1>
-			<h2>La mayor base de datos histórica del Real Madrid Femenino</h2>
-			<Searcher />
-			<ResumenEstadisticas />
+<ResumenEstadisticas />
 		</div>
 	</section>
+
+	<div class="w-full overflow-hidden" style="padding: 3rem 0;">
+		<HistoryCarousel />
+	</div>
 
 	<div class="content-layout">
 		<main class="welcome-area">
 			<section class="news-content">
 				{
 					spotlightNews.length > 0 && (
-						<div class="spotlight-news-grid mb-[4rem]">
+						<div class="spotlight-section mb-[4rem]">
+						<div class="title-block" style="margin-bottom:2rem">
+							<h2 class="landing-title">NOTICIAS</h2>
+						</div>
+						<div class="spotlight-news-grid">
 							{spotlightNews.map((noticia) => (
 								<a
 									href={`/noticias/${noticia.slug}`}
@@ -199,13 +197,17 @@ try {
 											alt={noticia.title}
 											loading="lazy"
 										/>
-										<span
-											class={`spotlight-tag ${(noticia.category || "").toLowerCase()}`}
-										>
-											{noticia.category}
-										</span>
 									</div>
 									<div class="spotlight-content">
+										<span class={`spotlight-tag ${(noticia.category || "").toLowerCase()}`}>
+											{noticia.category}
+										</span>
+										<h3 class="spotlight-title">
+											{noticia.title}
+										</h3>
+										{noticia.subtitle && (
+											<p class="spotlight-subtitle">{noticia.subtitle}</p>
+										)}
 										<time class="spotlight-date">
 											{new Date(noticia.createdAt)
 												.toLocaleDateString("es-ES", {
@@ -215,13 +217,11 @@ try {
 												})
 												.toUpperCase()}
 										</time>
-										<h3 class="spotlight-title">
-											{noticia.title}
-										</h3>
 									</div>
 								</a>
 							))}
 						</div>
+					</div>
 					)
 				}
 
@@ -229,11 +229,13 @@ try {
 					class="season-stats-section mb-[4rem] w-full"
 					id="stats-dashboard"
 				>
-					<h2 class="landing-title">ESTADÍSTICAS</h2>
-					<p class="landing-subtitle">
-						Balance histórico por temporada y competición del Real
-						Madrid Femenino
-					</p>
+					<div class="title-block">
+						<h2 class="landing-title">ESTADÍSTICAS</h2>
+						<p class="landing-subtitle">
+							Balance histórico por temporada y competición del Real
+							Madrid Femenino
+						</p>
+					</div>
 					<ClubStatsDashboard
 						matches={gamesData}
 						goals={allGoals}
@@ -250,17 +252,17 @@ try {
 		</main>
 
 		<aside class="proximo-partido sidebar-right">
+			<span class="section-label">♦ CALENDAR ♦</span>
 			<h2 class="section-title">CALENDARIO</h2>
 			<Calendar />
 
+			<span class="section-label">♦ PLAYER OF THE MONTH ♦</span>
 			<h2 class="section-title">JUGADORA DEL MES</h2>
 			<PlayerOfTheMonthWidget />
 
-			<h2 class="section-title">NEWSLETTER</h2>
-			<NewsletterWidget />
-
 			{masLeidas.length > 0 && (
 				<>
+					<span class="section-label">♦ MOST READ ♦</span>
 					<h2 class="section-title">MÁS LEÍDAS</h2>
 					<ol class="mas-leidas-list">
 						{masLeidas.map((n, i) => (
@@ -287,50 +289,115 @@ try {
 				</>
 			)}
 
+			<span class="section-label">♦ PLAYERS MAP ♦</span>
 			<h2 class="section-title">MAPA DE JUGADORAS</h2>
-			<a href="/jugadoras" class="stats-link">
-				<img
-					src={mapaJugadoras}
-					alt="Mapa de Jugadoras Real Madrid Femenino"
-					class="stats-image"
-					width="450"
-					height="180"
-					loading="lazy"
-					style="height: 180px; object-fit: cover; width: 100%;"
-				/>
+			<a href="/jugadoras" class="sidebar-map-link">
+				<div class="sidebar-map-frame">
+					<img
+						src={mapaJugadoras}
+						alt="Mapa de Jugadoras Real Madrid Femenino"
+						class="sidebar-map-img"
+						width="450"
+						height="180"
+						loading="lazy"
+					/>
+					<div class="sidebar-map-overlay">Ver mapa →</div>
+				</div>
 			</a>
 
+			<span class="section-label">♦ STADIUMS MAP ♦</span>
 			<h2 class="section-title">MAPA DE ESTADIOS</h2>
-			<a href="/partidos" class="stats-link">
-				<img
-					src={mapaPartidos}
-					alt="Mapa de Estadios Real Madrid Femenino"
-					class="stats-image"
-					width="450"
-					height="180"
-					loading="lazy"
-					style="height: 180px; object-fit: cover; width: 100%;"
-				/>
+			<a href="/partidos" class="sidebar-map-link">
+				<div class="sidebar-map-frame">
+					<img
+						src={mapaPartidos}
+						alt="Mapa de Estadios Real Madrid Femenino"
+						class="sidebar-map-img"
+						width="450"
+						height="180"
+						loading="lazy"
+					/>
+					<div class="sidebar-map-overlay">Ver mapa →</div>
+				</div>
 			</a>
 
+			<span class="section-label">♦ STANDINGS ♦</span>
 			<h2 class="section-title">CLASIFICACIÓN</h2>
-			<iframe
-				id="sofa-standings-embed-3739-77723"
-				src="https://widgets.sofascore.com/embed/tournament/3739/season/77723/standings/Primera%20Division%2C%20Women%2025%2F26?widgetTitle=Primera%20Division%2C%20Women%2025%2F26&showCompetitionLogo=true"
-				style="height:911px!important;max-width:768px!important;width:100%!important;"
-				frameborder="0"
-				scrolling="no"
-				loading="lazy"
-				title="Clasificación de Liga F"></iframe>
-			<div
-				style="font-size:12px;font-family:Arial,sans-serif;text-align:left"
-			>
+			<div class="standings-frame">
+				<iframe
+					id="sofa-standings-embed-3739-77723"
+					src="https://widgets.sofascore.com/embed/tournament/3739/season/77723/standings/Primera%20Division%2C%20Women%2025%2F26?widgetTitle=Primera%20Division%2C%20Women%2025%2F26&showCompetitionLogo=true"
+					style="height:911px!important;max-width:768px!important;width:100%!important;"
+					frameborder="0"
+					scrolling="no"
+					loading="lazy"
+					title="Clasificación de Liga F"></iframe>
+			</div>
+			<div style="font-size:11px;font-family:'DM Sans',Arial,sans-serif;text-align:left;color:rgba(240,240,240,0.4);margin-top:0.4rem;">
 				Clasificación ofrecida por <a
 					target="_blank"
 					href="https://www.sofascore.com/es-la/torneo/futbol/spain/liga-f/1127#id:77723"
-					rel="noopener noreferrer">Estadísticas de Sofascore</a
+					rel="noopener noreferrer"
+					style="color:rgba(212,168,67,0.6);text-decoration:none;">Sofascore</a
 				>
 			</div>
 		</aside>
 	</div>
 </Layout>
+
+<style>
+	.sidebar-map-link {
+		display: block;
+		text-decoration: none;
+		margin-bottom: 2rem;
+	}
+	.sidebar-map-frame {
+		position: relative;
+		border-radius: 10px;
+		overflow: hidden;
+		border: 1px solid rgba(212, 168, 67, 0.25);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+		transition: border-color 0.3s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-frame {
+		border-color: rgba(212, 168, 67, 0.55);
+	}
+	.sidebar-map-img {
+		display: block;
+		width: 100%;
+		height: 180px;
+		object-fit: cover;
+		filter: brightness(0.85);
+		transition: filter 0.3s ease, transform 0.4s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-img {
+		filter: brightness(1);
+		transform: scale(1.03);
+	}
+	.sidebar-map-overlay {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 0.5rem 1rem;
+		background: linear-gradient(to top, rgba(6, 13, 28, 0.75), transparent);
+		color: #d4a843;
+		font-family: 'Cinzel', serif;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-align: right;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-overlay {
+		opacity: 1;
+	}
+	.standings-frame {
+		border-radius: 10px;
+		overflow: hidden;
+		border: 1px solid rgba(212, 168, 67, 0.2);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+		margin-bottom: 0.5rem;
+	}
+</style>
