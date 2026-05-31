@@ -96,7 +96,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
         <div className="gallery-viewer-container">
             {children}
 
-            <div className="viewer-controls-row flex justify-between items-center px-2 py-4 border-b border-gray-100 mb-6">
+            <div className="viewer-controls-row">
                 <div className="photo-counter">
                     <span>{currentIndex + 1}</span> / {album.photos.length}
                 </div>
@@ -147,20 +147,29 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .gallery-viewer-container {
-                    background: #fff;
+                    background: #060d1c;
                     min-height: calc(100vh - 80px);
                     display: flex;
                     flex-direction: column;
                     padding-bottom: 2rem;
                 }
+                .viewer-controls-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0.75rem 0.5rem;
+                    border-bottom: 1px solid rgba(212,168,67,0.15);
+                    margin-bottom: 1.5rem;
+                }
                 .photo-counter {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 1.5rem;
-                    color: #ccc;
-                    letter-spacing: 2px;
+                    font-family: 'Cinzel', serif;
+                    font-size: 0.85rem;
+                    color: rgba(200,210,220,0.45);
+                    letter-spacing: 0.12em;
                 }
                 .photo-counter span {
-                    color: #151e42;
+                    color: #d4a843;
+                    font-weight: 700;
                 }
 
                 .main-stage {
@@ -226,26 +235,26 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 .thumb-item {
                     width: 100px;
                     height: 65px;
-                    border-radius: 6px;
+                    border-radius: 4px;
                     overflow: hidden;
                     cursor: pointer;
                     flex-shrink: 0;
                     transition: all 0.3s;
-                    border: 2px solid transparent;
-                    background: #eee;
+                    border: 1px solid rgba(212,168,67,0.15);
+                    background: rgba(8,16,34,0.8);
                     position: relative;
                 }
                 .thumb-img {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    opacity: 0.5;
+                    opacity: 0.45;
                     transition: all 0.3s;
                 }
+                .thumb-item:hover .thumb-img { opacity: 0.75; }
                 .thumb-item.active {
-                    border-color: #ffde59;
+                    border-color: #d4a843;
                     transform: scale(1.05);
-                    opacity: 1;
                 }
                 .thumb-item.active .thumb-img {
                     opacity: 1;
@@ -253,7 +262,7 @@ const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {
                 .active-overlay {
                     position: absolute;
                     inset: 0;
-                    background: rgba(255, 222, 89, 0.1);
+                    background: rgba(212,168,67,0.08);
                 }
 
                 @media (max-width: 768px) {

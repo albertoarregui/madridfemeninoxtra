@@ -63,64 +63,100 @@ if (!albumData) {
     title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`}
     description={`Explora las fotos de ${albumData.title} del Real Madrid Femenino.`}
 >
-    <main class="gallery-detail-page pt-32">
-        <div class="container mx-auto px-6">
-            <div class="gallery-back-link-wrapper mb-8">
-                <a
-                    href="/fotogalerias"
-                    class="gallery-back-link flex items-center gap-2 font-black text-xs uppercase tracking-widest text-[rgba(150,160,175,0.6)] hover:text-[#d4a843] transition-colors group"
-                >
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        class="group-hover:-translate-x-1 transition-transform"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="3"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Volver a Fotogalerías
-                </a>
-            </div>
+    <main class="gal-detail-page">
+        <div class="gal-container">
+            <a href="/fotogalerias" class="gal-back-link">← VOLVER A FOTOGALERÍAS</a>
 
-            <GalleryViewer album={albumData} client:only="react">
-                <header class="gallery-inner-header mb-12">
-                    <h1 class="landing-title text-left !mb-10">FOTOGALERÍAS</h1>
-                    <div class="border-l-4 border-[#ffde59] pl-6 py-2">
-                        <h2
-                            class="text-2xl sm:text-4xl font-black text-[#f0f0f0] uppercase italic mb-2 tracking-tighter leading-none"
-                            style="font-family: 'Cinzel', serif;"
-                        >
-                            {albumData.title}
-                        </h2>
-                        <p
-                            class="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em]"
-                            style="color: rgba(212,168,67,0.6); font-family: 'DM Sans', sans-serif;"
-                        >
-                            {albumData.subtitle}
-                            <span class="mx-2 text-[#ffde59]">•</span>
-                            {albumData.date}
-                        </p>
-                    </div>
-                </header>
-            </GalleryViewer>
+            <header class="gal-album-header">
+                <div class="gal-accent-bar"></div>
+                <div class="gal-header-content">
+                    <h1 class="gal-album-title">{albumData.title}</h1>
+                    <p class="gal-album-meta">
+                        {albumData.subtitle && <span>{albumData.subtitle}</span>}
+                        {albumData.subtitle && <span class="gal-sep">·</span>}
+                        <span>{albumData.date}</span>
+                    </p>
+                </div>
+            </header>
+
+            <GalleryViewer album={albumData} client:only="react" />
         </div>
     </main>
 </Layout>
 
 <style>
-    .gallery-detail-page {
+    .gal-detail-page {
         min-height: 100vh;
-        padding-bottom: 5rem;
         background: #060d1c;
         color: #f0f0f0;
+        padding-top: calc(56px + 2rem);
+        padding-bottom: 5rem;
     }
-    .container {
+    .gal-container {
         max-width: 1240px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+    }
+    .gal-back-link {
+        display: inline-block;
+        margin-bottom: 2rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(212,168,67,0.55);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .gal-back-link:hover { color: #d4a843; }
+
+    .gal-album-header {
+        display: flex;
+        align-items: stretch;
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    .gal-accent-bar {
+        width: 4px;
+        background: #d4a843;
+        border-radius: 2px;
+        flex-shrink: 0;
+    }
+    .gal-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.25rem 0;
+    }
+    .gal-album-title {
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.6rem, 4vw, 3rem);
+        font-weight: 700;
+        text-transform: uppercase;
+        line-height: 1.05;
+        letter-spacing: 0.02em;
+        background: linear-gradient(180deg, #f5f0e8 20%, #d4a843 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+    }
+    .gal-album-meta {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(212,168,67,0.6);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .gal-sep { color: rgba(212,168,67,0.4); }
+
+    @media (max-width: 640px) {
+        .gal-detail-page { padding-top: calc(56px + 1.25rem); }
+        .gal-container { padding: 0 1rem; }
     }
 </style>
