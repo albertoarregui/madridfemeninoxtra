@@ -305,62 +305,45 @@ function getTeamLogo(teamName: string) {
 </div>
 
 <script>
-    const seasonSelect = document.getElementById(
-        "filtro-temporada",
-    ) as HTMLSelectElement;
-    const competitionSelect = document.getElementById(
-        "filtro-competicion",
-    ) as HTMLSelectElement;
-    const matchesContainer = document.getElementById("matches-container");
-
     function filterMatches() {
+        const seasonSelect = document.getElementById("filtro-temporada") as HTMLSelectElement;
+        const competitionSelect = document.getElementById("filtro-competicion") as HTMLSelectElement;
+        const matchesContainer = document.getElementById("matches-container");
         const selectedSeason = seasonSelect?.value || "todos";
         const selectedCompetition = competitionSelect?.value || "todos";
         const matchItems = matchesContainer?.querySelectorAll(".match-item");
-
         let visibleCount = 0;
 
         matchItems?.forEach((item) => {
-            const itemElement = item as HTMLElement;
-            const season = itemElement.dataset.season || "";
-            const competition = itemElement.dataset.competition || "";
-
-            const matchesSeason =
-                selectedSeason === "todos" || season === selectedSeason;
-            const matchesCompetition =
-                selectedCompetition === "todos" ||
-                competition === selectedCompetition;
-
-            if (matchesSeason && matchesCompetition) {
-                itemElement.style.display = "";
-                visibleCount++;
-            } else {
-                itemElement.style.display = "none";
-            }
+            const el = item as HTMLElement;
+            const matchesSeason = selectedSeason === "todos" || el.dataset.season === selectedSeason;
+            const matchesComp = selectedCompetition === "todos" || el.dataset.competition === selectedCompetition;
+            el.style.display = matchesSeason && matchesComp ? "" : "none";
+            if (matchesSeason && matchesComp) visibleCount++;
         });
 
-        const existingMessage = matchesContainer?.querySelector(
-            ".no-results-message",
-        );
+        const matchesContainer2 = document.getElementById("matches-container");
+        const existingMessage = matchesContainer2?.querySelector(".no-results-message");
         if (visibleCount === 0 && !existingMessage) {
-            const noResultsMsg = document.createElement("p");
-            noResultsMsg.className = "no-results-message";
-            noResultsMsg.textContent =
-                "No se encontraron partidos con los filtros seleccionados.";
-            matchesContainer?.appendChild(noResultsMsg);
+            const msg = document.createElement("p");
+            msg.className = "no-results-message";
+            msg.textContent = "No se encontraron partidos con los filtros seleccionados.";
+            matchesContainer2?.appendChild(msg);
         } else if (visibleCount > 0 && existingMessage) {
             existingMessage.remove();
         }
     }
 
-    seasonSelect?.addEventListener("change", filterMatches);
-    competitionSelect?.addEventListener("change", filterMatches);
-
-    function initCustomSelects() {
+    function initMatchList() {
         const root = document.querySelector(".match-list-ui");
         if (!root) return;
-        const containers = root.querySelectorAll(".custom-select-container");
 
+        const seasonSelect = document.getElementById("filtro-temporada");
+        const competitionSelect = document.getElementById("filtro-competicion");
+        seasonSelect?.addEventListener("change", filterMatches);
+        competitionSelect?.addEventListener("change", filterMatches);
+
+        const containers = root.querySelectorAll(".custom-select-container");
         containers.forEach(function(container) {
             const trigger = container.querySelector(".custom-select-trigger");
             const select = container.querySelector("select");
@@ -372,9 +355,7 @@ function getTeamLogo(teamName: string) {
 
             trigger.addEventListener("click", function(e) {
                 e.stopPropagation();
-                containers.forEach(function(c) {
-                    if (c !== container) c.classList.remove("open");
-                });
+                containers.forEach(function(c) { if (c !== container) c.classList.remove("open"); });
                 container.classList.toggle("open");
             });
 
@@ -382,14 +363,11 @@ function getTeamLogo(teamName: string) {
                 option.addEventListener("click", function(e) {
                     e.stopPropagation();
                     const value = option.getAttribute("data-value");
-                    if (selectedText) selectedText.textContent = option.textContent;
-                    
+                    if (selectedText) selectedText.textContent = (option.textContent || "").trim();
                     if (select && value) {
                         select.value = value;
-                        const event = new Event("change", { bubbles: true });
-                        select.dispatchEvent(event);
+                        select.dispatchEvent(new Event("change", { bubbles: true }));
                     }
-                    
                     options.forEach(function(opt) { opt.classList.remove("selected"); });
                     option.classList.add("selected");
                     container.classList.remove("open");
@@ -402,11 +380,11 @@ function getTeamLogo(teamName: string) {
         });
     }
 
-    document.addEventListener("astro:page-load", initCustomSelects);
+    document.addEventListener("astro:page-load", initMatchList);
     if (document.readyState === "complete" || document.readyState === "interactive") {
-        initCustomSelects();
+        initMatchList();
     } else {
-        document.addEventListener("DOMContentLoaded", initCustomSelects);
+        document.addEventListener("DOMContentLoaded", initMatchList);
     }
 </script>
 
@@ -430,15 +408,34 @@ function getTeamLogo(teamName: string) {
         display: flex;
         flex-direction: column;
         gap: 0;
-        background: #ffffff;
-        border-radius: 8px;
+        background: rgba(8,16,34,0.85);
+        border: 1px solid rgba(212,168,67,0.18);
+        border-radius: 4px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        position: relative;
+    }
+    .matches-container::before {
+        content: '';
+        position: absolute; top: 0; left: 0;
+        width: 14px; height: 14px;
+        border-top: 1px solid rgba(212,168,67,0.5);
+        border-left: 1px solid rgba(212,168,67,0.5);
+        pointer-events: none;
+        z-index: 1;
+    }
+    .matches-container::after {
+        content: '';
+        position: absolute; bottom: 0; right: 0;
+        width: 14px; height: 14px;
+        border-bottom: 1px solid rgba(212,168,67,0.5);
+        border-right: 1px solid rgba(212,168,67,0.5);
+        pointer-events: none;
+        z-index: 1;
     }
 
     .match-item {
-        background: #ffffff;
-        border-bottom: 1px solid #f0f0f0;
+        background: transparent;
+        border-bottom: 1px solid rgba(212,168,67,0.07);
     }
 
     .match-item:last-child {
@@ -449,48 +446,51 @@ function getTeamLogo(teamName: string) {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1rem;
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
+        padding: 0.5rem 1rem;
+        background: rgba(212,168,67,0.04);
+        border-bottom: 1px solid rgba(212,168,67,0.08);
     }
 
     .competition-info {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.6rem;
     }
 
     .competition-logo {
-        width: 24px;
-        height: 24px;
+        width: 18px;
+        height: 18px;
         object-fit: contain;
+        opacity: 0.85;
     }
 
     .competition-name {
-        color: #6c757d;
-        font-size: 0.85rem;
+        font-family: 'Cinzel', serif;
+        color: rgba(212,168,67,0.65);
+        font-size: 0.6rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.12em;
     }
 
     .match-detail {
         display: grid;
         grid-template-columns: 80px 1fr 40px;
         align-items: center;
-        padding: 1rem;
+        padding: 0.9rem 1rem;
         gap: 1rem;
         text-decoration: none;
-        transition: background 0.3s ease;
+        transition: background 0.2s ease;
     }
 
     .match-detail:hover {
-        background: rgba(255, 222, 89, 0.15);
+        background: rgba(212,168,67,0.06);
     }
 
     .match-date-time {
-        color: #6c757d;
-        font-size: 0.9rem;
+        font-family: 'DM Sans', sans-serif;
+        color: rgba(200,210,220,0.4);
+        font-size: 0.78rem;
         font-weight: 500;
         text-align: center;
     }
@@ -505,7 +505,7 @@ function getTeamLogo(teamName: string) {
     .team {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.65rem;
         flex: 1;
         min-width: 0;
     }
@@ -530,14 +530,15 @@ function getTeamLogo(teamName: string) {
     .team-shield-placeholder {
         width: 28px;
         height: 28px;
-        background: #e9ecef;
+        background: rgba(212,168,67,0.08);
         border-radius: 50%;
         flex-shrink: 0;
     }
 
     .team-name {
-        color: #2b2b2b;
-        font-size: 0.95rem;
+        font-family: 'DM Sans', sans-serif;
+        color: rgba(200,210,220,0.88);
+        font-size: 0.9rem;
         font-weight: 600;
         white-space: nowrap;
         overflow: hidden;
@@ -547,56 +548,63 @@ function getTeamLogo(teamName: string) {
     .score-wrapper {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
         justify-content: center;
         min-width: 60px;
     }
 
     .score {
-        color: #2b2b2b;
-        font-size: 1.2rem;
+        font-family: 'Cinzel', serif;
+        color: #d4a843;
+        font-size: 1.15rem;
         font-weight: 700;
     }
 
     .vs {
-        color: #2b2b2b;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-transform: uppercase;
+        font-family: 'DM Sans', sans-serif;
+        color: rgba(200,210,220,0.3);
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 
     .result-indicator {
-        width: 32px;
-        height: 32px;
-        border-radius: 4px;
+        width: 30px;
+        height: 30px;
+        border-radius: 3px;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-family: 'Cinzel', serif;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.72rem;
         flex-shrink: 0;
+        letter-spacing: 0.05em;
     }
 
     .result-indicator.win {
-        background: #2ecc71;
-        color: #ffffff;
+        background: rgba(74,222,128,0.15);
+        color: rgba(74,222,128,0.9);
+        border: 1px solid rgba(74,222,128,0.25);
     }
 
     .result-indicator.loss {
-        background: #e74c3c;
-        color: #ffffff;
+        background: rgba(248,113,113,0.12);
+        color: rgba(248,113,113,0.85);
+        border: 1px solid rgba(248,113,113,0.2);
     }
 
     .result-indicator.draw {
-        background: #f39c12;
-        color: #ffffff;
+        background: rgba(212,168,67,0.1);
+        color: rgba(212,168,67,0.8);
+        border: 1px solid rgba(212,168,67,0.2);
     }
 
     .no-results-message {
-        color: #6c757d;
+        font-family: 'DM Sans', sans-serif;
+        color: rgba(200,210,220,0.35);
         text-align: center;
         padding: 3rem 1rem;
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     @media (max-width: 640px) {

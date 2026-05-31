@@ -50,13 +50,13 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
     const getCompColor = (comp: string) => {
         const c = comp.toUpperCase();
-        if (c.includes('LIGA F')) return 'bg-[#40E0D0] border-[#40E0D0] text-black shadow-cyan-500/20';
-        if (c.includes('UWCL')) return 'bg-[#1e3a8a] border-[#1e3a8a] text-white shadow-blue-800/30';
-        if (c.includes('COPA DE LA REINA')) return 'bg-[#ffa500] border-[#ffa500] text-black shadow-orange-500/20';
-        if (c.includes('SUPERCOPA')) return 'bg-[#ff0000] border-[#ff0000] text-white shadow-red-500/20';
-        if (c.includes('AMISTOSO')) return 'bg-gray-400 border-gray-400 text-white shadow-gray-500/20';
-        if (c === 'TODAS') return 'bg-[#151e42] border-[#151e42] text-white shadow-blue-900/40';
-        return 'bg-white border-gray-100 text-gray-400';
+        if (c.includes('LIGA F')) return 'bg-[#40E0D0] border-[#40E0D0] text-[#060d1c] shadow-cyan-500/20';
+        if (c.includes('UWCL')) return 'bg-[#1e3a8a] border-[#1e3a8a] text-[#f0f0f0] shadow-blue-800/30';
+        if (c.includes('COPA DE LA REINA')) return 'bg-[#ffa500] border-[#ffa500] text-[#060d1c] shadow-orange-500/20';
+        if (c.includes('SUPERCOPA')) return 'bg-[#ff0000] border-[#ff0000] text-[#f0f0f0] shadow-red-500/20';
+        if (c.includes('AMISTOSO')) return 'bg-[rgba(150,160,175,0.3)] border-[rgba(150,160,175,0.4)] text-[#f0f0f0] shadow-gray-500/20';
+        if (c === 'TODAS') return 'bg-[#d4a843] border-[#d4a843] text-[#060d1c] shadow-yellow-800/40';
+        return 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)]';
     };
 
     const filteredMatches = useMemo(() => {
@@ -96,10 +96,10 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                     setSelectedMonth(prev => prev === month ? 'TODOS' : month);
                                     setCurrentPage(1);
                                 }}
-                                className={`w-full max-w-[160px] px-2 sm:px-4 py-3 sm:py-4 rounded-[18px] sm:rounded-[22px] font-black text-[10px] sm:text-xs tracking-widest transition-all border-2 
+                                className={`w-full max-w-[160px] px-2 sm:px-4 py-3 sm:py-4 rounded-[18px] sm:rounded-[22px] font-black text-[10px] sm:text-xs tracking-widest transition-all border-2
                                     ${selectedMonth === month
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]'
-                                        : 'bg-white border-gray-100 text-gray-400 hover:border-[#ffde59] hover:text-[#151e42] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
+                                        ? 'bg-[#d4a843] border-[#d4a843] text-[#060d1c] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]'
+                                        : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
                             >
                                 {month}
                             </button>
@@ -121,7 +121,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                 className={`min-w-[130px] sm:min-w-[160px] px-4 sm:px-8 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] font-black text-[10px] sm:text-sm tracking-[0.05em] transition-all border-2 whitespace-nowrap
                                     ${selectedComp === comp
                                         ? getCompColor(comp) + ' shadow-2xl translate-y-[-2px] sm:translate-y-[-4px]'
-                                        : 'bg-white border-gray-100 text-gray-400 hover:border-[#151e42] hover:text-[#151e42] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
+                                        : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
                             >
                                 {comp}
                             </button>
@@ -212,9 +212,9 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                         );
                     })
                 ) : (
-                    <div className="py-24 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100 mx-4">
-                        <CalendarIcon className="mx-auto text-gray-100 mb-6" size={80} />
-                        <p className="text-gray-400 font-bold text-xl max-w-md mx-auto px-6 italic uppercase tracking-wider opacity-60">
+                    <div className="py-24 text-center rounded-[40px] border-2 border-dashed mx-4" style={{background:'rgba(8,16,34,0.6)',borderColor:'rgba(212,168,67,0.15)'}}>
+                        <CalendarIcon className="mx-auto mb-6" size={80} style={{color:'rgba(212,168,67,0.2)'}} />
+                        <p className="font-bold text-xl max-w-md mx-auto px-6 italic uppercase tracking-wider" style={{color:'rgba(200,210,220,0.65)',fontFamily:"'DM Sans', sans-serif"}}>
                             {selectedMonth !== 'TODOS' && selectedComp === 'TODAS'
                                 ? "No hay partidos programados en este mes"
                                 : selectedComp !== 'TODAS' && selectedMonth === 'TODOS'
@@ -226,14 +226,15 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
             </div>
 
             {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-3 py-10 border-t border-gray-100/50">
+                <div className="flex justify-center items-center gap-3 py-10" style={{borderTop:'1px solid rgba(212,168,67,0.12)'}}>
                     <button
                         onClick={() => {
                             setCurrentPage(prev => Math.max(1, prev - 1));
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={currentPage === 1}
-                        className="p-3 rounded-2xl border-2 border-gray-100 disabled:opacity-20 hover:border-[#ffde59] transition-all bg-white shadow-sm"
+                        className="p-3 rounded-2xl border-2 disabled:opacity-20 transition-all"
+                        style={{background:'rgba(8,16,34,0.85)',borderColor:'rgba(212,168,67,0.2)',color:'#f0f0f0'}}
                     >
                         <ChevronLeft size={20} />
                     </button>
@@ -246,10 +247,10 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                     setCurrentPage(page);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                 }}
-                                className={`w-10 h-10 flex items-center justify-center rounded-2xl font-black transition-all border-2 text-sm
-                                    ${currentPage === page
-                                        ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md scale-110'
-                                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
+                                className="w-10 h-10 flex items-center justify-center rounded-2xl font-black transition-all border-2 text-sm"
+                                style={currentPage === page
+                                    ? {background:'#d4a843',borderColor:'#d4a843',color:'#060d1c',transform:'scale(1.1)',boxShadow:'0 4px 12px rgba(212,168,67,0.3)'}
+                                    : {background:'rgba(8,16,34,0.85)',borderColor:'rgba(212,168,67,0.2)',color:'rgba(200,210,220,0.65)'}}
                             >
                                 {page}
                             </button>
@@ -262,7 +263,8 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={currentPage === totalPages}
-                        className="p-3 rounded-2xl border-2 border-gray-100 disabled:opacity-20 hover:border-[#ffde59] transition-all bg-white shadow-sm"
+                        className="p-3 rounded-2xl border-2 disabled:opacity-20 transition-all"
+                        style={{background:'rgba(8,16,34,0.85)',borderColor:'rgba(212,168,67,0.2)',color:'#f0f0f0'}}
                     >
                         <ChevronRight size={20} />
                     </button>
@@ -273,32 +275,36 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 __html: `
                 .match-archive-card {
                     display: flex;
-                    background: #ffde59;
+                    background: rgba(8,16,34,0.85);
+                    border: 1px solid rgba(212,168,67,0.2);
                     border-radius: 40px 0 0 0;
                     overflow: hidden;
                     text-decoration: none;
-                    color: #151e42;
+                    color: #f0f0f0;
                     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
                     position: relative;
                     min-height: 140px;
+                    backdrop-filter: blur(8px);
                 }
                 .match-archive-card:hover {
                     transform: translateY(-8px);
-                    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+                    border-color: rgba(212,168,67,0.5);
                 }
                 .match-date-box {
-                    background: rgba(0, 0, 0, 0.05);
-                    color: #151e42;
+                    background: rgba(212,168,67,0.07);
+                    color: #d4a843;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     width: 110px;
                     min-width: 110px;
+                    border-right: 1px solid rgba(212,168,67,0.12);
                 }
-                .venue-icon-wrapper { color: #151e42; }
-                .m-day { font-size: 2.22rem; font-family: 'Bebas Neue', sans-serif; line-height: 1; }
-                .m-month { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; color: #151e42; }
+                .venue-icon-wrapper { color: rgba(212,168,67,0.6); }
+                .m-day { font-size: 2.22rem; font-family: 'Cinzel', serif; line-height: 1; color: #f0f0f0; }
+                .m-month { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; color: rgba(212,168,67,0.7); font-family: 'DM Sans', sans-serif; }
 
                 .match-main-content {
                     flex-grow: 1;
@@ -309,7 +315,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     align-items: center;
                     overflow: hidden;
                 }
-                
+
                 .teams-interaction-row {
                     display: flex;
                     align-items: center;
@@ -326,9 +332,9 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 .team-side.visitor { justify-content: flex-start; padding-left: 2.5rem; text-align: left; }
 
                 .team-name {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 1.6rem;
-                    color: #151e42;
+                    font-family: 'Cinzel', serif;
+                    font-size: 1.3rem;
+                    color: #f0f0f0;
                     line-height: 1;
                     text-transform: uppercase;
                     white-space: nowrap;
@@ -355,18 +361,20 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     align-items: center;
                 }
                 .score-display {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 3.5rem;
+                    font-family: 'Cinzel', serif;
+                    font-size: 3rem;
                     display: flex;
                     gap: 0.5rem;
                     align-items: center;
-                    color: #151e42;
+                    color: #d4a843;
                     line-height: 1;
+                    font-weight: 700;
                 }
-                .score-separator { opacity: 0.3; }
-                
+                .score-separator { opacity: 0.4; color: #f0f0f0; }
+
                 .time-display {
-                    background: rgba(0, 0, 0, 0.08);
+                    background: rgba(212,168,67,0.1);
+                    border: 1px solid rgba(212,168,67,0.25);
                     padding: 0.5rem 1rem;
                     border-radius: 12px;
                     display: flex;
@@ -374,7 +382,8 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     gap: 0.5rem;
                     font-weight: 800;
                     font-size: 1rem;
-                    color: #151e42;
+                    color: #d4a843;
+                    font-family: 'DM Sans', sans-serif;
                 }
 
                 .match-comp-logo-right {
@@ -391,7 +400,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
                 @media (max-width: 1024px) {
-                    .team-name { font-size: 1.2rem; }
+                    .team-name { font-size: 1rem; }
                     .score-display { font-size: 2.5rem; }
                     .team-shield { width: 45px; height: 45px; }
                     .team-side.local { padding-right: 1.5rem; }
@@ -402,14 +411,14 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
                 @media (max-width: 768px) {
                     .match-archive-card { flex-direction: column; min-height: auto; border-radius: 25px 0 0 0; margin-left: 1rem; margin-right: 1rem; }
-                    .match-date-box { width: 100%; height: auto; padding: 1.5rem; flex-direction: row; gap: 1.5rem; background: rgba(0,0,0,0.05); }
+                    .match-date-box { width: 100%; height: auto; padding: 1.5rem; flex-direction: row; gap: 1.5rem; background: rgba(212,168,67,0.07); border-right: none; border-bottom: 1px solid rgba(212,168,67,0.12); }
                     .venue-icon-wrapper { margin-bottom: 0 !important; }
                     .match-main-content { padding: 2rem 1.5rem; }
                     .teams-interaction-row { flex-direction: column; gap: 1rem; }
                     .team-side { width: 100%; justify-content: center !important; padding: 0 !important; }
-                    .team-name { font-size: 1.4rem; white-space: normal; text-align: center !important; }
+                    .team-name { font-size: 1.2rem; white-space: normal; text-align: center !important; }
                     .central-block { margin: 0.5rem 0; width: 100%; justify-content: center; }
-                    .match-comp-logo-right { width: 100%; height: 110px; padding: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05); }
+                    .match-comp-logo-right { width: 100%; height: 110px; padding: 1.5rem; border-top: 1px solid rgba(212,168,67,0.1); }
                     .comp-logo-large { width: 80px; height: 80px; }
                     .meta-row { flex-direction: row; gap: 0.5rem; justify-content: center; }
                     .meta-item span { font-size: 9px; letter-spacing: -0.2px; }

@@ -398,7 +398,6 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
             const imgs = Array.from(captureRef.current.querySelectorAll('img'));
             const origSrcs = imgs.map(img => img.src);
 
-            // Images on the CDN don't have CORS headers; proxy them server-side
             await Promise.allSettled(imgs.map(async (img) => {
                 try {
                     const isExternal = img.src.startsWith('http') && !img.src.startsWith(window.location.origin);
@@ -434,7 +433,6 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
             const nameB = dataB?.nombre.replace(/\s+/g, '-') ?? 'B';
             const filename = `comparativa-${nameA}-vs-${nameB}.png`;
 
-            // iOS Safari ignores the download attribute on blob/data URLs — show overlay instead
             if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
                 const dataUrl = canvas.toDataURL('image/png');
                 const overlay = document.createElement('div');

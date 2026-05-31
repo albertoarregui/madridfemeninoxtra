@@ -106,10 +106,9 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     <button
                         key={cat}
                         onClick={() => handleCategoryChange(cat)}
-                        className={`px-6 py-2 rounded-full font-bold text-sm tracking-wider transition-all border-2
-                            ${selectedCategory === cat
-                                ? 'bg-[#ffde59] border-[#ffde59] text-[#151e42] shadow-md'
-                                : 'bg-white border-gray-200 text-gray-500 hover:border-[#ffde59] hover:text-[#151e42]'}`}
+                        style={selectedCategory === cat
+                            ? { background: '#d4a843', borderColor: '#d4a843', color: '#060d1c', border: '1px solid #d4a843', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }
+                            : { background: 'transparent', borderColor: 'rgba(212,168,67,0.25)', color: 'rgba(212,168,67,0.65)', border: '1px solid rgba(212,168,67,0.25)', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }}
                     >
                         {cat}
                     </button>
@@ -143,8 +142,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     ))
                 ) : (
                     <div className="py-24 text-center">
-                        <Activity className="mx-auto text-gray-200 mb-4" size={64} />
-                        <p className="text-gray-400 font-bold text-xl">
+                        <Activity style={{ color: 'rgba(212,168,67,0.35)', margin: '0 auto 1rem' }} size={64} />
+                        <p style={{ color: 'rgba(200,210,220,0.5)', fontFamily: 'DM Sans, sans-serif', fontSize: '1.1rem' }}>
                             {searchQuery.trim()
                                 ? `No hay resultados para "${searchQuery}"`
                                 : 'No hay noticias en esta sección'}
@@ -159,9 +158,9 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 __html: `
                 .archive-card {
                     display: flex;
-                    background: white;
-                    border: 4px solid #ffde59;
-                    border-radius: 40px 0 0 0;
+                    background: rgba(8,16,34,0.85);
+                    border: 1px solid rgba(212,168,67,0.15);
+                    border-radius: 6px;
                     overflow: hidden;
                     text-decoration: none;
                     color: inherit;
@@ -169,9 +168,9 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     position: relative;
                 }
                 .archive-card:hover {
-                    transform: translateY(-10px);
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    border-color: #d1b131;
+                    transform: translateY(-4px);
+                    box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+                    border-color: rgba(212,168,67,0.5);
                 }
                 .archive-image {
                     width: 380px;
@@ -192,47 +191,48 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 .archive-tag {
                     position: absolute;
                     bottom: 0;
-                    right: 0;
-                    background: #ffde59;
-                    color: #151e42;
-                    padding: 0.6rem 1.5rem;
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 1.1rem;
-                    border-top-left-radius: 20px;
-                    letter-spacing: 1px;
+                    left: 0;
+                    background: #d4a843;
+                    color: #060d1c;
+                    padding: 0.15rem 0.6rem;
+                    font-family: 'Cinzel', serif;
+                    font-size: 0.62rem;
+                    letter-spacing: 0.15em;
+                    border-radius: 50px;
                     text-transform: uppercase;
                     z-index: 5;
-                    font-weight: bold;
+                    margin: 0.5rem;
                 }
                 .archive-info {
-                    padding: 2.5rem;
+                    padding: 2rem;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
                     flex-grow: 1;
+                    background: transparent;
                 }
                 .archive-date {
-                    font-size: 0.85rem;
-                    font-weight: 800;
-                    letter-spacing: 1.5px;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.7rem;
+                    letter-spacing: 0.12em;
                     margin-bottom: 0.75rem;
-                    color: #000;
+                    color: rgba(212,168,67,0.6);
                 }
                 .archive-title {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 2.8rem;
-                    line-height: 1;
-                    color: #151e42;
+                    font-family: 'Cinzel', serif;
+                    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+                    line-height: 1.25;
+                    color: #f0f0f0;
                     margin-bottom: 0.75rem;
-                    text-transform: uppercase;
                     transition: color 0.3s ease;
                 }
                 .archive-card:hover .archive-title {
-                    color: #000;
+                    color: #d4a843;
                 }
                 .archive-subtitle {
-                    font-size: 1rem;
-                    color: #666;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.88rem;
+                    color: rgba(200,210,220,0.6);
                     line-height: 1.5;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
@@ -244,7 +244,6 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 @media (max-width: 900px) {
                     .archive-card {
                         flex-direction: column;
-                        border-radius: 30px 0 0 0;
                     }
                     .archive-image {
                         width: 100%;
@@ -252,7 +251,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                         height: 220px;
                     }
                     .archive-title {
-                        font-size: 1.8rem;
+                        font-size: 1.2rem;
                     }
                     .archive-subtitle {
                         display: none;
@@ -261,7 +260,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                         padding: 1.5rem;
                     }
                     .archive-card:hover {
-                        transform: translateY(-5px);
+                        transform: translateY(-4px);
                     }
                 }
                 .news-search-wrapper {
@@ -274,15 +273,15 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     align-items: center;
                     width: 100%;
                     max-width: 600px;
-                    border: 2px solid #ccc;
+                    border: 1px solid rgba(212,168,67,0.25);
                     border-radius: 25px;
                     overflow: hidden;
                     transition: border-color 0.3s ease;
-                    background: #fff;
+                    background: rgba(6,13,28,0.95);
                 }
                 .news-search-box:hover,
                 .news-search-box:focus-within {
-                    border-color: #ffde59;
+                    border-color: rgba(212,168,67,0.6);
                 }
                 .news-search-icon {
                     display: none;
@@ -293,12 +292,12 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     border: none;
                     outline: none;
                     font-size: 1rem;
-                    font-family: 'Inter', sans-serif;
-                    color: #151e42;
+                    font-family: 'DM Sans', sans-serif;
+                    color: #f0f0f0;
                     background: transparent;
                 }
                 .news-search-input::placeholder {
-                    color: #aaa;
+                    color: rgba(150,160,175,0.5);
                 }
                 .news-search-clear {
                     display: flex;
@@ -307,12 +306,12 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     background: none;
                     border: none;
                     cursor: pointer;
-                    color: #aaa;
+                    color: rgba(150,160,175,0.5);
                     padding: 0.75rem 1.25rem;
                     transition: color 0.3s ease;
                 }
                 .news-search-clear:hover {
-                    color: #ffde59;
+                    color: #d4a843;
                 }
             ` }} />
         </div>

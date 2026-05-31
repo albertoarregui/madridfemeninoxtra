@@ -71,72 +71,102 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
 
     if (!stats) return null;
 
+    const cardStyle: React.CSSProperties = {
+        background: 'rgba(8,16,34,0.85)',
+        border: '1px solid rgba(212,168,67,0.18)',
+        borderRadius: '4px',
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        gap: '0.75rem',
+        position: 'relative',
+    };
+
+    const iconWrapStyle: React.CSSProperties = {
+        color: 'rgba(212,168,67,0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    };
+
+    const labelStyle: React.CSSProperties = {
+        fontFamily: "'Cinzel', serif",
+        fontSize: '0.58rem',
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase' as const,
+        color: 'rgba(200,210,220,0.45)',
+        margin: 0,
+    };
+
+    const valueStyle: React.CSSProperties = {
+        fontFamily: "'Cinzel', serif",
+        fontSize: '2.2rem',
+        fontWeight: 700,
+        color: '#d4a843',
+        lineHeight: 1,
+        margin: 0,
+    };
+
     return (
-        <div className="w-full max-w-7xl mx-auto mb-8">
-            <h2 className="text-2xl font-bold mb-6 font-bebas text-[#151e42] border-l-4 border-[#ffde59] pl-3 uppercase">Estadísticas de Viaje</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
-                    <div className="bg-blue-50 p-3 rounded-full text-blue-600 mb-3">
-                        <Navigation size={32} />
-                    </div>
+        <div style={{ width: '100%', maxWidth: '56rem', margin: '0 auto 2.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div style={cardStyle}>
+                    <div style={iconWrapStyle}><Navigation size={28} /></div>
                     <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Desplazamientos</p>
-                        <p className="text-3xl md:text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.totalTrips}</p>
+                        <p style={labelStyle}>Desplazamientos</p>
+                        <p style={valueStyle}>{stats.totalTrips}</p>
                     </div>
                 </div>
-
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
-                    <div className="bg-orange-50 p-3 rounded-full text-orange-600 mb-3">
-                        <MapPin size={32} />
-                    </div>
+                <div style={cardStyle}>
+                    <div style={iconWrapStyle}><MapPin size={28} /></div>
                     <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Distancia Total</p>
-                        <p className="text-3xl md:text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.totalKm.toLocaleString()} km</p>
+                        <p style={labelStyle}>Distancia Total</p>
+                        <p style={valueStyle}>{stats.totalKm.toLocaleString()} <span style={{ fontSize: '1rem' }}>km</span></p>
                     </div>
                 </div>
-
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center group">
-                    <div className="bg-indigo-50 p-3 rounded-full text-indigo-600 mb-3">
-                        <Clock size={32} />
-                    </div>
+                <div style={cardStyle}>
+                    <div style={iconWrapStyle}><Clock size={28} /></div>
                     <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors">Tiempo en Ruta</p>
-                        <p className="text-3xl md:text-4xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">~{stats.totalHours} h</p>
+                        <p style={labelStyle}>Tiempo en Ruta</p>
+                        <p style={valueStyle}>~{stats.totalHours} <span style={{ fontSize: '1rem' }}>h</span></p>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center">
-                    <Calendar size={16} className="text-gray-500 mr-2" />
-                    <h3 className="text-sm font-bold text-gray-700 uppercase">Desglose por Temporada</h3>
+            <div style={{ background: 'rgba(8,16,34,0.85)', border: '1px solid rgba(212,168,67,0.18)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(212,168,67,0.12)', background: 'rgba(212,168,67,0.03)' }}>
+                    <Calendar size={14} style={{ color: 'rgba(212,168,67,0.6)', flexShrink: 0 }} />
+                    <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.65rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(212,168,67,0.75)' }}>
+                        Desglose por Temporada
+                    </span>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'DM Sans', sans-serif", fontSize: '0.84rem' }}>
+                        <thead>
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Temporada</th>
-                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Viajes</th>
-                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Kilómetros</th>
-                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Horas (Est.) *</th>
+                                {['Temporada','Viajes','Kilómetros','Horas (Est.)'].map(h => (
+                                    <th key={h} style={{ padding: '0.65rem 1rem', textAlign: 'center', fontFamily: "'Cinzel', serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(212,168,67,0.7)', background: 'rgba(212,168,67,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                                ))}
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {stats.seasonBreakdown.map((row) => (
-                                <tr key={row.season} className="hover:bg-gray-50 transaction-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-[#151e42] text-center">{row.season}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{row.trips}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono text-center">{Math.round(row.km).toLocaleString()} km</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-center">{Math.round(row.hours)}h</td>
+                        <tbody>
+                            {stats.seasonBreakdown.map((row, i) => (
+                                <tr key={row.season} style={{ borderBottom: '1px solid rgba(212,168,67,0.07)', background: i % 2 === 0 ? 'rgba(6,13,28,0.6)' : 'rgba(6,13,28,0.4)' }}>
+                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', fontFamily: "'Cinzel', serif", fontSize: '0.78rem', color: 'rgba(200,210,220,0.85)', fontWeight: 600 }}>{row.season}</td>
+                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)' }}>{row.trips}</td>
+                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(row.km).toLocaleString()} km</td>
+                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)' }}>{Math.round(row.hours)}h</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <div className="bg-white rounded-lg px-4 py-3 border-t border-gray-200 text-xs text-gray-500 italic space-y-1">
-                    <p>* Estimación: &lt;300km en autobús (80km/h), &gt;300km en avión (800km/h + 2.5h gestión).</p>
-                    <p>** "Viajes" excluye desplazamientos locales (&lt;70km), pero sus km y horas se suman al total.</p>
+                <div style={{ padding: '0.65rem 1.25rem', borderTop: '1px solid rgba(212,168,67,0.07)', fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: 'rgba(200,210,220,0.3)', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span>* Estimación: &lt;300km en autobús (80km/h), &gt;300km en avión (800km/h + 2.5h gestión).</span>
+                    <span>** "Viajes" excluye desplazamientos locales (&lt;70km), pero sus km y horas se suman al total.</span>
                 </div>
             </div>
         </div>
@@ -144,5 +174,3 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
 };
 
 export default MatchStatsDashboard;
-
-

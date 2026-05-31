@@ -36,7 +36,6 @@ async function notifyGoogleIndexing(url: string): Promise<{ success: boolean; re
 
 export const POST: APIRoute = async ({ request }) => {
     try {
-        // Verificar el secreto del webhook de Contentful
         const webhookSecret = import.meta.env.CONTENTFUL_WEBHOOK_SECRET;
         const incomingSecret = request.headers.get('x-contentful-webhook-secret');
 
@@ -50,7 +49,6 @@ export const POST: APIRoute = async ({ request }) => {
 
         const body = await request.json();
 
-        // Contentful envía el payload con sys.contentType.sys.id y fields.slug
         const contentType = body?.sys?.contentType?.sys?.id;
         const slug = body?.fields?.slug?.['es'] ?? body?.fields?.slug;
         const isPublished =

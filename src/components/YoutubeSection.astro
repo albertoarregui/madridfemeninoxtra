@@ -49,9 +49,14 @@ const otherVideos = videos.slice(1);
     </p>
 
     <div class="youtube-content">
-        {mainVideo && (
-            <div class="main-video-col">
-                <div class="main-video" id="main-video-wrapper" data-video-id={mainVideo.id} data-video-title={mainVideo.title}>
+        {
+            mainVideo ? (
+                <div
+                    class="main-video"
+                    id="main-video-wrapper"
+                    data-video-id={mainVideo.id}
+                    data-video-title={mainVideo.title}
+                >
                     <img
                         class="main-thumb"
                         src={`https://i.ytimg.com/vi/${mainVideo.id}/maxresdefault.jpg`}
@@ -65,27 +70,46 @@ const otherVideos = videos.slice(1);
                         </svg>
                     </button>
                 </div>
-                <p class="main-video-title">{mainVideo.title}</p>
-            </div>
-        )}
+            ) : (
+                <p>Cargando vídeos...</p>
+            )
+        }
 
-        {otherVideos.length > 0 && (
-            <div class="video-grid-sidebar">
-                {otherVideos.slice(0, 4).map((video) => (
-                    <a href={video.link} target="_blank" rel="noopener noreferrer" class="video-card-small">
-                        <div class="video-thumbnail">
-                            <img src={video.thumbnail} alt={video.title} loading="lazy" />
-                            <div class="play-overlay" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                                    <polygon points="5,2 16,9 5,16" fill="white" />
-                                </svg>
-                            </div>
-                        </div>
-                        <h3 class="video-title-small">{video.title}</h3>
-                    </a>
-                ))}
-            </div>
-        )}
+        {
+            otherVideos.length > 0 && (
+                <div class="scroll-wrapper">
+                    <button class="scroll-btn left" id="scrollLeft" aria-label="Vídeo anterior">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M15 6l-6 6l6 6" />
+                        </svg>
+                    </button>
+
+                    <div class="video-scroll-container" id="videoScroll">
+                        {otherVideos.map((video) => (
+                            <a href={video.link} target="_blank" rel="noopener noreferrer" class="video-card-small">
+                                <div class="video-thumbnail">
+                                    <img src={video.thumbnail} alt={video.title} loading="lazy" />
+                                    <div class="play-overlay" aria-hidden="true">
+                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                            <polygon points="5,2 16,9 5,16" fill="white" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <h3 class="video-title-small">{video.title}</h3>
+                            </a>
+                        ))}
+                    </div>
+
+                    <button class="scroll-btn right" id="scrollRight" aria-label="Vídeo siguiente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M9 6l6 6l-6 6" />
+                        </svg>
+                    </button>
+                </div>
+            )
+        }
     </div>
 </section>
 
@@ -108,6 +132,29 @@ const otherVideos = videos.slice(1);
                 wrapper.style.cursor = "default";
             });
         }
+
+        const scrollContainer = document.getElementById("videoScroll");
+        const scrollLeftBtn  = document.getElementById("scrollLeft");
+        const scrollRightBtn = document.getElementById("scrollRight");
+        if (scrollContainer && scrollLeftBtn && scrollRightBtn) {
+            scrollLeftBtn.addEventListener("click", () => {
+                scrollContainer.scrollBy({ left: -320, behavior: "smooth" });
+            });
+            scrollRightBtn.addEventListener("click", () => {
+                scrollContainer.scrollBy({ left: 320, behavior: "smooth" });
+            });
+
+            let touchStartX = 0;
+            let touchScrollLeft = 0;
+            scrollContainer.addEventListener("touchstart", (e: TouchEvent) => {
+                touchStartX = e.touches[0].clientX;
+                touchScrollLeft = scrollContainer.scrollLeft;
+            }, { passive: true });
+            scrollContainer.addEventListener("touchmove", (e: TouchEvent) => {
+                const dx = touchStartX - e.touches[0].clientX;
+                scrollContainer.scrollLeft = touchScrollLeft + dx;
+            }, { passive: true });
+        }
     });
 </script>
 
@@ -122,39 +169,16 @@ const otherVideos = videos.slice(1);
         white-space: nowrap;
     }
 
-    .youtube-content {
-        display: grid;
-        grid-template-columns: 1fr 0.55fr;
-        gap: 1rem;
-        align-items: start;
-    }
-
-    .main-video-col {
-        display: flex;
-        flex-direction: column;
-    }
-
     .main-video {
         width: 100%;
         position: relative;
         aspect-ratio: 16 / 9;
         border-radius: 10px;
         overflow: hidden;
+        margin-bottom: 1.5rem;
         background: #000;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         cursor: pointer;
-    }
-
-    .main-video-title {
-        font-family: 'Cinzel', serif;
-        font-size: 0.9rem;
-        color: #f0f0f0;
-        margin: 0.6rem 0 0;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.4;
     }
 
     .main-thumb {
@@ -217,33 +241,73 @@ const otherVideos = videos.slice(1);
         to { transform: rotate(360deg); }
     }
 
-    .video-grid-sidebar {
+    .scroll-wrapper {
+        position: relative;
         display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .video-scroll-container {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 0.75rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        flex: 1;
+        scroll-snap-type: x mandatory;
+        touch-action: pan-x;
+    }
+
+    .video-scroll-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scroll-btn {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(212, 168, 67, 0.08);
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        color: rgba(212, 168, 67, 0.7);
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+
+    .scroll-btn:hover {
+        background: rgba(212, 168, 67, 0.18);
+        border-color: rgba(212, 168, 67, 0.5);
+        color: #d4a843;
+        transform: scale(1.05);
     }
 
     .video-card-small {
-        display: flex;
-        flex-direction: row;
-        gap: 0.65rem;
-        align-items: flex-start;
+        flex: 0 0 clamp(200px, 25vw, 270px);
         text-decoration: none;
         color: inherit;
-        transition: transform 0.2s ease;
+        transition: transform 0.25s ease;
+        scroll-snap-align: start;
     }
 
     .video-card-small:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px);
     }
 
     .video-thumbnail {
-        flex-shrink: 0;
-        width: 110px;
-        aspect-ratio: 16 / 9;
-        border-radius: 6px;
-        overflow: hidden;
         position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 7px;
+        overflow: hidden;
+        margin-bottom: 0.6rem;
         background: #0a1428;
     }
 
@@ -251,13 +315,13 @@ const otherVideos = videos.slice(1);
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease, filter 0.3s ease;
-        filter: brightness(0.85);
+        transition: transform 0.35s ease, filter 0.35s ease;
+        filter: brightness(0.82);
         display: block;
     }
 
     .video-card-small:hover .video-thumbnail img {
-        transform: scale(1.03);
+        transform: scale(1.05);
         filter: brightness(1);
     }
 
@@ -266,8 +330,8 @@ const otherVideos = videos.slice(1);
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 26px;
-        height: 26px;
+        width: 34px;
+        height: 34px;
         border-radius: 50%;
         background: rgba(212, 168, 67, 0.28);
         display: flex;
@@ -279,18 +343,18 @@ const otherVideos = videos.slice(1);
     }
 
     .video-card-small:hover .play-overlay {
-        background: rgba(212, 168, 67, 0.5);
+        background: rgba(212, 168, 67, 0.45);
     }
 
     .video-title-small {
         font-family: 'DM Sans', sans-serif;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
         font-weight: 500;
-        color: #c8c8c8;
+        color: #b0b8c8;
         margin: 0;
         line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
         transition: color 0.2s ease;
@@ -305,31 +369,29 @@ const otherVideos = videos.slice(1);
             padding: 2rem 0 0;
         }
 
-        .youtube-content {
-            grid-template-columns: 1fr;
-        }
-
-        .video-grid-sidebar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        .video-card-small {
-            flex-direction: column;
-        }
-
-        .video-thumbnail {
-            width: 100%;
+        .main-video {
+            margin-bottom: 1rem;
         }
 
         .play-btn-main {
             width: 72px;
             height: 72px;
         }
+
+        .video-card-small {
+            flex: 0 0 clamp(160px, 42vw, 210px);
+        }
+
+        .scroll-btn {
+            display: none;
+        }
     }
 
     @media (max-width: 480px) {
+        .video-card-small {
+            flex: 0 0 clamp(145px, 48vw, 185px);
+        }
+
         .video-title-small {
             font-size: 0.72rem;
         }

@@ -42,6 +42,11 @@ interface ClubStatsDashboardProps {
     competitions: string[];
 }
 
+const card = "bg-[rgba(10,20,40,0.6)] rounded-xl border border-[rgba(212,168,67,0.15)] transition-all cursor-default group hover:border-[rgba(212,168,67,0.38)] hover:shadow-[0_6px_28px_rgba(212,168,67,0.12)]";
+const cardTitle = "text-[10px] font-bold text-[#888] uppercase tracking-widest group-hover:text-[#d4a843] transition-colors";
+const statNum = "text-3xl font-black text-[#f0f0f0] leading-none group-hover:text-[#d4a843] transition-colors";
+const divider = "w-full h-px bg-[rgba(255,255,255,0.07)]";
+
 const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals, seasons, competitions }) => {
     const [selectedSeason, setSelectedSeason] = useState<string>(seasons.length > 0 ? seasons[0] : 'all');
     const [selectedCompetition, setSelectedCompetition] = useState<string>('Partidos Oficiales');
@@ -209,27 +214,20 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
         };
     }, [filteredGoals]);
 
-    const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
-    
+    const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
+
     const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora', preFetchedPhoto?: string) => {
         if (preFetchedPhoto && preFetchedPhoto !== 'null' && preFetchedPhoto.length > 5) {
             return preFetchedPhoto;
         }
-
-        const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
         const searchName = normalize(name);
-
         const goal = goals.find(g => {
             const gName = type === 'goleadora' ? g.nombre_goleadora : g.nombre_asistente;
             return gName && normalize(gName) === searchName;
         });
-
         const dbPhoto = goal ? (type === 'goleadora' ? goal.foto_goleadora : goal.foto_asistente) : null;
-
-        if (dbPhoto && dbPhoto !== 'null' && dbPhoto.length > 5) {
-            return dbPhoto;
-        }
-
+        if (dbPhoto && dbPhoto !== 'null' && dbPhoto.length > 5) return dbPhoto;
         const localPlaceholder = '/assets/jugadoras/placeholder.png';
         try {
             const localAsset = getAssetUrl('jugadoras', getSlug(name));
@@ -243,6 +241,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
 
     return (
         <div className="w-full max-w-7xl mx-auto mb-0">
+            {/* Filters */}
             <div className="flex flex-col items-center mb-6 gap-4 relative z-[1001]">
                 <div className="flex gap-4 w-full flex-wrap justify-center items-center">
                     <CustomSelect
@@ -269,148 +268,154 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
+            {/* Top 4 KPI cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all cursor-default overflow-hidden">
+                <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors truncate">Partidos</p>
-                        <p className="text-3xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.played}</p>
+                        <p className={`${cardTitle} mb-1 truncate`}>Partidos</p>
+                        <p className={statNum}>{stats.played}</p>
                     </div>
-                    <div className="bg-gray-100 p-2.5 rounded-full text-gray-600 group-hover:text-gray-600 transition-colors flex-shrink-0 ml-2"><Monitor size={20} /></div>
+                    <div className="bg-[rgba(255,255,255,0.06)] p-2.5 rounded-full text-[#888] group-hover:text-[#d4a843] transition-colors flex-shrink-0 ml-2"><Monitor size={20} /></div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all cursor-default overflow-hidden">
+                <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors truncate">Puntos</p>
+                        <p className={`${cardTitle} mb-1 truncate`}>Puntos</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <p className="text-3xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.points}</p>
-                            <span className="text-[10px] text-gray-400 font-bold group-hover:text-[#ffde59]/80 transition-colors whitespace-nowrap">({stats.ppg}/partido)</span>
+                            <p className={statNum}>{stats.points}</p>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.ppg}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-yellow-50 p-2.5 rounded-full text-yellow-600 group-hover:text-yellow-600 transition-colors flex-shrink-0 ml-2"><Trophy size={20} /></div>
+                    <div className="bg-[rgba(212,168,67,0.12)] p-2.5 rounded-full text-[#d4a843] flex-shrink-0 ml-2"><Trophy size={20} /></div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all cursor-default overflow-hidden">
+                <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors truncate">Goles a Favor</p>
+                        <p className={`${cardTitle} mb-1 truncate`}>Goles a Favor</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <p className="text-3xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.gf}</p>
-                            <span className="text-[10px] text-gray-400 font-bold group-hover:text-[#ffde59]/80 transition-colors whitespace-nowrap">({stats.gf90}/partido)</span>
+                            <p className={statNum}>{stats.gf}</p>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.gf90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-green-50 p-2.5 rounded-full text-green-600 group-hover:text-green-600 transition-colors flex-shrink-0 ml-2"><Target size={20} /></div>
+                    <div className="bg-[rgba(74,222,128,0.1)] p-2.5 rounded-full text-green-400 flex-shrink-0 ml-2"><Target size={20} /></div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between group hover:shadow-md transition-all cursor-default overflow-hidden">
+                <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-[#ffde59] transition-colors truncate">Goles en Contra</p>
+                        <p className={`${cardTitle} mb-1 truncate`}>Goles en Contra</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <p className="text-3xl font-black text-[#151e42] leading-none group-hover:text-[#ffde59] transition-colors">{stats.ga}</p>
-                            <span className="text-[10px] text-gray-400 font-bold group-hover:text-[#ffde59]/80 transition-colors whitespace-nowrap">({stats.ga90}/partido)</span>
+                            <p className={statNum}>{stats.ga}</p>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.ga90}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-red-50 p-2.5 rounded-full text-red-600 group-hover:text-red-600 transition-colors flex-shrink-0 ml-2"><Shield size={20} /></div>
+                    <div className="bg-[rgba(239,68,68,0.1)] p-2.5 rounded-full text-red-400 flex-shrink-0 ml-2"><Shield size={20} /></div>
                 </div>
             </div>
 
+            {/* Mid row: Balance / Disciplina / GD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center group hover:shadow-md transition-all cursor-default">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 group-hover:text-[#ffde59] transition-colors">Balance de Resultados</h3>
-                    <div className="flex items-end justify-between text-center divide-x divide-gray-100">
+                {/* Balance */}
+                <div className={`${card} p-6 flex flex-col justify-center`}>
+                    <h3 className={`${cardTitle} mb-4`}>Balance de Resultados</h3>
+                    <div className="flex items-end justify-between text-center divide-x divide-[rgba(255,255,255,0.08)]">
                         <div className="flex-1 px-2">
-                            <div className="text-green-600 mb-2 flex justify-center"><ArrowUpRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42]">{stats.wins}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Victorias</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.wins / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-green-400 mb-2 flex justify-center"><ArrowUpRight size={28} /></div>
+                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.wins}</p>
+                            <p className="text-xs text-[#888] uppercase font-bold mt-1">Victorias</p>
+                            <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.wins / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
-                            <div className="text-yellow-600 mb-2 flex justify-center"><Minus size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42]">{stats.draws}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Empates</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.draws / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-[#d4a843] mb-2 flex justify-center"><Minus size={28} /></div>
+                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.draws}</p>
+                            <p className="text-xs text-[#888] uppercase font-bold mt-1">Empates</p>
+                            <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.draws / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
-                            <div className="text-red-500 mb-2 flex justify-center"><ArrowDownRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#151e42]">{stats.losses}</p>
-                            <p className="text-xs text-gray-500 uppercase font-bold mt-1">Derrotas</p>
-                            <p className="text-sm font-bold text-gray-400 font-mono mt-1">{((stats.losses / stats.played) * 100).toFixed(0)}%</p>
+                            <div className="text-red-400 mb-2 flex justify-center"><ArrowDownRight size={28} /></div>
+                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.losses}</p>
+                            <p className="text-xs text-[#888] uppercase font-bold mt-1">Derrotas</p>
+                            <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.losses / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default overflow-hidden">
+                {/* Disciplina */}
+                <div className={`${card} p-6 overflow-hidden`}>
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Disciplina</h3>
-                        <Swords size={16} className="text-gray-300" />
+                        <h3 className={cardTitle}>Disciplina</h3>
+                        <Swords size={16} className="text-[rgba(212,168,67,0.3)]" />
                     </div>
                     <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                        <div className="col-span-2 flex items-center justify-between pb-2 border-b border-gray-50">
+                        <div className="col-span-2 flex items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.07)]">
                             <div className="flex flex-col">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">Faltas</span>
-                                <span className="text-xs text-gray-500">Cometidas vs Provocadas</span>
+                                <span className="text-[10px] text-[#888] font-bold uppercase">Faltas</span>
+                                <span className="text-xs text-[#666]">Cometidas vs Provocadas</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="text-lg font-black text-red-500">{stats.foulsCommitted}</span>
-                                <span className="text-lg font-black text-gray-200">/</span>
-                                <span className="text-lg font-black text-green-500">{stats.foulsReceived}</span>
+                                <span className="text-lg font-black text-red-400">{stats.foulsCommitted}</span>
+                                <span className="text-lg font-black text-[rgba(255,255,255,0.15)]">/</span>
+                                <span className="text-lg font-black text-green-400">{stats.foulsReceived}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">Amarillas</span>
+                            <span className="text-[10px] text-[#888] font-bold uppercase">Amarillas</span>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-gray-600 uppercase">A favor</span></div>
-                                <span className="text-sm font-black text-[#151e42]">{stats.yellowsRival}</span>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">A favor</span></div>
+                                <span className="text-sm font-black text-[#f0f0f0]">{stats.yellowsRival}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-gray-600 uppercase">En contra</span></div>
-                                <span className="text-sm font-black text-[#151e42]">{stats.yellowsRM}</span>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">En contra</span></div>
+                                <span className="text-sm font-black text-[#f0f0f0]">{stats.yellowsRM}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">Rojas</span>
+                            <span className="text-[10px] text-[#888] font-bold uppercase">Rojas</span>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-gray-600 uppercase">A favor</span></div>
-                                <span className="text-sm font-black text-[#151e42]">{stats.redsRival}</span>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">A favor</span></div>
+                                <span className="text-sm font-black text-[#f0f0f0]">{stats.redsRival}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-gray-600 uppercase">En contra</span></div>
-                                <span className="text-sm font-black text-[#151e42]">{stats.redsRM}</span>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">En contra</span></div>
+                                <span className="text-sm font-black text-[#f0f0f0]">{stats.redsRM}</span>
                             </div>
                         </div>
-                        <div className="col-span-2 pt-2 border-t border-gray-50 flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">Penaltis</span>
+                        <div className="col-span-2 pt-2 border-t border-[rgba(255,255,255,0.07)] flex items-center justify-between">
+                            <span className="text-[10px] text-[#888] font-bold uppercase">Penaltis</span>
                             <div className="flex gap-4">
-                                <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-gray-400 uppercase">A favor</span><span className="text-sm font-black text-green-600">{stats.penaltisRM}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-gray-400 uppercase">En contra</span><span className="text-sm font-black text-red-600">{stats.penaltisRival}</span></div>
+                                <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-[#888] uppercase">A favor</span><span className="text-sm font-black text-green-400">{stats.penaltisRM}</span></div>
+                                <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-[#888] uppercase">En contra</span><span className="text-sm font-black text-red-400">{stats.penaltisRival}</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col justify-center gap-6 hover:shadow-md transition-all cursor-default">
-                    <div className="flex items-start justify-between group">
+                {/* GD + clean sheets */}
+                <div className={`${card} p-6 flex flex-col justify-center gap-6`}>
+                    <div className="flex items-start justify-between group/inner">
                         <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Diferencia de Goles</p>
-                            <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-600' : 'text-red-500'} group-hover:text-[#ffde59] transition-colors`}>{stats.gd}</p>
+                            <p className={`${cardTitle} mb-1`}>Diferencia de Goles</p>
+                            <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-400' : 'text-red-400'} group-hover:text-[#d4a843] transition-colors`}>{stats.gd}</p>
                         </div>
-                        <TrendingUp size={24} className="text-gray-300 group-hover:text-[#ffde59] transition-colors mt-0.5" />
+                        <TrendingUp size={24} className="text-[rgba(212,168,67,0.25)] group-hover:text-[#d4a843] transition-colors mt-0.5" />
                     </div>
-                    <div className="w-full h-px bg-gray-100"></div>
+                    <div className={divider}></div>
                     <div className="flex items-start justify-between">
-                        <div className="group">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">Porterías a Cero</p>
-                            <p className="text-3xl font-black text-[#151e42] group-hover:text-[#ffde59] transition-colors">{stats.cleanSheets}</p>
+                        <div>
+                            <p className={`${cardTitle} mb-1`}>Porterías a Cero</p>
+                            <p className="text-3xl font-black text-[#f0f0f0] group-hover:text-[#d4a843] transition-colors">{stats.cleanSheets}</p>
                         </div>
-                        <div className="text-right group">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 group-hover:text-[#ffde59] transition-colors">% Imbatibilidad</p>
-                            <p className="text-lg font-bold text-gray-600 group-hover:text-[#ffde59] transition-colors">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
+                        <div className="text-right">
+                            <p className={`${cardTitle} mb-1`}>% Imbatibilidad</p>
+                            <p className="text-lg font-bold text-[#c8c8c8] group-hover:text-[#d4a843] transition-colors">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 group hover:shadow-md transition-all cursor-default">
+            {/* Attendance chart */}
+            <div className={`${card} p-6 mb-6`}>
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Evolución de Asistencia</h3>
+                    <h3 className={cardTitle}>Evolución de Asistencia</h3>
                     <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
-                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#151e42]"></div><span className="text-gray-500">Asistencia</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full border border-gray-300 border-dashed bg-transparent"></div><span className="text-gray-400">Capacidad</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#d4a843]"></div><span className="text-[#888]">Asistencia</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full border border-[rgba(255,255,255,0.3)] border-dashed bg-transparent"></div><span className="text-[#666]">Capacidad</span></div>
                     </div>
                 </div>
                 <div className="h-64 w-full relative">
@@ -428,7 +433,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                 capacity: Number(m.capacidad || 6000)
                             }))
                             .filter(d => d.attendance > 0);
-                        if (chartData.length < 2) return <p className="text-center text-gray-400 italic pt-20">No hay suficientes datos de asistencia (Alfredo Di Stéfano)</p>;
+                        if (chartData.length < 2) return <p className="text-center text-[#666] italic pt-20">No hay suficientes datos de asistencia (Alfredo Di Stéfano)</p>;
                         const maxCap = Math.max(...chartData.map(d => d.capacity), ...chartData.map(d => d.attendance)) * 1.1;
                         const yTicks = [0, 0.25, 0.5, 0.75, 1].map(p => Math.round(maxCap * p));
                         const getX = (i: number) => (i / (chartData.length - 1)) * 1000;
@@ -438,34 +443,34 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                         const attArea = `${attPath} L 1000 300 L 0 300 Z`;
                         return (
                             <div className="flex w-full h-full">
-                                <div className="flex flex-col justify-between h-full text-[9px] text-gray-400 font-mono pr-2 pb-6 pt-1 text-right min-w-[30px]">
+                                <div className="flex flex-col justify-between h-full text-[9px] text-[#666] font-mono pr-2 pb-6 pt-1 text-right min-w-[30px]">
                                     {yTicks.slice().reverse().map((tick, i) => (<span key={i}>{tick >= 1000 ? (tick / 1000).toFixed(1) + 'k' : tick}</span>))}
                                 </div>
                                 <div className="relative flex-1 h-full group/chart">
                                     <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 1000 300">
-                                        {[0, 75, 150, 225, 300].map(p => (<line key={p} x1="0" y1={p} x2="1000" y2={p} stroke="#f3f4f6" strokeWidth="1" vectorEffect="non-scaling-stroke" />))}
-                                        <path d={capPath} fill="none" stroke="#e5e7eb" strokeWidth="2" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+                                        {[0, 75, 150, 225, 300].map(p => (<line key={p} x1="0" y1={p} x2="1000" y2={p} stroke="rgba(255,255,255,0.06)" strokeWidth="1" vectorEffect="non-scaling-stroke" />))}
+                                        <path d={capPath} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
                                         <path d={attArea} fill="url(#gradientAtt)" className="opacity-20" />
-                                        <defs><linearGradient id="gradientAtt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#151e42" /><stop offset="100%" stopColor="#151e42" stopOpacity="0" /></linearGradient></defs>
-                                        <path d={attPath} fill="none" stroke="#151e42" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                                        <defs><linearGradient id="gradientAtt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d4a843" /><stop offset="100%" stopColor="#d4a843" stopOpacity="0" /></linearGradient></defs>
+                                        <path d={attPath} fill="none" stroke="#d4a843" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                                         {chartData.map((d, i) => (
                                             <g key={i} className="group/point">
                                                 <rect x={getX(i) - (500 / chartData.length)} y="0" width={1000 / chartData.length} height="300" fill="transparent" className="cursor-crosshair" />
-                                                <line x1={getX(i)} y1="0" x2={getX(i)} y2="300" stroke="#ffde59" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
-                                                <circle cx={getX(i)} cy={getY(d.attendance)} r="4" fill="#151e42" stroke="#fff" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
-                                                <foreignObject x={getX(i) < 500 ? getX(i) : getX(i) - 140} y={0} width="140" height="300" className="overflow-visible pointer-events-none">
-                                                    <div className={`absolute top-0 ${getX(i) < 500 ? 'left-2' : 'right-2'} transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[#151e42] text-white text-[10px] p-2 rounded shadow-lg min-w-[140px] whitespace-nowrap pointer-events-none`}>
-                                                        <p className="font-bold border-b border-gray-600 pb-1 mb-1 text-[#ffde59]">{d.fullDate}</p>
-                                                        <p className="text-gray-300 mb-1">vs {d.rival}</p>
-                                                        <div className="flex justify-between gap-3"><span className="text-gray-400">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString()}</span></div>
-                                                        <div className="flex justify-between gap-3"><span className="text-gray-400">Capacidad:</span><span className="font-mono text-gray-500">{d.capacity.toLocaleString()}</span></div>
-                                                        <div className="mt-1 pt-1 border-t border-gray-600 flex justify-between gap-3"><span className="text-gray-400">% Ocupación:</span><span className={`font-bold ${d.attendance / d.capacity > 0.8 ? 'text-green-400' : 'text-white'}`}>{d.capacity > 0 ? ((d.attendance / d.capacity) * 100).toFixed(1) : 0}%</span></div>
+                                                <line x1={getX(i)} y1="0" x2={getX(i)} y2="300" stroke="#d4a843" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
+                                                <circle cx={getX(i)} cy={getY(d.attendance)} r="4" fill="#d4a843" stroke="#060d1c" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
+                                                <foreignObject x={Math.max(0, Math.min(860, getX(i) - 70))} y={Math.max(0, getY(d.attendance) - 115)} width="140" height="110" className="overflow-visible pointer-events-none">
+                                                    <div className="transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[#060d1c] border border-[rgba(212,168,67,0.2)] text-white text-[10px] p-2 rounded shadow-lg whitespace-nowrap pointer-events-none w-full">
+                                                        <p className="font-bold border-b border-[rgba(212,168,67,0.2)] pb-1 mb-1 text-[#d4a843]">{d.fullDate}</p>
+                                                        <p className="text-[#c8c8c8] mb-1">vs {d.rival}</p>
+                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString()}</span></div>
+                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Capacidad:</span><span className="font-mono text-[#666]">{d.capacity.toLocaleString()}</span></div>
+                                                        <div className="mt-1 pt-1 border-t border-[rgba(212,168,67,0.2)] flex justify-between gap-3"><span className="text-[#888]">% Ocupación:</span><span className={`font-bold ${d.attendance / d.capacity > 0.8 ? 'text-green-400' : 'text-white'}`}>{d.capacity > 0 ? ((d.attendance / d.capacity) * 100).toFixed(1) : 0}%</span></div>
                                                     </div>
                                                 </foreignObject>
                                             </g>
                                         ))}
                                     </svg>
-                                    <div className="absolute w-full flex justify-between text-[9px] text-gray-400 font-mono mt-2 -bottom-6">
+                                    <div className="absolute w-full flex justify-between text-[9px] text-[#666] font-mono mt-2 -bottom-6">
                                         <span>{chartData[0]?.label}</span>
                                         {chartData.length > 2 && <span>{chartData[Math.floor(chartData.length / 2)].label}</span>}
                                         {chartData.length > 1 && <span>{chartData[chartData.length - 1].label}</span>}
@@ -477,36 +482,33 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default relative">
+            {/* Goal timing chart */}
+            <div className={`${card} p-6 mb-6 relative`}>
                 <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Distribución de Goles (Minutos)</h3>
-                    <Clock size={16} className="text-gray-300" />
+                    <h3 className={cardTitle}>Distribución de Goles (Minutos)</h3>
+                    <Clock size={16} className="text-[rgba(212,168,67,0.3)]" />
                 </div>
-
                 <div className="w-full">
                     <div className="flex items-end justify-between h-40 gap-1 w-full pt-6">
                         {goalTiming.map((bucket, i) => (
                             <div key={i} className={`flex-1 flex flex-col items-center group relative h-full ${i % 2 !== 0 ? 'hidden md:flex' : ''}`}>
                                 <div className="w-full relative h-full flex flex-col items-center justify-end">
-
                                     {bucket.count > 0 && (
                                         <div className="relative h-8 w-full flex items-center justify-center mb-1">
-                                            <span className="absolute text-[#151e42] font-black text-xs opacity-70 group-hover:opacity-0 transition-opacity">
+                                            <span className="absolute text-[#d4a843] font-black text-xs opacity-70 group-hover:opacity-0 transition-opacity">
                                                 {bucket.count}
                                             </span>
-                                            <span className="absolute text-[#151e42] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity z-[100]">
+                                            <span className="absolute text-[#d4a843] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity z-[100]">
                                                 {bucket.sharePercent}%
                                             </span>
                                         </div>
                                     )}
-
                                     <div
-                                        className={`w-full ${bucket.count > 0 ? 'bg-[#ffde59]' : 'bg-gray-50'} transition-all duration-300 ease-out rounded-t-sm relative`}
+                                        className={`w-full transition-all duration-300 ease-out rounded-t-sm relative ${bucket.count > 0 ? 'bg-[#d4a843]' : 'bg-[rgba(255,255,255,0.05)]'}`}
                                         style={{ height: `${bucket.heightPercent}%`, minHeight: bucket.count > 0 ? '4px' : '2px' }}
                                     ></div>
                                 </div>
-
-                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 min-h-[14px] flex items-center justify-center transition-colors ${bucket.label.includes('+') ? 'text-[#151e42] font-black' : 'text-gray-400 font-medium group-hover:text-[#151e42]'}`}>
+                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 min-h-[14px] flex items-center justify-center transition-colors ${bucket.label.includes('+') ? 'text-[#d4a843] font-black' : 'text-[rgba(255,255,255,0.35)] font-medium group-hover:text-[#888]'}`}>
                                     {bucket.label}
                                 </span>
                             </div>
@@ -515,68 +517,67 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
+            {/* Top scorers / assisters / G+A */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default lg:col-span-1">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Máximas Goleadoras</h3>
-                        <div className="bg-green-50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55l4.76 -3.45" /><path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" /></svg></div>
+                {[
+                    {
+                        title: 'Máximas Goleadoras',
+                        players: topScorers,
+                        stat: (p: any) => p.goals,
+                        type: 'goleadora' as const,
+                        icon: (
+                            <div className="bg-[rgba(74,222,128,0.1)] p-3 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55l4.76 -3.45" /><path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" /></svg>
+                            </div>
+                        )
+                    },
+                    {
+                        title: 'Máximas Asistentes',
+                        players: topAssisters,
+                        stat: (p: any) => p.assists,
+                        type: 'asistente' as const,
+                        icon: (
+                            <div className="bg-[rgba(239,68,68,0.1)] p-3 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 9a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1l0 -2" /><path d="M12 8l0 13" /><path d="M19 12v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0 -5a4.8 8 0 0 1 4.5 5a4.8 8 0 0 1 4.5 -5a2.5 2.5 0 0 1 0 5" /></svg>
+                            </div>
+                        )
+                    },
+                    {
+                        title: 'Goles + Asistencias',
+                        players: topGA,
+                        stat: (p: any) => p.total,
+                        type: 'goleadora' as const,
+                        icon: (
+                            <div className="bg-[rgba(168,85,247,0.1)] p-3 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 12.057a1.9 1.9 0 0 0 .614 .743c1.06 .713 2.472 .112 3.043 -.919c.839 -1.513 -.022 -3.368 -1.525 -4.08c-2 -.95 -4.371 .154 -5.24 2.086c-1.095 2.432 .29 5.248 2.71 6.246c2.931 1.208 6.283 -.418 7.438 -3.255c1.36 -3.343 -.557 -7.134 -3.896 -8.41c-3.855 -1.474 -8.2 .68 -9.636 4.422c-1.63 4.253 .823 9.024 5.082 10.576c4.778 1.74 10.118 -.941 11.833 -5.59a9.354 9.354 0 0 0 .577 -2.813" /></svg>
+                            </div>
+                        )
+                    }
+                ].map(({ title, players, stat, type, icon }) => (
+                    <div key={title} className={`${card} p-6`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className={cardTitle}>{title}</h3>
+                            {icon}
+                        </div>
+                        <div className="space-y-4">
+                            {players.map((p, i) => (
+                                <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-[rgba(212,168,67,0.06)] p-2 -m-2 rounded-lg transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#d4a843]' : 'text-[rgba(212,168,67,0.18)]'}`}>{i + 1}</span>
+                                        <div className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden border-2 border-[#060d1c] shadow-sm">
+                                            <img src={getPlayerImage(p.name, type, p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} />
+                                        </div>
+                                        <span className="text-sm font-bold text-[#c8c8c8] group-hover/p:text-[#d4a843] transition-colors">{p.name}</span>
+                                    </div>
+                                    <span className="text-lg font-black text-[#f0f0f0]">{stat(p)}</span>
+                                </a>
+                            ))}
+                        </div>
                     </div>
-                    <div className="space-y-4">
-                        {topScorers.map((p, i) => (
-                            <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
-                                    <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
-                                </div>
-                                <span className="text-lg font-black text-[#151e42]">{p.goals}</span>
-                            </a>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default lg:col-span-1">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Máximas Asistentes</h3>
-                        <div className="bg-red-50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 9a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1l0 -2" /><path d="M12 8l0 13" /><path d="M19 12v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0 -5a4.8 8 0 0 1 4.5 5a4.8 8 0 0 1 4.5 -5a2.5 2.5 0 0 1 0 5" /></svg></div>
-                    </div>
-                    <div className="space-y-4">
-                        {topAssisters.map((p, i) => (
-                            <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'asistente', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
-                                    <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
-                                </div>
-                                <span className="text-lg font-black text-[#151e42]">{p.assists}</span>
-                            </a>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 group hover:shadow-md transition-all cursor-default lg:col-span-1">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-[#ffde59] transition-colors">Goles + Asistencias</h3>
-                        <div className="bg-purple-50 p-3 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-600"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 12.057a1.9 1.9 0 0 0 .614 .743c1.06 .713 2.472 .112 3.043 -.919c.839 -1.513 -.022 -3.368 -1.525 -4.08c-2 -.95 -4.371 .154 -5.24 2.086c-1.095 2.432 .29 5.248 2.71 6.246c2.931 1.208 6.283 -.418 7.438 -3.255c1.36 -3.343 -.557 -7.134 -3.896 -8.41c-3.855 -1.474 -8.2 .68 -9.636 4.422c-1.63 4.253 .823 9.024 5.082 10.576c4.778 1.74 10.118 -.941 11.833 -5.59a9.354 9.354 0 0 0 .577 -2.813" /></svg></div>
-                    </div>
-                    <div className="space-y-4">
-                        {topGA.map((p, i) => (
-                            <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-gray-50 p-2 -m-2 rounded-lg transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#ffde59]' : 'text-gray-200'}`}>{i + 1}</span>
-                                    <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm"><img src={getPlayerImage(p.name, 'goleadora', p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} /></div>
-                                    <span className="text-sm font-bold text-gray-700 group-hover/p:text-[#151e42]">{p.name}</span>
-                                </div>
-                                <span className="text-lg font-black text-[#151e42]">{p.total}</span>
-                            </a>
-                        ))}
-                    </div>
-                </div>
+                ))}
             </div>
         </div>
     );
 };
 
 export default ClubStatsDashboard;
-
-

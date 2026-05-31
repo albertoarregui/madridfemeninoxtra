@@ -68,26 +68,27 @@ try {
 </div>
 
 <script>
-    const grid = document.getElementById("hitosGrid");
     let scrollInterval: any;
     let resumeTimeout: any;
-    let isPaused = false;
 
-    if (grid) {
-        const startAutoScroll = () => {
-            scrollInterval = setInterval(() => {
-                if (!isPaused) {
-                    if (
-                        grid.scrollLeft + grid.clientWidth >=
-                        grid.scrollWidth - 1
-                    ) {
-                        grid.scrollLeft = 0;
-                    } else {
-                        grid.scrollLeft += 2;
-                    }
+    function initCarousel() {
+        clearInterval(scrollInterval);
+        clearTimeout(resumeTimeout);
+
+        const grid = document.getElementById("hitosGrid");
+        if (!grid) return;
+
+        let isPaused = false;
+
+        scrollInterval = setInterval(() => {
+            if (!isPaused) {
+                if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 1) {
+                    grid.scrollLeft = 0;
+                } else {
+                    grid.scrollLeft += 2;
                 }
-            }, 30);
-        };
+            }
+        }, 30);
 
         grid.addEventListener("mouseenter", () => {
             clearTimeout(resumeTimeout);
@@ -96,23 +97,19 @@ try {
         grid.addEventListener("mouseleave", () => {
             isPaused = false;
         });
-        grid.addEventListener(
-            "touchstart",
-            () => {
-                clearTimeout(resumeTimeout);
-                isPaused = true;
-            },
-            { passive: true },
-        );
+        grid.addEventListener("touchstart", () => {
+            clearTimeout(resumeTimeout);
+            isPaused = true;
+        }, { passive: true });
         grid.addEventListener("touchend", () => {
             clearTimeout(resumeTimeout);
             resumeTimeout = setTimeout(() => {
                 isPaused = false;
             }, 3000);
         });
-
-        startAutoScroll();
     }
+
+    document.addEventListener("astro:page-load", initCarousel);
 </script>
 
 <style>
@@ -296,14 +293,12 @@ try {
 
     @media (max-width: 768px) {
         .hitos-grid {
-            scroll-snap-type: x mandatory;
             gap: 12px;
             padding: 6px 0;
         }
         .hito-card-vertical {
             min-width: 280px;
             height: 160px;
-            scroll-snap-align: start;
         }
         .hito-img-wrapper {
             width: 120px;

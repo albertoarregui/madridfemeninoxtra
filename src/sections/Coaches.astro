@@ -1,7 +1,7 @@
 ---
-import type { ImageMetadata } from "astro";
 import "../styles/global.css";
 import { getCoachImageUrl } from "../utils/entrenadores";
+import { getFlagSrc } from "../utils/flags";
 
 interface Props {
     coaches?: any[];
@@ -9,90 +9,103 @@ interface Props {
 
 const { coaches = [] } = Astro.props;
 
-const displayCoaches = coaches;
-
-const listofCoachesRaw = displayCoaches.map((coach) => {
-    return { ...coach, countryName: coach.pais || "" };
-});
-
-const listofCoaches = listofCoachesRaw.filter((c) => {
-    const name = (c.nombre || c.name || "").trim();
-    if (!name || name.toLowerCase() === "null") return false;
-
-    const excluded = [
-        "josé manuel lara",
-        "antonio rodríguez",
-        "antonio rodriguez",
-    ];
-    return !excluded.includes(name.toLowerCase());
-});
-
-import { getAssetUrl } from "../utils/assets";
-import { getFlagSrc } from "../utils/flags";
-
-function getCoachImageSrc(coach: any) {
-    if (coach.imageUrl) return { src: coach.imageUrl };
-    return { src: getCoachImageUrl(coach) };
-}
+const listofCoaches = coaches
+    .map((coach) => ({
+        ...coach,
+        nombre: coach.nombre || coach.name || "",
+        countryName: coach.pais || "",
+        flagUrl: coach.flagUrl || getFlagSrc(coach.country || coach.pais),
+        imageUrl: coach.imageUrl || getCoachImageUrl(coach) || "",
+    }))
+    .filter((c) => {
+        const name = c.nombre.trim();
+        if (!name || name.toLowerCase() === "null") return false;
+        const excluded = ["josé manuel lara", "antonio rodríguez", "antonio rodriguez"];
+        return !excluded.includes(name.toLowerCase());
+    });
 ---
 
-<section class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-wrap justify-center gap-6 gap-y-10 pt-4">
-        {
-            listofCoaches.map((coach) => {
-                const coachImgSrc = getCoachImageSrc(coach)?.src;
-                return (
-                    <a
-                        href={`/entrenadores/${coach.id}`}
-                        class="group relative flex flex-col items-center transition-all duration-300 hover:-translate-y-1 w-[300px]"
-                    >
-                        <div class="absolute inset-x-0 bottom-0 top-6 bg-gradient-to-br from-[#1d274e] to-[#151e42] rounded-2xl shadow-lg border border-white/5 group-hover:border-[#ffde59]/50 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(255,222,89,0.15)] z-0 overflow-hidden" />
-
-                        <div class="w-full h-72 relative z-10 px-4 -mb-12">
-                            <div class="w-full h-full relative flex items-end justify-center">
-                                <img
-                                    src={coachImgSrc}
-                                    alt={coach.name}
-                                    class="w-full h-full object-cover object-top transform origin-bottom transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2 rounded-t-2xl"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="w-full p-5 relative z-20 mt-12">
-                            <div class="absolute -top-6 left-6 z-20">
-                                <span class="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-xs font-bold uppercase tracking-wider text-white group-hover:bg-[#ffde59] group-hover:text-black transition-colors">
-                                    Entrenador
-                                </span>
-                            </div>
-
-                            <div class="flex items-start justify-between mb-2 mt-2">
-                                <h3 class="text-xl font-black font-bebas text-white uppercase tracking-wide group-hover:text-[#ffde59] transition-colors leading-none truncate w-full">
-                                    {coach.name}
-                                </h3>
-                            </div>
-
-                            <div class="flex items-center gap-2 text-gray-400 text-sm font-medium">
-                                <img
-                                    src={getFlagSrc(coach.country)}
-                                    alt={coach.countryName}
-                                    class="w-5 h-5 rounded-full object-cover shadow-sm"
-                                />
-                                <span class="uppercase">
-                                    {coach.countryName}
-                                </span>
-                            </div>
-
-                            <div class="mt-4 pt-4 border-t border-white/10 flex justify-end">
-                                <span class="text-xs font-bold uppercase tracking-wider text-[#ffde59] flex items-center gap-1 transition-colors group-hover:text-white">
-                                    Ver Perfil <span class="text-lg">→</span>
-                                </span>
-                            </div>
-                        </div>
-                    </a>
-                );
-            })
-        }
+<div class="ec-wrapper">
+    <div class="pg-card-grid ec-grid" data-ec-grid>
+        {listofCoaches.map((coach, index) => (
+            <a
+                id={`card-${coach.id || coach.slug}`}
+                href={`/entrenadores/${coach.id || coach.slug}`}
+                class="player-portrait-card"
+                data-nombre={coach.nombre}
+                data-default-order={index}
+                style={`animation-delay: ${Math.min(index * 40, 400)}ms`}
+                data-astro-prefetch="hover"
+                aria-label={`Ver ficha de ${coach.nombre}`}
+            >
+                <span class="pg-corner pg-corner-tl" aria-hidden="true" />
+                <span class="pg-corner pg-corner-tr" aria-hidden="true" />
+                <span class="pg-corner pg-corner-bl" aria-hidden="true" />
+                <span class="pg-corner pg-corner-br" aria-hidden="true" />
+                <div class="pg-card-glow" aria-hidden="true" />
+                <span class="pg-pos-label" aria-hidden="true">♦ ENT</span>
+                <div class="pg-card-photo" transition:name={`coach-${coach.id || coach.slug}`}>
+                    <img
+                        src={coach.imageUrl}
+                        alt={coach.nombre}
+                        loading={index < 6 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        width={200}
+                        height={267}
+                        onerror="this.src='/assets/entrenadores/placeholder.png'"
+                    />
+                </div>
+                <div class="pg-card-overlay">
+                    <span class="pg-card-divider" aria-hidden="true"></span>
+                    <div class="pg-card-name">{coach.nombre}</div>
+                    <div class="pg-card-country">
+                        {coach.flagUrl && <img src={coach.flagUrl} alt="" width="14" height="14" loading="lazy" onerror="this.style.display='none'" />}
+                        <span>{coach.countryName}</span>
+                    </div>
+                </div>
+            </a>
+        ))}
     </div>
-</section>
+</div>
 
+<script>
+  document.addEventListener('astro:after-swap', () => {
+    const hash = window.location.hash;
+    if (hash?.startsWith('#card-')) {
+      const el = document.querySelector<HTMLElement>(hash);
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  });
 
+  document.addEventListener('astro:before-swap', (e: any) => {
+    const from = window.location.pathname;
+    const to = e.to?.pathname ?? '';
+    const returning = to === '/entrenadores' && from.startsWith('/entrenadores/');
+    e.newDocument.documentElement.toggleAttribute('data-skip-coaches-enter', returning);
+  });
+</script>
+
+<style>
+  .ec-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 1rem 4rem;
+  }
+
+  .ec-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  html[data-skip-coaches-enter] .player-portrait-card {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  @media (min-width: 540px) {
+    .ec-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 900px) {
+    .ec-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+</style>

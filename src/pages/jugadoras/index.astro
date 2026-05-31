@@ -2,9 +2,8 @@
 import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 import { fetchPlayersDirectly } from "../../utils/players";
-import PlayersGrid from "../../components/PlayersGrid";
 import PlayerMapWrapper from "../../components/PlayerMapWrapper";
-import PlayerStatsDashboard from "../../components/PlayerStatsDashboard";
+import PlayersSection from "../../components/PlayersSection.astro";
 
 import { getFlagSrc } from "../../utils/flags";
 
@@ -19,7 +18,7 @@ const playersData = playersRaw.map((player) => {
     return {
         ...player,
         countryName: pais_origin || iso || "",
-        flagUrl: getFlagSrc(iso || pais_origin),
+        flagUrl: getFlagSrc(pais_origin || iso),
     };
 });
 ---
@@ -28,17 +27,20 @@ const playersData = playersRaw.map((player) => {
     title="Jugadoras del Real Madrid Femenino | Madrid Femenino Xtra"
     description="Todas las jugadoras del Real Madrid Femenino a lo largo de su historia: ficha técnica, posiciones, dorsales, estadísticas y trayectoria."
 >
-    <main class="max-w-7xl mx-auto px-6 md:px-0 py-10">
-        <header class="page-header-container">
-            <h1 class="landing-title">JUGADORAS</h1>
-            <p class="landing-subtitle">Todas las jugadoras del Real Madrid Femenino a lo largo de su historia</p>
-        </header>
+    <main class="py-10">
+        <div class="max-w-7xl mx-auto px-6 md:px-4">
+            <header class="page-header-container">
+                <h1 class="landing-title">JUGADORAS</h1>
+                <p class="landing-subtitle">Todas las jugadoras del Real Madrid Femenino a lo largo de su historia</p>
+            </header>
+        </div>
 
-        <PlayerStatsDashboard players={playersData} client:load />
-
-        <PlayerMapWrapper players={playersData} client:only="react" />
-
-        <PlayersGrid players={playersData} client:load />
+        <div class="max-w-[1500px] mx-auto px-4 md:px-6 mt-6">
+            <PlayerMapWrapper players={playersData} client:only="react" />
+            <div class="mt-10">
+                <PlayersSection players={playersData} />
+            </div>
+        </div>
     </main>
 </Layout>
 

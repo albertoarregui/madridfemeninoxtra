@@ -43,24 +43,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     }}
                 >
                     <div className="cursor-pointer group relative">
-                        {marker.type === 'match' && marker.imageUrl ? (
-                            <div className="w-16 h-12 rounded border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-110 transition-transform">
-                                <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover" />
-                            </div>
-                        ) : marker.imageUrl ? (
-                            <div className="w-14 h-14 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white hover:scale-110 transition-transform">
-                                <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover object-top" />
-                            </div>
-                        ) : marker.type === 'rival-city' ? (
-                            <div className="w-10 h-10 rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform flex items-center justify-center">
-                                <img src={marker.imageUrl} alt={marker.label} className="w-full h-full object-cover" />
+                        {marker.imageUrl ? (
+                            <div style={{ width:'44px', height:'44px', borderRadius:'50%', border:'2px solid rgba(212,168,67,0.7)', boxShadow:'0 0 12px rgba(212,168,67,0.3)', overflow:'hidden', background:'#06080f', transition:'transform 0.2s, box-shadow 0.2s' }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1.15)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 20px rgba(212,168,67,0.6)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 12px rgba(212,168,67,0.3)'; }}
+                            >
+                                <img src={marker.imageUrl} alt={marker.label} style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'bottom center' }} />
                             </div>
                         ) : (
                             <div className="hover:scale-110 transition-transform">
-                                <MapPin
-                                    className={`w-8 h-8 drop-shadow-md ${marker.type === 'match' ? 'text-blue-500 fill-blue-500' : 'text-red-500 fill-red-500'
-                                        }`}
-                                />
+                                <MapPin className="w-7 h-7 drop-shadow-md" style={{ color:'#d4a843', fill:'rgba(212,168,67,0.4)' }} />
                             </div>
                         )}
 
@@ -79,13 +71,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <style>{`
                 .custom-popup .maplibregl-popup-content {
                     padding: 0 !important;
-                    border-radius: 0.5rem !important;
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-                    border: none !important;
+                    border-radius: 4px !important;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.7) !important;
+                    border: 1px solid rgba(212,168,67,0.25) !important;
                     background: transparent !important;
                 }
                 .custom-popup .maplibregl-popup-tip {
-                    border-bottom-color: white !important;
+                    border-top-color: rgba(8,16,34,0.97) !important;
+                    border-bottom-color: rgba(8,16,34,0.97) !important;
                 }
             `}</style>
 
@@ -96,7 +89,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     zoom: zoom
                 }}
                 style={{ width: '100%', height: '100%' }}
-                mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+                mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
                 attributionControl={false}
             >
                 <NavigationControl position="top-right" />
@@ -116,66 +109,45 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                         className="custom-popup"
                         maxWidth="320px"
                     >
-                        <div className="relative min-w-[280px] max-w-[90vw] text-[#151e42] bg-white rounded-lg overflow-hidden font-sans shadow-none border-0 ring-0">
+                        <div style={{ minWidth:'260px', maxWidth:'90vw', background:'rgba(8,16,34,0.97)', borderRadius:'4px', overflow:'hidden', fontFamily:"'DM Sans', sans-serif" }}>
 
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPopupInfo(null);
-                                }}
-                                className="absolute top-2 right-2 z-10 p-1 bg-transparent hover:bg-[#ffde59] rounded-full transition-colors text-white hover:text-[#151e42]"
+                                onClick={(e) => { e.stopPropagation(); setPopupInfo(null); }}
+                                style={{ position:'absolute', top:'0.6rem', right:'0.6rem', zIndex:10, background:'transparent', border:'none', cursor:'pointer', color:'rgba(200,210,220,0.5)', padding:'4px', lineHeight:1 }}
                                 aria-label="Cerrar"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                             </button>
 
-
                             {popupInfo.type === 'player' && (
-                                <div className="flex flex-col">
-
-                                    <div className="w-full h-64 bg-gray-200 relative items-end justify-center flex overflow-hidden">
-
+                                <div style={{ display:'flex', flexDirection:'column' }}>
+                                    <div style={{ width:'100%', height:'200px', background:'#060d1c', position:'relative', display:'flex', alignItems:'flex-end', justifyContent:'center', overflow:'hidden' }}>
                                         <img
                                             src={popupInfo.imageUrl}
                                             alt={popupInfo.label}
-                                            className="w-full h-full object-contain object-bottom"
+                                            style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'bottom center' }}
                                         />
-                                        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pt-12 text-center">
-                                            <span className="text-white font-bebas text-3xl tracking-wider drop-shadow-md block leading-none font-bold">{popupInfo.label}</span>
+                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(to top, rgba(8,16,34,0.98) 0%, rgba(8,16,34,0.6) 50%, transparent 100%)', padding:'2rem 1rem 0.75rem', textAlign:'center' }}>
+                                            <span style={{ color:'#f0f0f0', fontFamily:"'Cinzel', serif", fontSize:'1.1rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', display:'block', lineHeight:1.1 }}>{popupInfo.label}</span>
                                         </div>
                                     </div>
-                                    <div className="p-5 pt-4 bg-white">
-                                        <div className="grid grid-cols-2 gap-4 mb-5 text-center">
+                                    <div style={{ padding:'0.85rem 1rem 1rem', background:'rgba(8,16,34,0.97)' }}>
+                                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'0.9rem', textAlign:'center' }}>
                                             <div>
-                                                <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Posición</span>
-                                                <span className="font-semibold text-sm">{popupInfo.data?.posicion || '-'}</span>
+                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(212,168,67,0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Posición</span>
+                                                <span style={{ color:'rgba(200,210,220,0.85)', fontSize:'0.75rem' }}>{popupInfo.data?.posicion || '-'}</span>
                                             </div>
                                             <div>
-                                                <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Nacimiento</span>
-                                                <span className="font-semibold text-sm">
-                                                    {(() => {
-                                                        const dateStr = popupInfo.data?.fecha_nacimiento;
-                                                        if (!dateStr) return '-';
-                                                        const parts = dateStr.split('-');
-                                                        if (parts.length === 3) {
-                                                            const [year, month, day] = parts;
-                                                            return `${day}/${month}/${year.slice(-2)}`;
-                                                        }
-                                                        return dateStr;
-                                                    })()}
-                                                </span>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <span className="block font-bold text-gray-500 uppercase text-[10px] tracking-widest mb-1">Origen</span>
-                                                <span className="font-semibold text-sm">{popupInfo.description?.replace('Nacida en ', '')}</span>
+                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(212,168,67,0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Origen</span>
+                                                <span style={{ color:'rgba(200,210,220,0.85)', fontSize:'0.75rem' }}>{popupInfo.description?.replace('Nacida en ', '') || '-'}</span>
                                             </div>
                                         </div>
 
                                         <a
                                             href={popupInfo.slug}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="block w-full text-center bg-[#ffde59] hover:bg-[#ffe57f] text-[#151e42] font-bold py-3 rounded shadow-sm hover:shadow-md transition-all uppercase tracking-wide text-xs"
+                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'#d4a843', fontFamily:"'Cinzel', serif", fontSize:'0.55rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.55rem 1rem', borderRadius:'2px', textDecoration:'none', transition:'background 0.2s', boxSizing:'border-box' }}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.2)')}
+                                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.1)')}
                                         >
                                             Ver Ficha Completa
                                         </a>

@@ -118,18 +118,19 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 .gallery-card {
                     display: flex;
                     flex-direction: column;
-                    background: white;
-                    border: 4px solid #ffde59;
+                    background: rgba(8,16,34,0.85);
+                    border: 2px solid rgba(212,168,67,0.15);
                     border-radius: 40px 0 0 0;
                     overflow: hidden;
                     text-decoration: none;
                     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
                     cursor: pointer;
+                    backdrop-filter: blur(8px);
                 }
                 .gallery-card:hover {
                     transform: translateY(-10px);
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    border-color: #d1b131;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                    border-color: rgba(212,168,67,0.5);
                 }
                 .gallery-image-wrapper {
                     position: relative;
@@ -149,8 +150,8 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     position: absolute;
                     bottom: 0px;
                     right: 0px;
-                    background: #ffde59;
-                    color: #151e42;
+                    background: #d4a843;
+                    color: #060d1c;
                     padding: 0.5rem 1rem;
                     font-weight: 900;
                     font-size: 0.8rem;
@@ -159,6 +160,7 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     align-items: center;
                     gap: 0.4rem;
                     z-index: 5;
+                    font-family: 'DM Sans', sans-serif;
                 }
                 .gallery-info {
                     padding: 1.5rem;
@@ -173,31 +175,37 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     font-size: 0.65rem;
                     font-weight: 800;
                     text-transform: uppercase;
-                    color: #999;
+                    color: rgba(150,160,175,0.6);
                     margin-bottom: 0.5rem;
                     letter-spacing: 0.5px;
+                    font-family: 'DM Sans', sans-serif;
                 }
                 .gallery-title {
-                    font-family: 'Bebas Neue', sans-serif;
-                    font-size: 1.8rem;
-                    line-height: 1.1;
-                    color: #151e42;
+                    font-family: 'Cinzel', serif;
+                    font-size: 1.4rem;
+                    line-height: 1.2;
+                    color: #f0f0f0;
                     margin-bottom: 1rem;
                     text-transform: uppercase;
                     flex-grow: 1;
+                    transition: color 0.3s;
+                }
+                .gallery-card:hover .gallery-title {
+                    color: #d4a843;
                 }
                 .gallery-footer {
                     display: flex;
                     align-items: center;
                     gap: 0.4rem;
                     font-size: 0.65rem;
-                    font-weight: 800;
-                    color: #ccc;
+                    font-weight: 700;
+                    color: rgba(212,168,67,0.6);
                     text-transform: uppercase;
-                    border-top: 1px solid #f0f0f0;
+                    border-top: 1px solid rgba(212,168,67,0.12);
                     padding-top: 1rem;
+                    font-family: 'DM Sans', sans-serif;
                 }
-                
+
                 .pagination-container {
                     display: flex;
                     justify-content: center;
@@ -208,8 +216,9 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 .pagination-btn {
                     padding: 0.75rem;
                     border-radius: 12px;
-                    border: 2px solid #f0f0f0;
-                    background: white;
+                    border: 2px solid rgba(212,168,67,0.2);
+                    background: rgba(8,16,34,0.85);
+                    color: #f0f0f0;
                     transition: all 0.3s;
                 }
                 .pagination-btn:disabled {
@@ -217,7 +226,8 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     cursor: not-allowed;
                 }
                 .pagination-btn:not(:disabled):hover {
-                    border-color: #ffde59;
+                    border-color: #d4a843;
+                    color: #d4a843;
                     transform: scale(1.1);
                 }
                 .pagination-numbers {
@@ -231,21 +241,23 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     align-items: center;
                     justify-content: center;
                     border-radius: 12px;
-                    border: 2px solid #f0f0f0;
-                    background: white;
+                    border: 2px solid rgba(212,168,67,0.2);
+                    background: rgba(8,16,34,0.85);
                     font-weight: 900;
-                    color: #999;
+                    color: rgba(200,210,220,0.65);
                     transition: all 0.3s;
+                    font-family: 'DM Sans', sans-serif;
                 }
                 .page-number.active {
-                    background: #ffde59;
-                    border-color: #ffde59;
-                    color: #151e42;
+                    background: #d4a843;
+                    border-color: #d4a843;
+                    color: #060d1c;
                     transform: scale(1.1);
-                    box-shadow: 0 10px 20px rgba(255, 222, 89, 0.2);
+                    box-shadow: 0 10px 20px rgba(212,168,67,0.25);
                 }
                 .page-number:hover:not(.active) {
-                    border-color: #ffde59;
+                    border-color: #d4a843;
+                    color: #d4a843;
                 }
 
                 @media (max-width: 640px) {
@@ -254,7 +266,7 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                         gap: 1rem;
                     }
                     .gallery-title {
-                        font-size: 1.3rem;
+                        font-size: 1rem;
                     }
                     .gallery-info {
                         padding: 1rem;

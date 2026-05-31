@@ -204,7 +204,6 @@ export async function fetchH2HStats(homeTeam: string, awayTeam: string): Promise
             };
         }
 
-        // Get all matches between these two teams
         const result = await client.execute({
             sql: `
                 SELECT
@@ -237,7 +236,6 @@ export async function fetchH2HStats(homeTeam: string, awayTeam: string): Promise
             recentMatches: []
         };
 
-        // Calculate stats
         for (const match of matches) {
             const isHome = match.club_local?.toLowerCase() === homeTeam.toLowerCase();
             const homeGoals = isHome ? match.goles_rm : match.goles_rival;
@@ -255,7 +253,6 @@ export async function fetchH2HStats(homeTeam: string, awayTeam: string): Promise
             }
         }
 
-        // Get recent matches (last 5)
         stats.recentMatches = matches.slice(0, 5).map(match => ({
             date: match.fecha,
             homeTeam: match.club_local,
@@ -909,27 +906,9 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
             const isOwnGoalInGolesTable =
                 tipoLower.includes('propia') ||
                 tipoLower.includes('own') ||
-                tipoLower.includes('p.p') ||
-
-
-                (goal.goleadora && !goal.nombre_jugadora && isNaN(Number(goal.goleadora)));
+                tipoLower.includes('p.p');
 
             if (isOwnGoalInGolesTable) {
-                let playerName = "Propia puerta";
-                let assistantName = goal.nombre_asistente || goal.asistente;
-
-                events.push({
-                    minute: parseMinuteInternal(goal.minuto),
-                    displayMinute: formatDisplayMinute(goal.minuto),
-                    type: 'goal',
-                    text: playerName,
-                    scorer: playerName,
-                    assistant: assistantName,
-                    isPenalty: false,
-                    isOwnGoal: true,
-                    team: 'local',
-                    videoUrl: goal.video_url || null
-                });
                 continue;
             }
 
@@ -1030,8 +1009,10 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 tipoLower.includes('own') ||
                 tipoLower.includes('p.p');
 
-            let goalText = isOwnGoal ? "Propia puerta" : `Gol de ${goal.goleadora || 'Rival'}`;
-            let scorer = isOwnGoal ? "Propia puerta" : goal.goleadora;
+            if (isOwnGoal) continue;
+
+            let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
+            let scorer = goal.goleadora;
 
             if (goal.asistente) {
                 goalText += ` (Asis. ${goal.asistente})`;
@@ -1045,7 +1026,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
                 scorer: scorer,
                 assistant: goal.asistente,
                 isPenalty: tipoLower.includes('penalti') || tipoLower === 'p',
-                isOwnGoal: isOwnGoal,
+                isOwnGoal: false,
                 team: 'rival'
             });
         }

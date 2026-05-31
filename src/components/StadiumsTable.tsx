@@ -71,16 +71,19 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
 
     const getSortIcon = (key: string) => {
         if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="w-3 h-3 ml-1 text-gray-400 opacity-50" />;
+            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(212,168,67,0.6)' }} />;
         }
         return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3 h-3 ml-1 text-[#151e42]" />
-            : <ArrowDown className="w-3 h-3 ml-1 text-[#151e42]" />;
+            ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" />
+            : <ArrowDown className="w-3 h-3 ml-1 text-yellow-400" />;
     };
 
     const SortableHeader = ({ label, sortKey, align = 'center', className = '', title = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string, title?: string }) => (
         <th
-            className={`py-4 px-4 font-bold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none ${className}`}
+            className={`py-4 px-4 font-bold cursor-pointer transition-colors select-none ${className}`}
+            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
+            onMouseLeave={e => (e.currentTarget.style.background = '')}
             onClick={() => requestSort(sortKey)}
             title={title}
         >
@@ -92,19 +95,20 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
     );
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto overflow-hidden rounded-xl border border-gray-200 shadow-xl bg-white mb-10">
-            <div className="overflow-x-auto custom-scrollbar">
+        <div className="w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
+            <div className="overflow-x-auto stadiums-scrollbar">
                 <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-bold whitespace-nowrap">
-                            <th className="sticky left-0 bg-gray-50 z-30 py-3 px-2 text-center w-10 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                        <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
+                            <th className="sticky left-0 z-30 py-3 px-2 text-center w-10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
+                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
                                 #
                             </th>
 
                             <SortableHeader
                                 sortKey="name"
                                 label="Estadio"
-                                className="sticky left-10 bg-gray-50 z-30 border-r-2 border-gray-200 shadow-[5px_0_10px_rgba(0,0,0,0.05)] min-w-[160px]"
+                                className="sticky left-10 z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[160px]"
                                 align="left"
                             />
 
@@ -113,69 +117,79 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
 
                             <SortableHeader sortKey="stats.played" label="PJ" />
 
-                            <SortableHeader sortKey="stats.wins" label="V" className="text-green-600 bg-green-50/50" />
-                            <SortableHeader sortKey="stats.winPct" label="% V" className="text-green-600 bg-green-50/50" />
+                            <SortableHeader sortKey="stats.wins" label="V" className="" />
+                            <SortableHeader sortKey="stats.winPct" label="% V" className="" />
 
-                            <SortableHeader sortKey="stats.draws" label="E" className="text-gray-600 bg-gray-50/50" />
-                            <SortableHeader sortKey="stats.drawPct" label="% E" className="text-gray-600 bg-gray-50/50" />
+                            <SortableHeader sortKey="stats.draws" label="E" className="" />
+                            <SortableHeader sortKey="stats.drawPct" label="% E" className="" />
 
-                            <SortableHeader sortKey="stats.losses" label="D" className="text-red-500 bg-red-50/50" />
-                            <SortableHeader sortKey="stats.lossPct" label="% D" className="text-red-500 bg-red-50/50" />
+                            <SortableHeader sortKey="stats.losses" label="D" className="" />
+                            <SortableHeader sortKey="stats.lossPct" label="% D" className="" />
 
                             <SortableHeader sortKey="stats.gf" label="GF" />
                             <SortableHeader sortKey="stats.ga" label="GC" />
                             <SortableHeader sortKey="stats.gd" label="Dif" />
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm">
+                    <tbody className="text-sm" style={{ color: '#f0f0f0' }}>
                         {sortedStadiums.map((stadium, index) => (
                             <tr
                                 key={stadium.slug}
-                                className="hover:bg-gray-50 transition-colors group text-gray-700"
+                                className="transition-colors group"
+                                style={{ borderBottom: '1px solid rgba(212,168,67,0.08)' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
+                                onMouseLeave={e => (e.currentTarget.style.background = '')}
                             >
-                                <td className="sticky left-0 bg-white group-hover:bg-gray-50 z-20 py-3 px-2 text-center font-mono text-gray-400 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                                <td className="sticky left-0 z-20 py-3 px-2 text-center font-mono shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
+                                    style={{ color: 'rgba(212,168,67,0.55)', background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
                                     {index + 1}
                                 </td>
 
-                                <td className="sticky left-10 bg-white group-hover:bg-gray-50 z-20 py-3 px-3 border-r-2 border-gray-200 font-bold text-gray-900 shadow-[5px_0_10px_rgba(0,0,0,0.05)] truncate max-w-[160px]" title={stadium.name}>
-                                    <a href={`/estadios/${stadium.slug}`} className="hover:text-[#ffde59] transition-colors">
+                                <td className="sticky left-10 z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate max-w-[160px]"
+                                    style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.12)', color: '#f0f0f0' }}
+                                    title={stadium.name}>
+                                    <a href={`/estadios/${stadium.slug}`}
+                                        style={{ color: '#f0f0f0' }}
+                                        onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
+                                        onMouseLeave={e => (e.currentTarget.style.color = '#f0f0f0')}
+                                        className="transition-colors">
                                         {stadium.name}
                                     </a>
                                 </td>
 
-                                <td className="py-3 px-2 text-gray-600 truncate max-w-[120px]" title={stadium.city}>{stadium.city || '-'}</td>
-                                <td className="py-3 px-2 text-center font-mono text-xs text-gray-400">
+                                <td className="py-3 px-2 truncate max-w-[120px]" style={{ color: 'rgba(200,210,220,0.65)' }} title={stadium.city}>{stadium.city || '-'}</td>
+                                <td className="py-3 px-2 text-center font-mono text-xs" style={{ color: 'rgba(200,210,220,0.65)' }}>
                                     {stadium.capacity ? Number(stadium.capacity).toLocaleString() : '-'}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-gray-900 bg-gray-50/50">
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
                                     {stadium.stats.played}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-green-600 bg-green-50/30">
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
                                     {stadium.stats.wins}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono text-green-700 bg-green-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
                                     {stadium.stats.winPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
                                     {stadium.stats.draws}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono text-gray-500 bg-gray-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
                                     {stadium.stats.drawPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-red-500 bg-red-50/30">
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
                                     {stadium.stats.losses}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono text-red-600 bg-red-50/30">
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
                                     {stadium.stats.lossPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-mono text-gray-600">{stadium.stats.gf}</td>
-                                <td className="py-3 px-2 text-center font-mono text-gray-600">{stadium.stats.ga}</td>
-                                <td className="py-3 px-2 text-center font-mono font-bold text-gray-900">
+                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{stadium.stats.gf}</td>
+                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{stadium.stats.ga}</td>
+                                <td className="py-3 px-2 text-center font-mono font-bold" style={{ color: '#f0f0f0' }}>
                                     {stadium.stats.gd > 0 ? `+${stadium.stats.gd}` : stadium.stats.gd}
                                 </td>
                             </tr>
@@ -185,16 +199,16 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
             </div>
 
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar {
+                .stadiums-scrollbar::-webkit-scrollbar {
                     height: 8px;
-                    background: #f1f5f9;
+                    background: rgba(6,13,28,0.95);
                 }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #cbd5e1;
+                .stadiums-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(212,168,67,0.3);
                     border-radius: 4px;
                 }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #94a3b8;
+                .stadiums-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(212,168,67,0.55);
                 }
             `}</style>
         </div>

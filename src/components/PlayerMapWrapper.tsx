@@ -49,13 +49,18 @@ const PlayerMapWrapper: React.FC<PlayerMapWrapperProps> = ({ players }) => {
     }, [players]);
 
     return (
-        <div className="w-full my-8">
-            <h2 className="text-2xl font-bold mb-4 font-bebas text-[#151e42] border-l-4 border-[#ffde59] pl-3">
-                MAPA DE ORIGEN
-            </h2>
+        <div style={{
+            width: '100%',
+            marginTop: '2rem',
+            marginBottom: '0.5rem',
+            border: '1px solid rgba(212,168,67,0.2)',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            position: 'relative',
+        }}>
             <InteractiveMap
                 markers={markers}
-                height="600px"
+                height="480px"
                 center={{ lat: 48, lng: 10 }}
                 zoom={3.5}
             />

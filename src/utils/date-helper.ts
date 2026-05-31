@@ -76,10 +76,7 @@ export function getMatchStatus(
 } {
     const now = new Date();
     const matchDate = parseMatchDate(dateStr, timeStr);
-    // Use 2h window (same as sync) so goles_rm=0 doesn't prematurely mark as finished
     const matchEndTime = new Date(matchDate.getTime() + 2 * 60 * 60 * 1000);
-
-    // Time window check first — isPlayed (derived from goles_rm) is unreliable during a live match
     if (now >= matchDate && now <= matchEndTime) {
         const minutesElapsed = Math.floor((now.getTime() - matchDate.getTime()) / (60 * 1000));
         return {

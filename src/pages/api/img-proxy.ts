@@ -6,7 +6,6 @@ export const GET: APIRoute = async ({ url }) => {
     const src = url.searchParams.get('url');
     if (!src) return new Response('Missing url', { status: 400 });
 
-    // Only allow our own CDN
     try {
         const parsed = new URL(src);
         if (!parsed.hostname.endsWith('madridfemeninoxtra.com') && parsed.hostname !== 'localhost') {

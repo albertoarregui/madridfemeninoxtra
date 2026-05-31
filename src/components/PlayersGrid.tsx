@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 interface Player {
     id_jugadora: string;
@@ -22,247 +22,265 @@ interface PlayersGridProps {
     players: Player[];
 }
 
+const POSITION_ORDER: Record<string, number> = {
+    'Portera': 1, 'Lateral izquierda': 2, 'Defensa central': 3, 'Defensa': 3,
+    'Lateral derecha': 4, 'Centrocampista': 5, 'Extremo izquierdo': 6,
+    'Extremo derecho': 6, 'Extremo': 6, 'Delantera': 7
+};
+
+const POSITION_ABBREV: Record<string, string> = {
+    'Portera': 'POR', 'Lateral izquierda': 'LI', 'Defensa central': 'DC',
+    'Defensa': 'DEF', 'Lateral derecha': 'LD', 'Centrocampista': 'MC',
+    'Extremo izquierdo': 'EI', 'Extremo derecho': 'ED', 'Extremo': 'EXT', 'Delantera': 'DEL'
+};
+
+
 const PlayersGrid: React.FC<PlayersGridProps> = ({ players }) => {
     const [selectedPosition, setSelectedPosition] = useState<string>('Todas');
     const [selectedCountry, setSelectedCountry] = useState<string>('Todos');
     const [selectedSeason, setSelectedSeason] = useState<string>('Todas');
+    const [sortOrder, setSortOrder] = useState<'position' | 'az' | 'za'>('position');
+    const [cols, setCols] = useState(5);
+    const [isMobile, setIsMobile] = useState(false);
 
-    const POSITION_ORDER: Record<string, number> = {
-        'Portera': 1,
-        'Lateral izquierda': 2,
-        'Defensa central': 3,
-        'Defensa': 3,
-        'Lateral derecha': 4,
-        'Centrocampista': 5,
-        'Extremo izquierdo': 6,
-        'Extremo derecho': 6,
-        'Extremo': 6,
-        'Delantera': 7
-    };
+    useEffect(() => {
+        const update = () => {
+            const w = window.innerWidth;
+            setIsMobile(w < 960);
+            if (w < 540) setCols(2);
+            else if (w < 800) setCols(3);
+            else if (w < 1100) setCols(4);
+            else setCols(5);
+        };
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
 
-    const positions = useMemo(() => {
-        const pos = new Set(players.map(p => p.posicion).filter(Boolean));
-        return ['Todas', ...Array.from(pos).sort((a, b) => {
-            const orderA = POSITION_ORDER[a] || 99;
-            const orderB = POSITION_ORDER[b] || 99;
-            return orderA - orderB;
-        })];
+    const cardCols = `repeat(${cols}, 1fr)`;
+
+    const positionData = useMemo((): [string, number][] => {
+        const map: Record<string, number> = {};
+        players.forEach(p => { if (p.posicion) map[p.posicion] = (map[p.posicion] || 0) + 1; });
+        const sorted = Object.entries(map).sort((a, b) => (POSITION_ORDER[a[0]] || 99) - (POSITION_ORDER[b[0]] || 99));
+        return [['Todas', players.length], ...sorted];
     }, [players]);
 
-    const countries = useMemo(() => {
-        const ct = new Set(players.map(p => p.pais_origin || p.pais_origen).filter(Boolean));
-        return ['Todos', ...Array.from(ct).sort()];
+    const countryData = useMemo(() => {
+        const map: Record<string, { count: number; flagUrl: string }> = {};
+        players.forEach(p => {
+            const country = p.pais_origin || p.pais_origen;
+            if (country) {
+                if (!map[country]) map[country] = { count: 0, flagUrl: p.flagUrl };
+                map[country].count++;
+            }
+        });
+        return Object.entries(map).sort((a, b) => b[1].count - a[1].count);
     }, [players]);
 
     const seasons = useMemo(() => {
-        const allSeasons = new Set<string>();
-        players.forEach(p => {
-            if (Array.isArray(p.temporadas)) {
-                p.temporadas.forEach(s => allSeasons.add(s));
-            }
-        });
-
-        const sorted = Array.from(allSeasons).sort().reverse();
-        if (sorted.length > 0) return ['Todas', ...sorted];
-        return ['Todas', '2024-2025', '2023-2024', '2022-2023', '2021-2022', '2020-2021'];
+        const all = new Set<string>();
+        players.forEach(p => { if (Array.isArray(p.temporadas)) p.temporadas.forEach(s => all.add(s)); });
+        return Array.from(all).sort().reverse();
     }, [players]);
 
     const filteredPlayers = useMemo(() => {
         const filtered = players.filter(player => {
-            const matchesPosition = selectedPosition === 'Todas' || player.posicion === selectedPosition;
+            const matchesPos = selectedPosition === 'Todas' || player.posicion === selectedPosition;
             const country = player.pais_origin || player.pais_origen;
             const matchesCountry = selectedCountry === 'Todos' || country === selectedCountry;
-
-            let matchesSeason = true;
-            if (selectedSeason !== 'Todas') {
-                if (Array.isArray(player.temporadas) && player.temporadas.length > 0) {
-                    matchesSeason = player.temporadas.includes(selectedSeason);
-                } else {
-                    matchesSeason = false;
-                }
-            }
-            return matchesPosition && matchesCountry && matchesSeason;
+            const matchesSeason = selectedSeason === 'Todas'
+                ? true
+                : Array.isArray(player.temporadas) && player.temporadas.includes(selectedSeason);
+            return matchesPos && matchesCountry && matchesSeason;
         });
 
-        const sorted = filtered.sort((a, b) => {
-            const orderA = POSITION_ORDER[a.posicion] || 99;
-            const orderB = POSITION_ORDER[b.posicion] || 99;
-            if (orderA !== orderB) return orderA - orderB;
-            return a.nombre.localeCompare(b.nombre);
-        });
+        if (sortOrder === 'position') {
+            filtered.sort((a, b) => {
+                const diff = (POSITION_ORDER[a.posicion] || 99) - (POSITION_ORDER[b.posicion] || 99);
+                return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+            });
+        } else if (sortOrder === 'az') {
+            filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        } else {
+            filtered.sort((a, b) => b.nombre.localeCompare(a.nombre));
+        }
+        return filtered;
+    }, [players, selectedPosition, selectedCountry, selectedSeason, sortOrder]);
 
-        return sorted;
-    }, [players, selectedPosition, selectedCountry, selectedSeason]);
+    const badge = (count: number, active: boolean): React.CSSProperties => ({
+        background: active ? 'rgba(212,168,67,0.22)' : 'rgba(212,168,67,0.06)',
+        color: active ? '#d4a843' : 'rgba(200,210,220,0.35)',
+        padding: '0 0.28rem', borderRadius: '2px',
+        fontSize: '0.54rem', fontFamily: "'DM Sans', sans-serif",
+        marginLeft: 'auto', flexShrink: 0,
+    });
 
-    const gridRef = useRef<HTMLDivElement>(null);
+    const sectionLabel: React.CSSProperties = {
+        fontFamily: "'Cinzel', serif", fontSize: '0.55rem',
+        letterSpacing: '0.18em', color: 'rgba(212,168,67,0.55)',
+        textTransform: 'uppercase', display: 'block',
+        marginBottom: '0.45rem', marginTop: '1rem',
+    };
+
+    const filterBtnStyle = (active: boolean): React.CSSProperties => ({
+        display: 'flex', alignItems: 'center', gap: '0.4rem',
+        width: '100%', padding: '0.38rem 0.6rem',
+        borderRadius: '2px',
+        border: `1px solid ${active ? 'rgba(212,168,67,0.45)' : 'rgba(212,168,67,0.08)'}`,
+        marginBottom: '0.25rem',
+        fontFamily: "'Cinzel', serif", fontSize: '0.59rem',
+        letterSpacing: '0.08em', textTransform: 'uppercase',
+        cursor: 'pointer', textAlign: 'left',
+        background: active ? 'rgba(212,168,67,0.08)' : 'transparent',
+        color: active ? '#d4a843' : 'rgba(200,210,220,0.45)',
+        transition: 'all 0.15s',
+    });
+
+    const sortBtnStyle = (active: boolean): React.CSSProperties => ({
+        padding: '0.3rem 0.8rem', borderRadius: '2px',
+        border: `1px solid ${active ? '#d4a843' : 'rgba(212,168,67,0.22)'}`,
+        fontFamily: "'Cinzel', serif", fontSize: '0.57rem',
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+        cursor: 'pointer',
+        background: active ? '#d4a843' : 'transparent',
+        color: active ? '#060d1c' : 'rgba(200,210,220,0.55)',
+        fontWeight: active ? 600 : 400,
+        transition: 'all 0.15s',
+    });
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 py-16 flex flex-col items-center" id="players-grid" ref={gridRef}>
-            {/* Filters Section */}
-            <div className="flex gap-4 w-full flex-wrap justify-center items-center relative z-[1001] mb-12 md:mb-24">
-                <div className="custom-select-container" data-custom-select="true">
-                    <div className="custom-select-trigger" style={{ cursor: 'pointer' }}>
-                        <span className="selected-text whitespace-nowrap overflow-hidden text-ellipsis">
-                            {selectedSeason === 'Todas' ? 'Todas las Temporadas' : `${selectedSeason.replace('-', '/')}`}
-                        </span>
-                        <div className="custom-select-arrow">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-                        </div>
-                    </div>
-                    <select
-                        style={{ display: 'none' }}
-                        className="native-select"
-                        value={selectedSeason}
-                        onChange={(e) => setSelectedSeason(e.target.value)}
-                    >
-                        {seasons.map(s => (
-                            <option key={s} value={s}>{s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}</option>
-                        ))}
-                    </select>
-                    <div className="custom-select-options">
-                        {seasons.map(s => (
-                            <div key={s} className={`custom-select-option ${selectedSeason === s ? 'selected' : ''}`} data-value={s}>
-                                {s === 'Todas' ? 'Todas las Temporadas' : `${s.replace('-', '/')}`}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+        <>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '230px minmax(0, 1fr)',
+                alignItems: 'start',
+                gap: '1.75rem',
+                width: '100%',
+            }}>
 
-                <div className="custom-select-container" data-custom-select="true">
-                    <div className="custom-select-trigger" style={{ cursor: 'pointer' }}>
-                        <span className="selected-text">
-                            {selectedPosition === 'Todas' ? 'Todas las Posiciones' : selectedPosition}
-                        </span>
-                        <div className="custom-select-arrow">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-                        </div>
+                {/* ── Sidebar ── */}
+                <aside className="pg-sidebar" style={{ position: isMobile ? 'static' : 'sticky', top: '90px', alignSelf: 'start' }}>
+                    <div style={{ textAlign: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid rgba(212,168,67,0.1)', marginBottom: '0.35rem' }}>
+                        <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.58rem', letterSpacing: '0.22em', color: 'rgba(212,168,67,0.6)', textTransform: 'uppercase' }}>♦ FILTROS ♦</span>
                     </div>
-                    <select
-                        style={{ display: 'none' }}
-                        className="native-select"
-                        value={selectedPosition}
-                        onChange={(e) => setSelectedPosition(e.target.value)}
-                    >
-                        {positions.map(pos => <option key={pos} value={pos}>{pos === 'Todas' ? 'Todas las Posiciones' : pos}</option>)}
-                    </select>
-                    <div className="custom-select-options">
-                        {positions.map(pos => (
-                            <div key={pos} className={`custom-select-option ${selectedPosition === pos ? 'selected' : ''}`} data-value={pos}>
-                                {pos === 'Todas' ? 'Todas las Posiciones' : pos}
-                            </div>
+
+                    <span style={sectionLabel}>♦ Posición</span>
+                    <div>
+                        {positionData.map(([pos, count]) => (
+                            <button key={pos} style={filterBtnStyle(selectedPosition === pos)} onClick={() => setSelectedPosition(pos)}>
+                                <span style={{ flex: 1 }}>{pos}</span>
+                                <span style={badge(count, selectedPosition === pos)}>{count}</span>
+                            </button>
                         ))}
                     </div>
-                </div>
 
-                <div className="custom-select-container" data-custom-select="true">
-                    <div className="custom-select-trigger" style={{ cursor: 'pointer' }}>
-                        <span className="selected-text">
-                            {selectedCountry === 'Todos' ? 'Todos los Países' : selectedCountry}
-                        </span>
-                        <div className="custom-select-arrow">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-                        </div>
-                    </div>
-                    <select
-                        style={{ display: 'none' }}
-                        className="native-select"
-                        value={selectedCountry}
-                        onChange={(e) => setSelectedCountry(e.target.value)}
-                    >
-                        {countries.map(c => <option key={c} value={c}>{c === 'Todos' ? 'Todos los Países' : c}</option>)}
-                    </select>
-                    <div className="custom-select-options">
-                        {countries.map(c => (
-                            <div key={c} className={`custom-select-option ${selectedCountry === c ? 'selected' : ''}`} data-value={c}>
-                                {c === 'Todos' ? 'Todos los Países' : c}
-                            </div>
+                    <span style={sectionLabel}>♦ País</span>
+                    <div>
+                        <button style={filterBtnStyle(selectedCountry === 'Todos')} onClick={() => setSelectedCountry('Todos')}>
+                            <span style={{ flex: 1 }}>Todos</span>
+                            <span style={badge(players.length, selectedCountry === 'Todos')}>{players.length}</span>
+                        </button>
+                        {countryData.map(([country, { count, flagUrl }]) => (
+                            <button key={country} style={filterBtnStyle(selectedCountry === country)} onClick={() => setSelectedCountry(country)}>
+                                {flagUrl && <img src={flagUrl} alt="" style={{ width: '14px', height: '14px', objectFit: 'cover', borderRadius: '1px', flexShrink: 0 }} />}
+                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{country}</span>
+                                <span style={badge(count, selectedCountry === country)}>{count}</span>
+                            </button>
                         ))}
                     </div>
-                </div>
-            </div>
 
-            {/* Grid wrapper with huge top padding on mobile to push cards down from filters */}
-            <div className="w-full relative z-0 mt-8 pt-20 px-4 md:px-0 md:pt-16">
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-32 gap-x-4 md:gap-x-8 md:gap-y-48">
-                    {filteredPlayers.map((player, index) => (
-                        <div key={player.id_jugadora || player.slug} className="relative pt-16 pb-6 md:pt-24 md:pb-8 h-full flex flex-col">
-                            <a
-                                href={`/jugadoras/${player.slug}`}
-                                className="group block relative w-full h-full text-decoration-none group mt-auto"
-                            >
-                                {/* Card Background */}
-                                <div className="absolute inset-x-0 bottom-0 top-0 bg-gradient-to-br from-[#1d274e] to-[#151e42] rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/5 group-hover:border-[#ffde59]/50 transition-all duration-500 z-0" />
-                                
-                                {/* Image Overlay */}
-                                <div className="absolute -top-16 md:-top-24 inset-x-0 bottom-[60%] z-10 px-2 md:px-6 pointer-events-none">
-                                    <div className="w-full h-full relative flex items-end justify-center">
+                    {seasons.length > 0 && (
+                        <>
+                            <span style={sectionLabel}>♦ Temporada</span>
+                            <div style={{ maxHeight: '175px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
+                                <button style={filterBtnStyle(selectedSeason === 'Todas')} onClick={() => setSelectedSeason('Todas')}>
+                                    <span style={{ flex: 1 }}>Todas</span>
+                                </button>
+                                {seasons.map(s => (
+                                    <button key={s} style={filterBtnStyle(selectedSeason === s)} onClick={() => setSelectedSeason(s)}>
+                                        <span style={{ flex: 1 }}>{s.replace('-', '/')}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </aside>
+
+                {/* ── Main ── */}
+                <main className="pg-main">
+                    {/* Sort bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '1.1rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.56rem', letterSpacing: '0.14em', color: 'rgba(212,168,67,0.45)', textTransform: 'uppercase' }}>♦ Ordenar Por</span>
+                        {(['position', 'az', 'za'] as const).map(order => (
+                            <button key={order} style={sortBtnStyle(sortOrder === order)} onClick={() => setSortOrder(order)}>
+                                {order === 'position' ? 'Por Posición' : order === 'az' ? 'A → Z' : 'Z → A'}
+                            </button>
+                        ))}
+                        <span style={{ marginLeft: 'auto', fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', color: 'rgba(200,210,220,0.35)' }}>
+                            {filteredPlayers.length} jugadoras
+                        </span>
+                    </div>
+
+                    {/* Card grid */}
+                    {filteredPlayers.length > 0 ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: cardCols, gap: '0.75rem' }}>
+                            {filteredPlayers.map((player, index) => (
+                                <a key={player.id_jugadora || player.slug} href={`/jugadoras/${player.slug}`} className="player-portrait-card" data-astro-prefetch="hover">
+                                    {/* 4 corner brackets */}
+                                    <span className="pg-corner pg-corner-tl" />
+                                    <span className="pg-corner pg-corner-tr" />
+                                    <span className="pg-corner pg-corner-bl" />
+                                    <span className="pg-corner pg-corner-br" />
+
+                                    {/* Gold glow */}
+                                    <div className="pg-card-glow" />
+
+                                    {/* Position — top-left */}
+                                    <span className="pg-pos-label">
+                                        ♦ {POSITION_ABBREV[player.posicion] || player.posicion?.slice(0, 3).toUpperCase() || '–'}
+                                    </span>
+
+                                    {/* Photo fills card */}
+                                    <div className="pg-card-photo" style={{ viewTransitionName: `player-${player.slug}` } as React.CSSProperties}>
                                         <img
                                             src={player.thumbnailUrl || player.imageUrl}
                                             alt={player.nombre}
-                                            className="w-auto h-auto max-h-[160%] object-contain transform origin-bottom transition-all duration-700 group-hover:scale-110 group-hover:-translate-y-4 filter drop-shadow-[0_15px_15px_rgba(0,0,0,0.5)]"
-                                            loading={index < 8 ? "eager" : "lazy"}
+                                            loading={index < 16 ? 'eager' : 'lazy'}
                                             decoding="async"
-                                            width={400}
-                                            height={500}
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = '/assets/jugadoras-perfil/placeholder.png';
-                                            }}
+                                            width={200}
+                                            height={267}
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras-perfil/placeholder.png'; }}
                                         />
                                     </div>
-                                </div>
 
-                                {/* Content Area */}
-                                <div className="relative pt-16 md:pt-28 pb-4 md:pb-8 px-4 md:px-8 z-20 flex flex-col h-full items-center text-center">
-                                    <div className="mb-2 md:mb-4">
-                                        <span className="inline-block px-3 py-1 bg-black/50 backdrop-blur-md border border-white/20 rounded-full text-[8px] md:text-[10px] font-bold uppercase tracking-[0.2em] text-white group-hover:bg-[#ffde59] group-hover:text-black transition-colors">
-                                            {player.posicion}
-                                        </span>
+                                    {/* Text overlaid on photo with gradient */}
+                                    <div className="pg-card-overlay">
+                                        <div className="pg-card-name">{player.nombre}</div>
+                                        <div className="pg-card-country">
+                                            {player.flagUrl && (
+                                                <img src={player.flagUrl} alt="" style={{ width: '14px', height: '14px', objectFit: 'cover', borderRadius: '1px', flexShrink: 0 }} loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            )}
+                                            <span>{player.countryName}</span>
+                                        </div>
                                     </div>
-
-                                    <h3 className="text-xl md:text-3xl font-black font-bebas text-white uppercase tracking-wider mb-2 leading-none group-hover:text-[#ffde59] transition-colors drop-shadow-lg break-words text-balance text-center w-full mt-2">
-                                        {player.nombre}
-                                    </h3>
-
-                                    <div className="flex items-center justify-center gap-2 mt-auto pb-4">
-                                        <img
-                                            src={player.flagUrl}
-                                            alt={player.countryName}
-                                            className="w-4 md:w-5 h-auto object-cover shadow-sm"
-                                            loading="lazy"
-                                            decoding="async"
-                                            width={24}
-                                            height={24}
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                            }}
-                                        />
-                                        <span className="text-[10px] md:text-sm font-medium text-gray-300 uppercase tracking-widest">{player.countryName}</span>
-                                    </div>
-
-                                    <div className="w-full mt-4 pt-4 border-t border-white/10 flex justify-end group-hover:border-white/20 transition-all">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-[#ffde59] flex items-center gap-1 transition-colors group-hover:text-white">
-                                            Ver Perfil <span className="text-lg">→</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </a>
+                                </a>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'rgba(6,13,28,0.8)', border: '1px dashed rgba(212,168,67,0.15)', borderRadius: '4px' }}>
+                            <p style={{ fontFamily: "'Cinzel', serif", color: 'rgba(200,210,220,0.4)', letterSpacing: '0.15em', marginBottom: '1.5rem' }}>No hay resultados</p>
+                            <button
+                                onClick={() => { setSelectedPosition('Todas'); setSelectedCountry('Todos'); setSelectedSeason('Todas'); }}
+                                style={{ padding: '0.55rem 1.4rem', background: '#d4a843', color: '#060d1c', border: 'none', borderRadius: '2px', fontFamily: "'Cinzel', serif", fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer' }}
+                            >
+                                Reiniciar filtros
+                            </button>
+                        </div>
+                    )}
+                </main>
             </div>
-
-            {filteredPlayers.length === 0 && (
-                <div className="text-center py-40 bg-white/5 rounded-[3rem] border-2 border-dashed border-white/10 mt-20 w-full">
-                    <p className="text-gray-500 text-3xl font-black font-bebas tracking-[0.2em] uppercase">No hay resultados</p>
-                    <button 
-                        onClick={() => { setSelectedPosition('Todas'); setSelectedCountry('Todos'); setSelectedSeason('Todas'); }}
-                        className="mt-8 px-8 py-3 bg-[#ffde59] text-black font-black uppercase tracking-widest rounded-full hover:scale-105 transition-all"
-                    >
-                        Reiniciar filtros
-                    </button>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 
