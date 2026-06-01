@@ -114,8 +114,8 @@ const TYPE_OPTIONS = [
     { value: "streak_assisting", label: "Mayor racha asistiendo" },
     { value: "streak_ga", label: "Mayor racha con gol o asistencia" },
     { value: "streak_clean_sheet", label: "Mayor racha de portería a cero" },
-    { value: "award_monthly", label: "Más veces Jugadora del Mes" },
-    { value: "award_season", label: "Mejor Jugadora de la Temporada" },
+    { value: "award_monthly", label: "Más veces jugadora del mes" },
+    { value: "award_season", label: "Más veces jugadora de la temporada" },
     { value: "valoracion", label: "Mejor valoración media" },
     { value: "tiros_totales", label: "Más tiros totales" },
     { value: "tiros_puerta", label: "Más tiros a puerta" },
@@ -219,8 +219,8 @@ export default function StatsRankings({
             streak_assisting: { title: "Mayor racha asistiendo", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_assisting"], primaryKey: "streak_assisting", isStreak: true, icon: <Zap className="text-yellow-500" /> },
             streak_ga: { title: "Mayor racha con gol o asistencia", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_ga"], primaryKey: "streak_ga", isStreak: true, icon: <Zap className="text-green-500" /> },
             streak_clean_sheet: { title: "Mayor racha de portería a cero", headers: ["Pos", "Jugadora", "Partidos"], dataKeys: ["streak_clean_sheet"], primaryKey: "streak_clean_sheet", isStreak: true, icon: <Shield className="text-blue-500" /> },
-            award_monthly: { title: "MVP del Mes", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "mes", icon: <Award className="text-purple-500" /> },
-            award_season: { title: "MVP de la Temporada", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "temporada", icon: <Crown className="text-yellow-600" /> },
+            award_monthly: { title: "Más veces jugadora del mes", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "mes", icon: <Award className="text-purple-500" /> },
+            award_season: { title: "Más veces jugadora de la temporada", headers: ["Pos", "Jugadora", "Premios"], dataKeys: ["award_count"], primaryKey: "award_count", isAward: true, awardType: "temporada", icon: <Crown className="text-yellow-600" /> },
         };
 
         const typeOpt = TYPE_OPTIONS.find(o => o.value === selectedType);
@@ -259,9 +259,9 @@ export default function StatsRankings({
             awardsData.forEach(award => {
                 const tipo = (award.tipo || "").toUpperCase();
                 if (selectedType === "award_monthly") {
-                    if (!tipo.includes("MES") && !tipo.includes("MENSUAL")) return;
+                    if (tipo !== "" && !tipo.includes("MES") && !tipo.includes("MENSUAL")) return;
                 } else {
-                    if (!tipo.includes("TEMPORADA") && !tipo.includes("SEASON") && !tipo.includes("AÑO")) return;
+                    if (!tipo.includes("TEMPORADA") && !tipo.includes("SEASON") && !tipo.includes("AÑO") && !tipo.includes("MVP")) return;
                 }
 
                 const matchSeason = selectedSeason === "todos" || award.temporada === selectedSeason;
@@ -275,6 +275,14 @@ export default function StatsRankings({
             players = Object.values(playerMap);
         } else {
             const playerMap: Record<number, any> = {};
+            const explicitlyAccumulated = new Set([
+                'pases_completados', 'pases_totales',
+                'regates_completados', 'regates_totales',
+                'pases_largo_completados', 'pases_largo_totales',
+                'centros_completados', 'centros_totales',
+                'duelos_suelo_ganados', 'duelos_suelo_totales',
+                'duelos_aereos_ganados', 'duelos_aereos_totales',
+            ]);
             rankingsData.forEach(item => {
                 const matchSeason = selectedSeason === "todos" || item.temporada === selectedSeason;
                 if (!matchSeason) return;
@@ -322,7 +330,7 @@ export default function StatsRankings({
                 p.valoracion_count += (item as any).valoracion_count || 0;
 
                 config.dataKeys.forEach((key: string) => {
-                    if (key !== 'display_ratio' && !key.startsWith('porcentaje_')) {
+                    if (key !== 'display_ratio' && !key.startsWith('porcentaje_') && !explicitlyAccumulated.has(key)) {
                         p[key] += (item as any)[key] || 0;
                     }
                 });
