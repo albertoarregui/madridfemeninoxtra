@@ -259,9 +259,9 @@ export default function StatsRankings({
             awardsData.forEach(award => {
                 const tipo = (award.tipo || "").toUpperCase();
                 if (selectedType === "award_monthly") {
-                    if (tipo !== "" && !tipo.includes("MES") && !tipo.includes("MENSUAL")) return;
+                    if (tipo !== "MVP_MES") return;
                 } else {
-                    if (!tipo.includes("TEMPORADA") && !tipo.includes("SEASON") && !tipo.includes("AÑO") && !tipo.includes("MVP")) return;
+                    if (tipo !== "MVP_TEMPORADA") return;
                 }
 
                 const matchSeason = selectedSeason === "todos" || award.temporada === selectedSeason;
