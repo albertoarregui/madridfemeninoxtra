@@ -43,7 +43,25 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     }}
                 >
                     <div className="cursor-pointer group relative">
-                        {marker.imageUrl ? (
+                        {marker.type === 'match' ? (
+                            <div
+                                style={{ display:'inline-flex', flexDirection:'column', background:'rgba(6,13,28,0.95)', border:'1px solid rgba(212,168,67,0.55)', borderRadius:'4px', overflow:'hidden', maxWidth:'160px', boxShadow:'0 2px 14px rgba(0,0,0,0.55), 0 0 8px rgba(212,168,67,0.12)', transition:'transform 0.2s, box-shadow 0.2s, border-color 0.2s' }}
+                                onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform='translateY(-2px)'; el.style.borderColor='rgba(212,168,67,0.9)'; el.style.boxShadow='0 6px 20px rgba(0,0,0,0.65), 0 0 16px rgba(212,168,67,0.28)'; }}
+                                onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.borderColor='rgba(212,168,67,0.55)'; el.style.boxShadow='0 2px 14px rgba(0,0,0,0.55), 0 0 8px rgba(212,168,67,0.12)'; }}
+                            >
+                                {marker.imageUrl && (
+                                    <div style={{ width:'100%', aspectRatio:'16/7', overflow:'hidden', position:'relative', flexShrink:0 }}>
+                                        <img src={marker.imageUrl} alt={marker.label} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, top:0, background:'linear-gradient(to bottom, transparent 40%, rgba(6,13,28,0.7) 100%)' }} />
+                                    </div>
+                                )}
+                                <div style={{ padding:'4px 8px' }}>
+                                    <span style={{ color:'rgba(220,230,240,0.9)', fontFamily:"'DM Sans', sans-serif", fontSize:'0.58rem', fontWeight:600 }}>
+                                        {marker.label}
+                                    </span>
+                                </div>
+                            </div>
+                        ) : marker.imageUrl ? (
                             <div style={{ width:'44px', height:'44px', borderRadius:'50%', border:'2px solid rgba(212,168,67,0.7)', boxShadow:'0 0 12px rgba(212,168,67,0.3)', overflow:'hidden', background:'#06080f', transition:'transform 0.2s, box-shadow 0.2s' }}
                                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1.15)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 20px rgba(212,168,67,0.6)'; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 12px rgba(212,168,67,0.3)'; }}
@@ -56,9 +74,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                             </div>
                         )}
 
-                        <span className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity pointer-events-none z-10">
-                            {marker.label}
-                        </span>
+                        {marker.type !== 'match' && (
+                            <span className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap transition-opacity pointer-events-none z-10">
+                                {marker.label}
+                            </span>
+                        )}
                     </div>
                 </Marker>
             )),
@@ -158,95 +178,83 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
 
                             {popupInfo.type === 'match' && (
-                                <div className="flex flex-col">
-
-                                    {popupInfo.imageUrl && (
-                                        <div className="w-full h-40 bg-gray-200 relative">
-                                            <img
-                                                src={popupInfo.imageUrl}
-                                                alt={`Estadio ${popupInfo.label}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                            <div className="absolute inset-0 bg-black/40"></div>
-                                            <div className="absolute bottom-2 left-3 right-3 text-white">
-
-                                                <h3 className="font-bebas text-xl leading-tight drop-shadow-md font-bold">
+                                <div style={{ fontFamily:"'DM Sans', sans-serif" }}>
+                                    {popupInfo.imageUrl ? (
+                                        <div style={{ width:'100%', height:'140px', position:'relative', overflow:'hidden', flexShrink:0 }}>
+                                            <img src={popupInfo.imageUrl} alt={popupInfo.label} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                                            <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(8,16,34,0.97) 0%, rgba(8,16,34,0.2) 55%, transparent 100%)' }} />
+                                            <div style={{ position:'absolute', bottom:'0.6rem', left:'1rem', right:'2.5rem' }}>
+                                                <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.9rem', fontWeight:700, color:'#f0f0f0', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2, textShadow:'0 1px 6px rgba(0,0,0,0.9)' }}>
                                                     {popupInfo.label}
                                                 </h3>
+                                                {popupInfo.data?.count && (
+                                                    <span style={{ fontSize:'0.6rem', color:'rgba(212,168,67,0.85)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+                                                        {popupInfo.data.count} partidos jugados aquí
+                                                    </span>
+                                                )}
                                             </div>
+                                        </div>
+                                    ) : (
+                                        <div style={{ padding:'0.85rem 2.5rem 0.75rem 1rem', borderBottom:'1px solid rgba(212,168,67,0.15)', background:'rgba(12,20,40,0.6)' }}>
+                                            <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.85rem', fontWeight:700, color:'#f0f0f0', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2 }}>
+                                                {popupInfo.label}
+                                            </h3>
+                                            {popupInfo.data?.count && (
+                                                <span style={{ fontSize:'0.6rem', color:'rgba(212,168,67,0.65)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+                                                    {popupInfo.data.count} partidos jugados aquí
+                                                </span>
+                                            )}
                                         </div>
                                     )}
 
-                                    <div className="p-3 bg-white">
-                                        {!popupInfo.imageUrl && (
-                                            <h3 className="font-bebas text-xl mb-3 border-b-2 border-[#ffde59] pb-1 inline-block font-bold">
-                                                {popupInfo.label}
-                                            </h3>
-                                        )}
-
-                                        {popupInfo.data?.matches && popupInfo.data.matches.length > 0 ? (
-                                            <div className="max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
-                                                <div className="text-xs text-gray-500 mb-2 italic font-bold flex justify-between items-center px-1">
-                                                    <span>{popupInfo.data.count} partidos jugados aquí</span>
-                                                </div>
-
-                                                {popupInfo.data.matches.slice(0, 5).map((m: any, idx: number) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="mb-3 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all relative overflow-hidden group border border-gray-100"
-                                                    >
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-[10px] text-gray-500 font-bold uppercase">{m.fecha_formateada}</span>
-
+                                    {popupInfo.data?.matches && popupInfo.data.matches.length > 0 ? (
+                                        <div style={{ maxHeight:'280px', overflowY:'auto', padding:'0.5rem' }} className="custom-scrollbar">
+                                            {popupInfo.data.matches.slice(0, 5).map((m: any, idx: number) => {
+                                                const isRMAway = m.club_visitante === 'Real Madrid' || m.club_visitante === 'CD Tacón';
+                                                const scoreHome = isRMAway ? m.goles_rival : m.goles_rm;
+                                                const scoreAway = isRMAway ? m.goles_rm : m.goles_rival;
+                                                const isWin = Number(m.goles_rm) > Number(m.goles_rival);
+                                                const isLoss = Number(m.goles_rm) < Number(m.goles_rival);
+                                                const resultColor = isWin ? '#4ade80' : isLoss ? '#f87171' : '#fbbf24';
+                                                const resultBg = isWin ? 'rgba(74,222,128,0.1)' : isLoss ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)';
+                                                return (
+                                                    <div key={idx} style={{ marginBottom:'0.5rem', padding:'0.65rem 0.75rem', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(212,168,67,0.1)', borderRadius:'3px' }}>
+                                                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'0.4rem' }}>
+                                                            <span style={{ fontSize:'0.6rem', color:'rgba(180,190,210,0.55)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em' }}>{m.fecha_formateada}</span>
                                                             {m.logo_competicion && (
-                                                                <img src={m.logo_competicion} alt={m.competicion_nombre} className="h-5 w-auto object-contain" title={m.competicion_nombre} />
+                                                                <img src={m.logo_competicion} alt={m.competicion_nombre} style={{ height:'16px', width:'auto', objectFit:'contain', opacity:0.8 }} title={m.competicion_nombre} />
                                                             )}
                                                         </div>
-
-                                                        <div className="text-sm font-bold text-[#151e42] mb-3 text-center leading-tight">
-                                                            {m.club_local} <span className="text-gray-400 font-normal text-xs px-1">vs</span> {m.club_visitante}
+                                                        <div style={{ textAlign:'center', marginBottom:'0.5rem', fontSize:'0.75rem', color:'rgba(220,230,240,0.85)', fontWeight:600, lineHeight:1.3 }}>
+                                                            {m.club_local} <span style={{ color:'rgba(180,190,210,0.4)', fontSize:'0.65rem', margin:'0 0.3rem', fontWeight:400 }}>vs</span> {m.club_visitante}
                                                         </div>
-
-                                                        <div className="text-center mb-4">
-                                                            {(() => {
-                                                                const isRMAway = m.club_visitante === 'Real Madrid' || m.club_visitante === 'CD Tacón';
-                                                                const scoreHome = isRMAway ? m.goles_rival : m.goles_rm;
-                                                                const scoreAway = isRMAway ? m.goles_rm : m.goles_rival;
-
-                                                                const isWin = Number(m.goles_rm) > Number(m.goles_rival);
-                                                                const isLoss = Number(m.goles_rm) < Number(m.goles_rival);
-
-                                                                return (
-                                                                    <span className={`font-mono font-bold text-lg text-[#151e42] px-6 py-1.5 rounded-lg ${isWin ? 'bg-green-100/80 text-green-900' :
-                                                                        isLoss ? 'bg-red-100/80 text-red-900' : 'bg-yellow-100/80 text-yellow-900'
-                                                                        }`}>
-                                                                        {scoreHome} - {scoreAway}
-                                                                    </span>
-                                                                );
-                                                            })()}
+                                                        <div style={{ textAlign:'center', marginBottom:'0.6rem' }}>
+                                                            <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:'1rem', color:resultColor, background:resultBg, padding:'2px 16px', borderRadius:'2px', border:`1px solid ${resultColor}40` }}>
+                                                                {scoreHome} - {scoreAway}
+                                                            </span>
                                                         </div>
-
-
                                                         <a
                                                             href={`/partidos/${m.slug}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="block w-full text-center bg-[#ffde59] hover:bg-[#ffe57f] text-[#151e42] font-bold py-2 rounded shadow-sm hover:shadow-md transition-all uppercase tracking-wide text-[10px]"
+                                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'#d4a843', fontFamily:"'Cinzel', serif", fontSize:'0.5rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.45rem 0.75rem', borderRadius:'2px', textDecoration:'none', boxSizing:'border-box', transition:'background 0.2s' }}
+                                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.2)')}
+                                                            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.1)')}
                                                         >
-                                                            Ver detalles
+                                                            Ver Detalles
                                                         </a>
                                                     </div>
-                                                ))}
-                                                {popupInfo.data.matches.length > 5 && (
-                                                    <p className="text-center text-xs text-gray-400 mt-2 font-medium">
-                                                        ...y {popupInfo.data.matches.length - 5} más
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm italic text-gray-500">Sin información detallada de partidos.</p>
-                                        )}
-                                    </div>
+                                                );
+                                            })}
+                                            {popupInfo.data.matches.length > 5 && (
+                                                <p style={{ textAlign:'center', fontSize:'0.65rem', color:'rgba(180,190,210,0.4)', margin:'0.5rem 0 0', fontStyle:'italic' }}>
+                                                    ...y {popupInfo.data.matches.length - 5} más
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p style={{ padding:'1rem', fontSize:'0.75rem', color:'rgba(180,190,210,0.5)', fontStyle:'italic' }}>Sin información detallada de partidos.</p>
+                                    )}
                                 </div>
                             )}
 
@@ -402,14 +410,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     width: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: #f1f1f1; 
+                    background: rgba(255,255,255,0.04);
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #ccc; 
+                    background: rgba(212,168,67,0.3);
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #aaa; 
+                    background: rgba(212,168,67,0.5);
                 }
             `}</style>
         </div>
