@@ -86,15 +86,11 @@ function calculateAge(birthDateString: string): number {
 ---
 
 <section class="player-selector">
-    <div class="scanline-overlay" aria-hidden="true"></div>
 
     <div class="sf-inner">
 
         <div class="main-player-display">
             <div class="player-main-image-container">
-                <span class="player-number-bg" id="player-number-ghost">
-                    {listofPlayers.length > 0 ? listofPlayers[0].number : ""}
-                </span>
                 {listofPlayers.length > 0 && (
                     <img
                         id="player-main-image"
@@ -114,9 +110,6 @@ function calculateAge(birthDateString: string): number {
             </h2>
 
             <div class="player-info-top">
-                <span class="player-position" id="player-position">
-                    {listofPlayers.length > 0 ? listofPlayers[0].position : "-"}
-                </span>
                 <div class="player-country-flat">
                     <img
                         id="player-flag"
@@ -196,6 +189,9 @@ function calculateAge(birthDateString: string): number {
 
     </div>
 
+    <div class="top-fade" aria-hidden="true"></div>
+    <div class="bottom-fade" aria-hidden="true"></div>
+
     <div class="mobile-player-carousel">
         <button class="carousel-arrow" id="carousel-prev" aria-label="Previous player">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -247,12 +243,10 @@ function calculateAge(birthDateString: string): number {
                 if (el) el.textContent = text;
             };
 
-            setContent("player-position", player.position);
             setContent("player-country-name", player.countryName);
             setContent("player-name", player.name);
-            setContent("player-height", `${player.height}m`);
             setContent("player-number", player.number);
-            setContent("player-number-ghost", player.number);
+            setContent("player-height", `${player.height}m`);
             setContent("player-weight", `${player.weight}kg`);
             setContent("player-age", calculateAge(player.date_birth));
 
@@ -261,10 +255,7 @@ function calculateAge(birthDateString: string): number {
 
             const imgEl = document.getElementById("player-main-image");
             if (imgEl) {
-                const thumb =
-                    document.querySelector(`.desktop-thumb[data-player-id="${player.id}"]`) ||
-                    document.querySelector(`.mobile-thumb[data-player-id="${player.id}"]`);
-                if (thumb?.dataset.profileImage) imgEl.src = thumb.dataset.profileImage;
+                if (player.imageUrl) imgEl.src = player.imageUrl;
                 imgEl.alt = player.name;
             }
 
@@ -314,21 +305,36 @@ function calculateAge(birthDateString: string): number {
     .player-selector {
         width: 100%;
         position: relative;
-        background: rgba(4, 10, 24, 0.95);
-        border: 1px solid rgba(212, 168, 67, 0.2);
-        border-radius: 10px;
+        background:
+            radial-gradient(ellipse 55% 35% at 50% 0%, rgba(212, 168, 67, 0.07) 0%, transparent 70%),
+            radial-gradient(ellipse 100% 60% at 50% 50%, rgba(8, 18, 42, 0.98) 0%, rgba(2, 5, 14, 1) 100%);
+        border: 1px solid rgba(212, 168, 67, 0.15);
+        border-top: none;
+        border-bottom: none;
+        border-radius: 0;
         overflow: hidden;
     }
 
-    .scanline-overlay {
+    .top-fade {
         position: absolute;
-        inset: 0;
-        background: repeating-linear-gradient(
-            0deg, transparent, transparent 3px,
-            rgba(0, 0, 0, 0.1) 3px, rgba(0, 0, 0, 0.1) 4px
-        );
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        background: linear-gradient(to bottom, #060d1c, transparent);
         pointer-events: none;
-        z-index: 0;
+        z-index: 10;
+    }
+
+    .bottom-fade {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(to bottom, transparent, #060d1c);
+        pointer-events: none;
+        z-index: 10;
     }
 
     .sf-inner {
