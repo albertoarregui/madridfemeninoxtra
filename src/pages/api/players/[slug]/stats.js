@@ -1,8 +1,7 @@
 
 
-import { createClient } from '@libsql/client';
-
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
+import { getDbClient } from '../../../../db/client';
+import { jsonResponse, jsonError } from '../../../../lib/api-cache';
 
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -37,23 +36,13 @@ export const GET = async ({ params }) => {
     const nombreJugadora = slugToProperName(slug);
 
     if (!nombreJugadora) {
-        return new Response(
-            JSON.stringify({ error: "Slug de jugadora no válido o vacío." }),
-            { status: 400, headers: JSON_HEADERS }
-        );
+        return jsonError('Slug de jugadora no válido o vacío.', 400);
     }
 
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         const playerQuery = `
@@ -69,10 +58,7 @@ export const GET = async ({ params }) => {
         });
 
         if (playerResult.rows.length === 0) {
-            return new Response(
-                JSON.stringify({ error: `Jugadora con nombre '${nombreJugadora}' no encontrada.` }),
-                { status: 404, headers: JSON_HEADERS }
-            );
+            return jsonError(`Jugadora con nombre '${nombreJugadora}' no encontrada.`, 404);
         }
 
         const jugadora = playerResult.rows[0];
@@ -85,94 +71,55 @@ export const GET = async ({ params }) => {
                 t.id_temporada,
                 c.competicion,
                 c.id_competicion,
-                
-                -- Convocatorias (appearances in lineup/squad)
                 COUNT(DISTINCT a.id_alineacion) as convocatorias,
-                
-                -- Partidos (matches played - same as convocatorias for now)
                 COUNT(DISTINCT a.id_partido) as partidos,
-                
-                -- Titularidades (starts - assuming alineaciones means starting lineup)
-                COUNT(DISTINCT CASE 
+                COUNT(DISTINCT CASE
                     WHEN NOT EXISTS (
-                        SELECT 1 FROM cambios cb 
-                        WHERE cb.id_partido = a.id_partido 
+                        SELECT 1 FROM cambios cb
+                        WHERE cb.id_partido = a.id_partido
                         AND cb.id_jugadora_entra = a.id_jugadora
-                    ) 
-                    THEN a.id_alineacion 
+                    )
+                    THEN a.id_alineacion
                 END) as titularidades,
-                
-                -- Suplencias (times on bench/substitute)
-                COUNT(DISTINCT CASE 
+                COUNT(DISTINCT CASE
                     WHEN EXISTS (
-                        SELECT 1 FROM cambios cb 
-                        WHERE cb.id_partido = a.id_partido 
+                        SELECT 1 FROM cambios cb
+                        WHERE cb.id_partido = a.id_partido
                         AND cb.id_jugadora_entra = a.id_jugadora
-                    ) 
-                    THEN a.id_alineacion 
+                    )
+                    THEN a.id_alineacion
                 END) as suplencias,
-                
-                -- Cambio entrada (substituted in)
                 COUNT(DISTINCT cm_in.id_cambio) as cambio_entrada,
-                
-                -- Cambio salida (substituted out)
                 COUNT(DISTINCT cm_out.id_cambio) as cambio_salida,
-                
-                -- Goles (goals)
                 COUNT(DISTINCT g.id_gol) as goles,
-                
-                -- Asistencias (assists)
                 COUNT(DISTINCT ast.id_gol) as asistencias,
-                
-                -- Porterías a cero (clean sheets - only for goalkeepers)
-                COUNT(DISTINCT CASE 
-                    WHEN p.goles_rival = 0 THEN p.id_partido 
+                COUNT(DISTINCT CASE
+                    WHEN p.goles_rival = 0 THEN p.id_partido
                 END) as porterias_cero,
-                
-                -- Tarjetas amarillas (yellow cards)
-                COUNT(DISTINCT CASE 
-                    WHEN tj.tipo_tarjeta = 'Amarilla' THEN tj.id_tarjeta 
+                COUNT(DISTINCT CASE
+                    WHEN tj.tipo_tarjeta = 'Amarilla' THEN tj.id_tarjeta
                 END) as tarjetas_amarillas,
-                
-                -- Tarjetas rojas (red cards)
-                COUNT(DISTINCT CASE 
-                    WHEN tj.tipo_tarjeta = 'Roja' THEN tj.id_tarjeta 
+                COUNT(DISTINCT CASE
+                    WHEN tj.tipo_tarjeta = 'Roja' THEN tj.id_tarjeta
                 END) as tarjetas_rojas,
-                
-                -- Capitanías (times as captain)
-                COUNT(DISTINCT CASE 
-                    WHEN p.capitana = a.id_jugadora THEN p.id_partido 
+                COUNT(DISTINCT CASE
+                    WHEN p.capitana = a.id_jugadora THEN p.id_partido
                 END) as capitanias
-                
             FROM alineaciones a
             INNER JOIN partidos p ON a.id_partido = p.id_partido
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
-            
-            -- Cambios entrada (substituted in)
-            LEFT JOIN cambios cm_in ON cm_in.id_partido = a.id_partido 
+            LEFT JOIN cambios cm_in ON cm_in.id_partido = a.id_partido
                 AND cm_in.id_jugadora_entra = a.id_jugadora
-            
-            -- Cambios salida (substituted out)
-            LEFT JOIN cambios cm_out ON cm_out.id_partido = a.id_partido 
+            LEFT JOIN cambios cm_out ON cm_out.id_partido = a.id_partido
                 AND cm_out.id_jugadora_sale = a.id_jugadora
-            
-            -- Goles
-            LEFT JOIN goles_y_asistencias g ON g.id_partido = a.id_partido 
+            LEFT JOIN goles_y_asistencias g ON g.id_partido = a.id_partido
                 AND g.goleadora = a.id_jugadora
-            
-            -- Asistencias
-            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = a.id_partido 
+            LEFT JOIN goles_y_asistencias ast ON ast.id_partido = a.id_partido
                 AND ast.asistente = a.id_jugadora
-            
-            -- Tarjetas
-            LEFT JOIN tarjetas tj ON tj.id_partido = a.id_partido 
+            LEFT JOIN tarjetas tj ON tj.id_partido = a.id_partido
                 AND tj.id_jugadora = a.id_jugadora
-            
-
-            
             WHERE a.id_jugadora = ?
-            
             GROUP BY t.temporada, t.id_temporada, c.competicion, c.id_competicion
             ORDER BY t.id_temporada DESC, c.competicion ASC
         `;
@@ -284,26 +231,21 @@ export const GET = async ({ params }) => {
             careerTotal.capitanias += total.capitanias;
         });
 
-        return new Response(
-            JSON.stringify({
+        return jsonResponse(
+            {
                 jugadora: {
                     id: jugadora.id_jugadora,
                     nombre: jugadora.nombre,
                     posicion: jugadora.posicion,
-                    es_portera: isGoalkeeper
+                    es_portera: isGoalkeeper,
                 },
                 estadisticas: estadisticasArray,
-                total_carrera: careerTotal
-            }),
-            { status: 200, headers: JSON_HEADERS }
+                total_carrera: careerTotal,
+            },
+            { sMaxage: 3600, swr: 86400 },
         );
-
     } catch (error) {
-        console.error("Error en base de datos (Stats Jugadora):", error.message);
-
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Error en base de datos (Stats Jugadora):', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };

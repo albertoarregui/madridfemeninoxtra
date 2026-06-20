@@ -1,95 +1,59 @@
-import type { Client } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client';
 
-let clientInstance: Client | null = null;
-let statsClientInstance: Client | null = null;
-let analyticsClientInstance: Client | null = null;
+const globalForDb = globalThis as unknown as {
+    __awardsDb?: Client | null;
+    __seasonAwardsDb?: Client | null;
+    __playersDb?: Client | null;
+    __analyticsDb?: Client | null;
+};
 
-export async function getDbClient(): Promise<Client | null> {
-    if (clientInstance) {
-        return clientInstance;
+const env = (key: string): string | undefined =>
+    (import.meta.env?.[key] as string | undefined) ?? process.env[key];
+
+function makeClient(
+    cacheKey: keyof typeof globalForDb,
+    urlKeys: string[],
+    tokenKeys: string[],
+    label: string,
+): Client | null {
+    const cached = globalForDb[cacheKey];
+    if (cached) return cached;
+
+    const url = urlKeys.map(env).find(Boolean);
+    const authToken = tokenKeys.map(env).find(Boolean);
+
+    if (!url || !authToken) {
+        console.error(`[DB CLIENT] ${label}: Credenciales no configuradas`);
+        return null;
     }
 
     try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env?.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('[DB CLIENT] AWARDS: Credenciales no configuradas');
-            return null;
-        }
-
-        console.log(`[DB CLIENT] Connecting to AWARDS DB: ${url}`);
-        clientInstance = createClient({ url, authToken });
-        return clientInstance;
+        const client = createClient({ url, authToken });
+        globalForDb[cacheKey] = client;
+        return client;
     } catch (e) {
-        console.error("[DB CLIENT] AWARDS: Error creating client:", e);
+        console.error(`[DB CLIENT] ${label}: Error creando el cliente:`, e);
         return null;
     }
+}
+
+export async function getDbClient(): Promise<Client | null> {
+    return makeClient('__awardsDb', ['TURSO_DATABASE_URL'], ['TURSO_AUTH_TOKEN'], 'AWARDS');
 }
 
 export async function getSeasonAwardsDbClient(): Promise<Client | null> {
-    try {
-        const { createClient } = await import('@libsql/client');
-        const url       = import.meta.env?.TURSO_DATABASE_URL_2  || process.env.TURSO_DATABASE_URL_2;
-        const authToken = import.meta.env?.TURSO_AUTH_TOKEN_2     || process.env.TURSO_AUTH_TOKEN_2;
-        if (!url || !authToken) {
-            console.error('[DB CLIENT] SEASON-AWARDS: Credenciales no configuradas');
-            return null;
-        }
-        console.log(`[DB CLIENT] Connecting to SEASON-AWARDS DB: ${url}`);
-        return createClient({ url, authToken });
-    } catch (e) {
-        console.error('[DB CLIENT] SEASON-AWARDS: Error creating client:', e);
-        return null;
-    }
+    return makeClient('__seasonAwardsDb', ['TURSO_DATABASE_URL_2'], ['TURSO_AUTH_TOKEN_2'], 'SEASON-AWARDS');
 }
 
 export async function getPlayersDbClient(): Promise<Client | null> {
-    if (statsClientInstance) {
-        return statsClientInstance;
-    }
-
-    try {
-        const { createClient } = await import('@libsql/client');
-        const url = import.meta.env?.TURSO_STATS_DATABASE_URL || process.env.TURSO_STATS_DATABASE_URL || import.meta.env?.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL;
-        const authToken = import.meta.env?.TURSO_STATS_AUTH_TOKEN || process.env.TURSO_STATS_AUTH_TOKEN || import.meta.env?.TURSO_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.error('[DB CLIENT] STATS: Credenciales no configuradas');
-            return null;
-        }
-
-        console.log(`[DB CLIENT] Connecting to STATS DB: ${url}`);
-        statsClientInstance = createClient({ url, authToken });
-        return statsClientInstance;
-    } catch (e) {
-        console.error("[DB CLIENT] STATS: Error creating client:", e);
-        return null;
-    }
+    return makeClient(
+        '__playersDb',
+        ['TURSO_STATS_DATABASE_URL', 'TURSO_DATABASE_URL'],
+        ['TURSO_STATS_AUTH_TOKEN', 'TURSO_AUTH_TOKEN'],
+        'STATS',
+    );
 }
 
 export async function getAnalyticsDbClient(): Promise<Client | null> {
-    if (analyticsClientInstance) {
-        return analyticsClientInstance;
-    }
-
-    try {
-        const { createClient } = await import('@libsql/client');
-        const url       = import.meta.env?.TURSO_NEWS_DATABASE_URL || process.env.TURSO_NEWS_DATABASE_URL;
-        const authToken = import.meta.env?.TURSO_NEWS_AUTH_TOKEN   || process.env.TURSO_NEWS_AUTH_TOKEN;
-
-        if (!url || !authToken) {
-            console.warn('[DB CLIENT] NEWS: Credenciales no configuradas (TURSO_NEWS_DATABASE_URL / TURSO_NEWS_AUTH_TOKEN)');
-            return null;
-        }
-
-        console.log(`[DB CLIENT] Connecting to NEWS DB: ${url}`);
-        analyticsClientInstance = createClient({ url, authToken });
-        return analyticsClientInstance;
-    } catch (e) {
-        console.error('[DB CLIENT] NEWS: Error creating client:', e);
-        return null;
-    }
+    return makeClient('__analyticsDb', ['TURSO_NEWS_DATABASE_URL'], ['TURSO_NEWS_AUTH_TOKEN'], 'NEWS');
 }
-

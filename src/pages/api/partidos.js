@@ -1,26 +1,11 @@
-import { createClient } from '@libsql/client';
-
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
-
-const JSON_HEADERS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET',
-};
+import { getDbClient } from '../../db/client';
+import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 export const GET = async () => {
-
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         const query = `
@@ -70,19 +55,10 @@ export const GET = async () => {
         `;
 
         const result = await client.execute(query);
-        const partidos = result.rows;
 
-        return new Response(
-            JSON.stringify(partidos),
-            { status: 200, headers: JSON_HEADERS }
-        );
-
+        return jsonResponse(result.rows, { sMaxage: 3600, swr: 86400 });
     } catch (error) {
-        console.error("Turso DB Error (Partidos):", error.message);
-
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Turso DB Error (Partidos):', error.message);
+        return jsonError('Fallo en la consulta de la base de datos: ' + error.message);
     }
 };

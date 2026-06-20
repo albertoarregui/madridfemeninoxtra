@@ -1,7 +1,5 @@
-import { createClient } from '@libsql/client';
-
-const dbUrl = import.meta.env.TURSO_DATABASE_URL;
-const dbToken = import.meta.env.TURSO_AUTH_TOKEN;
+import { getDbClient } from '../../../db/client';
+import { jsonResponse, jsonError } from '../../../lib/api-cache';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -9,59 +7,39 @@ const CORS_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const getDbClient = () => {
-    if (!dbUrl || !dbToken) {
-        return {
-            error: new Response(
-                JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-                { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-            )
-        };
-    }
-    try {
-        const client = createClient({ url: dbUrl, authToken: dbToken });
-        return { client };
-    } catch (err) {
-        return {
-            error: new Response(
-                JSON.stringify({ error: 'Error al crear el cliente de Turso.' }),
-                { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-            )
-        };
-    }
-};
-
 export const OPTIONS = () => {
     return new Response(null, {
         status: 204,
-        headers: CORS_HEADERS
+        headers: CORS_HEADERS,
     });
 };
 
 export const GET = async () => {
-    const { client, error } = getDbClient();
-    if (error) return error;
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
+    }
 
     try {
         const sqlQuery = `
-            SELECT 
-                id_entrenador, 
-                nombre, 
-                ciudad, 
-                pais, 
+            SELECT
+                id_entrenador,
+                nombre,
+                ciudad,
+                pais,
                 fecha_nacimiento,
                 foto_url
-            FROM 
-                entrenadores 
-            WHERE 
+            FROM
+                entrenadores
+            WHERE
                 nombre NOT IN ('José Manuel Lara', 'Antonio Rodríguez')
-            ORDER BY 
+            ORDER BY
                 id_entrenador ASC
         `;
 
         const result = await client.execute(sqlQuery);
 
-        const entrenadores = result.rows.map(row => {
+        const entrenadores = result.rows.map((row) => {
             let record = {};
             result.columns.forEach((col, index) => {
                 record[col] = row[index];
@@ -69,41 +47,30 @@ export const GET = async () => {
             return record;
         });
 
-        return new Response(
-            JSON.stringify(entrenadores),
-            { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
-
+        return jsonResponse(entrenadores, { sMaxage: 21600, swr: 86400 });
     } catch (error) {
-        console.error("Turso DB Error (GET Entrenadores):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        console.error('Turso DB Error (GET Entrenadores):', error.message);
+        return jsonError('Fallo en la consulta de la base de datos: ' + error.message);
     }
 };
 
 export const POST = async ({ request }) => {
-    const { client, error } = getDbClient();
-    if (error) return error;
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
+    }
 
     let body;
     try {
         body = await request.json();
     } catch (e) {
-        return new Response(
-            JSON.stringify({ error: "Formato JSON no válido en el cuerpo de la solicitud." }),
-            { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonError('Formato JSON no válido en el cuerpo de la solicitud.', 400);
     }
 
     const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
 
     if (!nombre || !ciudad || !pais || !fecha_nacimiento) {
-        return new Response(
-            JSON.stringify({ error: "Faltan campos obligatorios (nombre, ciudad, pais, fecha_nacimiento)." }),
-            { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonError('Faltan campos obligatorios (nombre, ciudad, pais, fecha_nacimiento).', 400);
     }
 
     const sql = `
@@ -113,26 +80,22 @@ export const POST = async ({ request }) => {
 
     try {
         await client.execute({
-            sql: sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url]
+            sql,
+            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url],
         });
 
-        return new Response(
-            JSON.stringify({ message: "Entrenador creado exitosamente." }),
-            { status: 201, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({ message: 'Entrenador creado exitosamente.' }, { sMaxage: 0, status: 201 });
     } catch (error) {
-        console.error("Turso DB Error (POST Entrenadores):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo al insertar el entrenador: ' + error.message }),
-            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        console.error('Turso DB Error (POST Entrenadores):', error.message);
+        return jsonError('Fallo al insertar el entrenador: ' + error.message);
     }
 };
 
 export const PUT = async ({ request, url }) => {
-    const { client, error } = getDbClient();
-    if (error) return error;
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
+    }
 
     const id_entrenador = url.searchParams.get('id');
 
@@ -140,19 +103,13 @@ export const PUT = async ({ request, url }) => {
     try {
         body = await request.json();
     } catch (e) {
-        return new Response(
-            JSON.stringify({ error: "Formato JSON no válido en el cuerpo de la solicitud." }),
-            { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonError('Formato JSON no válido en el cuerpo de la solicitud.', 400);
     }
 
     const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
 
     if (!id_entrenador || !nombre || !ciudad || !pais || !fecha_nacimiento) {
-        return new Response(
-            JSON.stringify({ error: "Faltan campos obligatorios para la actualización (ID o datos del entrenador)." }),
-            { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonError('Faltan campos obligatorios para la actualización (ID o datos del entrenador).', 400);
     }
 
     const sql = `
@@ -163,66 +120,44 @@ export const PUT = async ({ request, url }) => {
 
     try {
         const result = await client.execute({
-            sql: sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url, id_entrenador]
+            sql,
+            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url, id_entrenador],
         });
 
         if (result.rowsAffected === 0) {
-            return new Response(
-                JSON.stringify({ message: "No se encontró el entrenador con ese ID." }),
-                { status: 404, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-            );
+            return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
-        return new Response(
-            JSON.stringify({ message: "Entrenador actualizado exitosamente." }),
-            { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({ message: 'Entrenador actualizado exitosamente.' }, { sMaxage: 0 });
     } catch (error) {
-        console.error("Turso DB Error (PUT Entrenadores):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo al actualizar el entrenador: ' + error.message }),
-            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        console.error('Turso DB Error (PUT Entrenadores):', error.message);
+        return jsonError('Fallo al actualizar el entrenador: ' + error.message);
     }
 };
 
 export const DELETE = async ({ url }) => {
-    const { client, error } = getDbClient();
-    if (error) return error;
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
+    }
 
     const id_entrenador = url.searchParams.get('id');
 
     if (!id_entrenador) {
-        return new Response(
-            JSON.stringify({ error: "El ID del entrenador es obligatorio para eliminar." }),
-            { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        return jsonError('El ID del entrenador es obligatorio para eliminar.', 400);
     }
 
     const sql = `DELETE FROM entrenadores WHERE id_entrenador = ?`;
 
     try {
-        const result = await client.execute({
-            sql: sql,
-            args: [id_entrenador]
-        });
+        const result = await client.execute({ sql, args: [id_entrenador] });
 
         if (result.rowsAffected === 0) {
-            return new Response(
-                JSON.stringify({ message: "No se encontró el entrenador con ese ID." }),
-                { status: 404, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-            );
+            return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
 
-        return new Response(null, {
-            status: 204,
-            headers: CORS_HEADERS
-        });
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
     } catch (error) {
-        console.error("Turso DB Error (DELETE Entrenadores):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo al eliminar el entrenador: ' + error.message }),
-            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-        );
+        console.error('Turso DB Error (DELETE Entrenadores):', error.message);
+        return jsonError('Fallo al eliminar el entrenador: ' + error.message);
     }
 };

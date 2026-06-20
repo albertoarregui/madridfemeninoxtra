@@ -1,52 +1,29 @@
-import { createClient } from '@libsql/client';
-
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
-
-const JSON_HEADERS = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET',
-};
+import { getDbClient } from '../../db/client';
+import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 export const GET = async () => {
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         const query = `
-            SELECT 
+            SELECT
                 id_club,
                 nombre,
                 ciudad,
                 pais
             FROM clubes
-            WHERE id_club != 1 
+            WHERE id_club != 1
             ORDER BY nombre ASC
         `;
 
         const result = await client.execute(query);
-        const todosLosClubes = result.rows;
 
-        return new Response(
-            JSON.stringify(todosLosClubes),
-            { status: 200, headers: JSON_HEADERS }
-        );
-
+        return jsonResponse(result.rows, { sMaxage: 21600, swr: 86400 });
     } catch (error) {
-        console.error("Turso DB Error en clubes:", error);
-
-        return new Response(
-            JSON.stringify({ error: 'Fallo al consultar clubes: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Turso DB Error en clubes:', error);
+        return jsonError('Fallo al consultar clubes: ' + error.message);
     }
-}
+};

@@ -1,6 +1,7 @@
-import { createClient } from '@libsql/client';
 import type { APIRoute } from 'astro';
 import { slugify } from '../../utils/players';
+import { getDbClient } from '../../db/client';
+import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 const CORS_HEADERS = {
     'Content-Type': 'application/json',
@@ -21,13 +22,10 @@ export const GET: APIRoute = async ({ request }) => {
     const fechaHasta   = url.searchParams.get('fecha_hasta')   ?? '';
     const idPartido    = url.searchParams.get('id_partido')    ?? '';
 
-    const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
-
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(JSON.stringify({ error: 'DB not configured' }), { status: 500, headers: CORS_HEADERS });
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('DB not configured');
     }
-
-    const client = createClient({ url: TURSO_DATABASE_URL, authToken: TURSO_AUTH_TOKEN });
 
     try {
         const matchWhere: string[] = ['p.goles_rm IS NOT NULL'];
@@ -324,9 +322,9 @@ export const GET: APIRoute = async ({ request }) => {
             valoracion_count: Number(row.valoracion_count),
         }));
 
-        return new Response(JSON.stringify(data), { status: 200, headers: CORS_HEADERS });
+        return jsonResponse(data, { sMaxage: 3600, swr: 86400 });
     } catch (err: any) {
         console.error('[buscador-avanzado]', err);
-        return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: CORS_HEADERS });
+        return jsonError(err.message);
     }
 };

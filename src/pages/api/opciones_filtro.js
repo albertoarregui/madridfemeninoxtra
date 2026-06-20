@@ -1,34 +1,27 @@
-import { createClient } from '@libsql/client';
-
-const dbUrl = import.meta.env.TURSO_DATABASE_URL;
-const dbToken = import.meta.env.TURSO_AUTH_TOKEN;
+import { getDbClient } from '../../db/client';
+import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
 };
 
 export const OPTIONS = () => {
     return new Response(null, {
         status: 204,
-        headers: CORS_HEADERS
+        headers: CORS_HEADERS,
     });
 };
 
 export const GET = async () => {
-
-    if (!dbUrl || !dbToken) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso (URL o Token) no configuradas en el entorno." }),
-            { status: 500, headers: CORS_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso (URL o Token) no configuradas en el entorno.');
     }
 
     try {
-        const client = createClient({ url: dbUrl, authToken: dbToken });
-
         const competicionesQuery = `
             SELECT DISTINCT c.competicion
             FROM partidos p
@@ -46,20 +39,13 @@ export const GET = async () => {
         const temporadasResult = await client.execute(temporadasQuery);
 
         const opciones = {
-            competiciones: competicionesResult.rows.map(row => row.competicion),
-            temporadas: temporadasResult.rows.map(row => row.temporada),
+            competiciones: competicionesResult.rows.map((row) => row.competicion),
+            temporadas: temporadasResult.rows.map((row) => row.temporada),
         };
 
-        return new Response(
-            JSON.stringify(opciones),
-            { status: 200, headers: CORS_HEADERS }
-        );
-
+        return jsonResponse(opciones, { sMaxage: 3600, swr: 86400 });
     } catch (error) {
-        console.error("Error al obtener opciones de filtro (DB):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: CORS_HEADERS }
-        );
+        console.error('Error al obtener opciones de filtro (DB):', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };

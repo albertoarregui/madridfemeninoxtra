@@ -1,4 +1,5 @@
-import { createClient } from '@libsql/client';
+import { getDbClient } from '../../../../db/client';
+import { jsonResponse, jsonError } from '../../../../lib/api-cache';
 
 function slugToProperName(slug) {
     if (!slug) return '';
@@ -24,8 +25,6 @@ function rowToObject(row, columns) {
     return obj;
 }
 
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
-
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -45,23 +44,13 @@ export const GET = async ({ params }) => {
     const nombreJugadora = slugToProperName(slug);
 
     if (!nombreJugadora) {
-        return new Response(
-            JSON.stringify({ error: "Slug de jugadora no válido o vacío." }),
-            { status: 400, headers: JSON_HEADERS }
-        );
+        return jsonError('Slug de jugadora no válido o vacío.', 400);
     }
 
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         let jugadora;
@@ -82,10 +71,7 @@ export const GET = async ({ params }) => {
         const fichaResult = await client.execute({ sql: fichaQuery, args: [nombreJugadora], parse: true });
 
         if (fichaResult.rows.length === 0) {
-            return new Response(
-                JSON.stringify({ error: `Jugadora con nombre '${nombreJugadora}' no encontrada.` }),
-                { status: 404, headers: JSON_HEADERS }
-            );
+            return jsonError(`Jugadora con nombre '${nombreJugadora}' no encontrada.`, 404);
         }
 
         jugadora = rowToObject(fichaResult.rows[0], fichaResult.columns);
@@ -100,7 +86,6 @@ export const GET = async ({ params }) => {
             LEFT JOIN clubes T_CLUB
                 ON T_DEBUT.id_club = T_CLUB.id_club
             WHERE T_DEBUT.id_jugadora = ?
-                -- Esta subconsulta filtra para encontrar el registro con la fecha más antigua (debut)
                 AND T_DEBUT.fecha_debut = (
                     SELECT MIN(fecha_debut) 
                     FROM dorsales 
@@ -123,23 +108,16 @@ export const GET = async ({ params }) => {
 
         const trayectoria = [];
 
-
-        return new Response(
-            JSON.stringify({
+        return jsonResponse(
+            {
                 ficha: jugadora,
                 dorsal_actual: dorsalActual,
-                trayectoria: trayectoria
-            }),
-            { status: 200, headers: JSON_HEADERS }
+                trayectoria: trayectoria,
+            },
+            { sMaxage: 3600, swr: 86400 },
         );
-
     } catch (error) {
-
-        console.error("Error en base de datos (Ficha Jugadora):", error.message);
-
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Error en base de datos (Ficha Jugadora):', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };

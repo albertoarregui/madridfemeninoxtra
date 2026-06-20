@@ -1,6 +1,5 @@
-import { createClient } from '@libsql/client';
-
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
+import { getDbClient } from '../../../../db/client';
+import { jsonResponse, jsonError } from '../../../../lib/api-cache';
 
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -28,23 +27,13 @@ export const GET = async ({ params }) => {
     const slug = params.slug;
 
     if (!slug) {
-        return new Response(
-            JSON.stringify({ error: "Falta el slug del entrenador en la URL." }),
-            { status: 400, headers: JSON_HEADERS }
-        );
+        return jsonError('Falta el slug del entrenador en la URL.', 400);
     }
 
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     const nombreEntrenador = slugToProperName(slug);
 
@@ -68,22 +57,15 @@ export const GET = async ({ params }) => {
         const fichaResult = await client.execute({ sql: fichaQuery, args: [nombreEntrenador] });
 
         if (fichaResult.rows.length === 0) {
-            return new Response(
-                JSON.stringify({ error: `Entrenador con nombre '${nombreEntrenador}' no encontrado.` }),
-                { status: 404, headers: JSON_HEADERS }
-            );
+            return jsonError(`Entrenador con nombre '${nombreEntrenador}' no encontrado.`, 404);
         }
 
         entrenador = fichaResult.rows[0];
         const id_entrenador = entrenador.id_entrenador;
 
-        // Exclusión de entrenadores específicos
         const excludedNames = ["jose manuel lara", "antonio rodriguez"];
         if (entrenador.nombre && excludedNames.includes(entrenador.nombre.toLowerCase().trim())) {
-            return new Response(
-                JSON.stringify({ error: "Este entrenador no tiene ficha pública disponible." }),
-                { status: 403, headers: JSON_HEADERS }
-            );
+            return jsonError('Este entrenador no tiene ficha pública disponible.', 403);
         }
 
         const statsQuery = `
@@ -134,19 +116,15 @@ export const GET = async ({ params }) => {
             return statRecord;
         });
 
-        return new Response(
-            JSON.stringify({
+        return jsonResponse(
+            {
                 ficha: entrenador,
-                estadisticas: estadisticasCalculadas
-            }),
-            { status: 200, headers: JSON_HEADERS }
+                estadisticas: estadisticasCalculadas,
+            },
+            { sMaxage: 3600, swr: 86400 },
         );
-
     } catch (error) {
-        console.error("Turso DB Error (Stats Entrenador):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Turso DB Error (Stats Entrenador):', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };

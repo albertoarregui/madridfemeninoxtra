@@ -1,6 +1,5 @@
-import { createClient } from '@libsql/client';
-
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
+import { getDbClient } from '../../../../db/client';
+import { jsonResponse, jsonError } from '../../../../lib/api-cache';
 
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -40,23 +39,13 @@ export const GET = async ({ params }) => {
     const slugData = parseSlugPartido(slug);
 
     if (!slugData) {
-        return new Response(
-            JSON.stringify({ error: "Slug de partido no válido o mal formado." }),
-            { status: 400, headers: JSON_HEADERS }
-        );
+        return jsonError('Slug de partido no válido o mal formado.', 400);
     }
 
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         const partidoQuery = `
@@ -79,22 +68,12 @@ export const GET = async ({ params }) => {
         const partido = partidoResult.rows[0] || null;
 
         if (!partido) {
-            return new Response(
-                JSON.stringify({ error: `Partido no encontrado para la fecha: ${slugData.fecha}.` }),
-                { status: 404, headers: JSON_HEADERS }
-            );
+            return jsonError(`Partido no encontrado para la fecha: ${slugData.fecha}.`, 404);
         }
 
-        return new Response(
-            JSON.stringify(partido),
-            { status: 200, headers: JSON_HEADERS }
-        );
-
+        return jsonResponse(partido, { sMaxage: 21600, swr: 86400 });
     } catch (error) {
-        console.error("Turso DB Error (Ficha Partido):", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Turso DB Error (Ficha Partido):', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };

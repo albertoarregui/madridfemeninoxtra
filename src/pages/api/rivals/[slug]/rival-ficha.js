@@ -1,4 +1,5 @@
-import { createClient } from '@libsql/client';
+import { getDbClient } from '../../../../db/client';
+import { jsonResponse, jsonError } from '../../../../lib/api-cache';
 
 function mapRowToObject(row, columns) {
     if (!row) return null;
@@ -87,8 +88,6 @@ function calcularRankingGA(goleadoras, asistentes) {
         .slice(0, 5);
 }
 
-const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = import.meta.env;
-
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -109,23 +108,13 @@ export const GET = async ({ params }) => {
     const rivalNombre = slugToProperName(clubSlugLimpio);
 
     if (!rivalNombre) {
-        return new Response(
-            JSON.stringify({ error: "Slug de club rival no válido o vacío." }),
-            { status: 400, headers: JSON_HEADERS }
-        );
+        return jsonError('Slug de club rival no válido o vacío.', 400);
     }
 
-    if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-        return new Response(
-            JSON.stringify({ error: "Fallo de conexión: Credenciales de Turso no configuradas." }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+    const client = await getDbClient();
+    if (!client) {
+        return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
-
-    const client = createClient({
-        url: TURSO_DATABASE_URL,
-        authToken: TURSO_AUTH_TOKEN,
-    });
 
     try {
         let club;
@@ -145,10 +134,7 @@ export const GET = async ({ params }) => {
         const clubResult = await client.execute({ sql: clubQuery, args: [rivalNombre] });
 
         if (clubResult.rows.length === 0) {
-            return new Response(
-                JSON.stringify({ error: `Club rival con nombre '${rivalNombre}' no encontrado.` }),
-                { status: 404, headers: JSON_HEADERS }
-            );
+            return jsonError(`Club rival con nombre '${rivalNombre}' no encontrado.`, 404);
         }
 
         club = mapRowToObject(clubResult.rows[0], clubResult.columns);
@@ -161,19 +147,11 @@ export const GET = async ({ params }) => {
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             JOIN jugadoras j ON g.id_jugadora = j.id_jugadora
-            -- Solo goles A FAVOR (es decir, el club local es RM o el visitante es el rival)
             WHERE g.tipo = 'GOL' AND (p.id_club_local = ? OR p.id_club_visitante = ?)
             GROUP BY j.nombre
             ORDER BY total_goles DESC
             LIMIT 5
         `;
-
-        const goleadorasResult = await client.execute({
-            sql: goleadorasQuery,
-            args: [id_club, id_club],
-            parse: true
-        });
-        const goleadoras = goleadorasResult.rows;
 
         const asistentesQuery = `
             SELECT
@@ -182,18 +160,11 @@ export const GET = async ({ params }) => {
             FROM goles_y_asistencias g
             JOIN partidos p ON g.id_partido = p.id_partido
             JOIN jugadoras j ON g.id_jugadora_asistente = j.id_jugadora
-            -- Solo asistencias A FAVOR
             WHERE g.tipo = 'ASISTENCIA' AND (p.id_club_local = ? OR p.id_club_visitante = ?)
             GROUP BY j.nombre
             ORDER BY total_asistencias DESC
             LIMIT 5
         `;
-        const asistentesResult = await client.execute({
-            sql: asistentesQuery,
-            args: [id_club, id_club],
-            parse: true
-        });
-        const asistentes = asistentesResult.rows;
 
         const partidosQuery = `
             SELECT
@@ -205,11 +176,14 @@ export const GET = async ({ params }) => {
             WHERE cl.nombre = ? OR cv.nombre = ?
         `;
 
-        const partidosResult = await client.execute({
-            sql: partidosQuery,
-            args: [rivalNombre, rivalNombre],
-            parse: true
-        });
+        const [goleadorasResult, asistentesResult, partidosResult] = await Promise.all([
+            client.execute({ sql: goleadorasQuery, args: [id_club, id_club], parse: true }),
+            client.execute({ sql: asistentesQuery, args: [id_club, id_club], parse: true }),
+            client.execute({ sql: partidosQuery, args: [rivalNombre, rivalNombre], parse: true }),
+        ]);
+
+        const goleadoras = goleadorasResult.rows;
+        const asistentes = asistentesResult.rows;
         const enfrentamientos = partidosResult.rows;
         const stats = calcularEstadisticasRival(enfrentamientos);
         const rankingGA = calcularRankingGA(goleadoras, asistentes);
@@ -223,16 +197,9 @@ export const GET = async ({ params }) => {
             ranking_ga: rankingGA,
         };
 
-        return new Response(
-            JSON.stringify(fichaClub),
-            { status: 200, headers: JSON_HEADERS }
-        );
-
+        return jsonResponse(fichaClub, { sMaxage: 3600, swr: 86400 });
     } catch (error) {
-        console.error("Error durante la ejecución de la API Ficha Rival:", error.message);
-        return new Response(
-            JSON.stringify({ error: 'Fallo en la conexión o consulta de la base de datos: ' + error.message }),
-            { status: 500, headers: JSON_HEADERS }
-        );
+        console.error('Error durante la ejecución de la API Ficha Rival:', error.message);
+        return jsonError('Fallo en la conexión o consulta de la base de datos: ' + error.message);
     }
 };
