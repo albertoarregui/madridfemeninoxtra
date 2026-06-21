@@ -670,10 +670,10 @@ export async function fetchMatchKit(matchId: string | number): Promise<string | 
         if (!client) return null;
 
         const query = `
-            SELECT e.imagen_url 
-            FROM equipacion_partido ep 
-            JOIN equipaciones e ON ep.id_equipacion = e.id_equipacion
-            WHERE ep.id_partido = ?
+            SELECT e.imagen_url
+            FROM partidos p
+            JOIN equipaciones e ON p.id_equipacion = e.id_equipacion
+            WHERE p.id_partido = ?
         `;
 
         const result = await client.execute({
