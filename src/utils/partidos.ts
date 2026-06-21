@@ -1120,21 +1120,15 @@ export async function fetchAllGoals(): Promise<any[]> {
             LEFT JOIN dorsales d1 ON (g.goleadora = d1.id_jugadora AND p.id_temporada = d1.id_temporada)
             -- Foto de la última temporada disponible (fallback general)
             LEFT JOIN dorsales d2 ON (g.goleadora = d2.id_jugadora AND d2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.goleadora))
-            
-            -- Goleadora: Relación por Nombre (fallback si id_jugadora es null)
-            LEFT JOIN jugadoras j2 ON (g.goleadora = j2.nombre AND j.id_jugadora IS NULL)
-            
+
             -- Asistente: Relación por ID
             LEFT JOIN jugadoras ast ON g.asistente = ast.id_jugadora
             -- Foto dorsal asistente temporada actual
             LEFT JOIN dorsales d_ast1 ON (g.asistente = d_ast1.id_jugadora AND p.id_temporada = d_ast1.id_temporada)
             -- Foto dorsal asistente última temporada
             LEFT JOIN dorsales d_ast2 ON (g.asistente = d_ast2.id_jugadora AND d_ast2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.asistente))
-            
-            -- Asistente: Relación por Nombre (fallback)
-            LEFT JOIN jugadoras ast2 ON (g.asistente = ast2.nombre AND ast.id_jugadora IS NULL)
-            
-            WHERE 1=1 
+
+            WHERE 1=1
             -- Deduplicate by goal ID in case joins have multiple matches
             GROUP BY g.id_gol
         `;
