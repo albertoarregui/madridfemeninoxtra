@@ -4,17 +4,22 @@ import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 
 const allPlayersDb = await fetchPlayersDirectly();
 
-const allSeasons = allPlayersDb.flatMap((p) => p.temporadas || []);
+// Incluimos todas las temporadas con presencia en plantilla, haya o no dorsal
+// asignado, para detectar la temporada actual aunque aún no haya dorsales.
+const allSeasons = allPlayersDb.flatMap((p) => Object.keys(p.season_info || {}));
 const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
 
 const squadPlayers = allPlayersDb.filter((player) => {
-    const dorsal = player.dorsales && player.dorsales[latestSeason];
-    return dorsal !== undefined && Number(dorsal) >= 1 && Number(dorsal) <= 24;
+    const info = player.season_info && player.season_info[latestSeason];
+    if (!info) return false;
+    // Sin dorsal todavía (principio de temporada): se muestra si es del primer equipo.
+    if (info.dorsal === null) return info.id_categoria === 4;
+    return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
 });
 
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin, iso } = player;
-    const dorsal = player.dorsales[latestSeason];
+    const dorsal = player.season_info[latestSeason].dorsal;
     const profilePhoto =
         player.profile_photos && player.profile_photos[latestSeason];
     const seasonPhoto =
@@ -24,7 +29,7 @@ const listofPlayers = squadPlayers.map((player) => {
         ...player,
         id: player.id_jugadora.toString(),
         name: player.nombre,
-        number: dorsal.toString(),
+        number: dorsal != null ? dorsal.toString() : "",
         position: player.posicion,
         country: pais_origin,
         iso,
@@ -46,7 +51,12 @@ const listofPlayers = squadPlayers.map((player) => {
     };
 });
 
-listofPlayers.sort((a, b) => Number(a.number) - Number(b.number));
+// Las jugadoras sin dorsal asignado se ordenan al final de su grupo.
+listofPlayers.sort((a, b) => {
+    const na = a.number === "" ? Infinity : Number(a.number);
+    const nb = b.number === "" ? Infinity : Number(b.number);
+    return na - nb;
+});
 
 const getNormalizedPosition = (pos: string) => {
     const p = pos?.toLowerCase() || "";
@@ -218,7 +228,7 @@ function calculateAge(birthDateString: string): number {
 </section>
 
 <script is:inline define:vars={{ players: listofPlayers }}>
-    /** @type {Array<any>} */ var players; // injected by define:vars
+    // `players` lo inyecta define:vars (no redeclarar: rompería el script).
 
     function calculateAge(birthDateString) {
         const birthDate = new Date(birthDateString);

@@ -58,9 +58,10 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 j.posicion,
                 t.temporada,
                 d.dorsal,
+                d.id_categoria,
                 d.foto_url,
                 d.foto_perfil_url
-            FROM 
+            FROM
                 jugadoras j
             LEFT JOIN
                 dorsales d ON j.id_jugadora = d.id_jugadora
@@ -81,23 +82,45 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                     ...row,
                     temporadas: [],
                     dorsales: {},
+                    season_info: {},
                     season_photos: {}
                 });
             }
 
             const player = playersMap.get(id);
+
+            // Registramos la temporada aunque la jugadora todavía no tenga dorsal
+            // asignado (p. ej. a principio de temporada). `season_info` conserva el
+            // dorsal crudo (null si aún no se sabe) y la categoría, sin alterar
+            // `temporadas`/`dorsales`, que usan el resto de páginas.
+            if (row.temporada) {
+                const incoming = {
+                    dorsal: row.dorsal === null || row.dorsal === undefined ? null : Number(row.dorsal),
+                    id_categoria: row.id_categoria != null ? Number(row.id_categoria) : null,
+                };
+                const existing = player.season_info[row.temporada];
+                const isBetter =
+                    !existing ||
+                    (existing.id_categoria !== 4 && incoming.id_categoria === 4) ||
+                    (existing.id_categoria === incoming.id_categoria && existing.dorsal == null && incoming.dorsal != null);
+                if (isBetter) player.season_info[row.temporada] = incoming;
+
+                if (row.foto_url && !player.season_photos[row.temporada]) {
+                    player.season_photos[row.temporada] = row.foto_url;
+                }
+                if (row.foto_perfil_url) {
+                    if (!player.profile_photos) player.profile_photos = {};
+                    if (!player.profile_photos[row.temporada]) {
+                        player.profile_photos[row.temporada] = row.foto_perfil_url;
+                    }
+                }
+            }
+
             if (row.temporada && row.dorsal !== null && row.dorsal !== undefined) {
                 if (!player.temporadas.includes(row.temporada)) {
                     player.temporadas.push(row.temporada);
                 }
                 player.dorsales[row.temporada] = Number(row.dorsal);
-                if (row.foto_url) {
-                    player.season_photos[row.temporada] = row.foto_url;
-                }
-                if (row.foto_perfil_url) {
-                    if (!player.profile_photos) player.profile_photos = {};
-                    player.profile_photos[row.temporada] = row.foto_perfil_url;
-                }
             }
         });
 
@@ -121,6 +144,7 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 lng: player.lng != null ? Number(player.lng) : null,
                 temporadas: temporadas,
                 dorsales: player.dorsales || {},
+                season_info: player.season_info || {},
                 season_photos: player.season_photos || {},
                 profile_photos: player.profile_photos || {},
                 rm_career: temporadas.length > 0 ? temporadas.join('-') : 'Actualidad'
