@@ -4,15 +4,12 @@ import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 
 const allPlayersDb = await fetchPlayersDirectly();
 
-// Incluimos todas las temporadas con presencia en plantilla, haya o no dorsal
-// asignado, para detectar la temporada actual aunque aún no haya dorsales.
 const allSeasons = allPlayersDb.flatMap((p) => Object.keys(p.season_info || {}));
 const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
 
 const squadPlayers = allPlayersDb.filter((player) => {
     const info = player.season_info && player.season_info[latestSeason];
     if (!info) return false;
-    // Sin dorsal todavía (principio de temporada): se muestra si es del primer equipo.
     if (info.dorsal === null) return info.id_categoria === 4;
     return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
 });
@@ -51,7 +48,6 @@ const listofPlayers = squadPlayers.map((player) => {
     };
 });
 
-// Las jugadoras sin dorsal asignado se ordenan al final de su grupo.
 listofPlayers.sort((a, b) => {
     const na = a.number === "" ? Infinity : Number(a.number);
     const nb = b.number === "" ? Infinity : Number(b.number);
@@ -228,7 +224,6 @@ function calculateAge(birthDateString: string): number {
 </section>
 
 <script is:inline define:vars={{ players: listofPlayers }}>
-    // `players` lo inyecta define:vars (no redeclarar: rompería el script).
 
     function calculateAge(birthDateString) {
         const birthDate = new Date(birthDateString);

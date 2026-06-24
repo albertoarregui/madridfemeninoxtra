@@ -241,7 +241,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
 
     return (
         <div className="w-full max-w-7xl mx-auto mb-0">
-            {/* Filters */}
             <div className="flex flex-col items-center mb-6 gap-4 relative z-[1001]">
                 <div className="flex gap-4 w-full flex-wrap justify-center items-center">
                     <CustomSelect
@@ -268,7 +267,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            {/* Top 4 KPI cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
@@ -309,9 +307,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            {/* Mid row: Balance / Disciplina / GD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                {/* Balance */}
                 <div className={`${card} p-6 flex flex-col justify-center`}>
                     <h3 className={`${cardTitle} mb-4`}>Balance de Resultados</h3>
                     <div className="flex items-end justify-between text-center divide-x divide-[rgba(255,255,255,0.08)]">
@@ -336,7 +332,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     </div>
                 </div>
 
-                {/* Disciplina */}
                 <div className={`${card} p-6 overflow-hidden`}>
                     <div className="flex items-center justify-between mb-4">
                         <h3 className={cardTitle}>Disciplina</h3>
@@ -386,7 +381,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     </div>
                 </div>
 
-                {/* GD + clean sheets */}
                 <div className={`${card} p-6 flex flex-col justify-center gap-6`}>
                     <div className="flex items-start justify-between group/inner">
                         <div>
@@ -409,7 +403,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            {/* Attendance chart */}
             <div className={`${card} p-6 mb-6`}>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className={cardTitle}>Evolución de Asistencia</h3>
@@ -482,7 +475,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            {/* Goal timing chart */}
             <div className={`${card} p-6 mb-6 relative`}>
                 <div className="flex items-center justify-between mb-8">
                     <h3 className={cardTitle}>Distribución de Goles (Minutos)</h3>
@@ -517,7 +509,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                 </div>
             </div>
 
-            {/* Top scorers / assisters / G+A */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 {[
                     {

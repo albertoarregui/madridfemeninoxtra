@@ -588,9 +588,10 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         }
         window.closeVideoModal = closeVideoModal;
 
-        document.addEventListener("DOMContentLoaded", () => {
+        function initRecordsFilter() {
             const container = document.getElementById("container-competicion");
-            if (!container) return;
+            if (!container || container.dataset.filterInit) return;
+            container.dataset.filterInit = "true";
 
             const trigger = container.querySelector(".custom-select-trigger");
             const options = container.querySelectorAll(".custom-select-option");
@@ -623,11 +624,15 @@ const formatShortDate = (dateString: string | null | undefined): string => {
                     });
                 });
             });
+        }
 
-            document.addEventListener("click", () => {
-                container.classList.remove("open");
-            });
+        document.addEventListener("click", () => {
+            document
+                .getElementById("container-competicion")
+                ?.classList.remove("open");
         });
+
+        document.addEventListener("astro:page-load", initRecordsFilter);
     </script>
 
     <style>

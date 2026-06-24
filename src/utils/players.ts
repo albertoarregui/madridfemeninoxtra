@@ -89,10 +89,6 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
 
             const player = playersMap.get(id);
 
-            // Registramos la temporada aunque la jugadora todavía no tenga dorsal
-            // asignado (p. ej. a principio de temporada). `season_info` conserva el
-            // dorsal crudo (null si aún no se sabe) y la categoría, sin alterar
-            // `temporadas`/`dorsales`, que usan el resto de páginas.
             if (row.temporada) {
                 const incoming = {
                     dorsal: row.dorsal === null || row.dorsal === undefined ? null : Number(row.dorsal),

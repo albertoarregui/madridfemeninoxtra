@@ -295,7 +295,6 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
             const matchesComp = selectedComp === 'todos' || 
                                (selectedComp === 'oficiales' && ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(p.competicion_nombre)) ||
                                p.competicion_nombre === selectedComp;
-            const matchesSeason = selectedSeason === 'todos'; // Matches are already filtered by season in the API usually, but let's be safe if we had season info
             return matchesComp;
         });
         return [
@@ -517,6 +516,7 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
                     <table className="bus-table">
                         <thead>
                             <tr>
+                                <th className="bus-th bus-th-num">#</th>
                                 <th className="bus-th bus-th-player">Jugadora</th>
                                 {activeColumns.map(col => (
                                     <th
@@ -541,9 +541,9 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
                                 const img = playerImageMap[player.slug];
                                 return (
                                     <tr key={player.id_jugadora} className={`bus-tr${idx % 2 !== 0 ? ' alt' : ''}`}>
+                                        <td className="bus-td bus-td-num">{idx + 1}</td>
                                         <td className="bus-td bus-td-player">
                                             <a href={`/jugadoras/${player.slug}`} className="bus-player-link">
-                                                <span className="bus-rank">{idx + 1}</span>
                                                 {img
                                                     ? <img src={img} alt={player.nombre} className="bus-player-img" loading="lazy" />
                                                     : <div className="bus-player-img-ph" />

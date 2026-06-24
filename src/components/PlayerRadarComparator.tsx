@@ -414,7 +414,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                     });
                     img.src = dataUrl;
                     await new Promise<void>(r => { if (img.complete) r(); else { img.onload = () => r(); } });
-                } catch { /* keep original src */ }
+                } catch {}
             }));
 
             const canvas = await html2canvas(captureRef.current, {
