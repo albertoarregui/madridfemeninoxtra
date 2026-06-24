@@ -5,7 +5,10 @@ export const prerender = false;
 
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 
-async function notifyGoogleIndexing(url: string): Promise<{ success: boolean; result?: any; error?: string }> {
+async function notifyGoogleIndexing(
+    url: string,
+    type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED',
+): Promise<{ success: boolean; result?: any; error?: string }> {
     const clientEmail = import.meta.env.GOOGLE_CLIENT_EMAIL;
     const privateKey = import.meta.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
@@ -27,7 +30,7 @@ async function notifyGoogleIndexing(url: string): Promise<{ success: boolean; re
             'Content-Type': 'application/json',
             Authorization: `Bearer ${jwtClient.credentials.access_token}`,
         },
-        body: JSON.stringify({ url, type: 'URL_UPDATED' }),
+        body: JSON.stringify({ url, type }),
     });
 
     const result = await response.json();
@@ -50,10 +53,10 @@ export const POST: APIRoute = async ({ request }) => {
         const body = await request.json();
 
         const contentType = body?.sys?.contentType?.sys?.id;
-        const slug = body?.fields?.slug?.['es'] ?? body?.fields?.slug;
-        const isPublished =
-            body?.sys?.type === 'Entry' &&
-            (body?.sys?.publishedVersion || body?.metadata?.tags);
+        const slugField = body?.fields?.slug;
+        const slug = typeof slugField === 'string'
+            ? slugField
+            : (slugField && typeof slugField === 'object' ? Object.values(slugField)[0] : null);
 
         console.log(`[Webhook] Evento recibido - contentType: ${contentType}, slug: ${slug}`);
 
@@ -64,10 +67,14 @@ export const POST: APIRoute = async ({ request }) => {
             );
         }
 
+        const topic = request.headers.get('x-contentful-topic') ?? '';
+        const type: 'URL_UPDATED' | 'URL_DELETED' =
+            /unpublish|delete/i.test(topic) ? 'URL_DELETED' : 'URL_UPDATED';
+
         const noticiaUrl = `${SITE_URL}/noticias/${slug}`;
 
-        console.log(`[Webhook] Indexando URL: ${noticiaUrl}`);
-        const indexResult = await notifyGoogleIndexing(noticiaUrl);
+        console.log(`[Webhook] Notificando a Google (${type}): ${noticiaUrl}`);
+        const indexResult = await notifyGoogleIndexing(noticiaUrl, type);
 
         if (indexResult.success) {
             console.log(`[Webhook] ✅ Indexada correctamente: ${noticiaUrl}`);
