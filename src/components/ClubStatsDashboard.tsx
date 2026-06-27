@@ -385,19 +385,19 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                     <div className="flex items-start justify-between group/inner">
                         <div>
                             <p className={`${cardTitle} mb-1`}>Diferencia de Goles</p>
-                            <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-400' : 'text-red-400'} group-hover:text-[#d4a843] transition-colors`}>{stats.gd}</p>
+                            <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>{stats.gd}</p>
                         </div>
-                        <TrendingUp size={24} className="text-[rgba(212,168,67,0.25)] group-hover:text-[#d4a843] transition-colors mt-0.5" />
+                        <TrendingUp size={24} className="text-[rgba(212,168,67,0.25)] mt-0.5" />
                     </div>
                     <div className={divider}></div>
                     <div className="flex items-start justify-between">
                         <div>
                             <p className={`${cardTitle} mb-1`}>Porterías a Cero</p>
-                            <p className="text-3xl font-black text-[#f0f0f0] group-hover:text-[#d4a843] transition-colors">{stats.cleanSheets}</p>
+                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.cleanSheets}</p>
                         </div>
                         <div className="text-right">
                             <p className={`${cardTitle} mb-1`}>% Imbatibilidad</p>
-                            <p className="text-lg font-bold text-[#c8c8c8] group-hover:text-[#d4a843] transition-colors">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
+                            <p className="text-lg font-bold text-[#c8c8c8]">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
                         </div>
                     </div>
                 </div>

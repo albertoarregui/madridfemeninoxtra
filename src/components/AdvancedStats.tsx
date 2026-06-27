@@ -1,7 +1,8 @@
 import React, { Component, useState, useEffect, useRef, useMemo } from 'react';
 import {
-    ComposedChart, Bar, Cell, Line, XAxis, YAxis, CartesianGrid,
+    ComposedChart, Bar, Cell, Line, Area, XAxis, YAxis, CartesianGrid,
     Tooltip as RTooltip, Legend, ResponsiveContainer,
+    FunnelChart, Funnel, LabelList,
 } from 'recharts';
 import * as d3 from 'd3';
 
@@ -16,6 +17,10 @@ interface NetPayload { nodes: NetworkNode[]; edges: NetworkEdge[]; seasons: stri
 interface SimNode extends d3.SimulationNodeDatum { id: string; name: string; img: string | null; assists: number; goals: number; }
 interface SimLink extends d3.SimulationLinkDatum<SimNode> { weight: number; fromName: string; toName: string; }
 interface SelectedInfo { node: NetworkNode; given: NetworkEdge[]; received: NetworkEdge[]; }
+interface FunnelStage { stage: string; value: number; }
+interface TeamPayload { funnel: FunnelStage[]; conversion: number; matchCount: number; seasons: string[]; competitions: string[]; }
+interface PlayerFinish { id: string; name: string; tiros: number; tirosPuerta: number; goles: number; }
+interface PlayerFinishPayload { players: PlayerFinish[]; seasons: string[]; competitions: string[]; }
 
 class TopErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; errMsg: string }> {
     constructor(props: any) {
@@ -66,8 +71,8 @@ function nodeR(n: Pick<SimNode, 'assists' | 'goals'>) {
     return 20 + Math.min((n.assists + n.goals) * 0.9, 18);
 }
 
-function CustomSelect({ label, options, value, onChange }: {
-    label: string; options: string[]; value: string; onChange: (v: string) => void;
+function CustomSelect({ label, options, value, onChange, allOption = 'Todas' }: {
+    label: string; options: string[]; value: string; onChange: (v: string) => void; allOption?: string | null;
 }) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -81,15 +86,17 @@ function CustomSelect({ label, options, value, onChange }: {
             <span className="adv-filter-label">{label}</span>
             <div className={`adv-custom-select ${open ? 'open' : ''}`}>
                 <button type="button" className="adv-custom-trigger" onClick={() => setOpen(o => !o)} aria-expanded={open}>
-                    <span className="adv-custom-text">{value || 'Todas'}</span>
+                    <span className="adv-custom-text">{value || (allOption ?? 'Selecciona')}</span>
                     <svg className="adv-custom-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
                         <path d="M1 1l5 5 5-5" stroke="rgba(212,168,67,0.8)" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                 </button>
                 {open && (
                     <ul className="adv-custom-options">
-                        <li className={`adv-custom-option ${value === '' ? 'selected' : ''}`}
-                            onMouseDown={() => { onChange(''); setOpen(false); }}>Todas</li>
+                        {allOption !== null && (
+                            <li className={`adv-custom-option ${value === '' ? 'selected' : ''}`}
+                                onMouseDown={() => { onChange(''); setOpen(false); }}>{allOption}</li>
+                        )}
                         {options.map(o => (
                             <li key={o} className={`adv-custom-option ${value === o ? 'selected' : ''}`}
                                 onMouseDown={() => { onChange(o); setOpen(false); }}>{o}</li>
@@ -126,33 +133,49 @@ function XGTooltip({ active, payload }: any) {
 }
 
 function XGChart({ data }: { data: MatchPoint[] }) {
-    const [chartH, setChartH] = useState(300);
+    const [dims, setDims] = useState({ h: 300, mobile: false, small: false });
 
     useEffect(() => {
         const update = () => {
             const w = window.innerWidth;
-            setChartH(w < 480 ? 220 : w < 768 ? 260 : 300);
+            setDims({
+                h: w < 480 ? 240 : w < 768 ? 270 : 300,
+                mobile: w < 768,
+                small: w < 480,
+            });
         };
         update();
         window.addEventListener('resize', update);
         return () => window.removeEventListener('resize', update);
     }, []);
 
-    return (
-        <div style={{ touchAction: 'pan-y' }}>
+    const { h: chartH, mobile, small } = dims;
+
+    const perPoint     = small ? 15 : 18;
+    const scrollMode   = mobile && data.length > (small ? 16 : 24);
+    const innerWidthPx = scrollMode ? Math.max(data.length * perPoint, 360) : null;
+
+    const maxLabels    = scrollMode ? Math.round(data.length / 3) : small ? 6 : mobile ? 9 : 16;
+    const tickInterval = data.length > maxLabels ? Math.ceil(data.length / maxLabels) - 1 : 0;
+    const barSize      = scrollMode ? 9 : small ? 6 : mobile ? 9 : 12;
+    const dotR         = scrollMode ? 2.5 : small ? 1.5 : 3;
+
+    const chart = (
             <ResponsiveContainer width="100%" height={chartH}>
-                <ComposedChart data={data} margin={{ top: 8, right: 10, left: -22, bottom: 4 }}>
+                <ComposedChart data={data} margin={{ top: 8, right: small ? 4 : 10, left: small ? -28 : -22, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,168,67,0.1)" vertical={false} />
                     <XAxis
                         dataKey="matchNum"
-                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fill: 'rgba(200,210,220,0.5)' }}
+                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 9 : 10, fill: 'rgba(200,210,220,0.5)' }}
                         tickLine={false}
                         axisLine={false}
+                        interval={tickInterval}
+                        minTickGap={small ? 8 : 4}
                     />
                     <YAxis
-                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: 10, fill: 'rgba(200,210,220,0.5)' }}
+                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 9 : 10, fill: 'rgba(200,210,220,0.5)' }}
                         allowDecimals
-                        width={30}
+                        width={small ? 26 : 30}
                         axisLine={false}
                         tickLine={false}
                     />
@@ -161,10 +184,10 @@ function XGChart({ data }: { data: MatchPoint[] }) {
                         cursor={{ fill: 'rgba(212,168,67,0.06)' }}
                     />
                     <Legend
-                        wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: 11, paddingTop: '8px', color: 'rgba(200,210,220,0.7)' }}
+                        wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: '8px', color: 'rgba(200,210,220,0.7)' }}
                         formatter={v => v === 'xg' ? 'xG esperado' : 'Goles reales'}
                     />
-                    <Bar dataKey="goles" name="goles" barSize={12} radius={[3, 3, 0, 0]}>
+                    <Bar dataKey="goles" name="goles" barSize={barSize} radius={[3, 3, 0, 0]}>
                         {data.map((entry, index) => (
                             <Cell
                                 key={`cell-${index}`}
@@ -174,13 +197,21 @@ function XGChart({ data }: { data: MatchPoint[] }) {
                         ))}
                     </Bar>
                     <Line type="monotone" dataKey="xg" name="xg"
-                        stroke="#d4a843" strokeWidth={2.5}
-                        dot={{ r: 3, fill: '#d4a843', strokeWidth: 0 }}
-                        activeDot={{ r: 7, fill: '#d4a843' }} />
+                        stroke="#d4a843" strokeWidth={small ? 2 : 2.5}
+                        dot={{ r: dotR, fill: '#d4a843', strokeWidth: 0 }}
+                        activeDot={{ r: small ? 5 : 7, fill: '#d4a843' }} />
                 </ComposedChart>
             </ResponsiveContainer>
-        </div>
     );
+
+    if (scrollMode) {
+        return (
+            <div style={{ overflowX: 'auto', overflowY: 'hidden', touchAction: 'pan-x pan-y', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ width: `${innerWidthPx}px` }}>{chart}</div>
+            </div>
+        );
+    }
+    return <div style={{ touchAction: 'pan-y' }}>{chart}</div>;
 }
 
 function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdge[] }) {
@@ -219,7 +250,8 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
         try {
             const W = graphW;
             const isMobile = W < 600;
-            const H = Math.max(340, Math.min(580, W * (isMobile ? 0.85 : 0.7)));
+            const isSmall  = W < 400;
+            const H = Math.max(isSmall ? 360 : 380, Math.min(640, W * (isMobile ? 0.95 : 0.64)));
 
             const svg = d3.select(svgRef.current)
                 .attr('width', W)
@@ -394,7 +426,7 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
                     setSelectedId(prev => prev === d.id ? null : d.id);
                 });
 
-            simulation.on('tick', () => {
+            const draw = () => {
                 const pad = 32;
                 simNodes.forEach(d => {
                     const r = nodeR(d);
@@ -408,7 +440,15 @@ function AssistGraph({ nodes, edges }: { nodes: NetworkNode[]; edges: NetworkEdg
                 link.attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2);
                 linkHit.attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2);
                 nodeG.attr('transform', d => `translate(${d.x ?? 0},${d.y ?? 0})`);
-            });
+            };
+
+            if (isMobile) {
+                for (let i = 0; i < 240; i++) simulation.tick();
+                simulation.stop();
+            }
+
+            simulation.on('tick', draw);
+            draw();
 
             return () => {
                 simulation.stop();
@@ -503,25 +543,133 @@ function Empty({ msg }: { msg: string }) {
     );
 }
 
+function CumXGTooltip({ active, payload }: any) {
+    if (!active || !payload?.length) return null;
+    const d: MatchPoint = payload[0].payload;
+    const fecha = d.fecha
+        ? new Date(d.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '';
+    const diff = d.cumGoals - d.cumXg;
+    const over = diff >= 0;
+    return (
+        <div className="adv-tooltip">
+            {d.rival && <p className="adv-tooltip-title">{d.rival}</p>}
+            {fecha && <p className="adv-tooltip-sub">{fecha} · {d.competicion}</p>}
+            <div className="adv-tooltip-divider" />
+            <p style={{ color: 'rgba(200,210,220,0.85)', margin: 0 }}>Goles acum.: <strong>{d.cumGoals}</strong></p>
+            <p style={{ color: '#d4a843', margin: 0 }}>xG acum.: <strong>{d.cumXg.toFixed(1)}</strong></p>
+            <p style={{ color: over ? '#4ade80' : '#f87171', margin: 0, fontSize: '0.72rem' }}>
+                {over ? '↑ +' : '↓ '}{diff.toFixed(1)} sobre lo esperado
+            </p>
+        </div>
+    );
+}
+
+function CumulativeChart({ data }: { data: MatchPoint[] }) {
+    const [dims, setDims] = useState({ h: 300, small: false });
+    useEffect(() => {
+        const u = () => { const w = window.innerWidth; setDims({ h: w < 480 ? 240 : w < 768 ? 270 : 300, small: w < 480 }); };
+        u(); window.addEventListener('resize', u); return () => window.removeEventListener('resize', u);
+    }, []);
+    const { h, small } = dims;
+    const maxLabels = small ? 6 : 12;
+    const interval  = data.length > maxLabels ? Math.ceil(data.length / maxLabels) - 1 : 0;
+    return (
+        <div style={{ touchAction: 'pan-y' }}>
+            <ResponsiveContainer width="100%" height={h}>
+                <ComposedChart data={data} margin={{ top: 8, right: small ? 6 : 12, left: small ? -24 : -18, bottom: 4 }}>
+                    <defs>
+                        <linearGradient id="cumGoalsFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"   stopColor="rgba(212,168,67,0.28)" />
+                            <stop offset="100%" stopColor="rgba(212,168,67,0)" />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(212,168,67,0.1)" vertical={false} />
+                    <XAxis dataKey="matchNum" interval={interval} minTickGap={small ? 8 : 4}
+                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 9 : 10, fill: 'rgba(200,210,220,0.5)' }}
+                        tickLine={false} axisLine={false} />
+                    <YAxis width={small ? 28 : 34}
+                        tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 9 : 10, fill: 'rgba(200,210,220,0.5)' }}
+                        axisLine={false} tickLine={false} />
+                    <RTooltip content={<CumXGTooltip />} cursor={{ stroke: 'rgba(212,168,67,0.25)' }} />
+                    <Legend wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: 8, color: 'rgba(200,210,220,0.7)' }} />
+                    <Area type="monotone" dataKey="cumGoals" name="Goles acumulados"
+                        stroke="#d4a843" strokeWidth={2.5} fill="url(#cumGoalsFill)"
+                        dot={false} activeDot={{ r: 5, fill: '#d4a843' }} />
+                    <Line type="monotone" dataKey="cumXg" name="xG acumulado"
+                        stroke="rgba(120,180,255,0.95)" strokeWidth={2.5} strokeDasharray="5 4"
+                        dot={false} activeDot={{ r: 5, fill: 'rgba(120,180,255,0.95)' }} />
+                </ComposedChart>
+            </ResponsiveContainer>
+        </div>
+    );
+}
+
+function FunnelTooltip({ active, payload }: any) {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload as FunnelStage;
+    return (
+        <div className="adv-tooltip">
+            <p className="adv-tooltip-title">{d.stage}</p>
+            <div className="adv-tooltip-divider" />
+            <p style={{ color: '#d4a843', margin: 0 }}><strong>{d.value}</strong></p>
+        </div>
+    );
+}
+
+function FinishingFunnel({ data, conversion }: { data: FunnelStage[]; conversion: number }) {
+    const [dims, setDims] = useState({ h: 300, small: false });
+    useEffect(() => {
+        const u = () => { const w = window.innerWidth; setDims({ h: w < 480 ? 260 : 310, small: w < 480 }); };
+        u(); window.addEventListener('resize', u); return () => window.removeEventListener('resize', u);
+    }, []);
+    const { h, small } = dims;
+    const colors = ['#d4a843', '#bd8a30', '#9a6c1c'];
+    const rows = data.map((d, i) => ({ ...d, fill: colors[i] ?? '#9a6c1c' }));
+    return (
+        <div>
+            <ResponsiveContainer width="100%" height={h}>
+                <FunnelChart margin={{ top: 12, right: small ? 86 : 108, bottom: 12, left: small ? 62 : 96 }}>
+                    <RTooltip content={<FunnelTooltip />} />
+                    <Funnel dataKey="value" data={rows} isAnimationActive lastShapeType="rectangle">
+                        <LabelList position="right" dataKey="stage" stroke="none" offset={small ? 12 : 16}
+                            fill="rgba(200,210,220,0.85)" fontFamily="DM Sans, sans-serif" fontSize={small ? 11 : 12} />
+                        <LabelList position="left" dataKey="value" stroke="none" offset={small ? 12 : 16}
+                            fill="#d4a843" fontFamily="Cinzel, serif" fontSize={small ? 12 : 13} />
+                    </Funnel>
+                </FunnelChart>
+            </ResponsiveContainer>
+            <p className="adv-funnel-note">Conversión: <strong>{conversion}%</strong> de los tiros acaban en gol</p>
+        </div>
+    );
+}
+
 function AdvancedStatsInner() {
     const [season,      setSeason]      = useState('');
-    const [competition, setCompetition] = useState('');
+    const [competition, setCompetition] = useState('Partidos oficiales');
     const [xgData,  setXgData]  = useState<XGPayload  | null>(null);
     const [netData, setNetData] = useState<NetPayload  | null>(null);
     const [xgLoading,  setXgLoading]  = useState(true);
     const [netLoading, setNetLoading] = useState(true);
     const [xgError,    setXgError]    = useState(false);
     const [netError,   setNetError]   = useState(false);
+    const [teamData,    setTeamData]    = useState<TeamPayload | null>(null);
+    const [teamLoading, setTeamLoading] = useState(true);
+    const [teamError,   setTeamError]   = useState(false);
+    const [pfData,    setPfData]    = useState<PlayerFinishPayload | null>(null);
+    const [pfLoading, setPfLoading] = useState(true);
+    const [pfError,   setPfError]   = useState(false);
+    const [pfPlayer,  setPfPlayer]  = useState('');
 
     const seasons = useMemo(() => {
-        const all = [...(xgData?.seasons ?? []), ...(netData?.seasons ?? [])];
+        const all = [...(xgData?.seasons ?? []), ...(netData?.seasons ?? []), ...(teamData?.seasons ?? []), ...(pfData?.seasons ?? [])];
         return [...new Set(all)].sort().reverse();
-    }, [xgData, netData]);
+    }, [xgData, netData, teamData, pfData]);
 
     const competitions = useMemo(() => {
-        const all = [...(xgData?.competitions ?? []), ...(netData?.competitions ?? [])];
+        const all = [...(xgData?.competitions ?? []), ...(netData?.competitions ?? []), ...(teamData?.competitions ?? []), ...(pfData?.competitions ?? [])];
         return [...new Set(all)].sort();
-    }, [xgData, netData]);
+    }, [xgData, netData, teamData, pfData]);
 
     const availableComps = useMemo(
         () => competitions.length ? ['Partidos oficiales', ...competitions] : [],
@@ -578,6 +726,74 @@ function AdvancedStatsInner() {
         return () => { cancelled = true; ctrl.abort(); clearTimeout(timeout); };
     }, [season, competition]);
 
+    useEffect(() => {
+        let cancelled = false;
+        setTeamLoading(true); setTeamError(false);
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 30000);
+        const p = new URLSearchParams();
+        if (season) p.set('season', season);
+        if (competition) p.set('competition', competition);
+        fetch(`/api/team-stats?${p}`, { signal: ctrl.signal })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(d => {
+                if (!cancelled) { setTeamData(d); setTeamLoading(false); }
+            })
+            .catch(e => {
+                if (e?.name === 'AbortError') return;
+                console.error('[team-stats]', e);
+                if (!cancelled) { setTeamError(true); setTeamLoading(false); }
+            })
+            .finally(() => clearTimeout(timeout));
+        return () => { cancelled = true; ctrl.abort(); clearTimeout(timeout); };
+    }, [season, competition]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPfLoading(true); setPfError(false);
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 30000);
+        const p = new URLSearchParams();
+        if (season) p.set('season', season);
+        if (competition) p.set('competition', competition);
+        fetch(`/api/finishing-players?${p}`, { signal: ctrl.signal })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                return r.json();
+            })
+            .then(d => {
+                if (!cancelled) { setPfData(d); setPfLoading(false); }
+            })
+            .catch(e => {
+                if (e?.name === 'AbortError') return;
+                console.error('[finishing-players]', e);
+                if (!cancelled) { setPfError(true); setPfLoading(false); }
+            })
+            .finally(() => clearTimeout(timeout));
+        return () => { cancelled = true; ctrl.abort(); clearTimeout(timeout); };
+    }, [season, competition]);
+
+    useEffect(() => {
+        if (pfData?.players?.length && !pfData.players.some(p => p.id === pfPlayer)) {
+            setPfPlayer(pfData.players[0].id);
+        }
+    }, [pfData]);
+
+    const pfSelected = pfData?.players.find(p => p.id === pfPlayer) ?? pfData?.players[0];
+    const pfFunnel = pfSelected
+        ? [
+            { stage: 'Tiros',          value: pfSelected.tiros },
+            { stage: 'Tiros a puerta', value: pfSelected.tirosPuerta },
+            { stage: 'Goles',          value: pfSelected.goles },
+        ]
+        : [];
+    const pfConversion = pfSelected && pfSelected.tiros
+        ? Math.round((pfSelected.goles / pfSelected.tiros) * 1000) / 10
+        : 0;
+
     return (
         <div className="adv-root">
             <div className="adv-filters">
@@ -594,6 +810,55 @@ function AdvancedStatsInner() {
                     : xgError || !xgData?.matches?.length
                     ? <Empty msg="Sin datos de xG para este filtro" />
                     : <ChartBoundary name="xg"><XGChart data={xgData.matches} /></ChartBoundary>}
+                </div>
+            </section>
+            <section className="adv-section">
+                <div className="adv-section-header">
+                    <h2 className="adv-section-title">XG ACUMULADO</h2>
+                    <p className="adv-section-sub">Goles acumulados vs xG acumulado · Si la línea dorada va por encima, el equipo marca más de lo esperado</p>
+                </div>
+                <div className="adv-card">
+                    {xgLoading  ? <Spinner />
+                    : xgError || !xgData?.matches?.length
+                    ? <Empty msg="Sin datos de xG para este filtro" />
+                    : <ChartBoundary name="cumxg"><CumulativeChart data={xgData.matches} /></ChartBoundary>}
+                </div>
+            </section>
+            <section className="adv-section">
+                <div className="adv-section-header">
+                    <h2 className="adv-section-title">EMBUDO DE FINALIZACIÓN</h2>
+                    <p className="adv-section-sub">De tiros a goles · Totales del filtro seleccionado</p>
+                </div>
+                <div className="adv-card">
+                    {teamLoading ? <Spinner />
+                    : teamError || !teamData?.matchCount
+                    ? <Empty msg="Sin datos de equipo para este filtro" />
+                    : <ChartBoundary name="funnel"><FinishingFunnel data={teamData.funnel} conversion={teamData.conversion} /></ChartBoundary>}
+                </div>
+            </section>
+            <section className="adv-section">
+                <div className="adv-section-header">
+                    <h2 className="adv-section-title">EMBUDO POR JUGADORA</h2>
+                    <p className="adv-section-sub">De tiros a goles, jugadora a jugadora · Solo se incluyen jugadoras con registro de tiros completo</p>
+                </div>
+                <div className="adv-card">
+                    {pfLoading ? <Spinner />
+                    : pfError || !pfData?.players?.length || !pfSelected
+                    ? <Empty msg="Sin datos de finalización para este filtro" />
+                    : (
+                        <>
+                            <div className="adv-player-pick">
+                                <CustomSelect
+                                    label="JUGADORA"
+                                    options={pfData.players.map(p => p.name)}
+                                    value={pfSelected.name}
+                                    onChange={(name) => { const f = pfData.players.find(p => p.name === name); if (f) setPfPlayer(f.id); }}
+                                    allOption={null}
+                                />
+                            </div>
+                            <ChartBoundary name="pfunnel"><FinishingFunnel data={pfFunnel} conversion={pfConversion} /></ChartBoundary>
+                        </>
+                    )}
                 </div>
             </section>
             <section className="adv-section">
