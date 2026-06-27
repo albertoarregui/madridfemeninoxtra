@@ -1,11 +1,12 @@
 import type { APIRoute } from 'astro';
 import { fetchPlayersDirectly } from '../../../utils/players';
+import { jsonResponse, jsonError } from '../../../lib/api-cache';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ params, url }) => {
     const { slug } = params;
-    if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 });
+    if (!slug) return jsonError('Missing slug', 400);
 
     const season      = url.searchParams.get('season')      ?? '';
     const competition = url.searchParams.get('competition') ?? '';
@@ -13,11 +14,11 @@ export const GET: APIRoute = async ({ params, url }) => {
     try {
         const players = await fetchPlayersDirectly();
         const player = players.find((p: any) => p.slug === slug);
-        if (!player) return Response.json({ error: 'Not found' }, { status: 404 });
+        if (!player) return jsonError('Not found', 404);
 
         const { getPlayersDbClient } = await import('../../../db/client');
         const client = await getPlayersDbClient();
-        if (!client) return Response.json({ error: 'DB unavailable' }, { status: 500 });
+        if (!client) return jsonError('DB unavailable', 500);
 
         const id = player.id_jugadora;
 
@@ -141,7 +142,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
         const vCount = Number(ej?.valoracion_count ?? 0);
 
-        return Response.json({
+        return jsonResponse({
             slug,
             nombre:       player.nombre,
             imageUrl:     player.imageUrl,
@@ -183,6 +184,6 @@ export const GET: APIRoute = async ({ params, url }) => {
         });
     } catch (e) {
         console.error('[player-radar]', e);
-        return Response.json({ error: 'Internal error' }, { status: 500 });
+        return jsonError('Internal error', 500);
     }
 };

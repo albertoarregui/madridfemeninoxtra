@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 export const prerender = false;
 
@@ -19,7 +20,7 @@ export const GET: APIRoute = async ({ url }) => {
     try {
         const { getPlayersDbClient } = await import('../../db/client');
         const client = await getPlayersDbClient();
-        if (!client) return Response.json({ error: 'DB unavailable' }, { status: 500 });
+        if (!client) return jsonError('DB unavailable', 500);
 
         const [edgesRow, optionsRow] = await Promise.all([
             client.execute({
@@ -94,7 +95,7 @@ export const GET: APIRoute = async ({ url }) => {
                 weight:   Number(row.weight ?? 1),
             }));
 
-        return Response.json({
+        return jsonResponse({
             nodes: Array.from(nodeMap.values()),
             edges,
             seasons,
@@ -102,6 +103,6 @@ export const GET: APIRoute = async ({ url }) => {
         });
     } catch (e) {
         console.error('[assist-network]', e);
-        return Response.json({ error: 'Internal error' }, { status: 500 });
+        return jsonError('Internal error', 500);
     }
 };
