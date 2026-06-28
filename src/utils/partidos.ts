@@ -663,14 +663,14 @@ export async function fetchMatchGoals(matchId: string | number): Promise<any[]> 
     }
 }
 
-export async function fetchMatchKit(matchId: string | number): Promise<string | null> {
+export async function fetchMatchKit(matchId: string | number): Promise<{ url: string; nombre: string | null; tipo: string | null } | null> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
         if (!client) return null;
 
         const query = `
-            SELECT e.imagen_url
+            SELECT e.imagen_url, e.nombre, e.tipo
             FROM partidos p
             JOIN equipaciones e ON p.id_equipacion = e.id_equipacion
             WHERE p.id_partido = ?
@@ -681,8 +681,12 @@ export async function fetchMatchKit(matchId: string | number): Promise<string | 
             args: [matchId]
         });
 
-        if (result.rows.length > 0) {
-            return result.rows[0].imagen_url as string;
+        if (result.rows.length > 0 && result.rows[0].imagen_url) {
+            return {
+                url: result.rows[0].imagen_url as string,
+                nombre: (result.rows[0].nombre as string) ?? null,
+                tipo: (result.rows[0].tipo as string) ?? null,
+            };
         }
         return null;
     } catch (error) {

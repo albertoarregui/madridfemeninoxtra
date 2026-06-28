@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
 import { fetchRivalsDirectly, slugify } from "../../utils/rivales";
 import {
     fetchRivalRecords,
@@ -10,6 +11,7 @@ import {
 } from "../../utils/rival-records";
 import type { ImageMetadata } from "astro";
 import { getAssetUrl, getAssetMetadata } from "../../utils/assets";
+import { competitionDisplayName } from "../../utils/competiciones";
 
 const { slug } = Astro.params;
 
@@ -67,6 +69,7 @@ const rivalMatches = await fetchRivalMatches(rival.id_club);
 const rivalStats = calculateRivalStats(rivalMatches);
 
 const competitionOrder = [
+    "Primera Iberdrola",
     "Liga F",
     "UWCL",
     "Copa de la Reina",
@@ -163,12 +166,59 @@ const mockPlayers: string[] = [];
 const isRealMadrid =
     rival.nombre.toLowerCase().trim().includes("real madrid") ||
     slug === "real-madrid";
+
+const rt = rivalStats?.total;
+const joinNatural = (arr: string[]) =>
+    arr.length <= 1 ? (arr[0] || "") : `${arr.slice(0, -1).join(", ")} y ${arr[arr.length - 1]}`;
+
+const bioParts: string[] = [];
+
+const lugar = [rival.ciudad, rival.pais].filter(Boolean).join(", ");
+if (lugar && rival.estadio) bioParts.push(`${rival.nombre} es un club de ${lugar}, que disputa sus partidos como local en el ${rival.estadio}.`);
+else if (lugar) bioParts.push(`${rival.nombre} es un club de ${lugar}.`);
+else if (rival.estadio) bioParts.push(`${rival.nombre} disputa sus partidos como local en el ${rival.estadio}.`);
+else bioParts.push(`${rival.nombre} es uno de los rivales del Real Madrid Femenino.`);
+
+if (rt && rt.pj) {
+    const balanceAdj = rt.pg > rt.pp ? "favorable" : rt.pg < rt.pp ? "adverso" : "muy igualado";
+    bioParts.push(`El Real Madrid Femenino y ${rival.nombre} se han medido en ${rt.pj} ${rt.pj === 1 ? "ocasión" : "ocasiones"} a lo largo de su historia, con un balance ${balanceAdj} para las madridistas: ${rt.pg} victorias, ${rt.pe} empates y ${rt.pp} derrotas. En el cómputo global, el conjunto blanco ha anotado ${rt.gf} goles y ha encajado ${rt.gc}.`);
+
+    const recBits: string[] = [];
+    if (rivalRecords?.mayor_victoria?.resultado) recBits.push(`la mayor victoria blanca es un ${rivalRecords.mayor_victoria.resultado}`);
+    if (rivalRecords?.mayor_derrota?.resultado) recBits.push(`la mayor derrota, un ${rivalRecords.mayor_derrota.resultado}`);
+    if (rivalRecords?.mas_repetido?.resultado) recBits.push(`el resultado más repetido es el ${rivalRecords.mas_repetido.resultado} (${rivalRecords.mas_repetido.veces} veces)`);
+    if (recBits.length) bioParts.push(`En cuanto a registros, ${joinNatural(recBits)}.`);
+
+    const scorers = (topPlayersData?.topScorers || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.goles})`);
+    const assisters = (topPlayersData?.topAssisters || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.asistencias})`);
+    const contributors = (topPlayersData?.topContributors || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.total})`);
+    if (scorers.length) bioParts.push(`Las máximas goleadoras madridistas ante ${rival.nombre} son ${joinNatural(scorers)}.`);
+    if (assisters.length) bioParts.push(`En asistencias destacan ${joinNatural(assisters)}.`);
+    if (contributors.length) bioParts.push(`Y en goles generados (G+A), las más determinantes son ${joinNatural(contributors)}.`);
+} else {
+    bioParts.push(`Aquí encontrarás el historial y las estadísticas de los enfrentamientos entre el Real Madrid Femenino y ${rival.nombre}.`);
+}
+const bio = bioParts.join(" ");
+
+const rivalSchema = {
+    "@context": "https://schema.org",
+    "@type": "SportsTeam",
+    name: rival.nombre,
+    sport: "Football",
+    ...(rival.shieldUrl ? { logo: rival.shieldUrl } : {}),
+    ...(rival.estadio ? { location: { "@type": "Place", name: rival.estadio } } : {}),
+    description: bio,
+};
+
+const seoTitle = `Real Madrid Femenino vs ${rival.nombre}: historial y estadísticas | Madrid Femenino Xtra`;
+const seoDescription = (rt && rt.pj)
+    ? `Historial del Real Madrid Femenino contra ${rival.nombre}: ${rt.pj} partidos, ${rt.pg} victorias, ${rt.pe} empates y ${rt.pp} derrotas. Goleadoras, asistentes y todos los partidos.`
+    : `Historial completo del Real Madrid Femenino contra ${rival.nombre}. Estadísticas, goleadoras, asistentes y todos los partidos disputados.`;
 ---
 
-<Layout
-    title={`${rival.nombre} | Madrid Femenino Xtra`}
-    description={`Historial completo del Real Madrid Femenino contra ${rival.nombre}. Estadísticas, goleadoras, asistentes y todos los partidos disputados.`}
->
+<Layout title={seoTitle} description={seoDescription}>
+    <script type="application/ld+json" set:html={JSON.stringify(rivalSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Rivales", path: "/rivales" }, { name: rival.nombre, path: `/rivales/${slug}` }]))} />
     <section class="rival-hero">
         <div class="hero-bg-glow" aria-hidden="true"></div>
 
@@ -246,6 +296,12 @@ const isRealMadrid =
     </section>
 
     <main class="rival-content">
+        <section class="profile-card" style="margin:0 0 1.25rem;">
+            <h2 class="card-title">{isRealMadrid ? "EL REAL MADRID FEMENINO" : `HISTORIAL CONTRA ${rival.nombre.toUpperCase()}`}</h2>
+            <div class="card-body">
+                <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+            </div>
+        </section>
         <div class="rival-grid">
 
             <div class="left-column">
@@ -508,7 +564,7 @@ const isRealMadrid =
                                             return (
                                                 <tr class={`match-row ${index >= 5 ? "hidden-match" : ""}`}>
                                                     <td>{new Date(match.fecha).toLocaleDateString("es-ES")}</td>
-                                                    <td>{match.competicion}</td>
+                                                    <td>{competitionDisplayName(match.competicion, { idTemporada: match.id_temporada })}</td>
                                                     <td>{match.ubicacion}</td>
                                                     <td class={resultClass}>{match.resultado}</td>
                                                     <td>{match.arbitra}</td>
@@ -925,7 +981,7 @@ const isRealMadrid =
             if (selectedComp === "all") {
                 compMatch = true;
             } else if (selectedComp === "oficiales") {
-                const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa", "Supercopa de España"];
+                const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa", "Supercopa de España"];
                 compMatch = officialComps.some((c) => m.competicion.includes(c));
             } else {
                 compMatch = m.competicion === selectedComp;

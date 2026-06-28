@@ -288,7 +288,7 @@ export default function StatsRankings({
                 if (!matchSeason) return;
 
                 if (selectedCompetition === "oficiales") {
-                    const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
+                    const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
                     if (!officialComps.includes(item.competicion)) return;
                 } else if (selectedCompetition !== "todos" && item.competicion !== selectedCompetition) {
                     return;

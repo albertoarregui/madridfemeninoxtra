@@ -293,7 +293,7 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
     const partidoOptions = useMemo(() => {
         const filtered = partidos.filter(p => {
             const matchesComp = selectedComp === 'todos' || 
-                               (selectedComp === 'oficiales' && ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(p.competicion_nombre)) ||
+                               (selectedComp === 'oficiales' && ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(p.competicion_nombre)) ||
                                p.competicion_nombre === selectedComp;
             return matchesComp;
         });

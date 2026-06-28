@@ -9,7 +9,7 @@ export interface FilterOptions {
 
 const RM_ID = 1;
 
-const COMPETITION_ORDER = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos'];
+const COMPETITION_ORDER = ['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos'];
 
 function orderCompetitions(list: string[]): string[] {
     return [...list].sort((a, b) => {

@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
 import {
     fetchPlayersDirectly,
     fetchPlayerStats,
@@ -11,6 +12,7 @@ import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 import { fetchAllGoals } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
+import { competitionDisplayName } from "../../utils/competiciones";
 
 const { slug } = Astro.params;
 const allPlayers = await fetchPlayersDirectly();
@@ -82,7 +84,7 @@ const debutDisplay =
 const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 
 const allGoals = await fetchAllGoals();
-const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
+const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
 const clubShields = await fetchAllClubShields();
 
 const milestones = allGoals
@@ -135,22 +137,71 @@ const schema = {
 
 const quickStats = playerStats ? [
     { value: playerStats.total_carrera_oficial.partidos, label: 'PARTIDOS' },
-    { value: playerStats.total_carrera_oficial.titularidades, label: 'TITULAR' },
+    { value: playerStats.total_carrera_oficial.titularidades, label: 'TITULARIDADES' },
     ...(!isGoalkeeper ? [
         { value: playerStats.total_carrera_oficial.goles, label: 'GOLES' },
-        { value: playerStats.total_carrera_oficial.asistencias, label: 'ASIST.' },
+        { value: playerStats.total_carrera_oficial.asistencias, label: 'ASISTENCIAS' },
     ] : [
-        { value: playerStats.total_carrera_oficial.porterias_cero ?? 0, label: 'P. A CERO' },
+        { value: playerStats.total_carrera_oficial.porterias_cero ?? 0, label: 'PORTERÍAS A CERO' },
     ]),
-    { value: playerStats.total_carrera_oficial.victorias, label: 'VICT.' },
+    { value: playerStats.total_carrera_oficial.victorias, label: 'VICTORIAS' },
 ] : [];
+
+const posLower = player.posicion ? player.posicion.toLowerCase() : "jugadora";
+const nat = player.pais_origin || player.pais_origen || "";
+const tco = playerStats?.total_carrera_oficial;
+const joinNatural = (arr: string[]) =>
+    arr.length <= 1 ? (arr[0] || "") : `${arr.slice(0, -1).join(", ")} y ${arr[arr.length - 1]}`;
+
+const esCanterana = player.tipo === "Club-trained";
+const lugarNac = player.lugar_nacimiento || "";
+
+const equiposPrevios = [
+    ...new Set(
+        (trajectory || [])
+            .map((t: any) => t.club)
+            .filter((c: string) => c && !/real madrid|tac[oó]n/i.test(c)),
+    ),
+] as string[];
+
+const bioParts: string[] = [];
+let s1 = `${player.nombre} es ${posLower} del Real Madrid Femenino${esCanterana ? " y formada en La Fábrica" : ""}${(lugarNac || nat) ? `, originaria de ${lugarNac || nat}` : ""}${edad ? `, ${edad} años` : ""}.`;
+if (latestDorsal) s1 += ` Actualmente viste el dorsal ${latestDorsal} del conjunto blanco.`;
+bioParts.push(s1);
+
+const fisico: string[] = [];
+if (player.altura) fisico.push(`mide ${player.altura} m`);
+if (player.peso) fisico.push(`pesa ${player.peso} kg`);
+if (fisico.length) bioParts.push(`Físicamente, ${joinNatural(fisico)}.`);
+
+if (debutInfo && debutInfo.fecha_debut) {
+    bioParts.push(`Su estreno con la camiseta madridista llegó el ${formatShortDate(debutInfo.fecha_debut)}${debutInfo.rival ? ` ante ${debutInfo.rival}` : ""}.`);
+}
+
+if (equiposPrevios.length) {
+    bioParts.push(`A lo largo de su carrera también ha jugado en ${joinNatural(equiposPrevios)}.`);
+}
+
+if (tco && tco.partidos) {
+    if (isGoalkeeper) {
+        bioParts.push(`Con el Real Madrid ha defendido la portería en ${tco.partidos} partidos oficiales${tco.porterias_cero ? `, dejando su puerta a cero en ${tco.porterias_cero} de ellos` : ""}${tco.victorias ? `, con ${tco.victorias} victorias` : ""}${tco.capitanias ? `, y ha ejercido de capitana en ${tco.capitanias} ${tco.capitanias === 1 ? "ocasión" : "ocasiones"}` : ""}.`);
+    } else {
+        bioParts.push(`Con el Real Madrid acumula ${tco.partidos} partidos oficiales${tco.titularidades ? ` (${tco.titularidades} como titular)` : ""}, en los que ha aportado ${tco.goles} goles y ${tco.asistencias} asistencias${tco.victorias ? `, con ${tco.victorias} victorias` : ""}${tco.capitanias ? `, además de lucir el brazalete de capitana en ${tco.capitanias} ${tco.capitanias === 1 ? "partido" : "partidos"}` : ""}.`);
+    }
+}
+const bio = bioParts.join(" ");
+(schema as any).description = bio;
+if (esCanterana) (schema as any).alumniOf = { "@type": "SportsOrganization", name: "La Fábrica (cantera del Real Madrid)" };
+
+const seoTitle = `${player.nombre}${player.posicion ? `, ${player.posicion}` : ""} | Madrid Femenino Xtra`;
+const seoDescription = (tco && tco.partidos)
+    ? `${player.nombre}, ${posLower} del Real Madrid Femenino${nat ? ` (${nat})` : ""}. ${tco.partidos} partidos${!isGoalkeeper ? `, ${tco.goles} goles y ${tco.asistencias} asistencias` : ""} en su carrera oficial. Ficha, estadísticas y trayectoria.`
+    : `Ficha de ${player.nombre}, ${posLower} del Real Madrid Femenino. Estadísticas, posición, trayectoria y récords.`;
 ---
 
-<Layout
-    title={`${player.nombre} | Madrid Femenino Xtra`}
-    description={`Ficha completa de ${player.nombre}, jugadora del Real Madrid Femenino. Estadísticas, posición, trayectoria y récords.`}
->
+<Layout title={seoTitle} description={seoDescription}>
     <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Jugadoras", path: "/jugadoras" }, { name: player.nombre, path: `/jugadoras/${slug}` }]))} />
 
     <section class="player-hero">
         <div class="hero-bg-glow" aria-hidden="true"></div>
@@ -189,6 +240,7 @@ const quickStats = playerStats ? [
 
                 <div class="hero-chips">
                     <span class="hero-chip hero-chip-gold">♦ {player.posicion} ♦</span>
+                    {esCanterana && <span class="hero-chip hero-chip-canterana" title="Formada en La Fábrica, la cantera del Real Madrid">★ Canterana</span>}
                     {(player.pais_origin || player.pais_origen) && (
                         <span class="hero-chip">
                             {flagUrl && <img src={flagUrl} alt="" class="chip-flag" width="16" height="16" loading="lazy" />}
@@ -217,6 +269,13 @@ const quickStats = playerStats ? [
     <main class="player-content">
         <div class="content-grid">
 
+            <section class="profile-card ficha-card full-col" style="margin-bottom:0;">
+                <h2 class="card-title">SOBRE {player.nombre.toUpperCase()}</h2>
+                <div class="card-body">
+                    <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                </div>
+            </section>
+
             <section class="profile-card ficha-card full-col">
                 <h2 class="card-title">FICHA PERSONAL</h2>
                 <div class="card-body">
@@ -226,13 +285,13 @@ const quickStats = playerStats ? [
                     </div>
                     {player.fecha_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Fecha de nac.</span>
+                            <span class="info-label">Fecha de nacimiento</span>
                             <span class="info-value">{fechaNacimiento}</span>
                         </div>
                     )}
                     {player.lugar_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Lugar de nac.</span>
+                            <span class="info-label">Lugar de nacimiento</span>
                             <span class="info-value">{player.lugar_nacimiento}</span>
                         </div>
                     )}
@@ -261,12 +320,6 @@ const quickStats = playerStats ? [
                         <span class="info-label">Debut</span>
                         <span class="info-value">{debutDisplay}</span>
                     </div>
-                    {latestDorsal && (
-                        <div class="info-row">
-                            <span class="info-label">Dorsal</span>
-                            <span class="info-value" style="color:#d4a843;font-family:'Cinzel',serif;font-weight:700;">#{latestDorsal}</span>
-                        </div>
-                    )}
                 </div>
             </section>
 
@@ -351,7 +404,7 @@ const quickStats = playerStats ? [
                                                 )}
                                                 <div class="m-details">
                                                     <span class="m-rival-name">{g.rival}</span>
-                                                    <span class="m-date">{g.fecha ? new Date(g.fecha).toLocaleDateString('es-ES') : ''} · {g.competicion}</span>
+                                                    <span class="m-date">{g.fecha ? new Date(g.fecha).toLocaleDateString('es-ES') : ''} · {competitionDisplayName(g.competicion, { idTemporada: g.id_temporada })}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -417,7 +470,7 @@ const quickStats = playerStats ? [
                                                                 {getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion) && (
                                                                     <img src={getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion)} alt={comp.competicion} class="competition-logo" />
                                                                 )}
-                                                                {comp.competicion}
+                                                                {competitionDisplayName(comp.competicion, { temporada: season.temporada })}
                                                             </div>
                                                         </td>
                                                         <td>{comp.convocatorias}</td>
@@ -704,6 +757,13 @@ const quickStats = playerStats ? [
     border-color: rgba(212,168,67,0.5);
     background: linear-gradient(135deg, rgba(212,168,67,0.14), rgba(212,168,67,0.04));
     color: #d4a843;
+}
+
+.hero-chip-canterana {
+    border-color: rgba(180,140,235,0.55);
+    background: linear-gradient(135deg, rgba(180,140,235,0.18), rgba(180,140,235,0.05));
+    color: #c4a7f0;
+    font-weight: 700;
 }
 
 .chip-flag {

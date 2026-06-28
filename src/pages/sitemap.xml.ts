@@ -8,7 +8,6 @@ import { contentfulClient } from '../lib/contentful';
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 
 const staticPages = [
-    { url: '', priority: 1.0, changefreq: 'daily' },
     { url: 'home', priority: 1.0, changefreq: 'daily' },
     { url: 'noticias', priority: 0.9, changefreq: 'daily' },
     { url: 'jugadoras', priority: 0.8, changefreq: 'weekly' },
@@ -17,7 +16,6 @@ const staticPages = [
     { url: 'partidos', priority: 0.7, changefreq: 'weekly' },
     { url: 'plantilla', priority: 0.7, changefreq: 'monthly' },
     { url: 'rankings', priority: 0.7, changefreq: 'weekly' },
-    { url: 'search', priority: 0.5, changefreq: 'monthly' },
     { url: 'sobre-nosotros', priority: 0.5, changefreq: 'monthly' },
     { url: 'contacto', priority: 0.5, changefreq: 'monthly' },
     { url: 'aviso-legal', priority: 0.3, changefreq: 'yearly' },

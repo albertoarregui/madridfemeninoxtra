@@ -3,7 +3,7 @@ import { jsonResponse, jsonError } from '../../lib/api-cache';
 
 export const prerender = false;
 
-const OFFICIAL_COMPS = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
+const OFFICIAL_COMPS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
 
 export const GET: APIRoute = async ({ url }) => {
     const season      = url.searchParams.get('season')      ?? '';

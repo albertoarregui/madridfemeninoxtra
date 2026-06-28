@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
 import {
     fetchCoachesDirectly,
     fetchCoachStats,
@@ -8,6 +9,7 @@ import {
 import { fetchCoachRecords } from "../../utils/coach-records";
 import { fetchCoachStreaks } from "../../utils/coach-streaks";
 import { getAssetUrl } from "../../utils/assets";
+import { competitionDisplayName } from "../../utils/competiciones";
 
 const { slug } = Astro.params;
 
@@ -42,16 +44,82 @@ const fechaNacimiento = formatDate(coach.fecha_nacimiento);
 const quickStats = coachStats ? [
     { value: coachStats.total_carrera.partidos, label: 'PARTIDOS' },
     { value: coachStats.total_carrera.victorias, label: 'VICTORIAS' },
-    { value: `${coachStats.total_carrera.porcentaje_victorias}%`, label: '% VIC.' },
+    { value: `${coachStats.total_carrera.porcentaje_victorias}%`, label: '% DE VICTORIAS' },
     { value: coachStats.total_carrera.empates, label: 'EMPATES' },
     { value: coachStats.total_carrera.derrotas, label: 'DERROTAS' },
 ] : [];
+
+const joinNatural = (arr: string[]) =>
+    arr.length <= 1 ? (arr[0] || "") : `${arr.slice(0, -1).join(", ")} y ${arr[arr.length - 1]}`;
+
+const nat = coach.pais || coach.country || "";
+const tc = coachStats?.total_carrera;
+const lugarNac = coach.ciudad || "";
+const origen = lugarNac && nat ? `${lugarNac} (${nat})` : (lugarNac || nat);
+
+const equiposPrevios = [
+    ...new Set(
+        (trajectory || [])
+            .map((t: any) => t.club)
+            .filter((c: string) => c && !/real madrid|tac[oó]n/i.test(c)),
+    ),
+] as string[];
+
+const bioParts: string[] = [];
+bioParts.push(`${nombre} es uno de los entrenadores que ha dirigido al Real Madrid Femenino${origen ? `, técnico originario de ${origen}` : ""}.`);
+
+if (equiposPrevios.length) {
+    bioParts.push(`A lo largo de su carrera también ha dirigido a ${joinNatural(equiposPrevios)}.`);
+}
+
+if (tc && tc.partidos) {
+    bioParts.push(`Al frente del banquillo blanco ha dirigido ${tc.partidos} encuentros, con un balance de ${tc.victorias} victorias, ${tc.empates} empates y ${tc.derrotas} derrotas, lo que se traduce en un ${tc.porcentaje_victorias}% de triunfos.`);
+}
+
+const recordParts: string[] = [];
+if (coachRecords?.mayor_victoria) {
+    const mv = coachRecords.mayor_victoria;
+    recordParts.push(`su mayor goleada fue un ${mv.goles_rm}-${mv.goles_rival} ante ${mv.rival}`);
+}
+if (coachRecords?.mas_victorias && coachRecords.mas_victorias.victorias) {
+    recordParts.push(`el rival al que más veces ha ganado es ${coachRecords.mas_victorias.rival} (${coachRecords.mas_victorias.victorias} victorias)`);
+}
+if (recordParts.length) {
+    bioParts.push(`Entre sus registros, ${joinNatural(recordParts)}.`);
+}
+
+const rachaParts: string[] = [];
+const best = coachStreaks?.best;
+if (best?.ganando) rachaParts.push(`${best.ganando} victorias seguidas`);
+if (best?.sin_perder) rachaParts.push(`${best.sin_perder} partidos sin perder`);
+if (best?.sin_encajar) rachaParts.push(`${best.sin_encajar} encuentros sin encajar`);
+if (rachaParts.length) {
+    bioParts.push(`Sus mejores rachas al mando del equipo incluyen ${joinNatural(rachaParts)}.`);
+}
+
+const bio = bioParts.join(" ");
+
+const coachSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: nombre,
+    jobTitle: "Entrenador de Fútbol",
+    affiliation: { "@type": "SportsTeam", name: "Real Madrid Femenino" },
+    ...(coach.imageUrl ? { image: coach.imageUrl } : {}),
+    ...(coach.fecha_nacimiento ? { birthDate: coach.fecha_nacimiento } : {}),
+    ...(nat ? { nationality: nat } : {}),
+    description: bio,
+};
+
+const seoTitle = `${nombre}, entrenador del Real Madrid Femenino | Madrid Femenino Xtra`;
+const seoDescription = (tc && tc.partidos)
+    ? `${nombre}, entrenador del Real Madrid Femenino${nat ? ` (${nat})` : ""}. ${tc.partidos} partidos dirigidos, ${tc.victorias} victorias (${tc.porcentaje_victorias}%). Estadísticas, récords y trayectoria.`
+    : `Perfil de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`;
 ---
 
-<Layout
-    title={`${nombre} | Madrid Femenino Xtra`}
-    description={`Perfil completo de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`}
->
+<Layout title={seoTitle} description={seoDescription}>
+    <script type="application/ld+json" set:html={JSON.stringify(coachSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Entrenadores", path: "/entrenadores" }, { name: nombre, path: `/entrenadores/${slug}` }]))} />
     <section class="coach-hero">
         <div class="hero-bg-glow" aria-hidden="true"></div>
 
@@ -101,6 +169,13 @@ const quickStats = coachStats ? [
     <main class="coach-content">
         <div class="content-grid">
 
+            <section class="profile-card full-col" style="margin-bottom:0;">
+                <h2 class="card-title">SOBRE {nombre.toUpperCase()}</h2>
+                <div class="card-body">
+                    <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                </div>
+            </section>
+
             <section class="profile-card full-col">
                 <h2 class="card-title">FICHA PERSONAL</h2>
                 <div class="card-body">
@@ -110,13 +185,13 @@ const quickStats = coachStats ? [
                     </div>
                     {coach.fecha_nacimiento && (
                         <div class="info-row">
-                            <span class="info-label">Fecha de nac.</span>
+                            <span class="info-label">Fecha de nacimiento</span>
                             <span class="info-value">{fechaNacimiento}</span>
                         </div>
                     )}
                     {coach.ciudad && (
                         <div class="info-row">
-                            <span class="info-label">Lugar de nac.</span>
+                            <span class="info-label">Lugar de nacimiento</span>
                             <span class="info-value">{coach.ciudad}</span>
                         </div>
                     )}
@@ -275,7 +350,7 @@ const quickStats = coachStats ? [
                                                             {getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion) && (
                                                                 <img src={getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion)} alt={comp.competicion} class="competition-logo" />
                                                             )}
-                                                            {comp.competicion}
+                                                            {competitionDisplayName(comp.competicion, { temporada: season.temporada })}
                                                         </div>
                                                     </td>
                                                     <td>{comp.partidos}</td>

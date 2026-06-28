@@ -163,6 +163,7 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             GROUP BY t.temporada, c.competicion
             ORDER BY t.temporada DESC, 
                 CASE c.competicion
+                    WHEN 'Primera Iberdrola' THEN 0
                     WHEN 'Liga F' THEN 1
                     WHEN 'UWCL' THEN 2
                     WHEN 'Copa de la Reina' THEN 3

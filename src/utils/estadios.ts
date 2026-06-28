@@ -173,4 +173,78 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
     }
 }
 
+export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ topScorers: any[]; topAssisters: any[]; topContributors: any[] }> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const db = await getPlayersDbClient();
+        if (!db) return { topScorers: [], topAssisters: [], topContributors: [] };
+
+        const topScorersResult = await db.execute({
+            sql: `
+                SELECT j.nombre, COUNT(*) as goles
+                FROM goles_y_asistencias ga
+                INNER JOIN partidos p ON ga.id_partido = p.id_partido
+                INNER JOIN estadios e ON p.id_estadio = e.id_estadio
+                INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
+                WHERE ga.goleadora IS NOT NULL AND e.nombre = ?
+                GROUP BY j.id_jugadora, j.nombre
+                ORDER BY goles DESC
+                LIMIT 10
+            `,
+            args: [stadiumName],
+        });
+
+        const topAssistersResult = await db.execute({
+            sql: `
+                SELECT j.nombre, COUNT(*) as asistencias
+                FROM goles_y_asistencias ga
+                INNER JOIN partidos p ON ga.id_partido = p.id_partido
+                INNER JOIN estadios e ON p.id_estadio = e.id_estadio
+                INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
+                WHERE ga.asistente IS NOT NULL AND e.nombre = ?
+                GROUP BY j.id_jugadora, j.nombre
+                ORDER BY asistencias DESC
+                LIMIT 10
+            `,
+            args: [stadiumName],
+        });
+
+        const topContributorsResult = await db.execute({
+            sql: `
+                SELECT nombre, SUM(goles) as goles, SUM(asistencias) as asistencias, SUM(goles) + SUM(asistencias) as total
+                FROM (
+                    SELECT j.id_jugadora, j.nombre, COUNT(*) as goles, 0 as asistencias
+                    FROM goles_y_asistencias ga
+                    INNER JOIN partidos p ON ga.id_partido = p.id_partido
+                    INNER JOIN estadios e ON p.id_estadio = e.id_estadio
+                    INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
+                    WHERE ga.goleadora IS NOT NULL AND e.nombre = ?
+                    GROUP BY j.id_jugadora, j.nombre
+                    UNION ALL
+                    SELECT j.id_jugadora, j.nombre, 0 as goles, COUNT(*) as asistencias
+                    FROM goles_y_asistencias ga
+                    INNER JOIN partidos p ON ga.id_partido = p.id_partido
+                    INNER JOIN estadios e ON p.id_estadio = e.id_estadio
+                    INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
+                    WHERE ga.asistente IS NOT NULL AND e.nombre = ?
+                    GROUP BY j.id_jugadora, j.nombre
+                )
+                GROUP BY nombre
+                ORDER BY total DESC
+                LIMIT 10
+            `,
+            args: [stadiumName, stadiumName],
+        });
+
+        return {
+            topScorers: topScorersResult.rows || [],
+            topAssisters: topAssistersResult.rows || [],
+            topContributors: topContributorsResult.rows || [],
+        };
+    } catch (error) {
+        console.error("Error fetching stadium top players:", error);
+        return { topScorers: [], topAssisters: [], topContributors: [] };
+    }
+}
+
 

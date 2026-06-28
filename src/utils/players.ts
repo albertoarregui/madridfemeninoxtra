@@ -53,9 +53,10 @@ export async function fetchPlayersDirectly(): Promise<any[]> {
                 j.iso,
                 j.lat,
                 j.lng,
-                j.altura, 
-                j.peso, 
+                j.altura,
+                j.peso,
                 j.posicion,
+                j.tipo,
                 t.temporada,
                 d.dorsal,
                 d.id_categoria,
@@ -304,6 +305,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR c.tarjetas_amarillas > 0 OR c.tarjetas_rojas > 0 OR cp.capitanias > 0
     ORDER BY b.temporada DESC, 
         CASE b.competicion
+            WHEN 'Primera Iberdrola' THEN 0
             WHEN 'Liga F' THEN 1
             WHEN 'UWCL' THEN 2
             WHEN 'Copa de la Reina' THEN 3
@@ -364,7 +366,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
                 };
             }
 
-            const officialComps = ["Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
+            const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
             const isOfficial = officialComps.includes(row.competicion);
 
             const stats = {

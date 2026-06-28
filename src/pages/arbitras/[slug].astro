@@ -1,5 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
 import {
     fetchRefereesDirectly,
@@ -9,9 +10,11 @@ import { generateSlug } from "../../utils/url-helper";
 
 import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
+import { competitionDisplayName } from "../../utils/competiciones";
 
 const competitionLogos: Record<string, string> = {
     "Liga F": getAssetUrl("competiciones", "liga_f.png"),
+    "Primera Iberdrola": getAssetUrl("competiciones", "primera_iberdrola.png"),
     UWCL: getAssetUrl("competiciones", "uwcl.png"),
     "Copa de la Reina": getAssetUrl("competiciones", "copa_de_la_reina.png"),
     "Supercopa de España": getAssetUrl(
@@ -189,12 +192,44 @@ const redArcFavor =
     totalCardsFavor > 0
         ? Math.round((totalStats.tr_c / totalCardsFavor) * circumference)
         : 0;
+
+const bioParts: string[] = [];
+if (totalStats.pj) {
+    let s1 = `${referee.nombre} es una de las colegiadas que ha arbitrado al Real Madrid Femenino`;
+    s1 += referee.colegio ? `, perteneciente al colegio arbitral de ${referee.colegio}.` : ".";
+    s1 += referee.pais_origen
+        ? ` Procedente de ${referee.pais_origen}, ha dirigido ${totalStats.pj} de los partidos del equipo`
+        : ` Ha dirigido ${totalStats.pj} de los partidos del equipo`;
+    s1 += `, con un balance para el conjunto blanco de ${totalStats.pg} victorias, ${totalStats.pe} empates y ${totalStats.pp} derrotas.`;
+    bioParts.push(s1);
+    if (totalStats.ta || totalStats.tr) {
+        bioParts.push(`En esos choques, las madridistas vieron ${totalStats.ta} tarjetas amarillas y ${totalStats.tr} rojas con ella como árbitra.`);
+    }
+} else {
+    bioParts.push(`Aquí encontrarás el historial completo de arbitraje de ${referee.nombre}${referee.colegio ? `, del colegio arbitral de ${referee.colegio},` : ""} en los partidos del Real Madrid Femenino.`);
+}
+const bio = bioParts.join(" ");
+
+const refereeSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: referee.nombre,
+    jobTitle: "Árbitra de Fútbol",
+    ...(referee.foto_url ? { image: referee.foto_url.startsWith("http") ? referee.foto_url : `https://media.madridfemeninoxtra.com${referee.foto_url}` } : {}),
+    ...(referee.pais_origen ? { nationality: referee.pais_origen } : {}),
+    ...(referee.colegio ? { memberOf: { "@type": "Organization", name: referee.colegio } } : {}),
+    description: bio,
+};
+
+const seoTitle = `${referee.nombre}, árbitra: historial con el Real Madrid Femenino | Madrid Femenino Xtra`;
+const seoDescription = totalStats.pj
+    ? `Historial de ${referee.nombre} como árbitra del Real Madrid Femenino: ${totalStats.pj} partidos, ${totalStats.pg} victorias, ${totalStats.pe} empates y ${totalStats.pp} derrotas. Tarjetas y estadísticas.`
+    : `Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`;
 ---
 
-<Layout
-    title={`Ficha de ${referee.nombre} | Madrid Femenino Xtra`}
-    description={`Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`}
->
+<Layout title={seoTitle} description={seoDescription}>
+    <script type="application/ld+json" set:html={JSON.stringify(refereeSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Árbitras", path: "/arbitras" }, { name: referee.nombre, path: `/arbitras/${slug}` }]))} />
     <section class="referee-hero">
         <div class="hero-bg-glow" aria-hidden="true"></div>
 
@@ -261,11 +296,11 @@ const redArcFavor =
                     </div>
                     <div class="qs-card">
                         <span class="qs-number" style="color:rgba(212,168,67,0.9)">{totalStats.ta}</span>
-                        <span class="qs-label">T. Amarillas</span>
+                        <span class="qs-label">Tarjetas Amarillas</span>
                     </div>
                     <div class="qs-card">
                         <span class="qs-number" style="color:rgba(248,113,113,0.9)">{totalStats.tr}</span>
-                        <span class="qs-label">T. Rojas</span>
+                        <span class="qs-label">Tarjetas Rojas</span>
                     </div>
                 </div>
             </div>
@@ -274,6 +309,13 @@ const redArcFavor =
 
     <main class="referee-content">
         <div class="content-grid">
+
+            <section class="profile-card full-col" style="margin-bottom:0;">
+                <h2 class="card-title">SOBRE {referee.nombre.toUpperCase()}</h2>
+                <div class="card-body">
+                    <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                </div>
+            </section>
 
             <section class="profile-card full-col">
                 <h2 class="card-title">FICHA DE {referee.nombre.toUpperCase()}</h2>
@@ -402,7 +444,7 @@ const redArcFavor =
                                                                     class="competition-logo"
                                                                 />
                                                             )}
-                                                            {comp.competicion}
+                                                            {competitionDisplayName(comp.competicion, { temporada: season.temporada })}
                                                         </div>
                                                     </td>
                                                     <td>{comp.pj}</td>

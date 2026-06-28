@@ -39,18 +39,6 @@ const matchSlug = `${slugify(nextMatch.club_local)}-vs-${slugify(nextMatch.club_
 
 const matchStatus = getMatchStatus(nextMatch.fecha, nextMatch.hora, nextMatch.isPlayed);
 
-let tiempoPartido: string | null = null;
-if (matchStatus.status === 'in-progress' && liveMatch?.id_partido) {
-    try {
-        const { getPlayersDbClient } = await import('../db/client');
-        const dbClient = await getPlayersDbClient();
-        if (dbClient) {
-            const r = await dbClient.execute({ sql: `SELECT tiempo_partido FROM partidos WHERE id_partido = ? LIMIT 1`, args: [liveMatch.id_partido] });
-            tiempoPartido = (r.rows[0]?.tiempo_partido as string) ?? null;
-        }
-    } catch (_) { tiempoPartido = null; }
-}
-
 const localShort = nextMatch.club_local.replace("Femenino","").replace("Real Madrid","R. Madrid").trim();
 const visitanteShort = nextMatch.club_visitante.replace("Femenino","").replace("Real Madrid","R. Madrid").trim();
 ---
@@ -87,7 +75,7 @@ const visitanteShort = nextMatch.club_visitante.replace("Femenino","").replace("
                     {nextMatch.club_local?.toLowerCase().includes('real madrid') ? (nextMatch.goles_rival ?? 0) : (nextMatch.goles_rm ?? 0)}
                 </span>
                 <span class="cd-minute">
-                    {tiempoPartido ?? `${Math.min(Math.floor((now.getTime() - new Date(targetDate).getTime()) / 60000), 90)}'`}
+                    {`${Math.min(Math.floor((now.getTime() - new Date(targetDate).getTime()) / 60000), 90)}'`}
                 </span>
             </div>
         ) : (

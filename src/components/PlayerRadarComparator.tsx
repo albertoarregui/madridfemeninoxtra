@@ -338,7 +338,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
     }, [dataA, dataB]);
 
     const availableComps = useMemo(() => {
-        const order = ['Liga F','UWCL','Copa de la Reina','Supercopa de España','Amistosos'];
+        const order = ['Primera Iberdrola','Liga F','UWCL','Copa de la Reina','Supercopa de España','Amistosos'];
         const set = new Set([...(dataA?.competitions ?? []), ...(dataB?.competitions ?? [])]);
         const sorted = [...set].sort((a, b) => {
             const ia = order.indexOf(a), ib = order.indexOf(b);

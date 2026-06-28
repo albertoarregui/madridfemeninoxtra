@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ params, url }) => {
 
         const id = player.id_jugadora;
 
-        const OFFICIAL_COMPS = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
+        const OFFICIAL_COMPS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
         const isOfficial = competition === 'Partidos oficiales';
 
         const seasonFilter = season ? `AND t.temporada = ?` : '';

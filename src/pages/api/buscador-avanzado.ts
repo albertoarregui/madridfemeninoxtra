@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ request }) => {
         }
 
         if (competicion === 'oficiales') {
-            matchWhere.push("c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')");
+            matchWhere.push("c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')");
         } else if (competicion) {
             matchWhere.push('c.competicion = ?');
             params.push(competicion);

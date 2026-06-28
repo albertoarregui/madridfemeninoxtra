@@ -163,7 +163,7 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.goleadora IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
+                AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY goles DESC
                 LIMIT 10
@@ -182,7 +182,7 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.asistente IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
+                AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY asistencias DESC
                 LIMIT 10
@@ -206,7 +206,7 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                    AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
+                    AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                     
                     UNION ALL
@@ -218,7 +218,7 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.asistente IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
-                    AND c.competicion IN ('Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
+                    AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                 )
                 GROUP BY nombre
@@ -259,9 +259,10 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
 
         const matchesResult = await db.execute({
             sql: `
-                SELECT 
+                SELECT
                     p.id_partido,
                     p.fecha,
+                    p.id_temporada,
                     p.id_competicion,
                     c.competicion,
                     p.id_club_local,
@@ -348,6 +349,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             return {
                 id: match.id_partido,
                 fecha: match.fecha,
+                id_temporada: match.id_temporada,
                 competicion: match.competicion || '-',
                 esLocal: esLocal,
                 ubicacion: esLocal ? 'Visitante' : 'Local',

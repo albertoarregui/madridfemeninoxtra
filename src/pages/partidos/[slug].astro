@@ -14,6 +14,8 @@ import { fetchCalendarFromDb } from "../../utils/calendar";
 import { getPlayerImage } from "../../utils/player-images";
 import { getAssetUrl } from "../../utils/assets";
 import { getMatchStatus } from "../../utils/date-helper";
+import { competitionDisplayName } from "../../utils/competiciones";
+import { breadcrumbSchema } from "../../utils/seo";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 
 const { slug } = Astro.params;
@@ -202,11 +204,116 @@ if (!game.isPlayed && !isWithinOneHour) {
     } catch (_) { h2hStats = null; }
 }
 
+const localScore = isLocalRM ? (game.goles_rm ?? 0) : (game.goles_rival ?? 0);
+const visitorScore = isLocalRM ? (game.goles_rival ?? 0) : (game.goles_rm ?? 0);
+const rmGoals = game.goles_rm ?? 0;
+const rivalGoals = game.goles_rival ?? 0;
+const rivalName = isLocalRM ? game.club_visitante : game.club_local;
+
+const fechaLarga = game.fecha
+    ? (() => { try { return new Date(game.fecha).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }); } catch { return ""; } })()
+    : "";
+const fechaCorta = formatDate(game.fecha);
+
+const venueText = game.estadio ? ` en el ${game.estadio}${game.ciudad ? ` (${game.ciudad})` : ""}` : "";
+
+const jornadaLabel = (() => {
+    const j = game.jornada;
+    if (!j) return "";
+    const lower = String(j).toLowerCase();
+    if (lower.includes("amistoso")) return "";
+    if (!isNaN(Number(j))) return `la jornada ${j}`;
+    return String(j);
+})();
+const competicionDisplay = competitionDisplayName(game.competicion_nombre, { idTemporada: game.id_temporada });
+const compLabel = competicionDisplay
+    ? `${jornadaLabel ? `${jornadaLabel} de ` : ""}${competicionDisplay}`
+    : "";
+
+const rmScorers = (timelineEvents || [])
+    .filter((e: any) => e.type === "goal" && e.team === "local" && e.scorer && !e.isOwnGoal)
+    .map((e: any) => `${e.scorer}${e.displayMinute && e.displayMinute !== "P" ? ` (${e.displayMinute}')` : ""}`);
+
+const margin = rmGoals - rivalGoals;
+const homeAway = isLocalRM ? "como local" : "a domicilio";
+const resultVerb = margin >= 3 ? "goleó a"
+    : margin > 0 ? "se impuso a"
+    : margin === 0 ? "firmó tablas ante"
+    : margin >= -2 ? "cayó ante"
+    : "cayó con claridad ante";
+const joinNatural = (arr: string[]) =>
+    arr.length <= 1 ? (arr[0] || "") : `${arr.slice(0, -1).join(", ")} y ${arr[arr.length - 1]}`;
+
+const lineupNames = (lineup || []).map((p: any) => p.name).filter(Boolean);
+
+const cambios = (subs || [])
+    .filter((s: any) => s.playerIn?.name || s.playerOut?.name)
+    .map((s: any) => `${s.playerIn?.name || "?"} por ${s.playerOut?.name || "?"}${s.minute ? ` (min. ${s.minute})` : ""}`);
+
+const kitMap: Record<string, string> = { local: "primera equipación", visitante: "segunda equipación", tercera: "tercera equipación", portera: "equipación de portera" };
+const kitText = matchKit?.tipo
+    ? (kitMap[matchKit.tipo.toLowerCase()] || `equipación ${matchKit.tipo.toLowerCase()}`)
+    : "";
+
+const numOrNull = (v: any) => (v == null || v === "" || Number.isNaN(Number(v)) || Number(v) === 0 ? null : Number(v));
+const posRm = numOrNull(game.posesion_rm);
+const tirosRm = numOrNull(game.rm_tiros);
+const tirosPuertaRm = numOrNull(game.rm_tiros_puerta);
+const statsBits: string[] = [];
+if (posRm != null) statsBits.push(`un ${posRm}% de posesión`);
+if (tirosRm != null) statsBits.push(`${tirosRm} tiros${tirosPuertaRm != null ? ` (${tirosPuertaRm} a puerta)` : ""}`);
+
+let cronica = "";
+if (isLiveOrPlayed) {
+    cronica = `El ${fechaLarga}, el Real Madrid Femenino ${resultVerb} ${rivalName} por ${rmGoals}-${rivalGoals}${compLabel ? ` en ${compLabel}` : ""}.`;
+    cronica += ` El encuentro${game.hora ? `, con inicio a las ${formatTime(game.hora)},` : ""} se disputó ${homeAway}${venueText}`;
+    cronica += game.arbitra_nombre ? ` y estuvo dirigido por la colegiada ${game.arbitra_nombre}` : "";
+    cronica += game.asistencia ? `, con ${Number(game.asistencia).toLocaleString("es-ES")} espectadores en las gradas.` : `.`;
+    if (lineupNames.length) cronica += ` El once inicial del Real Madrid lo formaron ${joinNatural(lineupNames)}.`;
+    if (rmScorers.length) {
+        cronica += rmScorers.length === 1
+            ? ` El gol blanco lo firmó ${rmScorers[0]}.`
+            : ` Las goleadoras del Real Madrid fueron ${joinNatural(rmScorers)}.`;
+    }
+    if (rmGoals > 0 && rivalGoals === 0) cronica += ` El equipo dejó su portería a cero.`;
+    if (cambios.length) cronica += ` En el banquillo hubo movimiento: entraron ${joinNatural(cambios)}.`;
+    if (statsBits.length) cronica += ` En el plano estadístico, el conjunto blanco firmó ${joinNatural(statsBits)}.`;
+    if (kitText) cronica += ` Para la ocasión, el equipo vistió su ${kitText}.`;
+    if (game.mvp && game.mvp_nombre) cronica += ` ${game.mvp_nombre} se llevó el premio a la MVP del partido.`;
+} else {
+    cronica = `El Real Madrid Femenino se medirá a ${rivalName} el ${fechaLarga}${game.hora ? ` a las ${formatTime(game.hora)}` : ""}${compLabel ? ` en ${compLabel}` : ""}.`;
+    cronica += ` El choque se jugará ${homeAway}${venueText}${game.arbitra_nombre ? `, con ${game.arbitra_nombre} como árbitra designada` : ""}.`;
+    cronica += ` En esta página podrás seguir el resultado en directo, las alineaciones, los cambios, las estadísticas y la crónica completa del encuentro en cuanto arranque.`;
+}
+
+const seoTitle = isLiveOrPlayed
+    ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`
+    : `${game.club_local} vs ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`;
+const seoDescription = isLiveOrPlayed
+    ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante} (${fechaCorta}). Resultado, goleadoras, alineaciones y estadísticas completas${compLabel ? ` de ${compLabel}` : ""}.`
+    : `${game.club_local} vs ${game.club_visitante} (${fechaCorta}). Previa, horario, alineaciones y estadísticas del partido${compLabel ? ` de ${compLabel}` : ""}.`;
+
+const matchStartISO = game.fecha ? `${game.fecha}T${kickoffHora}` : undefined;
+const matchSchema = {
+    "@context": "https://schema.org",
+    "@type": "SportsEvent",
+    name: `${game.club_local} vs ${game.club_visitante}`,
+    sport: "Football",
+    ...(matchStartISO ? { startDate: matchStartISO } : {}),
+    eventStatus: "https://schema.org/EventScheduled",
+    ...(game.estadio
+        ? { location: { "@type": "Place", name: game.estadio, ...(game.ciudad || game.pais ? { address: [game.ciudad, game.pais].filter(Boolean).join(", ") } : {}) } }
+        : {}),
+    homeTeam: { "@type": "SportsTeam", name: game.club_local },
+    awayTeam: { "@type": "SportsTeam", name: game.club_visitante },
+    ...(competicionDisplay ? { organizer: { "@type": "Organization", name: competicionDisplay } } : {}),
+};
+
 ---
 
-<Layout
-    title={`${game.club_local} vs ${game.club_visitante} | Madrid Femenino Xtra`}
-    description={`Resultado y estadísticas del partido ${game.club_local} vs ${game.club_visitante}. Alineaciones, goles y crónica completa.`}>
+<Layout title={seoTitle} description={seoDescription}>
+    <script type="application/ld+json" set:html={JSON.stringify(matchSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Partidos", path: "/partidos" }, { name: `${game.club_local} vs ${game.club_visitante}`, path: `/partidos/${slug}` }]))} />
     <main class="match-details-page">
         <a href="/partidos" class="back-link">
             <svg
@@ -230,7 +337,7 @@ if (!game.isPlayed && !isWithinOneHour) {
                 <div class="match-content-body">
                     <div class="match-metadata-top">
                         <span class="metadata-text">
-                            {game.competicion_nombre}
+                            {competicionDisplay}
                             {
                                 (() => {
                                     const jornada = game.jornada;
@@ -448,6 +555,10 @@ if (!game.isPlayed && !isWithinOneHour) {
                 </div>
             </section>
         </div>
+        <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
+            <h2 class="section-header">{isLiveOrPlayed ? "RESUMEN DEL PARTIDO" : "PREVIA DEL PARTIDO"}</h2>
+            <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(220,225,230,0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>
+        </section>
         {!game.isPlayed && !isWithinOneHour && h2hStats && h2hStats.totalMatches > 0 && (
             <div class="h2h-row">
                 <div class="h2h-bare">
@@ -1034,8 +1145,8 @@ if (!game.isPlayed && !isWithinOneHour) {
                         <div class="kit-content">
                             <div class="kit-content-inner">
                                 <img
-                                    src={matchKit}
-                                    alt="Equipación del partido"
+                                    src={matchKit.url}
+                                    alt={matchKit.nombre || "Equipación del partido"}
                                     class="kit-image"
                                     loading="lazy"
                                 />

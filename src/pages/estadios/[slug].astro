@@ -1,16 +1,20 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
 import {
     fetchAllStadiumsWithStats,
     fetchMatchesByStadium,
+    fetchTopPlayersByStadium,
 } from "../../utils/estadios";
+import { competitionDisplayName } from "../../utils/competiciones";
 import { generateSlug } from "../../utils/url-helper";
 
 import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
 
 const competitionLogos: Record<string, any> = {
     "Liga F": getAssetMetadata("competiciones", "liga_f"),
+    "Primera Iberdrola": getAssetMetadata("competiciones", "primera_iberdrola"),
     UWCL: getAssetMetadata("competiciones", "uwcl"),
     "Copa de la Reina": getAssetMetadata("competiciones", "copa_de_la_reina"),
     "Supercopa de España": getAssetMetadata(
@@ -29,6 +33,7 @@ if (!stadium) {
 }
 
 const rawMatches = await fetchMatchesByStadium(stadium.name);
+const stadiumTopPlayers = await fetchTopPlayersByStadium(stadium.name);
 
 const matches = rawMatches.map((m) => {
     const isLocal =
@@ -181,12 +186,72 @@ const concededArc =
     totalMatches > 0
         ? Math.round((totalStats.conceded / totalMatches) * circumference)
         : 0;
+
+const joinNatural = (arr: string[]) =>
+    arr.length <= 1 ? (arr[0] || "") : `${arr.slice(0, -1).join(", ")} y ${arr[arr.length - 1]}`;
+
+const mainStadium = allStadiums && allStadiums.length ? allStadiums[0] : null;
+const isMainStadium = !!(mainStadium && mainStadium.name === stadium.name);
+
+const bioParts: string[] = [];
+if (totalStats.pj) {
+    const intro = isMainStadium
+        ? `El ${stadium.name}${stadium.city ? `, situado en ${stadium.city},` : ""} es el estadio principal del Real Madrid Femenino`
+        : `El ${stadium.name}${stadium.city ? `, situado en ${stadium.city},` : ""} es uno de los escenarios por los que ha pasado el Real Madrid Femenino`;
+    bioParts.push(`${intro}. Sobre su césped el equipo ha disputado ${totalStats.pj} ${totalStats.pj === 1 ? "partido" : "partidos"}, con un balance de ${totalStats.pg} victorias, ${totalStats.pe} empates y ${totalStats.pp} derrotas.`);
+    bioParts.push(`En este recinto las blancas han anotado ${totalStats.gf} goles y han recibido ${totalStats.gc}${stadium.capacity ? `, ante un aforo de hasta ${Number(stadium.capacity).toLocaleString("es-ES")} espectadores` : ""}.`);
+
+    const winsHere = matches.filter((m: any) => m.golesRM != null && m.golesRM !== "" && m.golesRival != null && m.golesRival !== "" && Number(m.golesRM) > Number(m.golesRival));
+    const mayorVictoria = winsHere.slice().sort((a: any, b: any) => {
+        const da = Number(a.golesRM) - Number(a.golesRival);
+        const db = Number(b.golesRM) - Number(b.golesRival);
+        return db !== da ? db - da : Number(b.golesRM) - Number(a.golesRM);
+    })[0] || null;
+    if (mayorVictoria) {
+        const rivalMV = mayorVictoria.esLocal ? mayorVictoria.club_visitante : mayorVictoria.club_local;
+        bioParts.push(`Su mayor victoria en este estadio es un ${mayorVictoria.golesRM}-${mayorVictoria.golesRival} ante ${rivalMV}.`);
+    }
+
+    const sc = (stadiumTopPlayers?.topScorers || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.goles})`);
+    const as = (stadiumTopPlayers?.topAssisters || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.asistencias})`);
+    const co = (stadiumTopPlayers?.topContributors || []).slice(0, 3).map((p: any) => `${p.nombre} (${p.total})`);
+    if (sc.length) bioParts.push(`Las máximas goleadoras madridistas en este recinto son ${joinNatural(sc)}.`);
+    if (as.length) bioParts.push(`En asistencias destacan ${joinNatural(as)}.`);
+    if (co.length) bioParts.push(`Y en goles generados (G+A), las más determinantes son ${joinNatural(co)}.`);
+} else {
+    bioParts.push(isMainStadium
+        ? `El ${stadium.name} es el estadio principal del Real Madrid Femenino.`
+        : `Aquí encontrarás el historial y las estadísticas de todos los partidos del Real Madrid Femenino en el ${stadium.name}${stadium.city ? `, en ${stadium.city}` : ""}.`);
+    if (stadium.capacity) {
+        bioParts.push(`El recinto tiene una capacidad de ${Number(stadium.capacity).toLocaleString("es-ES")} espectadores.`);
+    }
+}
+
+if (mainStadium && !isMainStadium) {
+    bioParts.push(`El estadio principal del Real Madrid Femenino es el ${mainStadium.name}.`);
+}
+
+const bio = bioParts.join(" ");
+
+const stadiumSchema = {
+    "@context": "https://schema.org",
+    "@type": "StadiumOrArena",
+    name: stadium.name,
+    ...(stadium.city ? { address: stadium.city } : {}),
+    ...(stadium.capacity ? { maximumAttendeeCapacity: Number(stadium.capacity) } : {}),
+    ...(stadium.coordinates ? { geo: { "@type": "GeoCoordinates", latitude: stadium.coordinates.lat, longitude: stadium.coordinates.lng } } : {}),
+    description: bio,
+};
+
+const seoTitle = `${stadium.name}: partidos y estadísticas del Real Madrid Femenino | Madrid Femenino Xtra`;
+const seoDescription = totalStats.pj
+    ? `El Real Madrid Femenino en el ${stadium.name}${stadium.city ? ` (${stadium.city})` : ""}: ${totalStats.pj} partidos, ${totalStats.pg} victorias, ${totalStats.gf} goles a favor. Historial y estadísticas completas.`
+    : `Estadísticas e historial de partidos del Real Madrid Femenino en el estadio ${stadium.name}.`;
 ---
 
-<Layout
-    title={`${stadium.name} | Madrid Femenino Xtra`}
-    description={`Estadísticas e historial de partidos del Real Madrid Femenino en el estadio ${stadium.name}.`}
->
+<Layout title={seoTitle} description={seoDescription}>
+    <script type="application/ld+json" set:html={JSON.stringify(stadiumSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Estadios", path: "/estadios" }, { name: stadium.name, path: `/estadios/${slug}` }]))} />
     <section class="stadium-hero">
         <div class="hero-bg-glow" aria-hidden="true"></div>
 
@@ -249,7 +314,7 @@ const concededArc =
                     </div>
                     <div class="qs-card">
                         <span class="qs-number">{totalStats.cleanSheets}</span>
-                        <span class="qs-label">P. A CERO</span>
+                        <span class="qs-label">PORTERÍAS A CERO</span>
                     </div>
                 </div>
             </div>
@@ -258,6 +323,13 @@ const concededArc =
 
     <main class="stadium-content">
         <div class="content-grid">
+
+            <section class="profile-card full-col" style="margin-bottom:0;">
+                <h2 class="card-title">SOBRE EL {stadium.name.toUpperCase()}</h2>
+                <div class="card-body">
+                    <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                </div>
+            </section>
 
             {stadium.coordinates && (
                 <section class="profile-card map-card">
@@ -331,7 +403,7 @@ const concededArc =
                                                                     class="competition-logo"
                                                                 />
                                                             )}
-                                                            {comp.competicion}
+                                                            {competitionDisplayName(comp.competicion, { temporada: season.temporada })}
                                                         </div>
                                                     </td>
                                                     <td>{comp.pj}</td>
@@ -499,12 +571,12 @@ const concededArc =
                                             {competitionLogos[match.competicion] && (
                                                 <img
                                                     src={competitionLogos[match.competicion].src}
-                                                    alt={match.competicion}
+                                                    alt={competitionDisplayName(match.competicion, { temporada: match.season })}
                                                     class="competition-logo-small"
-                                                    title={match.competicion}
+                                                    title={competitionDisplayName(match.competicion, { temporada: match.season })}
                                                 />
                                             )}
-                                            {!competitionLogos[match.competicion] && match.competicion}
+                                            {!competitionLogos[match.competicion] && competitionDisplayName(match.competicion, { temporada: match.season })}
                                         </td>
                                         <td class={match.club_local.toLowerCase().includes("real madrid") ? "font-bold" : ""}>
                                             {match.club_local}

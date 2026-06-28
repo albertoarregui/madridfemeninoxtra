@@ -56,7 +56,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             const seasonMatch = selectedSeason === 'all' || m.temporada_nombre === selectedSeason;
             let compMatch = true;
             if (selectedCompetition === 'Partidos Oficiales') {
-                compMatch = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(m.competicion_nombre);
+                compMatch = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(m.competicion_nombre);
             } else if (selectedCompetition !== 'all') {
                 compMatch = m.competicion_nombre === selectedCompetition;
             }
@@ -69,7 +69,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             const seasonMatch = selectedSeason === 'all' || g.temporada === selectedSeason;
             let compMatch = true;
             if (selectedCompetition === 'Partidos Oficiales') {
-                compMatch = ['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(g.competicion);
+                compMatch = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(g.competicion);
             } else if (selectedCompetition !== 'all') {
                 compMatch = g.competicion === selectedCompetition;
             }
@@ -257,7 +257,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                         options={[
                             { value: 'all', label: 'Todas las Competiciones' },
                             { value: 'Partidos Oficiales', label: 'Partidos Oficiales' },
-                            ...['Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
+                            ...['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
                                 .filter(c => competitions.includes(c))
                                 .map(c => ({ value: c, label: c }))
                         ]}

@@ -34,6 +34,8 @@ const seasonSet = new Set<string>();
 players.forEach(p => { if (Array.isArray(p.temporadas)) p.temporadas.forEach((s: string) => seasonSet.add(s)); });
 const seasons = Array.from(seasonSet).sort().reverse();
 
+const canteranaCount = players.filter(p => p.tipo === 'Club-trained').length;
+
 const sortedPlayers = [...players].sort((a, b) => {
     const diff = (POSITION_ORDER[a.posicion] || 99) - (POSITION_ORDER[b.posicion] || 99);
     return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
@@ -56,6 +58,18 @@ const sortedPlayers = [...players].sort((a, b) => {
                     <span class="pg-filter-badge">{count}</span>
                 </button>
             ))}
+        </div>
+
+        <span class="pg-section-label">♦ Cantera</span>
+        <div data-filter-group="canterana">
+            <button class="pg-filter-btn pg-active" data-filter="canterana" data-value="">
+                <span class="pg-filter-label">Todas</span>
+                <span class="pg-filter-badge">{players.length}</span>
+            </button>
+            <button class="pg-filter-btn" data-filter="canterana" data-value="si">
+                <span class="pg-filter-label">Canteranas</span>
+                <span class="pg-filter-badge">{canteranaCount}</span>
+            </button>
         </div>
 
         <span class="pg-section-label">♦ País</span>
@@ -115,6 +129,7 @@ const sortedPlayers = [...players].sort((a, b) => {
                         class="player-portrait-card"
                         data-posicion={player.posicion || ''}
                         data-pais={country || ''}
+                        data-canterana={player.tipo === 'Club-trained' ? 'si' : 'no'}
                         data-temporadas={(player.temporadas || []).join(',')}
                         data-nombre={player.nombre}
                         data-default-order={index}
@@ -128,6 +143,7 @@ const sortedPlayers = [...players].sort((a, b) => {
                         <span class="pg-corner pg-corner-br" aria-hidden="true" />
                         <div class="pg-card-glow" aria-hidden="true" />
                         <span class="pg-pos-label" aria-hidden="true">♦ {posAbbrev}</span>
+                        {player.tipo === 'Club-trained' && <span class="pg-canterana-badge" title="Canterana — formada en La Fábrica" aria-label="Canterana">★</span>}
                         <div class="pg-card-photo" transition:name={`player-${player.slug}`}>
                             <img
                                 src={player.imageUrl}
@@ -167,7 +183,7 @@ const sortedPlayers = [...players].sort((a, b) => {
     const noResults = document.querySelector<HTMLElement>('[data-pg-no-results]');
     const resetBtn = document.querySelector('[data-pg-reset]');
 
-    const state: Record<string, string> = { posicion: '', pais: '', temporada: '' };
+    const state: Record<string, string> = { posicion: '', pais: '', temporada: '', canterana: '' };
     let sortMode = 'posicion';
 
     function applyFilters() {
@@ -177,7 +193,8 @@ const sortedPlayers = [...players].sort((a, b) => {
         const matchesPais = state.pais === '' || card.dataset.pais === state.pais;
         const temporadas = card.dataset.temporadas ? card.dataset.temporadas.split(',') : [];
         const matchesSeason = state.temporada === '' || temporadas.includes(state.temporada);
-        const matches = matchesPos && matchesPais && matchesSeason;
+        const matchesCanterana = state.canterana === '' || card.dataset.canterana === state.canterana;
+        const matches = matchesPos && matchesPais && matchesSeason && matchesCanterana;
         card.style.display = matches ? '' : 'none';
         if (matches) visible++;
       }
@@ -221,6 +238,7 @@ const sortedPlayers = [...players].sort((a, b) => {
         state.posicion = '';
         state.pais = '';
         state.temporada = '';
+        state.canterana = '';
         for (const btn of filterBtns) {
           btn.classList.toggle('pg-active', (btn.dataset.value ?? '') === '');
         }

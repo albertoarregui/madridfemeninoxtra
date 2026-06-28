@@ -39,7 +39,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 📈 **Estadísticas históricas** — Balance por temporada y competición
 - 👩 **Fichas de jugadoras** — Partidos, goles, asistencias y más
 - 🏟️ **Estadios y árbitras** — Base de datos completa
-- 🏆 **Competiciones** — Liga F, UWCL, Copa de la Reina y Supercopa
+- 🏆 **Competiciones** — Primera Iberdrola (2020-2022), Liga F, UWCL, Copa de la Reina y Supercopa
 - 📧 **Newsletter semanal** — Digest automático cada lunes con las noticias de la semana
 - ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
 - 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición, con soporte táctil y diseño adaptado a móvil
@@ -90,6 +90,35 @@ pnpm dev
 - `/src/utils` — Lógica de negocio y helpers
 - `/src/assets` — Recursos estáticos
 - `/scripts` — Scripts de automatización (newsletter semanal)
+- `/scripts/migrations` — Migraciones de base de datos versionadas
+
+## 🔄 Cambios Recientes (Junio 2026)
+
+### 🔎 SEO y datos estructurados
+- ✅ **Biografías/crónicas únicas e indexables** generadas desde la BD en las 6 fichas dinámicas (jugadoras, entrenadores, rivales, estadios, árbitras y partidos)
+- ✅ **Datos estructurados schema.org**: `Person`, `SportsEvent`, `SportsTeam`, `StadiumOrArena` por ficha; `Organization` + `WebSite` con `SearchAction` global; `BreadcrumbList` en todas las fichas
+- ✅ **Canonical** normalizado por ruta (sin query) y `og:url` por página
+- ✅ **Prioridad a `/home`**: la landing `/` canonicaliza a `/home` y se retira del sitemap; `/search` (noindex) también fuera del sitemap
+
+### 🏆 Competición "Primera Iberdrola"
+- ✅ Nueva competición en la tabla `competiciones`; reasignados los **64 partidos** de liga de 2020/21 y 2021/22 (la liga se llamaba así hasta 2022)
+- ✅ Incluida en todos los filtros de competiciones oficiales (las estadísticas históricas se mantienen intactas) y ordenada **la primera** como liga doméstica
+- ✅ Logo propio con fondo transparente
+
+### ⭐ Canteranas (jugadoras de La Fábrica)
+- ✅ **Filtro "Canteranas"** en /jugadoras (categoría FIFA *club-trained*)
+- ✅ **Badge lila** (★) en el grid y en la ficha
+- ✅ Bio "formada en La Fábrica" + schema `alumniOf`
+
+### ⚽ Crónica de partido
+- ✅ Incluye **alineación, cambios, estadísticas** (solo si existen), **equipación, MVP, árbitra y hora**
+- ✅ Los goles en propia puerta del Real Madrid **no** cuentan como gol del equipo
+
+### 🧹 Otros
+- ✅ Eliminada la columna `tiempo_partido` (sin uso) de la tabla `partidos`
+- ✅ **Plantilla**: la portera con el dorsal más bajo aparece destacada por defecto
+- ✅ Fichas: nombres completos en las tarjetas de estadísticas, retirado "Dorsal" de la ficha personal, textos justificados y adaptados a todo tipo de pantalla (`clamp()`)
+- ✅ Migraciones añadidas: `11-drop-tiempo-partido`, `12-primera-iberdrola`
 
 ## � Cambios Recientes (Mayo 2026)
 
