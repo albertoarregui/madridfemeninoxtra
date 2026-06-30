@@ -2,6 +2,7 @@
 import { fetchCalendarFromDb } from "../utils/calendar";
 import { getAssetUrl } from "../utils/assets";
 import { fetchGamesDirectly, slugify } from "../utils/partidos";
+import { getCurrentSeasonStartYear, nowInMadrid } from "../utils/season";
 
 const calendarMatches = await fetchCalendarFromDb();
 const allGames = await fetchGamesDirectly();
@@ -62,11 +63,9 @@ function getDaysInMonth(year: number, month: number): number {
     return new Date(year, month, 0).getDate();
 }
 
-const now = new Date();
-const currentMonth = now.getMonth() + 1;
-const currentYear = now.getFullYear();
+const { year: currentYear, month: currentMonth } = nowInMadrid();
 
-const seasonStartYear = currentMonth >= 7 ? currentYear : currentYear - 1;
+const seasonStartYear = getCurrentSeasonStartYear();
 
 const MONTHS_DATA = [];
 for (let i = 0; i < 12; i++) {

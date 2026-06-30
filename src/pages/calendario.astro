@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { fetchGamesDirectly } from "../utils/partidos";
 import CalendarArchive from "../components/CalendarArchive";
+import { getCurrentSeason } from "../utils/season";
 import "../styles/global.css";
 
 export const prerender = false;
@@ -12,19 +13,7 @@ let error = null;
 try {
     const allMatches = await fetchGamesDirectly();
 
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
-
-    let startYear, endYearAbbrev;
-    if (currentMonth >= 7) {
-        startYear = currentYear;
-        endYearAbbrev = (currentYear + 1).toString().slice(-2);
-    } else {
-        startYear = currentYear - 1;
-        endYearAbbrev = currentYear.toString().slice(-2);
-    }
-    const currentSeason = `${startYear}/${endYearAbbrev}`;
+    const currentSeason = getCurrentSeason();
 
     matches = allMatches.filter(
         (m) =>

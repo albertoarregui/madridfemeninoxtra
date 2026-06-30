@@ -520,6 +520,139 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
     }
 }
 
+export async function fetchPlayerContract(playerId: string | number): Promise<{ fecha_fin: string | null; valor_mercado: number | null } | null> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+
+        if (!client) {
+            return null;
+        }
+
+        const query = `
+    SELECT fecha_fin, valor_mercado
+    FROM contratos
+    WHERE id_jugadora = ?
+    ORDER BY fecha_inicio DESC
+    LIMIT 1
+`;
+
+        const result = await client.execute({
+            sql: query,
+            args: [playerId],
+        });
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const row = result.rows[0];
+        return {
+            fecha_fin: cleanApiValue(row.fecha_fin) || null,
+            valor_mercado: row.valor_mercado != null ? Number(row.valor_mercado) : null,
+        };
+
+    } catch (error) {
+        console.error("Error fetching player contract:", error);
+        return null;
+    }
+}
+
+export interface PlayerInjury {
+    tipo_lesion: string | null;
+    zona_cuerpo: string | null;
+    fecha_lesion: string | null;
+    fecha_alta: string | null;
+    partidos_perdidos: number | null;
+    activa: boolean;
+}
+
+export async function fetchPlayerInjuries(playerId: string | number): Promise<{ injuries: PlayerInjury[]; isInjured: boolean }> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+
+        if (!client) {
+            return { injuries: [], isInjured: false };
+        }
+
+        const result = await client.execute({
+            sql: `
+    SELECT tipo_lesion, zona_cuerpo, fecha_lesion, fecha_alta, partidos_perdidos
+    FROM lesiones
+    WHERE id_jugadora = ?
+    ORDER BY fecha_lesion DESC
+`,
+            args: [playerId],
+        });
+
+        const todayMadrid = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Europe/Madrid',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date());
+
+        const injuries: PlayerInjury[] = result.rows.map((row: any) => {
+            const fechaAlta = cleanApiValue(row.fecha_alta) || null;
+            const altaDate = fechaAlta ? String(fechaAlta).split('T')[0] : null;
+            const activa = !altaDate || altaDate > todayMadrid;
+            return {
+                tipo_lesion: cleanApiValue(row.tipo_lesion) || null,
+                zona_cuerpo: cleanApiValue(row.zona_cuerpo) || null,
+                fecha_lesion: cleanApiValue(row.fecha_lesion) || null,
+                fecha_alta: fechaAlta,
+                partidos_perdidos: row.partidos_perdidos != null ? Number(row.partidos_perdidos) : null,
+                activa,
+            };
+        });
+
+        return { injuries, isInjured: injuries.some((i) => i.activa) };
+
+    } catch (error) {
+        console.error("Error fetching player injuries:", error);
+        return { injuries: [], isInjured: false };
+    }
+}
+
+export async function fetchPlayerSocials(playerId: string | number): Promise<{ instagram: string | null; x: string | null; tiktok: string | null } | null> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+
+        if (!client) {
+            return null;
+        }
+
+        const result = await client.execute({
+            sql: `SELECT url_instagram, url_x, url_tiktok FROM redes_sociales WHERE id_jugadora = ? LIMIT 1`,
+            args: [playerId],
+        });
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const row = result.rows[0];
+        const clean = (v: any): string | null => {
+            const value = cleanApiValue(v);
+            if (typeof value !== 'string') return null;
+            const trimmed = value.trim();
+            return trimmed ? trimmed : null;
+        };
+
+        return {
+            instagram: clean(row.url_instagram),
+            x: clean(row.url_x),
+            tiktok: clean(row.url_tiktok),
+        };
+
+    } catch (error) {
+        console.error("Error fetching player socials:", error);
+        return null;
+    }
+}
+
 export async function fetchPlayerTrajectory(playerId: string | number): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');

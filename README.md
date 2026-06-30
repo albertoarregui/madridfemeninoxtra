@@ -92,6 +92,19 @@ pnpm dev
 - `/scripts` — Scripts de automatización (newsletter semanal)
 - `/scripts/migrations` — Migraciones de base de datos versionadas
 
+## 🔄 Cambios Recientes (Julio 2026)
+
+### 📅 Cambio de temporada automático
+- ✅ La temporada en curso se calcula **siempre en hora de Madrid** (`Europe/Madrid`), no en la del servidor; corrige que el calendario y la plantilla no cambiaran a la nueva temporada el 1 de julio en Vercel (que corre en UTC)
+- ✅ Nuevo helper `src/utils/season.ts` (`getCurrentSeason`, `getCurrentSeasonStartYear`, `nowInMadrid`) aplicado en calendario, plantilla y el componente `Calendar`
+
+### 👩 Fichas de jugadoras
+- ✅ **Fin de contrato** y **valor de mercado** (datos de Soccerdonna, tabla `contratos`) en la ficha personal; el valor se muestra completo en euros (p. ej. `135.000 euros`)
+- ✅ **Redes sociales** (Instagram, X y TikTok) como iconos enlazados desde la tabla `redes_sociales`
+- ✅ **Historial de lesiones** en una tarjeta propia (tipo, zona, fechas y partidos perdidos) desde la tabla `lesiones`, resaltando las lesiones en curso
+- ✅ **Badge "Lesionada"** junto a la edad cuando la jugadora tiene una lesión activa (sin alta o con alta futura)
+- ✅ Todo adaptado a todo tipo de pantalla (`clamp()` y `flex-wrap`)
+
 ## 🔄 Cambios Recientes (Junio 2026)
 
 ### 🔎 SEO y datos estructurados
