@@ -103,7 +103,7 @@ export async function fetchGamesDirectly(): Promise<any[]> {
               LEFT JOIN jugadoras jm ON p.mvp = jm.id_jugadora
               LEFT JOIN entrenadores en ON p.id_entrenador = en.id_entrenador
               LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
-              ORDER BY p.id_partido ASC
+              ORDER BY p.fecha ASC, p.hora ASC, p.id_partido ASC
         `;
 
         const result = await client.execute(query);
