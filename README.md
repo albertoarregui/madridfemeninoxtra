@@ -119,8 +119,6 @@ pnpm dev
 - ✅ **Badge "Lesionada"** junto a la edad cuando la jugadora tiene una lesión activa (sin alta o con alta futura)
 - ✅ Todo adaptado a todo tipo de pantalla (`clamp()` y `flex-wrap`)
 
-## 🔄 Cambios Recientes (Junio 2026)
-
 ### 🔎 SEO y datos estructurados
 - ✅ **Biografías/crónicas únicas e indexables** generadas desde la BD en las 6 fichas dinámicas (jugadoras, entrenadores, rivales, estadios, árbitras y partidos)
 - ✅ **Datos estructurados schema.org**: `Person`, `SportsEvent`, `SportsTeam`, `StadiumOrArena` por ficha; `Organization` + `WebSite` con `SearchAction` global; `BreadcrumbList` en todas las fichas
