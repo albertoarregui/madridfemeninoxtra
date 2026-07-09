@@ -119,24 +119,28 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 {visibleNoticias.length > 0 ? (
                     visibleNoticias.map((noticia: Noticia) => (
                         <a href={`/noticias/${noticia.slug}`} className="archive-card group" key={noticia.id}>
-                            <div className="archive-image">
-                                <img
-                                    src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}?fm=webp&w=760&h=480&q=80&fit=fill` : "/assets/background/stadium.webp"}
-                                    alt={noticia.title}
-                                    loading="lazy"
-                                />
-                                <span className="archive-tag">{noticia.category || "ACTUALIDAD"}</span>
-                            </div>
-                            <div className="archive-info">
-                                <time className="archive-date">
-                                    {new Date(noticia.createdAt || noticia.updatedAt || "").toLocaleDateString("es-ES", {
-                                        day: "2-digit",
-                                        month: "long",
-                                        year: "numeric"
-                                    }).toUpperCase()}
-                                </time>
-                                <h2 className="archive-title">{noticia.title}</h2>
-                                <p className="archive-subtitle">{noticia.subtitle}</p>
+                            <div className="archive-inner">
+                                <div className="archive-image">
+                                    <img
+                                        src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}?fm=webp&w=760&h=480&q=80&fit=fill` : "/assets/background/stadium.webp"}
+                                        alt={noticia.title}
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <div className="archive-info">
+                                    <div className="archive-meta">
+                                        <span className="archive-tag">{noticia.category || "ACTUALIDAD"}</span>
+                                        <time className="archive-date">
+                                            {new Date(noticia.createdAt || noticia.updatedAt || "").toLocaleDateString("es-ES", {
+                                                day: "2-digit",
+                                                month: "long",
+                                                year: "numeric"
+                                            }).toUpperCase()}
+                                        </time>
+                                    </div>
+                                    <h2 className="archive-title">{noticia.title}</h2>
+                                    <p className="archive-subtitle">{noticia.subtitle}</p>
+                                </div>
                             </div>
                         </a>
                     ))
@@ -157,25 +161,62 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .archive-card {
-                    display: flex;
-                    background: rgba(8,16,34,0.85);
-                    border: 1px solid rgba(212,168,67,0.15);
-                    border-radius: 6px;
+                    display: block;
+                    background: rgba(212,168,67,0.14);
+                    padding: 1px;
+                    border-radius: 22px 0 22px 0;
                     overflow: hidden;
                     text-decoration: none;
                     color: inherit;
-                    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+                    transition: transform 0.3s ease, box-shadow 0.35s ease;
                     position: relative;
+                }
+                .archive-card::before {
+                    content: "";
+                    position: absolute;
+                    inset: -100%;
+                    background: conic-gradient(
+                        from 0deg,
+                        transparent 0%,
+                        transparent 80%,
+                        rgba(212,168,67,0.4) 86%,
+                        #d4a843 90%,
+                        #f5d483 92%,
+                        #d4a843 94%,
+                        transparent 100%
+                    );
+                    z-index: 0;
+                    opacity: 0;
+                    transition: opacity 0.35s ease;
+                    animation: archive-spin 1.8s linear infinite paused;
+                }
+                @keyframes archive-spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
                 .archive-card:hover {
                     transform: translateY(-4px);
                     box-shadow: 0 16px 40px rgba(0,0,0,0.4);
-                    border-color: rgba(212,168,67,0.5);
+                }
+                .archive-card:hover::before {
+                    opacity: 1;
+                    animation-play-state: running;
+                }
+                .archive-inner {
+                    position: relative;
+                    z-index: 1;
+                    display: flex;
+                    align-items: stretch;
+                    width: 100%;
+                    background: rgba(8,16,34,0.92);
+                    border-radius: 21px 0 21px 0;
+                    overflow: hidden;
                 }
                 .archive-image {
                     width: 380px;
                     min-width: 380px;
-                    height: 240px;
+                    align-self: stretch;
+                    min-height: 240px;
                     overflow: hidden;
                     position: relative;
                 }
@@ -188,10 +229,13 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 .archive-card:hover .archive-image img {
                     transform: scale(1.08);
                 }
+                .archive-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    margin-bottom: 0.75rem;
+                }
                 .archive-tag {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
                     background: #d4a843;
                     color: #060d1c;
                     padding: 0.15rem 0.6rem;
@@ -200,8 +244,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     letter-spacing: 0.15em;
                     border-radius: 50px;
                     text-transform: uppercase;
-                    z-index: 5;
-                    margin: 0.5rem;
+                    line-height: 1.6;
+                    white-space: nowrap;
                 }
                 .archive-info {
                     padding: 2rem;
@@ -215,7 +259,6 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     font-family: 'DM Sans', sans-serif;
                     font-size: 0.7rem;
                     letter-spacing: 0.12em;
-                    margin-bottom: 0.75rem;
                     color: rgba(212,168,67,0.6);
                 }
                 .archive-title {
@@ -242,7 +285,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 }
 
                 @media (max-width: 900px) {
-                    .archive-card {
+                    .archive-inner {
                         flex-direction: column;
                     }
                     .archive-image {

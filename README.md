@@ -40,7 +40,8 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - 👩 **Fichas de jugadoras** — Partidos, goles, asistencias y más
 - 🏟️ **Estadios y árbitras** — Base de datos completa
 - 🏆 **Competiciones** — Primera Iberdrola (2020-2022), Liga F, UWCL, Copa de la Reina y Supercopa
-- 📧 **Newsletter semanal** — Digest automático cada lunes con las noticias de la semana
+- 📧 **Newsletter** — Aviso por email a los suscriptores confirmados cuando se publica una noticia nueva (webhook de Contentful)
+- 🎠 **Carrusel "Jugadoras"** — Plantilla actual (+ entrenador) con foto, dorsal, posición y hasta 3 noticias relacionadas por persona; también en la ficha individual
 - ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
 - 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición, con soporte táctil y diseño adaptado a móvil
 - 🔍 **Buscador Avanzado** — Tabla de estadísticas individual filtrable por temporada, competición (incluyendo "Partidos Oficiales"), posición, titularidad, fecha y partido; ordenación por columna, modo totales/por 90 minutos y búsqueda en tiempo real
@@ -54,7 +55,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - **Base de Datos**: [Turso](https://turso.tech/) (LibSQL)
 - **Autenticación**: [Clerk](https://clerk.com/)
 - **CMS**: [Contentful](https://www.contentful.com/) (Noticias)
-- **Email**: [Resend](https://resend.com/) (Newsletter)
+- **Email**: [Resend](https://resend.com/) (Notificaciones de newsletter)
 - **Media**: [Cloudflare](https://www.cloudflare.com/) (R2 / Images)
 - **Despliegue**: [Vercel](https://vercel.com/)
 
@@ -89,10 +90,23 @@ pnpm dev
 - `/src/db` — Clientes de base de datos Turso
 - `/src/utils` — Lógica de negocio y helpers
 - `/src/assets` — Recursos estáticos
-- `/scripts` — Scripts de automatización (newsletter semanal)
+- `/scripts` — Scripts de mantenimiento y depuración
 - `/scripts/migrations` — Migraciones de base de datos versionadas
 
 ## 🔄 Cambios Recientes (Julio 2026)
+
+### 🏠 Home
+- ✅ **Vídeo de fondo del hero eliminado**; el fondo global (`background.webp`) queda visible en toda la página, hero incluido
+- ✅ **Transiciones de página instantáneas** en todo el sitio: `ClientRouter` + prefetch (`viewport`) en todas las rutas (incluida la intro `/`) y sin animación de cross-fade
+- ✅ **Dashboard de estadísticas**: si la temporada actual aún no tiene partidos oficiales jugados, arranca en "Todas las Temporadas" en vez de quedar vacío; en cuanto se juega el primero, vuelve a arrancar filtrado a la temporada en curso
+- ✅ **Nuevo carrusel "Jugadoras"**: plantilla actual (por dorsal de la última temporada) + entrenador del partido más reciente, con foto, dorsal/posición y hasta 3 noticias relacionadas por persona
+
+### 📰 Noticias
+- ✅ **Ficha de jugadora/entrenador**: sección de noticias relacionadas (vía `focusType` + `referenceId` de Contentful), mismo carrusel y efectos que el resto del sitio
+- ✅ **`/noticias`**: mosaico con la noticia más reciente destacada + 4 secundarias, debajo del título
+- ✅ **Estilo unificado**: todas las tarjetas de noticias (jugadoras, mosaico, archivo) comparten el mismo hover (borde cónico dorado giratorio) y la misma forma de esquina (`22px 0 22px 0`)
+- ✅ **Archivo de noticias**: badge de categoría junto a la fecha; corregido el hueco que dejaba la miniatura cuando el texto era más alto
+- ✅ **Newsletter**: retirado el digest semanal automático (cron de GitHub Actions); se mantiene el aviso por email al publicar cada noticia
 
 ### 📅 Cambio de temporada automático
 - ✅ La temporada en curso se calcula **siempre en hora de Madrid** (`Europe/Madrid`), no en la del servidor; corrige que el calendario y la plantilla no cambiaran a la nueva temporada el 1 de julio en Vercel (que corre en UTC)

@@ -16,6 +16,8 @@ import { getFlagSrc } from "../../utils/flags";
 import { fetchAllGoals } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
 import { competitionDisplayName } from "../../utils/competiciones";
+import { getNewsForPlayer } from "../../utils/noticias";
+import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
 
 const { slug } = Astro.params;
 const allPlayers = await fetchPlayersDirectly();
@@ -88,6 +90,7 @@ const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 const contract = await fetchPlayerContract(player.id_jugadora);
 const socials = await fetchPlayerSocials(player.id_jugadora);
 const { injuries, isInjured } = await fetchPlayerInjuries(player.id_jugadora);
+const playerNews = await getNewsForPlayer(player.id_jugadora, player.nombre, 6);
 
 const finContratoDisplay = contract?.fecha_fin ? formatShortDate(contract.fecha_fin) : null;
 
@@ -606,6 +609,13 @@ const seoDescription = (tco && tco.partidos)
                     </div>
                 </section>
             )}
+
+            <div class="full-col">
+                <PlayerNewsSection
+                    title={`Noticias de ${player.nombre}`}
+                    noticias={playerNews}
+                />
+            </div>
 
         </div>
     </main>

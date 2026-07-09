@@ -27,6 +27,22 @@ try {
 const title = "Noticias | Madrid Femenino Xtra";
 const description =
     "Todas las noticias, actualidad y última hora del Real Madrid Femenino.";
+
+const latestNews = noticias.slice(0, 5);
+const FALLBACK_IMAGE =
+    "https://media.madridfemeninoxtra.com/background/stadium.webp";
+const imgUrl = (n: any, w = 800) =>
+    n.featuredImage?.fields?.file?.url
+        ? `https:${n.featuredImage.fields.file.url}?fm=webp&w=${w}&q=80`
+        : FALLBACK_IMAGE;
+const formatDate = (d: string) =>
+    new Date(d)
+        .toLocaleDateString("es-ES", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+        })
+        .toUpperCase();
 ---
 
 <Layout title={title} description={description}>
@@ -38,6 +54,43 @@ const description =
                 Femenino
             </p>
         </header>
+
+        {
+            latestNews.length > 0 && (
+                <section class="latest-grid-section">
+                    <div class="container">
+                        <div class="latest-mosaic">
+                            {latestNews.map((n, i) => (
+                                <a
+                                    href={`/noticias/${n.slug}`}
+                                    class={`mtile ${i === 0 ? "mtile--hero" : ""}`}
+                                >
+                                    <span class="mtile-inner">
+                                        <img
+                                            class="mtile-img"
+                                            src={imgUrl(n, i === 0 ? 1000 : 700)}
+                                            alt={n.title}
+                                            loading="lazy"
+                                        />
+                                        <span class="mtile-overlay">
+                                            <span class="mtile-cat">
+                                                {n.category || "ACTUALIDAD"}
+                                            </span>
+                                            <h3 class="mtile-title">
+                                                {n.title}
+                                            </h3>
+                                            <time class="mtile-date">
+                                                {formatDate(n.createdAt)}
+                                            </time>
+                                        </span>
+                                    </span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            )
+        }
 
         <section class="news-grid-section">
             <div class="container">
@@ -66,9 +119,200 @@ const description =
         padding: 0 1.5rem;
     }
 
+    .latest-grid-section {
+        margin: 1rem 0 3rem;
+    }
+
+    .latest-mosaic {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr;
+        grid-template-rows: repeat(2, 1fr);
+        gap: 1rem;
+        height: 600px;
+    }
+
+    .latest-mosaic > .mtile--hero {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+
+    .mtile {
+        position: relative;
+        overflow: hidden;
+        border-radius: 22px 0 22px 0;
+        text-decoration: none;
+        background: rgba(212, 168, 67, 0.14);
+        padding: 1px;
+        transition: transform 0.3s ease, box-shadow 0.35s ease;
+    }
+
+    .mtile::before {
+        content: "";
+        position: absolute;
+        inset: -100%;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 80%,
+            rgba(212, 168, 67, 0.4) 86%,
+            #d4a843 90%,
+            #f5d483 92%,
+            #d4a843 94%,
+            transparent 100%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        animation: mtile-spin 1.8s linear infinite paused;
+    }
+
+    @keyframes mtile-spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .mtile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .mtile:hover::before {
+        opacity: 1;
+        animation-play-state: running;
+    }
+
+    .mtile-inner {
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 21px 0 21px 0;
+        overflow: hidden;
+    }
+
+    .mtile-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .mtile:hover .mtile-img {
+        transform: scale(1.05);
+    }
+
+    .mtile-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 1.25rem 1.4rem;
+        background: linear-gradient(
+            to top,
+            rgba(4, 9, 20, 0.92) 0%,
+            rgba(4, 9, 20, 0.55) 38%,
+            rgba(4, 9, 20, 0) 68%
+        );
+    }
+
+    .mtile-cat {
+        align-self: flex-start;
+        background: #d4a843;
+        color: #060d1c;
+        padding: 0.15rem 0.6rem;
+        font-family: "Cinzel", serif;
+        font-size: 0.62rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        border-radius: 50px;
+        line-height: 1.6;
+        white-space: nowrap;
+        margin-bottom: 0.6rem;
+    }
+
+    .mtile-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.2;
+        color: #ffffff;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .mtile-date {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.66rem;
+        letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 0.6rem;
+    }
+
+    .mtile--hero .mtile-overlay {
+        padding: 1.8rem 2rem;
+    }
+
+    .mtile--hero .mtile-title {
+        font-size: 2rem;
+        -webkit-line-clamp: 4;
+    }
+
+    .mtile--hero .mtile-cat {
+        font-size: 0.68rem;
+    }
+
+    @media (max-width: 900px) {
+        .latest-mosaic {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: none;
+            grid-auto-rows: 220px;
+            height: auto;
+        }
+        .latest-mosaic > .mtile--hero {
+            grid-column: 1 / -1;
+            grid-row: auto;
+            height: 320px;
+        }
+        .mtile--hero .mtile-title {
+            font-size: 1.7rem;
+        }
+    }
+
     @media (max-width: 768px) {
         .news-archive-page {
             padding-top: 1rem;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .latest-mosaic {
+            grid-template-columns: 1fr;
+            grid-auto-rows: 210px;
+            gap: 0.85rem;
+        }
+        .latest-mosaic > .mtile--hero {
+            height: 250px;
+        }
+        .mtile-overlay,
+        .mtile--hero .mtile-overlay {
+            padding: 1.1rem 1.2rem;
+        }
+        .mtile--hero .mtile-title {
+            font-size: 1.5rem;
+        }
+        .mtile-title {
+            font-size: 1.08rem;
         }
     }
 </style>

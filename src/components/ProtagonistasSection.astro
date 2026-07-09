@@ -1,0 +1,521 @@
+---
+import {
+    getRecentNewsByFocus,
+    groupNewsByReference,
+    type NoticiaCard,
+} from "../utils/noticias";
+import { fetchPlayersDirectly } from "../utils/players";
+import { fetchCoachesDirectly } from "../utils/entrenadores";
+
+interface Props {
+    games?: any[];
+}
+const { games = [] } = Astro.props;
+
+const POSITION_ORDER: Record<string, number> = {
+    Portera: 1,
+    "Lateral izquierda": 2,
+    "Defensa central": 3,
+    Defensa: 3,
+    "Lateral derecha": 4,
+    Centrocampista: 5,
+    "Extremo izquierdo": 6,
+    "Extremo derecho": 6,
+    Extremo: 6,
+    Delantera: 7,
+};
+
+const [players, coaches, playerNews, coachNews] = await Promise.all([
+    fetchPlayersDirectly(),
+    fetchCoachesDirectly(),
+    getRecentNewsByFocus("player", 200),
+    getRecentNewsByFocus("coach", 100),
+]);
+
+const playerNewsByRef = groupNewsByReference(playerNews, 3);
+const coachNewsByRef = groupNewsByReference(coachNews, 3);
+
+const allSeasonKeys = players.flatMap((p: any) => Object.keys(p.dorsales || {}));
+const latestSeason = [...new Set(allSeasonKeys)].sort().reverse()[0] as
+    | string
+    | undefined;
+
+interface Card {
+    kind: "player" | "coach";
+    id: string;
+    nombre: string;
+    href: string;
+    photo: string;
+    dorsal: number | null;
+    posicion: string;
+    news: NoticiaCard[];
+    order: number;
+}
+
+const PLACEHOLDER = "/assets/jugadoras-perfil/placeholder.png";
+
+const squad: Card[] = players
+    .filter((p: any) => latestSeason && p.dorsales?.[latestSeason] != null)
+    .map((p: any) => ({
+        kind: "player" as const,
+        id: String(p.id_jugadora),
+        nombre: p.nombre,
+        href: `/jugadoras/${p.slug}`,
+        photo: p.imageUrl || PLACEHOLDER,
+        dorsal: p.dorsales[latestSeason!],
+        posicion: p.posicion || "",
+        news: playerNewsByRef.get(String(p.id_jugadora)) || [],
+        order: POSITION_ORDER[p.posicion] || 99,
+    }))
+    .sort((a, b) => a.order - b.order || (a.dorsal ?? 99) - (b.dorsal ?? 99));
+
+const recentGame = [...games]
+    .filter((g: any) => g.entrenador_nombre)
+    .sort(
+        (a: any, b: any) =>
+            new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
+    )[0];
+const currentCoach = recentGame
+    ? coaches.find((c: any) => c.nombre === recentGame.entrenador_nombre)
+    : null;
+
+const coachCard: Card | null = currentCoach
+    ? {
+          kind: "coach",
+          id: String(currentCoach.id_entrenador),
+          nombre: currentCoach.nombre,
+          href: `/entrenadores/${currentCoach.slug}`,
+          photo: currentCoach.imageUrl || PLACEHOLDER,
+          dorsal: null,
+          posicion: "Entrenador",
+          news: coachNewsByRef.get(String(currentCoach.id_entrenador)) || [],
+          order: 0,
+      }
+    : null;
+
+const cards: Card[] = coachCard ? [...squad, coachCard] : squad;
+
+const formatDate = (d: string) =>
+    new Date(d)
+        .toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        })
+        .replace(".", "")
+        .toUpperCase();
+---
+
+{
+    cards.length > 0 && (
+        <section class="jugadoras-section">
+            <div class="title-block">
+                <h2 class="landing-title">JUGADORAS</h2>
+                <p class="landing-subtitle">
+                    Las noticias más relevantes de la plantilla del Real Madrid
+                    Femenino
+                </p>
+            </div>
+
+            <div class="jug-carousel-full">
+                <div class="jug-grid" id="jugadorasGrid">
+                    {cards.map((c) => (
+                        <article class="jug-card">
+                            <div class="jug-inner">
+                                <a class="jug-head" href={c.href}>
+                                    <span class="jug-photo">
+                                        <img
+                                            src={c.photo}
+                                            alt={c.nombre}
+                                            loading="lazy"
+                                            width="66"
+                                            height="66"
+                                            onerror={`this.src='${PLACEHOLDER}'`}
+                                        />
+                                    </span>
+                                    <span class="jug-head-text">
+                                        <span class="jug-eyebrow">
+                                            Noticias de {c.nombre}
+                                        </span>
+                                        <span class="jug-name">{c.nombre}</span>
+                                        <span class="jug-tags">
+                                            {c.dorsal != null &&
+                                                `#${c.dorsal} / `}
+                                            {c.posicion}
+                                        </span>
+                                    </span>
+                                </a>
+
+                                <div class="jug-news">
+                                    {c.news.length > 0 ? (
+                                        c.news.map((n) => (
+                                            <a
+                                                class="jug-news-item"
+                                                href={`/noticias/${n.slug}`}
+                                            >
+                                                <span class="jug-news-cat">
+                                                    {n.category || "NOTICIAS"}
+                                                </span>
+                                                <span class="jug-news-title">
+                                                    {n.title}
+                                                </span>
+                                                <time class="jug-news-date">
+                                                    {formatDate(n.createdAt)}
+                                                </time>
+                                            </a>
+                                        ))
+                                    ) : (
+                                        <p class="jug-nonews">
+                                            Sin noticias recientes
+                                        </p>
+                                    )}
+                                </div>
+
+                                <a class="jug-foot" href={c.href}>
+                                    Ver todas las noticias
+                                    <span class="jug-foot-arrow">→</span>
+                                </a>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            </div>
+        </section>
+    )
+}
+
+<script>
+    let jugScrollInterval: any;
+    let jugResumeTimeout: any;
+
+    function initJugadorasCarousel() {
+        clearInterval(jugScrollInterval);
+        clearTimeout(jugResumeTimeout);
+
+        const grid = document.getElementById("jugadorasGrid");
+        if (!grid) return;
+
+        let isPaused = false;
+
+        jugScrollInterval = setInterval(() => {
+            if (!isPaused) {
+                if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 1) {
+                    grid.scrollLeft = 0;
+                } else {
+                    grid.scrollLeft += 2;
+                }
+            }
+        }, 30);
+
+        grid.addEventListener("mouseenter", () => {
+            clearTimeout(jugResumeTimeout);
+            isPaused = true;
+        });
+        grid.addEventListener("mouseleave", () => {
+            isPaused = false;
+        });
+        grid.addEventListener(
+            "touchstart",
+            () => {
+                clearTimeout(jugResumeTimeout);
+                isPaused = true;
+            },
+            { passive: true },
+        );
+        grid.addEventListener("touchend", () => {
+            clearTimeout(jugResumeTimeout);
+            jugResumeTimeout = setTimeout(() => {
+                isPaused = false;
+            }, 3000);
+        });
+    }
+
+    document.addEventListener("astro:page-load", initJugadorasCarousel);
+</script>
+
+<style>
+    .jugadoras-section {
+        width: 100%;
+    }
+
+    .jug-carousel-full {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .jug-grid {
+        display: flex;
+        width: 100%;
+        gap: 20px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        cursor: grab;
+        padding: 8px 2px;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .jug-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .jug-card {
+        flex-shrink: 0;
+        width: 380px;
+        height: 470px;
+        background: rgba(212, 168, 67, 0.14);
+        border-radius: 22px 0 22px 0;
+        padding: 1px;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        transition: transform 0.3s ease;
+    }
+
+    .jug-card::before {
+        content: "";
+        position: absolute;
+        inset: -100%;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 80%,
+            rgba(212, 168, 67, 0.4) 86%,
+            #d4a843 90%,
+            #f5d483 92%,
+            #d4a843 94%,
+            transparent 100%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        animation: jug-spin 1.8s linear infinite paused;
+    }
+
+    @keyframes jug-spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .jug-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .jug-card:hover::before {
+        opacity: 1;
+        animation-play-state: running;
+    }
+
+    .jug-inner {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: rgba(8, 16, 34, 0.97);
+        border-radius: 21px 0 21px 0;
+        padding: 1.5rem 1.6rem 1.2rem;
+    }
+
+    .jug-head {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        text-decoration: none;
+        padding-bottom: 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .jug-photo {
+        flex-shrink: 0;
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #0a1428;
+        border: 3px solid rgba(212, 168, 67, 0.55);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        transition: border-color 0.3s ease, transform 0.4s ease;
+    }
+
+    .jug-card:hover .jug-photo {
+        border-color: #d4a843;
+        transform: scale(1.05);
+    }
+
+    .jug-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        pointer-events: none;
+        -webkit-user-drag: none;
+    }
+
+    .jug-head-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .jug-eyebrow {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #d4a843;
+        margin-bottom: 0.25rem;
+    }
+
+    .jug-name {
+        font-family: "Cinzel", serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: #f0f0f0;
+        transition: color 0.3s ease;
+    }
+
+    .jug-card:hover .jug-name {
+        color: #d4a843;
+    }
+
+    .jug-tags {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(200, 210, 220, 0.55);
+        margin-top: 0.35rem;
+    }
+
+    .jug-news {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    .jug-news-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        text-decoration: none;
+        padding: 0.85rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .jug-news-cat {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #d4a843;
+    }
+
+    .jug-news-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.18rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: #d8dde4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.25s ease;
+    }
+
+    .jug-news-item:hover .jug-news-title {
+        color: #d4a843;
+    }
+
+    .jug-news-date {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.62rem;
+        letter-spacing: 0.05em;
+        color: rgba(200, 210, 220, 0.4);
+    }
+
+    .jug-nonews {
+        margin: auto 0;
+        text-align: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.05rem;
+        font-style: italic;
+        color: rgba(200, 210, 220, 0.35);
+    }
+
+    .jug-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 0.9rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #d4a843;
+        transition: color 0.25s ease;
+    }
+
+    .jug-foot:hover {
+        color: #f5d483;
+    }
+
+    .jug-foot-arrow {
+        transition: transform 0.25s ease;
+    }
+
+    .jug-foot:hover .jug-foot-arrow {
+        transform: translateX(4px);
+    }
+
+    @media (max-width: 768px) {
+        .jug-grid {
+            gap: 14px;
+        }
+        .jug-card {
+            width: 300px;
+            height: 450px;
+        }
+        .jug-inner {
+            padding: 1.3rem 1.3rem 1rem;
+        }
+        .jug-name {
+            font-size: 1.15rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .jug-card {
+            width: 82vw;
+            max-width: 300px;
+            height: 440px;
+        }
+        .jug-name {
+            font-size: 1.05rem;
+        }
+        .jug-news-title {
+            font-size: 1.05rem;
+        }
+    }
+</style>

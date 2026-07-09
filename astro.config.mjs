@@ -10,6 +10,10 @@ export default defineConfig({
   site: 'https://www.madridfemeninoxtra.com',
   compressHTML: true,
   output: 'server',
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport',
+  },
   adapter: vercel({
     imageService: true,
   }),

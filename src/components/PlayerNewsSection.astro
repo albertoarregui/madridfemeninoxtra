@@ -1,0 +1,328 @@
+---
+import type { NoticiaCard } from "../utils/noticias";
+
+interface Props {
+    title: string;
+    noticias: NoticiaCard[];
+}
+
+const { title, noticias } = Astro.props;
+
+const FALLBACK =
+    "https://media.madridfemeninoxtra.com/background/stadium.webp";
+---
+
+{
+    noticias.length > 0 && (
+        <section class="player-news">
+            <h2 class="player-news-title">{title}</h2>
+
+            <div class="hitos-carousel-full">
+                <div class="carousel-nav-wrapper">
+                    <div class="hitos-grid" id="playerNewsGrid">
+                        {noticias.map((n) => (
+                            <a
+                                href={`/noticias/${n.slug}`}
+                                class="hito-card-vertical"
+                            >
+                                <div class="inner-content">
+                                    <div class="hito-img-wrapper">
+                                        <img
+                                            src={n.imageUrl || FALLBACK}
+                                            alt={n.title}
+                                            class="hito-img"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <div class="hito-info">
+                                        <div class="hito-badge">
+                                            {n.category || "NOTICIAS"}
+                                        </div>
+                                        <h3 class="hito-name">{n.title}</h3>
+                                        {n.subtitle && (
+                                            <p class="hito-meta">{n.subtitle}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+    )
+}
+
+<script>
+    let pnScrollInterval: any;
+    let pnResumeTimeout: any;
+
+    function initPlayerNewsCarousel() {
+        clearInterval(pnScrollInterval);
+        clearTimeout(pnResumeTimeout);
+
+        const grid = document.getElementById("playerNewsGrid");
+        if (!grid) return;
+
+        let isPaused = false;
+
+        pnScrollInterval = setInterval(() => {
+            if (!isPaused) {
+                if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 1) {
+                    grid.scrollLeft = 0;
+                } else {
+                    grid.scrollLeft += 2;
+                }
+            }
+        }, 30);
+
+        grid.addEventListener("mouseenter", () => {
+            clearTimeout(pnResumeTimeout);
+            isPaused = true;
+        });
+        grid.addEventListener("mouseleave", () => {
+            isPaused = false;
+        });
+        grid.addEventListener(
+            "touchstart",
+            () => {
+                clearTimeout(pnResumeTimeout);
+                isPaused = true;
+            },
+            { passive: true },
+        );
+        grid.addEventListener("touchend", () => {
+            clearTimeout(pnResumeTimeout);
+            pnResumeTimeout = setTimeout(() => {
+                isPaused = false;
+            }, 3000);
+        });
+    }
+
+    document.addEventListener("astro:page-load", initPlayerNewsCarousel);
+</script>
+
+<style>
+    .player-news {
+        width: 100%;
+        margin-top: 2rem;
+    }
+    .player-news-title {
+        font-family: "Cinzel", serif;
+        font-size: clamp(1.3rem, 3vw, 1.7rem);
+        font-weight: 700;
+        color: #d4a843;
+        text-align: center;
+        letter-spacing: 0.04em;
+        margin-bottom: 1.5rem;
+    }
+
+    .hitos-carousel-full {
+        width: 100%;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        position: relative;
+    }
+
+    .carousel-nav-wrapper {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .hitos-grid {
+        display: flex;
+        width: 100%;
+        gap: 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        cursor: grab;
+        padding: 6px 2px;
+        touch-action: pan-x;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hitos-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hito-card-vertical {
+        flex-shrink: 0;
+        text-decoration: none;
+        background: rgba(212, 168, 67, 0.12);
+        padding: 1px;
+        min-width: 340px;
+        max-width: 400px;
+        height: 190px;
+        border-radius: 22px 0 22px 0;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-drag: none;
+        transition: transform 0.3s ease;
+    }
+
+    .hito-card-vertical::before {
+        content: "";
+        position: absolute;
+        inset: -100%;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 80%,
+            rgba(212, 168, 67, 0.4) 86%,
+            #d4a843 90%,
+            #f5d483 92%,
+            #d4a843 94%,
+            transparent 100%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        animation: pn-spin 1.8s linear infinite paused;
+    }
+
+    @keyframes pn-spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .hito-card-vertical:hover {
+        transform: translateY(-3px);
+    }
+    .hito-card-vertical:active {
+        transform: scale(0.97);
+        opacity: 0.85;
+    }
+
+    .hito-card-vertical:hover::before {
+        opacity: 1;
+        animation-play-state: running;
+    }
+
+    .inner-content {
+        background: rgba(8, 16, 34, 0.97);
+        border-radius: 21px 0 21px 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+    }
+
+    .hito-img-wrapper {
+        width: 145px;
+        flex-shrink: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0a1428;
+    }
+
+    .hito-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.55s ease, filter 0.4s ease;
+        filter: brightness(0.8);
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
+    .hito-card-vertical:hover .hito-img {
+        transform: scale(1.07);
+        filter: brightness(1);
+    }
+
+    .hito-badge {
+        display: inline-block;
+        background: #d4a843;
+        color: #060d1c;
+        padding: 2px 10px;
+        font-family: "Cinzel", serif;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        width: fit-content;
+        margin-bottom: 0.55rem;
+        border-radius: 2px;
+    }
+
+    .hito-info {
+        padding: 1.1rem 1.1rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .hito-name {
+        font-family: "Cinzel", serif;
+        color: #f0f0f0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.3;
+        text-transform: uppercase;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.3s ease;
+    }
+
+    .hito-card-vertical:hover .hito-name {
+        color: #d4a843;
+    }
+
+    .hito-meta {
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.7rem;
+        color: rgba(200, 200, 200, 0.6);
+        margin-top: 0.5rem;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    @media (max-width: 768px) {
+        .hitos-grid {
+            gap: 12px;
+            padding: 6px 0;
+        }
+        .hito-card-vertical {
+            min-width: 280px;
+            height: 160px;
+        }
+        .hito-img-wrapper {
+            width: 120px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hito-card-vertical {
+            min-width: 260px;
+            height: 150px;
+        }
+        .hito-img-wrapper {
+            width: 110px;
+        }
+        .hito-info {
+            padding: 0.9rem 0.85rem;
+        }
+    }
+</style>

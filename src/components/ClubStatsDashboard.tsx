@@ -47,8 +47,16 @@ const cardTitle = "text-[10px] font-bold text-[#888] uppercase tracking-widest g
 const statNum = "text-3xl font-black text-[#f0f0f0] leading-none group-hover:text-[#d4a843] transition-colors";
 const divider = "w-full h-px bg-[rgba(255,255,255,0.07)]";
 
+const OFFICIAL_COMPETITIONS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
+
 const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals, seasons, competitions }) => {
-    const [selectedSeason, setSelectedSeason] = useState<string>(seasons.length > 0 ? seasons[0] : 'all');
+    const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
+    const currentSeasonHasPlayed = seasons.length > 0 && matches.some(m =>
+        m.temporada_nombre === seasons[0] &&
+        OFFICIAL_COMPETITIONS.includes(m.competicion_nombre) &&
+        hasScore(m.goles_rm) && hasScore(m.goles_rival)
+    );
+    const [selectedSeason, setSelectedSeason] = useState<string>(currentSeasonHasPlayed ? seasons[0] : 'all');
     const [selectedCompetition, setSelectedCompetition] = useState<string>('Partidos Oficiales');
 
     const filteredMatches = useMemo(() => {
@@ -56,7 +64,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             const seasonMatch = selectedSeason === 'all' || m.temporada_nombre === selectedSeason;
             let compMatch = true;
             if (selectedCompetition === 'Partidos Oficiales') {
-                compMatch = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(m.competicion_nombre);
+                compMatch = OFFICIAL_COMPETITIONS.includes(m.competicion_nombre);
             } else if (selectedCompetition !== 'all') {
                 compMatch = m.competicion_nombre === selectedCompetition;
             }
@@ -69,7 +77,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
             const seasonMatch = selectedSeason === 'all' || g.temporada === selectedSeason;
             let compMatch = true;
             if (selectedCompetition === 'Partidos Oficiales') {
-                compMatch = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'].includes(g.competicion);
+                compMatch = OFFICIAL_COMPETITIONS.includes(g.competicion);
             } else if (selectedCompetition !== 'all') {
                 compMatch = g.competicion === selectedCompetition;
             }
@@ -83,7 +91,6 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
         let redsRM = 0, redsRival = 0, penaltisRM = 0, penaltisRival = 0;
         const scoreFrequencies: Record<string, number> = {};
 
-        const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
         filteredMatches.forEach(m => {
             if (!hasScore(m.goles_rm) || !hasScore(m.goles_rival)) return;
             const gRM = Number(m.goles_rm);
