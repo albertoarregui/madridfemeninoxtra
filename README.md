@@ -1,7 +1,7 @@
 # ⚪️ Madrid Femenino Xtra 🟣
 
 <div align="center">
-  <img src="https://i.gyazo.com/bb389c0a7b32f71b7c5657668f7c174c.jpg" alt="Madrid Femenino Xtra - Página principal" width="800" />
+  <img src="https://i.gyazo.com/e869d44e9d7d11d24b2103b00f923fb1.jpg" alt="Madrid Femenino Xtra - Página principal" width="800" />
 </div>
 
 Bienvenido al repositorio oficial de **Madrid Femenino Xtra**, la base de datos histórica más grande del Real Madrid Femenino.
@@ -29,7 +29,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 </div>
 
 <div align="center">
-  <img src="https://i.gyazo.com/5e1a1ceec396f55ead64e170d1afdb9d.png" alt="Madrid Femenino Xtra - Estadísticas" width="800" />
+  <img src="https://i.gyazo.com/ca3d832a3493d966884c9c17495aebc7.png" alt="Madrid Femenino Xtra - Estadísticas" width="800" />
 </div>
 
 ## ✨ Funcionalidades
@@ -92,6 +92,10 @@ pnpm dev
 - `/src/assets` — Recursos estáticos
 - `/scripts` — Scripts de mantenimiento y depuración
 - `/scripts/migrations` — Migraciones de base de datos versionadas
+
+<div align="center">
+  <img src="https://i.gyazo.com/a42415cdf2fcdb4b54b3fc0fce50bda2.png" alt="Madrid Femenino Xtra - Noticias" width="800" />
+</div>
 
 ## 🔄 Cambios Recientes (Julio 2026)
 
