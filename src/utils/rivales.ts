@@ -1,3 +1,4 @@
+import { cachear, TTL } from './cache';
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
     return text.toString().toLowerCase()
@@ -43,7 +44,7 @@ export const cleanApiValue = (value: any): any => {
     return value;
 };
 
-export async function fetchRivalsDirectly(): Promise<any[]> {
+async function fetchRivalsDirectlyUncached(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -215,7 +216,7 @@ export async function fetchRivals(): Promise<any[]> {
         return [];
     }
 }
-export async function fetchAllClubShields(): Promise<Record<string, string>> {
+async function fetchAllClubShieldsUncached(): Promise<Record<string, string>> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -270,3 +271,9 @@ export async function fetchClubCountDirectly(): Promise<number> {
 }
 
 
+
+
+export const fetchRivalsDirectly = cachear('rivals:all', TTL.medio, fetchRivalsDirectlyUncached);
+
+
+export const fetchAllClubShields = cachear('shields:all', TTL.largo, fetchAllClubShieldsUncached);

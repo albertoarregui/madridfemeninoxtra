@@ -1,3 +1,4 @@
+import { cachear, TTL } from './cache';
 
 export interface CalendarMatch {
     id: number;
@@ -33,7 +34,7 @@ function isRealMadrid(name: string): boolean {
     return REAL_MADRID_ID_NAMES.includes(name.toLowerCase().trim());
 }
 
-export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
+async function fetchCalendarFromDbUncached(): Promise<CalendarMatch[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -117,3 +118,6 @@ export async function fetchCalendarFromDb(): Promise<CalendarMatch[]> {
         return [];
     }
 }
+
+
+export const fetchCalendarFromDb = cachear('calendar:all', TTL.corto, fetchCalendarFromDbUncached);

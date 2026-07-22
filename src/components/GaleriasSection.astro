@@ -1,0 +1,307 @@
+---
+import { Image } from "astro:assets";
+import {
+    fetchLatestGalleries,
+    fetchGallerySlugs,
+    photoUrl,
+    galleryTitle,
+    formatGalleryDate,
+} from "../utils/galerias";
+import { fetchGamesDirectly } from "../utils/partidos";
+
+const galleries = await fetchLatestGalleries(4);
+const slugs = await fetchGallerySlugs();
+
+let games: any[] = [];
+if (galleries.some((g) => g.idPartido)) {
+    try {
+        games = await fetchGamesDirectly();
+    } catch {
+        games = [];
+    }
+}
+
+const cards = galleries.map((g) => {
+    const partido = g.idPartido
+        ? games.find((m: any) => m.id_partido === g.idPartido)
+        : null;
+    return {
+        // La página de la galería la genera Contentful; si aún no existe, la tarjeta no enlaza.
+        href: slugs[g.route] ? `/fotogalerias/${slugs[g.route]}` : null,
+        titulo: partido
+            ? `${partido.club_local} vs ${partido.club_visitante}`
+            : galleryTitle(g.route),
+        etiqueta: partido?.competicion_nombre || "FOTOGALERÍA",
+        fecha: formatGalleryDate(g.fecha),
+        count: g.count,
+        cover: g.cover ? photoUrl(g.route, g.cover) : null,
+        jugadoras: Object.keys(g.players || {}).length,
+    };
+});
+---
+
+{
+    cards.length > 0 && (
+        <section class="galerias-section">
+            <div class="title-block">
+                <h2 class="landing-title">GALERÍAS</h2>
+                <p class="landing-subtitle">
+                    Las mejores imágenes de los partidos y entrenamientos del Real
+                    Madrid Femenino
+                </p>
+            </div>
+
+            <div class="gal-cards">
+                {cards.map((c) => {
+                    const Tag = c.href ? "a" : "div";
+                    return (
+                    <Tag class:list={["gal-card", !c.href && "gal-card-sinlink"]} href={c.href || undefined}>
+                        <div class="gal-card-inner">
+                        <div class="gal-card-media">
+                            {c.cover ? (
+                                <Image
+                                    src={c.cover}
+                                    alt={c.titulo}
+                                    width={480}
+                                    height={300}
+                                    quality={70}
+                                    format="webp"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                            ) : (
+                                <div class="gal-card-noimg" />
+                            )}
+                            <span class="gal-card-count">{c.count} FOTOS</span>
+                        </div>
+                        <div class="gal-card-body">
+                            <span class="gal-card-tag">{c.etiqueta}</span>
+                            <h3 class="gal-card-title">{c.titulo}</h3>
+                            <div class="gal-card-meta">
+                                {c.fecha && <time>{c.fecha}</time>}
+                                {c.jugadoras > 0 && (
+                                    <span class="gal-card-players">
+                                        {c.jugadoras} jugadoras
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        </div>
+                    </Tag>
+                    );
+                })}
+            </div>
+
+            <a class="gal-section-all" href="/fotogalerias">
+                VER TODAS LAS FOTOGALERÍAS <span aria-hidden="true">→</span>
+            </a>
+        </section>
+    )
+}
+
+<style>
+    .galerias-section {
+        width: 100%;
+    }
+
+    .gal-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: clamp(0.75rem, 2vw, 1.25rem);
+    }
+
+    .gal-card {
+        display: block;
+        background: rgba(212, 168, 67, 0.14);
+        padding: 1px;
+        border-radius: 22px 0 22px 0;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.35s ease;
+    }
+
+    .gal-card::before {
+        content: "";
+        position: absolute;
+        inset: -100%;
+        background: conic-gradient(
+            from 0deg,
+            transparent 0%,
+            transparent 80%,
+            rgba(212, 168, 67, 0.4) 86%,
+            #d4a843 90%,
+            #f5d483 92%,
+            #d4a843 94%,
+            transparent 100%
+        );
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        animation: gal-spin 1.8s linear infinite paused;
+    }
+
+    @keyframes gal-spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .gal-card-inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        background: rgba(8, 16, 34, 0.92);
+        border-radius: 21px 0 21px 0;
+        overflow: hidden;
+    }
+    a.gal-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+    a.gal-card:hover::before {
+        opacity: 1;
+        animation-play-state: running;
+    }
+    a.gal-card:hover .gal-card-media img {
+        transform: scale(1.08);
+    }
+    a.gal-card:hover .gal-card-title {
+        color: #d4a843;
+    }
+    .gal-card-sinlink {
+        cursor: default;
+    }
+
+    .gal-card-media {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        background: #060d1c;
+    }
+    .gal-card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 35%;
+        display: block;
+        transition: transform 0.6s ease;
+    }
+    .gal-card-noimg {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0a1428, #060d1c);
+    }
+
+    .gal-card-count {
+        position: absolute;
+        top: 0.55rem;
+        right: 0.55rem;
+        font-family: "Cinzel", serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        color: #e8c874;
+        background: rgba(6, 13, 28, 0.85);
+        border: 1px solid rgba(212, 168, 67, 0.35);
+        border-radius: 2px;
+        padding: 0.22rem 0.5rem;
+    }
+
+    .gal-card-body {
+        padding: 0.85rem 0.95rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+    }
+
+    .gal-card-tag {
+        font-family: "Cinzel", serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(212, 168, 67, 0.8);
+    }
+
+    .gal-card-title {
+        margin: 0;
+        font-family: "Archivo Black", "Cinzel", serif;
+        font-size: clamp(0.92rem, 2vw, 1.05rem);
+        line-height: 1.25;
+        color: var(--text-primary, #f0f0f0);
+        text-transform: uppercase;
+        transition: color 0.3s ease;
+    }
+
+    .gal-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: auto;
+        padding-top: 0.4rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+        color: var(--text-muted, #888);
+    }
+    .gal-card-players {
+        color: rgba(212, 168, 67, 0.7);
+    }
+    .gal-card-players::before {
+        content: "· ";
+    }
+
+    .gal-section-all {
+        display: block;
+        width: fit-content;
+        margin: clamp(1rem, 3vw, 1.75rem) auto 0;
+        font-family: "Cinzel", serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.16em;
+        color: rgba(212, 168, 67, 0.85);
+        text-decoration: none;
+        padding: 0.6rem 1.4rem;
+        border: 1px solid rgba(212, 168, 67, 0.3);
+        border-radius: 3px;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .gal-section-all:hover {
+        background: rgba(212, 168, 67, 0.14);
+        border-color: rgba(212, 168, 67, 0.6);
+    }
+
+    @media (max-width: 520px) {
+        .gal-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+        }
+        .gal-card-body {
+            padding: 0.65rem 0.7rem 0.8rem;
+        }
+        .gal-card-meta {
+            font-size: 0.62rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .gal-card,
+        .gal-card-media img {
+            transition: none;
+        }
+        .gal-card::before {
+            animation: none;
+        }
+        .gal-card:hover {
+            transform: none;
+        }
+        .gal-card:hover .gal-card-media img {
+            transform: none;
+        }
+    }
+</style>

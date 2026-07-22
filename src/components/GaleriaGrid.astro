@@ -1,0 +1,681 @@
+---
+import { Image, getImage } from "astro:assets";
+
+export type GaleriaFoto = {
+    src: string;
+    alt: string;
+    pos?: string;
+    caption?: string;
+    temporada?: string | null;
+    competicion?: string | null;
+};
+
+interface Props {
+    fotos: GaleriaFoto[];
+    titulo?: string;
+    subtitulo?: string;
+    verTodasHref?: string;
+    verTodasLabel?: string;
+    minCol?: string;
+    porTanda?: number;
+    conFiltros?: boolean;
+    id?: string;
+}
+
+const {
+    fotos,
+    titulo,
+    subtitulo,
+    verTodasHref,
+    verTodasLabel = "VER TODAS",
+    minCol = "160px",
+    porTanda = 0,
+    conFiltros = false,
+    id,
+} = Astro.props;
+
+const gid = id || `gal-${Math.random().toString(36).slice(2, 9)}`;
+const inicial = porTanda > 0 ? Math.min(porTanda, fotos.length) : fotos.length;
+
+const fotosLightbox = await Promise.all(
+    fotos.map(async (f) => {
+        try {
+            const grande = await getImage({
+                src: f.src,
+                width: 1600,
+                height: 1600,
+                quality: 80,
+                format: "webp",
+            });
+            return { ...f, src: grande.src };
+        } catch {
+            return f;
+        }
+    }),
+);
+
+const unicos = (key: "temporada" | "competicion") =>
+    [...new Set(fotos.map((f) => f[key]).filter(Boolean))].sort() as string[];
+const temporadas = conFiltros ? unicos("temporada") : [];
+const competiciones = conFiltros ? unicos("competicion") : [];
+const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.length > 0);
+---
+
+{
+    fotos.length > 0 && (
+        <section class="mfx-gal" id={gid} data-total={fotos.length} data-tanda={porTanda}>
+            {(titulo || subtitulo || verTodasHref) && (
+                <div class="mfx-gal-head">
+                    <div class="mfx-gal-head-text">
+                        {titulo && <h2 class="mfx-gal-title">{titulo}</h2>}
+                        {subtitulo && <p class="mfx-gal-sub">{subtitulo}</p>}
+                    </div>
+                    {verTodasHref && (
+                        <a class="mfx-gal-all" href={verTodasHref}>
+                            {verTodasLabel} <span aria-hidden="true">→</span>
+                        </a>
+                    )}
+                </div>
+            )}
+
+            {mostrarFiltros && (
+                <div class="mfx-gal-filtros filters-container">
+                    {[
+                        { key: "temporada", label: "Todas las Temporadas", valores: temporadas },
+                        { key: "competicion", label: "Todas las Competiciones", valores: competiciones },
+                    ]
+                        .filter((f) => f.valores.length > 0)
+                        .map((f) => (
+                            <div class="custom-select-container" data-key={f.key}>
+                                <div class="custom-select-trigger">
+                                    <span class="selected-text">{f.label}</span>
+                                    <div class="custom-select-arrow">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path d="m6 9 6 6 6-6" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="custom-select-options">
+                                    <div class="custom-select-option selected" data-value="">
+                                        {f.label}
+                                    </div>
+                                    {f.valores.map((v) => (
+                                        <div class="custom-select-option" data-value={v}>
+                                            {v}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    <span class="mfx-gal-resultado" aria-live="polite" />
+                </div>
+            )}
+
+            <div class="mfx-gal-grid" style={`--min-col:${minCol}`}>
+                {fotos.map((foto, i) => (
+                    <button
+                        type="button"
+                        class="mfx-gal-item"
+                        data-idx={i}
+                        data-temporada={foto.temporada || ""}
+                        data-competicion={foto.competicion || ""}
+                        hidden={i >= inicial}
+                        aria-label={`Ampliar foto ${i + 1} de ${fotos.length}`}
+                    >
+                        <Image
+                            src={foto.src}
+                            alt={foto.alt}
+                            width={400}
+                            height={400}
+                            quality={70}
+                            format="webp"
+                            loading="lazy"
+                            decoding="async"
+                            style={foto.pos}
+                        />
+                        <span class="mfx-gal-zoom" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="M21 21l-4.3-4.3M11 8v6M8 11h6" />
+                            </svg>
+                        </span>
+                    </button>
+                ))}
+            </div>
+
+            {porTanda > 0 && fotos.length > inicial && (
+                <button type="button" class="mfx-gal-more">
+                    CARGAR MÁS <span class="mfx-gal-more-count">({fotos.length - inicial} restantes)</span>
+                </button>
+            )}
+
+            <script type="application/json" class="mfx-gal-data" set:html={JSON.stringify(fotosLightbox)} />
+        </section>
+    )
+}
+
+<style>
+    .mfx-gal {
+        width: 100%;
+    }
+
+    .mfx-gal-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.15);
+    }
+
+    .mfx-gal-title {
+        font-family: "Cinzel", serif;
+        font-size: clamp(0.72rem, 1.6vw, 0.85rem);
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        color: rgba(212, 168, 67, 0.85);
+        text-transform: uppercase;
+        margin: 0;
+    }
+
+    .mfx-gal-sub {
+        margin: 0.3rem 0 0;
+        font-size: clamp(0.72rem, 1.5vw, 0.8rem);
+        color: var(--text-muted, #888);
+        letter-spacing: 0.03em;
+    }
+
+    .mfx-gal-all {
+        font-family: "Cinzel", serif;
+        font-size: 0.65rem;
+        letter-spacing: 0.16em;
+        color: rgba(212, 168, 67, 0.8);
+        text-decoration: none;
+        white-space: nowrap;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid rgba(212, 168, 67, 0.25);
+        border-radius: 3px;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .mfx-gal-all:hover {
+        background: rgba(212, 168, 67, 0.12);
+        border-color: rgba(212, 168, 67, 0.55);
+        color: #e8c874;
+    }
+
+    .mfx-gal-filtros {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: clamp(0.75rem, 2vw, 1.5rem);
+        margin-bottom: 1.35rem;
+    }
+
+    .mfx-gal-resultado:empty {
+        display: none;
+    }
+
+    .mfx-gal-resultado {
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        color: var(--text-muted, #888);
+        padding-bottom: 0.5rem;
+    }
+
+    .mfx-gal-more[hidden] {
+        display: none;
+    }
+
+    .mfx-gal-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(var(--min-col, 160px), 1fr));
+        gap: clamp(0.4rem, 1.2vw, 0.7rem);
+    }
+
+    .mfx-gal-item[hidden] {
+        display: none;
+    }
+
+    .mfx-gal-item {
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        padding: 0;
+        border: 1px solid rgba(212, 168, 67, 0.14);
+        border-radius: 3px;
+        overflow: hidden;
+        background: rgba(8, 16, 34, 0.85);
+        cursor: zoom-in;
+        transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .mfx-gal-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 35%;
+        display: block;
+        transition: transform 0.35s ease, filter 0.35s ease;
+    }
+    .mfx-gal-item:hover {
+        border-color: rgba(212, 168, 67, 0.5);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        z-index: 2;
+    }
+    .mfx-gal-item:hover img {
+        transform: scale(1.06);
+    }
+    .mfx-gal-item:focus-visible {
+        outline: 2px solid rgba(212, 168, 67, 0.8);
+        outline-offset: 2px;
+    }
+
+    .mfx-gal-zoom {
+        position: absolute;
+        right: 0.4rem;
+        bottom: 0.4rem;
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: rgba(6, 13, 28, 0.75);
+        color: rgba(212, 168, 67, 0.9);
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        pointer-events: none;
+    }
+    .mfx-gal-item:hover .mfx-gal-zoom {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .mfx-gal-more {
+        display: block;
+        margin: 1.1rem auto 0;
+        padding: 0.6rem 1.6rem;
+        font-family: "Cinzel", serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.16em;
+        color: rgba(212, 168, 67, 0.85);
+        background: rgba(212, 168, 67, 0.05);
+        border: 1px solid rgba(212, 168, 67, 0.3);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .mfx-gal-more:hover {
+        background: rgba(212, 168, 67, 0.14);
+        border-color: rgba(212, 168, 67, 0.6);
+    }
+    .mfx-gal-more-count {
+        opacity: 0.6;
+        letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 480px) {
+        .mfx-gal-grid {
+            grid-template-columns: repeat(auto-fill, minmax(min(var(--min-col, 160px), 44%), 1fr));
+        }
+        .mfx-gal-head {
+            align-items: flex-start;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .mfx-gal-item,
+        .mfx-gal-item img,
+        .mfx-gal-zoom {
+            transition: none;
+        }
+        .mfx-gal-item:hover img {
+            transform: none;
+        }
+    }
+</style>
+
+<script>
+    function initGalerias() {
+        let lb = document.getElementById("mfx-lightbox");
+        if (!lb) {
+            lb = document.createElement("div");
+            lb.id = "mfx-lightbox";
+            lb.className = "mfx-lb";
+            lb.setAttribute("role", "dialog");
+            lb.setAttribute("aria-modal", "true");
+            lb.hidden = true;
+            lb.innerHTML = `
+                <button class="mfx-lb-close" aria-label="Cerrar">&times;</button>
+                <button class="mfx-lb-nav mfx-lb-prev" aria-label="Foto anterior">&#8249;</button>
+                <figure class="mfx-lb-figure">
+                    <img class="mfx-lb-img" alt="" />
+                    <figcaption class="mfx-lb-cap"></figcaption>
+                </figure>
+                <button class="mfx-lb-nav mfx-lb-next" aria-label="Foto siguiente">&#8250;</button>
+                <div class="mfx-lb-counter"></div>`;
+            document.body.appendChild(lb);
+        }
+
+        const img = lb.querySelector(".mfx-lb-img") as HTMLImageElement;
+        const cap = lb.querySelector(".mfx-lb-cap") as HTMLElement;
+        const counter = lb.querySelector(".mfx-lb-counter") as HTMLElement;
+
+        let fotos: any[] = [];
+        let idx = 0;
+        let lastFocus: HTMLElement | null = null;
+
+        function render() {
+            const f = fotos[idx];
+            if (!f) return;
+            img.src = f.src;
+            img.alt = f.alt || "";
+            cap.textContent = f.caption || f.alt || "";
+            cap.hidden = !cap.textContent;
+            counter.textContent = `${idx + 1} / ${fotos.length}`;
+            [idx - 1, idx + 1].forEach((i) => {
+                if (fotos[i]) {
+                    const p = new Image();
+                    p.src = fotos[i].src;
+                }
+            });
+        }
+
+        function open(list: any[], i: number, trigger: HTMLElement) {
+            fotos = list;
+            idx = i;
+            lastFocus = trigger;
+            lb!.hidden = false;
+            document.body.style.overflow = "hidden";
+            render();
+            (lb!.querySelector(".mfx-lb-close") as HTMLElement)?.focus();
+        }
+
+        function close() {
+            lb!.hidden = true;
+            document.body.style.overflow = "";
+            img.src = "";
+            lastFocus?.focus();
+        }
+
+        const move = (d: number) => {
+            idx = (idx + d + fotos.length) % fotos.length;
+            render();
+        };
+
+        if (!lb.dataset.bound) {
+            lb.dataset.bound = "1";
+            lb.querySelector(".mfx-lb-close")!.addEventListener("click", close);
+            lb.querySelector(".mfx-lb-prev")!.addEventListener("click", () => move(-1));
+            lb.querySelector(".mfx-lb-next")!.addEventListener("click", () => move(1));
+            lb.addEventListener("click", (e) => {
+                if (e.target === lb) close();
+            });
+            document.addEventListener("keydown", (e) => {
+                if (lb!.hidden) return;
+                if (e.key === "Escape") close();
+                else if (e.key === "ArrowLeft") move(-1);
+                else if (e.key === "ArrowRight") move(1);
+            });
+            let x0 = 0;
+            lb.addEventListener("touchstart", (e) => (x0 = e.changedTouches[0].clientX), { passive: true });
+            lb.addEventListener(
+                "touchend",
+                (e) => {
+                    const dx = e.changedTouches[0].clientX - x0;
+                    if (Math.abs(dx) > 50) move(dx > 0 ? -1 : 1);
+                },
+                { passive: true },
+            );
+        }
+
+        document.querySelectorAll(".mfx-gal").forEach((sec) => {
+            const el = sec as HTMLElement;
+            if (el.dataset.bound) return;
+            el.dataset.bound = "1";
+
+            const data = el.querySelector(".mfx-gal-data");
+            const lista: any[] = data ? JSON.parse(data.textContent || "[]") : [];
+            const items = Array.from(el.querySelectorAll<HTMLElement>(".mfx-gal-item"));
+            const more = el.querySelector(".mfx-gal-more") as HTMLButtonElement | null;
+            const resultado = el.querySelector(".mfx-gal-resultado") as HTMLElement | null;
+            const filtros = Array.from(
+                el.querySelectorAll<HTMLElement>(".mfx-gal-filtros .custom-select-container"),
+            );
+
+            const tanda = Number(el.dataset.tanda || 0) || items.length;
+            let mostradas = Math.min(tanda, items.length);
+
+            function coincide(item: HTMLElement) {
+                return filtros.every((c) => {
+                    const v = c.dataset.value || "";
+                    return !v || item.dataset[c.dataset.key!] === v;
+                });
+            }
+
+            function aplicar() {
+                const filtrados = items.filter(coincide);
+                const listaFiltrada = filtrados.map((it) => lista[Number(it.dataset.idx)]);
+
+                items.forEach((it) => (it.hidden = true));
+                filtrados.slice(0, mostradas).forEach((it) => (it.hidden = false));
+
+                filtrados.forEach((it, pos) => {
+                    it.dataset.pos = String(pos);
+                    (it as any)._lista = listaFiltrada;
+                });
+
+                const quedan = Math.max(0, filtrados.length - mostradas);
+                if (more) {
+                    more.hidden = quedan === 0;
+                    const c = more.querySelector(".mfx-gal-more-count");
+                    if (c) c.textContent = `(${quedan} restantes)`;
+                }
+                if (resultado) {
+                    resultado.textContent =
+                        filtrados.length === items.length
+                            ? ""
+                            : `${filtrados.length} ${filtrados.length === 1 ? "foto" : "fotos"}`;
+                }
+            }
+
+            items.forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const lst = (btn as any)._lista || lista;
+                    const pos = btn.dataset.pos !== undefined ? Number(btn.dataset.pos) : Number(btn.dataset.idx);
+                    open(lst, pos, btn);
+                });
+            });
+
+            filtros.forEach((cont) => {
+                const trigger = cont.querySelector(".custom-select-trigger");
+                const texto = cont.querySelector(".selected-text") as HTMLElement;
+                const opciones = Array.from(cont.querySelectorAll<HTMLElement>(".custom-select-option"));
+
+                trigger?.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    filtros.forEach((c) => c !== cont && c.classList.remove("open"));
+                    cont.classList.toggle("open");
+                });
+
+                opciones.forEach((op) => {
+                    op.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        opciones.forEach((o) => o.classList.remove("selected"));
+                        op.classList.add("selected");
+                        cont.dataset.value = op.dataset.value || "";
+                        texto.textContent = op.textContent;
+                        cont.classList.remove("open");
+                        mostradas = Math.min(tanda, items.length);
+                        aplicar();
+                    });
+                });
+            });
+
+            document.addEventListener("click", () =>
+                filtros.forEach((c) => c.classList.remove("open")),
+            );
+
+            more?.addEventListener("click", () => {
+                mostradas += tanda;
+                aplicar();
+            });
+
+            aplicar();
+        });
+    }
+
+    initGalerias();
+    document.addEventListener("astro:page-load", initGalerias);
+</script>
+
+<style is:global>
+    .mfx-lb[hidden] {
+        display: none;
+    }
+    .mfx-lb {
+        position: fixed;
+        inset: 0;
+        z-index: 2000002;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: clamp(0.25rem, 2vw, 1rem);
+        padding: clamp(0.75rem, 3vw, 2rem);
+        background: rgba(3, 7, 16, 0.95);
+        backdrop-filter: blur(6px);
+        animation: mfxLbIn 0.2s ease;
+    }
+    @keyframes mfxLbIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .mfx-lb-figure {
+        grid-column: 2;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        min-width: 0;
+        max-height: 100%;
+    }
+    .mfx-lb-img {
+        max-width: 100%;
+        max-height: calc(100vh - 8rem);
+        object-fit: contain;
+        border: 1px solid rgba(212, 168, 67, 0.25);
+        border-radius: 3px;
+        background: #060d1c;
+    }
+    .mfx-lb-cap {
+        font-family: "Cinzel", serif;
+        font-size: clamp(0.65rem, 1.6vw, 0.75rem);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(212, 168, 67, 0.8);
+        text-align: center;
+    }
+
+    .mfx-lb-nav,
+    .mfx-lb-close {
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(212, 168, 67, 0.3);
+        background: rgba(8, 16, 34, 0.8);
+        color: rgba(212, 168, 67, 0.9);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .mfx-lb-nav {
+        width: clamp(36px, 8vw, 48px);
+        height: clamp(36px, 8vw, 48px);
+        font-size: clamp(1.4rem, 4vw, 2rem);
+        line-height: 1;
+    }
+    .mfx-lb-prev {
+        grid-column: 1;
+    }
+    .mfx-lb-next {
+        grid-column: 3;
+    }
+    .mfx-lb-nav:hover,
+    .mfx-lb-close:hover {
+        background: rgba(212, 168, 67, 0.18);
+        border-color: rgba(212, 168, 67, 0.65);
+    }
+
+    .mfx-lb-close {
+        position: absolute;
+        top: clamp(0.6rem, 2vw, 1.2rem);
+        right: clamp(0.6rem, 2vw, 1.2rem);
+        width: 38px;
+        height: 38px;
+        font-size: 1.5rem;
+        line-height: 1;
+        z-index: 2;
+    }
+
+    .mfx-lb-counter {
+        position: absolute;
+        bottom: clamp(0.6rem, 2vw, 1.2rem);
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Cinzel", serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.16em;
+        color: rgba(212, 168, 67, 0.65);
+    }
+
+    @media (max-width: 640px) {
+        .mfx-lb {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr auto;
+        }
+        .mfx-lb-figure {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .mfx-lb-nav {
+            grid-row: 2;
+        }
+        .mfx-lb-prev {
+            grid-column: 1;
+            justify-self: start;
+        }
+        .mfx-lb-next {
+            grid-column: 1;
+            grid-row: 2;
+            justify-self: end;
+        }
+        .mfx-lb-counter {
+            bottom: auto;
+            top: clamp(0.6rem, 2vw, 1.2rem);
+            left: clamp(0.8rem, 3vw, 1.2rem);
+            transform: none;
+        }
+        .mfx-lb-img {
+            max-height: calc(100vh - 10rem);
+        }
+    }
+</style>

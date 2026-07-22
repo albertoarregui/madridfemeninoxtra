@@ -1,3 +1,4 @@
+import { cachear, TTL } from './cache';
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocida';
     return text.toString().toLowerCase()
@@ -34,7 +35,7 @@ export function getCleanCountryName(country: string | null | undefined): string 
         : 'default';
 }
 
-export async function fetchPlayersDirectly(): Promise<any[]> {
+async function fetchPlayersDirectlyUncached(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -696,3 +697,6 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
     }
 }
 
+
+
+export const fetchPlayersDirectly = cachear('players:all', TTL.medio, fetchPlayersDirectlyUncached);

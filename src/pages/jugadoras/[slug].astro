@@ -18,6 +18,8 @@ import { fetchAllClubShields } from "../../utils/rivales";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { getNewsForPlayer } from "../../utils/noticias";
 import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
+import GaleriaGrid from "../../components/GaleriaGrid.astro";
+import { fetchPlayerPhotos, photoUrl, faceThumbStyle } from "../../utils/galerias";
 
 const { slug } = Astro.params;
 const allPlayers = await fetchPlayersDirectly();
@@ -42,6 +44,16 @@ const currentSeasonName =
         ? seasonPhotosData[initialSeasonIndex].season
         : player.temporada || "Actualidad";
 
+const playerPhotos = await fetchPlayerPhotos(slug!);
+const totalGaleria = playerPhotos.length;
+const galeriaFotos = playerPhotos.map((p) => ({
+    src: photoUrl(p.route, p.f),
+    alt: `${player.nombre} — Real Madrid Femenino`,
+    pos: faceThumbStyle(p.face),
+    caption: [player.nombre, p.competicion, p.temporada].filter(Boolean).join(" · "),
+    temporada: p.temporada,
+    competicion: p.competicion,
+}));
 const isGoalkeeper = player.posicion === "Portera";
 const playerStats = await fetchPlayerStats(player.id_jugadora, isGoalkeeper);
 if (playerStats) {
@@ -610,6 +622,21 @@ const seoDescription = (tco && tco.partidos)
                 </section>
             )}
 
+            {galeriaFotos.length > 0 && (
+                <section class="profile-card full-col galeria-card">
+                    <h2 class="card-title">GALERÍA DE {player.nombre.toUpperCase()}</h2>
+                    <div class="card-body galeria-card-body">
+                        <GaleriaGrid
+                            fotos={galeriaFotos}
+                            subtitulo={`${totalGaleria} ${totalGaleria === 1 ? "foto" : "fotos"} en las fotogalerías`}
+                            minCol="150px"
+                            porTanda={14}
+                            conFiltros={true}
+                        />
+                    </div>
+                </section>
+            )}
+
             <div class="full-col">
                 <PlayerNewsSection
                     title={`Noticias de ${player.nombre}`}
@@ -988,6 +1015,10 @@ const seoDescription = (tco && tco.partidos)
 
 .card-body {
     padding: 0;
+}
+
+.galeria-card-body {
+    padding: 1.1rem 1.25rem 1.25rem;
 }
 
 .info-row {

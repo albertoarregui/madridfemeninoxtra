@@ -1,3 +1,4 @@
+import { cachear, TTL } from './cache';
 import { getAssetUrl } from './assets';
 import { getRivalShieldUrl } from './rivales';
 import { getFlagSrc } from './flags';
@@ -38,7 +39,7 @@ export function formatGameDate(dateString: string | null | undefined): string {
     }
 }
 
-export async function fetchGamesDirectly(): Promise<any[]> {
+async function fetchGamesDirectlyUncached(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -1081,7 +1082,7 @@ export async function fetchMatchEvents(matchId: string | number, matchScore?: nu
     }
 }
 
-export async function fetchAllGoals(): Promise<any[]> {
+async function fetchAllGoalsUncached(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
@@ -1145,3 +1146,9 @@ export async function fetchAllGoals(): Promise<any[]> {
     }
 }
 
+
+
+export const fetchGamesDirectly = cachear('games:all', TTL.corto, fetchGamesDirectlyUncached);
+
+
+export const fetchAllGoals = cachear('goals:all', TTL.corto, fetchAllGoalsUncached);

@@ -45,6 +45,7 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
 - 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición, con soporte táctil y diseño adaptado a móvil
 - 🔍 **Buscador Avanzado** — Tabla de estadísticas individual filtrable por temporada, competición (incluyendo "Partidos Oficiales"), posición, titularidad, fecha y partido; ordenación por columna, modo totales/por 90 minutos y búsqueda en tiempo real
+- 📸 **Fotogalerías con detección automática** — Cada foto detecta a las jugadoras etiquetadas en sus metadatos (XMP), y las galerías aparecen solas en la ficha de cada jugadora, en la ficha del partido y en la home. Miniaturas encuadradas en la cara mediante las regiones faciales de los metadatos
 
 ---
 
@@ -91,6 +92,7 @@ pnpm dev
 - `/src/utils` — Lógica de negocio y helpers
 - `/src/assets` — Recursos estáticos
 - `/scripts` — Scripts de mantenimiento y depuración
+- `/scripts/galerias` — Subida e indexado de fotogalerías (detección de jugadoras por metadatos)
 - `/scripts/migrations` — Migraciones de base de datos versionadas
 
 <div align="center">
@@ -99,9 +101,25 @@ pnpm dev
 
 ## 🔄 Cambios Recientes (Julio 2026)
 
+### 📸 Fotogalerías con detección automática de jugadoras
+- ✅ Un script (`npm run galeria` / `npm run galeria:indexar`) lee los metadatos **XMP** de cada foto en Cloudflare R2 (descargando solo la cola del fichero), detecta a las jugadoras etiquetadas y sus **regiones faciales**, las cruza con la tabla `jugadoras` y publica los índices en R2
+- ✅ **Ficha de jugadora**: sección "Galería de {nombre}" con las fotos en las que aparece, cargando de 14 en 14, con miniaturas **encuadradas en su cara** y filtros por temporada y competición
+- ✅ **Ficha de partido**: sección "Galería del partido" (21 fotos), enlazada automáticamente por el `id_partido` del nombre de carpeta
+- ✅ **Home**: nueva sección "Galerías" bajo "Jugadoras", con el mismo hover que las tarjetas de noticias
+- ✅ Visor tipo lightbox con teclado, swipe y navegación; las páginas de cada galería las sigue generando **Contentful** (las tarjetas solo enlazan cuando la entrada existe)
+- ✅ Diccionario de alias editable (`scripts/galerias/overrides.json`) para variantes de escritura y personas que no son jugadoras
+- ✅ Todo adaptado a todo tipo de pantalla, sin scroll horizontal (grid de 2 a 7 columnas según el ancho)
+
+### ⚡ Rendimiento
+- ✅ **Caché de CDN** en el middleware: las páginas públicas se sirven desde el borde (`s-maxage` + `stale-while-revalidate`), excluyendo `/api`, `/premios` y cualquier usuario identificado
+- ✅ **Caché en memoria de los catálogos** de base de datos (jugadoras, partidos, goles, calendario, rivales, escudos) con TTL por tipo, deduplicando consultas repetidas y ráfagas concurrentes contra Turso
+- ✅ **Optimización de imágenes** (servicio de imágenes de Vercel) en galerías, MVP, carrusel de hitos, noticias de la home y "más leídas"; favicon reducido de 343 KB a 5,5 KB
+- ✅ **Prefetch** cambiado de `viewport` a `hover` para no renderizar en servidor decenas de páginas por visita
+- ✅ Corregido un error de hidratación preexistente en el dashboard de estadísticas (fechas y números con zona horaria e idioma fijos)
+
 ### 🏠 Home
 - ✅ **Vídeo de fondo del hero eliminado**; el fondo global (`background.webp`) queda visible en toda la página, hero incluido
-- ✅ **Transiciones de página instantáneas** en todo el sitio: `ClientRouter` + prefetch (`viewport`) en todas las rutas (incluida la intro `/`) y sin animación de cross-fade
+- ✅ **Transiciones de página instantáneas** en todo el sitio: `ClientRouter` + prefetch (`hover`) en todas las rutas (incluida la intro `/`) y sin animación de cross-fade
 - ✅ **Dashboard de estadísticas**: si la temporada actual aún no tiene partidos oficiales jugados, arranca en "Todas las Temporadas" en vez de quedar vacío; en cuanto se juega el primero, vuelve a arrancar filtrado a la temporada en curso
 - ✅ **Nuevo carrusel "Jugadoras"**: plantilla actual (por dorsal de la última temporada) + entrenador del partido más reciente, con foto, dorsal/posición y hasta 3 noticias relacionadas por persona
 

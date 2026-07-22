@@ -17,6 +17,8 @@ import { getMatchStatus } from "../../utils/date-helper";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { breadcrumbSchema } from "../../utils/seo";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
+import GaleriaGrid from "../../components/GaleriaGrid.astro";
+import { fetchGalleryForMatch, photoUrl, galleryPageHref } from "../../utils/galerias";
 
 const { slug } = Astro.params;
 
@@ -101,6 +103,19 @@ const subs = isLiveOrPlayed ? await fetchMatchSubstitutions(game.id_partido) : [
 const timelineEvents = isLiveOrPlayed ? await fetchMatchEvents(game.id_partido, game.goles_rm) : [];
 const stadiumStats = await fetchStadiumStats(game.estadio);
 const matchKit = isLiveOrPlayed ? await fetchMatchKit(game.id_partido) : null;
+
+const MATCH_GALERIA_PREVIEW = 21;
+const matchGallery = await fetchGalleryForMatch(game.id_partido);
+const galeriaRoute = matchGallery?.route ?? "";
+const totalGaleria = matchGallery?.count ?? 0;
+const galeriaFotos = (matchGallery?.photos ?? [])
+    .slice(0, MATCH_GALERIA_PREVIEW)
+    .map((p, i) => ({
+        src: photoUrl(galeriaRoute, p.f),
+        alt: `${game.club_local} vs ${game.club_visitante} — foto ${i + 1}`,
+        caption: `${game.club_local} vs ${game.club_visitante}`,
+    }));
+const galeriaHref = galeriaRoute ? await galleryPageHref(galeriaRoute) : null;
 
 let mvpPlayer;
 
@@ -555,6 +570,21 @@ const matchSchema = {
                 </div>
             </section>
         </div>
+        {galeriaFotos.length > 0 && (
+            <section class="match-card-new" style="margin-bottom:1.25rem;">
+                <h2 class="section-header">GALERÍA DEL PARTIDO</h2>
+                <div style="padding:clamp(1rem,3.5vw,1.5rem);">
+                    <GaleriaGrid
+                        fotos={galeriaFotos}
+                        subtitulo={`${totalGaleria} fotos de este partido`}
+                        verTodasHref={galeriaHref || undefined}
+                        verTodasLabel="VER GALERÍA COMPLETA"
+                        minCol="170px"
+                    />
+                </div>
+            </section>
+        )}
+
         <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
             <h2 class="section-header">{isLiveOrPlayed ? "RESUMEN DEL PARTIDO" : "PREVIA DEL PARTIDO"}</h2>
             <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(220,225,230,0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>

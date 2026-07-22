@@ -426,8 +426,8 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                             .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())
                             .map(m => ({
                                 date: new Date(m.fecha),
-                                label: new Date(m.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-                                fullDate: new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
+                                label: new Date(m.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', timeZone: 'Europe/Madrid' }),
+                                fullDate: new Date(m.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid' }),
                                 rival: m.club_visitante === 'Real Madrid' ? m.club_local : m.club_visitante,
                                 attendance: Number(m.asistencia || 0),
                                 capacity: Number(m.capacidad || 6000)
@@ -462,8 +462,8 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                                     <div className="transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[#060d1c] border border-[rgba(212,168,67,0.2)] text-white text-[10px] p-2 rounded shadow-lg whitespace-nowrap pointer-events-none w-full">
                                                         <p className="font-bold border-b border-[rgba(212,168,67,0.2)] pb-1 mb-1 text-[#d4a843]">{d.fullDate}</p>
                                                         <p className="text-[#c8c8c8] mb-1">vs {d.rival}</p>
-                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString()}</span></div>
-                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Capacidad:</span><span className="font-mono text-[#666]">{d.capacity.toLocaleString()}</span></div>
+                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString('es-ES')}</span></div>
+                                                        <div className="flex justify-between gap-3"><span className="text-[#888]">Capacidad:</span><span className="font-mono text-[#666]">{d.capacity.toLocaleString('es-ES')}</span></div>
                                                         <div className="mt-1 pt-1 border-t border-[rgba(212,168,67,0.2)] flex justify-between gap-3"><span className="text-[#888]">% Ocupación:</span><span className={`font-bold ${d.attendance / d.capacity > 0.8 ? 'text-green-400' : 'text-white'}`}>{d.capacity > 0 ? ((d.attendance / d.capacity) * 100).toFixed(1) : 0}%</span></div>
                                                     </div>
                                                 </foreignObject>
