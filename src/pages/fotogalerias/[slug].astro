@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import GalleryViewer from "../../components/GalleryViewer";
 import { contentfulClient } from "../../lib/contentful";
+import { fetchGallery, photoUrl, resolveIndexRoute } from "../../utils/galerias";
 import "../../styles/global.css";
 
 export const prerender = false;
@@ -29,7 +30,15 @@ try {
         const subtitle = getV("competition") || getV("competicion") || "";
         const dateRaw = getV("date") || getV("fecha");
         const total = getV("totalphotos") || getV("totalFotos") || 0;
-        const folder = getV("route") || getV("rutaDeCarpetas") || "";
+        const folder = (getV("route") || getV("rutaDeCarpetas") || "").replace(/^\/+|\/+$/g, "");
+
+        const realRoute = (await resolveIndexRoute(folder)) || folder;
+        const index = await fetchGallery(realRoute);
+        const photos = index?.photos?.length
+            ? index.photos.map((p) => photoUrl(realRoute, p.f))
+            : Array.from({ length: Number(total) }, (_, i) =>
+                  encodeURI(`https://media.madridfemeninoxtra.com/galerias/${folder}/${folder}${i + 1}.webp`),
+              );
 
         albumData = {
             title: title,
@@ -43,11 +52,7 @@ try {
                       })
                       .toUpperCase()
                 : "SIN FECHA",
-            photos: Array.from(
-                { length: Number(total) },
-                (_, i) =>
-                    encodeURI(`https://media.madridfemeninoxtra.com/galerias/${folder}/${folder}${i + 1}.webp`),
-            ),
+            photos,
         };
     }
 } catch (e) {

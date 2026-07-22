@@ -101,6 +101,31 @@ export async function fetchGallery(route: string): Promise<GalleryIndex | null> 
     return getJson<GalleryIndex>(`${BASE}/${route}/_index.json`);
 }
 
+const normRoute = (s: string) =>
+    s.toLowerCase().replace(/^\/+|\/+$/g, "").replace(/_/g, "-");
+
+export async function resolveIndexRoute(raw: string): Promise<string | null> {
+    if (!raw) return null;
+    const galleries = await fetchGalleriesIndex();
+    if (!galleries.length) return null;
+
+    const r = normRoute(raw);
+    let hit = galleries.find((g) => normRoute(g.route) === r);
+    if (hit) return hit.route;
+
+    const last = r.split("/").pop();
+    hit = galleries.find((g) => normRoute(g.route).split("/").pop() === last);
+    if (hit) return hit.route;
+
+    const m = last?.match(/^(\d+)/);
+    if (m) {
+        const id = Number(m[1]);
+        hit = galleries.find((g) => g.idPartido === id);
+        if (hit) return hit.route;
+    }
+    return null;
+}
+
 export async function fetchPlayerPhotos(slug: string, limit?: number): Promise<PlayerPhoto[]> {
     const data = await getJson<{ photos: PlayerPhoto[] }>(`${BASE}/_players/${slug}.json`);
     const photos = data?.photos ?? [];
@@ -134,7 +159,12 @@ export async function fetchGallerySlugs(): Promise<Record<string, string>> {
             };
             const ruta = get("route") || get("rutaDeCarpetas");
             const slug = get("slug");
-            if (ruta && slug) map[String(ruta).replace(/^\/+|\/+$/g, "")] = String(slug);
+            if (ruta && slug) {
+                const raw = String(ruta).replace(/^\/+|\/+$/g, "");
+                const real = (await resolveIndexRoute(raw)) || raw;
+                map[real] = String(slug);
+                if (real !== raw) map[raw] = String(slug);
+            }
         }
     } catch {
     }
