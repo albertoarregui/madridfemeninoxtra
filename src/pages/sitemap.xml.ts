@@ -3,6 +3,9 @@ import { fetchPlayersDirectly } from '../utils/players';
 import { fetchCoachesDirectly } from '../utils/entrenadores';
 import { fetchRivalsDirectly } from '../utils/rivales';
 import { fetchGamesDirectly } from '../utils/partidos';
+import { fetchAllStadiumsWithStats } from '../utils/estadios';
+import { fetchRefereesDirectly } from '../utils/arbitras';
+import { generateSlug } from '../utils/url-helper';
 import { contentfulClient } from '../lib/contentful';
 
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
@@ -14,8 +17,14 @@ const staticPages = [
     { url: 'entrenadores', priority: 0.7, changefreq: 'monthly' },
     { url: 'rivales', priority: 0.7, changefreq: 'monthly' },
     { url: 'partidos', priority: 0.7, changefreq: 'weekly' },
+    { url: 'estadios', priority: 0.7, changefreq: 'monthly' },
+    { url: 'arbitras', priority: 0.7, changefreq: 'monthly' },
+    { url: 'fotogalerias', priority: 0.7, changefreq: 'weekly' },
     { url: 'plantilla', priority: 0.7, changefreq: 'monthly' },
     { url: 'rankings', priority: 0.7, changefreq: 'weekly' },
+    { url: 'records', priority: 0.6, changefreq: 'weekly' },
+    { url: 'comparador', priority: 0.6, changefreq: 'monthly' },
+    { url: 'calendario', priority: 0.6, changefreq: 'weekly' },
     { url: 'sobre-nosotros', priority: 0.5, changefreq: 'monthly' },
     { url: 'contacto', priority: 0.5, changefreq: 'monthly' },
     { url: 'aviso-legal', priority: 0.3, changefreq: 'yearly' },
@@ -123,6 +132,56 @@ export const GET: APIRoute = async () => {
             });
         } catch (error) {
             console.error('Error fetching matches:', error);
+        }
+
+        try {
+            const stadiums = await fetchAllStadiumsWithStats();
+            stadiums.forEach((stadium: any) => {
+                if (!stadium.slug) return;
+                urls.push({
+                    loc: `${SITE_URL}/estadios/${stadium.slug}`,
+                    changefreq: 'monthly',
+                    priority: 0.6,
+                });
+            });
+        } catch (error) {
+            console.error('Error fetching stadiums:', error);
+        }
+
+        try {
+            const referees = await fetchRefereesDirectly();
+            referees.forEach((referee: any) => {
+                if (!referee.nombre) return;
+                urls.push({
+                    loc: `${SITE_URL}/arbitras/${generateSlug(referee.nombre)}`,
+                    changefreq: 'monthly',
+                    priority: 0.6,
+                });
+            });
+        } catch (error) {
+            console.error('Error fetching referees:', error);
+        }
+
+        try {
+            const galleries = await contentfulClient.getEntries({
+                content_type: 'gallery',
+                limit: 1000,
+            });
+            galleries.items.forEach((item: any) => {
+                const f = item.fields as any;
+                const key = Object.keys(f).find(k => k.toLowerCase() === 'slug');
+                const slug = key ? f[key] : null;
+                if (!slug) return;
+                const lastmod = new Date(item.sys.updatedAt).toISOString().split('T')[0];
+                urls.push({
+                    loc: `${SITE_URL}/fotogalerias/${slug}`,
+                    lastmod,
+                    changefreq: 'monthly',
+                    priority: 0.6,
+                });
+            });
+        } catch (error) {
+            console.error('Error fetching galleries for sitemap:', error);
         }
 
         const sitemap = generateSitemapXML(urls);
