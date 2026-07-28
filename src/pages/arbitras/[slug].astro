@@ -154,9 +154,14 @@ matches.forEach((m) => calculateBlock(totalStats, m));
 const uniqueSeasons = [...new Set(matches.map((m) => m.season))]
     .sort()
     .reverse();
+const esAmistoso = (comp: string) => /amistoso|friendly/i.test(comp || "");
+const hayAmistosos = matches.some((m) => esAmistoso(m.competicion));
+
 const uniqueCompetitions = [
     ...new Set(matches.map((m) => m.competicion)),
-].sort();
+]
+    .filter((c) => !esAmistoso(c))
+    .sort();
 
 const circumference = 220;
 const totalMatches = totalStats.pj;
@@ -520,12 +525,16 @@ const seoDescription = totalStats.pj
                             </div>
                             <div class="custom-select-options">
                                 <div class="custom-select-option selected" data-value="all">Todas las Competiciones</div>
+                                {hayAmistosos && (
+                                    <div class="custom-select-option" data-value="amistosos">Amistosos</div>
+                                )}
                                 {uniqueCompetitions.map((comp) => (
                                     <div class="custom-select-option" data-value={comp}>{comp}</div>
                                 ))}
                             </div>
                             <select id="competition-filter" style="display:none;">
                                 <option value="all">Todas las Competiciones</option>
+                                {hayAmistosos && <option value="amistosos">Amistosos</option>}
                                 {uniqueCompetitions.map((comp) => (
                                     <option value={comp}>{comp}</option>
                                 ))}
@@ -803,7 +812,11 @@ const seoDescription = totalStats.pj
         if (selectedSeason !== "all") {
             filtered = filtered.filter((m) => m.season === selectedSeason);
         }
-        if (selectedComp !== "all") {
+        if (selectedComp === "amistosos") {
+            filtered = filtered.filter((m) =>
+                /amistoso|friendly/i.test(m.competicion || ""),
+            );
+        } else if (selectedComp !== "all") {
             filtered = filtered.filter((m) => m.competicion === selectedComp);
         }
 
@@ -1408,7 +1421,7 @@ const seoDescription = totalStats.pj
 }
 .custom-select-trigger:hover { border-color: rgba(212,168,67,0.5); }
 
-.custom-select-arrow { color: rgba(212,168,67,0.6); flex-shrink: 0; transition: transform 0.2s; }
+.custom-select-arrow { position: static; transform: none; color: rgba(212,168,67,0.6); display: flex; align-items: center; flex-shrink: 0; transition: transform 0.2s; }
 .custom-select-container.open .custom-select-arrow { transform: rotate(180deg); }
 
 .custom-select-options {

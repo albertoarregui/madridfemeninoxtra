@@ -202,7 +202,9 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                                     ) : '-'}
                                 </td>
                                 <td className="py-3 px-2 text-center font-mono text-xs" style={{ color: 'rgba(200,210,220,0.65)' }}>
-                                    {rival.capacidad !== 0 ? Number(rival.capacidad).toLocaleString() : '-'}
+                                    {Number.isFinite(Number(rival.capacidad)) && Number(rival.capacidad) !== 0
+                                        ? Number(rival.capacidad).toLocaleString()
+                                        : '-'}
                                 </td>
 
                                 <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>

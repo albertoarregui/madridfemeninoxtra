@@ -80,10 +80,8 @@ async function fetchRivalsDirectlyUncached(): Promise<any[]> {
                 p.id_club_visitante,
                 p.goles_rm,
                 p.goles_rival,
-                p.penaltis,
-                comp.competicion
+                p.penaltis
             FROM partidos p
-            LEFT JOIN competiciones comp ON p.id_competicion = comp.id_competicion
             WHERE p.goles_rm IS NOT NULL
         `;
 
@@ -98,10 +96,6 @@ async function fetchRivalsDirectlyUncached(): Promise<any[]> {
         }>();
 
         matchesResult.rows.forEach((m: any) => {
-            const comp = (m.competicion || '').toLowerCase();
-            const isAmistoso = comp.includes('amistoso') || comp.includes('friendly');
-            if (isAmistoso) return;
-
             const localId = String(m.id_club_local);
             const visitanteId = String(m.id_club_visitante);
             const gRM = Number(m.goles_rm) || 0;

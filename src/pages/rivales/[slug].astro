@@ -76,9 +76,12 @@ const competitionOrder = [
     "Supercopa de España",
     "Amistosos",
 ];
+const esAmistoso = (comp: string) => /amistoso|friendly/i.test(comp || "");
+const hayAmistosos = rivalMatches.some((m) => esAmistoso(m.competicion));
+
 const uniqueCompetitions = [
     ...new Set(rivalMatches.map((m) => m.competicion)),
-].filter((c) => c && c !== "-");
+].filter((c) => c && c !== "-" && !esAmistoso(c));
 const competitions = uniqueCompetitions.sort((a, b) => {
     const indexA = competitionOrder.indexOf(a);
     const indexB = competitionOrder.indexOf(b);
@@ -448,6 +451,9 @@ const seoDescription = (rt && rt.pj)
                                 <div class="custom-select-options">
                                     <div class="custom-select-option selected" data-value="all">Todas las Competiciones</div>
                                     <div class="custom-select-option" data-value="oficiales">Partidos oficiales</div>
+                                    {hayAmistosos && (
+                                        <div class="custom-select-option" data-value="amistosos">Amistosos</div>
+                                    )}
                                     {competitions.map((comp) => (
                                         <div class="custom-select-option" data-value={comp}>{comp}</div>
                                     ))}
@@ -455,6 +461,7 @@ const seoDescription = (rt && rt.pj)
                                 <select id="competition-filter" style="display: none;">
                                     <option value="all">Todas las Competiciones</option>
                                     <option value="oficiales">Partidos oficiales</option>
+                                    {hayAmistosos && <option value="amistosos">Amistosos</option>}
                                     {competitions.map((comp) => (
                                         <option value={comp}>{comp}</option>
                                     ))}
@@ -983,6 +990,8 @@ const seoDescription = (rt && rt.pj)
             } else if (selectedComp === "oficiales") {
                 const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa", "Supercopa de España"];
                 compMatch = officialComps.some((c) => m.competicion.includes(c));
+            } else if (selectedComp === "amistosos") {
+                compMatch = /amistoso|friendly/i.test(m.competicion || "");
             } else {
                 compMatch = m.competicion === selectedComp;
             }
@@ -1669,6 +1678,8 @@ const seoDescription = (rt && rt.pj)
 .custom-select-trigger:hover { border-color: rgba(212,168,67,0.5); }
 
 .custom-select-arrow {
+    position: static;
+    transform: none;
     color: rgba(212,168,67,0.6);
     display: flex;
     align-items: center;
