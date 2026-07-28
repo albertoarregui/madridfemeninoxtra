@@ -177,6 +177,21 @@ export async function galleryPageHref(route: string): Promise<string | null> {
     return slugs[route] ? `/fotogalerias/${slugs[route]}` : null;
 }
 
+export async function fetchPlayerNames(): Promise<Record<string, string>> {
+    const { fetchPlayersDirectly } = await import("./players");
+    const players = await fetchPlayersDirectly();
+    const map: Record<string, string> = {};
+    for (const p of players) {
+        if (p.slug && p.nombre) map[p.slug] = p.nombre;
+    }
+    return map;
+}
+
+export function photoAlt(slugs: string[] | undefined, names: Record<string, string>, contexto: string): string {
+    const nombres = (slugs || []).map((s) => names[s]).filter(Boolean);
+    return nombres.length ? `${nombres.join(", ")} — ${contexto}` : contexto;
+}
+
 export function faceThumbStyle(face: [number, number, number, number] | null): string {
     if (!face) return "object-position:50% 35%;";
     const [x, y, w, h] = face;

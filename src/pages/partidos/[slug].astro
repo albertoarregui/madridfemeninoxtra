@@ -18,7 +18,7 @@ import { competitionDisplayName } from "../../utils/competiciones";
 import { breadcrumbSchema } from "../../utils/seo";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 import GaleriaGrid from "../../components/GaleriaGrid.astro";
-import { fetchGalleryForMatch, photoUrl, galleryPageHref } from "../../utils/galerias";
+import { fetchGalleryForMatch, photoUrl, galleryPageHref, fetchPlayerNames, photoAlt } from "../../utils/galerias";
 
 const { slug } = Astro.params;
 
@@ -108,11 +108,12 @@ const MATCH_GALERIA_PREVIEW = 21;
 const matchGallery = await fetchGalleryForMatch(game.id_partido);
 const galeriaRoute = matchGallery?.route ?? "";
 const totalGaleria = matchGallery?.count ?? 0;
+const galeriaNames = matchGallery ? await fetchPlayerNames() : {};
 const galeriaFotos = (matchGallery?.photos ?? [])
     .slice(0, MATCH_GALERIA_PREVIEW)
-    .map((p, i) => ({
+    .map((p) => ({
         src: photoUrl(galeriaRoute, p.f),
-        alt: `${game.club_local} vs ${game.club_visitante} — foto ${i + 1}`,
+        alt: photoAlt(p.p, galeriaNames, `${game.club_local} vs ${game.club_visitante}`),
         caption: `${game.club_local} vs ${game.club_visitante}`,
     }));
 const galeriaHref = galeriaRoute ? await galleryPageHref(galeriaRoute) : null;

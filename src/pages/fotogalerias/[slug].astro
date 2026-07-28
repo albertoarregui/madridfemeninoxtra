@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import GalleryViewer from "../../components/GalleryViewer";
 import { contentfulClient } from "../../lib/contentful";
 import { fetchGallery, photoUrl, resolveIndexRoute } from "../../utils/galerias";
+import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
 
 export const prerender = false;
@@ -62,13 +63,32 @@ try {
 if (!albumData) {
     return Astro.redirect("/404");
 }
+
+const cover = albumData.photos[0];
+const gallerySchema = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: albumData.title,
+    description: `Galería de fotos de ${albumData.title} del Real Madrid Femenino.`,
+    url: `https://www.madridfemeninoxtra.com/fotogalerias/${slug}`,
+    ...(cover ? { image: cover } : {}),
+    ...(albumData.photos.length ? { numberOfItems: albumData.photos.length } : {}),
+};
+const galleryBreadcrumb = breadcrumbSchema([
+    { name: "Inicio", path: "/home" },
+    { name: "Fotogalerías", path: "/fotogalerias" },
+    { name: albumData.title, path: `/fotogalerias/${slug}` },
+]);
 ---
 
 <Layout
     title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`}
     description={`Explora las fotos de ${albumData.title} del Real Madrid Femenino.`}
+    image={cover || undefined}
     noBg={true}
 >
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(gallerySchema)} />
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(galleryBreadcrumb)} />
     <main class="gal-detail-page">
         <div class="gal-container">
             <a href="/fotogalerias" class="gal-back-link">← VOLVER A FOTOGALERÍAS</a>
