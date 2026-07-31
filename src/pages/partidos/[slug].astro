@@ -302,6 +302,44 @@ if (isLiveOrPlayed) {
     cronica += ` En esta página podrás seguir el resultado en directo, las alineaciones, los cambios, las estadísticas y la crónica completa del encuentro en cuanto arranque.`;
 }
 
+let cronicaHtml = "";
+let cronicaVisible = "";
+let cronicaResto = "";
+try {
+    const { contentfulClient } = await import("../../lib/contentful");
+    const entries = await contentfulClient.getEntries({
+        content_type: "noticia",
+        "fields.focusType": "match",
+        order: ["-sys.createdAt"] as any,
+        limit: 100,
+    });
+    const claves = [String(game.id_partido), String(slug)].filter(Boolean);
+    const entrada = entries.items.find((item: any) => {
+        const ref = String(
+            item.fields?.referenceId ?? item.fields?.id ?? "",
+        ).trim();
+        return ref !== "" && claves.includes(ref);
+    });
+    if (entrada && (entrada as any).fields?.body) {
+        const { documentToHtmlString } = await import(
+            "@contentful/rich-text-html-renderer"
+        );
+        cronicaHtml = documentToHtmlString((entrada as any).fields.body);
+        const parrafos = cronicaHtml.match(/<p>[\s\S]*?<\/p>/g) || [];
+        if (parrafos.length > 2) {
+            const corte =
+                cronicaHtml.indexOf(parrafos[1]) + parrafos[1].length;
+            cronicaVisible = cronicaHtml.slice(0, corte);
+            cronicaResto = cronicaHtml.slice(corte);
+        } else {
+            cronicaVisible = cronicaHtml;
+        }
+    }
+} catch (e) {
+    console.warn("Error cargando crónica de Contentful:", e);
+}
+const tieneCronica = Boolean(cronicaVisible);
+
 const seoTitle = isLiveOrPlayed
     ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`
     : `${game.club_local} vs ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`;
@@ -587,8 +625,24 @@ const matchSchema = {
         )}
 
         <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
-            <h2 class="section-header">{isLiveOrPlayed ? "RESUMEN DEL PARTIDO" : "PREVIA DEL PARTIDO"}</h2>
-            <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(220,225,230,0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>
+            <h2 class="section-header">{isLiveOrPlayed ? "CRÓNICA" : "PREVIA DEL PARTIDO"}</h2>
+            {tieneCronica ? (
+                <div class="cronica-cuerpo">
+                    <div set:html={cronicaVisible} />
+                    {cronicaResto && (
+                        <details class="cronica-mas">
+                            <summary class="cronica-toggle">
+                                <span class="cronica-toggle-abrir">Seguir leyendo</span>
+                                <span class="cronica-toggle-cerrar">Leer menos</span>
+                                <span class="cronica-toggle-flecha" aria-hidden="true">▾</span>
+                            </summary>
+                            <div set:html={cronicaResto} />
+                        </details>
+                    )}
+                </div>
+            ) : (
+                <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(220,225,230,0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>
+            )}
         </section>
         {!game.isPlayed && !isWithinOneHour && h2hStats && h2hStats.totalMatches > 0 && (
             <div class="h2h-row">
@@ -2623,6 +2677,109 @@ const matchSchema = {
             grid-template-columns: 1fr;
         }
     }
+    .cronica-cuerpo {
+        padding: clamp(1rem, 3.5vw, 1.5rem);
+        line-height: 1.8;
+        color: rgba(220, 225, 230, 0.9);
+        font-size: clamp(0.92rem, 2.6vw, 1.05rem);
+        overflow-wrap: break-word;
+        text-wrap: pretty;
+        text-align: justify;
+    }
+
+    .cronica-cuerpo :global(p) {
+        margin: 0 0 1.1rem;
+    }
+
+    .cronica-cuerpo :global(p:last-child) {
+        margin-bottom: 0;
+    }
+
+    .cronica-cuerpo :global(h2),
+    .cronica-cuerpo :global(h3),
+    .cronica-cuerpo :global(h4) {
+        font-family: "Cinzel", serif;
+        color: #d4a843;
+        text-align: left;
+        text-wrap: balance;
+        font-size: clamp(1.15rem, 2.8vw, 1.4rem);
+        margin: 1.8rem 0 0.8rem;
+    }
+
+    .cronica-cuerpo :global(a) {
+        color: #d4a843;
+        text-decoration: none;
+    }
+
+    .cronica-cuerpo :global(a:hover) {
+        text-decoration: underline;
+    }
+
+    .cronica-cuerpo :global(img) {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1.2rem auto;
+    }
+
+    .cronica-mas {
+        margin-top: 0.4rem;
+    }
+
+    .cronica-mas > :global(div) {
+        padding-top: 1.1rem;
+    }
+
+    .cronica-toggle {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: #d4a843;
+        font-family: "Cinzel", serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.5rem 0.9rem;
+        border: 1px solid rgba(212, 168, 67, 0.35);
+        border-radius: 4px;
+        background: rgba(212, 168, 67, 0.06);
+        transition: all 0.3s ease;
+    }
+
+    .cronica-toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .cronica-toggle:hover {
+        background: rgba(212, 168, 67, 0.14);
+        border-color: rgba(212, 168, 67, 0.6);
+    }
+
+    .cronica-toggle-flecha {
+        font-size: 0.7rem;
+        transition: transform 0.3s ease;
+    }
+
+    .cronica-mas[open] .cronica-toggle-flecha {
+        transform: rotate(180deg);
+    }
+
+    .cronica-toggle-cerrar {
+        display: none;
+    }
+
+    .cronica-mas[open] .cronica-toggle-abrir {
+        display: none;
+    }
+
+    .cronica-mas[open] .cronica-toggle-cerrar {
+        display: inline;
+    }
+
     .section-header {
         background: transparent;
         color: #d4a843;
