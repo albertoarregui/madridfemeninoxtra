@@ -1,0 +1,134 @@
+---
+interface Props {
+    visible: string;
+    resto?: string;
+}
+const { visible, resto = "" } = Astro.props;
+---
+
+<div class="ficha-texto">
+    <div set:html={visible} />
+    {
+        resto && (
+            <details class="ficha-mas">
+                <summary class="ficha-toggle">
+                    <span class="ficha-toggle-abrir">Seguir leyendo</span>
+                    <span class="ficha-toggle-cerrar">Leer menos</span>
+                    <span class="ficha-toggle-flecha" aria-hidden="true">▾</span>
+                </summary>
+                <div set:html={resto} />
+            </details>
+        )
+    }
+</div>
+
+<style>
+    .ficha-texto {
+        padding: clamp(0.75rem, 3vw, 1rem) clamp(0.9rem, 4vw, 1.25rem);
+        line-height: 1.75;
+        font-size: clamp(0.92rem, 2.6vw, 1.05rem);
+        overflow-wrap: break-word;
+        text-wrap: pretty;
+        text-align: justify;
+        box-sizing: border-box;
+    }
+
+    .ficha-texto :global(p) {
+        margin: 0 0 1rem;
+    }
+
+    .ficha-texto :global(p:last-child) {
+        margin-bottom: 0;
+    }
+
+    .ficha-texto :global(h2),
+    .ficha-texto :global(h3),
+    .ficha-texto :global(h4) {
+        font-family: "Cinzel", serif;
+        color: #d4a843;
+        text-align: left;
+        text-wrap: balance;
+        font-size: clamp(1.1rem, 2.6vw, 1.3rem);
+        margin: 1.6rem 0 0.7rem;
+    }
+
+    .ficha-texto :global(a) {
+        color: #d4a843;
+        text-decoration: none;
+    }
+
+    .ficha-texto :global(a:hover) {
+        text-decoration: underline;
+    }
+
+    .ficha-texto :global(img) {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 1.1rem auto;
+    }
+
+    .ficha-texto :global(ul),
+    .ficha-texto :global(ol) {
+        margin: 0 0 1rem 1.4rem;
+        text-align: left;
+    }
+
+    .ficha-mas {
+        margin-top: 0.4rem;
+    }
+
+    .ficha-mas > :global(div) {
+        padding-top: 1rem;
+    }
+
+    .ficha-toggle {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: #d4a843;
+        font-family: "Cinzel", serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.5rem 0.9rem;
+        border: 1px solid rgba(212, 168, 67, 0.35);
+        border-radius: 4px;
+        background: rgba(212, 168, 67, 0.06);
+        transition: all 0.3s ease;
+    }
+
+    .ficha-toggle::-webkit-details-marker {
+        display: none;
+    }
+
+    .ficha-toggle:hover {
+        background: rgba(212, 168, 67, 0.14);
+        border-color: rgba(212, 168, 67, 0.6);
+    }
+
+    .ficha-toggle-flecha {
+        font-size: 0.7rem;
+        transition: transform 0.3s ease;
+    }
+
+    .ficha-mas[open] .ficha-toggle-flecha {
+        transform: rotate(180deg);
+    }
+
+    .ficha-toggle-cerrar {
+        display: none;
+    }
+
+    .ficha-mas[open] .ficha-toggle-abrir {
+        display: none;
+    }
+
+    .ficha-mas[open] .ficha-toggle-cerrar {
+        display: inline;
+    }
+</style>

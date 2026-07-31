@@ -16,6 +16,7 @@ import { getAssetUrl } from "../../utils/assets";
 import { getMatchStatus } from "../../utils/date-helper";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { breadcrumbSchema } from "../../utils/seo";
+import { fetchCronicaPartido } from "../../utils/fichas";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 import GaleriaGrid from "../../components/GaleriaGrid.astro";
 import { fetchGalleryForMatch, photoUrl, galleryPageHref, fetchPlayerNames, photoAlt } from "../../utils/galerias";
@@ -302,42 +303,9 @@ if (isLiveOrPlayed) {
     cronica += ` En esta página podrás seguir el resultado en directo, las alineaciones, los cambios, las estadísticas y la crónica completa del encuentro en cuanto arranque.`;
 }
 
-let cronicaHtml = "";
-let cronicaVisible = "";
-let cronicaResto = "";
-try {
-    const { contentfulClient } = await import("../../lib/contentful");
-    const entries = await contentfulClient.getEntries({
-        content_type: "noticia",
-        "fields.focusType": "match",
-        order: ["-sys.createdAt"] as any,
-        limit: 100,
-    });
-    const claves = [String(game.id_partido), String(slug)].filter(Boolean);
-    const entrada = entries.items.find((item: any) => {
-        const ref = String(
-            item.fields?.referenceId ?? item.fields?.id ?? "",
-        ).trim();
-        return ref !== "" && claves.includes(ref);
-    });
-    if (entrada && (entrada as any).fields?.body) {
-        const { documentToHtmlString } = await import(
-            "@contentful/rich-text-html-renderer"
-        );
-        cronicaHtml = documentToHtmlString((entrada as any).fields.body);
-        const parrafos = cronicaHtml.match(/<p>[\s\S]*?<\/p>/g) || [];
-        if (parrafos.length > 2) {
-            const corte =
-                cronicaHtml.indexOf(parrafos[1]) + parrafos[1].length;
-            cronicaVisible = cronicaHtml.slice(0, corte);
-            cronicaResto = cronicaHtml.slice(corte);
-        } else {
-            cronicaVisible = cronicaHtml;
-        }
-    }
-} catch (e) {
-    console.warn("Error cargando crónica de Contentful:", e);
-}
+const fichaCronica = await fetchCronicaPartido([game.id_partido, slug]);
+const cronicaVisible = fichaCronica?.visible ?? "";
+const cronicaResto = fichaCronica?.resto ?? "";
 const tieneCronica = Boolean(cronicaVisible);
 
 const seoTitle = isLiveOrPlayed

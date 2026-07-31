@@ -1,4 +1,6 @@
 ---
+import FichaTexto from "../../components/FichaTexto.astro";
+import { fetchFicha } from "../../utils/fichas";
 import Layout from "../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../utils/seo";
 import { fetchRivalsDirectly, slugify } from "../../utils/rivales";
@@ -202,6 +204,7 @@ if (rt && rt.pj) {
     bioParts.push(`Aquí encontrarás el historial y las estadísticas de los enfrentamientos entre el Real Madrid Femenino y ${rival.nombre}.`);
 }
 const bio = bioParts.join(" ");
+const ficha = await fetchFicha("club", [slug, rival.id_club]);
 
 const rivalSchema = {
     "@context": "https://schema.org",
@@ -302,7 +305,11 @@ const seoDescription = (rt && rt.pj)
         <section class="profile-card" style="margin:0 0 1.25rem;">
             <h2 class="card-title">{isRealMadrid ? "EL REAL MADRID FEMENINO" : `HISTORIAL CONTRA ${rival.nombre.toUpperCase()}`}</h2>
             <div class="card-body">
-                <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                {ficha ? (
+                    <FichaTexto visible={ficha.visible} resto={ficha.resto} />
+                ) : (
+                    <p style="margin:0;padding:clamp(0.75rem,3vw,1rem) clamp(0.9rem,4vw,1.25rem);line-height:1.75;font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;box-sizing:border-box;">{bio}</p>
+                )}
             </div>
         </section>
         <div class="rival-grid">
