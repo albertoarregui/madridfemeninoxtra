@@ -20,6 +20,7 @@ const { slug } = Astro.params;
 let noticia: any = null;
 let noticiaId: string | null = null;
 let noticiaCreatedAt: string | null = null;
+let noticiaUpdatedAt: string | null = null;
 let relatedNoticias: any[] = [];
 
 try {
@@ -35,6 +36,7 @@ try {
         noticia = entries.items[0].fields;
         noticiaId = entries.items[0].sys.id;
         noticiaCreatedAt = entries.items[0].sys.createdAt;
+        noticiaUpdatedAt = entries.items[0].sys.updatedAt;
 
         if (noticia?.category && noticiaId) {
             try {
@@ -375,6 +377,9 @@ const matchRowsOrdered = posOrder
     .map((k) => ({ key: k, players: matchRows[k] || [] }))
     .filter((r) => r.players.length > 0);
 const publishDateISO = new Date(noticia?.publishDate || noticiaCreatedAt || '').toISOString();
+const modifiedDateISO = noticiaUpdatedAt
+    ? new Date(noticiaUpdatedAt).toISOString()
+    : publishDateISO;
 const articleUrl = `https://www.madridfemeninoxtra.com/noticias/${slug}`;
 const categorySlug = (category || 'actualidad').toLowerCase().replace(/\s+/g, '-');
 
@@ -396,7 +401,7 @@ const newsSchema = {
     description: subtitle || title,
     image: featuredImageUrl ? [featuredImageUrl] : [],
     datePublished: publishDateISO,
-    dateModified: publishDateISO,
+    dateModified: modifiedDateISO,
     author: author
         ? { "@type": "Person", name: author }
         : { "@type": "Organization", name: "Madrid Femenino Xtra", url: "https://www.madridfemeninoxtra.com" },
@@ -465,8 +470,13 @@ const newsSchema = {
         slot="head"
     />
     <meta
+        property="article:modified_time"
+        content={modifiedDateISO}
+        slot="head"
+    />
+    <meta
         property="article:author"
-        content="Madrid Femenino Xtra"
+        content={author || "Madrid Femenino Xtra"}
         slot="head"
     />
     <meta name="twitter:image:alt" content={title} slot="head" />
@@ -1550,6 +1560,16 @@ const newsSchema = {
         border-radius: 0 12px 12px 0;
     }
 
+    .news-article-rich-text :global(h1),
+    .news-article-rich-text :global(h2),
+    .news-article-rich-text :global(h3),
+    .news-article-rich-text :global(h4),
+    .news-article-rich-text :global(h5),
+    .news-article-rich-text :global(h6) {
+        text-align: left;
+        text-wrap: balance;
+    }
+
     .news-article-rich-text :global(h1) {
         font-family: "Cinzel", serif;
         font-size: 2.8rem;
@@ -1599,9 +1619,22 @@ const newsSchema = {
         text-decoration: underline;
     }
 
+    .news-article-rich-text :global(p:empty) {
+        display: none;
+    }
+
+    .news-article-rich-text :global(p:has(+ iframe)),
+    .news-article-rich-text :global(p:has(+ figure)),
+    .news-article-rich-text :global(p:has(+ blockquote)),
+    .news-article-rich-text :global(p:has(+ .twitter-tweet)),
+    .news-article-rich-text :global(p:has(+ .instagram-media)),
+    .news-article-rich-text :global(p:has(+ .tiktok-embed)) {
+        margin-bottom: 1.4rem;
+    }
+
     .news-article-rich-text :global(iframe) {
         display: block;
-        margin: 2.5rem auto;
+        margin: 1.4rem auto;
         max-width: 100%;
         width: 100%;
         min-height: 400px;
@@ -1632,10 +1665,16 @@ const newsSchema = {
         justify-content: center;
     }
 
+    .news-article-rich-text :global(figure img),
+    .media-centered img {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
     .news-article-rich-text :global(figcaption) {
         font-size: 0.85rem;
         color: rgba(200,210,220,0.45);
-        margin-top: 0.8rem;
+        margin-top: 0.45rem;
         font-style: italic;
         text-align: center;
         font-family: inherit;
@@ -1643,9 +1682,13 @@ const newsSchema = {
         display: block;
     }
 
-    .news-article-rich-text :global(.twitter-tweet) {
+    .news-article-rich-text :global(.twitter-tweet),
+    .news-article-rich-text :global(.instagram-media),
+    .news-article-rich-text :global(.tiktok-embed) {
         margin-left: auto !important;
         margin-right: auto !important;
+        margin-top: 1.4rem !important;
+        margin-bottom: 1.4rem !important;
     }
 
     .news-article-rich-text :global(blockquote p) {
@@ -1669,7 +1712,7 @@ const newsSchema = {
     .photo-caption {
         font-size: 0.85rem;
         color: rgba(200,210,220,0.45);
-        margin-top: 0.75rem;
+        margin-top: 0.45rem;
         text-align: center;
         font-weight: 400;
     }

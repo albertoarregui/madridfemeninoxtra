@@ -57,6 +57,56 @@ try {
 	console.error("Error fetching news for home:", e);
 }
 
+const CAMPOS_PARTIDO_STATS = [
+	"temporada_nombre",
+	"competicion_nombre",
+	"goles_rm",
+	"goles_rival",
+	"penaltis",
+	"resultado",
+	"asistencia",
+	"capacidad",
+	"estadio",
+	"faltas_cometidas",
+	"faltas_recibidas",
+	"amarillas_rm",
+	"amarillas_rival",
+	"rojas_rm",
+	"rojas_rival",
+	"penaltis_rm",
+	"penaltis_rival",
+	"club_local",
+	"club_visitante",
+	"fecha",
+] as const;
+
+const CAMPOS_GOL_STATS = [
+	"id_gol",
+	"minuto",
+	"temporada",
+	"competicion",
+	"nombre_goleadora",
+	"foto_goleadora",
+	"nombre_asistente",
+	"foto_asistente",
+] as const;
+
+function proyectar<T extends Record<string, any>>(
+	filas: T[],
+	campos: readonly string[],
+): T[] {
+	return filas.map((fila) => {
+		const salida: Record<string, any> = {};
+		for (const campo of campos) {
+			if (fila[campo] !== undefined) salida[campo] = fila[campo];
+		}
+		return salida as T;
+	});
+}
+
+const statsMatches = proyectar(gamesData, CAMPOS_PARTIDO_STATS);
+const statsGoals = proyectar(allGoals, CAMPOS_GOL_STATS);
+
 const uniqueSeasons = [
 	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
 ]
@@ -133,10 +183,14 @@ try {
 ---
 
 <Layout
-	title="Madrid Femenino Xtra | Noticias, Actualidad y Estadísticas del Real Madrid Femenino"
+	title="Madrid Femenino Xtra | Noticias y actualidad del Real Madrid Femenino"
 	description="Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!"
 >
 	<script type="application/ld+json" set:html={JSON.stringify(schema)} />
+
+	<h1 class="titulo-seo">
+		Real Madrid Femenino: noticias, resultados y estadísticas
+	</h1>
 
 	<section class="hero">
 		<div class="hero-text">
@@ -222,8 +276,8 @@ try {
 						</p>
 					</div>
 					<ClubStatsDashboard
-						matches={gamesData}
-						goals={allGoals}
+						matches={statsMatches}
+						goals={statsGoals}
 						seasons={uniqueSeasons}
 						competitions={uniqueCompetitions}
 						client:load
@@ -343,6 +397,17 @@ try {
 </Layout>
 
 <style>
+	.titulo-seo {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
 	.sidebar-map-link {
 		display: block;
 		text-decoration: none;
