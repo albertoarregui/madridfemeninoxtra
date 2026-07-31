@@ -499,7 +499,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                 <>
                     <div ref={captureRef} className="cmp-capture-wrap">
                         <div className="cmp-cap-header">
-                            <img src="/logo_header.png" alt="Madrid Femenino Xtra" className="cmp-cap-logo" />
+                            <img src="/icon.webp" alt="Madrid Femenino Xtra" className="cmp-cap-logo" />
                             <div className="cmp-cap-players">
                                 <div className="cmp-cap-player">
                                     <div className="cmp-cap-img-wrap">

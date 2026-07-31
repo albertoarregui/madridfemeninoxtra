@@ -122,7 +122,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                             <div className="archive-inner">
                                 <div className="archive-image">
                                     <img
-                                        src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}?fm=webp&w=760&h=480&q=80&fit=fill` : "/assets/background/stadium.webp"}
+                                        src={noticia.featuredImage?.fields?.file?.url ? `https:${noticia.featuredImage.fields.file.url}?fm=webp&w=760&h=480&q=80&fit=fill` : "/og.png"}
                                         alt={noticia.title}
                                         loading="lazy"
                                     />

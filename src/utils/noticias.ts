@@ -12,7 +12,7 @@ export interface NoticiaCard {
     imageUrl: string | null;
 }
 
-const FALLBACK_IMAGE = "https://media.madridfemeninoxtra.com/background/stadium.webp";
+const FALLBACK_IMAGE = "https://www.madridfemeninoxtra.com/og.png";
 
 function mapNoticia(item: any): NoticiaCard {
     const f = item.fields || {};
