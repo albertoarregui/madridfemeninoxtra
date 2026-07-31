@@ -337,9 +337,10 @@ if (focusType === "club") {
 if (focusType === "match" && contentReferenceId) {
     try {
         const allMatches = await fetchGamesDirectly();
-        matchData = allMatches.find(
-            (m: any) => String(m.id_partido) === String(contentReferenceId),
-        );
+        const refPartido = String(contentReferenceId).trim();
+        matchData =
+            allMatches.find((m: any) => String(m.id_partido) === refPartido) ||
+            allMatches.find((m: any) => String(m.slug) === refPartido);
         if (matchData) {
             const { getPlayersDbClient } = await import("../../db/client");
             const client = await getPlayersDbClient();
@@ -381,6 +382,10 @@ const modifiedDateISO = noticiaUpdatedAt
     ? new Date(noticiaUpdatedAt).toISOString()
     : publishDateISO;
 const articleUrl = `https://www.madridfemeninoxtra.com/noticias/${slug}`;
+const canonicalPath =
+    focusType === "match" && matchData?.slug
+        ? `/partidos/${matchData.slug}`
+        : undefined;
 const categorySlug = (category || 'actualidad').toLowerCase().replace(/\s+/g, '-');
 
 const breadcrumbSchema = {
@@ -450,6 +455,7 @@ const newsSchema = {
     title={`${title} | Madrid Femenino Xtra`}
     description={subtitle || `${title} - Madrid Femenino Xtra`}
     image={featuredImageUrl || undefined}
+    canonical={canonicalPath}
     noBg={true}
 >
     <script

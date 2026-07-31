@@ -36,6 +36,7 @@ interface Props {
 	showAds?: boolean;
 	author?: string;
 	noBg?: boolean;
+	canonical?: string;
 }
 const {
 	title = "Noticias, actualidad y estadísticas del Real Madrid femenino | Madrid Femenino Xtra",
@@ -45,7 +46,12 @@ const {
 	showAds = true,
 	author = "Madrid Femenino Xtra",
 	noBg = false,
+	canonical,
 } = Astro.props;
+
+const canonicalUrl = canonical
+	? new URL(canonical, Astro.site).href
+	: new URL(Astro.url.pathname, Astro.site).href;
 
 const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
 
@@ -87,7 +93,7 @@ const siteSchema = {
 		<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
 		<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
 		<link rel="manifest" href="/site.webmanifest" />
-		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href} />
+		<link rel="canonical" href={canonicalUrl} />
 		<script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
 		<link rel="alternate" type="application/rss+xml" title="Madrid Femenino Xtra Noticias" href="/rss.xml" />
 		<link rel="preconnect" href="https://i.ytimg.com" />
