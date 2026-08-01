@@ -54,10 +54,14 @@ async function renderizar(entrada: any): Promise<FichaTexto | null> {
 export async function fetchFicha(
     tipo: TipoFicha,
     claves: (string | number | null | undefined)[],
-): Promise<FichaTexto | null> {
+): Promise<string | null> {
     const items = await listar('ficha', tipo);
     if (!items.length) return null;
-    return renderizar(buscar(items, claves));
+    const entrada = buscar(items, claves);
+    if (!entrada?.fields?.body) return null;
+    const { documentToHtmlString } = await import('@contentful/rich-text-html-renderer');
+    const html = documentToHtmlString(entrada.fields.body);
+    return html.trim() ? html : null;
 }
 
 export async function fetchCronicaPartido(
