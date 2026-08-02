@@ -72,24 +72,41 @@ const contentReferenceId = referenceId || id;
 
 const TIPOS_WIDGET = ["player", "coach", "referee", "club", "match"] as const;
 
-const referenciasWidget = String(referenceId ?? id ?? "")
+const esTipoValido = (t: string): boolean =>
+    (TIPOS_WIDGET as readonly string[]).includes(String(t).toLowerCase().trim());
+
+const tiposDeclarados = String(focusType ?? "")
+    .split(/[,;\n]+/)
+    .map((t: string) => t.trim().toLowerCase())
+    .filter(Boolean);
+
+const tipoPrincipal = tiposDeclarados.find(esTipoValido) || "";
+
+const refsCrudas = String(referenceId ?? id ?? "")
     .split(/[,;\n]+/)
     .map((r: string) => r.trim())
-    .filter(Boolean)
-    .map((r: string) => {
+    .filter(Boolean);
+
+const referenciasWidget = refsCrudas
+    .map((r: string, i: number) => {
         const m = r.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
-        if (m && (TIPOS_WIDGET as readonly string[]).includes(m[1].toLowerCase())) {
+        if (m && esTipoValido(m[1])) {
             return { tipo: m[1].toLowerCase(), ref: m[2].trim() };
         }
-        return { tipo: focusType, ref: r };
+        const enParalelo =
+            tiposDeclarados.length === refsCrudas.length &&
+            esTipoValido(tiposDeclarados[i])
+                ? tiposDeclarados[i]
+                : tipoPrincipal;
+        return { tipo: enParalelo, ref: r };
     })
-    .filter((r: any) => r.ref);
+    .filter((r: any) => r.ref && r.tipo);
 
 const refsDe = (tipo: string): string[] => {
     const propias = referenciasWidget
         .filter((r: any) => r.tipo === tipo)
         .map((r: any) => r.ref);
-    return propias.length ? propias : focusType === tipo ? [""] : [];
+    return propias.length ? propias : tipoPrincipal === tipo ? [""] : [];
 };
 
 const featuredImageUrl = n.featuredImage?.fields?.file?.url
@@ -475,7 +492,7 @@ const modifiedDateISO = noticiaUpdatedAt
     : publishDateISO;
 const articleUrl = `https://www.madridfemeninoxtra.com/noticias/${slug}`;
 const canonicalPath =
-    focusType === "match" && matchData?.slug
+    tipoPrincipal === "match" && matchData?.slug
         ? `/partidos/${matchData.slug}`
         : undefined;
 const categorySlug = (category || 'actualidad').toLowerCase().replace(/\s+/g, '-');
