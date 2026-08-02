@@ -342,26 +342,32 @@ if (focusType === "match" && contentReferenceId) {
             allMatches.find((m: any) => String(m.id_partido) === refPartido) ||
             allMatches.find((m: any) => String(m.slug) === refPartido);
         if (matchData) {
-            const { getPlayersDbClient } = await import("../../db/client");
-            const client = await getPlayersDbClient();
-            if (client) {
-                const lineupResult = await client.execute({
-                    sql: `SELECT al.*, j.nombre, j.posicion, j.foto_url,
-                            (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = al.id_partido AND g.goleadora = al.id_jugadora) as goles,
-                            (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = al.id_partido AND g.asistente = al.id_jugadora) as asistencias
-                          FROM alineaciones al
-                          JOIN jugadoras j ON al.id_jugadora = j.id_jugadora
-                          WHERE al.id_partido = ? AND al.titular = 1
-                          ORDER BY j.posicion`,
-                    args: [contentReferenceId],
-                });
-                matchLineup = (lineupResult?.rows || []) as any[];
-            }
+            const { fetchMatchLineups } = await import("../../utils/partidos");
+            const alineacion = await fetchMatchLineups(matchData.id_partido);
+            matchLineup = (alineacion || []).map((p: any) => ({
+                ...p,
+                nombre: p.name ?? p.nombre ?? "",
+                posicion: p.pos ?? p.posicion ?? "",
+                foto_url: p.imageUrl ?? p.foto_url ?? "",
+                goles: p.goals ?? p.goles ?? 0,
+                asistencias: p.assists ?? p.asistencias ?? 0,
+            }));
         }
     } catch (e) {
         console.warn("Error fetching match data:", e);
     }
 }
+
+const matchEsLocalRM =
+    matchData?.club_local?.toLowerCase().includes("real madrid") ?? false;
+const matchRivalName = matchData
+    ? (matchEsLocalRM ? matchData.club_visitante : matchData.club_local) || ""
+    : "";
+const matchRivalShield = matchData
+    ? matchEsLocalRM
+        ? matchData.visitante_shield_url || matchData.visitante_foto_url
+        : matchData.local_shield_url || matchData.local_foto_url
+    : "";
 
 const posOrder = ["Portera", "Defensa", "Centrocampista", "Delantera"];
 const matchRows: Record<string, any[]> = {};
@@ -1159,18 +1165,15 @@ const newsSchema = {
                                         <div class="mh-team">
                                             <img
                                                 src={getRivalShieldUrl({
-                                                    nombre: matchData.rival,
-                                                    foto_url:
-                                                        matchData.rival_foto_url,
+                                                    nombre: matchRivalName,
+                                                    foto_url: matchRivalShield,
                                                 })}
-                                                alt={matchData.rival}
+                                                alt={matchRivalName}
                                                 class="mh-shield"
                                                 onerror="this.style.opacity='0'"
                                             />
                                             <span class="mh-name">
-                                                {(
-                                                    matchData.rival || ""
-                                                ).toUpperCase()}
+                                                {matchRivalName.toUpperCase()}
                                             </span>
                                         </div>
                                     </div>
