@@ -371,17 +371,50 @@ const matchRivalShield = matchData
 
 const posOrder = ["Portera", "Defensa", "Centrocampista", "Delantera"];
 const matchRows: Record<string, any[]> = {};
+const lineaDe = (pos: string): string => {
+    const p = (pos || "").toLowerCase();
+    if (/porter|guardameta|\bgk\b/.test(p)) return "Portera";
+    if (/lateral|central|defens|carriler/.test(p)) return "Defensa";
+    if (/extremo|delanter|atacante|punta|forward|ariete/.test(p))
+        return "Delantera";
+    return "Centrocampista";
+};
+
+const ladoDe = (pos: string): number => {
+    const p = (pos || "").toLowerCase();
+    if (/izquierd|\bizq|left/.test(p)) return 0;
+    if (/derech|\bder\b|right/.test(p)) return 2;
+    return 1;
+};
+
+const esDeBanda = (pos: string): boolean =>
+    /lateral|carriler|extremo|banda|winger/i.test(pos || "");
+
+const colocarLinea = (jugadoras: any[]): any[] => {
+    const conLado = jugadoras.some((p) => ladoDe(p.posicion) !== 1);
+    if (conLado) {
+        return jugadoras
+            .map((p, i) => ({ p, i }))
+            .sort(
+                (a, b) => ladoDe(a.p.posicion) - ladoDe(b.p.posicion) || a.i - b.i,
+            )
+            .map(({ p }) => p);
+    }
+    const bandas = jugadoras.filter((p) => esDeBanda(p.posicion));
+    const centro = jugadoras.filter((p) => !esDeBanda(p.posicion));
+    if (bandas.length === 2 && centro.length > 0) {
+        return [bandas[0], ...centro, bandas[1]];
+    }
+    return jugadoras;
+};
+
 matchLineup.forEach((p: any) => {
-    const pos = p.posicion || "Centrocampista";
-    const key =
-        posOrder.find((o) =>
-            pos.toLowerCase().startsWith(o.slice(0, 4).toLowerCase()),
-        ) || "Centrocampista";
+    const key = lineaDe(p.posicion);
     if (!matchRows[key]) matchRows[key] = [];
     matchRows[key].push(p);
 });
 const matchRowsOrdered = posOrder
-    .map((k) => ({ key: k, players: matchRows[k] || [] }))
+    .map((k) => ({ key: k, players: colocarLinea(matchRows[k] || []) }))
     .filter((r) => r.players.length > 0);
 const publishDateISO = new Date(noticia?.publishDate || noticiaCreatedAt || '').toISOString();
 const modifiedDateISO = noticiaUpdatedAt
