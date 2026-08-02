@@ -311,7 +311,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     .news-list-container {
                         display: grid !important;
                         grid-template-columns: repeat(2, minmax(0, 1fr));
-                        gap: 0.85rem !important;
+                        column-gap: 0.85rem !important;
+                        row-gap: 1.35rem !important;
                         align-items: start;
                     }
                     .archive-card {
@@ -377,6 +378,18 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                         font-size: 0.78rem;
                         -webkit-line-clamp: 2;
                         margin-top: 0.4rem;
+                    }
+                }
+                @media (hover: none) {
+                    .archive-card::before {
+                        display: none;
+                    }
+                    .archive-card:hover {
+                        transform: none;
+                        box-shadow: none;
+                    }
+                    .archive-card:hover .archive-image img {
+                        transform: none;
                     }
                 }
                 .news-search-wrapper {
