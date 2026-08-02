@@ -70,6 +70,28 @@ const { title, subtitle, player, category, focusType, referenceId, id, author } 
 
 const contentReferenceId = referenceId || id;
 
+const TIPOS_WIDGET = ["player", "coach", "referee", "club", "match"] as const;
+
+const referenciasWidget = String(referenceId ?? id ?? "")
+    .split(/[,;\n]+/)
+    .map((r: string) => r.trim())
+    .filter(Boolean)
+    .map((r: string) => {
+        const m = r.match(/^([a-zA-Z]+)\s*:\s*(.+)$/);
+        if (m && (TIPOS_WIDGET as readonly string[]).includes(m[1].toLowerCase())) {
+            return { tipo: m[1].toLowerCase(), ref: m[2].trim() };
+        }
+        return { tipo: focusType, ref: r };
+    })
+    .filter((r: any) => r.ref);
+
+const refsDe = (tipo: string): string[] => {
+    const propias = referenciasWidget
+        .filter((r: any) => r.tipo === tipo)
+        .map((r: any) => r.ref);
+    return propias.length ? propias : focusType === tipo ? [""] : [];
+};
+
 const featuredImageUrl = n.featuredImage?.fields?.file?.url
     ? `https:${n.featuredImage.fields.file.url}`
     : "https://www.madridfemeninoxtra.com/og.png";
@@ -134,51 +156,58 @@ let refereeData: any = null;
 let matchData: any = null;
 let matchLineup: any[] = [];
 
-if (focusType === "player" && (contentReferenceId || player)) {
+const playerWidgets: any[] = [];
+for (const ref of refsDe("player")) {
     const allPlayers = await fetchPlayersDirectly();
-    playerData =
+    const buscado = ref || String(contentReferenceId ?? "");
+    const datos =
+        allPlayers.find((p) => String(p.id_jugadora) === buscado) ||
         allPlayers.find(
             (p) =>
-                String(p.nombre).toLowerCase() === String(player).toLowerCase(),
+                String(p.nombre).toLowerCase() ===
+                String(buscado || player).toLowerCase(),
         ) ||
         allPlayers.find((p) =>
             String(p.nombre)
                 .toLowerCase()
-                .includes(String(player || "").toLowerCase()),
-        ) ||
-        allPlayers.find(
-            (p) => String(p.id_jugadora) === String(contentReferenceId),
+                .includes(String(buscado || player || "").toLowerCase()),
         );
+    if (!datos) continue;
 
-    if (playerData) {
-        const statsResponse = await fetchPlayerStats(
-            playerData.id_jugadora,
-            playerData.posicion === "Portera",
-        );
-
-        if (statsResponse) {
-            playerStats = {
-                ...statsResponse,
-                current_official: statsResponse.total_carrera_oficial || {
-                    partidos: 0,
-                    minutos: 0,
-                    goles: 0,
-                    asistencias: 0,
-                    porterias_cero: 0,
-                },
-                season_name: "TOTAL (OFICIAL)",
-            };
-        }
-    }
+    const statsResponse = await fetchPlayerStats(
+        datos.id_jugadora,
+        datos.posicion === "Portera",
+    );
+    const stats = statsResponse
+        ? {
+              ...statsResponse,
+              current_official: statsResponse.total_carrera_oficial || {
+                  partidos: 0,
+                  minutos: 0,
+                  goles: 0,
+                  asistencias: 0,
+                  porterias_cero: 0,
+              },
+              season_name: "TOTAL (OFICIAL)",
+          }
+        : null;
+    playerWidgets.push({ playerData: datos, playerStats: stats });
 }
+playerData = playerWidgets[0]?.playerData ?? null;
+playerStats = playerWidgets[0]?.playerStats ?? null;
 
-if (focusType === "coach") {
+const coachWidgets: any[] = [];
+for (const ref of refsDe("coach")) {
     const coaches = await fetchCoachesDirectly();
-    coachData = contentReferenceId
-        ? coaches.find(
-              (c) => String(c.id_entrenador) === String(contentReferenceId),
+    const buscado = ref || String(contentReferenceId ?? "");
+    coachData = buscado
+        ? coaches.find((c) => String(c.id_entrenador) === buscado) ||
+          coaches.find((c) => String(c.slug) === buscado) ||
+          coaches.find((c) =>
+              String(c.nombre).toLowerCase().includes(buscado.toLowerCase()),
           )
         : coaches.find((c) => String(c.nombre).toLowerCase().includes("toril"));
+    coachStats = null;
 
     if (coachData) {
         const statsResp = await fetchCoachStats(coachData.id_entrenador);
@@ -245,21 +274,32 @@ if (focusType === "coach") {
             };
         }
     }
+    if (coachData) coachWidgets.push({ coachData, coachStats });
 }
+coachData = coachWidgets[0]?.coachData ?? null;
+coachStats = coachWidgets[0]?.coachStats ?? null;
 
-if (focusType === "referee") {
+const refereeWidgets: any[] = [];
+for (const ref of refsDe("referee")) {
     const referees = await fetchRefereesDirectly();
-    refereeData = contentReferenceId
-        ? referees.find(
-              (r) => String(r.id_arbitra) === String(contentReferenceId),
+    const buscado = ref || String(contentReferenceId ?? "");
+    const datos = buscado
+        ? referees.find((r) => String(r.id_arbitra) === buscado) ||
+          referees.find((r) =>
+              String(r.nombre).toLowerCase().includes(buscado.toLowerCase()),
           )
         : referees[0];
+    if (datos) refereeWidgets.push({ refereeData: datos });
 }
+refereeData = refereeWidgets[0]?.refereeData ?? null;
 
-if (focusType === "club") {
+const clubWidgets: any[] = [];
+for (const ref of refsDe("club")) {
+    const contentReferenceId = ref || String((referenceId ?? id) ?? "");
     const rivals = await fetchRivalsDirectly();
     clubData = contentReferenceId
-        ? rivals.find((r) => String(r.id_club) === String(contentReferenceId))
+        ? rivals.find((r) => String(r.id_club) === String(contentReferenceId)) ||
+          rivals.find((r) => String(r.slug) === String(contentReferenceId))
         : rivals[0];
 
     const isRMRequested =
@@ -332,45 +372,12 @@ if (focusType === "club") {
             }
         }
     }
+    if (clubData) clubWidgets.push({ clubData });
 }
-
-if (focusType === "match" && contentReferenceId) {
-    try {
-        const allMatches = await fetchGamesDirectly();
-        const refPartido = String(contentReferenceId).trim();
-        matchData =
-            allMatches.find((m: any) => String(m.id_partido) === refPartido) ||
-            allMatches.find((m: any) => String(m.slug) === refPartido);
-        if (matchData) {
-            const { fetchMatchLineups } = await import("../../utils/partidos");
-            const alineacion = await fetchMatchLineups(matchData.id_partido);
-            matchLineup = (alineacion || []).map((p: any) => ({
-                ...p,
-                nombre: p.name ?? p.nombre ?? "",
-                posicion: p.pos ?? p.posicion ?? "",
-                foto_url: p.imageUrl ?? p.foto_url ?? "",
-                goles: p.goals ?? p.goles ?? 0,
-                asistencias: p.assists ?? p.asistencias ?? 0,
-            }));
-        }
-    } catch (e) {
-        console.warn("Error fetching match data:", e);
-    }
-}
-
-const matchEsLocalRM =
-    matchData?.club_local?.toLowerCase().includes("real madrid") ?? false;
-const matchRivalName = matchData
-    ? (matchEsLocalRM ? matchData.club_visitante : matchData.club_local) || ""
-    : "";
-const matchRivalShield = matchData
-    ? matchEsLocalRM
-        ? matchData.visitante_shield_url || matchData.visitante_foto_url
-        : matchData.local_shield_url || matchData.local_foto_url
-    : "";
+clubData = clubWidgets[0]?.clubData ?? null;
 
 const posOrder = ["Portera", "Defensa", "Centrocampista", "Delantera"];
-const matchRows: Record<string, any[]> = {};
+
 const lineaDe = (pos: string): string => {
     const p = (pos || "").toLowerCase();
     if (/porter|guardameta|\bgk\b/.test(p)) return "Portera";
@@ -408,14 +415,60 @@ const colocarLinea = (jugadoras: any[]): any[] => {
     return jugadoras;
 };
 
-matchLineup.forEach((p: any) => {
-    const key = lineaDe(p.posicion);
-    if (!matchRows[key]) matchRows[key] = [];
-    matchRows[key].push(p);
-});
-const matchRowsOrdered = posOrder
-    .map((k) => ({ key: k, players: colocarLinea(matchRows[k] || []) }))
-    .filter((r) => r.players.length > 0);
+const filasDeAlineacion = (alineacion: any[]) => {
+    const filas: Record<string, any[]> = {};
+    alineacion.forEach((p: any) => {
+        const key = lineaDe(p.posicion);
+        if (!filas[key]) filas[key] = [];
+        filas[key].push(p);
+    });
+    return posOrder
+        .map((k) => ({ key: k, players: colocarLinea(filas[k] || []) }))
+        .filter((r) => r.players.length > 0);
+};
+
+const matchWidgets: any[] = [];
+for (const ref of refsDe("match")) {
+    const buscado = ref || String(contentReferenceId ?? "").trim();
+    if (!buscado) continue;
+    try {
+        const allMatches = await fetchGamesDirectly();
+        const datos =
+            allMatches.find((m: any) => String(m.id_partido) === buscado) ||
+            allMatches.find((m: any) => String(m.slug) === buscado);
+        if (!datos) continue;
+
+        const { fetchMatchLineups } = await import("../../utils/partidos");
+        const alineacion = ((await fetchMatchLineups(datos.id_partido)) || []).map(
+            (p: any) => ({
+                ...p,
+                nombre: p.name ?? p.nombre ?? "",
+                posicion: p.pos ?? p.posicion ?? "",
+                foto_url: p.imageUrl ?? p.foto_url ?? "",
+                goles: p.goals ?? p.goles ?? 0,
+                asistencias: p.assists ?? p.asistencias ?? 0,
+            }),
+        );
+
+        const esLocalRM =
+            datos.club_local?.toLowerCase().includes("real madrid") ?? false;
+        matchWidgets.push({
+            matchData: datos,
+            matchLineup: alineacion,
+            matchRowsOrdered: filasDeAlineacion(alineacion),
+            matchRivalName:
+                (esLocalRM ? datos.club_visitante : datos.club_local) || "",
+            matchRivalShield: esLocalRM
+                ? datos.visitante_shield_url || datos.visitante_foto_url
+                : datos.local_shield_url || datos.local_foto_url,
+        });
+    } catch (e) {
+        console.warn("Error fetching match data:", e);
+    }
+}
+matchData = matchWidgets[0]?.matchData ?? null;
+matchLineup = matchWidgets[0]?.matchLineup ?? [];
+
 const publishDateISO = new Date(noticia?.publishDate || noticiaCreatedAt || '').toISOString();
 const modifiedDateISO = noticiaUpdatedAt
     ? new Date(noticiaUpdatedAt).toISOString()
@@ -770,7 +823,7 @@ const newsSchema = {
 
                     <div class="news-footer-widgets">
                         {
-                            focusType === "player" && (
+                            playerWidgets.map(({ playerData, playerStats }: any) => (
                                 <div class="dashboard-widget-card-refined">
                                     <div class="widget-top-info">
                                         <div class="widget-avatar-wrapper">
@@ -779,14 +832,14 @@ const newsSchema = {
                                                     playerData?.imageUrl ||
                                                     "https://media.madridfemeninoxtra.com/jugadoras/default.webp"
                                                 }
-                                                alt={player}
+                                                alt={playerData?.nombre || player}
                                                 class="widget-avatar"
                                             />
                                         </div>
                                         <div class="widget-name-box">
                                             <div class="widget-name-row">
                                                 <h3 class="widget-title-small">
-                                                    {player}
+                                                    {playerData?.nombre || player}
                                                 </h3>
                                                 {playerData?.iso && (
                                                     <img
@@ -871,11 +924,11 @@ const newsSchema = {
                                         VER PERFIL COMPLETO
                                     </a>
                                 </div>
-                            )
+                            ))
                         }
 
                         {
-                            focusType === "coach" && coachData && (
+                            coachWidgets.map(({ coachData, coachStats }: any) => (
                                 <div class="dashboard-widget-card-refined">
                                     <div class="widget-top-info">
                                         <div class="widget-avatar-wrapper">
@@ -955,11 +1008,11 @@ const newsSchema = {
                                         VER PERFIL COMPLETO
                                     </a>
                                 </div>
-                            )
+                            ))
                         }
 
                         {
-                            focusType === "referee" && refereeData && (
+                            refereeWidgets.map(({ refereeData }: any) => (
                                 <div class="dashboard-widget-card-refined">
                                     <div class="widget-top-info">
                                         <div class="widget-avatar-wrapper">
@@ -1060,11 +1113,11 @@ const newsSchema = {
                                         VER PERFIL COMPLETO
                                     </a>
                                 </div>
-                            )
+                            ))
                         }
 
                         {
-                            focusType === "club" && clubData && (
+                            clubWidgets.map(({ clubData }: any) => (
                                 <div class="dashboard-widget-card-refined club-widget">
                                     <div class="club-widget-header">
                                         <img
@@ -1149,11 +1202,11 @@ const newsSchema = {
                                             : "VER BALANCE COMPLETO"}
                                     </a>
                                 </div>
-                            )
+                            ))
                         }
 
                         {
-                            focusType === "match" && matchData && (
+                            matchWidgets.map(({ matchData, matchRowsOrdered, matchRivalName, matchRivalShield }: any) => (
                                 <div class="match-widget-full">
                                     <div class="match-header-scores">
                                         <div class="mh-team">
@@ -1226,7 +1279,7 @@ const newsSchema = {
                                                 </div>
                                             )}
 
-                                            {matchRowsOrdered.map((rowData) => (
+                                            {matchRowsOrdered.map((rowData: any) => (
                                                 <div class="pitch-row">
                                                     {rowData.players.map(
                                                         (p: any) => (
@@ -1314,7 +1367,7 @@ const newsSchema = {
                                         VER DETALLES DEL PARTIDO →
                                     </a>
                                 </div>
-                            )
+                            ))
                         }
                     </div>
 
@@ -1888,10 +1941,18 @@ const newsSchema = {
     }
 
     .news-footer-widgets {
-        display: flex;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+        justify-items: center;
+        align-items: start;
+        gap: clamp(1.25rem, 3vw, 2rem);
+        max-width: 1100px;
+        margin: 3rem auto 0;
         padding: 0 1.5rem 5rem;
-        margin-top: 3rem;
+    }
+
+    .news-footer-widgets:has(> .dashboard-widget-card-refined:only-child) {
+        grid-template-columns: minmax(0, 500px);
     }
 
     .dashboard-widget-card-refined {
