@@ -18,7 +18,7 @@ interface NewsArchiveProps {
     noticias: Noticia[];
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     const [selectedCategory, setSelectedCategory] = useState<string>('TODAS');
