@@ -75,14 +75,18 @@ export const getFlagCdnCode = (code: string | undefined): string => {
     };
     return threeToTwo[c] || c;
 };
-export function getFlagSrc(codeOrName: string | undefined): string {
-    if (!codeOrName) return "";
+export function getFlagSrc(codeOrName: string | undefined, iso?: string): string {
+    const raw = (codeOrName || '').trim();
+    const isoRaw = (iso || '').trim();
+    if (!raw && !isoRaw) return "";
 
-    const raw = codeOrName.trim();
-    const cdnCode = getFlagCdnCode(raw);
+    if (raw) {
+        const local = getAssetUrl('banderas', raw);
+        if (local && !local.includes('placeholder') && !local.startsWith('https://media.')) return local;
+    }
 
-    const local = getAssetUrl('banderas', raw);
-    if (local && !local.includes('placeholder') && !local.startsWith('https://media.')) return local;
+    const cdnCode = getFlagCdnCode(isoRaw || raw);
+    if (!/^[a-z]{2}(-[a-z]{3})?$/.test(cdnCode)) return "";
 
     return `https://flagcdn.com/w40/${cdnCode}.png`;
 }
