@@ -971,14 +971,10 @@ const newsSchema = {
                                                 )}
                                             </div>
                                             <span class="widget-subtitle-pos">
-                                                ENTRENADORA
+                                                Entrenador
                                             </span>
                                         </div>
                                     </div>
-                                    <p class="widget-season-label">
-                                        {coachStats?.season_name} · Competición
-                                        oficial
-                                    </p>
                                     <div class="widget-stats-grid-compact grid-4">
                                         <div class="widget-stat-unit">
                                             <span class="stat-num">
@@ -1009,13 +1005,9 @@ const newsSchema = {
                                         </div>
                                         <div class="widget-stat-unit">
                                             <span class="stat-num">
-                                                {coachStats?.current_official
-                                                    ?.goles_favor ?? 0}
-                                                -
-                                                {coachStats?.current_official
-                                                    ?.goles_contra ?? 0}
+                                                {`${coachStats?.current_official?.goles_favor ?? 0}-${coachStats?.current_official?.goles_contra ?? 0}`}
                                             </span>
-                                            <span class="stat-tag">GF-GC</span>
+                                            <span class="stat-tag nowrap-tag">GF-GC</span>
                                         </div>
                                     </div>
                                     <a
@@ -1959,17 +1951,154 @@ const newsSchema = {
 
     .news-footer-widgets {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+        grid-template-columns: minmax(0, 500px);
+        justify-content: center;
         justify-items: center;
-        align-items: start;
-        gap: clamp(1.25rem, 3vw, 2rem);
-        max-width: 1100px;
+        align-items: stretch;
+        gap: clamp(1rem, 2.5vw, 1.75rem);
         margin: 3rem auto 0;
         padding: 0 1.5rem 5rem;
     }
 
-    .news-footer-widgets:has(> .dashboard-widget-card-refined:only-child) {
-        grid-template-columns: minmax(0, 500px);
+    .news-footer-widgets > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+        .news-footer-widgets:has(> * + *) {
+            grid-template-columns: none;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(0, 1fr);
+            justify-content: stretch;
+            margin-left: -4rem;
+            margin-right: -4rem;
+        }
+
+        .news-footer-widgets:has(> * + *) > * {
+            width: 100%;
+            max-width: none;
+        }
+
+        .news-footer-widgets:has(> * + *) .dashboard-widget-card-refined {
+            padding: 1.5rem 1.25rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-stats-grid-compact {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.5rem 0.2rem;
+            padding: 1rem 0.4rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-stats-grid-compact.grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-stats-grid-compact.grid-5 {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-title-small {
+            font-size: clamp(1rem, 1.6vw, 1.3rem);
+            line-height: 1.2;
+            min-height: 2.4em;
+            display: block;
+            width: 100%;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-name-row {
+            align-items: flex-start;
+            row-gap: 0.45rem;
+            padding-top: 0.35rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-name-box {
+            gap: 0.1rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-subtitle-pos {
+            padding-top: 0;
+            line-height: 1.2;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-avatar-wrapper {
+            width: 68px;
+            height: 68px;
+            border-width: 2px;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-top-info {
+            align-items: flex-start;
+            gap: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .widget-stat-unit {
+            gap: 0.15rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .stat-tag {
+            font-size: 0.46rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .stat-tag {
+            white-space: normal !important;
+            font-size: 0.52rem;
+            letter-spacing: 0;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+            hyphens: auto;
+        }
+
+        .news-footer-widgets:has(> * + *) .stat-num {
+            font-size: 1.15rem;
+        }
+
+        .news-footer-widgets:has(> * + *) .stat-tag {
+            min-height: 2.3em;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+    }
+
+    .widget-stat-unit {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
+    .dashboard-widget-card-refined,
+    .dashboard-widget-card-refined * {
+        min-width: 0;
+    }
+
+    .dashboard-widget-card-refined {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dashboard-widget-card-refined .widget-stats-grid-compact {
+        margin-top: auto;
+    }
+
+    .dashboard-widget-card-refined .widget-cta-btn-premium {
+        margin-top: auto;
+    }
+
+    .dashboard-widget-card-refined .widget-stats-grid-compact
+        ~ .widget-cta-btn-premium {
+        margin-top: 0;
+    }
+
+    .widget-title-small,
+    .widget-subtitle-pos,
+    .widget-name-box,
+    .widget-name-row,
+    .widget-season-label {
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: none;
     }
 
     .dashboard-widget-card-refined {
@@ -2046,20 +2175,22 @@ const newsSchema = {
     }
 
     @media (max-width: 600px) {
-        .widget-stats-grid-compact {
-            gap: 0.25rem;
-            padding: 1rem 0.25rem;
-            grid-template-columns: repeat(4, 1fr);
-        }
+        .widget-stats-grid-compact,
+        .widget-stats-grid-compact.grid-3,
         .widget-stats-grid-compact.grid-5 {
-            grid-template-columns: repeat(5, 1fr);
+            gap: 0.6rem 0.25rem;
+            padding: 1rem 0.35rem;
+            grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
         }
         .stat-num {
-            font-size: 1.2rem;
+            font-size: 0.92rem;
         }
         .stat-tag {
             font-size: 0.48rem;
             letter-spacing: 0;
+            white-space: normal !important;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
         }
     }
 
@@ -2071,10 +2202,12 @@ const newsSchema = {
 
     .stat-num {
         font-family: "Cinzel", serif;
-        font-size: 2.2rem;
+        font-size: clamp(0.95rem, 0.55rem + 1.6vw, 2.2rem);
         color: #d4a843;
-        line-height: 1;
-        white-space: nowrap !important;
+        line-height: 1.05;
+        white-space: nowrap;
+        text-align: center;
+        max-width: 100%;
     }
 
     .stat-tag {
@@ -2084,7 +2217,9 @@ const newsSchema = {
         color: rgba(200,210,220,0.45);
         letter-spacing: 0.05em;
         text-align: center;
-        white-space: nowrap !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
     }
 
     .nowrap-tag {
@@ -2195,7 +2330,7 @@ const newsSchema = {
         }
 
         .stat-num {
-            font-size: 1.8rem;
+            font-size: clamp(0.95rem, 0.55rem + 1.6vw, 1.8rem);
         }
 
         .widget-name-row {
