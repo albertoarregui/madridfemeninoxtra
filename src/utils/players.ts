@@ -616,6 +616,38 @@ export async function fetchPlayerInjuries(playerId: string | number): Promise<{ 
     }
 }
 
+export async function fetchInjuredPlayerIds(): Promise<Set<string>> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return new Set();
+
+        const result = await client.execute(`
+            SELECT id_jugadora, fecha_alta FROM lesiones
+        `);
+
+        const todayMadrid = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Europe/Madrid',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date());
+
+        const lesionadas = new Set<string>();
+        for (const row of result.rows as any[]) {
+            const fechaAlta = cleanApiValue(row.fecha_alta) || null;
+            const altaDate = fechaAlta ? String(fechaAlta).split('T')[0] : null;
+            if (!altaDate || altaDate > todayMadrid) {
+                lesionadas.add(String(row.id_jugadora));
+            }
+        }
+        return lesionadas;
+    } catch (error) {
+        console.error("Error fetching injured players:", error);
+        return new Set();
+    }
+}
+
 export async function fetchPlayerSocials(playerId: string | number): Promise<{ instagram: string | null; x: string | null; tiktok: string | null } | null> {
     try {
         const { getPlayersDbClient } = await import('../db/client');

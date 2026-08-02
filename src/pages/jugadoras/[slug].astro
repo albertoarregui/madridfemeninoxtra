@@ -463,23 +463,33 @@ const seoDescription = (tco && tco.partidos)
             </section>
 
             {injuries.length > 0 && (
-                <section class="profile-card injuries-card">
+                <section class="profile-card injuries-card full-col">
                     <h2 class="card-title">LESIONES</h2>
-                    <div class="card-body" style="padding:1.25rem 1.5rem;">
-                        <div class="injuries-list">
+                    <div class="card-body" style="padding:1.25rem;">
+                        <div class="injuries-grid">
                             {injuries.map((inj) => (
-                                <div class={`injury-item${inj.activa ? ' injury-active' : ''}`}>
-                                    <div class="injury-head">
-                                        <span class="injury-type">{inj.tipo_lesion || "Lesión"}</span>
-                                        {inj.activa && <span class="injury-badge">En curso</span>}
+                                <div class={`injury-card${inj.activa ? ' injury-active' : ''}`}>
+                                    <div class="injury-count">
+                                        <span class="i-count">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="i-icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+                                            {inj.partidos_perdidos != null && inj.partidos_perdidos > 0 ? inj.partidos_perdidos : "—"}
+                                        </span>
+                                        <span class="i-label">
+                                            {inj.partidos_perdidos === 1 ? "PARTIDO" : "PARTIDOS"}
+                                        </span>
                                     </div>
-                                    {inj.zona_cuerpo && <span class="injury-zone">{inj.zona_cuerpo}</span>}
-                                    <span class="injury-dates">
-                                        {formatShortDate(inj.fecha_lesion)} – {inj.fecha_alta ? formatShortDate(inj.fecha_alta) : "Alta pendiente"}
-                                    </span>
-                                    {inj.partidos_perdidos != null && inj.partidos_perdidos > 0 && (
-                                        <span class="injury-missed">{inj.partidos_perdidos} {inj.partidos_perdidos === 1 ? "partido perdido" : "partidos perdidos"}</span>
-                                    )}
+                                    <div class="injury-content">
+                                        <div class="injury-head">
+                                            <span class="injury-type">{inj.tipo_lesion || "Lesión"}</span>
+                                            {inj.activa && <span class="injury-badge">En curso</span>}
+                                        </div>
+                                        <div class="i-details">
+                                            {inj.zona_cuerpo && <span class="injury-zone">{inj.zona_cuerpo}</span>}
+                                            <span class="injury-dates">
+                                                {formatShortDate(inj.fecha_lesion)} – {inj.fecha_alta ? formatShortDate(inj.fecha_alta) : "Alta pendiente"}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1088,25 +1098,83 @@ const seoDescription = (tco && tco.partidos)
 }
 .hero-chip-injured svg { flex-shrink: 0; }
 
-.injuries-list {
+.injuries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.injury-card {
+    display: flex;
+    background: rgba(6,13,28,0.6);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(212,168,67,0.12);
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+}
+.injury-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(212,168,67,0.4);
+}
+.injury-card.injury-active {
+    border-color: rgba(255,107,107,0.35);
+}
+.injury-card.injury-active:hover {
+    border-color: rgba(255,107,107,0.6);
+}
+.injury-count {
+    background: rgba(212,168,67,0.1);
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    border-right: 1px solid rgba(212,168,67,0.15);
 }
-.injury-item {
+.injury-card.injury-active .injury-count {
+    background: rgba(255,107,107,0.1);
+    border-right-color: rgba(255,107,107,0.2);
+}
+.i-count {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #d4a843;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.injury-card.injury-active .i-count {
+    color: #ff6b6b;
+}
+.i-icon {
+    color: #ff6b6b;
+    flex-shrink: 0;
+}
+.i-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: rgba(200,210,220,0.5);
+    margin-top: 0.3rem;
+    text-align: center;
+}
+.injury-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    padding: clamp(0.65rem, 3vw, 0.75rem) clamp(0.8rem, 3.5vw, 1rem);
-    border-radius: 10px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(212,168,67,0.08);
-    border-left: 3px solid rgba(212,168,67,0.4);
-    overflow-wrap: break-word;
+    gap: 0.35rem;
+    justify-content: center;
 }
-.injury-item.injury-active {
-    border-left-color: #ff6b6b;
-    background: rgba(255,107,107,0.05);
+.i-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
 }
 .injury-head {
     display: flex;
@@ -1140,11 +1208,6 @@ const seoDescription = (tco && tco.partidos)
     font-family: 'DM Sans', sans-serif;
     font-size: 0.78rem;
     color: rgba(200,210,220,0.6);
-}
-.injury-missed {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.75rem;
-    color: rgba(200,210,220,0.45);
 }
 
 .field-diagram {

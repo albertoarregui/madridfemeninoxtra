@@ -1,8 +1,9 @@
 ---
 import { getFlagSrc } from "../utils/flags";
-import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
+import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds } from "../utils/players";
 
 const allPlayersDb = await fetchPlayersDirectly();
+const lesionadas = await fetchInjuredPlayerIds();
 
 const allSeasons = allPlayersDb.flatMap((p) => Object.keys(p.season_info || {}));
 const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
@@ -25,6 +26,7 @@ const listofPlayers = squadPlayers.map((player) => {
     return {
         ...player,
         id: player.id_jugadora.toString(),
+        isInjured: lesionadas.has(String(player.id_jugadora)),
         name: player.nombre,
         number: dorsal != null ? dorsal.toString() : "",
         position: player.posicion,
@@ -121,6 +123,16 @@ function calculateAge(birthDateString: string): number {
                 {listofPlayers.length > 0 ? listofPlayers[0].name : "Selecciona jugadora"}
             </h2>
 
+            <span
+                class="squad-injured-chip"
+                id="player-injured"
+                title="Lesionada actualmente"
+                hidden={!(listofPlayers.length > 0 && listofPlayers[0].isInjured)}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+                Lesionada
+            </span>
+
             <div class="player-info-top">
                 <div class="player-country-flat">
                     <img
@@ -188,6 +200,11 @@ function calculateAge(birthDateString: string): number {
                                     aria-label={player.name}
                                 >
                                     <span class="thumbnail-number">{player.number}</span>
+                        {player.isInjured && (
+                            <span class="thumb-injured" title="Lesionada" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+                            </span>
+                        )}
                                     <div class="thumbnail-image-wrapper">
                                         <img src={player.thumbnailUrl} alt={player.name} class="thumbnail-image" />
                                     </div>
@@ -216,6 +233,11 @@ function calculateAge(birthDateString: string): number {
                         aria-label={player.name}
                     >
                         <span class="thumbnail-number">{player.number}</span>
+                        {player.isInjured && (
+                            <span class="thumb-injured" title="Lesionada" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+                            </span>
+                        )}
                         <div class="thumbnail-image-wrapper">
                             <img src={player.thumbnailUrl} alt={player.name} class="thumbnail-image" />
                         </div>
@@ -271,6 +293,9 @@ function calculateAge(birthDateString: string): number {
 
             const link = document.getElementById("player-profile-link");
             if (link) link.href = `/jugadoras/${player.slug}`;
+
+            const chip = document.getElementById("player-injured");
+            if (chip) chip.hidden = !player.isInjured;
 
             document.querySelectorAll(".player-thumbnail").forEach(thumb => {
                 const i = parseInt(thumb.dataset.playerIndex || "-1");
@@ -420,6 +445,41 @@ function calculateAge(birthDateString: string): number {
         line-height: 1.1;
         margin: 0 0 1.2rem;
         text-shadow: 0 0 40px rgba(212, 168, 67, 0.2);
+    }
+
+    .squad-injured-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: -0.6rem 0 1.1rem;
+        padding: 0.25rem 0.7rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.45);
+        background: rgba(255, 107, 107, 0.1);
+        border-radius: 999px;
+    }
+
+    .squad-injured-chip[hidden] {
+        display: none;
+    }
+
+    .squad-injured-chip svg {
+        flex-shrink: 0;
+    }
+
+    .thumb-injured {
+        position: absolute;
+        top: 4px;
+        left: 5px;
+        z-index: 4;
+        display: inline-flex;
+        color: #ff6b6b;
+        filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9));
     }
 
     .player-info-top {
