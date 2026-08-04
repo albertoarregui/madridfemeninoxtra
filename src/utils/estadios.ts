@@ -92,6 +92,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
 
         const query = `
             SELECT 
+                e.id_estadio,
                 e.nombre,
                 e.ciudad,
                 e.capacidad,
@@ -143,6 +144,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                 : getAssetUrl('estadios', photoUrl);
 
             return {
+                id: stadium.id_estadio,
                 name: stadium.nombre,
                 city: stadium.ciudad || '',
                 capacity: stadium.capacidad,

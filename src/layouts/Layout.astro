@@ -6,6 +6,7 @@ import CookieConsent from "../components/CookieConsent.astro";
 import ScrollToTop from "../components/ScrollToTop.astro";
 import NextMatchCountdown from "../components/NextMatchCountdown.astro";
 import { getAssetUrl } from "../utils/assets";
+import { resolverOgImage } from "../utils/og";
 import "../styles/global.css";
 // @ts-ignore
 import "@fontsource/cormorant-garamond/400.css";
@@ -41,7 +42,7 @@ interface Props {
 const {
 	title = "Noticias, actualidad y estadísticas del Real Madrid femenino | Madrid Femenino Xtra",
 	description = "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!",
-	image = ogImage,
+	image,
 	noindex = false,
 	showAds = true,
 	author = "Madrid Femenino Xtra",
@@ -52,6 +53,9 @@ const {
 const canonicalUrl = canonical
 	? new URL(canonical, Astro.site).href
 	: new URL(Astro.url.pathname, Astro.site).href;
+
+const miniatura = await resolverOgImage(Astro.url.pathname, image);
+const imagenSocial = miniatura ?? image ?? ogImage;
 
 const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
 
@@ -106,14 +110,14 @@ const siteSchema = {
 		<meta property="og:site_name" content="Madrid Femenino Xtra" />
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:image" content={image} />
+		<meta property="og:image" content={imagenSocial} />
 		<meta property="og:image:alt" content={title} />
 		<meta property="og:locale" content="es_ES" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:site" content="@madridfemxtra" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
-		<meta name="twitter:image" content={image} />
+		<meta name="twitter:image" content={imagenSocial} />
 		<meta name="robots" content={noindex ? "noindex" : "index, follow"} />
 		<slot name="head" />
 		<ClientRouter />

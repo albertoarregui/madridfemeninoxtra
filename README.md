@@ -99,6 +99,24 @@ pnpm dev
   <img src="https://i.gyazo.com/a42415cdf2fcdb4b54b3fc0fce50bda2.png" alt="Madrid Femenino Xtra - Noticias" width="800" />
 </div>
 
+## 🔄 Cambios Recientes (Agosto 2026)
+
+### 🖼 Miniaturas para compartir (og:image) por página
+- ✅ Nuevo tipo de contenido en Contentful, **"Miniatura para compartir (og:image)"**: una `ruta` (`/premios`, `/jugadoras/*`, `/`) y una imagen
+- ✅ El `Layout` (y la portada) resuelven la miniatura sola en cada visita, con caché de 10 minutos: **no hace falta desplegar** para cambiarla
+- ✅ Una ruta exacta manda siempre; una ruta con comodín (`/jugadoras/*`) solo se aplica a las páginas de esa sección que no traigan ya su propia imagen (una noticia mantiene su foto destacada)
+- ✅ La imagen se recorta y comprime al servirla (1200x630, JPG), así que vale cualquier tamaño de origen
+- ✅ Se sube desde el panel de Contentful o con `npm run og -- <imagen> <ruta>` (`--lista` para verlas, `--borrar <ruta>` para quitarlas)
+
+### 🏷 Nombres reconocibles en las fichas de Contentful
+- ✅ El tipo `ficha` usa como nombre de entrada un campo de texto interno (`titulo`, o el `title` que ya exista; se crea solo si no hay ninguno): en el listado se lee **"Jugadora · Noe Bejarano"** o **"Estadio · Pinatar Arena"** en vez de solo el tipo
+- ✅ `npm run contentful:titulos` cruza el `referenceId` de cada ficha con las tablas de Turso (jugadoras, entrenadores, árbitras, clubes, estadios), rellena los títulos y republica solo lo que ya estaba publicado (`--seco` para simular)
+- ✅ Avisa de las fichas cuyo `referenceId` no existe en la base de datos
+- ✅ Es un campo interno: no se muestra en la web
+
+### 🏟 Fichas de estadio visibles
+- ✅ Las 74 fichas de estadio guardadas en Contentful nunca llegaban a mostrarse: se buscaban por slug y estaban guardadas por `id_estadio`. Ahora la página busca por ambos
+
 ## 🔄 Cambios Recientes (Julio 2026)
 
 ### 📸 Fotogalerías con detección automática de jugadoras
