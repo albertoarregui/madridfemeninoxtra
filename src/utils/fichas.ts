@@ -8,6 +8,25 @@ export interface FichaTexto {
     resto: string;
 }
 
+const ETIQUETAS_EMBED = 'iframe|blockquote|script|ins|embed|object|video|twitter-widget|amp-[a-z-]+';
+const BLOQUE_EMBED = new RegExp(`<\\s*(${ETIQUETAS_EMBED})\\b[\\s\\S]*?<\\s*\\/\\s*\\1\\s*>`, 'gi');
+const ETIQUETA_EMBED = new RegExp(`<\\s*\\/?\\s*(?:${ETIQUETAS_EMBED})\\b`, 'i');
+
+function limpiarEmbeds(nodo: any): any {
+    if (!nodo || typeof nodo !== 'object') return nodo;
+    if (nodo.nodeType === 'text') {
+        const valor = String(nodo.value ?? '');
+        if (!valor.includes('<')) return nodo;
+        const limpio = valor.replace(BLOQUE_EMBED, ' ').replace(/\s+/g, ' ').trim();
+        if (!limpio || ETIQUETA_EMBED.test(limpio)) return null;
+        return { ...nodo, value: limpio };
+    }
+    if (!Array.isArray(nodo.content)) return nodo;
+    const content = nodo.content.map(limpiarEmbeds).filter(Boolean);
+    if (nodo.nodeType !== 'document' && !content.length && nodo.content.length) return null;
+    return { ...nodo, content };
+}
+
 function partir(html: string): FichaTexto {
     const parrafos = html.match(/<p>[\s\S]*?<\/p>/g) || [];
     if (parrafos.length <= 2) return { visible: html, resto: '' };
@@ -46,7 +65,7 @@ function buscar(items: any[], claves: (string | number | null | undefined)[]) {
 async function renderizar(entrada: any): Promise<FichaTexto | null> {
     if (!entrada?.fields?.body) return null;
     const { documentToHtmlString } = await import('@contentful/rich-text-html-renderer');
-    const html = documentToHtmlString(entrada.fields.body);
+    const html = documentToHtmlString(limpiarEmbeds(entrada.fields.body));
     if (!html.trim()) return null;
     return partir(html);
 }
