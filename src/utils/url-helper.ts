@@ -6,11 +6,11 @@ export function generateSlug(text: string | null | undefined): string {
         .trim()
         .replace(/ø/g, 'o').replace(/Ø/g, 'O')
         .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+        .replace(/ß/g, 'ss').replace(/ẞ/g, 'SS')
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9\-]+/g, '')
         .replace(/\-\-+/g, '-')
         .replace(/^-+|-+$/g, '');
 }
-
 

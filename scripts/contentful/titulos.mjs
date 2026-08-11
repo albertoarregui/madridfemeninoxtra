@@ -37,6 +37,7 @@ function slugify(text) {
         .trim()
         .replace(/ø/g, "o")
         .replace(/ö/g, "o")
+        .replace(/ß/g, "ss")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/\s+/g, "-")

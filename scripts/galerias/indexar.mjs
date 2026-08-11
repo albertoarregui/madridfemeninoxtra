@@ -43,6 +43,8 @@ function slugify(text) {
         .replace(/Ø/g, "O")
         .replace(/ö/g, "o")
         .replace(/Ö/g, "O")
+        .replace(/ß/g, "ss")
+        .replace(/ẞ/g, "SS")
         .replace(/\s+/g, "-")
         .normalize("NFD")
         .replace(/[̀-ͯ]/g, "")

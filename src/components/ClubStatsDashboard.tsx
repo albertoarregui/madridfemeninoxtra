@@ -221,7 +221,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
         };
     }, [filteredGoals]);
 
-    const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/\s+/g, '-').normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
+    const getSlug = (name: string) => name.toLowerCase().trim().replace(/ø/g, 'o').replace(/ö/g, 'o').replace(/ß/g, 'ss').replace(/\s+/g, '-').normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]/g, '').replace(/--+/g, '-');
 
     const getPlayerImage = (name: string, type: 'goleadora' | 'asistente' = 'goleadora', preFetchedPhoto?: string) => {
         if (preFetchedPhoto && preFetchedPhoto !== 'null' && preFetchedPhoto.length > 5) {

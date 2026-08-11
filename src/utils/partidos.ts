@@ -9,6 +9,7 @@ export function slugify(text: string | null | undefined): string {
         .trim()
         .replace(/ø/g, 'o').replace(/Ø/g, 'O')
         .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+        .replace(/ß/g, 'ss').replace(/ẞ/g, 'SS')
         .replace(/\s+/g, '-')
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^\w\-]+/g, '')
