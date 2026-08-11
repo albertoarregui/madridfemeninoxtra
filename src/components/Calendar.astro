@@ -3,9 +3,39 @@ import { fetchCalendarFromDb } from "../utils/calendar";
 import { getAssetUrl } from "../utils/assets";
 import { fetchGamesDirectly, slugify } from "../utils/partidos";
 import { getCurrentSeasonStartYear, nowInMadrid } from "../utils/season";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 
 const calendarMatches = await fetchCalendarFromDb();
 const allGames = await fetchGamesDirectly();
+const allPlayers = await fetchPlayersDirectly();
+
+const latestSquadSeason = [...new Set(
+    allPlayers.flatMap((player) => Object.keys(player.season_info || {})),
+)].sort().reverse()[0];
+
+const birthdays = allPlayers
+    .filter((player) => {
+        const info = player.season_info?.[latestSquadSeason];
+        return Boolean(player.fecha_nacimiento && info &&
+            (info.id_categoria === 4 || (Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24)));
+    })
+    .map((player) => {
+        const profilePhoto = player.profile_photos?.[latestSquadSeason];
+        const seasonPhoto = player.season_photos?.[latestSquadSeason];
+        const [, month, day] = String(player.fecha_nacimiento).split("T")[0].split("-");
+        return {
+            name: player.nombre,
+            slug: player.slug,
+            month: Number(month),
+            day: Number(day),
+            imageUrl: getPlayerImageUrl({
+                ...player,
+                foto_url: profilePhoto || seasonPhoto,
+                foto_perfil_url: profilePhoto,
+            }),
+        };
+    })
+    .filter((birthday) => birthday.month && birthday.day);
 
 const gamesByDate = new Map();
 allGames.forEach((game) => {
@@ -67,7 +97,15 @@ const { year: currentYear, month: currentMonth } = nowInMadrid();
 
 const seasonStartYear = getCurrentSeasonStartYear();
 
-const MONTHS_DATA = [];
+type CalendarMonth = {
+    month: string;
+    year: number;
+    days: number;
+    startDay: number;
+    monthNum: number;
+};
+
+const MONTHS_DATA: CalendarMonth[] = [];
 for (let i = 0; i < 12; i++) {
     let m = 7 + i;
     let y = seasonStartYear;
@@ -106,6 +144,13 @@ const getMatchForDay = (day: number, monthIndex: number) => {
     });
 };
 
+const getBirthdaysForDay = (day: number, monthIndex: number) => {
+    const monthData = MONTHS_DATA[monthIndex];
+    return monthData
+        ? birthdays.filter((birthday) => birthday.month === monthData.monthNum && birthday.day === day)
+        : [];
+};
+
 const getDayInfo = (
     i: number,
     monthData: (typeof MONTHS_DATA)[0],
@@ -118,6 +163,7 @@ const getDayInfo = (
     if (!isValidDay && i >= 35) return null;
 
     const match = isValidDay ? getMatchForDay(dayNum, monthIndex) : null;
+    const dayBirthdays = isValidDay ? getBirthdaysForDay(dayNum, monthIndex) : [];
     let matchSlug = "";
 
     if (match) {
@@ -154,6 +200,7 @@ const getDayInfo = (
         rivalName,
         competitionLogo,
         matchSlug,
+        birthdays: dayBirthdays,
     };
 };
 ---
@@ -236,15 +283,16 @@ const getDayInfo = (
                             rivalName,
                             competitionLogo,
                             matchSlug,
+                            birthdays,
                         } = info;
 
                         return (
                             <div
-                                class={`day ${isValidDay ? "" : "empty"} ${match ? "has-match" : ""}`}
+                                class={`day ${isValidDay ? "" : "empty"} ${match ? "has-match" : ""} ${birthdays.length ? "has-birthday" : ""}`}
                             >
                                 {isValidDay && (
                                     <span
-                                        class={`day-number ${match ? "badge-style" : ""}`}
+                                        class={`day-number ${match || birthdays.length ? "badge-style" : ""}`}
                                     >
                                         {dayNum}
                                     </span>
@@ -322,6 +370,22 @@ const getDayInfo = (
                                         )}
                                     </a>
                                 )}
+                                {birthdays.map((birthday, birthdayIndex) => (
+                                    <a
+                                        href={`/jugadoras/${birthday.slug}`}
+                                        class={`birthday-content ${birthdayIndex > 0 ? "birthday-extra" : ""}`}
+                                        title={`Cumpleaños de ${birthday.name}`}
+                                        aria-label={`Cumpleaños de ${birthday.name}`}
+                                    >
+                                        <img
+                                            src={birthday.imageUrl}
+                                            alt={birthday.name}
+                                            class="birthday-player-photo"
+                                            loading="lazy"
+                                        />
+                                        <span class="birthday-cake" aria-hidden="true">🎂</span>
+                                    </a>
+                                ))}
                             </div>
                         );
                     })}
@@ -775,6 +839,94 @@ const getDayInfo = (
         z-index: 10;
     }
 
+    .day.has-birthday {
+        overflow: visible;
+        border: 1px solid rgba(239, 179, 218, 0.65);
+        background: rgba(115, 45, 96, 0.24);
+    }
+
+    .day.has-birthday:hover {
+        transform: scale(1.06);
+        border-color: rgba(255, 207, 238, 0.9);
+        box-shadow: 0 4px 14px rgba(231, 116, 194, 0.28);
+        z-index: 10;
+    }
+
+    .birthday-content {
+        position: absolute;
+        inset: 2px;
+        z-index: 3;
+        overflow: visible;
+        border-radius: 6px;
+        text-decoration: none;
+    }
+
+    .birthday-player-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center top;
+        display: block;
+        border-radius: 6px;
+    }
+
+    .birthday-cake {
+        position: absolute;
+        left: -8px;
+        bottom: -8px;
+        z-index: 7;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid rgba(239, 179, 218, 0.75);
+        background: rgba(115, 45, 96, 0.95);
+        font-size: 0.7rem;
+        line-height: 1;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 768px) {
+        .birthday-cake {
+            width: 20px;
+            height: 20px;
+            font-size: 0.78rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .birthday-cake {
+            width: 24px;
+            height: 24px;
+            font-size: 0.9rem;
+        }
+    }
+
+    .birthday-extra {
+        width: 52%;
+        left: auto;
+        border-left: 1px solid rgba(255, 255, 255, 0.65);
+    }
+
+    .day.has-birthday.has-match .match-content {
+        top: 2px;
+        right: 2px;
+        left: auto;
+        width: 30%;
+        height: 30%;
+        z-index: 6;
+        border-radius: 50%;
+        background: rgba(8, 16, 34, 0.92);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+    }
+
+    .day.has-birthday.has-match .match-content .icon-indicator,
+    .day.has-birthday.has-match .match-content .competition-logo {
+        display: none;
+    }
+
     .rival-shield {
         width: 70%;
         height: 70%;
@@ -830,5 +982,3 @@ const getDayInfo = (
         height: 100%;
     }
 </style>
-
-

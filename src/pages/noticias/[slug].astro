@@ -319,11 +319,9 @@ for (const ref of refsDe("club")) {
           rivals.find((r) => String(r.slug) === String(contentReferenceId))
         : rivals[0];
 
-    const isRMRequested =
-        String(contentReferenceId) === "1" ||
-        String(player || "")
-            .toLowerCase()
-            .includes("madrid");
+    // La referencia explícita del widget manda: otros campos editoriales de la
+    // noticia pueden mencionar al Real Madrid aunque el club destacado sea rival.
+    const isRMRequested = String(contentReferenceId) === "1";
 
     if (!clubData || (isRMRequested && String(clubData.id_club) !== "1")) {
         const { getPlayersDbClient } = await import("../../db/client");
@@ -338,15 +336,17 @@ for (const ref of refsDe("club")) {
             });
             if (clubRes.rows.length > 0) {
                 const row = clubRes.rows[0];
-                const cleanNombre = row.nombre || "Real Madrid";
-                const allMatches = await fetchGamesDirectly();
-                const playedMatches = allMatches.filter(
-                    (m: any) =>
-                        m.resultado !== "P" &&
-                        !String(m.competicion_nombre)
-                            .toLowerCase()
-                            .includes("amistoso"),
-                );
+                const cleanNombre = String(row.nombre || "Club");
+                const matchesRes = await client.execute({
+                    sql: `SELECT p.goles_rm, p.goles_rival, p.penaltis
+                          FROM partidos p
+                          LEFT JOIN competiciones co ON p.id_competicion = co.id_competicion
+                          WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                            AND p.goles_rm IS NOT NULL
+                            AND LOWER(COALESCE(co.competicion, '')) NOT LIKE '%amistoso%'`,
+                    args: [row.id_club as any, row.id_club as any],
+                });
+                const playedMatches = matchesRes.rows;
 
                 let wins = 0,
                     draws = 0,
@@ -360,21 +360,25 @@ for (const ref of refsDe("club")) {
                     gf += gRM;
                     ga += gRiv;
                     if (gRiv === 0) cleanSheets++;
-                    if (m.resultado === "V") wins++;
-                    else if (m.resultado === "D") losses++;
+                    const penaltis = String(m.penaltis ?? "").trim();
+                    if (gRM > gRiv || (gRM === gRiv && penaltis === "1")) wins++;
+                    else if (gRM < gRiv || (gRM === gRiv && penaltis === "0")) losses++;
                     else draws++;
                 });
 
                 clubData = {
                     id_club: row.id_club,
                     nombre: cleanNombre,
-                    ciudad: row.ciudad || "Madrid",
-                    pais: row.pais || "España",
-                    iso: row.iso || "ES",
-                    slug: row.slug || "real-madrid",
-                    estadio: row.estadio || "Alfredo Di Stéfano",
-                    shieldUrl:
-                        "https://media.madridfemeninoxtra.com/escudos/real_madrid.webp",
+                    ciudad: row.ciudad || "",
+                    pais: row.pais || "",
+                    iso: row.iso || "",
+                    slug: row.slug || generateSlug(cleanNombre),
+                    estadio: row.estadio || "",
+                    capacidad: row.capacidad || null,
+                    shieldUrl: getRivalShieldUrl({
+                        nombre: cleanNombre,
+                        foto_url: row.foto_url,
+                    }),
                     stats: {
                         played: playedMatches.length,
                         wins,
