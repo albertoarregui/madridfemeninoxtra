@@ -15,9 +15,15 @@ export default defineConfig({
     defaultStrategy: 'hover',
   },
   adapter: vercel({
-    imageService: true,
+    // Las imágenes ya se suben optimizadas en WebP. Evitamos generar variantes
+    // mediante la API de Image Optimization de Vercel (y consumir su cuota).
+    imageService: false,
   }),
   image: {
+    // Conserva el archivo original: no redimensiona ni recomprime las imágenes.
+    service: {
+      entrypoint: 'astro/assets/services/noop',
+    },
     domains: ['images.ctfassets.net', 'downloads.ctfassets.net', 'media.madridfemeninoxtra.com'],
   },
   vite: {
