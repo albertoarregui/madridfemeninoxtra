@@ -11,6 +11,7 @@ const CACHE_LARGA = [
 
 const CACHE_CORTA_S = 60; // el CDN sirve la copia guardada durante 1 min
 const SWR_S = 3600; // y hasta 1 h más mientras la regenera por detrás
+const SWR_PARTIDO_S = 60; // las fichas pueden pasar de previa a resultado
 const CACHE_LARGA_S = 3600;
 const SWR_LARGA_S = 86400;
 
@@ -35,8 +36,9 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
 
         if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
+            const fichaPartido = /^\/partidos\/[^/]+\/?$/.test(url.pathname);
             const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;
-            const swr = larga ? SWR_LARGA_S : SWR_S;
+            const swr = larga ? SWR_LARGA_S : fichaPartido ? SWR_PARTIDO_S : SWR_S;
             response.headers.set(
                 "Cache-Control",
                 `public, max-age=0, s-maxage=${sMaxage}, stale-while-revalidate=${swr}`,
