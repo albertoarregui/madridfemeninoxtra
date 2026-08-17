@@ -26,6 +26,8 @@ export interface CalendarMatch {
     capacidad: number | null;
     id_arbitra: number | null;
     arbitra_nombre: string | null;
+    goles_rm: number | null;
+    goles_rival: number | null;
 }
 
 const REAL_MADRID_ID_NAMES = ['real madrid', 'real madrid femenino'];
@@ -111,6 +113,8 @@ async function fetchCalendarFromDbUncached(): Promise<CalendarMatch[]> {
                 capacidad: row.capacidad ? Number(row.capacidad) : null,
                 id_arbitra: row.id_arbitra ? Number(row.id_arbitra) : null,
                 arbitra_nombre: row.arbitra_nombre || null,
+                goles_rm: row.goles_rm == null || row.goles_rm === '' ? null : Number(row.goles_rm),
+                goles_rival: row.goles_rival == null || row.goles_rival === '' ? null : Number(row.goles_rival),
             };
         });
     } catch (error) {
