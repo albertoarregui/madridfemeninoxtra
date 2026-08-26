@@ -77,6 +77,13 @@ export async function invalidarTags(tags: string[]): Promise<void> {
         getCache({ namespace: 'mfx-data-v1' }).expireTag(unicas),
         dangerouslyDeleteByTag(unicas, { revalidationDeadlineSeconds: 0 }),
     ]);
+
+    // Las APIs de purga confirman la recepción antes de que el cambio termine
+    // de propagarse globalmente (normalmente <300 ms). En escrituras esperamos
+    // esa ventana para garantizar read-after-write al devolver la respuesta.
+    if (process.env.VERCEL) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+    }
 }
 
 export function invalidarCache(clave?: string) {
