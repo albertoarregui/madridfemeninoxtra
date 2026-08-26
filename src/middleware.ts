@@ -36,9 +36,12 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             !SIN_CACHE.some((re) => re.test(url.pathname)) &&
             !auth().userId;
 
-        if (cacheable) {
+        if (request.method === "GET" && response.status === 200 && !auth().userId) {
             const tags = tagsForPath(url.pathname);
             if (tags.length > 0) await addCacheTag(tags);
+        }
+
+        if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
             const fichaPartido = /^\/partidos\/[^/]+\/?$/.test(url.pathname);
             const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;

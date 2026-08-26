@@ -11,6 +11,7 @@ import HistoryCarousel from "../components/HistoryCarousel.astro";
 import ProtagonistasSection from "../components/ProtagonistasSection.astro";
 import GaleriasSection from "../components/GaleriasSection.astro";
 import { getAssetUrl } from "../utils/assets";
+import { cached } from "../utils/cache";
 
 const mapaJugadoras = getAssetUrl("sidebar", "mapa_jugadoras.png");
 const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
@@ -149,11 +150,13 @@ try {
 	const { getAnalyticsDbClient } = await import("../db/client");
 	const analyticsClient = await getAnalyticsDbClient();
 	if (analyticsClient) {
-		const topResult = await analyticsClient.execute({
-			sql: `SELECT slug FROM article_views ORDER BY views DESC LIMIT 5`,
-			args: [],
-		});
-		const topSlugs = topResult.rows.map((r: any) => String(r.slug));
+		const topSlugs = await cached('news:most-read-slugs', 60 * 60 * 1000, async () => {
+			const topResult = await analyticsClient.execute({
+				sql: `SELECT slug FROM article_views ORDER BY views DESC LIMIT 5`,
+				args: [],
+			});
+			return topResult.rows.map((r: any) => String(r.slug));
+		}, { tags: ['news-ranking'] });
 		if (topSlugs.length > 0) {
 			const { contentfulClient } = await import("../lib/contentful");
 			const related = await contentfulClient.getEntries({

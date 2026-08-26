@@ -9,9 +9,21 @@ export const cacheTags = {
 
 export function tagsForPath(pathname: string): string[] {
     const tags: string[] = [];
+    if (/^\/api\/(partidos|games\/)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar, cacheTags.goals, cacheTags.lineups, cacheTags.statistics);
+    if (/^\/api\/(goles_y_asistencias|xg-timeline|assist-network|finishing-players|team-stats)/.test(pathname)) {
+        tags.push(cacheTags.goals, cacheTags.statistics, cacheTags.rankings, cacheTags.players, cacheTags.matches);
+    }
+    if (/^\/api\/players/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics, cacheTags.rankings);
+    if (/^\/api\/player-radar/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics, cacheTags.rankings);
+    if (/^\/api\/coaches/.test(pathname)) tags.push(cacheTags.coaches, cacheTags.matches);
+    if (/^\/api\/(rivals|clubes)/.test(pathname)) tags.push(cacheTags.rivals, cacheTags.matches, cacheTags.statistics);
+    if (/^\/api\/(buscador|opciones_filtro)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.statistics);
+    if (/^\/api\/search/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.rivals, cacheTags.coaches, cacheTags.stadiums);
     if (pathname === '/' || pathname === '/home') tags.push(cacheTags.homepage, cacheTags.matches);
     if (/^\/(partidos|calendario)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar);
-    if (/^\/partidos\/[^/]+\/?$/.test(pathname)) tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics);
+    if (/^\/partidos\/[^/]+\/?$/.test(pathname)) {
+        tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics, cacheTags.stadiums, cacheTags.coaches, 'referees');
+    }
     if (/^\/(jugadoras|plantilla)/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics);
     if (/^\/(estadisticas|rankings|records|comparador)/.test(pathname)) tags.push(cacheTags.statistics, cacheTags.rankings);
     if (/^\/estadios/.test(pathname)) tags.push(cacheTags.stadiums);

@@ -1,7 +1,6 @@
 import { getDbClient } from '../../../db/client';
 import { jsonResponse, jsonError } from '../../../lib/api-cache';
-import { cacheTags, tagsAfterWrite } from '../../../lib/cache-tags';
-import { invalidarTags } from '../../../utils/cache';
+import { cacheTags } from '../../../lib/cache-tags';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -81,12 +80,10 @@ export const POST = async ({ request }) => {
     `;
 
     try {
-        const result = await client.execute({
+        await client.execute({
             sql,
             args: [nombre, ciudad, pais, fecha_nacimiento, foto_url],
         });
-
-        await invalidarTags(tagsAfterWrite.coach(String(result.lastInsertRowid)));
 
         return jsonResponse({ message: 'Entrenador creado exitosamente.' }, { sMaxage: 0, status: 201 });
     } catch (error) {
@@ -131,7 +128,6 @@ export const PUT = async ({ request, url }) => {
         if (result.rowsAffected === 0) {
             return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
-        await invalidarTags(tagsAfterWrite.coach(id_entrenador));
         return jsonResponse({ message: 'Entrenador actualizado exitosamente.' }, { sMaxage: 0 });
     } catch (error) {
         console.error('Turso DB Error (PUT Entrenadores):', error.message);
@@ -159,8 +155,6 @@ export const DELETE = async ({ url }) => {
         if (result.rowsAffected === 0) {
             return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
-
-        await invalidarTags(tagsAfterWrite.coach(id_entrenador));
 
         return new Response(null, { status: 204, headers: CORS_HEADERS });
     } catch (error) {
