@@ -1,5 +1,7 @@
 import { getDbClient } from '../../../db/client';
 import { jsonResponse, jsonError } from '../../../lib/api-cache';
+import { cacheTags, tagsAfterWrite } from '../../../lib/cache-tags';
+import { invalidarTags } from '../../../utils/cache';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -47,7 +49,7 @@ export const GET = async () => {
             return record;
         });
 
-        return jsonResponse(entrenadores, { sMaxage: 21600, swr: 86400 });
+        return jsonResponse(entrenadores, { sMaxage: 21600, swr: 86400, tags: [cacheTags.coaches] });
     } catch (error) {
         console.error('Turso DB Error (GET Entrenadores):', error.message);
         return jsonError('Fallo en la consulta de la base de datos: ' + error.message);
@@ -79,10 +81,12 @@ export const POST = async ({ request }) => {
     `;
 
     try {
-        await client.execute({
+        const result = await client.execute({
             sql,
             args: [nombre, ciudad, pais, fecha_nacimiento, foto_url],
         });
+
+        await invalidarTags(tagsAfterWrite.coach(String(result.lastInsertRowid)));
 
         return jsonResponse({ message: 'Entrenador creado exitosamente.' }, { sMaxage: 0, status: 201 });
     } catch (error) {
@@ -127,6 +131,7 @@ export const PUT = async ({ request, url }) => {
         if (result.rowsAffected === 0) {
             return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
+        await invalidarTags(tagsAfterWrite.coach(id_entrenador));
         return jsonResponse({ message: 'Entrenador actualizado exitosamente.' }, { sMaxage: 0 });
     } catch (error) {
         console.error('Turso DB Error (PUT Entrenadores):', error.message);
@@ -154,6 +159,8 @@ export const DELETE = async ({ url }) => {
         if (result.rowsAffected === 0) {
             return jsonResponse({ message: 'No se encontró el entrenador con ese ID.' }, { sMaxage: 0, status: 404 });
         }
+
+        await invalidarTags(tagsAfterWrite.coach(id_entrenador));
 
         return new Response(null, { status: 204, headers: CORS_HEADERS });
     } catch (error) {

@@ -1,4 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
+import { addCacheTag } from "@vercel/functions";
+import { tagsForPath } from "./lib/cache-tags";
 
 const isProtectedRoute = createRouteMatcher([]);
 
@@ -35,6 +37,8 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             !auth().userId;
 
         if (cacheable) {
+            const tags = tagsForPath(url.pathname);
+            if (tags.length > 0) await addCacheTag(tags);
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
             const fichaPartido = /^\/partidos\/[^/]+\/?$/.test(url.pathname);
             const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;

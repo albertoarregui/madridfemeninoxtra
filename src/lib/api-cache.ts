@@ -3,6 +3,7 @@ type CacheOptions = {
     swr?: number;
     status?: number;
     headers?: Record<string, string>;
+    tags?: string[];
 };
 
 const BASE_HEADERS = {
@@ -11,7 +12,7 @@ const BASE_HEADERS = {
 };
 
 export function jsonResponse(data: unknown, opts: CacheOptions = {}): Response {
-    const { sMaxage = 3600, swr = 86400, status = 200, headers = {} } = opts;
+    const { sMaxage = 3600, swr = 86400, status = 200, headers = {}, tags = [] } = opts;
 
     const cacheControl =
         sMaxage > 0
@@ -20,7 +21,12 @@ export function jsonResponse(data: unknown, opts: CacheOptions = {}): Response {
 
     return new Response(JSON.stringify(data), {
         status,
-        headers: { ...BASE_HEADERS, 'Cache-Control': cacheControl, ...headers },
+        headers: {
+            ...BASE_HEADERS,
+            'Cache-Control': cacheControl,
+            ...(tags.length > 0 ? { 'Vercel-Cache-Tag': [...new Set(tags)].join(',') } : {}),
+            ...headers,
+        },
     });
 }
 

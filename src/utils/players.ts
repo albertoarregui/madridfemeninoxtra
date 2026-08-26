@@ -732,4 +732,4 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
 
 
 
-export const fetchPlayersDirectly = cachear('players:all', TTL.medio, fetchPlayersDirectlyUncached);
+export const fetchPlayersDirectly = cachear('players:all', TTL.medio, fetchPlayersDirectlyUncached, { tags: ['players', 'statistics'] });

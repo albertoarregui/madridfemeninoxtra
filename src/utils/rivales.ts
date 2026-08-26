@@ -267,7 +267,7 @@ export async function fetchClubCountDirectly(): Promise<number> {
 
 
 
-export const fetchRivalsDirectly = cachear('rivals:all', TTL.medio, fetchRivalsDirectlyUncached);
+export const fetchRivalsDirectly = cachear('rivals:all', TTL.medio, fetchRivalsDirectlyUncached, { tags: ['rivals', 'matches'] });
 
 
-export const fetchAllClubShields = cachear('shields:all', TTL.largo, fetchAllClubShieldsUncached);
+export const fetchAllClubShields = cachear('shields:all', TTL.largo, fetchAllClubShieldsUncached, { tags: ['rivals'] });
