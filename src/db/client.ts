@@ -28,7 +28,7 @@ const TABLE_TAGS: Record<string, string[]> = {
     entrenadores: ['coaches', 'matches'],
     trayectoria_entrenadores: ['coaches'],
     clubes: ['rivals'],
-    arbitras: ['referees'],
+    arbitras: ['referees', 'matches', 'statistics'],
     tarjetas: ['statistics', 'matches'],
     tarjetas_rival: ['statistics', 'matches'],
     cambios: ['lineups', 'statistics', 'players'],

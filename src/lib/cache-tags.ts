@@ -3,6 +3,7 @@ export const cacheTags = {
     goals: 'goals', lineups: 'lineups', statistics: 'statistics', rankings: 'rankings',
     players: 'players', player: (id: string | number) => `player-${id}`,
     stadiums: 'stadiums', stadium: (id: string | number) => `stadium-${id}`,
+    referees: 'referees', referee: (id: string | number) => `referee-${id}`,
     coaches: 'coaches', coach: (id: string | number) => `coach-${id}`,
     calendar: 'calendar', rivals: 'rivals', homepage: 'homepage',
 } as const;
@@ -27,6 +28,7 @@ export function tagsForPath(pathname: string): string[] {
     if (/^\/(jugadoras|plantilla)/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics);
     if (/^\/(estadisticas|rankings|records|comparador)/.test(pathname)) tags.push(cacheTags.statistics, cacheTags.rankings);
     if (/^\/estadios/.test(pathname)) tags.push(cacheTags.stadiums);
+    if (/^\/arbitras/.test(pathname)) tags.push(cacheTags.referees, cacheTags.matches, cacheTags.statistics);
     if (/^\/entrenadores/.test(pathname)) tags.push(cacheTags.coaches);
     if (/^\/rivales/.test(pathname)) tags.push(cacheTags.rivals, cacheTags.matches);
     return [...new Set(tags)];
@@ -45,6 +47,7 @@ export const tagsAfterWrite = {
     ],
     player: (id: string | number) => [cacheTags.players, cacheTags.player(id), cacheTags.statistics],
     stadium: (id: string | number) => [cacheTags.stadiums, cacheTags.stadium(id), cacheTags.matches, cacheTags.statistics],
+    referee: (id: string | number) => [cacheTags.referees, cacheTags.referee(id), cacheTags.matches, cacheTags.statistics],
     lineup: (matchId: string | number, playerId: string | number) => [
         cacheTags.match(matchId), cacheTags.matches, cacheTags.lineups,
         cacheTags.statistics, cacheTags.player(playerId),
