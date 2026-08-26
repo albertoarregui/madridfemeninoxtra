@@ -9,7 +9,6 @@ const globalForDb = globalThis as unknown as {
 };
 
 const DB_READ_TTL_MS = 24 * 60 * 60 * 1000;
-const MATCH_READ_TTL_MS = 2 * 60 * 1000;
 const MATCH_CACHE_VERSION = 'v2';
 
 const TABLE_TAGS: Record<string, string[]> = {
@@ -100,7 +99,7 @@ function withReadCache(client: Client, database: string): Client {
                 const cacheVersion = isMatchRead ? MATCH_CACHE_VERSION : 'v1';
                 const key = `turso:${cacheVersion}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
 
-                return cached(key, isMatchRead ? MATCH_READ_TTL_MS : DB_READ_TTL_MS, async () => {
+                return cached(key, DB_READ_TTL_MS, async () => {
                     const result = await target.execute(statement);
                     return {
                         columns: [...result.columns],

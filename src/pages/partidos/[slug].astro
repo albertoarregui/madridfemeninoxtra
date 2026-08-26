@@ -395,6 +395,7 @@ const matchSchema = {
                                             src={localShield}
                                             alt={game.club_local}
                                             class="team-shield-xl"
+                                            data-proxy-fallback
                                         />
                                     )
                                 }
@@ -442,6 +443,7 @@ const matchSchema = {
                                             src={visitorShield}
                                             alt={game.club_visitante}
                                             class="team-shield-xl"
+                                            data-proxy-fallback
                                         />
                                     )
                                 }
@@ -497,6 +499,7 @@ const matchSchema = {
                             src={stadiumImageSrc}
                             alt={game.estadio}
                             class="stadium-img-rect"
+                            data-proxy-fallback
                         />
                     </div>
                 )}
@@ -727,6 +730,7 @@ const matchSchema = {
                                                         src={player.imageUrl}
                                                         alt={player.name}
                                                         class="player-img-rect"
+                                                        data-proxy-fallback
                                                     />
                                                 )}
                                         </div>
@@ -915,6 +919,7 @@ const matchSchema = {
                                                                     .imageUrl
                                                             }
                                                             class="sub-img"
+                                                            data-proxy-fallback
                                                         />
                                                     )}
                                                 <span class="sub-name">
@@ -1168,6 +1173,7 @@ const matchSchema = {
                                                 }
                                                 alt={mvpPlayer.name}
                                                 class="mvp-photo-full"
+                                                data-proxy-fallback
                                             />
                                             <div class="mvp-name-badge">
                                                 {mvpPlayer.name}
@@ -1201,7 +1207,8 @@ const matchSchema = {
                                     src={matchKit.url}
                                     alt={matchKit.nombre || "Equipación del partido"}
                                     class="kit-image"
-                                    loading="lazy"
+                                    loading="eager"
+                                    data-proxy-fallback
                                 />
                             </div>
                         </div>
@@ -1217,7 +1224,8 @@ const matchSchema = {
                                         src={game.once_inicial_url}
                                         alt={`XI Inicial ${game.club_local} vs ${game.club_visitante}`}
                                         class="xi-photo"
-                                        loading="lazy"
+                                        loading="eager"
+                                        data-proxy-fallback
                                     />
                                 ) : (
                                     <p class="no-data-msg">
@@ -4140,6 +4148,15 @@ const matchSchema = {
 </style>
 
 <script>
+    document.querySelectorAll<HTMLImageElement>('img[data-proxy-fallback]').forEach((image) => {
+        image.addEventListener('error', () => {
+            if (image.dataset.proxyRetried === 'true') return;
+            image.dataset.proxyRetried = 'true';
+            const originalUrl = image.currentSrc || image.src;
+            image.src = `/api/img-proxy?url=${encodeURIComponent(originalUrl)}`;
+        });
+    });
+
     const block = document.querySelector<HTMLElement>('.countdown-block');
     if (block) {
         const fecha = block.dataset.fecha!;
