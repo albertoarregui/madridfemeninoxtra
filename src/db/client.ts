@@ -8,7 +8,8 @@ const globalForDb = globalThis as unknown as {
     __analyticsDb?: Client | null;
 };
 
-const DB_READ_TTL_MS = 24 * 60 * 60 * 1000;
+// Una consulta solo vuelve a Turso una vez al mes, salvo revalidación por cambio.
+const DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MATCH_CACHE_VERSION = 'v2';
 
 const TABLE_TAGS: Record<string, string[]> = {

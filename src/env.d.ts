@@ -8,6 +8,7 @@ interface ImportMetaEnv {
     readonly TURSO_STATS_AUTH_TOKEN?: string;
     readonly TURSO_DATABASE_URL_2?: string;
     readonly TURSO_AUTH_TOKEN_2?: string;
+    readonly CACHE_REVALIDATION_SECRET?: string;
     readonly CONTENTFUL_SPACE_ID?: string;
     readonly CONTENTFUL_ACCESS_TOKEN?: string;
     readonly CLOUDFLARE_IMAGES_DOMAIN?: string;
@@ -26,5 +27,4 @@ declare module "*.mp3" {
     const src: string;
     export default src;
 }
-
 

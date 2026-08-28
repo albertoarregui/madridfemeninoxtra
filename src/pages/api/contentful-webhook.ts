@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
+import { cacheTags } from '../../lib/cache-tags';
+import { invalidarTags } from '../../utils/cache';
 
 export const prerender = false;
 
@@ -72,6 +74,12 @@ export const POST: APIRoute = async ({ request }) => {
             /unpublish|delete/i.test(topic) ? 'URL_DELETED' : 'URL_UPDATED';
 
         const noticiaUrl = `${SITE_URL}/noticias/${slug}`;
+
+        await invalidarTags([
+            cacheTags.news,
+            cacheTags.newsItem(String(slug)),
+            cacheTags.homepage,
+        ]);
 
         console.log(`[Webhook] Notificando a Google (${type}): ${noticiaUrl}`);
         const indexResult = await notifyGoogleIndexing(noticiaUrl, type);

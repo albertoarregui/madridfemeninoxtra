@@ -7,7 +7,13 @@ type Entrada<T> = {
     tags: string[];
 };
 
-type CacheOptions = { tags?: string[] };
+type CacheOptions = {
+    tags?: string[];
+    /** Usa Vercel Runtime Cache solo para datos de origen, no para duplicados. */
+    remote?: boolean;
+    /** Evita datos obsoletos entre instancias después de una revalidación. */
+    memoryTtlMs?: number;
+};
 
 const almacen = new Map<string, Entrada<any>>();
 
@@ -20,33 +26,39 @@ export const TTL = {
 export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<T>, options: CacheOptions = {}): Promise<T> {
     const ahora = Date.now();
     const tags = [...new Set(options.tags ?? [])];
+    const remote = options.remote ?? true;
+    const memoryTtlMs = options.memoryTtlMs ?? (remote ? 0 : ttlMs);
     const hit = almacen.get(clave) as Entrada<T> | undefined;
 
-    if (hit?.data !== undefined && ahora - hit.at < ttlMs) {
+    if (memoryTtlMs > 0 && hit?.data !== undefined && ahora - hit.at < memoryTtlMs) {
         return hit.data;
     }
     if (hit?.enCurso) return hit.enCurso;
 
-    try {
-        const remoto = await getCache({ namespace: 'mfx-data-v1' }).get(clave);
-        if (remoto !== null) {
-            const data = remoto as T;
-            almacen.set(clave, { at: ahora, data, tags });
-            return data;
+    if (remote) {
+        try {
+            const remoto = await getCache({ namespace: 'mfx-data-v1' }).get(clave);
+            if (remoto !== null) {
+                const data = remoto as T;
+                almacen.set(clave, { at: ahora, data, tags });
+                return data;
+            }
+        } catch (error) {
+            if (import.meta.env?.PROD) console.error('[CACHE] Error leyendo Runtime Cache:', error);
         }
-    } catch (error) {
-        if (import.meta.env?.PROD) console.error('[CACHE] Error leyendo Runtime Cache:', error);
     }
 
     const enCurso = fn()
         .then(async (data) => {
             almacen.set(clave, { at: Date.now(), data, tags });
-            try {
-                await getCache({ namespace: 'mfx-data-v1' }).set(clave, data, {
-                    ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
-                });
-            } catch (error) {
-                if (import.meta.env?.PROD) console.error('[CACHE] Error escribiendo Runtime Cache:', error);
+            if (remote) {
+                try {
+                    await getCache({ namespace: 'mfx-data-v1' }).set(clave, data, {
+                        ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
+                    });
+                } catch (error) {
+                    if (import.meta.env?.PROD) console.error('[CACHE] Error escribiendo Runtime Cache:', error);
+                }
             }
             return data;
         })
@@ -60,7 +72,9 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
 }
 
 export function cachear<T>(clave: string, ttlMs: number, fn: () => Promise<T>, options: CacheOptions = {}): () => Promise<T> {
-    return () => cached(clave, ttlMs, fn, options);
+    // Las consultas internas ya tienen su propia caché remota. Guardar también
+    // el agregado duplicaba escrituras cada pocos minutos.
+    return () => cached(clave, ttlMs, fn, { ...options, remote: false, memoryTtlMs: 0 });
 }
 
 /** Invocar solamente después de que Turso confirme la escritura. */

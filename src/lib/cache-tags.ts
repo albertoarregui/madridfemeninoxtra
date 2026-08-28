@@ -6,6 +6,7 @@ export const cacheTags = {
     referees: 'referees', referee: (id: string | number) => `referee-${id}`,
     coaches: 'coaches', coach: (id: string | number) => `coach-${id}`,
     calendar: 'calendar', rivals: 'rivals', homepage: 'homepage',
+    news: 'news', newsItem: (slug: string) => `news-${slug}`,
 } as const;
 
 export function tagsForPath(pathname: string): string[] {
@@ -21,6 +22,11 @@ export function tagsForPath(pathname: string): string[] {
     if (/^\/api\/(buscador|opciones_filtro)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.statistics);
     if (/^\/api\/search/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.rivals, cacheTags.coaches, cacheTags.stadiums);
     if (pathname === '/' || pathname === '/home') tags.push(cacheTags.homepage, cacheTags.matches);
+    if (/^\/noticias(?:\/|$)/.test(pathname)) {
+        tags.push(cacheTags.news);
+        const slug = pathname.match(/^\/noticias\/([^/]+)\/?$/)?.[1];
+        if (slug && slug !== 'categoria') tags.push(cacheTags.newsItem(slug));
+    }
     if (/^\/(partidos|calendario)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar);
     if (/^\/partidos\/[^/]+\/?$/.test(pathname)) {
         tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics, cacheTags.stadiums, cacheTags.coaches, 'referees');
