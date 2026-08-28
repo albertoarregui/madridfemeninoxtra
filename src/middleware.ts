@@ -33,7 +33,6 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             request.method === "GET" &&
             response.status === 200 &&
             (response.headers.get("content-type") || "").includes("text/html") &&
-            !response.headers.has("Cache-Control") &&
             !SIN_CACHE.some((re) => re.test(url.pathname)) &&
             !auth().userId;
 
@@ -46,9 +45,11 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
             const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;
             const swr = larga ? SWR_LARGA_S : SWR_S;
+            // Astro establece Cache-Control: public, max-age=0. La cabecera
+            // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(
-                "Cache-Control",
-                `public, max-age=0, s-maxage=${sMaxage}, stale-while-revalidate=${swr}`,
+                "Vercel-CDN-Cache-Control",
+                `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
             );
             response.headers.set("Vary", "Accept-Encoding");
         }
