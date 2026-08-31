@@ -10,6 +10,7 @@ const globalForDb = globalThis as unknown as {
 
 // Una consulta solo vuelve a Turso una vez al mes, salvo revalidación por cambio.
 const DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MATCH_READ_TTL_MS = 2 * 60 * 1000;
 const MATCH_CACHE_VERSION = 'v2';
 
 const TABLE_TAGS: Record<string, string[]> = {
@@ -96,11 +97,14 @@ function withReadCache(client: Client, database: string): Client {
                 const args = typeof statement === 'string' ? [] : (statement.args ?? statement.params ?? []);
                 const normalizedSql = sql.replace(/\s+/g, ' ').trim();
                 const tags = tagsForQuery(sql);
-                const isMatchRead = tags.includes('matches');
+                // Las consultas de una ficha suelen filtrar por id_partido sin
+                // tocar la tabla `partidos` (goles, tarjetas, alineaciones...).
+                // También deben refrescarse rápido después de cargar el acta.
+                const isMatchRead = tags.includes('matches') || /\bid_partido\s*=\s*\?/i.test(sql);
                 const cacheVersion = isMatchRead ? MATCH_CACHE_VERSION : 'v1';
                 const key = `turso:${cacheVersion}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
 
-                return cached(key, DB_READ_TTL_MS, async () => {
+                return cached(key, isMatchRead ? MATCH_READ_TTL_MS : DB_READ_TTL_MS, async () => {
                     const result = await target.execute(statement);
                     return {
                         columns: [...result.columns],

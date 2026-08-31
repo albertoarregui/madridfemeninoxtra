@@ -16,6 +16,7 @@ type CacheOptions = {
 };
 
 const almacen = new Map<string, Entrada<any>>();
+const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v2';
 
 export const TTL = {
     corto: 2 * 60 * 1000,
@@ -37,7 +38,7 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
 
     if (remote) {
         try {
-            const remoto = await getCache({ namespace: 'mfx-data-v1' }).get(clave);
+            const remoto = await getCache({ namespace: RUNTIME_CACHE_NAMESPACE }).get(clave);
             if (remoto !== null) {
                 const data = remoto as T;
                 almacen.set(clave, { at: ahora, data, tags });
@@ -53,7 +54,7 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
             almacen.set(clave, { at: Date.now(), data, tags });
             if (remote) {
                 try {
-                    await getCache({ namespace: 'mfx-data-v1' }).set(clave, data, {
+                    await getCache({ namespace: RUNTIME_CACHE_NAMESPACE }).set(clave, data, {
                         ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
                     });
                 } catch (error) {
@@ -88,7 +89,7 @@ export async function invalidarTags(tags: string[]): Promise<void> {
 
     // Deadline 0 fuerza que la siguiente lectura repueble la CDN en foreground.
     await Promise.all([
-        getCache({ namespace: 'mfx-data-v1' }).expireTag(unicas),
+        getCache({ namespace: RUNTIME_CACHE_NAMESPACE }).expireTag(unicas),
         dangerouslyDeleteByTag(unicas, { revalidationDeadlineSeconds: 0 }),
     ]);
 
