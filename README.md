@@ -60,6 +60,27 @@ Este proyecto es una aplicación web moderna construida con **Astro**, diseñada
 - **Media**: [Cloudflare](https://www.cloudflare.com/) (R2 / Images)
 - **Despliegue**: [Vercel](https://vercel.com/)
 
+## Caché de datos de Turso
+
+Las lecturas de las bases principal y de estadísticas se guardan en Vercel
+Runtime Cache durante 30 días. Las páginas HTML se guardan en la CDN y ambas
+capas se invalidan por etiquetas después de cualquier escritura hecha con el
+cliente de `src/db/client.ts`.
+
+Las escrituras realizadas fuera de la aplicación (Turso MCP, consola o scripts)
+deben terminar llamando a `POST /api/cache/revalidate`. El endpoint acepta las
+tablas modificadas y calcula las etiquetas afectadas:
+
+```bash
+curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
+  -H "Content-Type: application/json" \
+  -H "x-cache-revalidation-secret: $CACHE_REVALIDATION_SECRET" \
+  --data '{"tables":["partidos","alineaciones","goles_y_asistencias"]}'
+```
+
+También admite `tags` para una invalidación más específica, por ejemplo
+`{"tags":["match-314","matches"]}`.
+
 ## 🛠️ Instalación y Configuración
 
 ### 1. Clonar el repositorio

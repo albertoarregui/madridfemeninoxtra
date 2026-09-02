@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 import { cacheTags } from '../../../lib/cache-tags';
+import { isCachedTable, tagsForTables, type CachedTable } from '../../../lib/db-cache-tags';
 import { invalidarTags } from '../../../utils/cache';
 
 export const prerender = false;
 
-const STATIC_TAGS = new Set([
+const STATIC_TAGS: Set<string> = new Set([
+    cacheTags.database,
     cacheTags.matches,
     cacheTags.goals,
     cacheTags.lineups,
@@ -18,7 +20,7 @@ const STATIC_TAGS = new Set([
     cacheTags.rivals,
     cacheTags.homepage,
     cacheTags.news,
-    'awards',
+    cacheTags.awards,
 ]);
 
 const DYNAMIC_TAG = /^(match|player|stadium|referee|coach|news)-[a-zA-Z0-9_-]+$/;
@@ -41,25 +43,44 @@ export const POST: APIRoute = async ({ request }) => {
         return response({ error: 'No autorizado' }, 401);
     }
 
-    let body: { tags?: unknown };
+    let body: { tags?: unknown; tables?: unknown };
     try {
         body = await request.json();
     } catch {
         return response({ error: 'JSON no válido' }, 400);
     }
 
-    if (!Array.isArray(body.tags)) {
+    const rawTags = body.tags ?? [];
+    const rawTables = body.tables ?? [];
+
+    if (!Array.isArray(rawTags)) {
         return response({ error: 'El campo tags debe ser una lista' }, 400);
     }
 
-    const tags = [...new Set(body.tags.filter((tag): tag is string =>
-        typeof tag === 'string' && (STATIC_TAGS.has(tag) || DYNAMIC_TAG.test(tag)),
-    ))];
+    if (!Array.isArray(rawTables)) {
+        return response({ error: 'El campo tables debe ser una lista' }, 400);
+    }
+
+    const invalidTables = rawTables.filter((table) =>
+        typeof table !== 'string' || !isCachedTable(table),
+    );
+    if (invalidTables.length > 0) {
+        return response({ error: 'Hay tablas no válidas', tables: invalidTables }, 400);
+    }
+
+    const tables = [...new Set(rawTables as CachedTable[])];
+
+    const tags = [...new Set([
+        ...rawTags.filter((tag): tag is string =>
+            typeof tag === 'string' && (STATIC_TAGS.has(tag) || DYNAMIC_TAG.test(tag)),
+        ),
+        ...tagsForTables(tables),
+    ])];
 
     if (tags.length === 0) {
         return response({ error: 'No se recibieron etiquetas válidas' }, 400);
     }
 
     await invalidarTags(tags);
-    return response({ revalidated: true, tags });
+    return response({ revalidated: true, tables, tags });
 };

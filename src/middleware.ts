@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 import { addCacheTag } from "@vercel/functions";
-import { tagsForPath } from "./lib/cache-tags";
+import { cacheTags, tagsForPath } from "./lib/cache-tags";
 
 const isProtectedRoute = createRouteMatcher([]);
 
@@ -15,8 +15,6 @@ const CACHE_LARGA = [
 // afectadas, por lo que no hace falta regenerar todas las páginas cada minuto.
 const CACHE_CORTA_S = 24 * 60 * 60;
 const SWR_S = 7 * 24 * 60 * 60;
-const CACHE_PARTIDO_S = 60;
-const SWR_PARTIDO_S = 60;
 const CACHE_LARGA_S = 7 * 24 * 60 * 60;
 const SWR_LARGA_S = 30 * 24 * 60 * 60;
 
@@ -40,14 +38,13 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
 
         if (request.method === "GET" && response.status === 200 && !auth().userId) {
             const tags = tagsForPath(url.pathname);
-            if (tags.length > 0) await addCacheTag(tags);
+            if (tags.length > 0) await addCacheTag([cacheTags.database, ...tags]);
         }
 
         if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
-            const fichaPartido = /^\/partidos\/[^/]+\/?$/.test(url.pathname);
-            const sMaxage = larga ? CACHE_LARGA_S : fichaPartido ? CACHE_PARTIDO_S : CACHE_CORTA_S;
-            const swr = larga ? SWR_LARGA_S : fichaPartido ? SWR_PARTIDO_S : SWR_S;
+            const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;
+            const swr = larga ? SWR_LARGA_S : SWR_S;
             // Astro establece Cache-Control: public, max-age=0. La cabecera
             // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(

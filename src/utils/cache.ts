@@ -16,7 +16,10 @@ type CacheOptions = {
 };
 
 const almacen = new Map<string, Entrada<any>>();
-const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v2';
+const tagVersions = new Map<string, number>();
+// Se cambia solo cuando el formato o las reglas de invalidación dejan
+// incompatibles las entradas existentes.
+const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v3';
 
 export const TTL = {
     corto: 2 * 60 * 1000,
@@ -36,37 +39,62 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
     }
     if (hit?.enCurso) return hit.enCurso;
 
-    if (remote) {
-        try {
-            const remoto = await getCache({ namespace: RUNTIME_CACHE_NAMESPACE }).get(clave);
-            if (remoto !== null) {
-                const data = remoto as T;
-                almacen.set(clave, { at: ahora, data, tags });
-                return data;
-            }
-        } catch (error) {
-            if (import.meta.env?.PROD) console.error('[CACHE] Error leyendo Runtime Cache:', error);
-        }
-    }
+    // Se registra la carga antes de consultar Runtime Cache. Así también se
+    // agrupan los fallos simultáneos de caché, no solo las consultas a Turso.
+    const versions = new Map(tags.map((tag) => [tag, tagVersions.get(tag) ?? 0]));
+    const sigueVigente = () => tags.every((tag) =>
+        (tagVersions.get(tag) ?? 0) === versions.get(tag),
+    );
+    const runtimeCache = remote ? getCache({ namespace: RUNTIME_CACHE_NAMESPACE }) : null;
 
-    const enCurso = fn()
-        .then(async (data) => {
-            almacen.set(clave, { at: Date.now(), data, tags });
-            if (remote) {
-                try {
-                    await getCache({ namespace: RUNTIME_CACHE_NAMESPACE }).set(clave, data, {
-                        ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
-                    });
-                } catch (error) {
-                    if (import.meta.env?.PROD) console.error('[CACHE] Error escribiendo Runtime Cache:', error);
+    let enCurso!: Promise<T>;
+    enCurso = (async () => {
+        if (runtimeCache) {
+            try {
+                const remoto = await runtimeCache.get(clave);
+                if (remoto !== null && sigueVigente()) {
+                    const data = remoto as T;
+                    if (almacen.get(clave)?.enCurso === enCurso) {
+                        almacen.set(clave, { at: Date.now(), data, tags });
+                    }
+                    return data;
                 }
+            } catch (error) {
+                if (import.meta.env?.PROD) console.error('[CACHE] Error leyendo Runtime Cache:', error);
             }
-            return data;
-        })
-        .catch((err) => {
+        }
+
+        const data = await fn();
+        const vigente = sigueVigente();
+
+        if (vigente && almacen.get(clave)?.enCurso === enCurso) {
+            almacen.set(clave, { at: Date.now(), data, tags });
+        }
+
+        if (runtimeCache && vigente) {
+            try {
+                await runtimeCache.set(clave, data, {
+                    ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
+                });
+                // Si se invalidó mientras se escribía, evita que la lectura
+                // anterior reaparezca en Runtime Cache después de la purga.
+                if (!sigueVigente()) await runtimeCache.delete(clave);
+            } catch (error) {
+                if (import.meta.env?.PROD) console.error('[CACHE] Error escribiendo Runtime Cache:', error);
+            }
+        }
+
+        if (!sigueVigente() && almacen.get(clave)?.enCurso === enCurso) {
             almacen.delete(clave);
-            throw err;
-        });
+        }
+
+        return data;
+    })().catch((err) => {
+        if (almacen.get(clave)?.enCurso === enCurso) {
+            almacen.delete(clave);
+        }
+        throw err;
+    });
 
     almacen.set(clave, { at: hit?.at ?? 0, data: hit?.data, enCurso, tags });
     return enCurso;
@@ -82,6 +110,10 @@ export function cachear<T>(clave: string, ttlMs: number, fn: () => Promise<T>, o
 export async function invalidarTags(tags: string[]): Promise<void> {
     const unicas = [...new Set(tags.filter(Boolean))];
     if (unicas.length === 0) return;
+
+    // Invalida también las lecturas que siguen en curso para impedir que una
+    // respuesta anterior vuelva a poblar la caché después de una escritura.
+    unicas.forEach((tag) => tagVersions.set(tag, (tagVersions.get(tag) ?? 0) + 1));
 
     for (const [clave, entrada] of almacen) {
         if (entrada.tags.some((tag) => unicas.includes(tag))) almacen.delete(clave);

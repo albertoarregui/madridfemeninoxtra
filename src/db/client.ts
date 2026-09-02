@@ -1,5 +1,6 @@
 import { createClient, type Client } from '@libsql/client';
 import { cached, invalidarTags } from '../utils/cache';
+import { isReadOnlySql, tagsForReadSql, tagsForWriteSql } from '../lib/db-cache-tags';
 
 const globalForDb = globalThis as unknown as {
     __awardsDb?: Client | null;
@@ -10,46 +11,85 @@ const globalForDb = globalThis as unknown as {
 
 // Una consulta solo vuelve a Turso una vez al mes, salvo revalidación por cambio.
 const DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const MATCH_READ_TTL_MS = 2 * 60 * 1000;
-const MATCH_CACHE_VERSION = 'v2';
+const DB_CACHE_VERSION = 'v3';
 
-const TABLE_TAGS: Record<string, string[]> = {
-    partidos: ['matches', 'calendar'],
-    goles_y_asistencias: ['goals', 'statistics', 'rankings'],
-    goles_propia: ['goals', 'statistics'],
-    goles_rival: ['goals', 'matches', 'statistics'],
-    alineaciones: ['lineups', 'statistics'],
-    estadisticas_jugadoras: ['statistics', 'players', 'rankings'],
-    estadisticas_partidos: ['statistics', 'matches'],
-    jugadoras: ['players'],
-    dorsales: ['players'],
-    lesiones: ['players'],
-    contratos: ['players'],
-    trayectoria_jugadoras: ['players'],
-    redes_sociales: ['players'],
-    estadios: ['stadiums'],
-    entrenadores: ['coaches', 'matches'],
-    trayectoria_entrenadores: ['coaches'],
-    clubes: ['rivals'],
-    arbitras: ['referees', 'matches', 'statistics'],
-    tarjetas: ['statistics', 'matches'],
-    tarjetas_rival: ['statistics', 'matches'],
-    cambios: ['lineups', 'statistics', 'players'],
-    equipaciones: ['matches'],
-    penaltis_fallados: ['goals', 'matches', 'statistics'],
-    tanda_penaltis: ['goals', 'matches'],
-    competiciones: ['matches', 'statistics'],
-    temporadas: ['matches', 'statistics'],
-    mvp: ['awards', 'players', 'homepage'],
-};
+function statementSql(statement: any): string | undefined {
+    if (typeof statement === 'string') return statement;
+    if (Array.isArray(statement) && typeof statement[0] === 'string') return statement[0];
+    return typeof statement?.sql === 'string' ? statement.sql : undefined;
+}
 
-function tagsForQuery(sql: string): string[] {
-    const lower = sql.toLowerCase();
-    const tags = new Set<string>();
-    for (const [table, tableTags] of Object.entries(TABLE_TAGS)) {
-        if (new RegExp(`\\b${table}\\b`, 'i').test(lower)) tableTags.forEach((tag) => tags.add(tag));
-    }
-    return [...tags];
+function statementArgs(statement: any, executeArgs?: any): any {
+    if (executeArgs !== undefined) return executeArgs;
+    if (Array.isArray(statement)) return statement[1] ?? [];
+    return typeof statement === 'string' ? [] : (statement?.args ?? statement?.params ?? []);
+}
+
+function addTags(target: Set<string>, tags: string[]): void {
+    tags.forEach((tag) => target.add(tag));
+}
+
+function changedRowsOrSchema(sql: string, rowsAffected = 0): boolean {
+    return rowsAffected > 0 || /^\s*(create|alter|drop|vacuum|reindex)\b/i.test(sql);
+}
+
+function withWriteInvalidation(transaction: any): any {
+    const changedTags = new Set<string>();
+
+    return new Proxy(transaction, {
+        get(target, property, receiver) {
+            if (property === 'execute') {
+                return async (statement: any) => {
+                    const result = await target.execute(statement);
+                    const sql = statementSql(statement);
+                    if (sql && !isReadOnlySql(sql) && changedRowsOrSchema(sql, result.rowsAffected)) {
+                        addTags(changedTags, tagsForWriteSql(sql));
+                    }
+                    return result;
+                };
+            }
+            if (property === 'batch') {
+                return async (statements: any[]) => {
+                    const results = await target.batch(statements);
+                    statements.forEach((statement, index) => {
+                        const sql = statementSql(statement);
+                        if (sql && !isReadOnlySql(sql) && changedRowsOrSchema(sql, results[index]?.rowsAffected)) {
+                            addTags(changedTags, tagsForWriteSql(sql));
+                        }
+                    });
+                    return results;
+                };
+            }
+            if (property === 'executeMultiple') {
+                return async (sql: string) => {
+                    await target.executeMultiple(sql);
+                    if (!isReadOnlySql(sql)) addTags(changedTags, tagsForWriteSql(sql));
+                };
+            }
+            if (property === 'commit') {
+                return async () => {
+                    await target.commit();
+                    await invalidarTags([...changedTags]);
+                    changedTags.clear();
+                };
+            }
+            if (property === 'rollback') {
+                return async () => {
+                    await target.rollback();
+                    changedTags.clear();
+                };
+            }
+            if (property === 'close') {
+                return () => {
+                    target.close();
+                    changedTags.clear();
+                };
+            }
+
+            const value = Reflect.get(target, property, receiver);
+            return typeof value === 'function' ? value.bind(target) : value;
+        },
+    });
 }
 
 function stableValue(value: unknown): unknown {
@@ -71,41 +111,63 @@ function withReadCache(client: Client, database: string): Client {
                     const results = await target.batch(statements, mode);
                     const changedTags = new Set<string>();
                     statements.forEach((statement, index) => {
-                        const sql = typeof statement === 'string' ? statement : statement?.sql;
-                        if (typeof sql === 'string' && !/^\s*(select|with|pragma)\b/i.test(sql) && results[index]?.rowsAffected > 0) {
-                            tagsForQuery(sql).forEach((tag) => changedTags.add(tag));
+                        const sql = statementSql(statement);
+                        if (sql && !isReadOnlySql(sql) && changedRowsOrSchema(sql, results[index]?.rowsAffected)) {
+                            addTags(changedTags, tagsForWriteSql(sql));
                         }
                     });
                     await invalidarTags([...changedTags]);
                     return results;
                 };
             }
+            if (property === 'migrate') {
+                return async (statements: any[]) => {
+                    const results = await target.migrate(statements);
+                    const changedTags = new Set<string>();
+                    statements.forEach((statement, index) => {
+                        const sql = statementSql(statement);
+                        if (sql && !isReadOnlySql(sql) && changedRowsOrSchema(sql, results[index]?.rowsAffected)) {
+                            addTags(changedTags, tagsForWriteSql(sql));
+                        }
+                    });
+                    await invalidarTags([...changedTags]);
+                    return results;
+                };
+            }
+            if (property === 'executeMultiple') {
+                return async (sql: string) => {
+                    await target.executeMultiple(sql);
+                    if (!isReadOnlySql(sql)) await invalidarTags(tagsForWriteSql(sql));
+                };
+            }
+            if (property === 'transaction') {
+                return async (mode?: any) => withWriteInvalidation(await target.transaction(mode));
+            }
             if (property !== 'execute') {
                 const value = Reflect.get(target, property, receiver);
                 return typeof value === 'function' ? value.bind(target) : value;
             }
 
-            return async (statement: any) => {
-                const sql = typeof statement === 'string' ? statement : statement?.sql;
-                if (typeof sql !== 'string') return target.execute(statement);
-                if (!/^\s*(select|with)\b/i.test(sql)) {
-                    const result = await target.execute(statement);
-                    if (result.rowsAffected > 0) await invalidarTags(tagsForQuery(sql));
+            return async (statement: any, executeArgs?: any) => {
+                const sql = statementSql(statement);
+                const run = () => executeArgs === undefined
+                    ? target.execute(statement)
+                    : target.execute(statement, executeArgs);
+
+                if (!sql) return run();
+                if (!isReadOnlySql(sql)) {
+                    const result = await run();
+                    if (changedRowsOrSchema(sql, result.rowsAffected)) await invalidarTags(tagsForWriteSql(sql));
                     return result;
                 }
 
-                const args = typeof statement === 'string' ? [] : (statement.args ?? statement.params ?? []);
+                const args = statementArgs(statement, executeArgs);
                 const normalizedSql = sql.replace(/\s+/g, ' ').trim();
-                const tags = tagsForQuery(sql);
-                // Las consultas de una ficha suelen filtrar por id_partido sin
-                // tocar la tabla `partidos` (goles, tarjetas, alineaciones...).
-                // También deben refrescarse rápido después de cargar el acta.
-                const isMatchRead = tags.includes('matches') || /\bid_partido\s*=\s*\?/i.test(sql);
-                const cacheVersion = isMatchRead ? MATCH_CACHE_VERSION : 'v1';
-                const key = `turso:${cacheVersion}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
+                const tags = tagsForReadSql(sql);
+                const key = `turso:${DB_CACHE_VERSION}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
 
-                return cached(key, isMatchRead ? MATCH_READ_TTL_MS : DB_READ_TTL_MS, async () => {
-                    const result = await target.execute(statement);
+                return cached(key, DB_READ_TTL_MS, async () => {
+                    const result = await run();
                     return {
                         columns: [...result.columns],
                         columnTypes: [...result.columnTypes],
