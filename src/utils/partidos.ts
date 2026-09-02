@@ -2,6 +2,7 @@ import { cachear, TTL } from './cache';
 import { getAssetUrl } from './assets';
 import { getRivalShieldUrl } from './rivales';
 import { getFlagSrc } from './flags';
+import { resolveMatchId } from '../lib/match-row';
 
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
@@ -51,7 +52,7 @@ async function fetchGamesDirectlyUncached(): Promise<any[]> {
 
         const query = `
             SELECT
-                p.id_partido, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
+                p.id_partido AS partido_id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 c.foto_url AS competicion_foto_url,
@@ -127,6 +128,7 @@ async function fetchGamesDirectlyUncached(): Promise<any[]> {
 
             return {
                 ...game,
+                id_partido: resolveMatchId(game),
                 isPlayed,
                 mvp: cleanApiValue(game.mvp),
                 local_foto_url: cleanApiValue(game.local_foto_url),
