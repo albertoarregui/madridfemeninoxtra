@@ -52,3 +52,30 @@ test('las tablas externas se traducen a etiquetas sin duplicados', () => {
     assert.ok(tags.includes(tableCacheTag('partidos')));
     assert.ok(tags.includes(tableCacheTag('goles_y_asistencias')));
 });
+
+test('insertar todos los datos de una ficha invalida su HTML y sus lecturas', () => {
+    const matchTables = [
+        'partidos',
+        'alineaciones',
+        'estadisticas_partidos',
+        'estadisticas_jugadoras',
+        'goles_y_asistencias',
+        'goles_propia',
+        'goles_rival',
+        'tarjetas',
+        'tarjetas_rival',
+        'equipaciones',
+        'penaltis_fallados',
+        'tanda_penaltis',
+    ] as const;
+
+    const tags = tagsForTables(matchTables);
+
+    for (const table of matchTables) {
+        assert.ok(tags.includes(tableCacheTag(table)), `falta invalidar la lectura de ${table}`);
+    }
+
+    for (const pageTag of ['matches', 'lineups', 'statistics', 'goals']) {
+        assert.ok(tags.includes(pageTag), `falta invalidar el HTML etiquetado como ${pageTag}`);
+    }
+});
