@@ -22,7 +22,7 @@ const tagVersions = new Map<string, number>();
 const keyVersions = new Map<string, number>();
 // Se cambia solo cuando el formato o las reglas de invalidación dejan
 // incompatibles las entradas existentes.
-const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v3';
+const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v4';
 
 export const TTL = {
     corto: 2 * 60 * 1000,
