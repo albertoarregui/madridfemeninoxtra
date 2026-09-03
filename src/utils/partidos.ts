@@ -1171,7 +1171,8 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
 
 
 
-export const fetchGamesDirectly = cachear('games:all', TTL.corto, fetchGamesDirectlyUncached, { tags: ['matches'] });
+export const fetchGamesDirectly = (options: MatchReadOptions = {}) =>
+    fetchGamesDirectlyUncached(options);
 
 
 export const fetchAllGoals = cachear('goals:all', TTL.corto, fetchAllGoalsUncached, { tags: ['goals', 'matches', 'statistics', 'rankings'] });
