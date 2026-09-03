@@ -24,32 +24,12 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
         auth().protect();
     }
 
-    let response = await next();
+    const response = await next();
 
     try {
         const { request } = context;
         const url = new URL(request.url);
         const freshMatch = isFreshMatchPath(url.pathname);
-        const matchDetail = /^\/partidos\/[^/]+\/?$/.test(url.pathname);
-
-        // Las fichas son respuestas grandes. Vercel estaba corrompiendo los
-        // fragmentos del stream después del DOCTYPE; al materializarlas aquí
-        // se envía HTML íntegro sin añadir consultas ni alterar sus datos.
-        if (
-            matchDetail &&
-            request.method === "GET" &&
-            response.status === 200 &&
-            (response.headers.get("content-type") || "").includes("text/html")
-        ) {
-            const body = await response.arrayBuffer();
-            const headers = new Headers(response.headers);
-            headers.set("Content-Length", String(body.byteLength));
-            response = new Response(body, {
-                status: response.status,
-                statusText: response.statusText,
-                headers,
-            });
-        }
 
         const cacheable =
             request.method === "GET" &&
