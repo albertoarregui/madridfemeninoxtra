@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 import { addCacheTag } from "@vercel/functions";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
+import { isFreshMatchPath } from "./lib/match-freshness";
 
 const isProtectedRoute = createRouteMatcher([]);
 
@@ -28,12 +29,14 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
     try {
         const { request } = context;
         const url = new URL(request.url);
+        const freshMatch = isFreshMatchPath(url.pathname);
 
         const cacheable =
             request.method === "GET" &&
             response.status === 200 &&
             (response.headers.get("content-type") || "").includes("text/html") &&
             !SIN_CACHE.some((re) => re.test(url.pathname)) &&
+            !freshMatch &&
             !auth().userId;
 
         if (request.method === "GET" && response.status === 200 && !auth().userId) {
@@ -41,7 +44,11 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             if (tags.length > 0) await addCacheTag([cacheTags.database, ...tags]);
         }
 
-        if (cacheable) {
+        if (freshMatch && request.method === "GET") {
+            response.headers.set("Cache-Control", "private, no-store, max-age=0");
+            response.headers.set("CDN-Cache-Control", "no-store");
+            response.headers.set("Vercel-CDN-Cache-Control", "no-store");
+        } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
             const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;
             const swr = larga ? SWR_LARGA_S : SWR_S;

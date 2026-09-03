@@ -6,6 +6,7 @@ const globalForDb = globalThis as unknown as {
     __awardsDb?: Client | null;
     __seasonAwardsDb?: Client | null;
     __playersDb?: Client | null;
+    __playersFreshDb?: Client | null;
     __analyticsDb?: Client | null;
 };
 
@@ -103,7 +104,7 @@ function stableValue(value: unknown): unknown {
     return value;
 }
 
-function withReadCache(client: Client, database: string): Client {
+function withReadCache(client: Client, database: string, forceRefresh = false): Client {
     return new Proxy(client, {
         get(target, property, receiver) {
             if (property === 'batch') {
@@ -178,7 +179,7 @@ function withReadCache(client: Client, database: string): Client {
                         rowsAffected: result.rowsAffected,
                         lastInsertRowid: result.lastInsertRowid,
                     } as any;
-                }, { tags });
+                }, { tags, forceRefresh });
             };
         },
     });
@@ -193,6 +194,7 @@ function makeClient(
     tokenKeys: string[],
     label: string,
     cacheReads = true,
+    forceRefresh = false,
 ): Client | null {
     const cached = globalForDb[cacheKey];
     if (cached) return cached;
@@ -210,7 +212,7 @@ function makeClient(
         const databaseKey = (() => {
             try { return new URL(url).hostname; } catch { return label.toLowerCase(); }
         })();
-        const client = cacheReads ? withReadCache(rawClient, databaseKey) : rawClient;
+        const client = cacheReads ? withReadCache(rawClient, databaseKey, forceRefresh) : rawClient;
         globalForDb[cacheKey] = client;
         return client;
     } catch (e) {
@@ -227,12 +229,15 @@ export async function getSeasonAwardsDbClient(): Promise<Client | null> {
     return makeClient('__seasonAwardsDb', ['TURSO_DATABASE_URL_2'], ['TURSO_AUTH_TOKEN_2'], 'SEASON-AWARDS', false);
 }
 
-export async function getPlayersDbClient(): Promise<Client | null> {
+export async function getPlayersDbClient(options: { forceRefresh?: boolean } = {}): Promise<Client | null> {
+    const forceRefresh = options.forceRefresh === true;
     return makeClient(
-        '__playersDb',
+        forceRefresh ? '__playersFreshDb' : '__playersDb',
         ['TURSO_STATS_DATABASE_URL', 'TURSO_DATABASE_URL'],
         ['TURSO_STATS_AUTH_TOKEN', 'TURSO_AUTH_TOKEN'],
-        'STATS',
+        forceRefresh ? 'STATS-FRESH' : 'STATS',
+        true,
+        forceRefresh,
     );
 }
 

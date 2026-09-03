@@ -13,10 +13,13 @@ type CacheOptions = {
     remote?: boolean;
     /** Evita datos obsoletos entre instancias después de una revalidación. */
     memoryTtlMs?: number;
+    /** Omite la lectura de caché, consulta el origen y reemplaza la misma entrada. */
+    forceRefresh?: boolean;
 };
 
 const almacen = new Map<string, Entrada<any>>();
 const tagVersions = new Map<string, number>();
+const keyVersions = new Map<string, number>();
 // Se cambia solo cuando el formato o las reglas de invalidación dejan
 // incompatibles las entradas existentes.
 const RUNTIME_CACHE_NAMESPACE = 'mfx-data-v3';
@@ -31,25 +34,31 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
     const ahora = Date.now();
     const tags = [...new Set(options.tags ?? [])];
     const remote = options.remote ?? true;
+    const forceRefresh = options.forceRefresh ?? false;
     const memoryTtlMs = options.memoryTtlMs ?? (remote ? 0 : ttlMs);
     const hit = almacen.get(clave) as Entrada<T> | undefined;
 
-    if (memoryTtlMs > 0 && hit?.data !== undefined && ahora - hit.at < memoryTtlMs) {
+    if (!forceRefresh && memoryTtlMs > 0 && hit?.data !== undefined && ahora - hit.at < memoryTtlMs) {
         return hit.data;
     }
-    if (hit?.enCurso) return hit.enCurso;
+    if (!forceRefresh && hit?.enCurso) return hit.enCurso;
+
+    if (forceRefresh) {
+        keyVersions.set(clave, (keyVersions.get(clave) ?? 0) + 1);
+    }
 
     // Se registra la carga antes de consultar Runtime Cache. Así también se
     // agrupan los fallos simultáneos de caché, no solo las consultas a Turso.
     const versions = new Map(tags.map((tag) => [tag, tagVersions.get(tag) ?? 0]));
-    const sigueVigente = () => tags.every((tag) =>
-        (tagVersions.get(tag) ?? 0) === versions.get(tag),
-    );
+    const keyVersion = keyVersions.get(clave) ?? 0;
+    const sigueVigente = () =>
+        (keyVersions.get(clave) ?? 0) === keyVersion &&
+        tags.every((tag) => (tagVersions.get(tag) ?? 0) === versions.get(tag));
     const runtimeCache = remote ? getCache({ namespace: RUNTIME_CACHE_NAMESPACE }) : null;
 
     let enCurso!: Promise<T>;
     enCurso = (async () => {
-        if (runtimeCache) {
+        if (runtimeCache && !forceRefresh) {
             try {
                 const remoto = await runtimeCache.get(clave);
                 if (remoto !== null && sigueVigente()) {

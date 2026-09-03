@@ -59,3 +59,20 @@ test('una lectura anterior no repuebla la caché después de una escritura', asy
     assert.equal(fresh, 'nuevo');
     assert.equal(freshReads, 1);
 });
+
+test('el refresco forzado sustituye la entrada sin perder la caché posterior', async () => {
+    const key = `test-force-refresh-${Date.now()}-${Math.random()}`;
+    const tag = `test-force-refresh-tag-${Date.now()}-${Math.random()}`;
+    let originReads = 0;
+    const read = (forceRefresh = false) => cached(
+        key,
+        60_000,
+        async () => ({ value: ++originReads }),
+        { tags: [tag], forceRefresh },
+    );
+
+    assert.deepEqual(await read(), { value: 1 });
+    assert.deepEqual(await read(true), { value: 2 });
+    assert.deepEqual(await read(), { value: 2 });
+    assert.equal(originReads, 2);
+});

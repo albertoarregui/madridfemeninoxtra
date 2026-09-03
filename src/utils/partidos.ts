@@ -4,6 +4,8 @@ import { getRivalShieldUrl } from './rivales';
 import { getFlagSrc } from './flags';
 import { resolveMatchId } from '../lib/match-row';
 
+export type MatchReadOptions = { fresh?: boolean };
+
 export function slugify(text: string | null | undefined): string {
     if (!text) return 'desconocido';
     return text.toString().toLowerCase()
@@ -41,10 +43,10 @@ export function formatGameDate(dateString: string | null | undefined): string {
     }
 }
 
-async function fetchGamesDirectlyUncached(): Promise<any[]> {
+async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: string } = {}): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) {
             return [];
@@ -106,10 +108,14 @@ async function fetchGamesDirectlyUncached(): Promise<any[]> {
               LEFT JOIN jugadoras jm ON p.mvp = jm.id_jugadora
               LEFT JOIN entrenadores en ON p.id_entrenador = en.id_entrenador
               LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
+              ${options.date ? 'WHERE p.fecha = ?' : ''}
               ORDER BY p.fecha ASC, p.hora ASC, p.id_partido ASC
         `;
 
-        const result = await client.execute(query);
+        const result = await client.execute({
+            sql: query,
+            args: options.date ? [options.date] : [],
+        });
 
         return result.rows.map((game: any) => {
             let dateSlug = 'sin-fecha';
@@ -148,6 +154,13 @@ async function fetchGamesDirectlyUncached(): Promise<any[]> {
         console.error("[fetchGamesDirectly] ERROR:", error);
         return [];
     }
+}
+
+export async function fetchGameBySlug(slug: string, options: MatchReadOptions = {}): Promise<any | null> {
+    const date = slug.match(/-(\d{4}-\d{2}-\d{2})$/)?.[1];
+    if (!date) return null;
+    const games = await fetchGamesDirectlyUncached({ ...options, date });
+    return games.find((game) => game.slug === slug) ?? null;
 }
 
 export async function fetchGames(): Promise<any[]> {
@@ -358,10 +371,10 @@ export function calculateRivalStats(matches: any[], rivalName: string = '') {
 
 
 
-export async function fetchMatchLineups(matchId: string | number): Promise<any[]> {
+export async function fetchMatchLineups(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) {
             return [];
@@ -499,10 +512,10 @@ export async function fetchMatchLineups(matchId: string | number): Promise<any[]
     }
 }
 
-export async function fetchMatchSubstitutions(matchId: string | number): Promise<any[]> {
+export async function fetchMatchSubstitutions(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) return [];
 
@@ -667,10 +680,10 @@ export async function fetchMatchGoals(matchId: string | number): Promise<any[]> 
     }
 }
 
-export async function fetchMatchKit(matchId: string | number): Promise<{ url: string; nombre: string | null; tipo: string | null } | null> {
+export async function fetchMatchKit(matchId: string | number, options: MatchReadOptions = {}): Promise<{ url: string; nombre: string | null; tipo: string | null } | null> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
         if (!client) return null;
 
         const query = `
@@ -699,12 +712,12 @@ export async function fetchMatchKit(matchId: string | number): Promise<{ url: st
     }
 }
 
-export async function fetchStadiumStats(stadiumName: string | null): Promise<{ wins: number, draws: number, losses: number, total: number }> {
+export async function fetchStadiumStats(stadiumName: string | null, options: MatchReadOptions = {}): Promise<{ wins: number, draws: number, losses: number, total: number }> {
     if (!stadiumName) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
@@ -753,12 +766,12 @@ export async function fetchStadiumStats(stadiumName: string | null): Promise<{ w
     }
 }
 
-export async function fetchRefereeStats(refereeId: string | number | null): Promise<{ wins: number, draws: number, losses: number, total: number, yellowCards: number, redCards: number }> {
+export async function fetchRefereeStats(refereeId: string | number | null, options: MatchReadOptions = {}): Promise<{ wins: number, draws: number, losses: number, total: number, yellowCards: number, redCards: number }> {
     if (!refereeId) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
     try {
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
@@ -824,12 +837,19 @@ export async function fetchRefereeStats(refereeId: string | number | null): Prom
     }
 }
 
-export async function fetchMatchEvents(matchId: string | number, matchScore?: number): Promise<any[]> {
+export async function fetchMatchEvents(
+    matchId: string | number,
+    matchScore?: number,
+    options: MatchReadOptions = {},
+    knownSubs?: any[],
+): Promise<any[]> {
     try {
-        const subsPromise = fetchMatchSubstitutions(matchId);
+        const subsPromise = knownSubs
+            ? Promise.resolve(knownSubs)
+            : fetchMatchSubstitutions(matchId, options);
 
         const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient();
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
         if (!client) return [];
 
         const goalsQuery = `
