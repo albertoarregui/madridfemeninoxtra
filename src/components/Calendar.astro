@@ -214,6 +214,7 @@ const getDayInfo = (
             >
                 <div class="calendar-header">
                     <button
+                        type="button"
                         class="nav-btn prev-btn"
                         disabled={index === 0}
                         aria-label="Mes anterior"
@@ -239,6 +240,7 @@ const getDayInfo = (
                         <span class="year">{monthData.year}</span>
                     </div>
                     <button
+                        type="button"
                         class="nav-btn next-btn"
                         disabled={index === MONTHS_DATA.length - 1}
                         aria-label="Mes siguiente"
@@ -396,56 +398,53 @@ const getDayInfo = (
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const widgets = document.querySelectorAll(".calendar-widget");
+    function initCalendar() {
+        document
+            .querySelectorAll<HTMLElement>(".calendar-widget-container")
+            .forEach((container) => {
+                if (container.dataset.calendarInitialized === "true") return;
+                container.dataset.calendarInitialized = "true";
 
-        widgets.forEach((widget) => {
-            const prevBtn = widget.querySelector(".prev-btn");
-            const nextBtn = widget.querySelector(".next-btn");
+                container.addEventListener("click", (event) => {
+                    const button = (event.target as Element).closest<HTMLButtonElement>(
+                        ".nav-btn",
+                    );
+                    if (!button || button.disabled) return;
 
-            if (prevBtn) {
-                prevBtn.addEventListener("click", () => {
-                    const currentIndexAttr =
-                        widget.getAttribute("data-month-index");
-                    if (currentIndexAttr !== null) {
-                        const currentIndex = parseInt(currentIndexAttr);
-                        if (currentIndex > 0) {
-                            changeMonth(currentIndex - 1);
-                        }
-                    }
+                    const currentWidget = button.closest<HTMLElement>(
+                        ".calendar-widget",
+                    );
+                    const currentIndex = Number(
+                        currentWidget?.dataset.monthIndex,
+                    );
+                    if (!Number.isInteger(currentIndex)) return;
+
+                    const newIndex = button.classList.contains("prev-btn")
+                        ? currentIndex - 1
+                        : currentIndex + 1;
+
+                    const widgets = container.querySelectorAll<HTMLElement>(
+                        ".calendar-widget",
+                    );
+                    if (newIndex < 0 || newIndex >= widgets.length) return;
+
+                    widgets.forEach((widget) => {
+                        widget.classList.toggle(
+                            "active",
+                            Number(widget.dataset.monthIndex) === newIndex,
+                        );
+                    });
                 });
-            }
-
-            if (nextBtn) {
-                nextBtn.addEventListener("click", () => {
-                    const currentIndexAttr =
-                        widget.getAttribute("data-month-index");
-                    if (currentIndexAttr !== null) {
-                        const currentIndex = parseInt(currentIndexAttr);
-                        changeMonth(currentIndex + 1);
-                    }
-                });
-            }
-        });
-
-        function changeMonth(newIndex: number) {
-            const allWidgets = document.querySelectorAll(".calendar-widget");
-            allWidgets.forEach((w) => {
-                const widget = w as HTMLElement;
-                const idxAttr = widget.getAttribute("data-month-index");
-                if (idxAttr !== null) {
-                    const idx = parseInt(idxAttr);
-                    if (idx === newIndex) {
-                        widget.style.display = "block";
-                        widget.classList.add("active");
-                    } else {
-                        widget.style.display = "none";
-                        widget.classList.remove("active");
-                    }
-                }
             });
-        }
-    });
+    }
+
+    document.addEventListener("astro:page-load", initCalendar);
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initCalendar, { once: true });
+    } else {
+        initCalendar();
+    }
 </script>
 
 <style>
