@@ -12,7 +12,7 @@ const globalForDb = globalThis as unknown as {
 
 // Una consulta solo vuelve a Turso una vez al mes, salvo revalidación por cambio.
 const DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const DB_CACHE_VERSION = 'v4';
+const DB_CACHE_VERSION = 'v5';
 
 function statementSql(statement: any): string | undefined {
     if (typeof statement === 'string') return statement;
