@@ -2,7 +2,7 @@
 import { fetchCalendarFromDb } from "../utils/calendar";
 import { fetchGamesDirectly } from "../utils/partidos";
 import { slugify } from "../utils/partidos";
-import { getMatchStatus } from "../utils/date-helper";
+import { getMatchStatus, parseMatchDate } from "../utils/date-helper";
 // @ts-ignore
 import "@fontsource/bowlby-one-sc";
 
@@ -13,21 +13,21 @@ const matchDuration = 120 * 60 * 1000;
 
 const liveMatch = allGames.find((game) => {
     if (!game.fecha || !game.hora) return false;
-    const h = game.hora?.includes(":") ? (game.hora.split(":").length === 2 ? `${game.hora}:00` : game.hora) : "00:00:00";
-    const matchDate = new Date(`${game.fecha}T${h}`);
+    const matchDate = parseMatchDate(game.fecha, game.hora);
     return now >= matchDate && now <= new Date(matchDate.getTime() + matchDuration);
 });
 
 const nextMatch = liveMatch ||
     calendarMatches.find((match) => {
-        const h = match.hora?.includes(":") ? (match.hora.split(":").length === 2 ? `${match.hora}:00` : match.hora) : "00:00:00";
-        return new Date(`${match.fecha}T${h}`) >= now;
+        return parseMatchDate(match.fecha, match.hora) >= now;
     }) || null;
 
 if (!nextMatch) return null;
 
+// Convertimos la hora española guardada en Turso a un instante ISO inequívoco.
+// Así Vercel (UTC) y cualquier navegador calculan exactamente la misma cuenta atrás.
 const targetDate = nextMatch.fecha
-    ? `${nextMatch.fecha}T${nextMatch.hora?.includes(":") ? (nextMatch.hora.split(":").length === 2 ? `${nextMatch.hora}:00` : nextMatch.hora) : "00:00:00"}`
+    ? parseMatchDate(nextMatch.fecha, nextMatch.hora).toISOString()
     : "";
 const matchTimeDisplay = nextMatch.hora?.replace(/[^0-9:]/g, "") || "00:00";
 
@@ -419,15 +419,7 @@ const visitanteShort = nextMatch.club_visitante.replace("Femenino","").replace("
         }
 
         function tick() {
-            const fmt = new Intl.DateTimeFormat('en-US', {
-                timeZone: 'Europe/Madrid',
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-            });
-            const p: any = {};
-            fmt.formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
-            const nowMs = new Date(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`).getTime();
-            const diff  = new Date(targetStr).getTime() - nowMs;
+            const diff = new Date(targetStr).getTime() - Date.now();
             if (diff <= 0) return;
 
             setCircle('d', Math.floor(diff / 86400000),           30);
