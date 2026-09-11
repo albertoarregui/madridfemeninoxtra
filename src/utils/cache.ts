@@ -54,7 +54,12 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
     const sigueVigente = () =>
         (keyVersions.get(clave) ?? 0) === keyVersion &&
         tags.every((tag) => (tagVersions.get(tag) ?? 0) === versions.get(tag));
-    const runtimeCache = remote ? getCache({ namespace: RUNTIME_CACHE_NAMESPACE }) : null;
+    // Las lecturas forzadas pertenecen a fichas recientes que el middleware
+    // sirve con `no-store`. Si escribimos aquí, cada visita genera una escritura
+    // de Runtime Cache por consulta aunque la respuesta nunca se reutilice.
+    const runtimeCache = remote && !forceRefresh
+        ? getCache({ namespace: RUNTIME_CACHE_NAMESPACE })
+        : null;
 
     let enCurso!: Promise<T>;
     enCurso = (async () => {

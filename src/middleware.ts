@@ -39,7 +39,10 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             !freshMatch &&
             !auth().userId;
 
-        if (request.method === "GET" && response.status === 200 && !auth().userId) {
+        // Solo las respuestas que realmente se guardan en la CDN necesitan
+        // etiquetas. Las APIs y las fichas `no-store` no deben registrar una
+        // escritura de caché en cada petición.
+        if (cacheable) {
             const tags = tagsForPath(url.pathname);
             if (tags.length > 0) await addCacheTag([cacheTags.database, ...tags]);
         }

@@ -60,7 +60,7 @@ test('una lectura anterior no repuebla la caché después de una escritura', asy
     assert.equal(freshReads, 1);
 });
 
-test('el refresco forzado sustituye la entrada sin perder la caché posterior', async () => {
+test('el refresco forzado vuelve al origen en cada lectura', async () => {
     const key = `test-force-refresh-${Date.now()}-${Math.random()}`;
     const tag = `test-force-refresh-tag-${Date.now()}-${Math.random()}`;
     let originReads = 0;
@@ -73,6 +73,6 @@ test('el refresco forzado sustituye la entrada sin perder la caché posterior', 
 
     assert.deepEqual(await read(), { value: 1 });
     assert.deepEqual(await read(true), { value: 2 });
-    assert.deepEqual(await read(), { value: 2 });
-    assert.equal(originReads, 2);
+    assert.deepEqual(await read(true), { value: 3 });
+    assert.equal(originReads, 3);
 });
