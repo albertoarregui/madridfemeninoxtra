@@ -1,6 +1,7 @@
 import { getPlayersDbClient } from '../../../db/client';
 import { jsonResponse, jsonError } from '../../../lib/api-cache';
 import { cacheTags } from '../../../lib/cache-tags';
+import { versionCoachImageUrl } from '../../../lib/coach-image';
 
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -69,6 +70,7 @@ export const POST = async ({ request }) => {
     }
 
     const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
+    const versionedPhotoUrl = versionCoachImageUrl(foto_url, Date.now(), true);
 
     if (!nombre || !ciudad || !pais || !fecha_nacimiento) {
         return jsonError('Faltan campos obligatorios (nombre, ciudad, pais, fecha_nacimiento).', 400);
@@ -82,7 +84,7 @@ export const POST = async ({ request }) => {
     try {
         await client.execute({
             sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url],
+            args: [nombre, ciudad, pais, fecha_nacimiento, versionedPhotoUrl],
         });
 
         return jsonResponse({ message: 'Entrenador creado exitosamente.' }, { sMaxage: 0, status: 201 });
@@ -108,6 +110,7 @@ export const PUT = async ({ request, url }) => {
     }
 
     const { nombre, ciudad, pais, fecha_nacimiento, foto_url } = body;
+    const versionedPhotoUrl = versionCoachImageUrl(foto_url, Date.now(), true);
 
     if (!id_entrenador || !nombre || !ciudad || !pais || !fecha_nacimiento) {
         return jsonError('Faltan campos obligatorios para la actualización (ID o datos del entrenador).', 400);
@@ -122,7 +125,7 @@ export const PUT = async ({ request, url }) => {
     try {
         const result = await client.execute({
             sql,
-            args: [nombre, ciudad, pais, fecha_nacimiento, foto_url, id_entrenador],
+            args: [nombre, ciudad, pais, fecha_nacimiento, versionedPhotoUrl, id_entrenador],
         });
 
         if (result.rowsAffected === 0) {

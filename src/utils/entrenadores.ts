@@ -13,12 +13,13 @@ export function slugify(text: string | null | undefined): string {
 
 import { getAssetUrl } from './assets';
 import { getFlagSrc } from './flags';
+import { versionCoachImageUrl } from '../lib/coach-image';
 
 export function getCoachImageUrl(coach: any): string {
     const photoUrl = coach.foto_url || coach.imageUrl;
 
     if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
-        return photoUrl;
+        return versionCoachImageUrl(photoUrl);
     }
 
     const name = photoUrl || coach.nombre;
@@ -319,4 +320,3 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
         return [];
     }
 }
-
