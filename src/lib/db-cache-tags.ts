@@ -26,7 +26,7 @@ export const TABLE_EFFECT_TAGS = {
     trayectoria_jugadoras: [cacheTags.players],
     redes_sociales: [cacheTags.players],
     estadios: [cacheTags.stadiums, cacheTags.matches, cacheTags.calendar, cacheTags.statistics],
-    entrenadores: [cacheTags.coaches, cacheTags.matches, cacheTags.statistics],
+    entrenadores: [cacheTags.coaches, cacheTags.matches, cacheTags.statistics, cacheTags.homepage],
     trayectoria_entrenadores: [cacheTags.coaches],
     clubes: [cacheTags.rivals, cacheTags.matches, cacheTags.calendar, cacheTags.statistics],
     arbitras: [cacheTags.referees, cacheTags.matches, cacheTags.statistics],

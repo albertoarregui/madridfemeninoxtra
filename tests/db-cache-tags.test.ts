@@ -42,6 +42,16 @@ test('una tabla desconocida activa la invalidación global de seguridad', () => 
     assert.deepEqual(tagsForWriteSql('UPDATE tabla_futura SET valor = 1'), [DATABASE_CACHE_TAG]);
 });
 
+test('actualizar un entrenador renueva sus fotos en fichas y portada', () => {
+    const tags = tagsForWriteSql(
+        "UPDATE entrenadores SET foto_url = 'https://media.example/coach.webp' WHERE id_entrenador = 7",
+    );
+
+    assert.ok(tags.includes(tableCacheTag('entrenadores')));
+    assert.ok(tags.includes('coaches'));
+    assert.ok(tags.includes('homepage'));
+});
+
 test('las tablas externas se traducen a etiquetas sin duplicados', () => {
     const tags = tagsForTables(['partidos', 'goles_y_asistencias']);
 

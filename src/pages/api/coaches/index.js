@@ -1,4 +1,4 @@
-import { getDbClient } from '../../../db/client';
+import { getPlayersDbClient } from '../../../db/client';
 import { jsonResponse, jsonError } from '../../../lib/api-cache';
 import { cacheTags } from '../../../lib/cache-tags';
 
@@ -16,7 +16,7 @@ export const OPTIONS = () => {
 };
 
 export const GET = async () => {
-    const client = await getDbClient();
+    const client = await getPlayersDbClient();
     if (!client) {
         return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
@@ -56,7 +56,7 @@ export const GET = async () => {
 };
 
 export const POST = async ({ request }) => {
-    const client = await getDbClient();
+    const client = await getPlayersDbClient();
     if (!client) {
         return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
@@ -93,7 +93,7 @@ export const POST = async ({ request }) => {
 };
 
 export const PUT = async ({ request, url }) => {
-    const client = await getDbClient();
+    const client = await getPlayersDbClient();
     if (!client) {
         return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
@@ -136,7 +136,7 @@ export const PUT = async ({ request, url }) => {
 };
 
 export const DELETE = async ({ url }) => {
-    const client = await getDbClient();
+    const client = await getPlayersDbClient();
     if (!client) {
         return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }

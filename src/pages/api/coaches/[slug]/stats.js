@@ -1,5 +1,6 @@
-import { getDbClient } from '../../../../db/client';
+import { getPlayersDbClient } from '../../../../db/client';
 import { jsonResponse, jsonError } from '../../../../lib/api-cache';
+import { cacheTags } from '../../../../lib/cache-tags';
 
 const JSON_HEADERS = {
     'Access-Control-Allow-Origin': '*',
@@ -30,7 +31,7 @@ export const GET = async ({ params }) => {
         return jsonError('Falta el slug del entrenador en la URL.', 400);
     }
 
-    const client = await getDbClient();
+    const client = await getPlayersDbClient();
     if (!client) {
         return jsonError('Fallo de conexión: Credenciales de Turso no configuradas.');
     }
@@ -121,7 +122,11 @@ export const GET = async ({ params }) => {
                 ficha: entrenador,
                 estadisticas: estadisticasCalculadas,
             },
-            { sMaxage: 3600, swr: 86400 },
+            {
+                sMaxage: 3600,
+                swr: 86400,
+                tags: [cacheTags.coaches, cacheTags.coach(id_entrenador)],
+            },
         );
     } catch (error) {
         console.error('Turso DB Error (Stats Entrenador):', error.message);
