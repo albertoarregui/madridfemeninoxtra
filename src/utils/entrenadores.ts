@@ -19,6 +19,20 @@ export function getCoachImageUrl(coach: any): string {
     const photoUrl = coach.foto_url || coach.imageUrl;
 
     if (photoUrl && (photoUrl.startsWith('http://') || photoUrl.startsWith('https://'))) {
+        try {
+            const url = new URL(photoUrl);
+            if (
+                url.hostname === 'media.madridfemeninoxtra.com' &&
+                url.pathname.startsWith('/entrenadores/')
+            ) {
+                const fileName = decodeURIComponent(url.pathname.split('/').pop() || '');
+                const localUrl = getAssetUrl('entrenadores', fileName);
+                if (!localUrl.startsWith('https://media.madridfemeninoxtra.com/')) {
+                    return localUrl;
+                }
+            }
+        } catch {
+        }
         return versionCoachImageUrl(photoUrl);
     }
 
