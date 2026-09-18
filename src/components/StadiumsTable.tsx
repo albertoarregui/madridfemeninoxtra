@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 interface Stadium {
     name: string;
@@ -12,12 +11,7 @@ interface Stadium {
         wins: number;
         draws: number;
         losses: number;
-        gf: number;
-        ga: number;
         gd: number;
-        winPct: string;
-        drawPct: string;
-        lossPct: string;
     };
 }
 
@@ -26,236 +20,140 @@ interface StadiumsTableProps {
 }
 
 const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'stats.played', direction: 'desc' });
-
-    const sortedStadiums = useMemo(() => {
-        let sortableItems = [...stadiums];
-        if (sortConfig !== null) {
-            sortableItems.sort((a, b) => {
-                const getValue = (item: any, path: string) => {
-                    return path.split('.').reduce((o, i) => (o ? o[i] : undefined), item);
-                };
-
-                let aValue = getValue(a, sortConfig.key);
-                let bValue = getValue(b, sortConfig.key);
-
-                if (typeof aValue === 'string' && sortConfig.key.includes('Pct')) {
-                    aValue = parseFloat(aValue);
-                    bValue = parseFloat(bValue);
-                }
-
-                if (sortConfig.key === 'capacity') {
-                    aValue = typeof aValue === 'string' ? parseInt(aValue.replace(/\D/g, '')) || 0 : Number(aValue) || 0;
-                    bValue = typeof bValue === 'string' ? parseInt(bValue.replace(/\D/g, '')) || 0 : Number(bValue) || 0;
-                }
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    }, [stadiums, sortConfig]);
-
-    const requestSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'desc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = 'asc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key: string) => {
-        if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(212,168,67,0.6)' }} />;
-        }
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" />
-            : <ArrowDown className="w-3 h-3 ml-1 text-yellow-400" />;
-    };
-
-    const SortableHeader = ({ label, sortKey, align = 'center', className = '', title = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string, title?: string }) => (
-        <th
-            className={`py-4 px-4 font-bold cursor-pointer transition-colors select-none ${className}`}
-            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-            onMouseLeave={e => (e.currentTarget.style.background = '')}
-            onClick={() => requestSort(sortKey)}
-            title={title}
-        >
-            <div className={`flex items-center ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                {label}
-                {getSortIcon(sortKey)}
-            </div>
-        </th>
+    const sortedStadiums = useMemo(
+        () => [...stadiums].sort((a, b) => b.stats.played - a.stats.played || a.name.localeCompare(b.name)),
+        [stadiums],
     );
 
     return (
-        <div className="stadiums-table-shell w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
-            <div className="stadiums-table-desktop overflow-x-auto stadiums-scrollbar">
-                <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
-                    <thead>
-                        <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
-                            <th className="sticky left-0 z-30 py-3 px-2 text-center w-10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
-                                #
-                            </th>
-
-                            <SortableHeader
-                                sortKey="name"
-                                label="Estadio"
-                                className="sticky left-10 z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[160px]"
-                                align="left"
+        <div className="stadiums-card-grid">
+            {sortedStadiums.map((stadium) => (
+                <a className="stadium-card" href={`/estadios/${stadium.slug}`} key={stadium.slug}>
+                    <div className="stadium-card__photo">
+                        {stadium.imageUrl && (
+                            <img
+                                src={stadium.imageUrl}
+                                alt={`Vista de ${stadium.name}`}
+                                loading="lazy"
+                                onError={(event) => { event.currentTarget.style.display = 'none'; }}
                             />
+                        )}
+                        <span className="stadium-card__played"><strong>{stadium.stats.played}</strong> PJ</span>
+                    </div>
 
-                            <SortableHeader sortKey="city" label="Ciudad" />
-                            <SortableHeader sortKey="capacity" label="Capacidad" />
+                    <div className="stadium-card__body">
+                        <h3>{stadium.name}</h3>
+                        <p>{stadium.city || 'Ciudad no disponible'}</p>
 
-                            <SortableHeader sortKey="stats.played" label="PJ" />
-
-                            <SortableHeader sortKey="stats.wins" label="V" className="" />
-                            <SortableHeader sortKey="stats.winPct" label="% V" className="" />
-
-                            <SortableHeader sortKey="stats.draws" label="E" className="" />
-                            <SortableHeader sortKey="stats.drawPct" label="% E" className="" />
-
-                            <SortableHeader sortKey="stats.losses" label="D" className="" />
-                            <SortableHeader sortKey="stats.lossPct" label="% D" className="" />
-
-                            <SortableHeader sortKey="stats.gf" label="GF" />
-                            <SortableHeader sortKey="stats.ga" label="GC" />
-                            <SortableHeader sortKey="stats.gd" label="Dif" />
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm" style={{ color: '#f0f0f0' }}>
-                        {sortedStadiums.map((stadium, index) => (
-                            <tr
-                                key={stadium.slug}
-                                className="transition-colors group"
-                                style={{ borderBottom: '1px solid rgba(212,168,67,0.08)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = '')}
-                            >
-                                <td className="sticky left-0 z-20 py-3 px-2 text-center font-mono shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                    style={{ color: 'rgba(212,168,67,0.55)', background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
-                                    {index + 1}
-                                </td>
-
-                                <td className="sticky left-10 z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate max-w-[160px]"
-                                    style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.12)', color: '#f0f0f0' }}
-                                    title={stadium.name}>
-                                    <a href={`/estadios/${stadium.slug}`}
-                                        style={{ color: '#f0f0f0' }}
-                                        onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
-                                        onMouseLeave={e => (e.currentTarget.style.color = '#f0f0f0')}
-                                        className="transition-colors">
-                                        {stadium.name}
-                                    </a>
-                                </td>
-
-                                <td className="py-3 px-2 truncate max-w-[120px]" style={{ color: 'rgba(200,210,220,0.65)' }} title={stadium.city}>{stadium.city || '-'}</td>
-                                <td className="py-3 px-2 text-center font-mono text-xs" style={{ color: 'rgba(200,210,220,0.65)' }}>
-                                    {stadium.capacity ? Number(stadium.capacity).toLocaleString() : '-'}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
-                                    {stadium.stats.played}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {stadium.stats.wins}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {stadium.stats.winPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
-                                    {stadium.stats.draws}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
-                                    {stadium.stats.drawPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {stadium.stats.losses}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {stadium.stats.lossPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{stadium.stats.gf}</td>
-                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{stadium.stats.ga}</td>
-                                <td className="py-3 px-2 text-center font-mono font-bold" style={{ color: '#f0f0f0' }}>
-                                    {stadium.stats.gd > 0 ? `+${stadium.stats.gd}` : stadium.stats.gd}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="stadiums-mobile-list">
-                {sortedStadiums.map((stadium, index) => (
-                    <article className="stadium-mobile-card" key={stadium.slug}>
-                        <header className="stadium-mobile-card__header">
-                            <span className="stadium-mobile-card__rank">{index + 1}</span>
-                            <div>
-                                <a href={`/estadios/${stadium.slug}`}>{stadium.name}</a>
-                                <p>{stadium.city || 'Ciudad no disponible'}</p>
-                            </div>
-                            <span className="stadium-mobile-card__played"><strong>{stadium.stats.played}</strong>PJ</span>
-                        </header>
-                        <div className="stadium-mobile-card__meta">
+                        <div className="stadium-card__meta">
                             <span>Capacidad</span>
                             <strong>{stadium.capacity ? Number(stadium.capacity).toLocaleString() : '—'}</strong>
                         </div>
-                        <div className="stadium-mobile-card__stats">
+
+                        <div className="stadium-card__stats">
                             <span className="is-win"><strong>{stadium.stats.wins}</strong>Victorias</span>
                             <span className="is-draw"><strong>{stadium.stats.draws}</strong>Empates</span>
                             <span className="is-loss"><strong>{stadium.stats.losses}</strong>Derrotas</span>
                             <span><strong>{stadium.stats.gd > 0 ? `+${stadium.stats.gd}` : stadium.stats.gd}</strong>Dif. goles</span>
                         </div>
-                    </article>
-                ))}
-            </div>
+                    </div>
+                </a>
+            ))}
 
             <style>{`
-                .stadiums-mobile-list { display: none; }
-                .stadiums-scrollbar::-webkit-scrollbar {
-                    height: 8px;
-                    background: rgba(6,13,28,0.95);
+                .stadiums-card-grid {
+                    width: min(100%, 1600px);
+                    margin: 0 auto 2.5rem;
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 1.15rem;
                 }
-                .stadiums-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(212,168,67,0.3);
-                    border-radius: 4px;
+                .stadium-card {
+                    min-width: 0;
+                    overflow: hidden;
+                    border: 1px solid rgba(212,168,67,0.2);
+                    border-radius: 10px;
+                    background: rgba(6,13,28,0.94);
+                    color: #f0f0f0;
+                    text-decoration: none;
+                    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
                 }
-                .stadiums-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(212,168,67,0.55);
+                .stadium-card:hover {
+                    transform: translateY(-4px);
+                    border-color: rgba(212,168,67,0.5);
+                    box-shadow: 0 16px 32px rgba(0,0,0,0.3);
+                }
+                .stadium-card__photo {
+                    position: relative;
+                    height: 190px;
+                    overflow: hidden;
+                    background: linear-gradient(135deg, #111b2d, #071022);
+                }
+                .stadium-card__photo::after {
+                    content: '';
+                    position: absolute;
+                    inset: auto 0 0;
+                    height: 34%;
+                    background: linear-gradient(to bottom, transparent, rgba(6,13,28,0.72));
+                    pointer-events: none;
+                }
+                .stadium-card__photo img {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                    object-fit: cover;
+                    filter: saturate(1.04) contrast(1.02);
+                    transition: transform 0.4s ease;
+                }
+                .stadium-card:hover .stadium-card__photo img { transform: scale(1.035); }
+                .stadium-card__played {
+                    position: absolute;
+                    right: 0.75rem;
+                    bottom: 0.7rem;
+                    z-index: 1;
+                    display: flex;
+                    align-items: baseline;
+                    gap: 0.3rem;
+                    padding: 0.32rem 0.55rem;
+                    border: 1px solid rgba(212,168,67,0.3);
+                    border-radius: 999px;
+                    background: rgba(6,13,28,0.8);
+                    color: rgba(200,210,220,0.6);
+                    font-family: 'Cinzel', serif;
+                    font-size: 0.48rem;
+                    letter-spacing: 0.08em;
+                    backdrop-filter: blur(5px);
+                }
+                .stadium-card__played strong { color: #d4a843; font-size: 0.9rem; }
+                .stadium-card__body { padding: 1rem; }
+                .stadium-card__body h3 {
+                    margin: 0;
+                    overflow: hidden;
+                    color: #f0f0f0;
+                    font-family: 'Cinzel', serif;
+                    font-size: 1rem;
+                    line-height: 1.25;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .stadium-card__body > p { margin: 0.3rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.75rem; }
+                .stadium-card__meta { display: flex; justify-content: space-between; margin-top: 0.85rem; padding: 0.65rem 0; border-top: 1px solid rgba(212,168,67,0.09); color: rgba(200,210,220,0.48); font-size: 0.68rem; }
+                .stadium-card__meta strong { color: rgba(235,238,242,0.82); font-variant-numeric: tabular-nums; }
+                .stadium-card__stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 0 -1rem -1rem; border-top: 1px solid rgba(212,168,67,0.08); }
+                .stadium-card__stats span { min-width: 0; padding: 0.72rem 0.15rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.53rem; text-align: center; }
+                .stadium-card__stats span:last-child { border-right: 0; }
+                .stadium-card__stats strong { display: block; margin-bottom: 0.17rem; color: #f0f0f0; font-size: 0.95rem; }
+                .stadium-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
+                .stadium-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
+                .stadium-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                @media (max-width: 1050px) {
+                    .stadiums-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                 }
                 @media (max-width: 640px) {
-                    .stadiums-table-shell { border: 0 !important; background: transparent !important; overflow: visible; }
-                    .stadiums-table-desktop { display: none; }
-                    .stadiums-mobile-list { display: grid; gap: 0.85rem; }
-                    .stadium-mobile-card { overflow: hidden; border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; background: rgba(6,13,28,0.94); }
-                    .stadium-mobile-card__header { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; align-items: center; gap: 0.7rem; padding: 0.9rem; border-bottom: 1px solid rgba(212,168,67,0.1); }
-                    .stadium-mobile-card__rank { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(212,168,67,0.2); border-radius: 50%; color: rgba(212,168,67,0.68); font-family: 'Cinzel', serif; font-size: 0.7rem; }
-                    .stadium-mobile-card__header a { display: block; overflow: hidden; color: #f0f0f0; font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-                    .stadium-mobile-card__header p { margin: 0.24rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.7rem; }
-                    .stadium-mobile-card__played { display: flex; flex-direction: column; align-items: center; color: rgba(200,210,220,0.42); font-family: 'Cinzel', serif; font-size: 0.45rem; letter-spacing: 0.1em; }
-                    .stadium-mobile-card__played strong { color: #d4a843; font-size: 1rem; line-height: 1; }
-                    .stadium-mobile-card__meta { display: flex; justify-content: space-between; padding: 0.65rem 0.9rem; color: rgba(200,210,220,0.48); font-size: 0.66rem; }
-                    .stadium-mobile-card__meta strong { color: rgba(230,235,240,0.82); font-variant-numeric: tabular-nums; }
-                    .stadium-mobile-card__stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-top: 1px solid rgba(212,168,67,0.08); }
-                    .stadium-mobile-card__stats span { min-width: 0; padding: 0.68rem 0.2rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.52rem; text-align: center; }
-                    .stadium-mobile-card__stats span:last-child { border-right: 0; }
-                    .stadium-mobile-card__stats strong { display: block; margin-bottom: 0.18rem; color: #f0f0f0; font-size: 0.9rem; }
-                    .stadium-mobile-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
-                    .stadium-mobile-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
-                    .stadium-mobile-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                    .stadiums-card-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+                    .stadium-card__photo { height: 145px; }
+                    .stadium-card__body { padding: 0.9rem; }
+                    .stadium-card__stats { margin: 0 -0.9rem -0.9rem; }
                 }
             `}</style>
         </div>
@@ -263,4 +161,3 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
 };
 
 export default StadiumsTable;
-

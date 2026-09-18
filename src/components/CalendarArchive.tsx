@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trophy, MapPin, Clock, SlidersHorizontal } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 interface Match {
     id_partido: string | number;
@@ -137,32 +138,36 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                         )}
                     </summary>
                     <div className="mobile-filter-content">
-                        <label>
+                        <div className="mobile-filter-field">
                             <span>MES</span>
-                            <select
+                            <CustomSelect
+                                id="calendar-mobile-month"
                                 value={selectedMonth}
-                                onChange={(event) => {
-                                    setSelectedMonth(event.target.value);
+                                onChange={(value) => {
+                                    setSelectedMonth(value);
                                     setCurrentPage(1);
                                 }}
-                            >
-                                <option value="TODOS">Todos los meses</option>
-                                {MONTHS.map(month => <option value={month} key={month}>{month}</option>)}
-                            </select>
-                        </label>
-                        <label>
+                                options={[
+                                    { value: 'TODOS', label: 'Todos los meses' },
+                                    ...MONTHS.map(month => ({ value: month, label: month })),
+                                ]}
+                            />
+                        </div>
+                        <div className="mobile-filter-field">
                             <span>COMPETICIÓN</span>
-                            <select
+                            <CustomSelect
+                                id="calendar-mobile-competition"
                                 value={selectedComp}
-                                onChange={(event) => {
-                                    setSelectedComp(event.target.value);
+                                onChange={(value) => {
+                                    setSelectedComp(value);
                                     setCurrentPage(1);
                                 }}
-                            >
-                                <option value="TODAS">Todas las competiciones</option>
-                                {ALL_COMPS.map(comp => <option value={comp} key={comp}>{comp}</option>)}
-                            </select>
-                        </label>
+                                options={[
+                                    { value: 'TODAS', label: 'Todas las competiciones' },
+                                    ...ALL_COMPS.map(comp => ({ value: comp, label: comp })),
+                                ]}
+                            />
+                        </div>
                         {(selectedMonth !== 'TODOS' || selectedComp !== 'TODAS') && (
                             <button
                                 type="button"
@@ -479,6 +484,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                         border-radius: 14px;
                         overflow: hidden;
                     }
+                    .mobile-filter-panel[open] { overflow: visible; }
                     .mobile-filter-panel summary {
                         min-height: 48px;
                         padding: 0.75rem 1rem;
@@ -517,27 +523,22 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                         gap: 0.8rem;
                         border-top: 1px solid rgba(212,168,67,0.12);
                     }
-                    .mobile-filter-content label {
+                    .mobile-filter-field {
                         display: grid;
                         gap: 0.35rem;
                     }
-                    .mobile-filter-content label > span {
+                    .mobile-filter-field > span {
                         color: rgba(200,210,220,0.55);
                         font-family: 'DM Sans', sans-serif;
                         font-size: 0.58rem;
                         font-weight: 800;
                         letter-spacing: 0.12em;
                     }
-                    .mobile-filter-content select {
+                    .mobile-filter-field .custom-select-container {
                         width: 100%;
-                        min-height: 42px;
-                        padding: 0 0.75rem;
-                        border: 1px solid rgba(212,168,67,0.2);
-                        border-radius: 10px;
-                        background: #081022;
-                        color: #f0f0f0;
-                        font-family: 'DM Sans', sans-serif;
-                        font-size: 0.78rem;
+                        min-width: 0;
+                        max-width: none;
+                        margin: 0;
                     }
                     .mobile-filter-clear {
                         min-height: 38px;

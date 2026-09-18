@@ -328,16 +328,7 @@ export default function BuscadorTemporadas({ competitions }: BuscadorProps) {
                                             <td key={col.key}
                                                 className={`bus-td bus-td-stat${isSorted ? ' sorted' : ''}${isTop ? ' top3' : ''}`}
                                             >
-                                                <button
-                                                    type="button"
-                                                    className="bus-stat-mobile-label"
-                                                    onClick={() => handleSort(col.key)}
-                                                    title={`Ordenar por ${col.title}`}
-                                                >
-                                                    {col.title}
-                                                    {isSorted && (sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
-                                                </button>
-                                                <span className="bus-stat-value">{display}</span>
+                                                {display}
                                             </td>
                                         );
                                     })}
@@ -349,7 +340,7 @@ export default function BuscadorTemporadas({ competitions }: BuscadorProps) {
             </div>
 
             <p className="bus-hint">
-                Pulsa una estadística para ordenar · «Por partido» divide los totales entre los partidos jugados
+                Desliza la tabla para consultar todas las columnas · Clic en columna para ordenar
             </p>
         </div>
     );

@@ -121,35 +121,75 @@ const sortedPlayers = [...players].sort((a, b) => {
             <span class="pg-mobile-filter-status" data-pg-filter-status hidden>ACTIVO</span>
         </summary>
         <div class="pg-mobile-filter-content">
-            <label>
+            <div class="pg-mobile-filter-field">
                 <span>POSICIÓN</span>
-                <select data-filter-select="posicion">
+                <div class="custom-select-container" data-custom-select="true">
+                    <div class="custom-select-trigger">
+                        <span class="selected-text">Todas las posiciones</span>
+                        <span class="custom-select-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span>
+                    </div>
+                    <select class="native-select" data-filter-select="posicion" hidden>
                     <option value="">Todas las posiciones</option>
                     {positions.map(([pos]) => <option value={pos}>{pos}</option>)}
-                </select>
-            </label>
-            <label>
-                <span>CANTERA</span>
-                <select data-filter-select="canterana">
-                    <option value="">Todas las jugadoras</option>
-                    <option value="si">Canteranas</option>
-                </select>
-            </label>
-            <label>
-                <span>PAÍS</span>
-                <select data-filter-select="pais">
-                    <option value="">Todos los países</option>
-                    {countries.map(([country]) => <option value={country}>{country}</option>)}
-                </select>
-            </label>
-            {seasons.length > 0 && (
-                <label>
-                    <span>TEMPORADA</span>
-                    <select data-filter-select="temporada">
-                        <option value="">Todas las temporadas</option>
-                        {seasons.map(s => <option value={s}>{s.replace('-', '/')}</option>)}
                     </select>
-                </label>
+                    <div class="custom-select-options">
+                        <div class="custom-select-option selected" data-value="">Todas las posiciones</div>
+                        {positions.map(([pos]) => <div class="custom-select-option" data-value={pos}>{pos}</div>)}
+                    </div>
+                </div>
+            </div>
+            <div class="pg-mobile-filter-field">
+                <span>CANTERA</span>
+                <div class="custom-select-container" data-custom-select="true">
+                    <div class="custom-select-trigger">
+                        <span class="selected-text">Todas las jugadoras</span>
+                        <span class="custom-select-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span>
+                    </div>
+                    <select class="native-select" data-filter-select="canterana" hidden>
+                        <option value="">Todas las jugadoras</option>
+                        <option value="si">Canteranas</option>
+                    </select>
+                    <div class="custom-select-options">
+                        <div class="custom-select-option selected" data-value="">Todas las jugadoras</div>
+                        <div class="custom-select-option" data-value="si">Canteranas</div>
+                    </div>
+                </div>
+            </div>
+            <div class="pg-mobile-filter-field">
+                <span>PAÍS</span>
+                <div class="custom-select-container" data-custom-select="true">
+                    <div class="custom-select-trigger">
+                        <span class="selected-text">Todos los países</span>
+                        <span class="custom-select-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span>
+                    </div>
+                    <select class="native-select" data-filter-select="pais" hidden>
+                        <option value="">Todos los países</option>
+                        {countries.map(([country]) => <option value={country}>{country}</option>)}
+                    </select>
+                    <div class="custom-select-options">
+                        <div class="custom-select-option selected" data-value="">Todos los países</div>
+                        {countries.map(([country]) => <div class="custom-select-option" data-value={country}>{country}</div>)}
+                    </div>
+                </div>
+            </div>
+            {seasons.length > 0 && (
+                <div class="pg-mobile-filter-field">
+                    <span>TEMPORADA</span>
+                    <div class="custom-select-container" data-custom-select="true">
+                        <div class="custom-select-trigger">
+                            <span class="selected-text">Todas las temporadas</span>
+                            <span class="custom-select-arrow" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span>
+                        </div>
+                        <select class="native-select" data-filter-select="temporada" hidden>
+                            <option value="">Todas las temporadas</option>
+                            {seasons.map(s => <option value={s}>{s.replace('-', '/')}</option>)}
+                        </select>
+                        <div class="custom-select-options">
+                            <div class="custom-select-option selected" data-value="">Todas las temporadas</div>
+                            {seasons.map(s => <div class="custom-select-option" data-value={s}>{s.replace('-', '/')}</div>)}
+                        </div>
+                    </div>
+                </div>
             )}
             <button class="pg-mobile-filter-clear" data-pg-mobile-reset hidden>Limpiar filtros</button>
         </div>
@@ -240,6 +280,16 @@ const sortedPlayers = [...players].sort((a, b) => {
     const state: Record<string, string> = { posicion: '', pais: '', temporada: '', canterana: '' };
     let sortMode = 'posicion';
 
+    function syncFilterSelect(select: HTMLSelectElement, value: string) {
+      select.value = value;
+      const container = select.closest<HTMLElement>('.custom-select-container');
+      const options = Array.from(container?.querySelectorAll<HTMLElement>('.custom-select-option') ?? []);
+      const selectedOption = options.find(option => (option.dataset.value ?? '') === value);
+      const selectedText = container?.querySelector<HTMLElement>('.selected-text');
+      if (selectedText && selectedOption) selectedText.textContent = selectedOption.textContent?.trim() ?? '';
+      for (const option of options) option.classList.toggle('selected', option === selectedOption);
+    }
+
     function applyFilters() {
       let visible = 0;
       for (const card of cards) {
@@ -279,7 +329,7 @@ const sortedPlayers = [...players].sort((a, b) => {
           }
         }
         for (const select of filterSelects) {
-          if (select.dataset.filterSelect === group) select.value = value;
+          if (select.dataset.filterSelect === group) syncFilterSelect(select, value);
         }
         applyFilters();
       });
@@ -315,7 +365,7 @@ const sortedPlayers = [...players].sort((a, b) => {
         for (const btn of filterBtns) {
           btn.classList.toggle('pg-active', (btn.dataset.value ?? '') === '');
         }
-        for (const select of filterSelects) select.value = '';
+        for (const select of filterSelects) syncFilterSelect(select, '');
         applyFilters();
     }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 interface Rival {
     id_club: string | number;
@@ -6,10 +6,8 @@ interface Rival {
     shieldUrl: string;
     ciudad: string;
     pais: string;
-    iso: string;
     flagUrl: string;
     estadio: string;
-    capacidad: string | number;
     slug: string;
     stats: {
         played: number;
@@ -18,11 +16,7 @@ interface Rival {
         losses: number;
         gf: number;
         ga: number;
-        gd: number;
         cleanSheets: number;
-        winPct: string;
-        drawPct: string;
-        lossPct: string;
     };
 }
 
@@ -30,295 +24,140 @@ interface RivalsTableProps {
     rivals: Rival[];
 }
 
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-
 const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'stats.played', direction: 'desc' });
-
-    const sortedRivals = useMemo(() => {
-        let sortableItems = [...rivals];
-        if (sortConfig !== null) {
-            sortableItems.sort((a, b) => {
-                const getValue = (item: any, path: string) => {
-                    return path.split('.').reduce((o, i) => (o ? o[i] : undefined), item);
-                };
-
-                let aValue = getValue(a, sortConfig.key);
-                let bValue = getValue(b, sortConfig.key);
-
-                if (typeof aValue === 'string' && sortConfig.key.includes('Pct')) {
-                    aValue = parseFloat(aValue);
-                    bValue = parseFloat(bValue);
-                }
-
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    }, [rivals, sortConfig]);
-
-    const requestSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'desc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = 'asc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key: string) => {
-        if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(212,168,67,0.6)' }} />;
-        }
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" />
-            : <ArrowDown className="w-3 h-3 ml-1 text-yellow-400" />;
-    };
-
-    const SortableHeader = ({ label, sortKey, align = 'center', className = '', title = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string, title?: string }) => (
-        <th
-            className={`py-4 px-4 font-bold cursor-pointer transition-colors select-none ${className}`}
-            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-            onMouseLeave={e => (e.currentTarget.style.background = '')}
-            onClick={() => requestSort(sortKey)}
-            title={title}
-        >
-            <div className={`flex items-center ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                {label}
-                {getSortIcon(sortKey)}
-            </div>
-        </th>
+    const sortedRivals = useMemo(
+        () => [...rivals].sort((a, b) => b.stats.played - a.stats.played || a.nombre.localeCompare(b.nombre)),
+        [rivals],
     );
 
     return (
-        <div className="rivals-table-shell w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
-            <div className="rivals-table-desktop overflow-x-auto rivals-scrollbar">
-                <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
-                    <thead>
-                        <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
+        <div className="rivals-card-grid">
+            {sortedRivals.map((rival) => (
+                <a className="rival-card" href={`/rivales/${rival.slug}`} key={rival.id_club}>
+                    <div className="rival-card__photo">
+                        <img
+                            src={rival.shieldUrl}
+                            alt={`Escudo de ${rival.nombre}`}
+                            loading="lazy"
+                            onError={(event) => { event.currentTarget.src = '/assets/escudos/placeholder.png'; }}
+                        />
+                        <span className="rival-card__played"><strong>{rival.stats.played}</strong> PJ</span>
+                    </div>
 
-                            <th className="sticky left-0 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
-                                #
-                            </th>
-                            <th className="sticky left-[50px] z-30 py-3 px-2 w-[60px] min-w-[60px] text-center"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
-                                Escudo
-                            </th>
-                            <SortableHeader
-                                sortKey="nombre"
-                                label="Rival"
-                                className="sticky left-[110px] z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[160px]"
-                                align="left"
-                            />
+                    <div className="rival-card__body">
+                        <h3>{rival.nombre}</h3>
+                        <p>
+                            {rival.flagUrl && <img src={rival.flagUrl} alt="" loading="lazy" />}
+                            <span>{rival.ciudad || rival.pais || 'Ubicación no disponible'}</span>
+                        </p>
 
-                            <SortableHeader sortKey="ciudad" label="Ciudad" />
-                            <th className="py-3 px-2 text-center"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}>
-                                País
-                            </th>
-                            <SortableHeader sortKey="estadio" label="Estadio" />
-                            <SortableHeader sortKey="capacidad" label="Cap" />
+                        <div className="rival-card__stadium">
+                            <span>Estadio</span>
+                            <strong>{rival.estadio || 'No disponible'}</strong>
+                        </div>
 
-                            <SortableHeader sortKey="stats.played" label="PJ" />
-
-                            <SortableHeader sortKey="stats.wins" label="V" className="" />
-                            <SortableHeader sortKey="stats.winPct" label="% V" className="" />
-
-                            <SortableHeader sortKey="stats.draws" label="E" className="" />
-                            <SortableHeader sortKey="stats.drawPct" label="% E" className="" />
-
-                            <SortableHeader sortKey="stats.losses" label="D" className="" />
-                            <SortableHeader sortKey="stats.lossPct" label="% D" className="" />
-
-                            <SortableHeader sortKey="stats.gf" label="GF" />
-                            <SortableHeader sortKey="stats.ga" label="GC" />
-                            <SortableHeader sortKey="stats.gd" label="Dif" />
-                            <SortableHeader sortKey="stats.cleanSheets" label="PaC" title="Porterías a cero" />
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm" style={{ color: '#f0f0f0' }}>
-                        {sortedRivals.map((rival, index) => (
-                            <tr
-                                key={rival.id_club}
-                                className="transition-colors group"
-                                style={{ borderBottom: '1px solid rgba(212,168,67,0.08)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = '')}
-                            >
-                                { }
-                                <td className="sticky left-0 z-20 py-3 px-2 text-center font-mono w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                    style={{ color: 'rgba(212,168,67,0.55)', background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
-                                    {index + 1}
-                                </td>
-                                <td className="sticky left-[50px] z-20 py-3 px-2 text-center w-[60px] min-w-[60px]"
-                                    style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
-                                    <img
-                                        src={rival.shieldUrl}
-                                        alt={rival.nombre}
-                                        className="w-8 h-8 object-contain mx-auto transition-transform group-hover:scale-110"
-                                        onError={(e) => (e.target as HTMLImageElement).src = '/assets/escudos/placeholder.png'}
-                                    />
-                                </td>
-                                <td className="sticky left-[110px] z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate max-w-[160px]"
-                                    style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.12)', color: '#f0f0f0' }}
-                                    title={rival.nombre}>
-                                    <a href={`/rivales/${rival.slug}`} target="_self"
-                                        style={{ color: '#f0f0f0' }}
-                                        onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
-                                        onMouseLeave={e => (e.currentTarget.style.color = '#f0f0f0')}
-                                        className="transition-colors">
-                                        {rival.nombre}
-                                    </a>
-                                </td>
-
-                                <td className="py-3 px-2 truncate max-w-[120px]" style={{ color: 'rgba(200,210,220,0.65)' }} title={rival.ciudad}>{rival.ciudad}</td>
-                                <td className="py-3 px-2 text-center">
-                                    {rival.flagUrl ? (
-                                        <img
-                                            src={rival.flagUrl}
-                                            alt={rival.pais}
-                                            className="w-5 h-auto inline-block shadow-sm opacity-90"
-                                            title={rival.pais}
-                                        />
-                                    ) : rival.pais || '-'}
-                                </td>
-                                <td className="py-3 px-2 whitespace-nowrap truncate max-w-[150px]" style={{ color: 'rgba(200,210,220,0.65)' }} title={rival.estadio}>
-                                    {rival.estadio ? (
-                                        <a href={`/rivales/${rival.slug}`} target="_self"
-                                            style={{ color: 'rgba(200,210,220,0.65)' }}
-                                            onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
-                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(200,210,220,0.65)')}
-                                            className="transition-colors">
-                                            {rival.estadio}
-                                        </a>
-                                    ) : '-'}
-                                </td>
-                                <td className="py-3 px-2 text-center font-mono text-xs" style={{ color: 'rgba(200,210,220,0.65)' }}>
-                                    {Number.isFinite(Number(rival.capacidad)) && Number(rival.capacidad) !== 0
-                                        ? Number(rival.capacidad).toLocaleString()
-                                        : '-'}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
-                                    {rival.stats.played}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {rival.stats.wins}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {rival.stats.winPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
-                                    {rival.stats.draws}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
-                                    {rival.stats.drawPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {rival.stats.losses}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {rival.stats.lossPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{rival.stats.gf}</td>
-                                <td className="py-3 px-2 text-center font-mono" style={{ color: '#f0f0f0' }}>{rival.stats.ga}</td>
-                                <td className="py-3 px-2 text-center font-mono font-bold" style={{ color: '#f0f0f0' }}>
-                                    {rival.stats.gd > 0 ? `+${rival.stats.gd}` : rival.stats.gd}
-                                </td>
-                                <td className="py-3 px-2 text-center font-bold text-blue-400">
-                                    {rival.stats.cleanSheets}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="rivals-mobile-list">
-                {sortedRivals.map((rival, index) => (
-                    <article className="rival-mobile-card" key={rival.id_club}>
-                        <header className="rival-mobile-card__header">
-                            <span className="rival-mobile-card__rank">{index + 1}</span>
-                            <img
-                                src={rival.shieldUrl}
-                                alt=""
-                                onError={(e) => (e.currentTarget.src = '/assets/escudos/placeholder.png')}
-                            />
-                            <div className="rival-mobile-card__identity">
-                                <a href={`/rivales/${rival.slug}`}>{rival.nombre}</a>
-                                <p>
-                                    {rival.flagUrl && <img src={rival.flagUrl} alt="" />}
-                                    <span>{rival.ciudad || rival.pais || 'Ubicación no disponible'}</span>
-                                </p>
-                            </div>
-                            <span className="rival-mobile-card__played"><strong>{rival.stats.played}</strong>PJ</span>
-                        </header>
-                        {rival.estadio && (
-                            <div className="rival-mobile-card__stadium">
-                                <span>Estadio</span>
-                                <strong>{rival.estadio}</strong>
-                            </div>
-                        )}
-                        <div className="rival-mobile-card__stats">
+                        <div className="rival-card__stats">
                             <span className="is-win"><strong>{rival.stats.wins}</strong>V</span>
                             <span className="is-draw"><strong>{rival.stats.draws}</strong>E</span>
                             <span className="is-loss"><strong>{rival.stats.losses}</strong>D</span>
                             <span><strong>{rival.stats.gf}-{rival.stats.ga}</strong>Goles</span>
                             <span><strong>{rival.stats.cleanSheets}</strong>PaC</span>
                         </div>
-                    </article>
-                ))}
-            </div>
+                    </div>
+                </a>
+            ))}
 
             <style>{`
-                .rivals-mobile-list { display: none; }
-                .rivals-scrollbar::-webkit-scrollbar {
-                    height: 8px;
-                    background: rgba(6,13,28,0.95);
+                .rivals-card-grid {
+                    width: min(100%, 1600px);
+                    margin: 0 auto 2.5rem;
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 1rem;
                 }
-                .rivals-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(212,168,67,0.3);
-                    border-radius: 4px;
+                .rival-card {
+                    min-width: 0;
+                    overflow: hidden;
+                    border: 1px solid rgba(212,168,67,0.2);
+                    border-radius: 10px;
+                    background: rgba(6,13,28,0.94);
+                    color: #f0f0f0;
+                    text-decoration: none;
+                    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
                 }
-                .rivals-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(212,168,67,0.55);
+                .rival-card:hover {
+                    transform: translateY(-4px);
+                    border-color: rgba(212,168,67,0.5);
+                    box-shadow: 0 16px 32px rgba(0,0,0,0.3);
                 }
-                @media (max-width: 640px) {
-                    .rivals-table-shell { border: 0 !important; background: transparent !important; overflow: visible; }
-                    .rivals-table-desktop { display: none; }
-                    .rivals-mobile-list { display: grid; gap: 0.85rem; }
-                    .rival-mobile-card { overflow: hidden; border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; background: rgba(6,13,28,0.94); }
-                    .rival-mobile-card__header { display: grid; grid-template-columns: 25px 42px minmax(0,1fr) auto; align-items: center; gap: 0.62rem; padding: 0.85rem; border-bottom: 1px solid rgba(212,168,67,0.1); }
-                    .rival-mobile-card__rank { color: rgba(212,168,67,0.55); font-family: 'Cinzel', serif; font-size: 0.68rem; text-align: center; }
-                    .rival-mobile-card__header > img { width: 42px; height: 42px; object-fit: contain; }
-                    .rival-mobile-card__identity { min-width: 0; }
-                    .rival-mobile-card__identity > a { display: block; overflow: hidden; color: #f0f0f0; font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-                    .rival-mobile-card__identity p { display: flex; align-items: center; gap: 0.38rem; min-width: 0; margin: 0.28rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.67rem; }
-                    .rival-mobile-card__identity p img { width: 16px; height: 11px; object-fit: cover; flex-shrink: 0; }
-                    .rival-mobile-card__identity p span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                    .rival-mobile-card__played { display: flex; flex-direction: column; align-items: center; color: rgba(200,210,220,0.42); font-family: 'Cinzel', serif; font-size: 0.45rem; letter-spacing: 0.1em; }
-                    .rival-mobile-card__played strong { color: #d4a843; font-size: 1rem; line-height: 1; }
-                    .rival-mobile-card__stadium { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.62rem 0.85rem; color: rgba(200,210,220,0.45); font-size: 0.62rem; }
-                    .rival-mobile-card__stadium strong { overflow: hidden; color: rgba(230,235,240,0.78); font-weight: 600; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-                    .rival-mobile-card__stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); border-top: 1px solid rgba(212,168,67,0.08); }
-                    .rival-mobile-card__stats span { min-width: 0; padding: 0.65rem 0.15rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.51rem; text-align: center; }
-                    .rival-mobile-card__stats span:last-child { border-right: 0; }
-                    .rival-mobile-card__stats strong { display: block; margin-bottom: 0.16rem; color: #f0f0f0; font-size: 0.86rem; }
-                    .rival-mobile-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
-                    .rival-mobile-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
-                    .rival-mobile-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                .rival-card__photo {
+                    position: relative;
+                    height: 165px;
+                    display: grid;
+                    place-items: center;
+                    overflow: hidden;
+                    background: radial-gradient(circle at center, rgba(212,168,67,0.09), transparent 58%), linear-gradient(135deg, #111b2d, #071022);
+                }
+                .rival-card__photo::after {
+                    content: '';
+                    position: absolute;
+                    inset: auto 0 0;
+                    height: 30%;
+                    background: linear-gradient(to bottom, transparent, rgba(6,13,28,0.68));
+                    pointer-events: none;
+                }
+                .rival-card__photo > img {
+                    width: 104px;
+                    height: 104px;
+                    display: block;
+                    object-fit: contain;
+                    filter: saturate(1.05) contrast(1.03);
+                    transition: transform 0.35s ease;
+                }
+                .rival-card:hover .rival-card__photo > img { transform: scale(1.06); }
+                .rival-card__played {
+                    position: absolute;
+                    right: 0.7rem;
+                    bottom: 0.65rem;
+                    z-index: 1;
+                    display: flex;
+                    align-items: baseline;
+                    gap: 0.28rem;
+                    padding: 0.3rem 0.5rem;
+                    border: 1px solid rgba(212,168,67,0.3);
+                    border-radius: 999px;
+                    background: rgba(6,13,28,0.8);
+                    color: rgba(200,210,220,0.58);
+                    font-family: 'Cinzel', serif;
+                    font-size: 0.46rem;
+                    letter-spacing: 0.08em;
+                    backdrop-filter: blur(5px);
+                }
+                .rival-card__played strong { color: #d4a843; font-size: 0.88rem; }
+                .rival-card__body { padding: 0.9rem; }
+                .rival-card__body h3 { margin: 0; overflow: hidden; color: #f0f0f0; font-family: 'Cinzel', serif; font-size: 0.9rem; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+                .rival-card__body > p { display: flex; align-items: center; gap: 0.4rem; min-width: 0; margin: 0.3rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.7rem; }
+                .rival-card__body > p img { width: 17px; height: 12px; object-fit: cover; flex-shrink: 0; }
+                .rival-card__body > p span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .rival-card__stadium { display: flex; justify-content: space-between; gap: 0.65rem; margin-top: 0.75rem; padding: 0.6rem 0; border-top: 1px solid rgba(212,168,67,0.09); color: rgba(200,210,220,0.44); font-size: 0.62rem; }
+                .rival-card__stadium strong { overflow: hidden; color: rgba(232,236,240,0.78); font-weight: 600; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+                .rival-card__stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); margin: 0 -0.9rem -0.9rem; border-top: 1px solid rgba(212,168,67,0.08); }
+                .rival-card__stats span { min-width: 0; padding: 0.65rem 0.1rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.5rem; text-align: center; }
+                .rival-card__stats span:last-child { border-right: 0; }
+                .rival-card__stats strong { display: block; margin-bottom: 0.15rem; color: #f0f0f0; font-size: 0.86rem; }
+                .rival-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
+                .rival-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
+                .rival-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                @media (max-width: 1200px) {
+                    .rivals-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+                }
+                @media (max-width: 850px) {
+                    .rivals-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                }
+                @media (max-width: 560px) {
+                    .rivals-card-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+                    .rival-card__photo { height: 135px; }
+                    .rival-card__photo > img { width: 86px; height: 86px; }
                 }
             `}</style>
         </div>
@@ -326,4 +165,3 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
 };
 
 export default RivalsTable;
-
