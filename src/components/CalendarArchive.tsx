@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trophy, MapPin, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trophy, MapPin, Clock, SlidersHorizontal } from 'lucide-react';
 
 interface Match {
     id_partido: string | number;
@@ -39,14 +39,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
         return [...matches].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
     }, [matches]);
 
-    const availableMonths = useMemo(() => {
-        return ['TODOS', ...MONTHS];
-    }, []);
-
     const ALL_COMPS = ["LIGA F", "UWCL", "COPA DE LA REINA", "SUPERCOPA DE ESPAÑA", "AMISTOSOS"];
-    const availableComps = useMemo(() => {
-        return ['TODAS', ...ALL_COMPS];
-    }, []);
 
     const getCompColor = (comp: string) => {
         const c = comp.toUpperCase();
@@ -86,48 +79,105 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
     return (
         <div className="calendar-archive-react">
-            <div className="filter-group mb-12 px-4 sm:px-6">
-                <div className="max-w-5xl mx-auto py-2">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 w-full justify-items-center">
-                        {MONTHS.map(month => (
-                            <button
-                                key={month}
-                                onClick={() => {
-                                    setSelectedMonth(prev => prev === month ? 'TODOS' : month);
-                                    setCurrentPage(1);
-                                }}
-                                className={`w-full max-w-[160px] px-2 sm:px-4 py-3 sm:py-4 rounded-[18px] sm:rounded-[22px] font-black text-[10px] sm:text-xs tracking-widest transition-all border-2
-                                    ${selectedMonth === month
-                                        ? 'bg-[#d4a843] border-[#d4a843] text-[#060d1c] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]'
-                                        : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
-                            >
-                                {month}
-                            </button>
-                        ))}
+            <div className="desktop-filters">
+                <div className="filter-group mb-12 px-4 sm:px-6">
+                    <div className="max-w-5xl mx-auto py-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 w-full justify-items-center">
+                            {MONTHS.map(month => (
+                                <button
+                                    key={month}
+                                    onClick={() => {
+                                        setSelectedMonth(prev => prev === month ? 'TODOS' : month);
+                                        setCurrentPage(1);
+                                    }}
+                                    className={`w-full max-w-[160px] px-2 sm:px-4 py-3 sm:py-4 rounded-[18px] sm:rounded-[22px] font-black text-[10px] sm:text-xs tracking-widest transition-all border-2
+                                        ${selectedMonth === month
+                                            ? 'bg-[#d4a843] border-[#d4a843] text-[#060d1c] shadow-xl translate-y-[-2px] sm:translate-y-[-4px]'
+                                            : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
+                                >
+                                    {month}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="filter-group mb-16 sm:mb-20 px-4 sm:px-6">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="flex flex-wrap gap-3 sm:gap-4 justify-center py-4">
+                            {ALL_COMPS.map(comp => (
+                                <button
+                                    key={comp}
+                                    onClick={() => {
+                                        setSelectedComp(prev => prev === comp ? 'TODAS' : comp);
+                                        setCurrentPage(1);
+                                    }}
+                                    className={`min-w-[130px] sm:min-w-[160px] px-4 sm:px-8 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] font-black text-[10px] sm:text-sm tracking-[0.05em] transition-all border-2 whitespace-nowrap
+                                        ${selectedComp === comp
+                                            ? getCompColor(comp) + ' shadow-2xl translate-y-[-2px] sm:translate-y-[-4px]'
+                                            : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
+                                >
+                                    {comp}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="filter-group mb-16 sm:mb-20 px-4 sm:px-6">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex flex-wrap gap-3 sm:gap-4 justify-center py-4">
-                        {ALL_COMPS.map(comp => (
-                            <button
-                                key={comp}
-                                onClick={() => {
-                                    setSelectedComp(prev => prev === comp ? 'TODAS' : comp);
+            <div className="mobile-filters">
+                <details className="mobile-filter-panel">
+                    <summary>
+                        <span className="mobile-filter-title">
+                            <SlidersHorizontal size={16} />
+                            FILTRAR PARTIDOS
+                        </span>
+                        {(selectedMonth !== 'TODOS' || selectedComp !== 'TODAS') && (
+                            <span className="mobile-filter-active">ACTIVO</span>
+                        )}
+                    </summary>
+                    <div className="mobile-filter-content">
+                        <label>
+                            <span>MES</span>
+                            <select
+                                value={selectedMonth}
+                                onChange={(event) => {
+                                    setSelectedMonth(event.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className={`min-w-[130px] sm:min-w-[160px] px-4 sm:px-8 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] font-black text-[10px] sm:text-sm tracking-[0.05em] transition-all border-2 whitespace-nowrap
-                                    ${selectedComp === comp
-                                        ? getCompColor(comp) + ' shadow-2xl translate-y-[-2px] sm:translate-y-[-4px]'
-                                        : 'bg-[rgba(8,16,34,0.85)] border-[rgba(212,168,67,0.2)] text-[rgba(200,210,220,0.65)] hover:border-[#d4a843] hover:text-[#d4a843] hover:translate-y-[-2px] sm:hover:translate-y-[-4px] hover:shadow-lg'}`}
                             >
-                                {comp}
+                                <option value="TODOS">Todos los meses</option>
+                                {MONTHS.map(month => <option value={month} key={month}>{month}</option>)}
+                            </select>
+                        </label>
+                        <label>
+                            <span>COMPETICIÓN</span>
+                            <select
+                                value={selectedComp}
+                                onChange={(event) => {
+                                    setSelectedComp(event.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            >
+                                <option value="TODAS">Todas las competiciones</option>
+                                {ALL_COMPS.map(comp => <option value={comp} key={comp}>{comp}</option>)}
+                            </select>
+                        </label>
+                        {(selectedMonth !== 'TODOS' || selectedComp !== 'TODAS') && (
+                            <button
+                                type="button"
+                                className="mobile-filter-clear"
+                                onClick={() => {
+                                    setSelectedMonth('TODOS');
+                                    setSelectedComp('TODAS');
+                                    setCurrentPage(1);
+                                }}
+                            >
+                                LIMPIAR FILTROS
                             </button>
-                        ))}
+                        )}
                     </div>
-                </div>
+                </details>
             </div>
 
             <div className="matches-list flex flex-col gap-6 mb-16">
@@ -153,45 +203,52 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                 </div>
 
                                 <div className="match-main-content">
+                                    <div className="mobile-match-heading">
+                                        {match.competicion_foto_url ? (
+                                            <img src={match.competicion_foto_url} alt={match.competicion_nombre} className="mobile-comp-logo" />
+                                        ) : (
+                                            <Trophy size={26} className="mobile-comp-placeholder" />
+                                        )}
+                                        {formattedJornada && <span>{formattedJornada}</span>}
+                                    </div>
+
                                     <div className="teams-interaction-row">
                                         <div className="team-side local">
                                             <span className="team-name">{match.club_local}</span>
+                                            <img src={match.local_shield_url} alt="" className="team-shield" />
                                         </div>
 
-                                        <div className="central-block">
-                                            <img src={match.local_shield_url} alt={match.club_local} className="team-shield" />
-                                            <div className="match-score-box">
-                                                {match.isPlayed ? (
-                                                    <div className="score-display">
-                                                        <span>{isHome ? match.goles_rm : match.goles_rival}</span>
-                                                        <span className="score-separator">-</span>
-                                                        <span>{isHome ? match.goles_rival : match.goles_rm}</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="time-display">
-                                                        <Clock size={16} />
-                                                        <span>{match.hora || 'TBD'}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <img src={match.visitante_shield_url} alt={match.club_visitante} className="team-shield" />
+                                        <div className="match-score-box">
+                                            {match.isPlayed ? (
+                                                <div className="score-display">
+                                                    <span>{isHome ? match.goles_rm : match.goles_rival}</span>
+                                                    <span className="score-separator">-</span>
+                                                    <span>{isHome ? match.goles_rival : match.goles_rm}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="time-display">
+                                                    <Clock size={16} />
+                                                    <span>{match.hora || 'TBD'}</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="team-side visitor">
+                                            <img src={match.visitante_shield_url} alt="" className="team-shield" />
                                             <span className="team-name">{match.club_visitante}</span>
                                         </div>
                                     </div>
 
                                     <div className="match-meta-container mt-3 w-full">
                                         <div className="meta-row flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden">
-                                            <div className="meta-item flex items-center gap-2">
+                                            <div className="meta-item competition-meta flex items-center gap-2">
                                                 <Trophy size={11} className="opacity-40" />
                                                 <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
                                                     {match.competicion_nombre} {formattedJornada ? `• ${formattedJornada}` : ''}
                                                 </span>
                                             </div>
-                                            <span className="opacity-20 text-[10px]">|</span>
-                                            <div className="meta-item flex items-center gap-2">
+                                            <span className="meta-separator opacity-20 text-[10px]">|</span>
+                                            <div className="meta-item stadium-meta flex items-center gap-2">
                                                 <MapPin size={11} className="opacity-40" />
                                                 <span className="text-[10px] font-black uppercase opacity-70 tracking-tighter">
                                                     {match.estadio}
@@ -306,6 +363,11 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                 .m-day { font-size: 2.22rem; font-family: 'Cinzel', serif; line-height: 1; color: #f0f0f0; }
                 .m-month { font-size: 0.9rem; font-weight: 800; text-transform: uppercase; color: rgba(212,168,67,0.7); font-family: 'DM Sans', sans-serif; }
 
+                .mobile-filters,
+                .mobile-match-heading {
+                    display: none;
+                }
+
                 .match-main-content {
                     flex-grow: 1;
                     padding: 1.5rem 2.5rem;
@@ -327,9 +389,10 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     display: flex;
                     align-items: center;
                     min-width: 0;
+                    gap: 1.5rem;
                 }
-                .team-side.local { justify-content: flex-end; padding-right: 2.5rem; text-align: right; }
-                .team-side.visitor { justify-content: flex-start; padding-left: 2.5rem; text-align: left; }
+                .team-side.local { justify-content: flex-end; padding-right: 1.5rem; text-align: right; }
+                .team-side.visitor { justify-content: flex-start; padding-left: 1.5rem; text-align: left; }
 
                 .team-name {
                     font-family: 'Cinzel', serif;
@@ -340,12 +403,6 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                }
-
-                .central-block {
-                    display: flex;
-                    align-items: center;
-                    gap: 1.5rem;
                 }
 
                 .team-shield {
@@ -403,25 +460,187 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                     .team-name { font-size: 1rem; }
                     .score-display { font-size: 2.5rem; }
                     .team-shield { width: 45px; height: 45px; }
-                    .team-side.local { padding-right: 1.5rem; }
-                    .team-side.visitor { padding-left: 1.5rem; }
+                    .team-side { gap: 0.9rem; }
+                    .team-side.local { padding-right: 1rem; }
+                    .team-side.visitor { padding-left: 1rem; }
                     .match-comp-logo-right { width: 100px; min-width: 100px; }
                     .comp-logo-large { width: 60px; height: 60px; }
                 }
 
                 @media (max-width: 768px) {
-                    .match-archive-card { flex-direction: column; min-height: auto; border-radius: 25px 0 0 0; margin-left: 1rem; margin-right: 1rem; }
-                    .match-date-box { width: 100%; height: auto; padding: 1.5rem; flex-direction: row; gap: 1.5rem; background: rgba(212,168,67,0.07); border-right: none; border-bottom: 1px solid rgba(212,168,67,0.12); }
+                    .desktop-filters { display: none; }
+                    .mobile-filters {
+                        display: block;
+                        margin: 0 1rem 1.25rem;
+                    }
+                    .mobile-filter-panel {
+                        background: rgba(8,16,34,0.9);
+                        border: 1px solid rgba(212,168,67,0.22);
+                        border-radius: 14px;
+                        overflow: hidden;
+                    }
+                    .mobile-filter-panel summary {
+                        min-height: 48px;
+                        padding: 0.75rem 1rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 0.75rem;
+                        cursor: pointer;
+                        list-style: none;
+                        color: rgba(212,168,67,0.85);
+                    }
+                    .mobile-filter-panel summary::-webkit-details-marker { display: none; }
+                    .mobile-filter-title {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.55rem;
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.7rem;
+                        font-weight: 800;
+                        letter-spacing: 0.12em;
+                    }
+                    .mobile-filter-active {
+                        padding: 0.2rem 0.45rem;
+                        border-radius: 999px;
+                        background: rgba(212,168,67,0.13);
+                        color: #d4a843;
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.55rem;
+                        font-weight: 800;
+                        letter-spacing: 0.08em;
+                    }
+                    .mobile-filter-content {
+                        padding: 0.85rem 1rem 1rem;
+                        display: grid;
+                        grid-template-columns: 1fr;
+                        gap: 0.8rem;
+                        border-top: 1px solid rgba(212,168,67,0.12);
+                    }
+                    .mobile-filter-content label {
+                        display: grid;
+                        gap: 0.35rem;
+                    }
+                    .mobile-filter-content label > span {
+                        color: rgba(200,210,220,0.55);
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.58rem;
+                        font-weight: 800;
+                        letter-spacing: 0.12em;
+                    }
+                    .mobile-filter-content select {
+                        width: 100%;
+                        min-height: 42px;
+                        padding: 0 0.75rem;
+                        border: 1px solid rgba(212,168,67,0.2);
+                        border-radius: 10px;
+                        background: #081022;
+                        color: #f0f0f0;
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.78rem;
+                    }
+                    .mobile-filter-clear {
+                        min-height: 38px;
+                        border: 1px solid rgba(212,168,67,0.28);
+                        border-radius: 10px;
+                        background: rgba(212,168,67,0.08);
+                        color: #d4a843;
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.62rem;
+                        font-weight: 800;
+                        letter-spacing: 0.1em;
+                    }
+
+                    .match-archive-card { flex-direction: column; min-height: auto; border-radius: 22px 0 0 0; margin-left: 1rem; margin-right: 1rem; }
+                    .match-date-box { width: 100%; min-width: 0; height: auto; padding: 0.85rem 1.25rem; flex-direction: row; gap: 0.8rem; background: rgba(212,168,67,0.07); border-right: none; border-bottom: 1px solid rgba(212,168,67,0.12); }
                     .venue-icon-wrapper { margin-bottom: 0 !important; }
-                    .match-main-content { padding: 2rem 1.5rem; }
-                    .teams-interaction-row { flex-direction: column; gap: 1rem; }
-                    .team-side { width: 100%; justify-content: center !important; padding: 0 !important; }
-                    .team-name { font-size: 1.2rem; white-space: normal; text-align: center !important; }
-                    .central-block { margin: 0.5rem 0; width: 100%; justify-content: center; }
-                    .match-comp-logo-right { width: 100%; height: 110px; padding: 1.5rem; border-top: 1px solid rgba(212,168,67,0.1); }
-                    .comp-logo-large { width: 80px; height: 80px; }
-                    .meta-row { flex-direction: row; gap: 0.5rem; justify-content: center; }
-                    .meta-item span { font-size: 9px; letter-spacing: -0.2px; }
+                    .venue-icon-wrapper svg { width: 22px; height: 22px; }
+                    .m-day { font-size: 1.65rem; }
+                    .m-month { font-size: 0.72rem; }
+                    .match-main-content { padding: 1.15rem 1rem 1.25rem; }
+                    .mobile-match-heading {
+                        min-height: 48px;
+                        margin-bottom: 1rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.8rem;
+                        color: rgba(212,168,67,0.78);
+                        font-family: 'DM Sans', sans-serif;
+                        font-size: 0.68rem;
+                        font-weight: 800;
+                        letter-spacing: 0.12em;
+                        text-transform: uppercase;
+                    }
+                    .mobile-comp-logo {
+                        width: 52px;
+                        height: 42px;
+                        object-fit: contain;
+                    }
+                    .mobile-comp-placeholder { opacity: 0.35; }
+                    .teams-interaction-row {
+                        display: grid;
+                        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+                        align-items: start;
+                        gap: 0.65rem;
+                    }
+                    .team-side {
+                        width: 100%;
+                        min-width: 0;
+                        padding: 0 !important;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start !important;
+                        gap: 0.65rem;
+                        text-align: center !important;
+                    }
+                    .team-side.local .team-shield { order: -1; }
+                    .team-shield { width: 58px; height: 58px; }
+                    .team-name {
+                        width: 100%;
+                        min-height: 2.6em;
+                        font-size: 0.72rem;
+                        line-height: 1.3;
+                        white-space: normal;
+                        overflow: visible;
+                        text-overflow: clip;
+                        text-align: center !important;
+                        overflow-wrap: anywhere;
+                    }
+                    .match-score-box {
+                        min-width: 76px;
+                        height: 58px;
+                    }
+                    .score-display { font-size: 2rem; gap: 0.3rem; }
+                    .time-display {
+                        padding: 0.48rem 0.62rem;
+                        border-radius: 10px;
+                        gap: 0.35rem;
+                        font-size: 0.88rem;
+                        white-space: nowrap;
+                    }
+                    .time-display svg { width: 14px; height: 14px; }
+                    .match-comp-logo-right { display: none; }
+                    .match-meta-container { margin-top: 1rem !important; }
+                    .meta-row {
+                        justify-content: center;
+                        gap: 0;
+                        white-space: normal !important;
+                        overflow: visible !important;
+                    }
+                    .competition-meta,
+                    .meta-separator { display: none !important; }
+                    .stadium-meta {
+                        max-width: 100%;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .stadium-meta span {
+                        font-size: 0.62rem !important;
+                        line-height: 1.35;
+                        letter-spacing: 0.03em !important;
+                        white-space: normal;
+                    }
                 }
             ` }} />
         </div>

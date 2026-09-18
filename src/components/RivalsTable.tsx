@@ -98,8 +98,8 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
     );
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
-            <div className="overflow-x-auto rivals-scrollbar">
+        <div className="rivals-table-shell w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
+            <div className="rivals-table-desktop overflow-x-auto rivals-scrollbar">
                 <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
                     <thead>
                         <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
@@ -246,7 +246,44 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                 </table>
             </div>
 
+            <div className="rivals-mobile-list">
+                {sortedRivals.map((rival, index) => (
+                    <article className="rival-mobile-card" key={rival.id_club}>
+                        <header className="rival-mobile-card__header">
+                            <span className="rival-mobile-card__rank">{index + 1}</span>
+                            <img
+                                src={rival.shieldUrl}
+                                alt=""
+                                onError={(e) => (e.currentTarget.src = '/assets/escudos/placeholder.png')}
+                            />
+                            <div className="rival-mobile-card__identity">
+                                <a href={`/rivales/${rival.slug}`}>{rival.nombre}</a>
+                                <p>
+                                    {rival.flagUrl && <img src={rival.flagUrl} alt="" />}
+                                    <span>{rival.ciudad || rival.pais || 'Ubicación no disponible'}</span>
+                                </p>
+                            </div>
+                            <span className="rival-mobile-card__played"><strong>{rival.stats.played}</strong>PJ</span>
+                        </header>
+                        {rival.estadio && (
+                            <div className="rival-mobile-card__stadium">
+                                <span>Estadio</span>
+                                <strong>{rival.estadio}</strong>
+                            </div>
+                        )}
+                        <div className="rival-mobile-card__stats">
+                            <span className="is-win"><strong>{rival.stats.wins}</strong>V</span>
+                            <span className="is-draw"><strong>{rival.stats.draws}</strong>E</span>
+                            <span className="is-loss"><strong>{rival.stats.losses}</strong>D</span>
+                            <span><strong>{rival.stats.gf}-{rival.stats.ga}</strong>Goles</span>
+                            <span><strong>{rival.stats.cleanSheets}</strong>PaC</span>
+                        </div>
+                    </article>
+                ))}
+            </div>
+
             <style>{`
+                .rivals-mobile-list { display: none; }
                 .rivals-scrollbar::-webkit-scrollbar {
                     height: 8px;
                     background: rgba(6,13,28,0.95);
@@ -258,11 +295,35 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                 .rivals-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(212,168,67,0.55);
                 }
+                @media (max-width: 640px) {
+                    .rivals-table-shell { border: 0 !important; background: transparent !important; overflow: visible; }
+                    .rivals-table-desktop { display: none; }
+                    .rivals-mobile-list { display: grid; gap: 0.85rem; }
+                    .rival-mobile-card { overflow: hidden; border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; background: rgba(6,13,28,0.94); }
+                    .rival-mobile-card__header { display: grid; grid-template-columns: 25px 42px minmax(0,1fr) auto; align-items: center; gap: 0.62rem; padding: 0.85rem; border-bottom: 1px solid rgba(212,168,67,0.1); }
+                    .rival-mobile-card__rank { color: rgba(212,168,67,0.55); font-family: 'Cinzel', serif; font-size: 0.68rem; text-align: center; }
+                    .rival-mobile-card__header > img { width: 42px; height: 42px; object-fit: contain; }
+                    .rival-mobile-card__identity { min-width: 0; }
+                    .rival-mobile-card__identity > a { display: block; overflow: hidden; color: #f0f0f0; font-family: 'Cinzel', serif; font-size: 0.8rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+                    .rival-mobile-card__identity p { display: flex; align-items: center; gap: 0.38rem; min-width: 0; margin: 0.28rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.67rem; }
+                    .rival-mobile-card__identity p img { width: 16px; height: 11px; object-fit: cover; flex-shrink: 0; }
+                    .rival-mobile-card__identity p span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .rival-mobile-card__played { display: flex; flex-direction: column; align-items: center; color: rgba(200,210,220,0.42); font-family: 'Cinzel', serif; font-size: 0.45rem; letter-spacing: 0.1em; }
+                    .rival-mobile-card__played strong { color: #d4a843; font-size: 1rem; line-height: 1; }
+                    .rival-mobile-card__stadium { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.62rem 0.85rem; color: rgba(200,210,220,0.45); font-size: 0.62rem; }
+                    .rival-mobile-card__stadium strong { overflow: hidden; color: rgba(230,235,240,0.78); font-weight: 600; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+                    .rival-mobile-card__stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); border-top: 1px solid rgba(212,168,67,0.08); }
+                    .rival-mobile-card__stats span { min-width: 0; padding: 0.65rem 0.15rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.51rem; text-align: center; }
+                    .rival-mobile-card__stats span:last-child { border-right: 0; }
+                    .rival-mobile-card__stats strong { display: block; margin-bottom: 0.16rem; color: #f0f0f0; font-size: 0.86rem; }
+                    .rival-mobile-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
+                    .rival-mobile-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
+                    .rival-mobile-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                }
             `}</style>
         </div>
     );
 };
 
 export default RivalsTable;
-
 

@@ -44,7 +44,7 @@ const sortedPlayers = [...players].sort((a, b) => {
 ---
 
 <div class="pg-layout">
-    <aside class="pg-sidebar" data-pg-sidebar>
+    <aside class="pg-sidebar pg-desktop-filters" data-pg-sidebar>
         <div class="pg-sidebar-header">♦ FILTROS ♦</div>
 
         <span class="pg-section-label">♦ Posición</span>
@@ -104,6 +104,56 @@ const sortedPlayers = [...players].sort((a, b) => {
             </>
         )}
     </aside>
+
+    <details class="pg-mobile-filters">
+        <summary>
+            <span class="pg-mobile-filter-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="4" y1="6" x2="20" y2="6"></line>
+                    <circle cx="9" cy="6" r="2"></circle>
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <circle cx="15" cy="12" r="2"></circle>
+                    <line x1="4" y1="18" x2="20" y2="18"></line>
+                    <circle cx="11" cy="18" r="2"></circle>
+                </svg>
+                FILTRAR JUGADORAS
+            </span>
+            <span class="pg-mobile-filter-status" data-pg-filter-status hidden>ACTIVO</span>
+        </summary>
+        <div class="pg-mobile-filter-content">
+            <label>
+                <span>POSICIÓN</span>
+                <select data-filter-select="posicion">
+                    <option value="">Todas las posiciones</option>
+                    {positions.map(([pos]) => <option value={pos}>{pos}</option>)}
+                </select>
+            </label>
+            <label>
+                <span>CANTERA</span>
+                <select data-filter-select="canterana">
+                    <option value="">Todas las jugadoras</option>
+                    <option value="si">Canteranas</option>
+                </select>
+            </label>
+            <label>
+                <span>PAÍS</span>
+                <select data-filter-select="pais">
+                    <option value="">Todos los países</option>
+                    {countries.map(([country]) => <option value={country}>{country}</option>)}
+                </select>
+            </label>
+            {seasons.length > 0 && (
+                <label>
+                    <span>TEMPORADA</span>
+                    <select data-filter-select="temporada">
+                        <option value="">Todas las temporadas</option>
+                        {seasons.map(s => <option value={s}>{s.replace('-', '/')}</option>)}
+                    </select>
+                </label>
+            )}
+            <button class="pg-mobile-filter-clear" data-pg-mobile-reset hidden>Limpiar filtros</button>
+        </div>
+    </details>
 
     <main class="pg-main">
         <div class="pg-sort-bar">
@@ -179,10 +229,13 @@ const sortedPlayers = [...players].sort((a, b) => {
 
     const cards = Array.from(grid.querySelectorAll<HTMLElement>('[data-posicion]'));
     const filterBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+    const filterSelects = Array.from(document.querySelectorAll<HTMLSelectElement>('[data-filter-select]'));
     const sortBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-sort]'));
     const countDisplay = document.querySelector('[data-pg-count]');
     const noResults = document.querySelector<HTMLElement>('[data-pg-no-results]');
     const resetBtn = document.querySelector('[data-pg-reset]');
+    const mobileResetBtn = document.querySelector<HTMLButtonElement>('[data-pg-mobile-reset]');
+    const filterStatus = document.querySelector<HTMLElement>('[data-pg-filter-status]');
 
     const state: Record<string, string> = { posicion: '', pais: '', temporada: '', canterana: '' };
     let sortMode = 'posicion';
@@ -201,6 +254,9 @@ const sortedPlayers = [...players].sort((a, b) => {
       }
       if (countDisplay) countDisplay.textContent = `${visible} jugadoras`;
       if (noResults) noResults.hidden = visible > 0;
+      const hasActiveFilters = Object.values(state).some(Boolean);
+      if (filterStatus) filterStatus.hidden = !hasActiveFilters;
+      if (mobileResetBtn) mobileResetBtn.hidden = !hasActiveFilters;
     }
 
     function applySort() {
@@ -222,6 +278,23 @@ const sortedPlayers = [...players].sort((a, b) => {
             b.classList.toggle('pg-active', (b.dataset.value ?? '') === value);
           }
         }
+        for (const select of filterSelects) {
+          if (select.dataset.filterSelect === group) select.value = value;
+        }
+        applyFilters();
+      });
+    }
+
+    for (const select of filterSelects) {
+      select.addEventListener('change', () => {
+        const group = select.dataset.filterSelect!;
+        const value = select.value;
+        state[group] = value;
+        for (const btn of filterBtns) {
+          if (btn.dataset.filter === group) {
+            btn.classList.toggle('pg-active', (btn.dataset.value ?? '') === value);
+          }
+        }
         applyFilters();
       });
     }
@@ -234,8 +307,7 @@ const sortedPlayers = [...players].sort((a, b) => {
       });
     }
 
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => {
+    function resetFilters() {
         state.posicion = '';
         state.pais = '';
         state.temporada = '';
@@ -243,9 +315,12 @@ const sortedPlayers = [...players].sort((a, b) => {
         for (const btn of filterBtns) {
           btn.classList.toggle('pg-active', (btn.dataset.value ?? '') === '');
         }
+        for (const select of filterSelects) select.value = '';
         applyFilters();
-      });
     }
+
+    resetBtn?.addEventListener('click', resetFilters);
+    mobileResetBtn?.addEventListener('click', resetFilters);
   }
 
   document.addEventListener('astro:after-swap', () => {

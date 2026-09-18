@@ -18,29 +18,28 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
         if (!matches || matches.length === 0) return null;
 
         const seasonStats: Record<string, { trips: number; km: number; hours: number }> = {};
-
         let totalTrips = 0;
         let totalKm = 0;
         let totalHours = 0;
 
         matches.forEach(m => {
             const season = m.temporada_nombre || 'Desconocida';
-            if (!seasonStats[season]) {
-                seasonStats[season] = { trips: 0, km: 0, hours: 0 };
-            }
+            if (!seasonStats[season]) seasonStats[season] = { trips: 0, km: 0, hours: 0 };
 
             const localName = (m.club_local || '').toLowerCase().replace(/\s/g, '');
+            const stadiumName = (m.estadio || '').toLowerCase();
             const isHomeGame = localName.includes('realmadrid') ||
                 localName.includes('tacon') ||
-                (m.estadio || '').toLowerCase().includes('alfredo') ||
-                (m.estadio || '').toLowerCase().includes('ciudad real madrid');
+                stadiumName.includes('alfredo') ||
+                stadiumName.includes('ciudad real madrid');
 
             if (!isHomeGame && m.estadio_lat != null && m.estadio_lng != null) {
                 const oneWayKm = calculateDistance(
-                    MADRID_COORDS.lat, MADRID_COORDS.lng,
-                    Number(m.estadio_lat), Number(m.estadio_lng)
+                    MADRID_COORDS.lat,
+                    MADRID_COORDS.lng,
+                    Number(m.estadio_lat),
+                    Number(m.estadio_lng),
                 );
-
                 const roundTripKm = oneWayKm * 2;
                 const tripHours = estimateTravelTime(oneWayKm) * 2;
 
@@ -56,120 +55,106 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
             }
         });
 
-        const sortedSeasons = Object.keys(seasonStats).sort().reverse();
-
         return {
             totalTrips,
             totalKm: Math.round(totalKm),
             totalHours: Math.round(totalHours),
-            seasonBreakdown: sortedSeasons.map(s => ({
-                season: s,
-                ...seasonStats[s]
-            }))
+            seasonBreakdown: Object.keys(seasonStats).sort().reverse().map(season => ({
+                season,
+                ...seasonStats[season],
+            })),
         };
     }, [matches]);
 
     if (!stats) return null;
 
-    const cardStyle: React.CSSProperties = {
-        background: 'rgba(8,16,34,0.85)',
-        border: '1px solid rgba(212,168,67,0.18)',
-        borderRadius: '4px',
-        padding: '1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        gap: '0.75rem',
-        position: 'relative',
-    };
-
-    const iconWrapStyle: React.CSSProperties = {
-        color: 'rgba(212,168,67,0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    };
-
-    const labelStyle: React.CSSProperties = {
-        fontFamily: "'Cinzel', serif",
-        fontSize: '0.58rem',
-        letterSpacing: '0.18em',
-        textTransform: 'uppercase' as const,
-        color: 'rgba(200,210,220,0.45)',
-        margin: 0,
-    };
-
-    const valueStyle: React.CSSProperties = {
-        fontFamily: "'Cinzel', serif",
-        fontSize: '2.2rem',
-        fontWeight: 700,
-        color: '#d4a843',
-        lineHeight: 1,
-        margin: 0,
-    };
-
     return (
-        <div style={{ width: '100%', maxWidth: '56rem', margin: '0 auto 2.5rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
-                <div style={cardStyle}>
-                    <div style={iconWrapStyle}><Navigation size={28} /></div>
+        <section className="travel-dashboard" aria-label="Resumen de desplazamientos">
+            <div className="travel-cards">
+                <article className="travel-card travel-card--distance">
+                    <MapPin aria-hidden="true" />
                     <div>
-                        <p style={labelStyle}>Desplazamientos</p>
-                        <p style={valueStyle}>{stats.totalTrips}</p>
+                        <p className="travel-label">Distancia total</p>
+                        <p className="travel-value">{stats.totalKm.toLocaleString()} <small>km</small></p>
                     </div>
-                </div>
-                <div style={cardStyle}>
-                    <div style={iconWrapStyle}><MapPin size={28} /></div>
+                </article>
+                <article className="travel-card">
+                    <Navigation aria-hidden="true" />
                     <div>
-                        <p style={labelStyle}>Distancia Total</p>
-                        <p style={valueStyle}>{stats.totalKm.toLocaleString()} <span style={{ fontSize: '1rem' }}>km</span></p>
+                        <p className="travel-label">Desplazamientos</p>
+                        <p className="travel-value">{stats.totalTrips}</p>
                     </div>
-                </div>
-                <div style={cardStyle}>
-                    <div style={iconWrapStyle}><Clock size={28} /></div>
+                </article>
+                <article className="travel-card">
+                    <Clock aria-hidden="true" />
                     <div>
-                        <p style={labelStyle}>Tiempo en Ruta</p>
-                        <p style={valueStyle}>~{stats.totalHours} <span style={{ fontSize: '1rem' }}>h</span></p>
+                        <p className="travel-label">Tiempo en ruta</p>
+                        <p className="travel-value">~{stats.totalHours} <small>h</small></p>
                     </div>
-                </div>
+                </article>
             </div>
 
-            <div style={{ background: 'rgba(8,16,34,0.85)', border: '1px solid rgba(212,168,67,0.18)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 1.25rem', borderBottom: '1px solid rgba(212,168,67,0.12)', background: 'rgba(212,168,67,0.03)' }}>
-                    <Calendar size={14} style={{ color: 'rgba(212,168,67,0.6)', flexShrink: 0 }} />
-                    <span style={{ fontFamily: "'Cinzel', serif", fontSize: '0.65rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(212,168,67,0.75)' }}>
-                        Desglose por Temporada
-                    </span>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: "'DM Sans', sans-serif", fontSize: '0.84rem' }}>
+            <div className="travel-breakdown">
+                <header className="travel-breakdown__header">
+                    <Calendar size={15} aria-hidden="true" />
+                    <span>Desglose por temporada</span>
+                </header>
+                <div className="travel-table-wrap">
+                    <table>
                         <thead>
                             <tr>
-                                {['Temporada','Viajes','Kilómetros','Horas (Est.)'].map(h => (
-                                    <th key={h} style={{ padding: '0.65rem 1rem', textAlign: 'center', fontFamily: "'Cinzel', serif", fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(212,168,67,0.7)', background: 'rgba(212,168,67,0.06)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
-                                ))}
+                                <th>Temporada</th>
+                                <th>Viajes</th>
+                                <th>Kilómetros</th>
+                                <th>Horas</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {stats.seasonBreakdown.map((row, i) => (
-                                <tr key={row.season} style={{ borderBottom: '1px solid rgba(212,168,67,0.07)', background: i % 2 === 0 ? 'rgba(6,13,28,0.6)' : 'rgba(6,13,28,0.4)' }}>
-                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', fontFamily: "'Cinzel', serif", fontSize: '0.78rem', color: 'rgba(200,210,220,0.85)', fontWeight: 600 }}>{row.season}</td>
-                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)' }}>{row.trips}</td>
-                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(row.km).toLocaleString()} km</td>
-                                    <td style={{ padding: '0.55rem 1rem', textAlign: 'center', color: 'rgba(200,210,220,0.65)' }}>{Math.round(row.hours)}h</td>
+                            {stats.seasonBreakdown.map(row => (
+                                <tr key={row.season}>
+                                    <td>{row.season}</td>
+                                    <td>{row.trips}</td>
+                                    <td>{Math.round(row.km).toLocaleString()} km</td>
+                                    <td>{Math.round(row.hours)} h</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <div style={{ padding: '0.65rem 1.25rem', borderTop: '1px solid rgba(212,168,67,0.07)', fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: 'rgba(200,210,220,0.3)', fontStyle: 'italic', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span>* Estimación: &lt;300km en autobús (80km/h), &gt;300km en avión (800km/h + 2.5h gestión).</span>
-                    <span>** "Viajes" excluye desplazamientos locales (&lt;70km), pero sus km y horas se suman al total.</span>
-                </div>
+                <footer className="travel-notes">
+                    <span>* Estimación: trayectos de menos de 300 km en autobús y el resto en avión.</span>
+                    <span>** Los desplazamientos locales no cuentan como viaje, aunque sí en distancia y tiempo.</span>
+                </footer>
             </div>
-        </div>
+
+            <style>{`
+                .travel-dashboard { width: 100%; }
+                .travel-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
+                .travel-card { min-height: 132px; padding: 1.15rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.65rem; text-align: center; background: rgba(8,16,34,0.9); border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; }
+                .travel-card svg { width: 25px; height: 25px; color: rgba(212,168,67,0.76); }
+                .travel-label { margin: 0 0 0.35rem; font-family: 'Cinzel', serif; font-size: 0.55rem; line-height: 1.35; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(200,210,220,0.52); }
+                .travel-value { margin: 0; font-family: 'Cinzel', serif; font-size: clamp(1.45rem, 2.2vw, 2.2rem); font-weight: 700; line-height: 1; color: #d4a843; font-variant-numeric: tabular-nums; }
+                .travel-value small { font-size: 0.8rem; }
+                .travel-breakdown { overflow: hidden; background: rgba(8,16,34,0.9); border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; }
+                .travel-breakdown__header { display: flex; align-items: center; gap: 0.55rem; padding: 0.8rem 1rem; border-bottom: 1px solid rgba(212,168,67,0.12); background: rgba(212,168,67,0.04); color: rgba(212,168,67,0.78); }
+                .travel-breakdown__header span { font-family: 'Cinzel', serif; font-size: 0.61rem; letter-spacing: 0.14em; text-transform: uppercase; }
+                .travel-table-wrap { overflow-x: auto; }
+                .travel-breakdown table { width: 100%; border-collapse: collapse; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; }
+                .travel-breakdown th { padding: 0.62rem 0.55rem; background: rgba(212,168,67,0.06); font-family: 'Cinzel', serif; font-size: 0.53rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(212,168,67,0.72); white-space: nowrap; }
+                .travel-breakdown td { padding: 0.55rem; border-bottom: 1px solid rgba(212,168,67,0.07); text-align: center; color: rgba(200,210,220,0.68); font-variant-numeric: tabular-nums; }
+                .travel-breakdown td:first-child { font-family: 'Cinzel', serif; font-weight: 600; color: rgba(230,235,240,0.88); }
+                .travel-notes { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.65rem 1rem; color: rgba(200,210,220,0.36); font-family: 'DM Sans', sans-serif; font-size: 0.64rem; font-style: italic; line-height: 1.45; }
+                @media (max-width: 600px) {
+                    .travel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+                    .travel-card--distance { grid-column: 1 / -1; min-height: 118px; }
+                    .travel-card { min-height: 108px; padding: 0.9rem 0.65rem; }
+                    .travel-card svg { width: 22px; height: 22px; }
+                    .travel-value { font-size: 1.65rem; }
+                    .travel-breakdown th, .travel-breakdown td { padding-inline: 0.35rem; }
+                    .travel-notes { padding-inline: 0.75rem; }
+                }
+            `}</style>
+        </section>
     );
 };
 

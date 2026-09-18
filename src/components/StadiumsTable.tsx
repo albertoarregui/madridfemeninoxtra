@@ -95,8 +95,8 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
     );
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
-            <div className="overflow-x-auto stadiums-scrollbar">
+        <div className="stadiums-table-shell w-full max-w-[1600px] mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
+            <div className="stadiums-table-desktop overflow-x-auto stadiums-scrollbar">
                 <table className="w-full border-collapse text-left min-w-[1000px] md:min-w-[1200px]">
                     <thead>
                         <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
@@ -198,7 +198,33 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                 </table>
             </div>
 
+            <div className="stadiums-mobile-list">
+                {sortedStadiums.map((stadium, index) => (
+                    <article className="stadium-mobile-card" key={stadium.slug}>
+                        <header className="stadium-mobile-card__header">
+                            <span className="stadium-mobile-card__rank">{index + 1}</span>
+                            <div>
+                                <a href={`/estadios/${stadium.slug}`}>{stadium.name}</a>
+                                <p>{stadium.city || 'Ciudad no disponible'}</p>
+                            </div>
+                            <span className="stadium-mobile-card__played"><strong>{stadium.stats.played}</strong>PJ</span>
+                        </header>
+                        <div className="stadium-mobile-card__meta">
+                            <span>Capacidad</span>
+                            <strong>{stadium.capacity ? Number(stadium.capacity).toLocaleString() : '—'}</strong>
+                        </div>
+                        <div className="stadium-mobile-card__stats">
+                            <span className="is-win"><strong>{stadium.stats.wins}</strong>Victorias</span>
+                            <span className="is-draw"><strong>{stadium.stats.draws}</strong>Empates</span>
+                            <span className="is-loss"><strong>{stadium.stats.losses}</strong>Derrotas</span>
+                            <span><strong>{stadium.stats.gd > 0 ? `+${stadium.stats.gd}` : stadium.stats.gd}</strong>Dif. goles</span>
+                        </div>
+                    </article>
+                ))}
+            </div>
+
             <style>{`
+                .stadiums-mobile-list { display: none; }
                 .stadiums-scrollbar::-webkit-scrollbar {
                     height: 8px;
                     background: rgba(6,13,28,0.95);
@@ -210,11 +236,31 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                 .stadiums-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(212,168,67,0.55);
                 }
+                @media (max-width: 640px) {
+                    .stadiums-table-shell { border: 0 !important; background: transparent !important; overflow: visible; }
+                    .stadiums-table-desktop { display: none; }
+                    .stadiums-mobile-list { display: grid; gap: 0.85rem; }
+                    .stadium-mobile-card { overflow: hidden; border: 1px solid rgba(212,168,67,0.2); border-radius: 8px; background: rgba(6,13,28,0.94); }
+                    .stadium-mobile-card__header { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; align-items: center; gap: 0.7rem; padding: 0.9rem; border-bottom: 1px solid rgba(212,168,67,0.1); }
+                    .stadium-mobile-card__rank { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(212,168,67,0.2); border-radius: 50%; color: rgba(212,168,67,0.68); font-family: 'Cinzel', serif; font-size: 0.7rem; }
+                    .stadium-mobile-card__header a { display: block; overflow: hidden; color: #f0f0f0; font-family: 'Cinzel', serif; font-size: 0.82rem; font-weight: 700; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+                    .stadium-mobile-card__header p { margin: 0.24rem 0 0; color: rgba(200,210,220,0.52); font-size: 0.7rem; }
+                    .stadium-mobile-card__played { display: flex; flex-direction: column; align-items: center; color: rgba(200,210,220,0.42); font-family: 'Cinzel', serif; font-size: 0.45rem; letter-spacing: 0.1em; }
+                    .stadium-mobile-card__played strong { color: #d4a843; font-size: 1rem; line-height: 1; }
+                    .stadium-mobile-card__meta { display: flex; justify-content: space-between; padding: 0.65rem 0.9rem; color: rgba(200,210,220,0.48); font-size: 0.66rem; }
+                    .stadium-mobile-card__meta strong { color: rgba(230,235,240,0.82); font-variant-numeric: tabular-nums; }
+                    .stadium-mobile-card__stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-top: 1px solid rgba(212,168,67,0.08); }
+                    .stadium-mobile-card__stats span { min-width: 0; padding: 0.68rem 0.2rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(200,210,220,0.42); font-size: 0.52rem; text-align: center; }
+                    .stadium-mobile-card__stats span:last-child { border-right: 0; }
+                    .stadium-mobile-card__stats strong { display: block; margin-bottom: 0.18rem; color: #f0f0f0; font-size: 0.9rem; }
+                    .stadium-mobile-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
+                    .stadium-mobile-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
+                    .stadium-mobile-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                }
             `}</style>
         </div>
     );
 };
 
 export default StadiumsTable;
-
 

@@ -562,7 +562,16 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
                                                 <td key={col.key}
                                                     className={`bus-td bus-td-stat${isSorted ? ' sorted' : ''}${isTop ? ' top3' : ''}`}
                                                 >
-                                                    {display}
+                                                    <button
+                                                        type="button"
+                                                        className="bus-stat-mobile-label"
+                                                        onClick={() => handleSort(col.key)}
+                                                        title={`Ordenar por ${col.title}`}
+                                                    >
+                                                        {col.title}
+                                                        {isSorted && (sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
+                                                    </button>
+                                                    <span className="bus-stat-value">{display}</span>
                                                 </td>
                                             );
                                         })}
@@ -575,7 +584,7 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
             </div>
 
             <p className="bus-hint">
-                Clic en columna para ordenar · Los valores Por 90' excluyen porcentajes y métricas de participación
+                Pulsa una estadística para ordenar · Los valores Por 90' excluyen porcentajes y métricas de participación
             </p>
         </div>
     );

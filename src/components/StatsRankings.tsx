@@ -446,16 +446,30 @@ export default function StatsRankings({
                 }
 
                 @media (max-width: 768px) {
-                    .podium-container { flex-direction: column; align-items: center; min-height: auto; gap: 40px; margin-bottom: 60px; padding: 0 20px; }
-                    .podium-spot { width: 100%; max-width: 100%; }
-                    .spot-1 { order: 1; }
-                    .spot-2 { order: 2; }
+                    .stats-rankings-react { padding-top: 0.75rem; }
+                    .stats-rankings-react .filters-container { gap: 0.6rem !important; margin-bottom: 1.75rem !important; }
+                    .podium-container { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; min-height: auto; gap: 0.35rem; margin-bottom: 2rem; padding: 0; }
+                    .podium-spot { width: 100%; max-width: 100%; min-width: 0; }
+                    .spot-1 { order: 2; }
+                    .spot-2 { order: 1; }
                     .spot-3 { order: 3; }
-                    .podium-base { height: auto !important; padding: 25px 0; border-radius: 12px; }
+                    .podium-spot > div { margin-bottom: 0.35rem !important; }
+                    .podium-base { padding: 0.45rem 0 !important; border-radius: 7px 7px 0 0; }
+                    .spot-1 .podium-base { height: 88px !important; }
+                    .spot-2 .podium-base { height: 68px !important; }
+                    .spot-3 .podium-base { height: 56px !important; }
+                    .podium-base svg { width: 17px; height: 17px; }
+                    .podium-base span { margin-top: 0.2rem !important; font-size: 1.25rem !important; line-height: 1 !important; }
                     .ranking-title-header h2 { font-size: 1.3rem; }
-                    .spot-1 .podium-img-wrapper { width: 170px; height: 170px; }
-                    .spot-2 .podium-img-wrapper { width: 140px; height: 140px; }
-                    .spot-3 .podium-img-wrapper { width: 120px; height: 120px; }
+                    .spot-1 .podium-img-wrapper { width: 88px; height: 88px; border-width: 3px; transform: none; }
+                    .spot-2 .podium-img-wrapper { width: 72px; height: 72px; border-width: 3px; }
+                    .spot-3 .podium-img-wrapper { width: 64px; height: 64px; border-width: 3px; }
+                    .spot-1 .animate-bounce { width: 18px; height: 18px; }
+                    .spot-1 .mb-2 { margin-bottom: 0.2rem !important; }
+                    .podium-stat-value { width: 100%; margin-top: 0.45rem !important; margin-bottom: 0 !important; }
+                    .podium-stat-value h3 { min-height: 2.35em; margin: 0 0 0.2rem !important; padding: 0 0.15rem !important; overflow: hidden; font-size: 0.62rem !important; line-height: 1.18 !important; white-space: normal !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+                    .podium-stat-value p { font-size: 1.18rem !important; line-height: 1 !important; }
+                    .spot-1 .podium-stat-value p { font-size: 1.45rem !important; }
                 }
                 .podium-stat-value { margin-bottom: 2rem; }
                 ` }} />

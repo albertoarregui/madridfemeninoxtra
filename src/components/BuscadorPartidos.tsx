@@ -438,7 +438,16 @@ export default function BuscadorPartidos({ seasons, competitions, rivals }: Busc
                                             <td key={col.key}
                                                 className={`bus-td bus-td-stat${isSorted ? ' sorted' : ''}${isTop ? ' top3' : ''}`}
                                             >
-                                                {display}
+                                                <button
+                                                    type="button"
+                                                    className="bus-stat-mobile-label"
+                                                    onClick={() => handleSort(col.key)}
+                                                    title={`Ordenar por ${col.title}`}
+                                                >
+                                                    {col.title}
+                                                    {isSorted && (sortDir === 'desc' ? <ChevronDown size={12} /> : <ChevronUp size={12} />)}
+                                                </button>
+                                                <span className="bus-stat-value">{display}</span>
                                             </td>
                                         );
                                     })}
@@ -450,7 +459,7 @@ export default function BuscadorPartidos({ seasons, competitions, rivals }: Busc
             </div>
 
             <p className="bus-hint">
-                Clic en columna para ordenar · Las estadísticas avanzadas pueden no estar disponibles en partidos antiguos
+                Pulsa una estadística para ordenar · Las estadísticas avanzadas pueden no estar disponibles en partidos antiguos
             </p>
         </div>
     );

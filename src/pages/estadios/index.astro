@@ -2,9 +2,13 @@
 import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 import { fetchAllStadiumsWithStats } from "../../utils/estadios";
+import { fetchGamesDirectly } from "../../utils/partidos";
 import StadiumsTable from "../../components/StadiumsTable";
+import MatchMapWrapper from "../../components/MatchMapWrapper";
+import MatchStatsDashboard from "../../components/MatchStatsDashboard";
 
 const stadiums = await fetchAllStadiumsWithStats();
+const gamesData = (await fetchGamesDirectly()).filter((game: any) => game.resultado !== "P");
 ---
 
 <Layout
@@ -17,8 +21,108 @@ const stadiums = await fetchAllStadiumsWithStats();
             <p class="landing-subtitle">Todos los estadios donde el Real Madrid Femenino ha disputado partidos a lo largo de su historia</p>
         </header>
 
+        <section class="stadiums-overview" aria-labelledby="stadiums-overview-title">
+            <header class="stadiums-overview__header">
+                <span class="stadiums-overview__eyebrow">Geografía madridista</span>
+                <h2 id="stadiums-overview-title">Estadios y desplazamientos</h2>
+                <p>Consulta las distancias recorridas por el equipo y explora en el mapa todos los campos en los que ha jugado.</p>
+            </header>
+            <div class="stadiums-overview__grid">
+                <MatchStatsDashboard matches={gamesData} client:only="react" />
+                <div class="stadiums-overview__map">
+                    <MatchMapWrapper matches={gamesData} client:only="react" />
+                </div>
+            </div>
+        </section>
+
+        <header class="stadiums-table-heading">
+            <span>Historial por campo</span>
+            <h2>Todos los estadios</h2>
+        </header>
         <StadiumsTable client:load stadiums={stadiums} />
     </main>
 </Layout>
 
+<style>
+    .stadiums-overview {
+        width: min(100%, 1600px);
+        margin: 0 auto 4rem;
+    }
+
+    .stadiums-overview__header,
+    .stadiums-table-heading {
+        margin-bottom: 1.35rem;
+    }
+
+    .stadiums-overview__eyebrow,
+    .stadiums-table-heading span {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: rgba(212,168,67,0.72);
+        font-family: 'Cinzel', serif;
+        font-size: 0.64rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .stadiums-overview h2,
+    .stadiums-table-heading h2 {
+        margin: 0;
+        color: #f0f0f0;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.45rem, 2.5vw, 2.15rem);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+    }
+
+    .stadiums-overview__header p {
+        max-width: 780px;
+        margin: 0.65rem 0 0;
+        color: rgba(200,210,220,0.58);
+        font-size: 0.9rem;
+        line-height: 1.65;
+    }
+
+    .stadiums-overview__grid {
+        display: grid;
+        grid-template-columns: minmax(390px, 0.85fr) minmax(0, 1.15fr);
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+
+    .stadiums-overview__map {
+        min-width: 0;
+    }
+
+    .stadiums-table-heading {
+        width: min(100%, 1600px);
+        margin-inline: auto;
+    }
+
+    @media (max-width: 1050px) {
+        .stadiums-overview__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 640px) {
+        main {
+            padding-inline: 1rem;
+        }
+
+        .stadiums-overview {
+            margin-bottom: 3rem;
+        }
+
+        .stadiums-overview__header,
+        .stadiums-table-heading {
+            text-align: center;
+        }
+
+        .stadiums-overview__header p {
+            font-size: 0.82rem;
+        }
+    }
+</style>
 

@@ -112,17 +112,17 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
     return (
         <div className="w-full max-w-7xl mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
             <div className="overflow-x-auto referees-scrollbar">
-                <table className="w-full border-collapse text-left min-w-[800px]">
+                <table className="referees-table w-full border-collapse text-left min-w-[800px]">
                     <thead>
                         <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
-                            <th className="sticky left-0 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
+                            <th className="ref-rank-col sticky left-0 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
                                 style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
                                 #
                             </th>
                             <SortableHeader
                                 sortKey="nombre"
                                 label="Árbitra"
-                                className="sticky left-[50px] z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[200px]"
+                                className="ref-name-col sticky left-[50px] z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[200px]"
                                 align="left"
                             />
 
@@ -164,11 +164,11 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
                                 onMouseLeave={e => (e.currentTarget.style.background = '')}
                             >
-                                <td className="sticky left-0 z-20 py-3 px-2 text-center font-mono w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
+                                <td className="ref-rank-col sticky left-0 z-20 py-3 px-2 text-center font-mono w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
                                     style={{ color: 'rgba(212,168,67,0.55)', background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
                                     {index + 1}
                                 </td>
-                                <td className="sticky left-[50px] z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate min-w-[200px]"
+                                <td className="ref-name-col sticky left-[50px] z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate min-w-[200px]"
                                     style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)', color: '#f0f0f0' }}
                                     title={referee.nombre}>
                                     <a href={`/arbitras/${generateSlug(referee.nombre)}`}
@@ -261,11 +261,34 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                 .referees-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(212,168,67,0.55);
                 }
+                @media (max-width: 640px) {
+                    .referees-table { min-width: 720px; }
+                    .ref-rank-col { display: none; }
+                    .ref-name-col {
+                        left: 0 !important;
+                        width: 128px !important;
+                        min-width: 128px !important;
+                        max-width: 128px !important;
+                        padding-left: 0.55rem !important;
+                        padding-right: 0.45rem !important;
+                    }
+                    thead .ref-name-col {
+                        background: #11182b !important;
+                    }
+                    .ref-name-col a {
+                        font-size: 0.7rem;
+                        line-height: 1.2;
+                    }
+                    .referees-table th,
+                    .referees-table td {
+                        padding-left: 0.45rem !important;
+                        padding-right: 0.45rem !important;
+                    }
+                }
             `}</style>
         </div>
     );
 };
 
 export default RefereesTable;
-
 

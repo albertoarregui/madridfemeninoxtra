@@ -28,9 +28,10 @@ interface Match {
 
 interface MatchMapWrapperProps {
     matches: Match[];
+    height?: string;
 }
 
-const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
+const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches, height = 'clamp(420px, 52vw, 650px)' }) => {
     const markers = useMemo(() => {
 
         const locationMap = new Map<string, {
@@ -97,17 +98,26 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches }) => {
     }, [matches]);
 
     return (
-        <div className="w-full my-8">
+        <div className="match-map-wrapper">
             <InteractiveMap
                 markers={markers}
-                height="600px"
+                height={height}
                 center={{ lat: 40, lng: -3 }}
                 zoom={4}
             />
+            <style>{`
+                .match-map-wrapper {
+                    width: 100%;
+                    overflow: hidden;
+                    border: 1px solid rgba(212,168,67,0.2);
+                    border-radius: 8px;
+                    background: rgba(8,16,34,0.9);
+                }
+                .match-map-wrapper > div { border-radius: 8px !important; }
+            `}</style>
         </div>
     );
 };
 
 export default MatchMapWrapper;
-
 
