@@ -1,6 +1,6 @@
 import { createClient, type Client } from '@libsql/client';
 import { cached, invalidarTags } from '../utils/cache';
-import { isReadOnlySql, tagsForReadSql, tagsForWriteSql } from '../lib/db-cache-tags';
+import { isReadOnlySql, tableCacheTag, tagsForReadSql, tagsForWriteSql } from '../lib/db-cache-tags';
 
 const globalForDb = globalThis as unknown as {
     __awardsDb?: Client | null;
@@ -10,9 +10,30 @@ const globalForDb = globalThis as unknown as {
     __analyticsDb?: Client | null;
 };
 
-// Una consulta solo vuelve a Turso una vez al mes, salvo revalidación por cambio.
-const DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const DB_CACHE_VERSION = 'v8';
+const STATIC_DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const DYNAMIC_DB_READ_TTL_MS = 5 * 60 * 1000;
+const DB_CACHE_VERSION = 'v9';
+
+const DYNAMIC_READ_TAGS = new Set([
+    tableCacheTag('partidos'),
+    tableCacheTag('goles_y_asistencias'),
+    tableCacheTag('goles_propia'),
+    tableCacheTag('goles_rival'),
+    tableCacheTag('alineaciones'),
+    tableCacheTag('estadisticas_jugadoras'),
+    tableCacheTag('estadisticas_partidos'),
+    tableCacheTag('tarjetas'),
+    tableCacheTag('tarjetas_rival'),
+    tableCacheTag('cambios'),
+    tableCacheTag('penaltis_fallados'),
+    tableCacheTag('tanda_penaltis'),
+]);
+
+export function readCacheTtlMs(tags: readonly string[]): number {
+    return tags.some((tag) => DYNAMIC_READ_TAGS.has(tag))
+        ? DYNAMIC_DB_READ_TTL_MS
+        : STATIC_DB_READ_TTL_MS;
+}
 
 function statementSql(statement: any): string | undefined {
     if (typeof statement === 'string') return statement;
@@ -166,8 +187,9 @@ function withReadCache(client: Client, database: string, forceRefresh = false): 
                 const normalizedSql = sql.replace(/\s+/g, ' ').trim();
                 const tags = tagsForReadSql(sql);
                 const key = `turso:${DB_CACHE_VERSION}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
+                const ttlMs = readCacheTtlMs(tags);
 
-                return cached(key, DB_READ_TTL_MS, async () => {
+                return cached(key, ttlMs, async () => {
                     const result = await run();
                     return {
                         columns: [...result.columns],

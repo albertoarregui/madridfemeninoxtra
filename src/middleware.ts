@@ -18,6 +18,7 @@ const CACHE_CORTA_S = 24 * 60 * 60;
 const SWR_S = 7 * 24 * 60 * 60;
 const CACHE_LARGA_S = 7 * 24 * 60 * 60;
 const SWR_LARGA_S = 30 * 24 * 60 * 60;
+const CACHE_HOME_S = 5 * 60;
 
 export const onRequest = clerkMiddleware(async (auth, context, next) => {
     if (isProtectedRoute(context.request)) {
@@ -53,8 +54,9 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             response.headers.set("Vercel-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
-            const sMaxage = larga ? CACHE_LARGA_S : CACHE_CORTA_S;
-            const swr = larga ? SWR_LARGA_S : SWR_S;
+            const home = url.pathname === '/' || url.pathname === '/home';
+            const sMaxage = home ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
+            const swr = home ? 0 : (larga ? SWR_LARGA_S : SWR_S);
             // Astro establece Cache-Control: public, max-age=0. La cabecera
             // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(
