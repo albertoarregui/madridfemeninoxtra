@@ -14,6 +14,7 @@ import {
 import type { ImageMetadata } from "astro";
 import { getAssetUrl, getAssetMetadata } from "../../utils/assets";
 import { competitionDisplayName } from "../../utils/competiciones";
+import { hasSubstantiveHtml } from "../../lib/content-quality";
 
 const { slug } = Astro.params;
 
@@ -205,6 +206,7 @@ if (rt && rt.pj) {
 }
 const bio = bioParts.join(" ");
 const ficha = await fetchFicha("club", [slug, rival.id_club]);
+const indexableRival = Number(rt?.pj ?? 0) > 0 || hasSubstantiveHtml(ficha);
 
 const rivalSchema = {
     "@context": "https://schema.org",
@@ -222,7 +224,7 @@ const seoDescription = (rt && rt.pj)
     : `Historial completo del Real Madrid Femenino contra ${rival.nombre}. Estadísticas, goleadoras, asistentes y todos los partidos disputados.`;
 ---
 
-<Layout title={seoTitle} description={seoDescription}>
+<Layout title={seoTitle} description={seoDescription} noindex={!indexableRival} showAds={indexableRival}>
     <script type="application/ld+json" set:html={JSON.stringify(rivalSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Rivales", path: "/rivales" }, { name: rival.nombre, path: `/rivales/${slug}` }]))} />
     <section class="rival-hero">

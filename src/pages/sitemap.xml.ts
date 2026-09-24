@@ -7,6 +7,11 @@ import { fetchAllStadiumsWithStats } from '../utils/estadios';
 import { fetchRefereesDirectly } from '../utils/arbitras';
 import { generateSlug } from '../utils/url-helper';
 import { contentfulClient } from '../lib/contentful';
+import {
+    hasPlayedStats,
+    isIndexableMatchSummary,
+    isIndexablePlayerSummary,
+} from '../lib/content-quality';
 
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 
@@ -83,7 +88,7 @@ export const GET: APIRoute = async () => {
 
         try {
             const players = await fetchPlayersDirectly();
-            players.forEach(player => {
+            players.filter(isIndexablePlayerSummary).forEach(player => {
                 urls.push({
                     loc: `${SITE_URL}/jugadoras/${player.slug}`,
                     changefreq: 'monthly',
@@ -109,7 +114,7 @@ export const GET: APIRoute = async () => {
 
         try {
             const rivals = await fetchRivalsDirectly();
-            rivals.forEach((rival: any) => {
+            rivals.filter(hasPlayedStats).forEach((rival: any) => {
                 urls.push({
                     loc: `${SITE_URL}/rivales/${rival.slug}`,
                     changefreq: 'monthly',
@@ -122,8 +127,7 @@ export const GET: APIRoute = async () => {
 
         try {
             const matches = await fetchGamesDirectly();
-            matches.forEach((match: any) => {
-                if (!match.slug) return;
+            matches.filter(isIndexableMatchSummary).forEach((match: any) => {
                 urls.push({
                     loc: `${SITE_URL}/partidos/${match.slug}`,
                     changefreq: 'monthly',
@@ -136,7 +140,7 @@ export const GET: APIRoute = async () => {
 
         try {
             const stadiums = await fetchAllStadiumsWithStats();
-            stadiums.forEach((stadium: any) => {
+            stadiums.filter(hasPlayedStats).forEach((stadium: any) => {
                 if (!stadium.slug) return;
                 urls.push({
                     loc: `${SITE_URL}/estadios/${stadium.slug}`,
@@ -150,7 +154,7 @@ export const GET: APIRoute = async () => {
 
         try {
             const referees = await fetchRefereesDirectly();
-            referees.forEach((referee: any) => {
+            referees.filter(hasPlayedStats).forEach((referee: any) => {
                 if (!referee.nombre) return;
                 urls.push({
                     loc: `${SITE_URL}/arbitras/${generateSlug(referee.nombre)}`,
@@ -198,5 +202,4 @@ export const GET: APIRoute = async () => {
         return new Response('Error generating sitemap', { status: 500 });
     }
 };
-
 

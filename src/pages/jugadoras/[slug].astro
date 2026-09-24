@@ -19,6 +19,7 @@ import { fetchAllGoals } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { getNewsForPlayer } from "../../utils/noticias";
+import { hasSubstantiveHtml } from "../../lib/content-quality";
 import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
 import GaleriaGrid from "../../components/GaleriaGrid.astro";
 import { fetchPlayerPhotos, photoUrl, faceThumbStyle } from "../../utils/galerias";
@@ -178,15 +179,15 @@ const schema = {
 };
 
 const quickStats = playerStats ? [
-    { value: playerStats.total_carrera_oficial.partidos, label: 'PARTIDOS' },
-    { value: playerStats.total_carrera_oficial.titularidades, label: 'TITULARIDADES' },
+    { value: playerStats.total_carrera_oficial.partidos, label: 'PARTIDOS OFICIALES' },
+    { value: playerStats.total_carrera_oficial.titularidades, label: 'TITULARIDADES OFICIALES' },
     ...(!isGoalkeeper ? [
-        { value: playerStats.total_carrera_oficial.goles, label: 'GOLES' },
-        { value: playerStats.total_carrera_oficial.asistencias, label: 'ASISTENCIAS' },
+        { value: playerStats.total_carrera_oficial.goles, label: 'GOLES OFICIALES' },
+        { value: playerStats.total_carrera_oficial.asistencias, label: 'ASISTENCIAS OFICIALES' },
     ] : [
-        { value: playerStats.total_carrera_oficial.porterias_cero ?? 0, label: 'PORTERÍAS A CERO' },
+        { value: playerStats.total_carrera_oficial.porterias_cero ?? 0, label: 'PORTERÍAS A CERO OFICIALES' },
     ]),
-    { value: playerStats.total_carrera_oficial.victorias, label: 'VICTORIAS' },
+    { value: playerStats.total_carrera_oficial.victorias, label: 'VICTORIAS OFICIALES' },
 ] : [];
 
 const posLower = player.posicion ? player.posicion.toLowerCase() : "jugadora";
@@ -233,6 +234,12 @@ if (tco && tco.partidos) {
 }
 const bio = bioParts.join(" ");
 const ficha = await fetchFicha("jugadora", [slug, player.id_jugadora]);
+const indexablePlayer = Boolean(
+    Number(tco?.partidos ?? 0) > 0 ||
+    (trajectory?.length ?? 0) >= 2 ||
+    hasSubstantiveHtml(ficha) ||
+    hasSubstantiveHtml(bio, 240),
+);
 (schema as any).description = bio;
 if (esCanterana) (schema as any).alumniOf = { "@type": "SportsOrganization", name: "La Fábrica (cantera del Real Madrid)" };
 
@@ -242,7 +249,7 @@ const seoDescription = (tco && tco.partidos)
     : `Ficha de ${player.nombre}, ${posLower} del Real Madrid Femenino. Estadísticas, posición, trayectoria y récords.`;
 ---
 
-<Layout title={seoTitle} description={seoDescription} image={currentImageUrl || resolvedImage || undefined}>
+<Layout title={seoTitle} description={seoDescription} image={currentImageUrl || resolvedImage || undefined} noindex={!indexablePlayer} showAds={indexablePlayer}>
     <script type="application/ld+json" set:html={JSON.stringify(schema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Jugadoras", path: "/jugadoras" }, { name: player.nombre, path: `/jugadoras/${slug}` }]))} />
 

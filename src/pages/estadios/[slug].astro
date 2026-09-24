@@ -13,6 +13,7 @@ import { competitionDisplayName } from "../../utils/competiciones";
 import { generateSlug } from "../../utils/url-helper";
 
 import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
+import { hasSubstantiveHtml } from "../../lib/content-quality";
 
 const competitionLogos: Record<string, any> = {
     "Liga F": getAssetMetadata("competiciones", "liga_f"),
@@ -240,6 +241,7 @@ if (mainStadium && !isMainStadium) {
 
 const bio = bioParts.join(" ");
 const ficha = await fetchFicha("estadio", [slug, stadium.id]);
+const indexableStadium = totalStats.pj > 0 || hasSubstantiveHtml(ficha);
 
 const stadiumSchema = {
     "@context": "https://schema.org",
@@ -257,7 +259,7 @@ const seoDescription = totalStats.pj
     : `Estadísticas e historial de partidos del Real Madrid Femenino en el estadio ${stadium.name}.`;
 ---
 
-<Layout title={seoTitle} description={seoDescription} image={stadium.imageUrl || undefined}>
+<Layout title={seoTitle} description={seoDescription} image={stadium.imageUrl || undefined} noindex={!indexableStadium} showAds={indexableStadium}>
     <script type="application/ld+json" set:html={JSON.stringify(stadiumSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Estadios", path: "/estadios" }, { name: stadium.name, path: `/estadios/${slug}` }]))} />
     <section class="stadium-hero">

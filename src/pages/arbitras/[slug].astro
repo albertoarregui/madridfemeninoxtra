@@ -13,6 +13,7 @@ import { generateSlug } from "../../utils/url-helper";
 import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 import { competitionDisplayName } from "../../utils/competiciones";
+import { hasSubstantiveHtml } from "../../lib/content-quality";
 
 const competitionLogos: Record<string, string> = {
     "Liga F": getAssetUrl("competiciones", "liga_f.png"),
@@ -217,6 +218,7 @@ if (totalStats.pj) {
 }
 const bio = bioParts.join(" ");
 const ficha = await fetchFicha("arbitra", [slug, referee.id_arbitra]);
+const indexableReferee = totalStats.pj > 0 || hasSubstantiveHtml(ficha);
 
 const refereeSchema = {
     "@context": "https://schema.org",
@@ -235,7 +237,7 @@ const seoDescription = totalStats.pj
     : `Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`;
 ---
 
-<Layout title={seoTitle} description={seoDescription}>
+<Layout title={seoTitle} description={seoDescription} noindex={!indexableReferee} showAds={indexableReferee}>
     <script type="application/ld+json" set:html={JSON.stringify(refereeSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Árbitras", path: "/arbitras" }, { name: referee.nombre, path: `/arbitras/${slug}` }]))} />
     <section class="referee-hero">

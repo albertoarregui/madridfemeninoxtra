@@ -21,6 +21,7 @@ import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
 import GaleriaGrid from "../../components/GaleriaGrid.astro";
 import { fetchGalleryForMatch, photoUrl, galleryPageHref, fetchPlayerNames, photoAlt } from "../../utils/galerias";
 import { isFreshMatchSlug } from "../../lib/match-freshness";
+import { hasMatchMetrics, isIndexableMatchDetail } from "../../lib/content-quality";
 
 const { slug } = Astro.params;
 const matchSlug = slug ?? "";
@@ -140,16 +141,13 @@ const slugifyForImages = (text: string | null | undefined): string => {
         .replace(/[-\s]+/g, "_");
 };
 
-mvpPlayer = {
-    name: game.mvp
-        ? game.mvp_nombre || `MVP #${game.mvp}`
-        : "MVP no disponible",
-    image:
-        game.mvp && game.mvp_nombre
-            ? getPlayerImage(slugifyForImages(game.mvp_nombre))
-            : null,
-    id: game.mvp ? String(game.mvp) : "unknown",
-};
+mvpPlayer = game.mvp ? {
+    name: game.mvp_nombre || `MVP #${game.mvp}`,
+    image: game.mvp_nombre
+        ? getPlayerImage(slugifyForImages(game.mvp_nombre))
+        : null,
+    id: String(game.mvp),
+} : null;
 
 const stadiumUrl = game.estadio_foto_url;
 const hasExternalStadium =
@@ -316,6 +314,18 @@ const fichaCronica = await fetchCronicaPartido([game.id_partido, slug]);
 const cronicaVisible = fichaCronica?.visible ?? "";
 const cronicaResto = fichaCronica?.resto ?? "";
 const tieneCronica = Boolean(cronicaVisible);
+const hasMatchMetricsData = hasMatchMetrics(game);
+const indexableMatch = isIndexableMatchDetail(game, {
+    hasEditorial: tieneCronica,
+    lineupCount: lineup.length,
+    eventCount: timelineEvents.length,
+    galleryCount: totalGaleria,
+});
+const cronicaHeading = tieneCronica
+    ? "CRÓNICA"
+    : game.isPlayed
+      ? "RESUMEN DEL PARTIDO"
+      : "INFORMACIÓN DEL PARTIDO";
 
 const seoTitle = isLiveOrPlayed
     ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`
@@ -342,7 +352,7 @@ const matchSchema = {
 
 ---
 
-<Layout title={seoTitle} description={seoDescription}>
+<Layout title={seoTitle} description={seoDescription} noindex={!indexableMatch} showAds={indexableMatch}>
     <script type="application/ld+json" set:html={JSON.stringify(matchSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Partidos", path: "/partidos" }, { name: `${game.club_local} vs ${game.club_visitante}`, path: `/partidos/${slug}` }]))} />
     <main class="match-details-page">
@@ -605,7 +615,7 @@ const matchSchema = {
         )}
 
         <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
-            <h2 class="section-header">{isLiveOrPlayed ? "CRÓNICA" : "PREVIA DEL PARTIDO"}</h2>
+            <h2 class="section-header">{cronicaHeading}</h2>
             {tieneCronica ? (
                 <div class="cronica-cuerpo">
                     <div set:html={cronicaVisible} />
@@ -655,7 +665,7 @@ const matchSchema = {
                 >
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h3 id="modal-referee-name">Nombre Árbitra</h3>
+                            <h3 id="modal-referee-name">{game.arbitra_nombre || "Árbitra del partido"}</h3>
                             <button
                                 class="close-btn"
                                 onclick="closeRefereeModal()"
@@ -1641,6 +1651,8 @@ const matchSchema = {
                         </div>
                     </div>
                 </section>
+            )}
+            {game.isPlayed && hasMatchMetricsData && (
                 <section class="metrics-card" style="margin-top: 2rem;">
                     <h2 class="section-header">Métricas</h2>
                     <div

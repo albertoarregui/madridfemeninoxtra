@@ -12,6 +12,7 @@ import { fetchCoachRecords } from "../../utils/coach-records";
 import { fetchCoachStreaks } from "../../utils/coach-streaks";
 import { getAssetUrl } from "../../utils/assets";
 import { competitionDisplayName } from "../../utils/competiciones";
+import { hasSubstantiveHtml } from "../../lib/content-quality";
 
 const { slug } = Astro.params;
 
@@ -101,6 +102,12 @@ if (rachaParts.length) {
 
 const bio = bioParts.join(" ");
 const ficha = await fetchFicha("entrenador", [slug, coach.id_entrenador]);
+const indexableCoach = Boolean(
+    Number(tc?.partidos ?? 0) > 0 ||
+    (trajectory?.length ?? 0) >= 2 ||
+    hasSubstantiveHtml(ficha) ||
+    hasSubstantiveHtml(bio, 240),
+);
 
 const coachSchema = {
     "@context": "https://schema.org",
@@ -120,7 +127,7 @@ const seoDescription = (tc && tc.partidos)
     : `Perfil de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`;
 ---
 
-<Layout title={seoTitle} description={seoDescription}>
+<Layout title={seoTitle} description={seoDescription} noindex={!indexableCoach} showAds={indexableCoach}>
     <script type="application/ld+json" set:html={JSON.stringify(coachSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/home" }, { name: "Entrenadores", path: "/entrenadores" }, { name: nombre, path: `/entrenadores/${slug}` }]))} />
     <section class="coach-hero">
