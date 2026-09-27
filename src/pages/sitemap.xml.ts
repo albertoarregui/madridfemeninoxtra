@@ -41,12 +41,11 @@ const staticPages = [
 ];
 
 function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[]): string {
-    const today = new Date().toISOString().split('T')[0];
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(url => `  <url>
-    <loc>${url.loc}</loc>
-    <lastmod>${url.lastmod || today}</lastmod>
+    <loc>${url.loc}</loc>${url.lastmod ? `
+    <lastmod>${url.lastmod}</lastmod>` : ''}
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('\n')}
@@ -56,12 +55,9 @@ ${urls.map(url => `  <url>
 export const GET: APIRoute = async () => {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
-        const today = new Date().toISOString().split('T')[0];
-
         staticPages.forEach(page => {
             urls.push({
                 loc: `${SITE_URL}/${page.url}`,
-                lastmod: today,
                 changefreq: page.changefreq,
                 priority: page.priority,
             });
