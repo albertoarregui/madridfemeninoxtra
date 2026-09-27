@@ -31,6 +31,7 @@ const staticPages = [
     { url: 'records', priority: 0.6, changefreq: 'weekly' },
     { url: 'comparador', priority: 0.6, changefreq: 'monthly' },
     { url: 'calendario', priority: 0.6, changefreq: 'weekly' },
+    { url: 'donde-ver-real-madrid-femenino', priority: 0.7, changefreq: 'daily' },
     { url: 'sobre-nosotros', priority: 0.5, changefreq: 'monthly' },
     { url: 'contacto', priority: 0.5, changefreq: 'monthly' },
     { url: 'aviso-legal', priority: 0.3, changefreq: 'yearly' },

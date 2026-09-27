@@ -1,0 +1,96 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../utils/partidos";
+
+export const prerender = false;
+
+const todayParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit",
+}).formatToParts(new Date());
+const today = `${todayParts.find((p) => p.type === "year")!.value}-${todayParts.find((p) => p.type === "month")!.value}-${todayParts.find((p) => p.type === "day")!.value}`;
+
+const matches = await fetchGamesDirectly();
+const nextMatch = matches.find((match) =>
+    !match.isPlayed &&
+    match.fecha &&
+    String(match.fecha).slice(0, 10) >= today &&
+    match.club_local && match.club_visitante,
+);
+const playsToday = nextMatch && String(nextMatch.fecha).slice(0, 10) === today;
+const tv = typeof nextMatch?.tv === "string" ? nextMatch.tv.trim() : nextMatch?.tv;
+const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
+---
+
+<Layout
+    title="Dónde ver al Real Madrid Femenino hoy: horario, TV y próximo partido | MFX"
+    description="Consulta dónde ver el próximo partido del Real Madrid Femenino: fecha, hora, televisión, rival, competición y estadio. Datos actualizados desde el calendario de MFX."
+>
+    <main class="watch-page">
+        <header class="page-header-container">
+            <h1 class="landing-title">Dónde ver al Real Madrid Femenino</h1>
+            <p class="landing-subtitle">Próximo partido · Horario · Televisión</p>
+        </header>
+
+        <div class="watch-content">
+            <p class="watch-intro">
+                Consulta cuándo juega el Real Madrid Femenino y qué televisión figura para su próximo encuentro.
+                La información procede del <a href="/calendario">calendario de partidos</a> y puede cambiar
+                cuando se confirmen el horario o la emisión.
+            </p>
+
+            {nextMatch ? (
+                <section class="match-panel" aria-labelledby="watch-match-title">
+                    <p class="eyebrow">{playsToday ? "Partido programado para hoy" : "Próximo partido"}</p>
+                    <h2 id="watch-match-title">{nextMatch.club_local} – {nextMatch.club_visitante}</h2>
+                    {!playsToday && <p class="today-note">Hoy no hay un partido programado en el calendario.</p>}
+                    <dl class="match-details">
+                        <div><dt>Fecha</dt><dd>{nextMatch.fecha_formateada}</dd></div>
+                        <div><dt>Hora</dt><dd>{hora ? `${hora} h (hora peninsular española)` : "Pendiente de confirmación"}</dd></div>
+                        <div><dt>Televisión</dt><dd>{tv || "Pendiente de confirmación"}</dd></div>
+                        <div><dt>Competición</dt><dd>{nextMatch.competicion_nombre || "Pendiente de confirmación"}</dd></div>
+                        <div><dt>Estadio</dt><dd>{nextMatch.estadio || "Pendiente de confirmación"}</dd></div>
+                    </dl>
+                    <a class="match-link" href={`/partidos/${nextMatch.slug}`}>
+                        Ver la ficha del partido <span aria-hidden="true">→</span>
+                    </a>
+                </section>
+            ) : (
+                <section class="match-panel" aria-labelledby="watch-match-title">
+                    <h2 id="watch-match-title">Próximo partido pendiente</h2>
+                    <p>No hay un próximo encuentro confirmado en el calendario. Consulta el <a href="/calendario">calendario completo</a> para conocer las próximas fechas.</p>
+                </section>
+            )}
+
+            <section class="watch-help" aria-labelledby="watch-help-title">
+                <h2 id="watch-help-title">¿Dónde consultar la emisión?</h2>
+                <p>
+                    Cuando la televisión esté confirmada, aparecerá arriba y en la ficha del encuentro.
+                    Si figura «Pendiente de confirmación», todavía no tenemos un canal o plataforma registrado
+                    para ese partido. Puedes consultar también los <a href="/partidos">resultados y fichas de partidos anteriores</a>.
+                </p>
+            </section>
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .watch-page { min-height: 100vh; padding-bottom: 5rem; }
+    .watch-content { max-width: 960px; margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2rem); color: var(--text-secondary); line-height: 1.7; }
+    .watch-content a { color: var(--primary-color); text-underline-offset: .2em; }
+    .watch-content a:hover { color: #f1cb79; }
+    .watch-intro { max-width: 72ch; margin: 0 0 2rem; }
+    .match-panel { padding: clamp(1.5rem, 4vw, 2.5rem); background: rgba(10, 20, 40, .88); border: 1px solid rgba(212, 168, 67, .3); border-radius: 20px; }
+    .eyebrow { margin: 0 0 .8rem; color: var(--primary-color); text-transform: uppercase; font-size: .8rem; font-weight: 700; letter-spacing: .15em; }
+    h2 { color: var(--text-primary); font-family: 'Cinzel', serif; line-height: 1.3; }
+    .match-panel h2 { margin: 0 0 1.4rem; font-size: clamp(1.4rem, 3vw, 2rem); }
+    .today-note { margin: -0.5rem 0 1.5rem; }
+    .match-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 2rem; margin: 0 0 2rem; }
+    .match-details div { border-top: 1px solid rgba(255, 255, 255, .14); padding-top: .7rem; }
+    .match-details dt { color: var(--primary-color); font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; }
+    .match-details dd { margin: .3rem 0 0; color: var(--text-primary); font-weight: 500; overflow-wrap: anywhere; }
+    .match-link { display: inline-flex; gap: .5rem; align-items: center; font-weight: 700; }
+    .watch-help { margin-top: 3rem; }
+    .watch-help h2 { font-size: 1.35rem; }
+    .watch-help p { max-width: 72ch; }
+    @media (max-width: 600px) { .match-details { grid-template-columns: 1fr; gap: 1rem; } }
+</style>

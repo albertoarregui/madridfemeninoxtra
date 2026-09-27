@@ -29,7 +29,7 @@ export function tagsForPath(pathname: string): string[] {
         const slug = pathname.match(/^\/noticias\/([^/]+)\/?$/)?.[1];
         if (slug && slug !== 'categoria') tags.push(cacheTags.newsItem(slug));
     }
-    if (/^\/(partidos|calendario)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar);
+    if (/^\/(partidos|calendario|donde-ver-real-madrid-femenino)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar);
     if (/^\/partidos\/[^/]+\/?$/.test(pathname)) {
         tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics, cacheTags.stadiums, cacheTags.coaches, 'referees');
     }
