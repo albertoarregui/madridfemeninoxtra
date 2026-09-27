@@ -1,6 +1,15 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { fetchGamesDirectly } from "../utils/partidos";
+import ligaFLogo from "../assets/competiciones/liga_f.png";
+import uwclLogo from "../assets/competiciones/uwcl.png";
+import copaLogo from "../assets/competiciones/copa_de_la_reina.png";
+import supercopaLogo from "../assets/competiciones/supercopa_de_espana.png";
+import daznLogo from "../assets/tv/DAZN.png";
+import teledeporteLogo from "../assets/tv/teledeporte.svg?url";
+import rtveLogo from "../assets/tv/rtve.svg?url";
+import disneyLogo from "../assets/tv/disney-plus.svg?url";
+import espnLogo from "../assets/tv/espn.svg?url";
 
 export const prerender = false;
 
@@ -19,6 +28,27 @@ const nextMatch = matches.find((match) =>
 const playsToday = nextMatch && String(nextMatch.fecha).slice(0, 10) === today;
 const tv = typeof nextMatch?.tv === "string" ? nextMatch.tv.trim() : nextMatch?.tv;
 const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
+type Channel = { name: string; logo: string; dark: boolean };
+const channels: Record<string, Channel> = {
+    dazn: { name: "DAZN", logo: daznLogo.src, dark: true },
+    teledeporte: { name: "Teledeporte", logo: teledeporteLogo, dark: false },
+    rtve: { name: "RTVE", logo: rtveLogo, dark: false },
+    disney: { name: "Disney+", logo: disneyLogo, dark: false },
+    espn: { name: "ESPN", logo: espnLogo, dark: false },
+};
+const competitions = [
+    { name: "Liga F", logo: ligaFLogo.src, channels: [channels.dazn, channels.teledeporte, channels.rtve] },
+    { name: "UWCL", logo: uwclLogo.src, channels: [channels.disney, channels.espn] },
+    { name: "Copa de la Reina", logo: copaLogo.src, channels: [channels.rtve] },
+    { name: "Supercopa de España", logo: supercopaLogo.src, channels: [channels.rtve] },
+];
+const competitionLogo = competitions.find((competition) => competition.name === nextMatch?.competicion_nombre)?.logo
+    || nextMatch?.competicion_foto_url;
+const matchChannels = typeof tv === "string"
+    ? tv.split("/").map((name) =>
+        Object.values(channels).find((channel) => channel.name.toLowerCase().replace(/\s/g, "") === name.trim().toLowerCase().replace(/\s/g, "")),
+    ).filter((channel) => channel !== undefined)
+    : [];
 ---
 
 <Layout
@@ -43,7 +73,10 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
                 <section class="match-panel" aria-labelledby="watch-match-title">
                     <div class="match-topline">
                         <p class="eyebrow">{playsToday ? "Partido de hoy" : "Próximo partido"}</p>
-                        {nextMatch.competicion_nombre && <span class="competition-label">{nextMatch.competicion_nombre}</span>}
+                        {nextMatch.competicion_nombre && <span class="competition-label">
+                            {competitionLogo && <img src={competitionLogo} alt="" width="34" height="34" />}
+                            {nextMatch.competicion_nombre}
+                        </span>}
                     </div>
                     {!playsToday && <p class="today-note">Hoy no hay partido programado. El próximo encuentro es:</p>}
                     <h2 id="watch-match-title" class="sr-only">{nextMatch.club_local} contra {nextMatch.club_visitante}</h2>
@@ -67,7 +100,14 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
                         <div><dt>Estadio</dt><dd>{nextMatch.estadio || "Pendiente de confirmación"}</dd></div>
                         <div class="tv-detail">
                             <dt>Televisión y plataformas</dt>
-                            <dd>{tv || "Pendiente de confirmación"}</dd>
+                            <dd>
+                                {tv || "Pendiente de confirmación"}
+                                {matchChannels.length > 0 && <span class="match-channel-logos" aria-hidden="true">
+                                    {matchChannels.map((channel) => <span class:list={["brand-logo", { "brand-logo--dark": channel.dark }]}>
+                                        <img src={channel.logo} alt="" loading="lazy" />
+                                    </span>)}
+                                </span>}
+                            </dd>
                         </div>
                     </dl>
                     <a class="match-link" href={`/partidos/${nextMatch.slug}`}>
@@ -81,13 +121,25 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
                 </section>
             )}
 
-            <section class="watch-help" aria-labelledby="watch-help-title">
-                <h2 id="watch-help-title">¿Dónde consultar la emisión?</h2>
-                <p>
-                    Cuando la televisión esté confirmada, aparecerá arriba y en la ficha del encuentro.
-                    Si figura «Pendiente de confirmación», todavía no tenemos un canal o plataforma registrado
-                    para ese partido. Puedes consultar también los <a href="/partidos">resultados y fichas de partidos anteriores</a>.
-                </p>
+            <section class="channels-section" aria-labelledby="channels-title">
+                <h2 id="channels-title">CANALES</h2>
+                <p class="channels-intro">Dónde ver al Real Madrid Femenino según la competición. La emisión concreta de cada encuentro puede variar: consulta la televisión confirmada arriba o en la <a href={nextMatch ? `/partidos/${nextMatch.slug}` : "/calendario"}>ficha del partido</a>.</p>
+                <div class="channels-grid">
+                    {competitions.map((competition) => <article class="channel-card">
+                        <div class="channel-competition">
+                            <img src={competition.logo} alt="" width="48" height="48" loading="lazy" />
+                            <h3>{competition.name}</h3>
+                        </div>
+                        <ul class="channel-list">
+                            {competition.channels.map((channel) => <li>
+                                <span class:list={["brand-logo", { "brand-logo--dark": channel.dark }]}>
+                                    <img src={channel.logo} alt="" loading="lazy" />
+                                </span>
+                                <span>{channel.name}</span>
+                            </li>)}
+                        </ul>
+                    </article>)}
+                </div>
             </section>
         </div>
     </main>
@@ -96,8 +148,7 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
 <style>
     .watch-page { min-height: 100vh; padding-bottom: 5rem; }
     .watch-page .page-header-container { margin-bottom: 1.5rem; }
-    .watch-page .landing-title { max-width: 100%; isolation: isolate; overflow-wrap: anywhere; }
-    .watch-page .landing-title::before { top: 50%; bottom: auto; transform: translate(-50%, -50%); width: 100%; font-size: clamp(1rem, 3.3vw, 2.8rem); line-height: 1.1; letter-spacing: .04em; opacity: .08; z-index: -1; }
+    .watch-page .landing-title { max-width: 100%; overflow-wrap: anywhere; }
     .watch-page .landing-subtitle { text-transform: none; letter-spacing: .04em; font-size: clamp(.9rem, 2vw, 1.08rem); margin-bottom: 0; }
     .watch-content { max-width: 960px; margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2rem); color: var(--text-secondary); line-height: 1.7; }
     .watch-content a { color: var(--primary-color); text-underline-offset: .2em; }
@@ -105,8 +156,9 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
     .watch-intro { max-width: 72ch; margin: 0 auto 2.25rem; text-align: center; }
     .match-panel { padding: clamp(1.25rem, 4vw, 2.5rem); background: linear-gradient(145deg, rgba(19, 30, 51, .96), rgba(7, 14, 28, .97)); border: 1px solid rgba(212, 168, 67, .38); border-radius: 22px; box-shadow: 0 18px 50px rgba(0, 0, 0, .28); }
     .match-topline { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .65rem 1rem; }
-    .eyebrow { margin: 0; color: var(--primary-color); text-transform: uppercase; font-size: .8rem; font-weight: 700; letter-spacing: .15em; }
-    .competition-label { padding: .35rem .75rem; border: 1px solid rgba(212, 168, 67, .3); border-radius: 999px; color: var(--primary-color); font-size: .8rem; font-weight: 700; }
+    .eyebrow { margin: 0; color: var(--primary-color); text-transform: uppercase; font-family: 'Cinzel', serif; font-size: clamp(1.05rem, 2.5vw, 1.45rem); font-weight: 700; letter-spacing: .1em; }
+    .competition-label { display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .7rem .25rem .3rem; border: 1px solid rgba(212, 168, 67, .3); border-radius: 999px; color: var(--primary-color); font-size: .85rem; font-weight: 700; }
+    .competition-label img { width: 34px; height: 34px; object-fit: contain; }
     h2 { color: var(--text-primary); font-family: 'Cinzel', serif; line-height: 1.3; }
     .today-note { margin: 1rem 0 0; font-size: .9rem; }
     .match-up { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, .65fr) minmax(0, 1fr); align-items: center; gap: 1rem; padding: 2rem 0; text-align: center; }
@@ -118,17 +170,27 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
     .kickoff strong { font-size: clamp(1.1rem, 2.6vw, 1.5rem); color: var(--text-primary); }
     .kickoff > span:last-child { font-size: .75rem; color: var(--text-muted); }
     .match-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0 0 1.5rem; }
-    .match-details div { border-top: 1px solid rgba(255, 255, 255, .14); padding: .9rem .25rem 0; }
+    .match-details div { border-top: 1px solid rgba(255, 255, 255, .14); padding: .9rem .25rem 0; text-align: center; }
     .match-details dt { color: var(--primary-color); font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; }
     .match-details dd { margin: .3rem 0 0; color: var(--text-primary); font-weight: 500; overflow-wrap: anywhere; }
     .match-details .tv-detail { grid-column: 1 / -1; padding: 1rem 1.2rem; border: 1px solid rgba(212, 168, 67, .22); border-radius: 12px; background: rgba(212, 168, 67, .08); }
-    .tv-detail dd { font-size: 1.2rem; font-weight: 700; }
+    .tv-detail dd { font-size: 1.3rem; font-weight: 700; }
+    .match-channel-logos { display: flex; justify-content: center; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
     .match-link { display: inline-flex; gap: .5rem; align-items: center; font-weight: 700; }
-    .watch-help { margin-top: 3rem; }
-    .watch-help h2 { font-size: 1.35rem; }
-    .watch-help p { max-width: 72ch; }
+    .channels-section { margin-top: clamp(3rem, 7vw, 5rem); }
+    .channels-section h2 { margin: 0 0 .7rem; text-align: center; color: var(--primary-color); font-size: clamp(1.7rem, 4vw, 2.5rem); text-transform: uppercase; letter-spacing: .1em; }
+    .channels-intro { max-width: 72ch; margin: 0 auto 2rem; text-align: center; }
+    .channels-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .channel-card { min-width: 0; padding: clamp(1.2rem, 3vw, 1.8rem); border: 1px solid rgba(212, 168, 67, .25); border-radius: 18px; background: rgba(10, 20, 40, .84); }
+    .channel-competition { display: flex; align-items: center; justify-content: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, .12); text-align: center; }
+    .channel-competition img { width: 48px; height: 48px; flex: 0 0 48px; object-fit: contain; }
+    .channel-competition h3 { margin: 0; color: var(--text-primary); font-family: 'Cinzel', serif; font-size: clamp(1rem, 2.5vw, 1.25rem); }
+    .channel-list { display: flex; justify-content: center; flex-wrap: wrap; gap: .85rem 1rem; margin: 1.2rem 0 0; padding: 0; list-style: none; }
+    .channel-list li { display: flex; align-items: center; gap: .5rem; color: var(--text-primary); font-size: .88rem; font-weight: 700; }
+    .brand-logo { display: grid; place-items: center; width: 64px; height: 46px; padding: .35rem; flex: 0 0 64px; border-radius: 9px; background: #f5f6f8; }
+    .brand-logo--dark { background: #0a0e18; border: 1px solid rgba(255, 255, 255, .22); }
+    .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
     @media (max-width: 600px) {
-        .watch-page .landing-title::before { font-size: clamp(.9rem, 4.5vw, 1.7rem); letter-spacing: .01em; }
         .watch-intro { text-align: left; }
         .match-up { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .5rem; padding: 1.75rem 0; }
         .match-up .team:first-child { grid-column: 1; grid-row: 1; }
@@ -140,5 +202,8 @@ const hora = nextMatch?.hora ? String(nextMatch.hora).slice(0, 5) : null;
         .versus { width: 2.5rem; height: 2.5rem; }
         .match-details { grid-template-columns: 1fr; gap: .65rem; }
         .match-details .tv-detail { grid-column: 1; }
+        .channels-grid { grid-template-columns: 1fr; }
+        .channels-intro { text-align: left; }
+        .channel-list { gap: .7rem; }
     }
 </style>
