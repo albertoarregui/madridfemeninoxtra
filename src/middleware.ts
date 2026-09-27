@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 import { addCacheTag } from "@vercel/functions";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
 import { isFreshMatchPath } from "./lib/match-freshness";
+import { secondsUntilNextSeason } from "./utils/season";
 
 const isProtectedRoute = createRouteMatcher([]);
 
@@ -21,6 +22,7 @@ const SWR_LARGA_S = 30 * 24 * 60 * 60;
 const CACHE_HOME_S = 5 * 60;
 
 export const onRequest = clerkMiddleware(async (auth, context, next) => {
+    const requestStartedAt = new Date();
     if (isProtectedRoute(context.request)) {
         auth().protect();
     }
@@ -55,8 +57,11 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
             const home = url.pathname === '/';
-            const sMaxage = home ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
-            const swr = home ? 0 : (larga ? SWR_LARGA_S : SWR_S);
+            const seasonPage = url.pathname === '/plantilla' || url.pathname === '/calendario';
+            const sMaxage = seasonPage
+                ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
+                : home ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
+            const swr = home || seasonPage ? 0 : (larga ? SWR_LARGA_S : SWR_S);
             // Astro establece Cache-Control: public, max-age=0. La cabecera
             // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(

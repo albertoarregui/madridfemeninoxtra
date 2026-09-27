@@ -1,15 +1,14 @@
 ---
 import { getFlagSrc } from "../utils/flags";
 import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds } from "../utils/players";
+interface Props { season: string; }
+const { season } = Astro.props;
 
 const allPlayersDb = await fetchPlayersDirectly();
 const lesionadas = await fetchInjuredPlayerIds();
 
-const allSeasons = allPlayersDb.flatMap((p) => Object.keys(p.season_info || {}));
-const latestSeason = [...new Set(allSeasons)].sort().reverse()[0];
-
 const squadPlayers = allPlayersDb.filter((player) => {
-    const info = player.season_info && player.season_info[latestSeason];
+    const info = player.season_info && player.season_info[season];
     if (!info) return false;
     if (info.dorsal === null) return info.id_categoria === 4;
     return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
@@ -17,11 +16,11 @@ const squadPlayers = allPlayersDb.filter((player) => {
 
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin, iso } = player;
-    const dorsal = player.season_info[latestSeason].dorsal;
+    const dorsal = player.season_info[season].dorsal;
     const profilePhoto =
-        player.profile_photos && player.profile_photos[latestSeason];
+        player.profile_photos && player.profile_photos[season];
     const seasonPhoto =
-        player.season_photos && player.season_photos[latestSeason];
+        player.season_photos && player.season_photos[season];
 
     return {
         ...player,
@@ -99,7 +98,11 @@ function calculateAge(birthDateString: string): number {
 }
 ---
 
-<section class="player-selector">
+{listofPlayers.length === 0 && (
+    <p class="squad-empty">Todavía no hay jugadoras registradas para la temporada {season}.</p>
+)}
+
+{listofPlayers.length > 0 && <section class="player-selector">
 
     <div class="sf-inner">
 
@@ -249,7 +252,24 @@ function calculateAge(birthDateString: string): number {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
         </button>
     </div>
-</section>
+</section>}
+
+{listofPlayers.length > 0 && (
+    <section class="squad-index" aria-labelledby="squad-index-title">
+        <h2 id="squad-index-title">Jugadoras y dorsales del Real Madrid Femenino {season}</h2>
+        <ul>
+            {listofPlayers.map((player) => (
+                <li>
+                    <a href={`/jugadoras/${player.slug}`}>
+                        <span class="squad-index-number">{player.number || "Sin dorsal"}</span>
+                        <span>{player.name}</span>
+                        <span class="squad-index-position">{player.position}</span>
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </section>
+)}
 
 <script is:inline define:vars={{ players: listofPlayers }}>
 
@@ -337,6 +357,43 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <style>
+    .squad-empty, .squad-index {
+        max-width: 1200px;
+        margin: 2rem auto 4rem;
+        padding: 0 1.5rem;
+        color: #c8c8c8;
+    }
+
+    .squad-index h2 {
+        color: #d4a843;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.15rem, 2vw, 1.5rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .squad-index ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: .5rem 1.5rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .squad-index a {
+        display: flex;
+        align-items: baseline;
+        gap: .75rem;
+        padding: .45rem 0;
+        border-bottom: 1px solid rgba(212, 168, 67, .2);
+        color: #e4e4e4;
+        text-decoration: none;
+    }
+
+    .squad-index a:hover { color: #d4a843; }
+    .squad-index-number { min-width: 3.5rem; color: #d4a843; font-weight: 700; }
+    .squad-index-position { margin-left: auto; font-size: .8rem; color: #aeb2bd; }
+
     .player-selector {
         width: 100%;
         position: relative;
