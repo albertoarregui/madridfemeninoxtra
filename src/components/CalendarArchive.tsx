@@ -37,7 +37,12 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
     const matchesPerPage = 20;
 
     const sortedMatches = useMemo(() => {
-        return [...matches].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+        return [...matches].sort((a, b) => {
+            // Upcoming matches first; the most recent result follows them.
+            if (a.isPlayed !== b.isPlayed) return a.isPlayed ? 1 : -1;
+            const dateDiff = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+            return a.isPlayed ? -dateDiff : dateDiff;
+        });
     }, [matches]);
 
     const ALL_COMPS = ["LIGA F", "UWCL", "COPA DE LA REINA", "SUPERCOPA DE ESPAÑA", "AMISTOSOS"];
@@ -63,10 +68,6 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
             const targetComp = sComp === 'AMISTOSOS' ? 'AMISTOSO' : sComp;
             const compMatches = selectedComp === 'TODAS' || mName.includes(targetComp);
-
-            if (selectedMonth === 'TODOS' && selectedComp === 'TODAS') {
-                return !m.isPlayed && monthMatches && compMatches;
-            }
 
             return monthMatches && compMatches;
         });
@@ -278,10 +279,10 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                         <CalendarIcon className="mx-auto mb-6" size={80} style={{color:'rgba(212,168,67,0.2)'}} />
                         <p className="font-bold text-xl max-w-md mx-auto px-6 italic uppercase tracking-wider" style={{color:'rgba(200,210,220,0.65)',fontFamily:"'DM Sans', sans-serif"}}>
                             {selectedMonth !== 'TODOS' && selectedComp === 'TODAS'
-                                ? "No hay partidos programados en este mes"
+                                ? "No hay partidos en este mes"
                                 : selectedComp !== 'TODAS' && selectedMonth === 'TODOS'
-                                    ? "No hay partidos programados de esta competición"
-                                    : "No hay partidos programados con estos filtros"}
+                                    ? "No hay partidos de esta competición"
+                                    : "No hay partidos con estos filtros"}
                         </p>
                     </div>
                 )}
