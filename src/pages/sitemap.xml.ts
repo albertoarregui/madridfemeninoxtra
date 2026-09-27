@@ -16,7 +16,8 @@ import {
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 
 const staticPages = [
-    { url: 'home', priority: 1.0, changefreq: 'daily' },
+    { url: '', priority: 1.0, changefreq: 'daily' },
+    { url: 'historia', priority: 0.5, changefreq: 'monthly' },
     { url: 'noticias', priority: 0.9, changefreq: 'daily' },
     { url: 'jugadoras', priority: 0.8, changefreq: 'weekly' },
     { url: 'entrenadores', priority: 0.7, changefreq: 'monthly' },
@@ -202,4 +203,3 @@ export const GET: APIRoute = async () => {
         return new Response('Error generating sitemap', { status: 500 });
     }
 };
-

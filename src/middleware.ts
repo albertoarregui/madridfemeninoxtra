@@ -54,7 +54,7 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             response.headers.set("Vercel-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
-            const home = url.pathname === '/' || url.pathname === '/home';
+            const home = url.pathname === '/';
             const sMaxage = home ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = home ? 0 : (larga ? SWR_LARGA_S : SWR_S);
             // Astro establece Cache-Control: public, max-age=0. La cabecera

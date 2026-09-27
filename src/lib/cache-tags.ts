@@ -23,7 +23,7 @@ export function tagsForPath(pathname: string): string[] {
     if (/^\/api\/(rivals|clubes)/.test(pathname)) tags.push(cacheTags.rivals, cacheTags.matches, cacheTags.statistics);
     if (/^\/api\/(buscador|opciones_filtro)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.statistics);
     if (/^\/api\/search/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.rivals, cacheTags.coaches, cacheTags.stadiums);
-    if (pathname === '/' || pathname === '/home') tags.push(cacheTags.homepage, cacheTags.matches);
+    if (pathname === '/') tags.push(cacheTags.homepage, cacheTags.matches);
     if (/^\/noticias(?:\/|$)/.test(pathname)) {
         tags.push(cacheTags.news);
         const slug = pathname.match(/^\/noticias\/([^/]+)\/?$/)?.[1];

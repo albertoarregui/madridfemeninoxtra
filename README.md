@@ -184,7 +184,7 @@ pnpm dev
 - ✅ **Biografías/crónicas únicas e indexables** generadas desde la BD en las 6 fichas dinámicas (jugadoras, entrenadores, rivales, estadios, árbitras y partidos)
 - ✅ **Datos estructurados schema.org**: `Person`, `SportsEvent`, `SportsTeam`, `StadiumOrArena` por ficha; `Organization` + `WebSite` con `SearchAction` global; `BreadcrumbList` en todas las fichas
 - ✅ **Canonical** normalizado por ruta (sin query) y `og:url` por página
-- ✅ **Prioridad a `/home`**: la landing `/` canonicaliza a `/home` y se retira del sitemap; `/search` (noindex) también fuera del sitemap
+- ✅ **Portada en `/`**: `/home` redirige con 301 a `/`; la antigua introducción está en `/historia`; `/search` (noindex) sigue fuera del sitemap
 
 ### 🏆 Competición "Primera Iberdrola"
 - ✅ Nueva competición en la tabla `competiciones`; reasignados los **64 partidos** de liga de 2020/21 y 2021/22 (la liga se llamaba así hasta 2022)

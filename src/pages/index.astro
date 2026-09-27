@@ -1,860 +1,451 @@
 ---
 import { Image } from "astro:assets";
-import { ClientRouter } from "astro:transitions";
+import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
-import { getAssetMetadata } from "../utils/assets";
-import heartbeatAudio from "../assets/audio/heartbeat.mp3";
-import Footer from "../components/Footer.astro";
-import { resolverOgImage } from "../utils/og";
+import "../styles/home.css";
+import ResumenEstadisticas from "../components/ResumenEstadisticas.astro";
+import Calendar from "../components/Calendar.astro";
+import YoutubeSection from "../components/YoutubeSection.astro";
+import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
+import HistoryCarousel from "../components/HistoryCarousel.astro";
+import ProtagonistasSection from "../components/ProtagonistasSection.astro";
+import GaleriasSection from "../components/GaleriasSection.astro";
+import { getAssetUrl } from "../utils/assets";
+import { cached } from "../utils/cache";
 
-const milestones = [
-    {
-        displayDate: "MAYO 2019",
-        title: "EL ORIGEN",
-        description: "El CD Tacón logra el ascenso a Primera Iberdrola. La semilla de lo que sería el Real Madrid Femenino.",
-        icon: "📍",
-        image: getAssetMetadata("intro", "01-ascenso"),
-    },
-    {
-        displayDate: "JUNIO 2019",
-        title: "COMUNICADO OFICIAL",
-        description: "El Real Madrid anuncia la absorción del CD Tacón. Comienza una nueva era en la historia del club.",
-        icon: "📜",
-        image: getAssetMetadata("intro", "02-comunicado"),
-    },
-    {
-        displayDate: "JULIO 2019",
-        title: "LA PRIMERA GALÁCTICA",
-        description: "Kosovare Asllani se convierte en la primera galáctica. La sueca lideraría el proyecto en su año de transición.",
-        icon: "⭐",
-        image: getAssetMetadata("intro", "03-kosovare_asllani"),
-    },
-    {
-        displayDate: "JULIO 2020",
-        title: "EL SUEÑO ES REAL",
-        description: "El 1 de julio de 2020 nace oficialmente el Real Madrid Femenino. Un día marcado en oro para el fútbol femenino mundial.",
-        icon: "🆕",
-        image: getAssetMetadata("intro", "04-comienzo"),
-    },
-    {
-        displayDate: "OCTUBRE 2020",
-        title: "EL PRIMER CLÁSICO",
-        description: "Debut oficial en Primera Iberdrola con un Clásico histórico.",
-        icon: "⚔️",
-        image: getAssetMetadata("intro", "05-debut"),
-    },
-    {
-        displayDate: "OCTUBRE 2020",
-        title: "EL PRIMER GRITO",
-        description: "Kosovare Asllani marca el primer gol oficial de la historia del Real Madrid Femenino contra el Valencia.",
-        icon: "⚽",
-        image: getAssetMetadata("intro", "06-primer_gol"),
-    },
-    {
-        displayDate: "FEBRERO 2021",
-        title: "LA REINA",
-        description: "154 segundos: Kosovare Asllani marca el hat-trick más rápido, no solo de la historia del club, sino del fútbol femenino mundial.",
-        icon: "👑",
-        image: getAssetMetadata("intro", "07-hat_trick_mas_rapido"),
-    },
-    {
-        displayDate: "MARZO 2021",
-        title: "PRIMER DERBI GANADO",
-        description: "Primera victoria contra el Atlético de Madrid. 0-1, con gol de Sofia Jakobsson.",
-        icon: "🔥",
-        image: getAssetMetadata("intro", "08-derbi"),
-    },
-    {
-        displayDate: "JUNIO 2021",
-        title: "OBJETIVO CUMPLIDO",
-        description: "Clasificación a la UWCL en la primera temporada. En solo un año, el equipo ya era de élite europea.",
-        icon: "🗺️",
-        image: getAssetMetadata("intro", "09-clasificacion_uwcl"),
-    },
-    {
-        displayDate: "SEPTIEMBRE 2021",
-        title: "NOCHE MÁGICA",
-        description: "Contra todo pronóstico, eliminamos al Manchester City en la previa de UWCL. Europa nos saluda.",
-        icon: "🏆",
-        image: getAssetMetadata("intro", "10-victoria_vs_city"),
-    },
-    {
-        displayDate: "NOVIEMBRE 2021",
-        title: "ERA TORIL",
-        description: "Alberto Toril asume el mando del equipo, tras la destitución de David Aznar, en el momento más delicado del equipo.",
-        icon: "👔",
-        image: getAssetMetadata("intro", "11-alberto_toril"),
-    },
-    {
-        displayDate: "MARZO 2022",
-        title: "ENTRE LAS 8 MEJORES",
-        description: "Debut histórico en Cuartos de Final de la UWCL. El escudo del Madrid brilla entre las mejores del viejo continente.",
-        icon: "🏟️",
-        image: getAssetMetadata("intro", "12-debut_cuartos_uwcl"),
-    },
-    {
-        displayDate: "JULIO 2022",
-        title: "LA CABRA",
-        description: "Caroline Weir llega para dar un nuevo salto de calidad, con una primera temporada histórica sumando 28 goles y 18 asistencias.",
-        icon: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-        image: getAssetMetadata("intro", "13-caroline_weir"),
-    },
-    {
-        displayDate: "AGOSTO 2022",
-        title: "DOBLE ELIMINACIÓN AL MANCHESTER CITY",
-        description: "Caroline Weir marca una obra de arte para eliminar nuevamente al Manchester City, su exequipo.",
-        icon: "🎯",
-        image: getAssetMetadata("intro", "14-caroline_weir_vs_city"),
-    },
-    {
-        displayDate: "FEBRERO 2023",
-        title: "DIAMANTE EN BRUTO",
-        description: "Linda Caicedo elige al Real Madrid. El mayor talento joven del planeta se viste de blanco.",
-        icon: "🦋",
-        image: getAssetMetadata("intro", "15-linda_caicedo"),
-    },
-    {
-        displayDate: "MAYO 2023",
-        title: "PRIMERA FINAL",
-        description: "La primera final en la historia del club llegó en la Copa de la Reina.",
-        icon: "🥈",
-        image: getAssetMetadata("intro", "16-primera_final"),
-    },
-    {
-        displayDate: "AGOSTO 2023",
-        title: "CAMPEONAS DEL MUNDO",
-        description: "Hasta 8 jugadoras del Real Madrid tocaron el cielo con la selección española en Sydney. Olga Carmona marcó el gol de la victoria.",
-        icon: "🌍",
-        image: getAssetMetadata("intro", "17-mundial"),
-    },
-    {
-        displayDate: "MARZO 2025",
-        title: "SUDOR, BARRO Y CORAZÓN",
-        description: "Primera victoria en un partido de los Cuartos de Final de la UWCL. El equipo sigue rompiendo barreras en Europa.",
-        icon: "💪",
-        image: getAssetMetadata("intro", "18-primera_victoria_cuartos_uwcl"),
-    },
-    {
-        displayDate: "MARZO 2025",
-        title: "MONTJUIC CONQUISTADO",
-        description: "El Real Madrid Femenino consigue su primera victoria en un Clásico contra el FC Barcelona, con un doblete de Caroline Weir y un gol de Alba Redondo, en Montjuic.",
-        icon: "🤍",
-        image: getAssetMetadata("intro", "20_clasico"),
-    },
-    {
-        displayDate: "JUNIO 2024",
-        title: "HOY",
-        description: "Pau Quesada toma las riendas del Real Madrid Femenino, tras la marcha de Alberto Toril. Empieza una nueva etapa.",
-        icon: "💎",
-        image: getAssetMetadata("intro", "19-pau_quesada"),
-    },
+const mapaJugadoras = getAssetUrl("sidebar", "mapa_jugadoras.png");
+const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
+
+import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
+import ClubStatsDashboard from "../components/ClubStatsDashboard";
+
+const gamesData = await fetchGamesDirectly();
+const allGoals = await fetchAllGoals();
+
+let spotlightNews: any[] = [];
+try {
+	const { contentfulClient } = await import("../lib/contentful");
+
+	const cronicaEntry = await contentfulClient.getEntries({
+		content_type: "noticia",
+		limit: 1,
+		"fields.category": "CRÓNICA",
+		order: ["-sys.createdAt"],
+	});
+	const previaEntry = await contentfulClient.getEntries({
+		content_type: "noticia",
+		limit: 1,
+		"fields.category": "PREVIA",
+		order: ["-sys.createdAt"],
+	});
+
+	const cronica = cronicaEntry.items[0];
+	const previa = previaEntry.items[0];
+
+	if (previa)
+		spotlightNews.push({
+			...previa.fields,
+			id: previa.sys.id,
+			createdAt: previa.sys.createdAt,
+		});
+	if (cronica)
+		spotlightNews.push({
+			...cronica.fields,
+			id: cronica.sys.id,
+			createdAt: cronica.sys.createdAt,
+		});
+} catch (e) {
+	console.error("Error fetching news for home:", e);
+}
+
+const CAMPOS_PARTIDO_STATS = [
+	"temporada_nombre",
+	"competicion_nombre",
+	"goles_rm",
+	"goles_rival",
+	"penaltis",
+	"resultado",
+	"asistencia",
+	"capacidad",
+	"estadio",
+	"faltas_cometidas",
+	"faltas_recibidas",
+	"amarillas_rm",
+	"amarillas_rival",
+	"rojas_rm",
+	"rojas_rival",
+	"penaltis_rm",
+	"penaltis_rival",
+	"club_local",
+	"club_visitante",
+	"fecha",
+] as const;
+
+const CAMPOS_GOL_STATS = [
+	"id_gol",
+	"minuto",
+	"temporada",
+	"competicion",
+	"nombre_goleadora",
+	"foto_goleadora",
+	"nombre_asistente",
+	"foto_asistente",
+] as const;
+
+function proyectar<T extends Record<string, any>>(
+	filas: T[],
+	campos: readonly string[],
+): T[] {
+	return filas.map((fila) => {
+		const salida: Record<string, any> = {};
+		for (const campo of campos) {
+			if (fila[campo] !== undefined) salida[campo] = fila[campo];
+		}
+		return salida as T;
+	});
+}
+
+const statsMatches = proyectar(gamesData, CAMPOS_PARTIDO_STATS);
+const statsGoals = proyectar(allGoals, CAMPOS_GOL_STATS);
+
+const uniqueSeasons = [
+	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
+]
+	.sort()
+	.reverse();
+
+const competitionOrder = [
+	"Liga F",
+	"UWCL",
+	"Copa de la Reina",
+	"Supercopa de España",
+	"Amistosos",
 ];
 
-const heroBg = getAssetMetadata("background", "background.webp");
+const uniqueCompetitions = [
+	...new Set(gamesData.map((g) => g.competicion_nombre).filter((c) => c)),
+].sort((a, b) => {
+	const indexA = competitionOrder.indexOf(a as string);
+	const indexB = competitionOrder.indexOf(b as string);
+	if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+	if (indexA !== -1) return -1;
+	if (indexB !== -1) return 1;
+	return (a as string).localeCompare(b as string);
+});
 
-const imagenSocial =
-    (await resolverOgImage(Astro.url.pathname)) ??
-    "https://www.madridfemeninoxtra.com/og.png";
+let masLeidas: { slug: string; title: string; subtitle?: string; category?: string; imageUrl?: string }[] = [];
+try {
+	const { getAnalyticsDbClient } = await import("../db/client");
+	const analyticsClient = await getAnalyticsDbClient();
+	if (analyticsClient) {
+		const topSlugs = await cached('news:most-read-slugs', 60 * 60 * 1000, async () => {
+			const topResult = await analyticsClient.execute({
+				sql: `SELECT slug FROM article_views ORDER BY views DESC LIMIT 5`,
+				args: [],
+			});
+			return topResult.rows.map((r: any) => String(r.slug));
+		}, { tags: ['news-ranking'] });
+		if (topSlugs.length > 0) {
+			const { contentfulClient } = await import("../lib/contentful");
+			const related = await contentfulClient.getEntries({
+				content_type: "noticia",
+				"fields.slug[in]": topSlugs.join(","),
+				select: ["sys.id", "fields.slug", "fields.title", "fields.subtitle", "fields.category", "fields.featuredImage"] as any,
+				limit: 5,
+			});
+			const bySlug = Object.fromEntries(
+				related.items.map((i: any) => [i.fields.slug, i.fields])
+			);
+			masLeidas = topSlugs
+				.map((s: string) => bySlug[s])
+				.filter(Boolean)
+				.map((f: any) => ({
+					slug: f.slug,
+					title: f.title,
+					subtitle: f.subtitle ?? '',
+					category: f.category,
+					imageUrl: f.featuredImage?.fields?.file?.url
+						? `https:${f.featuredImage.fields.file.url}?fm=webp&w=120&h=80&q=75&fit=fill`
+						: undefined,
+				}));
+		}
+	}
+} catch (_) {}
 ---
 
-<html lang="es">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="generator" content={Astro.generator} />
-        <meta name="theme-color" content="#060d1c" />
-        <title>Madrid Femenino Xtra | Noticias y actualidad del Real Madrid Femenino</title>
-        <meta
-            name="description"
-            content="Tu fuente 100% dedicada al Real Madrid Femenino: noticias, resultados, calendario y estadísticas históricas de todas las jugadoras, partidos y rivales."
-        />
-        <link rel="canonical" href="https://www.madridfemeninoxtra.com/home" />
+<Layout
+	title="Real Madrid Femenino: noticias, partidos, plantilla y estadísticas | MFX"
+	description="Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!"
+>
+	<h1 class="titulo-seo">
+		Real Madrid Femenino: noticias, resultados y estadísticas
+	</h1>
 
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Madrid Femenino Xtra" />
-        <meta property="og:locale" content="es_ES" />
-        <meta property="og:url" content="https://www.madridfemeninoxtra.com/home" />
-        <meta
-            property="og:title"
-            content="Madrid Femenino Xtra | Noticias y actualidad del Real Madrid Femenino"
-        />
-        <meta
-            property="og:description"
-            content="Tu fuente 100% dedicada al Real Madrid Femenino: noticias, resultados, calendario y estadísticas históricas de todas las jugadoras, partidos y rivales."
-        />
-        <meta property="og:image" content={imagenSocial} />
+	<section class="hero">
+		<div class="hero-text">
+<ResumenEstadisticas />
+		</div>
+	</section>
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@madridfemxtra" />
-        <meta
-            name="twitter:title"
-            content="Madrid Femenino Xtra | Noticias y actualidad del Real Madrid Femenino"
-        />
-        <meta
-            name="twitter:description"
-            content="Tu fuente 100% dedicada al Real Madrid Femenino: noticias, resultados, calendario y estadísticas históricas de todas las jugadoras, partidos y rivales."
-        />
-        <meta
-            name="twitter:image"
-            content={imagenSocial}
-        />
+	<div class="w-full overflow-hidden" style="padding: 3rem 0;">
+		<HistoryCarousel />
+	</div>
 
-        <link rel="icon" type="image/webp" href="/icon.webp" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
-        <link rel="manifest" href="/site.webmanifest" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
-            rel="stylesheet"
-        />
-        <link rel="prefetch" href="/home" />
-        <ClientRouter />
-    </head>
+	<div class="content-layout">
+		<main class="welcome-area">
+			<section class="news-content">
+				{
+					spotlightNews.length > 0 && (
+						<div class="spotlight-section mb-[4rem]">
+						<div class="title-block" style="margin-bottom:2rem">
+							<h2 class="landing-title">NOTICIAS</h2>
+						</div>
+						<div class="spotlight-news-grid">
+							{spotlightNews.map((noticia) => (
+								<a
+									href={`/noticias/${noticia.slug}`}
+									class="spotlight-card"
+								>
+									<div class="spotlight-image">
+										<Image
+											src={
+												noticia.featuredImage?.fields
+													?.file?.url
+													? `https:${noticia.featuredImage.fields.file.url}`
+													: "/og.png"
+											}
+											alt={noticia.title}
+											width={400}
+											height={360}
+											quality={72}
+											format="webp"
+											loading="lazy"
+											decoding="async"
+										/>
+									</div>
+									<div class="spotlight-content">
+										<span class={`spotlight-tag ${(noticia.category || "").toLowerCase()}`}>
+											{noticia.category}
+										</span>
+										<h3 class="spotlight-title">
+											{noticia.title}
+										</h3>
+										{noticia.subtitle && (
+											<p class="spotlight-subtitle">{noticia.subtitle}</p>
+										)}
+										<time class="spotlight-date">
+											{new Date(noticia.createdAt)
+												.toLocaleDateString("es-ES", {
+													day: "2-digit",
+													month: "long",
+													year: "numeric",
+												})
+												.toUpperCase()}
+										</time>
+									</div>
+								</a>
+							))}
+						</div>
+					</div>
+					)
+				}
 
-    <body>
-        <div class="fixed inset-0 z-[-1]">
-            <div class="absolute inset-0" style="background:#060d1c;"></div>
-            <div
-                class="absolute inset-0 z-10"
-                style="background:linear-gradient(to right,#060d1c 0%,transparent 40%,transparent 60%,#060d1c 100%);"
-            ></div>
-            {
-                heroBg && (
-                    <Image
-                        src={heroBg}
-                        alt=""
-                        class="w-full h-full object-cover scale-110 animate-pulse-slow"
-                        style="opacity:0.18; object-position: center center;"
-                        width={1920}
-                        height={1080}
-                        format="webp"
-                        loading="eager"
-                    />
-                )
-            }
-        </div>
+				<div
+					class="season-stats-section mb-[4rem] w-full"
+					id="stats-dashboard"
+				>
+					<div class="title-block">
+						<h2 class="landing-title">ESTADÍSTICAS</h2>
+						<p class="landing-subtitle">
+							Balance histórico por temporada y competición del Real
+							Madrid Femenino
+						</p>
+					</div>
+					<ClubStatsDashboard
+						matches={statsMatches}
+						goals={statsGoals}
+						seasons={uniqueSeasons}
+						competitions={uniqueCompetitions}
+						client:load
+					/>
+				</div>
 
-        <a
-            href="/home"
-            data-astro-prefetch="load"
-            class="skip-btn"
-        >
-            Saltar Intro
-            <span class="skip-arrow">→</span>
-        </a>
+				<div class="protagonistas-container mb-[4rem] w-full">
+					<ProtagonistasSection games={gamesData} />
+				</div>
 
-        <audio id="heartbeat-audio" src={heartbeatAudio} preload="auto"></audio>
-        <div id="particles-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+				<div class="galerias-container mb-[4rem] w-full">
+					<GaleriasSection />
+				</div>
 
-        <div class="page-wrap">
+				<div class="youtube-container mb-[4rem]">
+					<YoutubeSection />
+				</div>
+			</section>
+		</main>
 
-            <header class="tl-header animate-fade-in-down">
-                <h1 class="tl-main-title" data-title="NUESTRO LEGADO">NUESTRO LEGADO</h1>
-                <p class="tl-subtitle">
-                    De cero a la élite. Así se forja la historia de la sección<br class="hidden md:block" />
-                    femenina del mejor club del mundo.
-                </p>
-            </header>
+		<aside class="proximo-partido sidebar-right">
+			<span class="section-label">♦ CALENDAR ♦</span>
+			<h2 class="section-title">CALENDARIO</h2>
+			<Calendar />
 
-            <div class="tl-body">
-                <div class="tl-line"></div>
-                <div class="tl-line-cap tl-line-cap--top"></div>
+			<span class="section-label">♦ PLAYER OF THE MONTH ♦</span>
+			<h2 class="section-title">JUGADORA DEL MES</h2>
+			<PlayerOfTheMonthWidget />
 
-                <div class="tl-items">
-                    {
-                        milestones.map((item, index) => (
-                            <div
-                                class={`tl-item timeline-item ${index % 2 === 0 ? "tl-item--even" : "tl-item--odd"}`}
-                            >
-                                <div class="tl-dot" />
+			{masLeidas.length > 0 && (
+				<>
+					<span class="section-label">♦ MOST READ ♦</span>
+					<h2 class="section-title">MÁS LEÍDAS</h2>
+					<ol class="mas-leidas-list">
+						{masLeidas.map((n, i) => (
+							<li class="mas-leidas-item">
+								<a href={`/noticias/${n.slug}`} class="mas-leidas-link">
+									<span class="mas-leidas-rank">{i + 1}</span>
+									{n.imageUrl && (
+										<Image
+											src={n.imageUrl}
+											alt={n.title}
+											class="mas-leidas-thumb"
+											width={140}
+											height={140}
+											quality={70}
+											format="webp"
+											loading="lazy"
+											decoding="async"
+										/>
+									)}
+									<div class="mas-leidas-info">
+										{n.category && <span class="mas-leidas-cat">{n.category.toUpperCase()}</span>}
+										<span class="mas-leidas-title">{n.title}</span>
+									</div>
+								</a>
+							</li>
+						))}
+					</ol>
+				</>
+			)}
 
-                                <svg
-                                    class={`tl-connector ${index % 2 === 0 ? "tl-connector--even" : "tl-connector--odd"}`}
-                                    viewBox="0 0 140 30"
-                                    aria-hidden="true"
-                                >
-                                    <path
-                                        d="M0,15 L30,15 L40,5 L50,25 L60,15 L140,15"
-                                        fill="none"
-                                        stroke="#d4a843"
-                                        stroke-width="2.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        style="filter:drop-shadow(0 0 4px rgba(212,168,67,0.5));"
-                                    />
-                                </svg>
+			<span class="section-label">♦ PLAYERS MAP ♦</span>
+			<h2 class="section-title">MAPA DE JUGADORAS</h2>
+			<a href="/jugadoras" class="sidebar-map-link">
+				<div class="sidebar-map-frame">
+					<img
+						src={mapaJugadoras}
+						alt="Mapa de Jugadoras Real Madrid Femenino"
+						class="sidebar-map-img"
+						width="450"
+						height="180"
+						loading="lazy"
+					/>
+					<div class="sidebar-map-overlay">Ver mapa →</div>
+				</div>
+			</a>
 
-                                <div
-                                    class={`tl-endpoint ${index % 2 === 0 ? "tl-endpoint--even" : "tl-endpoint--odd"}`}
-                                />
+			<span class="section-label">♦ STADIUMS MAP ♦</span>
+			<h2 class="section-title">MAPA DE ESTADIOS</h2>
+			<a href="/partidos" class="sidebar-map-link">
+				<div class="sidebar-map-frame">
+					<img
+						src={mapaPartidos}
+						alt="Mapa de Estadios Real Madrid Femenino"
+						class="sidebar-map-img"
+						width="450"
+						height="180"
+						loading="lazy"
+					/>
+					<div class="sidebar-map-overlay">Ver mapa →</div>
+				</div>
+			</a>
 
-                                <div
-                                    class={`tl-card-side ${index % 2 === 0 ? "tl-card-side--even" : "tl-card-side--odd"}`}
-                                >
-                                    <div class="tl-mobile-bar" />
+			<span class="section-label">♦ STANDINGS ♦</span>
+			<h2 class="section-title">CLASIFICACIÓN</h2>
+			<div class="standings-frame">
+				<iframe
+					id="sofa-standings-embed-3739-97379"
+					src="https://widgets.sofascore.com/es-ES/embed/tournament/3739/season/97379/standings/Liga%20F%20Moeve%2026%2F27?widgetTitle=Liga%20F%20Moeve%2026%2F27&showCompetitionLogo=true"
+					style="height:963px!important;max-width:768px!important;width:100%!important;"
+					frameborder="0"
+					scrolling="no"
+					loading="lazy"
+					title="Clasificación de Liga F Moeve 2026/27"></iframe>
+			</div>
+			<div style="font-size:11px;font-family:'DM Sans',Arial,sans-serif;text-align:left;color:rgba(240,240,240,0.4);margin-top:0.4rem;">
+				Clasificación ofrecida por <a
+					target="_blank"
+					href="https://www.sofascore.com/es-la/football/tournament/spain/liga-f/1127#id:97379"
+					rel="noopener noreferrer"
+					style="color:rgba(212,168,67,0.6);text-decoration:none;">Sofascore</a
+				>
+			</div>
+		</aside>
+	</div>
+</Layout>
 
-                                    <div
-                                        class="tl-card timeline-content"
-                                        onclick="this.scrollIntoView({behavior:'smooth',block:'center'}); if(window.playHeartbeat) window.playHeartbeat();"
-                                    >
-                                        <div class="tl-card-img-wrap">
-                                            {item.image ? (
-                                                <Image
-                                                    src={item.image}
-                                                    alt={item.title}
-                                                    class="tl-card-img"
-                                                    width={600}
-                                                    height={400}
-                                                    format="webp"
-                                                    loading="lazy"
-                                                    decoding="async"
-                                                />
-                                            ) : (
-                                                <div class="tl-card-img-placeholder">
-                                                    <span>{item.icon}</span>
-                                                </div>
-                                            )}
-                                            <div
-                                                class={`tl-badge ${index % 2 === 0 ? "tl-badge--right" : "tl-badge--left"}`}
-                                            >
-                                                {item.icon}
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            class={`tl-card-text ${index % 2 === 0 ? "" : "tl-card-text--flip"}`}
-                                        >
-                                            <p class="tl-date">{item.displayDate}</p>
-                                            <h3 class="tl-card-title">{item.title}</h3>
-                                            <p class="tl-card-desc">{item.description}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    }
-                </div>
-
-                <div class="tl-line-cap tl-line-cap--bottom"></div>
-            </div>
-
-            <div class="tl-cta">
-                <a href="/home" data-astro-prefetch="load" class="cta-btn">
-                    ENTRA EN MFX
-                </a>
-            </div>
-
-            <Footer />
-        </div>
-
-        <div id="nav-overlay" aria-hidden="true"></div>
-
-        <script>
-            (window as unknown as Record<string, unknown>).playHeartbeat = function () {
-                const audio = document.getElementById("heartbeat-audio") as HTMLAudioElement;
-                if (audio) {
-                    audio.volume = 1.0;
-                    audio.currentTime = 0;
-                    audio.play().catch((e: unknown) => console.error("Audio play failed:", e));
-                }
-            };
-
-            function navigateTo(url: string) {
-                try { localStorage.setItem("madridxtra_intro_seen", "true"); } catch (_) {}
-                const overlay = document.getElementById("nav-overlay");
-                if (overlay) {
-                    overlay.classList.add("active");
-                    overlay.addEventListener("transitionend", () => {
-                        window.location.href = url;
-                    }, { once: true });
-                } else {
-                    window.location.href = url;
-                }
-            }
-
-            document.querySelectorAll<HTMLAnchorElement>(".skip-btn, .cta-btn").forEach(link => {
-                link.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    navigateTo(link.getAttribute("href") ?? "/home");
-                });
-            });
-
-            document.addEventListener("DOMContentLoaded", () => {
-                const observer = new IntersectionObserver(
-                    (entries) => {
-                        entries.forEach((entry) => {
-                            if (entry.isIntersecting) entry.target.classList.add("is-visible");
-                        });
-                    },
-                    { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
-                );
-                document.querySelectorAll(".timeline-item").forEach((el) => observer.observe(el));
-
-                const container = document.getElementById("particles-container");
-                if (container) {
-                    for (let i = 0; i < 40; i++) {
-                        const p = document.createElement("div");
-                        const size = Math.random() * 3 + 1;
-                        const isGold = Math.random() > 0.65;
-                        p.style.cssText = `
-                            width:${size}px;height:${size}px;
-                            background:${isGold ? "#d4a843" : "rgba(255,255,255,0.18)"};
-                            position:absolute;border-radius:50%;
-                            left:${Math.random() * 100}vw;top:${Math.random() * 100}vh;
-                            animation:float ${Math.random() * 12 + 10}s linear infinite;
-                        `;
-                        container.appendChild(p);
-                    }
-                }
-            });
-        </script>
-
-        <style>
-            body {
-                background: #060d1c;
-                color: #f0f0f0;
-                overflow-x: hidden;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-
-            .skip-btn {
-                position: fixed;
-                top: 1.5rem;
-                right: 1.5rem;
-                z-index: 50;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.45rem 1.25rem;
-                border-radius: 100px;
-                border: 1px solid rgba(212, 168, 67, 0.35);
-                background: rgba(6, 13, 28, 0.6);
-                backdrop-filter: blur(8px);
-                color: rgba(212, 168, 67, 0.7);
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.78rem;
-                font-weight: 500;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
-                text-decoration: none;
-                transition: all 0.25s ease;
-            }
-            .skip-btn:hover {
-                border-color: #d4a843;
-                color: #d4a843;
-                background: rgba(212, 168, 67, 0.08);
-            }
-            .skip-arrow { transition: transform 0.2s; display: inline-block; }
-            .skip-btn:hover .skip-arrow { transform: translateX(3px); }
-
-            .page-wrap {
-                position: relative;
-                width: 100%;
-                min-height: 100vh;
-                padding: clamp(3.5rem, 8vw, 5rem) 1rem 0;
-                transition: padding 0.4s ease;
-            }
-
-            .tl-header {
-                text-align: center;
-                margin-bottom: clamp(3rem, 8vw, 7rem);
-                position: relative;
-                z-index: 10;
-                padding: 0 1rem;
-                transition: margin 0.4s ease;
-            }
-            .tl-main-title {
-                font-family: 'Cinzel', serif;
-                font-size: clamp(2rem, 5.5vw, 4.5rem);
-                font-weight: 900;
-                color: #d4a843;
-                letter-spacing: 0.08em;
-                text-transform: uppercase;
-                line-height: 1;
-                margin: 0 0 1.5rem;
-                filter: drop-shadow(0 0 40px rgba(212, 168, 67, 0.25));
-                position: relative;
-            }
-            .tl-main-title::before {
-                content: attr(data-title);
-                position: absolute;
-                bottom: 0;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: min(1.8em, 7vw);
-                font-weight: 900;
-                font-family: 'Cinzel', serif;
-                color: #d4a843;
-                opacity: 0.08;
-                white-space: nowrap;
-                pointer-events: none;
-                user-select: none;
-                letter-spacing: 0.08em;
-                line-height: 1;
-                z-index: -1;
-            }
-            .tl-subtitle {
-                font-family: 'DM Sans', sans-serif;
-                font-size: clamp(0.95rem, 2.2vw, 1.25rem);
-                color: rgba(200, 210, 220, 0.5);
-                font-style: italic;
-                max-width: 600px;
-                margin: 0 auto;
-                line-height: 1.75;
-            }
-
-            .tl-body {
-                position: relative;
-                max-width: 1280px;
-                margin: 0 auto;
-                padding: 3rem 0 3rem;
-            }
-
-            .tl-line {
-                position: absolute;
-                left: 1rem;
-                top: 0;
-                bottom: 0;
-                width: 3px;
-                background: #d4a843;
-                box-shadow: 0 0 14px rgba(212, 168, 67, 0.45);
-                border-radius: 2px;
-                z-index: 0;
-            }
-            .tl-line-cap {
-                position: absolute;
-                left: 1rem;
-                width: 1.75rem;
-                height: 1.75rem;
-                background: #d4a843;
-                transform: translateX(-50%) rotate(45deg);
-                box-shadow: 0 0 18px rgba(212, 168, 67, 0.6);
-                z-index: 10;
-            }
-            .tl-line-cap--top { top: -0.875rem; }
-            .tl-line-cap--bottom { bottom: -0.875rem; }
-
-            @media (min-width: 1024px) {
-                .tl-line { left: 50%; transform: translateX(-50%); }
-                .tl-line-cap { left: 50%; }
-            }
-
-            .tl-items {
-                display: flex;
-                flex-direction: column;
-                gap: clamp(3rem, 8vw, 6rem);
-                padding: clamp(2rem, 5vw, 4rem) 0;
-                transition: gap 0.4s ease, padding 0.4s ease;
-            }
-
-            .tl-item {
-                position: relative;
-                display: flex;
-                align-items: center;
-                flex-direction: column;
-                padding-left: 3rem;
-            }
-
-            .tl-dot {
-                position: absolute;
-                left: 1rem;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                width: 0.9rem;
-                height: 0.9rem;
-                background: #d4a843;
-                border-radius: 50%;
-                box-shadow: 0 0 10px rgba(212, 168, 67, 0.7);
-                z-index: 10;
-            }
-
-            .tl-connector {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 140px;
-                height: 30px;
-                z-index: 0;
-                overflow: visible;
-                display: none;
-            }
-
-            .tl-endpoint {
-                position: absolute;
-                top: 50%;
-                width: 1.25rem;
-                height: 1.25rem;
-                background: #d4a843;
-                transform: translateY(-50%) rotate(45deg);
-                box-shadow: 0 0 12px rgba(212, 168, 67, 0.5);
-                z-index: 20;
-                display: none;
-                transition: transform 0.4s ease, background 0.3s ease;
-            }
-            .tl-item:hover .tl-endpoint {
-                transform: translateY(-50%) rotate(45deg) scale(1.3);
-                background: #fff;
-            }
-
-            .tl-mobile-bar {
-                position: absolute;
-                left: -2rem;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 1.75rem;
-                height: 2px;
-                background: #d4a843;
-            }
-
-            .tl-card-side {
-                position: relative;
-                width: 100%;
-            }
-
-            .tl-card {
-                position: relative;
-                width: 100%;
-                max-width: 30rem;
-                cursor: pointer;
-                transition: transform 0.6s ease;
-            }
-            .tl-card:hover { transform: scale(1.03); }
-            .tl-card:active { transform: scale(0.98); opacity: 0.9; }
-
-            .tl-card-img-wrap { position: relative; }
-            .tl-card-img {
-                width: 100%;
-                height: auto;
-                border-radius: 0.9rem;
-                border: 1px solid rgba(212, 168, 67, 0.2);
-                box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-                display: block;
-            }
-            .tl-card-img-placeholder {
-                width: 100%;
-                height: 14rem;
-                background: rgba(6, 13, 28, 0.9);
-                border-radius: 0.9rem;
-                border: 1px solid rgba(212, 168, 67, 0.2);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 2.5rem;
-            }
-
-            .tl-badge {
-                position: absolute;
-                top: -1.4rem;
-                width: 3.25rem;
-                height: 3.25rem;
-                background: #d4a843;
-                color: #060d1c;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.3rem;
-                border: 4px solid #060d1c;
-                box-shadow: 0 4px 16px rgba(212, 168, 67, 0.4);
-                z-index: 30;
-            }
-            .tl-badge--right { right: -1.4rem; }
-            .tl-badge--left  { left:  -1.4rem; }
-
-            .tl-card-text { margin-top: 1.25rem; }
-
-            .tl-date {
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.7rem;
-                font-weight: 700;
-                letter-spacing: 0.24em;
-                text-transform: uppercase;
-                color: #d4a843;
-                margin: 0 0 0.3rem;
-            }
-            .tl-card-title {
-                font-family: 'Cinzel', serif;
-                font-size: clamp(1.2rem, 2.5vw, 1.6rem);
-                font-weight: 700;
-                color: #f0f0f0;
-                text-transform: uppercase;
-                line-height: 1.1;
-                letter-spacing: 0.04em;
-                margin: 0 0 0.65rem;
-            }
-            .tl-card-desc {
-                font-family: 'DM Sans', sans-serif;
-                font-size: 0.88rem;
-                color: rgba(200, 210, 220, 0.6);
-                line-height: 1.7;
-                margin: 0;
-                max-width: 28rem;
-            }
-
-            @media (min-width: 1024px) {
-                .tl-dot  { left: 50%; }
-                .tl-connector { display: block; }
-                .tl-endpoint  { display: block; }
-                .tl-mobile-bar { display: none; }
-
-                .tl-item {
-                    flex-direction: row;
-                    padding-left: 0;
-                }
-                .tl-item--even { flex-direction: row-reverse; }
-                .tl-item--odd  { flex-direction: row; }
-
-                .tl-connector--even { left: 50%; }
-                .tl-connector--odd  { right: 50%; transform: translateY(-50%) scaleX(-1); }
-
-                .tl-endpoint--even { left:  calc(50% + 140px); }
-                .tl-endpoint--odd  { right: calc(50% + 140px); }
-
-                .tl-card-side { width: 50%; }
-                .tl-item--even .tl-card-side { padding-left: 220px; }
-                .tl-item--odd  .tl-card-side { padding-right: 220px; }
-
-                .tl-item--even .tl-card { margin-left: 0; }
-                .tl-item--odd  .tl-card { margin-left: auto; }
-
-                .tl-card-text--flip { text-align: right; }
-                .tl-card-text--flip .tl-card-desc { margin-left: auto; }
-            }
-
-            @media (max-width: 768px) {
-                .page-wrap {
-                    padding-top: 5rem;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .skip-btn {
-                    top: 0.75rem;
-                    right: 0.75rem;
-                    padding: 0.35rem 0.85rem;
-                    font-size: 0.68rem;
-                    gap: 0.35rem;
-                }
-                .page-wrap {
-                    padding-top: 5.5rem;
-                }
-            }
-
-            @media (max-width: 1023px) {
-                .tl-line-cap--bottom {
-                    display: none;
-                }
-                .tl-body {
-                    padding-bottom: 0;
-                }
-                .tl-cta {
-                    text-align: left;
-                    padding: 1.5rem 1rem 2.5rem 3.5rem;
-                }
-                .tl-cta::before {
-                    content: '';
-                    position: absolute;
-                    left: 1rem;
-                    transform: translateX(-50%);
-                    top: 0;
-                    height: 50%;
-                    width: 3px;
-                    background: #d4a843;
-                    box-shadow: 0 0 14px rgba(212, 168, 67, 0.45);
-                }
-                .tl-cta::after {
-                    content: '';
-                    position: absolute;
-                    left: 1rem;
-                    transform: translateX(-50%) rotate(45deg);
-                    top: calc(50% - 0.875rem);
-                    width: 1.75rem;
-                    height: 1.75rem;
-                    background: #d4a843;
-                    box-shadow: 0 0 18px rgba(212, 168, 67, 0.6);
-                    z-index: 5;
-                }
-            }
-
-            .tl-cta {
-                text-align: center;
-                position: relative;
-                z-index: 20;
-                padding: clamp(3rem, 6vw, 5rem) 0 2rem;
-            }
-            .cta-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 1rem;
-                padding: 1rem 3.5rem;
-                min-height: 44px;
-                background: #d4a843;
-                color: #060d1c;
-                font-family: 'Cinzel', serif;
-                font-size: 1rem;
-                font-weight: 700;
-                letter-spacing: 0.22em;
-                text-transform: uppercase;
-                text-decoration: none;
-                border-radius: 3px;
-                transition: all 0.25s ease;
-                box-shadow: 0 4px 24px rgba(212, 168, 67, 0.3);
-            }
-            .cta-btn:hover {
-                background: #c49030;
-                transform: translateY(-2px);
-                box-shadow: 0 8px 32px rgba(212, 168, 67, 0.4);
-            }
-
-            #nav-overlay {
-                position: fixed;
-                inset: 0;
-                background: #060d1c;
-                opacity: 0;
-                pointer-events: none;
-                z-index: 9999;
-                transition: opacity 0.55s ease;
-            }
-            #nav-overlay.active {
-                opacity: 1;
-                pointer-events: all;
-            }
-
-            .animate-fade-in-down {
-                animation: fadeInDown 1.4s ease-out forwards;
-            }
-            @keyframes fadeInDown {
-                from { opacity: 0; transform: translateY(-24px); }
-                to   { opacity: 1; transform: translateY(0); }
-            }
-
-            @keyframes float {
-                0%   { transform: translateY(0) translateX(0); opacity: 0; }
-                10%  { opacity: 0.9; }
-                90%  { opacity: 0.9; }
-                100% { transform: translateY(-120px) translateX(40px); opacity: 0; }
-            }
-
-            .animate-pulse-slow {
-                animation: bgPulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            }
-            @keyframes bgPulse {
-                0%, 100% { opacity: 0.12; transform: scale(1.1); }
-                50%       { opacity: 0.08; transform: scale(1); }
-            }
-
-            .timeline-content {
-                opacity: 0;
-                transform: translateY(18px) scale(0.98);
-                transition: opacity 0.85s ease-out, transform 0.85s ease-out;
-            }
-            .timeline-item.is-visible .timeline-content {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        </style>
-    </body>
-</html>
+<style>
+	.titulo-seo {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.sidebar-map-link {
+		display: block;
+		text-decoration: none;
+		margin-bottom: 2rem;
+	}
+	.sidebar-map-frame {
+		position: relative;
+		border-radius: 10px;
+		overflow: hidden;
+		border: 1px solid rgba(212, 168, 67, 0.25);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+		transition: border-color 0.3s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-frame {
+		border-color: rgba(212, 168, 67, 0.55);
+	}
+	.sidebar-map-img {
+		display: block;
+		width: 100%;
+		height: 180px;
+		object-fit: cover;
+		filter: brightness(0.85);
+		transition: filter 0.3s ease, transform 0.4s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-img {
+		filter: brightness(1);
+		transform: scale(1.03);
+	}
+	.sidebar-map-overlay {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 0.5rem 1rem;
+		background: linear-gradient(to top, rgba(6, 13, 28, 0.75), transparent);
+		color: #d4a843;
+		font-family: 'Cinzel', serif;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-align: right;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+	.sidebar-map-link:hover .sidebar-map-overlay {
+		opacity: 1;
+	}
+	.standings-frame {
+		border-radius: 10px;
+		overflow: hidden;
+		border: 1px solid rgba(212, 168, 67, 0.2);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+		margin-bottom: 0.5rem;
+	}
+</style>
