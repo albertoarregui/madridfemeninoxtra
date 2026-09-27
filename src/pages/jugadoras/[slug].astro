@@ -15,9 +15,10 @@ import {
 
 import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
-import { fetchAllGoals } from "../../utils/partidos";
+import { fetchAllGoals, slugify as matchSlugify } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
 import { competitionDisplayName } from "../../utils/competiciones";
+import { getCurrentSeason } from "../../utils/season";
 import { getNewsForPlayer } from "../../utils/noticias";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
 import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
@@ -143,6 +144,9 @@ const milestones = allGoals
         ...g,
         goalNumber: index + 1,
         rival: g.club_local === "Real Madrid" ? g.club_visitante : g.club_local,
+        matchPath: /^\d{4}-\d{2}-\d{2}$/.test(String(g.fecha || '').slice(0, 10)) && g.club_local && g.club_visitante
+            ? `/partidos/${matchSlugify(g.club_local)}-vs-${matchSlugify(g.club_visitante)}-${String(g.fecha).slice(0, 10)}`
+            : null,
     }))
     .filter((g) => g.goalNumber % 10 === 0);
 
@@ -163,19 +167,27 @@ const getPlayerCoordinates = (pos: string) => {
     return { left, top };
 };
 const playerPosition = getPlayerCoordinates(player.posicion || "");
+const currentSquadInfo = player.season_info?.[getCurrentSeason()];
+const isCurrentSquad = Boolean(currentSquadInfo && (
+    currentSquadInfo.id_categoria === 4 ||
+    (Number(currentSquadInfo.dorsal) >= 1 && Number(currentSquadInfo.dorsal) <= 24)
+));
 
 const schema = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `https://www.madridfemeninoxtra.com/jugadoras/${slug}#persona`,
+    url: `https://www.madridfemeninoxtra.com/jugadoras/${slug}`,
     name: player.nombre,
     jobTitle: "Jugadora de Fútbol",
-    affiliation: { "@type": "SportsTeam", name: "Real Madrid Femenino" },
-    image: resolvedImage || player.imageUrl,
-    birthDate: player.fecha_nacimiento,
-    birthPlace: { "@type": "Place", name: player.lugar_nacimiento },
+    ...(isCurrentSquad ? { affiliation: { "@type": "SportsTeam", name: "Real Madrid Femenino" } } : {}),
+    ...(resolvedImage || player.imageUrl ? { image: resolvedImage || player.imageUrl } : {}),
+    ...(/^\d{4}-\d{2}-\d{2}$/.test(String(player.fecha_nacimiento || '').slice(0, 10))
+        ? { birthDate: String(player.fecha_nacimiento).slice(0, 10) } : {}),
+    ...(player.lugar_nacimiento ? { birthPlace: { "@type": "Place", name: player.lugar_nacimiento } } : {}),
     height: player.altura ? `${player.altura} m` : undefined,
     weight: player.peso ? `${player.peso} kg` : undefined,
-    nationality: player.pais_origin,
+    ...(player.pais_origin ? { nationality: player.pais_origin } : {}),
 };
 
 const quickStats = playerStats ? [
@@ -547,6 +559,7 @@ const seoDescription = (tco && tco.partidos)
                                                     <span class="m-date">{g.fecha ? new Date(g.fecha).toLocaleDateString('es-ES') : ''} · {competitionDisplayName(g.competicion, { idTemporada: g.id_temporada })}</span>
                                                 </div>
                                             </div>
+                                            {g.matchPath && <a class="milestone-match-link" href={g.matchPath} onclick="event.stopPropagation()">Ver partido →</a>}
                                         </div>
                                     </div>
                                 );
@@ -678,6 +691,10 @@ const seoDescription = (tco && tco.partidos)
             </div>
 
         </div>
+        <nav class="player-related-links" aria-label="Más información del equipo">
+            <a href="/partidos">Partidos del Real Madrid Femenino →</a>
+            <a href="/plantilla">Plantilla actual →</a>
+        </nav>
     </main>
 
     <div id="video-modal" class="video-modal-overlay">
@@ -1370,7 +1387,10 @@ const seoDescription = (tco && tco.partidos)
     margin-top: 3px;
     color: rgba(200,210,220,0.5);
 }
-.milestone-content { padding: 0.75rem; flex: 1; display: flex; align-items: center; }
+.milestone-content { padding: 0.75rem; flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: .4rem; min-width: 0; }
+.milestone-match-link, .player-related-links a { color: #d4a843; font-weight: 700; text-underline-offset: .2em; }
+.milestone-match-link { font-size: .72rem; }
+.player-related-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem 2rem; margin: 2rem auto 0; font-family: 'Cinzel', serif; font-size: .85rem; text-align: center; }
 .m-match-info { display: flex; align-items: center; gap: 0.65rem; }
 .m-rival-shield { width: 36px; height: 36px; flex-shrink: 0; }
 .m-rival-shield img { width: 100%; height: 100%; object-fit: contain; }

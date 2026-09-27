@@ -6,6 +6,8 @@ export type TipoFicha = 'jugadora' | 'entrenador' | 'arbitra' | 'club' | 'estadi
 export interface FichaTexto {
     visible: string;
     resto: string;
+    articleSlug?: string;
+    articleCategory?: string;
 }
 
 const ETIQUETAS_EMBED = 'iframe|blockquote|script|ins|embed|object|video|twitter-widget|amp-[a-z-]+';
@@ -67,7 +69,11 @@ async function renderizar(entrada: any): Promise<FichaTexto | null> {
     const { documentToHtmlString } = await import('@contentful/rich-text-html-renderer');
     const html = documentToHtmlString(limpiarEmbeds(entrada.fields.body));
     if (!html.trim()) return null;
-    return partir(html);
+    return {
+        ...partir(html),
+        articleSlug: entrada.fields.slug || undefined,
+        articleCategory: entrada.fields.category || undefined,
+    };
 }
 
 export async function fetchFicha(
@@ -85,8 +91,11 @@ export async function fetchFicha(
 
 export async function fetchCronicaPartido(
     claves: (string | number | null | undefined)[],
+    category?: 'CRÓNICA' | 'PREVIA',
 ): Promise<FichaTexto | null> {
     const items = await listar('noticia', 'match');
     if (!items.length) return null;
-    return renderizar(buscar(items, claves));
+    return renderizar(buscar(category ? items.filter((item) =>
+        String(item.fields?.category || '').toUpperCase() === category,
+    ) : items, claves));
 }

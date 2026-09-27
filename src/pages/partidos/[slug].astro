@@ -310,9 +310,15 @@ if (isLiveOrPlayed) {
     cronica += ` En esta página podrás seguir el resultado en directo, las alineaciones, los cambios, las estadísticas y la crónica completa del encuentro en cuanto arranque.`;
 }
 
-const fichaCronica = await fetchCronicaPartido([game.id_partido, slug]);
+const matchKeys = [game.id_partido, slug];
+const fichaCronica = await fetchCronicaPartido(matchKeys, game.isPlayed ? 'CRÓNICA' : 'PREVIA')
+    ?? await fetchCronicaPartido(matchKeys);
 const cronicaVisible = fichaCronica?.visible ?? "";
 const cronicaResto = fichaCronica?.resto ?? "";
+const matchArticleCategory = fichaCronica?.articleCategory?.toUpperCase();
+const matchArticleLabel = matchArticleCategory === 'CRÓNICA'
+    ? 'Leer la crónica completa'
+    : matchArticleCategory === 'PREVIA' ? 'Leer la previa completa' : 'Leer el artículo completo';
 const tieneCronica = Boolean(cronicaVisible);
 const hasMatchMetricsData = hasMatchMetrics(game);
 const indexableMatch = isIndexableMatchDetail(game, {
@@ -322,7 +328,7 @@ const indexableMatch = isIndexableMatchDetail(game, {
     galleryCount: totalGaleria,
 });
 const cronicaHeading = tieneCronica
-    ? "CRÓNICA"
+    ? matchArticleCategory === 'CRÓNICA' ? "CRÓNICA" : "CONTEXTO DEL PARTIDO"
     : game.isPlayed
       ? "RESUMEN DEL PARTIDO"
       : "INFORMACIÓN DEL PARTIDO";
@@ -334,26 +340,35 @@ const seoDescription = isLiveOrPlayed
     ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante} (${fechaCorta}). Resultado, goleadoras, alineaciones y estadísticas completas${compLabel ? ` de ${compLabel}` : ""}.`
     : `${game.club_local} vs ${game.club_visitante} (${fechaCorta}). Previa, horario, alineaciones y estadísticas del partido${compLabel ? ` de ${compLabel}` : ""}.`;
 
-const matchStartISO = game.fecha ? `${game.fecha}T${kickoffHora}` : undefined;
-const matchSchema = {
+const matchDay = String(game.fecha || '').slice(0, 10);
+const confirmedKickoff = String(game.hora || '').match(/^(\d{2}:\d{2})/);
+const madridOffset = matchDay && confirmedKickoff
+    ? new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', timeZoneName: 'longOffset' })
+        .formatToParts(new Date(`${matchDay}T12:00:00Z`))
+        .find((part) => part.type === 'timeZoneName')?.value.replace('GMT', '')
+    : null;
+const matchStartISO = /^\d{4}-\d{2}-\d{2}$/.test(matchDay) && confirmedKickoff && madridOffset
+    ? `${matchDay}T${confirmedKickoff[1]}:00${madridOffset}`
+    : null;
+const matchSchema = matchStartISO ? {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: `${game.club_local} vs ${game.club_visitante}`,
     sport: "Football",
-    ...(matchStartISO ? { startDate: matchStartISO } : {}),
-    eventStatus: "https://schema.org/EventScheduled",
+    startDate: matchStartISO,
+    url: `https://www.madridfemeninoxtra.com/partidos/${slug}`,
+    ...(!game.isPlayed ? { eventStatus: "https://schema.org/EventScheduled" } : {}),
     ...(game.estadio
         ? { location: { "@type": "Place", name: game.estadio, ...(game.ciudad || game.pais ? { address: [game.ciudad, game.pais].filter(Boolean).join(", ") } : {}) } }
         : {}),
     homeTeam: { "@type": "SportsTeam", name: game.club_local },
     awayTeam: { "@type": "SportsTeam", name: game.club_visitante },
-    ...(competicionDisplay ? { organizer: { "@type": "Organization", name: competicionDisplay } } : {}),
-};
+} : null;
 
 ---
 
 <Layout title={seoTitle} description={seoDescription} noindex={!indexableMatch} showAds={indexableMatch}>
-    <script type="application/ld+json" set:html={JSON.stringify(matchSchema)} />
+    {matchSchema && <script type="application/ld+json" set:html={JSON.stringify(matchSchema)} />}
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Partidos", path: "/partidos" }, { name: `${game.club_local} vs ${game.club_visitante}`, path: `/partidos/${slug}` }]))} />
     <main class="match-details-page">
         <a href="/partidos" class="back-link">
@@ -619,7 +634,7 @@ const matchSchema = {
             {tieneCronica ? (
                 <div class="cronica-cuerpo">
                     <div set:html={cronicaVisible} />
-                    {cronicaResto && (
+                    {cronicaResto && !fichaCronica?.articleSlug && (
                         <details class="cronica-mas">
                             <summary class="cronica-toggle">
                                 <span class="cronica-toggle-abrir">Seguir leyendo</span>
@@ -628,6 +643,13 @@ const matchSchema = {
                             </summary>
                             <div set:html={cronicaResto} />
                         </details>
+                    )}
+                    {fichaCronica?.articleSlug && (
+                        <p class="match-article-link">
+                            <a href={`/noticias/${fichaCronica.articleSlug}`}>
+                                {matchArticleLabel} →
+                            </a>
+                        </p>
                     )}
                 </div>
             ) : (
@@ -2683,6 +2705,9 @@ const matchSchema = {
         text-wrap: pretty;
         text-align: justify;
     }
+
+    .match-article-link { margin: 1.25rem 0 0; text-align: left; }
+    .match-article-link a { display: inline-block; color: #d4a843; font-weight: 700; text-underline-offset: .2em; }
 
     .cronica-cuerpo :global(p) {
         margin: 0 0 1.1rem;
