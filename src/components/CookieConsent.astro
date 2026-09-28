@@ -8,11 +8,33 @@ const { showAds = true } = Astro.props;
 
 {
     showAds && (
-        <script
-            is:inline
-            async
-            crossorigin="anonymous"
-            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753331336777901"
-        ></script>
+        <script is:inline>
+            function loadGoogleAdSense() {
+                if (
+                    document.querySelector(
+                        'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]',
+                    )
+                ) {
+                    return;
+                }
+
+                const script = document.createElement("script");
+                script.src =
+                    "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753331336777901";
+                script.async = true;
+                script.crossOrigin = "anonymous";
+                document.head.appendChild(script);
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", loadGoogleAdSense, {
+                    once: true,
+                });
+            } else {
+                loadGoogleAdSense();
+            }
+
+            document.addEventListener("astro:page-load", loadGoogleAdSense);
+        </script>
     )
 }
