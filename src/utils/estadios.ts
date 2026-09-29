@@ -1,4 +1,3 @@
-
 import { generateSlug } from './url-helper';
 import { getAssetUrl } from './assets';
 
@@ -10,6 +9,7 @@ export interface StadiumSummary {
     coordinates?: { lat: number, lng: number };
     capacity?: string | number;
 }
+
 export async function getAllStadiums(): Promise<StadiumSummary[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -63,6 +63,8 @@ export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]>
             LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
             LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
             WHERE e.nombre = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
             ORDER BY p.fecha DESC
         `;
 
@@ -119,6 +121,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
             FROM estadios e
             JOIN partidos p ON e.id_estadio = p.id_estadio
             WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
             GROUP BY e.id_estadio, e.nombre, e.ciudad, e.capacidad, e.foto_url
             ORDER BY played DESC
         `;
@@ -153,7 +156,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
                 coordinates: (stadium.lat != null && stadium.lng != null)
                     ? { lat: Number(stadium.lat), lng: Number(stadium.lng) }
                     : undefined,
-                slug: slug,
+                slug,
                 stats: {
                     played,
                     wins,
@@ -248,5 +251,3 @@ export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ t
         return { topScorers: [], topAssisters: [], topContributors: [] };
     }
 }
-
-
