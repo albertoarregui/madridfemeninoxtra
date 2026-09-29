@@ -3,9 +3,7 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
         const { getPlayersDbClient } = await import('../db/client');
         const db = await getPlayersDbClient();
 
-        if (!db) {
-            return null;
-        }
+        if (!db) return null;
 
         const matchesResult = await db.execute({
             sql: `
@@ -13,6 +11,8 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
                 FROM partidos p
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso'
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                 ORDER BY p.fecha DESC
             `,
             args: [coachId],
@@ -24,9 +24,7 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
             fecha: row.fecha,
         }));
 
-        if (matches.length === 0) {
-            return null;
-        }
+        if (matches.length === 0) return null;
 
         const isWin = (m: any) => m.goles_rm > m.goles_rival;
         const isDraw = (m: any) => m.goles_rm === m.goles_rival;
@@ -42,11 +40,8 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
         const calculateCurrentStreak = (condition: (m: any) => boolean): number => {
             let count = 0;
             for (const match of matches) {
-                if (condition(match)) {
-                    count++;
-                } else {
-                    break;
-                }
+                if (condition(match)) count++;
+                else break;
             }
             return count;
         };
@@ -54,9 +49,7 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
         const calculateBestStreak = (condition: (m: any) => boolean): number => {
             let maxStreak = 0;
             let currentStreak = 0;
-
             const chronologicalMatches = [...matches].reverse();
-
             for (const match of chronologicalMatches) {
                 if (condition(match)) {
                     currentStreak++;
@@ -99,5 +92,3 @@ export async function fetchCoachStreaks(coachId: string | number): Promise<any> 
         return null;
     }
 }
-
-
