@@ -4,6 +4,7 @@ import "../styles/global.css";
 import { fetchRankingsDirectly, fetchPlayerStreaks } from "../utils/rankings";
 import { fetchPlayerAwards } from "../utils/awards";
 import { fetchPlayersDirectly } from "../utils/players";
+import { breadcrumbSchema } from "../utils/seo";
 import StatsRankings from "../components/StatsRankings.tsx";
 
 const rankingsData = await fetchRankingsDirectly();
@@ -20,6 +21,7 @@ const uniqueSeasons = [
     .reverse();
 
 const competitionOrder = [
+    "Primera Iberdrola",
     "Liga F",
     "UWCL",
     "Copa de la Reina",
@@ -44,20 +46,43 @@ const uniqueCompetitions = [
 const playerImageMap = Object.fromEntries(
     playersData.map((p: any) => [p.slug, p.imageUrl]),
 );
+
+const featuredRankings = [
+    ["/rankings/maximas-goleadoras", "Máximas goleadoras"],
+    ["/rankings/maximas-asistentes", "Máximas asistentes"],
+    ["/rankings/mas-partidos", "Más partidos"],
+    ["/rankings/mas-minutos", "Más minutos"],
+    ["/rankings/mas-capitanias", "Más capitanías"],
+    ["/rankings/porterias-a-cero", "Porterías a cero"],
+];
 ---
 
 <Layout
-    title=" Rankings y Estadísticas | Madrid Femenino Xtra"
-    description="Consulta las líderes históricas del Real Madrid Femenino por temporada y competición. Rankings de máximas goleadoras, asistentes, partidos y minutos."
+    title="Estadísticas del Real Madrid Femenino: goleadoras, asistentes y récords | MFX"
+    description="Rankings históricos del Real Madrid Femenino: máximas goleadoras y asistentes, jugadoras con más partidos, minutos, capitanías y porterías a cero."
 >
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Rankings", path: "/rankings" },
+            ]),
+        )}
+    />
+
     <main class="max-w-7xl mx-auto px-6 md:px-0 py-10">
         <header class="page-header-container">
-            <h1 class="landing-title">RANKINGS</h1>
+            <h1 class="landing-title">Estadísticas y rankings del Real Madrid Femenino</h1>
             <p class="landing-subtitle">
-                Consulta las líderes históricas por competición y temporada del
-                Real Madrid Femenino
+                Goleadoras, asistentes, partidos, minutos, capitanías y más datos históricos
             </p>
         </header>
+
+        <nav class="seo-ranking-links" aria-label="Rankings históricos destacados">
+            {featuredRankings.map(([href, label]) => <a href={href}>{label}</a>)}
+        </nav>
 
         {
             rankingsData.length > 0 ? (
@@ -81,7 +106,26 @@ const playerImageMap = Object.fromEntries(
 </Layout>
 
 <style>
-    main {
-        color: #f0f0f0;
+    main { color: #f0f0f0; }
+    .seo-ranking-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.8rem;
+        margin: 0 0 2rem;
+    }
+    .seo-ranking-links a {
+        border: 1px solid rgba(212, 168, 67, 0.28);
+        background: rgba(12, 12, 16, 0.62);
+        color: #d4a843;
+        padding: 0.85rem 1rem;
+        text-align: center;
+        text-decoration: none;
+        font-family: "Cinzel", serif;
+        font-size: 0.82rem;
+        transition: 0.2s ease;
+    }
+    .seo-ranking-links a:hover {
+        border-color: rgba(212, 168, 67, 0.75);
+        transform: translateY(-2px);
     }
 </style>
