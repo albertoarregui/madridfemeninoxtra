@@ -30,8 +30,8 @@ function calcularEstadisticasRival(enfrentamientos) {
     let stats = { victorias: 0, empates: 0, derrotas: 0, goles_a_favor: 0, goles_en_contra: 0 };
 
     for (const p of enfrentamientos) {
-        const goles_rm = p.goles_rm || 0;
-        const goles_rival = p.goles_rival || 0;
+        const goles_rm = Number(p.goles_rm);
+        const goles_rival = Number(p.goles_rival);
 
         stats.goles_a_favor += goles_rm;
         stats.goles_en_contra += goles_rival;
@@ -168,12 +168,14 @@ export const GET = async ({ params }) => {
 
         const partidosQuery = `
             SELECT
-                IFNULL(p.goles_rm, 0) AS goles_rm,
-                IFNULL(p.goles_rival, 0) AS goles_rival
+                p.goles_rm AS goles_rm,
+                p.goles_rival AS goles_rival
             FROM partidos p
             LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
             LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-            WHERE cl.nombre = ? OR cv.nombre = ?
+            WHERE (cl.nombre = ? OR cv.nombre = ?)
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
         `;
 
         const [goleadorasResult, asistentesResult, partidosResult] = await Promise.all([
