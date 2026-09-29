@@ -1,0 +1,252 @@
+/* Calendar overlap fixes that preserve the original visual scale. */
+
+.calendar-widget .day {
+    isolation: isolate;
+}
+
+/* Event cards must never grow over neighbouring days. */
+.calendar-widget .day.has-match:hover,
+.calendar-widget .day.has-birthday:hover {
+    transform: none;
+    z-index: 2;
+}
+
+/* Multiple birthdays: keep the original card size but divide the cell cleanly. */
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra) .birthday-content {
+    top: 2px;
+    bottom: 2px;
+    width: calc(50% - 3px);
+    height: auto;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra) .birthday-content:not(.birthday-extra) {
+    left: 2px;
+    right: auto;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra {
+    left: auto;
+    right: 2px;
+}
+
+/* Three birthdays: three equal columns, no stacking. */
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra) .birthday-content {
+    width: calc(33.333% - 3px);
+    right: auto;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) {
+    left: 2px;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra {
+    left: calc(33.333% + 1px);
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra {
+    left: calc(66.666% + 1px);
+}
+
+/* Four birthdays: compact 2x2 grid instead of overlapping layers. */
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content {
+    width: calc(50% - 3px);
+    height: calc(50% - 3px);
+    right: auto;
+    bottom: auto;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) {
+    top: 2px;
+    left: 2px;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra {
+    top: 2px;
+    left: calc(50% + 1px);
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra {
+    top: calc(50% + 1px);
+    left: 2px;
+}
+
+.calendar-widget .day.has-birthday:not(.has-match):has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra + .birthday-extra {
+    top: calc(50% + 1px);
+    left: calc(50% + 1px);
+}
+
+/* On multi-birthday cells the cake stays inside its own card. */
+.calendar-widget .day:has(.birthday-extra) .birthday-cake {
+    left: 2px;
+    bottom: 2px;
+    width: 14px;
+    height: 14px;
+    font-size: 0.62rem;
+}
+
+/* Match + birthday: the opponent remains the main visual; player thumbnails are secondary. */
+.calendar-widget .day.has-birthday.has-match .match-content {
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    background: transparent;
+    box-shadow: none;
+    z-index: 2;
+}
+
+.calendar-widget .day.has-birthday.has-match .match-content .icon-indicator {
+    display: flex;
+}
+
+.calendar-widget .day.has-birthday.has-match .match-content .competition-logo {
+    display: block;
+}
+
+.calendar-widget .day.has-birthday.has-match .rival-shield {
+    width: 62%;
+    height: 62%;
+    transform: translate(-10%, -7%);
+}
+
+.calendar-widget .day.has-birthday.has-match .birthday-content {
+    inset: auto 3px 3px auto;
+    width: 32%;
+    height: 42%;
+    z-index: 8;
+    overflow: hidden;
+    border: 1px solid rgba(239, 179, 218, 0.8);
+    background: rgba(115, 45, 96, 0.92);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45);
+}
+
+.calendar-widget .day.has-birthday.has-match .birthday-content:not(.birthday-extra) {
+    right: 3px;
+}
+
+.calendar-widget .day.has-birthday.has-match .birthday-content:not(.birthday-extra) + .birthday-extra {
+    right: calc(32% + 5px);
+    left: auto;
+}
+
+.calendar-widget .day.has-birthday.has-match .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra {
+    right: calc(64% + 7px);
+    left: auto;
+}
+
+.calendar-widget .day.has-birthday.has-match .birthday-cake {
+    left: 2px;
+    bottom: 2px;
+    width: 13px;
+    height: 13px;
+    font-size: 0.58rem;
+}
+
+/* Four birthdays beside a match: four compact thumbnails along the bottom. */
+.calendar-widget .day.has-birthday.has-match:has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content {
+    width: 23%;
+    height: 38%;
+}
+
+.calendar-widget .day.has-birthday.has-match:has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) {
+    right: 3px;
+}
+
+.calendar-widget .day.has-birthday.has-match:has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra {
+    right: calc(23% + 5px);
+}
+
+.calendar-widget .day.has-birthday.has-match:has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra {
+    right: calc(46% + 7px);
+}
+
+.calendar-widget .day.has-birthday.has-match:has(.birthday-extra + .birthday-extra + .birthday-extra) .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra + .birthday-extra {
+    right: calc(69% + 9px);
+    left: auto;
+}
+
+/* Responsive: preserve original event sizes; use the gutters for corner badges. */
+@media (max-width: 768px) {
+    .calendar-widget .calendar-grid {
+        gap: 5px 4px;
+    }
+
+    .calendar-widget .day-number.badge-style {
+        top: -9px;
+        left: -9px;
+    }
+
+    .calendar-widget .icon-indicator {
+        top: -9px;
+        right: -9px;
+    }
+
+    .calendar-widget .competition-logo {
+        bottom: -9px;
+        left: -9px;
+    }
+
+    .calendar-widget .day.has-birthday.has-match .rival-shield {
+        width: 60%;
+        height: 60%;
+        transform: translate(-9%, -7%);
+    }
+
+    .calendar-widget .day.has-birthday.has-match .birthday-content {
+        width: 34%;
+        height: 44%;
+    }
+
+    .calendar-widget .day.has-birthday.has-match .birthday-content:not(.birthday-extra) + .birthday-extra {
+        right: calc(34% + 5px);
+    }
+
+    .calendar-widget .day.has-birthday.has-match .birthday-content:not(.birthday-extra) + .birthday-extra + .birthday-extra {
+        right: calc(68% + 7px);
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-widget .calendar-grid {
+        gap: 6px 5px !important;
+    }
+
+    .calendar-widget .day-number.badge-style {
+        top: -10px !important;
+        left: -10px !important;
+    }
+
+    .calendar-widget .icon-indicator {
+        top: -10px !important;
+        right: -10px !important;
+    }
+
+    .calendar-widget .competition-logo {
+        bottom: -10px !important;
+        left: -10px !important;
+    }
+
+    .calendar-widget .day.has-birthday.has-match .rival-shield {
+        width: 58%;
+        height: 58%;
+    }
+
+    .calendar-widget .day.has-birthday.has-match .birthday-content {
+        width: 34%;
+        height: 46%;
+        bottom: 2px;
+        right: 2px;
+    }
+
+    .calendar-widget .day:has(.birthday-extra) .birthday-cake,
+    .calendar-widget .day.has-birthday.has-match .birthday-cake {
+        width: 12px !important;
+        height: 12px !important;
+        font-size: 0.54rem !important;
+        left: 1px !important;
+        bottom: 1px !important;
+    }
+}
