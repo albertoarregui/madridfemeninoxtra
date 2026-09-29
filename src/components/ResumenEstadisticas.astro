@@ -1,8 +1,9 @@
 ---
 import { fetchGamesDirectly } from "../utils/partidos";
 import { fetchPlayersDirectly } from "../utils/players";
-import { fetchRivalsDirectly, fetchClubCountDirectly } from "../utils/rivales";
+import { fetchClubCountDirectly } from "../utils/rivales";
 import { fetchGoalsAssistsDirectly } from "../utils/goles_y_asistencias";
+import { getMatchStatus } from "../utils/date-helper";
 
 const [partidosRaw, jugadoras, totalRivales, golesData] = await Promise.all([
     fetchGamesDirectly(),
@@ -19,11 +20,41 @@ const officialCompsIds = [
     "Supercopa de España",
 ];
 
+const madridToday = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+}).format(new Date());
+
+function isCompletedMatch(match: any): boolean {
+    const hasRmScore =
+        match.goles_rm !== null &&
+        match.goles_rm !== undefined &&
+        String(match.goles_rm).trim() !== "";
+    const hasRivalScore =
+        match.goles_rival !== null &&
+        match.goles_rival !== undefined &&
+        String(match.goles_rival).trim() !== "";
+
+    if (!hasRmScore || !hasRivalScore || !match.fecha) return false;
+
+    const dateOnly = String(match.fecha).split("T")[0].split(" ")[0];
+
+    if (dateOnly < madridToday) return true;
+    if (dateOnly > madridToday) return false;
+
+    if (!match.hora || String(match.hora).trim() === "") return false;
+
+    return getMatchStatus(dateOnly, String(match.hora)).status === "finished";
+}
+
 const partidos = partidosRaw.filter(
     (p) =>
         p.competicion_nombre &&
         officialCompsIds.includes(p.competicion_nombre) &&
-        p.resultado !== "P",
+        p.resultado !== "P" &&
+        isCompletedMatch(p),
 );
 
 let stats = {
@@ -217,5 +248,3 @@ const resumen = [
         }
     }
 </style>
-
-
