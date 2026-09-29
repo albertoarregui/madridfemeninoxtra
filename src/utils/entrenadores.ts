@@ -54,9 +54,7 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
 
-        if (!client) {
-            return [];
-        }
+        if (!client) return [];
 
         const query = `
             SELECT 
@@ -67,25 +65,21 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                 iso,
                 fecha_nacimiento,
                 foto_url 
-            FROM 
-                entrenadores 
-            WHERE 
-                nombre NOT IN ('José Manuel Lara', 'Antonio Rodríguez')
-            ORDER BY 
-                id_entrenador ASC
+            FROM entrenadores 
+            WHERE nombre NOT IN ('José Manuel Lara', 'Antonio Rodríguez')
+            ORDER BY id_entrenador ASC
         `;
 
         const result = await client.execute(query);
 
         return result.rows
             .map((coach: any) => {
-                const nombreRaw = coach.nombre;
-                const nombre = cleanApiValue(nombreRaw) || "";
+                const nombre = cleanApiValue(coach.nombre) || "";
                 const slug = slugify(nombre);
 
                 return {
                     id_entrenador: coach.id_entrenador,
-                    nombre: nombre,
+                    nombre,
                     name: nombre,
                     ciudad: cleanApiValue(coach.ciudad) || "",
                     city: cleanApiValue(coach.ciudad) || "",
@@ -95,13 +89,12 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
                     flagUrl: getFlagSrc(cleanApiValue(coach.iso) || cleanApiValue(coach.pais) || undefined),
                     fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || "",
                     foto_url: cleanApiValue(coach.foto_url) || "",
-                    slug: slug,
+                    slug,
                     id: slug,
                     imageUrl: getCoachImageUrl(coach),
                 };
             })
             .filter((coach) => {
-
                 const hasValidName = coach.name &&
                     coach.name.trim() !== "" &&
                     coach.name.toLowerCase() !== "null" &&
@@ -132,19 +125,16 @@ export async function fetchCoaches(): Promise<any[]> {
         }
 
         const coaches = await response.json();
-
         if (!Array.isArray(coaches)) return [];
 
-        return coaches.map(coach => {
-            return {
-                ...coach,
-                slug: slugify(coach.nombre),
-                imageUrl: getCoachImageUrl(coach),
-                ciudad: cleanApiValue(coach.ciudad) || '',
-                pais: cleanApiValue(coach.pais) || '',
-                fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || '',
-            };
-        });
+        return coaches.map(coach => ({
+            ...coach,
+            slug: slugify(coach.nombre),
+            imageUrl: getCoachImageUrl(coach),
+            ciudad: cleanApiValue(coach.ciudad) || '',
+            pais: cleanApiValue(coach.pais) || '',
+            fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || '',
+        }));
     } catch (error) {
         console.error("Fallo al obtener entrenadores de la API:", error);
         return [];
@@ -156,9 +146,7 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
 
-        if (!client) {
-            return null;
-        }
+        if (!client) return null;
 
         const statsQuery = `
             SELECT
@@ -175,6 +163,8 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             INNER JOIN temporadas t ON p.id_temporada = t.id_temporada
             INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE p.id_entrenador = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
             GROUP BY t.temporada, c.competicion
             ORDER BY t.temporada DESC, 
                 CASE c.competicion
@@ -194,17 +184,14 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
         });
 
         const estadisticas: any = {};
-        const temporadasSet = new Set();
 
         statsResult.rows.forEach((row: any) => {
             const temporada = row.temporada;
             const competicion = row.competicion;
 
-            temporadasSet.add(temporada);
-
             if (!estadisticas[temporada]) {
                 estadisticas[temporada] = {
-                    temporada: temporada,
+                    temporada,
                     competiciones: [],
                     total: {
                         partidos: 0,
@@ -224,11 +211,11 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             const derrotas = Number(row.derrotas) || 0;
 
             estadisticas[temporada].competiciones.push({
-                competicion: competicion,
-                partidos: partidos,
-                victorias: victorias,
-                empates: empates,
-                derrotas: derrotas,
+                competicion,
+                partidos,
+                victorias,
+                empates,
+                derrotas,
                 goles_favor: Number(row.goles_favor) || 0,
                 goles_contra: Number(row.goles_contra) || 0,
                 porterias_cero: Number(row.porterias_cero) || 0,
@@ -237,10 +224,10 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
                 porcentaje_derrotas: partidos > 0 ? ((derrotas / partidos) * 100).toFixed(1) : '0.0',
             });
 
-            estadisticas[temporada].total.partidos += Number(row.partidos) || 0;
-            estadisticas[temporada].total.victorias += Number(row.victorias) || 0;
-            estadisticas[temporada].total.empates += Number(row.empates) || 0;
-            estadisticas[temporada].total.derrotas += Number(row.derrotas) || 0;
+            estadisticas[temporada].total.partidos += partidos;
+            estadisticas[temporada].total.victorias += victorias;
+            estadisticas[temporada].total.empates += empates;
+            estadisticas[temporada].total.derrotas += derrotas;
             estadisticas[temporada].total.goles_favor += Number(row.goles_favor) || 0;
             estadisticas[temporada].total.goles_contra += Number(row.goles_contra) || 0;
             estadisticas[temporada].total.porterias_cero += Number(row.porterias_cero) || 0;
@@ -301,21 +288,16 @@ export async function fetchCoachTrajectory(coachId: string | number): Promise<an
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
 
-        if (!client) {
-            return [];
-        }
+        if (!client) return [];
 
         const query = `
             SELECT 
                 club,
                 año_inicio,
                 año_fin
-            FROM 
-                trayectoria_entrenadores
-            WHERE 
-                id_entrenador = ?
-            ORDER BY 
-                año_inicio DESC
+            FROM trayectoria_entrenadores
+            WHERE id_entrenador = ?
+            ORDER BY año_inicio DESC
         `;
 
         const result = await client.execute({
