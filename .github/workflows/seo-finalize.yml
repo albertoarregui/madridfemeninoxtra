@@ -1,0 +1,123 @@
+name: Finalize SEO overhaul
+
+on:
+  push:
+    branches:
+      - seo-overhaul-2026-09-29
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: seo-overhaul-2026-09-29
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply final SEO consistency patches
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=-1, required=True):
+              p = Path(path)
+              s = p.read_text()
+              n = s.count(old)
+              if required and n == 0:
+                  raise SystemExit(f"Missing target in {path}: {old[:100]!r}")
+              p.write_text(s.replace(old, new, count))
+              print(path, 'replacements', n if count == -1 else min(n, count))
+
+          # A match is played only when BOTH final scores exist.
+          p = Path('src/utils/partidos.ts')
+          s = p.read_text()
+          old = "const isPlayed = game.goles_rm !== null && game.goles_rm !== undefined && String(game.goles_rm).trim() !== '';"
+          new = "const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';\n            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival);"
+          if old not in s:
+              raise SystemExit('Missing fetchGamesDirectly isPlayed target')
+          s = s.replace(old, new)
+          old2 = "const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '';"
+          new2 = "const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '' && match.goles_rival !== null && match.goles_rival !== undefined && String(match.goles_rival).trim() !== '';"
+          s = s.replace(old2, new2)
+          p.write_text(s)
+
+          # Historical records: include the pre-Liga F league name and optimize intent.
+          p = Path('src/pages/records.astro')
+          s = p.read_text()
+          if '"Primera Iberdrola"' not in s.split('const officialCompsIds = [',1)[1].split('];',1)[0]:
+              s = s.replace('const officialCompsIds = [\n    "Liga F",', 'const officialCompsIds = [\n    "Primera Iberdrola",\n    "Liga F",')
+          if '{ id: "Primera Iberdrola"' not in s:
+              s = s.replace('const officialComps = [\n    { id: "Liga F", name: "Liga F", icon: "liga_f" },', 'const officialComps = [\n    { id: "Primera Iberdrola", name: "Primera Iberdrola", icon: "liga_f" },\n    { id: "Liga F", name: "Liga F", icon: "liga_f" },')
+          s = s.replace('title="Récords | Madrid Femenino Xtra"', 'title="Récords goleadores del Real Madrid Femenino: hitos históricos | MFX"')
+          s = s.replace('description="Marcas de goles redondos a lo largo de la historia del Real Madrid femenino."', 'description="Récords goleadores e hitos históricos del Real Madrid Femenino: goles redondos, protagonistas, rivales y fechas de cada marca."')
+          s = s.replace('<h1 class="landing-title">RÉCORDS</h1>', '<h1 class="landing-title">Récords goleadores del Real Madrid Femenino</h1>')
+          p.write_text(s)
+
+          # Article E-E-A-T, entity links, Discover image metadata, and robust final-score filtering.
+          p = Path('src/pages/noticias/[slug].astro')
+          s = p.read_text()
+          s = s.replace("AND p.goles_rm IS NOT NULL\n                            AND LOWER(COALESCE(co.competicion, '')) NOT LIKE '%amistoso%'", "AND p.goles_rm IS NOT NULL AND p.goles_rm != ''\n                            AND p.goles_rival IS NOT NULL AND p.goles_rival != ''\n                            AND LOWER(COALESCE(co.competicion, '')) NOT LIKE '%amistoso%'")
+          s = s.replace('author: author\n        ? { "@type": "Person", name: author }', 'author: author\n        ? { "@type": "Person", name: author, ...(String(author).toLowerCase().includes("alberto") ? { "@id": "https://www.madridfemeninoxtra.com/autor/alberto-arregui#person", url: "https://www.madridfemeninoxtra.com/autor/alberto-arregui" } : {}) }')
+          s = s.replace('{author && <span class="news-author">· {author}</span>}', '{author && <span class="news-author">· {String(author).toLowerCase().includes("alberto") ? <a href="/autor/alberto-arregui">{author}</a> : author}</span>}')
+          s = s.replace('<meta property="og:image:width" content="1200" slot="head" />', '<meta property="og:image:width" content={String(featuredImageWidth)} slot="head" />')
+          s = s.replace('<meta property="og:image:height" content="630" slot="head" />', '<meta property="og:image:height" content={String(featuredImageHeight)} slot="head" />')
+          body_target = '''                    <div class="news-article-rich-text">\n                        <div set:html={bodyHtml} />\n                    </div>'''
+          body_repl = body_target + '''\n\n                    {(playerWidgets.length || coachWidgets.length || refereeWidgets.length || clubWidgets.length || matchWidgets.length) && (\n                        <nav class="news-entity-links" aria-label="Información relacionada en Madrid Femenino Xtra">\n                            <strong>Consulta también:</strong>\n                            {playerWidgets.map(({ playerData }: any) => <a href={`/jugadoras/${playerData.slug}`}>{playerData.nombre}</a>)}\n                            {coachWidgets.map(({ coachData }: any) => <a href={`/entrenadores/${coachData.slug}`}>{coachData.nombre}</a>)}\n                            {refereeWidgets.map(({ refereeData }: any) => <a href={`/arbitras/${generateSlug(refereeData.nombre)}`}>{refereeData.nombre}</a>)}\n                            {clubWidgets.filter(({ clubData }: any) => !String(clubData.nombre || '').toLowerCase().includes('real madrid')).map(({ clubData }: any) => <a href={`/rivales/${clubData.slug}`}>{clubData.nombre}</a>)}\n                            {matchWidgets.map(({ matchData }: any) => <a href={`/partidos/${matchData.slug || matchData.id_partido}`}>Ficha del partido</a>)}\n                        </nav>\n                    )}'''
+          if body_target in s and 'news-entity-links' not in s:
+              s = s.replace(body_target, body_repl, 1)
+          if '.news-entity-links {' not in s:
+              s = s.replace('<style>', '''<style>\n    .news-entity-links { margin: 1.5rem 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; font-family:'DM Sans',sans-serif; font-size:.78rem; }\n    .news-entity-links strong { color:#444; margin-right:.2rem; }\n    .news-entity-links a { color:#6b4d00; border:1px solid rgba(107,77,0,.22); padding:.35rem .55rem; text-decoration:none; background:rgba(212,168,67,.06); }\n    .news-entity-links a:hover { border-color:#9a720d; color:#3c2b00; }''', 1)
+          p.write_text(s)
+
+          # Author trust link.
+          p = Path('src/pages/sobre-nosotros.astro')
+          if p.exists():
+              s = p.read_text()
+              s = s.replace('<h3 class="tc-name">Alberto Arregui</h3>', '<h3 class="tc-name"><a href="/autor/alberto-arregui">Alberto Arregui</a></h3>')
+              p.write_text(s)
+
+          # Ensure press/data room is discoverable in the sitemap and footer.
+          p = Path('src/pages/sitemap.xml.ts')
+          s = p.read_text()
+          if "{ url: 'prensa-datos'" not in s:
+              s = s.replace("    { url: 'estadisticas-real-madrid-femenino', priority: 0.9, changefreq: 'weekly' },", "    { url: 'estadisticas-real-madrid-femenino', priority: 0.9, changefreq: 'weekly' },\n    { url: 'prensa-datos', priority: 0.7, changefreq: 'weekly' },")
+          p.write_text(s)
+
+          p = Path('src/components/Footer.astro')
+          s = p.read_text()
+          if 'href="/prensa-datos"' not in s:
+              s = s.replace('        <a href="/estadisticas-real-madrid-femenino">Datos y estadísticas</a>', '        <a href="/estadisticas-real-madrid-femenino">Datos y estadísticas</a>\n        <span class="footer-dot" aria-hidden="true">·</span>\n        <a href="/prensa-datos">Datos para medios</a>')
+          p.write_text(s)
+
+          Path('tests/seo-played-matches.test.ts').write_text('''import test from "node:test";\nimport assert from "node:assert/strict";\nconst hasScore=(v:any)=>v!==null&&v!==undefined&&String(v).trim()!=="";\nconst isPlayed=(m:any)=>hasScore(m.goles_rm)&&hasScore(m.goles_rival);\ntest("scheduled match is never played",()=>assert.equal(isPlayed({goles_rm:null,goles_rival:null}),false));\ntest("partial score is never played",()=>assert.equal(isPlayed({goles_rm:2,goles_rival:null}),false));\ntest("zero-zero is a valid final score",()=>assert.equal(isPlayed({goles_rm:0,goles_rival:0}),true));\n''')
+          PY
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run Astro type/content checks
+        run: npx astro check
+
+      - name: Remove validator and commit validated result
+        if: success()
+        run: |
+          rm .github/workflows/seo-finalize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: finalize validated SEO overhaul"
+          git push origin HEAD:seo-overhaul-2026-09-29
