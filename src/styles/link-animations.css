@@ -2,10 +2,11 @@
  * MFX link interaction
  *
  * Scope is intentionally narrow:
- * 1) Google News CTA keeps its own component animation.
- * 2) This stylesheet only animates inline hyperlinks that appear inside
- *    editorial/prose text. Navigation, cards, buttons, logos and other UI
- *    links are deliberately untouched.
+ * 1) Google News CTA.
+ * 2) Inline hyperlinks that appear inside editorial/prose text.
+ *
+ * Navigation, cards, buttons, logos and other UI links are deliberately
+ * untouched.
  */
 
 :root {
@@ -16,7 +17,7 @@
     --mfx-link-fill-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Inline word links only. */
+/* Inline word links only: the gold fill grows from bottom to top. */
 .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
 .news-article-rich-text a[href] {
     background-image: linear-gradient(
@@ -26,8 +27,8 @@
         var(--mfx-link-fill-end) 100%
     ) !important;
     background-repeat: no-repeat !important;
-    background-position: left center !important;
-    background-size: 0% 100% !important;
+    background-position: center bottom !important;
+    background-size: 100% 0% !important;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
     transition:
@@ -59,6 +60,25 @@
     outline-offset: 2px;
 }
 
+/* Google News CTA: override the component's horizontal sweep so the fill
+ * grows vertically from the bottom edge to the top edge. */
+.mfx-google-news-banner__cta::before {
+    transform: scaleY(0) !important;
+    transform-origin: center bottom !important;
+    transition: transform var(--mfx-link-fill-duration) var(--mfx-link-fill-easing) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .mfx-google-news-banner__cta:hover::before {
+        transform: scaleY(1) !important;
+    }
+}
+
+.mfx-google-news-banner__cta:focus-visible::before,
+.mfx-google-news-banner__cta:active::before {
+    transform: scaleY(1) !important;
+}
+
 @media (hover: none), (pointer: coarse) {
     .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
     .news-article-rich-text a[href] {
@@ -69,7 +89,8 @@
 
 @media (prefers-reduced-motion: reduce) {
     .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
-    .news-article-rich-text a[href] {
+    .news-article-rich-text a[href],
+    .mfx-google-news-banner__cta::before {
         transition-duration: 0.01ms !important;
     }
 }
