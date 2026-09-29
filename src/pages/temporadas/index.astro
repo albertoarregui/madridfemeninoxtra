@@ -1,0 +1,85 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../../utils/partidos";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/global.css";
+
+const games = await fetchGamesDirectly();
+const seasonMap = new Map<string, { season: string; played: number; upcoming: number }>();
+
+for (const game of games) {
+    const season = String(game.temporada_nombre || "").trim();
+    if (!season) continue;
+    const current = seasonMap.get(season) || { season, played: 0, upcoming: 0 };
+    if (game.isPlayed) current.played += 1;
+    else current.upcoming += 1;
+    seasonMap.set(season, current);
+}
+
+const seasons = [...seasonMap.values()].sort((a, b) => b.season.localeCompare(a.season));
+---
+
+<Layout
+    title="Temporadas del Real Madrid Femenino: resultados y estadísticas | MFX"
+    description="Archivo por temporadas del Real Madrid Femenino con partidos, resultados, goleadoras, asistentes, minutos y estadísticas."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Temporadas", path: "/temporadas" },
+            ]),
+        )}
+    />
+
+    <main class="season-index max-w-5xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">Temporadas del Real Madrid Femenino</h1>
+            <p class="landing-subtitle">Archivo histórico temporada a temporada</p>
+        </header>
+
+        <div class="season-grid">
+            {seasons.map((season) => (
+                <a href={`/temporadas/${season.season.replace("/", "-")}`}>
+                    <strong>{season.season}</strong>
+                    <span>
+                        {season.played} partidos disputados
+                        {season.upcoming ? ` · ${season.upcoming} programados` : ""}
+                    </span>
+                </a>
+            ))}
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .season-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 1rem;
+    }
+    .season-grid a {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        text-decoration: none;
+        border: 1px solid rgba(212, 168, 67, 0.22);
+        background: rgba(10, 10, 14, 0.65);
+        padding: 1.4rem;
+        transition: 0.2s;
+    }
+    .season-grid a:hover {
+        border-color: #d4a843;
+        transform: translateY(-3px);
+    }
+    .season-grid strong {
+        font: 700 1.45rem "Cinzel", serif;
+        color: #d4a843;
+    }
+    .season-grid span {
+        font: 0.78rem "DM Sans", sans-serif;
+        color: #aaa;
+    }
+</style>
