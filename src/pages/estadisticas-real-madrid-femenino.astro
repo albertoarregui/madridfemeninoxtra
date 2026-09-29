@@ -1,0 +1,154 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../utils/partidos";
+import { fetchRivalsDirectly } from "../utils/rivales";
+import { fetchPlayersDirectly } from "../utils/players";
+import { fetchAllStadiumsWithStats } from "../utils/estadios";
+import { breadcrumbSchema } from "../utils/seo";
+import "../styles/global.css";
+
+const games = (await fetchGamesDirectly()).filter((game: any) => game.isPlayed);
+const rivals = await fetchRivalsDirectly();
+const players = await fetchPlayersDirectly();
+const stadiums = await fetchAllStadiumsWithStats();
+const goalsFor = games.reduce((total: number, game: any) => total + Number(game.goles_rm || 0), 0);
+const goalsAgainst = games.reduce((total: number, game: any) => total + Number(game.goles_rival || 0), 0);
+
+const resources = [
+    ["/rankings/maximas-goleadoras", "Máximas goleadoras", "Ranking histórico en partidos oficiales"],
+    ["/rankings/maximas-asistentes", "Máximas asistentes", "Asistencias acumuladas por jugadora"],
+    ["/rankings/mas-partidos", "Más partidos", "Jugadoras con más apariciones"],
+    ["/records", "Récords goleadores", "Hitos y goles redondos del club"],
+    ["/temporadas", "Temporadas", "Archivo completo por curso"],
+    ["/rivales", "Historial por rival", "Balances, resultados y goleadoras"],
+    ["/estadios", "Estadios", "Partidos y balance por recinto"],
+    ["/arbitras", "Árbitras", "Historial y estadísticas arbitrales"],
+    ["/partidos", "Partidos", "Buscador del archivo de resultados"],
+    ["/estadisticas/avanzadas", "Estadísticas avanzadas", "xG, redes de asistencias y más"],
+];
+---
+
+<Layout
+    title="Estadísticas del Real Madrid Femenino: datos históricos y récords | MFX"
+    description="Centro de datos del Real Madrid Femenino con partidos, goles, jugadoras, rivales, estadios, rankings, temporadas y récords históricos."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Datos y estadísticas", path: "/estadisticas-real-madrid-femenino" },
+            ]),
+        )}
+    />
+
+    <main class="data-hub max-w-6xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">Datos y estadísticas del Real Madrid Femenino</h1>
+            <p class="landing-subtitle">El archivo histórico de Madrid Femenino Xtra</p>
+        </header>
+
+        <section class="data-kpis" aria-label="Cifras históricas del Real Madrid Femenino">
+            <div><strong>{games.length}</strong><span>Partidos disputados</span></div>
+            <div><strong>{goalsFor}</strong><span>Goles a favor</span></div>
+            <div><strong>{goalsAgainst}</strong><span>Goles en contra</span></div>
+            <div><strong>{players.length}</strong><span>Jugadoras registradas</span></div>
+            <div><strong>{rivals.length}</strong><span>Rivales</span></div>
+            <div><strong>{stadiums.length}</strong><span>Estadios</span></div>
+        </section>
+
+        <section class="resource-grid">
+            {resources.map(([href, title, description]) => (
+                <a href={href}>
+                    <strong>{title}</strong>
+                    <span>{description}</span>
+                </a>
+            ))}
+        </section>
+
+        <section class="citation-box">
+            <h2>Metodología y consulta de datos</h2>
+            <p>
+                Los balances históricos de MFX excluyen partidos programados hasta que existe un
+                marcador final registrado para ambos equipos. Consulta la
+                <a href="/politica-editorial">metodología editorial y estadística</a> para conocer los
+                criterios de verificación y corrección.
+            </p>
+            <p>
+                Para verificaciones periodísticas, correcciones o solicitudes de uso de datos, utiliza
+                <a href="/contacto">Contacto</a>.
+            </p>
+        </section>
+    </main>
+</Layout>
+
+<style>
+    .data-kpis {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.65rem;
+        margin-bottom: 2rem;
+    }
+    .data-kpis div {
+        border: 1px solid rgba(212, 168, 67, 0.22);
+        background: rgba(10, 10, 14, 0.65);
+        padding: 1rem;
+        text-align: center;
+    }
+    .data-kpis strong {
+        display: block;
+        color: #d4a843;
+        font: 700 1.4rem "Cinzel", serif;
+    }
+    .data-kpis span {
+        font: 0.68rem "DM Sans", sans-serif;
+        color: #999;
+    }
+    .resource-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .resource-grid a {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        text-decoration: none;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        background: rgba(10, 10, 14, 0.6);
+        padding: 1.2rem;
+        transition: 0.2s;
+    }
+    .resource-grid a:hover {
+        border-color: #d4a843;
+        transform: translateY(-2px);
+    }
+    .resource-grid strong {
+        font-family: "Cinzel", serif;
+        color: #d4a843;
+    }
+    .resource-grid span {
+        font: 0.78rem "DM Sans", sans-serif;
+        color: #aaa;
+    }
+    .citation-box {
+        margin-top: 2rem;
+        border-left: 3px solid #d4a843;
+        background: rgba(212, 168, 67, 0.055);
+        padding: 1.3rem;
+        color: #ccc;
+        font: 0.88rem/1.7 "DM Sans", sans-serif;
+    }
+    .citation-box h2 {
+        font: 700 1.1rem "Cinzel", serif;
+        color: #d4a843;
+    }
+    .citation-box a { color: #d4a843; }
+    @media (max-width: 800px) {
+        .data-kpis { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 450px) {
+        .data-kpis { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
