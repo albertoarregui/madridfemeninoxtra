@@ -1,0 +1,170 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { breadcrumbSchema } from "../../utils/seo";
+import { contentfulClient } from "../../lib/contentful";
+import "../../styles/global.css";
+
+let articles: any[] = [];
+try {
+    const entries = await contentfulClient.getEntries({
+        content_type: "noticia",
+        order: ["-sys.createdAt"] as any,
+        limit: 50,
+    });
+    articles = entries.items
+        .filter((item: any) => String(item.fields?.author || "").toLowerCase().includes("alberto"))
+        .slice(0, 12)
+        .map((item: any) => ({
+            title: item.fields?.title,
+            slug: item.fields?.slug,
+            category: item.fields?.category,
+            date: item.fields?.publishDate || item.sys.createdAt,
+        }))
+        .filter((item: any) => item.title && item.slug);
+} catch (error) {
+    console.warn("No se pudieron cargar artículos del autor", error);
+}
+
+const pageUrl = "https://www.madridfemeninoxtra.com/autor/alberto-arregui";
+const personSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": `${pageUrl}#person`,
+    name: "Alberto Arregui",
+    url: pageUrl,
+    jobTitle: "Fundador y director de Madrid Femenino Xtra",
+    worksFor: {
+        "@type": "Organization",
+        name: "Madrid Femenino Xtra",
+        url: "https://www.madridfemeninoxtra.com",
+    },
+    knowsAbout: [
+        "Real Madrid Femenino",
+        "fútbol femenino",
+        "periodismo deportivo",
+        "estadística de fútbol",
+    ],
+    sameAs: [
+        "https://x.com/madridfemxtra",
+        "https://instagram.com/madridfemxtra",
+        "https://tiktok.com/@madridfemeninoxtra",
+    ],
+};
+---
+
+<Layout
+    title="Alberto Arregui, fundador de Madrid Femenino Xtra | MFX"
+    description="Perfil de Alberto Arregui, fundador y director de Madrid Femenino Xtra, medio especializado en el Real Madrid Femenino y su base de datos histórica."
+>
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(personSchema)} />
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Autor", path: "/autor/alberto-arregui" },
+                { name: "Alberto Arregui", path: "/autor/alberto-arregui" },
+            ]),
+        )}
+    />
+
+    <main class="author-page max-w-5xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">Alberto Arregui</h1>
+            <p class="landing-subtitle">Fundador y director de Madrid Femenino Xtra</p>
+        </header>
+
+        <section class="author-card">
+            <p>
+                Alberto Arregui es el fundador y director de <strong>Madrid Femenino Xtra</strong>,
+                proyecto especializado exclusivamente en el Real Madrid Femenino. Sigue al equipo
+                desde 2019 y puso en marcha la comunidad de MFX en septiembre de 2023; la web y su
+                base de datos histórica se publicaron en diciembre de 2025.
+            </p>
+            <p>
+                En MFX se encarga de la cobertura editorial, la investigación y mantenimiento de
+                datos, la producción multimedia y el desarrollo del producto. El objetivo es combinar
+                actualidad con un archivo estadístico verificable que permita consultar la historia del
+                equipo por jugadora, partido, rival, estadio, árbitra y temporada.
+            </p>
+            <p>
+                Consulta la <a href="/politica-editorial">política editorial y metodología de datos</a>
+                para conocer cómo se verifican, corrigen y actualizan las publicaciones y estadísticas.
+            </p>
+        </section>
+
+        {articles.length > 0 && (
+            <section class="author-articles">
+                <h2>Últimos artículos</h2>
+                <div class="article-grid">
+                    {articles.map((article: any) => (
+                        <a class="article-card" href={`/noticias/${article.slug}`}>
+                            <span>{article.category || "ACTUALIDAD"}</span>
+                            <strong>{article.title}</strong>
+                            <time>
+                                {new Date(article.date).toLocaleDateString("es-ES", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                })}
+                            </time>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
+    </main>
+</Layout>
+
+<style>
+    .author-card {
+        border: 1px solid rgba(212, 168, 67, 0.25);
+        background: rgba(10, 10, 14, 0.68);
+        padding: clamp(1.4rem, 4vw, 2.6rem);
+        font-family: "DM Sans", sans-serif;
+        line-height: 1.75;
+        color: #d7d7dc;
+    }
+    .author-card strong,
+    .author-card a,
+    .author-articles h2 { color: #d4a843; }
+    .author-card a { text-underline-offset: 0.2em; }
+    .author-articles { margin-top: 3rem; }
+    .author-articles h2 {
+        font-family: "Cinzel", serif;
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+    .article-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 1rem;
+    }
+    .article-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        text-decoration: none;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        background: rgba(14, 14, 18, 0.58);
+        padding: 1.1rem;
+        color: #f0f0f0;
+        transition: 0.2s ease;
+    }
+    .article-card:hover {
+        border-color: rgba(212, 168, 67, 0.65);
+        transform: translateY(-2px);
+    }
+    .article-card span,
+    .article-card time {
+        font-size: 0.72rem;
+        color: #a8a8b0;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .article-card strong {
+        font-family: "Cinzel", serif;
+        line-height: 1.35;
+    }
+</style>
