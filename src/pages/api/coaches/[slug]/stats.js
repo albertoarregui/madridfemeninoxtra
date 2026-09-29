@@ -85,6 +85,8 @@ export const GET = async ({ params }) => {
                 competiciones c ON p.id_competicion = c.id_competicion
             WHERE
                 p.id_entrenador = ?
+                AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
             GROUP BY
                 t.temporada, c.competicion
             ORDER BY
@@ -103,18 +105,17 @@ export const GET = async ({ params }) => {
             const empates = row.empates;
             const derrotas = row.derrotas;
 
-            const statRecord = {
+            return {
                 temporada: row.temporada,
                 competicion: row.competicion,
                 total_partidos: total,
-                victorias: victorias,
-                empates: empates,
-                derrotas: derrotas,
+                victorias,
+                empates,
+                derrotas,
                 porc_victorias: total > 0 ? ((victorias / total) * 100).toFixed(1) + '%' : '0.0%',
                 porc_empates: total > 0 ? ((empates / total) * 100).toFixed(1) + '%' : '0.0%',
                 porc_derrotas: total > 0 ? ((derrotas / total) * 100).toFixed(1) + '%' : '0.0%'
             };
-            return statRecord;
         });
 
         return jsonResponse(
