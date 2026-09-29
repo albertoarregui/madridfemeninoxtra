@@ -1,0 +1,222 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../utils/partidos";
+import { fetchRankingsDirectly } from "../utils/rankings";
+import { breadcrumbSchema } from "../utils/seo";
+import "../styles/global.css";
+
+const officialCompetitions = new Set([
+    "Primera Iberdrola",
+    "Liga F",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+]);
+
+const games = (await fetchGamesDirectly()).filter(
+    (game: any) => game.isPlayed && officialCompetitions.has(game.competicion_nombre),
+);
+const rankings = (await fetchRankingsDirectly()).filter((row: any) =>
+    officialCompetitions.has(row.competicion),
+);
+
+const goalsFor = games.reduce((sum: number, game: any) => sum + Number(game.goles_rm || 0), 0);
+const goalsAgainst = games.reduce((sum: number, game: any) => sum + Number(game.goles_rival || 0), 0);
+const wins = games.filter((game: any) => {
+    const gf = Number(game.goles_rm || 0);
+    const ga = Number(game.goles_rival || 0);
+    const penalties = String(game.penaltis ?? "").trim();
+    return gf > ga || (gf === ga && penalties === "1");
+}).length;
+
+const byPlayer = new Map<string, any>();
+for (const row of rankings) {
+    const key = String(row.id_jugadora || row.slug || row.nombre);
+    const current = byPlayer.get(key) || {
+        nombre: row.nombre,
+        slug: row.slug,
+        goles: 0,
+        asistencias: 0,
+        partidos: 0,
+    };
+    current.goles += Number(row.goles || 0);
+    current.asistencias += Number(row.asistencias || 0);
+    current.partidos += Number(row.partidos || 0);
+    byPlayer.set(key, current);
+}
+const players = [...byPlayer.values()];
+const topScorer = players.sort((a, b) => b.goles - a.goles)[0];
+const topAssister = [...players].sort((a, b) => b.asistencias - a.asistencias)[0];
+const mostApps = [...players].sort((a, b) => b.partidos - a.partidos)[0];
+const updatedAt = new Date().toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+});
+---
+
+<Layout
+    title="Datos del Real Madrid Femenino para medios y periodistas | MFX"
+    description="Sala de datos de Madrid Femenino Xtra para periodistas: cifras históricas verificables del Real Madrid Femenino, líderes estadísticas y metodología."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Datos para medios", path: "/prensa-datos" },
+            ]),
+        )}
+    />
+
+    <main class="press-data max-w-5xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">Datos del Real Madrid Femenino para medios</h1>
+            <p class="landing-subtitle">Cifras verificables y recursos de Madrid Femenino Xtra · Actualizado {updatedAt}</p>
+        </header>
+
+        <section class="press-intro">
+            <p>
+                Esta página reúne datos históricos listos para consulta periodística. Las cifras se
+                calculan directamente desde la base de datos de MFX y solo incluyen partidos oficiales
+                con marcador final registrado.
+            </p>
+        </section>
+
+        <section class="press-kpis" aria-label="Cifras históricas">
+            <div><strong>{games.length}</strong><span>Partidos oficiales</span></div>
+            <div><strong>{wins}</strong><span>Victorias</span></div>
+            <div><strong>{goalsFor}</strong><span>Goles a favor</span></div>
+            <div><strong>{goalsAgainst}</strong><span>Goles en contra</span></div>
+        </section>
+
+        <section class="press-leaders">
+            <h2>Líderes históricas</h2>
+            <div class="leader-grid">
+                {topScorer && (
+                    <a href={`/jugadoras/${topScorer.slug}`}>
+                        <span>Máxima goleadora</span>
+                        <strong>{topScorer.nombre}</strong>
+                        <b>{topScorer.goles} goles</b>
+                    </a>
+                )}
+                {topAssister && (
+                    <a href={`/jugadoras/${topAssister.slug}`}>
+                        <span>Máxima asistente</span>
+                        <strong>{topAssister.nombre}</strong>
+                        <b>{topAssister.asistencias} asistencias</b>
+                    </a>
+                )}
+                {mostApps && (
+                    <a href={`/jugadoras/${mostApps.slug}`}>
+                        <span>Más partidos</span>
+                        <strong>{mostApps.nombre}</strong>
+                        <b>{mostApps.partidos} partidos</b>
+                    </a>
+                )}
+            </div>
+        </section>
+
+        <section class="press-resources">
+            <h2>Recursos para citar y verificar</h2>
+            <div class="resource-list">
+                <a href="/estadisticas-real-madrid-femenino">Centro de datos y estadísticas</a>
+                <a href="/rankings/maximas-goleadoras">Ranking histórico de goleadoras</a>
+                <a href="/rankings/maximas-asistentes">Ranking histórico de asistentes</a>
+                <a href="/temporadas">Archivo por temporadas</a>
+                <a href="/rivales">Historial por rival</a>
+                <a href="/records">Récords goleadores</a>
+            </div>
+        </section>
+
+        <section class="press-method">
+            <h2>Cómo citar MFX</h2>
+            <p>
+                Puedes citar las cifras como “Madrid Femenino Xtra (MFX)” enlazando a la página de datos
+                correspondiente. Para comprobar criterios, fuentes y correcciones consulta la
+                <a href="/politica-editorial">metodología editorial y estadística</a>.
+            </p>
+            <p>
+                Para una verificación concreta, una consulta de datos o una solicitud para medios,
+                utiliza <a href="/contacto">Contacto</a>.
+            </p>
+        </section>
+    </main>
+</Layout>
+
+<style>
+    .press-intro,
+    .press-method {
+        border-left: 3px solid #d4a843;
+        background: rgba(212, 168, 67, 0.055);
+        padding: 1.25rem 1.4rem;
+        color: #c9c9cf;
+        font: 0.9rem/1.7 "DM Sans", sans-serif;
+    }
+    .press-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin: 2rem 0;
+    }
+    .press-kpis div {
+        text-align: center;
+        border: 1px solid rgba(212, 168, 67, 0.22);
+        background: rgba(10, 10, 14, 0.65);
+        padding: 1.15rem;
+    }
+    .press-kpis strong {
+        display: block;
+        color: #d4a843;
+        font: 700 1.5rem "Cinzel", serif;
+    }
+    .press-kpis span {
+        color: #999;
+        font: 0.7rem "DM Sans", sans-serif;
+        text-transform: uppercase;
+    }
+    .press-leaders,
+    .press-resources { margin: 2.4rem 0; }
+    .press-leaders h2,
+    .press-resources h2,
+    .press-method h2 {
+        color: #d4a843;
+        font: 700 1.1rem "Cinzel", serif;
+        margin: 0 0 1rem;
+    }
+    .leader-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.8rem;
+    }
+    .leader-grid a {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        background: rgba(10, 10, 14, 0.62);
+        padding: 1.1rem;
+        text-decoration: none;
+    }
+    .leader-grid span { color: #999; font: 0.7rem "DM Sans", sans-serif; text-transform: uppercase; }
+    .leader-grid strong { color: #eee; font-family: "Cinzel", serif; }
+    .leader-grid b { color: #d4a843; font: 700 0.88rem "DM Sans", sans-serif; }
+    .resource-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.7rem;
+    }
+    .resource-list a {
+        color: #d4a843;
+        text-decoration: none;
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        padding: 0.8rem;
+        font: 0.8rem "DM Sans", sans-serif;
+    }
+    .press-method a { color: #d4a843; }
+    @media (max-width: 720px) {
+        .press-kpis { grid-template-columns: repeat(2, 1fr); }
+        .leader-grid { grid-template-columns: 1fr; }
+    }
+</style>
