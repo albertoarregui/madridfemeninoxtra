@@ -130,7 +130,8 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
                 console.error("Error parsing date for slug:", game.fecha, e);
             }
 
-            const isPlayed = game.goles_rm !== null && game.goles_rm !== undefined && String(game.goles_rm).trim() !== '';
+            const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
+            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival);
 
             return {
                 ...game,
@@ -180,7 +181,8 @@ export async function fetchGames(): Promise<any[]> {
 
         return games.map(game => {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
-            const isPlayed = game.goles_rm !== null && game.goles_rm !== undefined && String(game.goles_rm).trim() !== '';
+            const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
+            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival);
             return {
                 ...game,
                 isPlayed,
@@ -342,7 +344,7 @@ export function calculateRivalStats(matches: any[], rivalName: string = '') {
 
         const rivalInMatch = isRivalMatch(clubLocal) || isRivalMatch(clubVisitante);
 
-        const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '';
+        const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '' && match.goles_rival !== null && match.goles_rival !== undefined && String(match.goles_rival).trim() !== '';
         if (!rivalInMatch || !isPlayed) return;
 
         stats.total++;

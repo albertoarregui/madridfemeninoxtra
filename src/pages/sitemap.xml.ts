@@ -36,6 +36,7 @@ const staticPages = [
     { url: 'rankings/porterias-a-cero', priority: 0.7, changefreq: 'weekly' },
     { url: 'temporadas', priority: 0.8, changefreq: 'weekly' },
     { url: 'estadisticas-real-madrid-femenino', priority: 0.9, changefreq: 'weekly' },
+    { url: 'prensa-datos', priority: 0.7, changefreq: 'weekly' },
     { url: 'records', priority: 0.6, changefreq: 'weekly' },
     { url: 'comparador', priority: 0.6, changefreq: 'monthly' },
     { url: 'calendario', priority: 0.6, changefreq: 'weekly' },
