@@ -1,0 +1,288 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchGamesDirectly } from "../../utils/partidos";
+import { fetchRankingsDirectly } from "../../utils/rankings";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/global.css";
+
+const { slug } = Astro.params;
+if (!/^\d{4}-\d{2}$/.test(String(slug || ""))) return Astro.redirect("/404");
+
+const season = String(slug).replace("-", "/");
+const allGames = await fetchGamesDirectly();
+const games = allGames.filter((game: any) => String(game.temporada_nombre || "") === season);
+const rankingRows = (await fetchRankingsDirectly()).filter(
+    (row: any) => String(row.temporada || "") === season,
+);
+
+if (!games.length && !rankingRows.length) return Astro.redirect("/404");
+
+const played = games
+    .filter((game: any) => game.isPlayed)
+    .sort((a: any, b: any) => String(b.fecha).localeCompare(String(a.fecha)));
+const upcoming = games
+    .filter((game: any) => !game.isPlayed)
+    .sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+
+let wins = 0;
+let draws = 0;
+let losses = 0;
+let gf = 0;
+let ga = 0;
+
+for (const game of played) {
+    const goalsFor = Number(game.goles_rm || 0);
+    const goalsAgainst = Number(game.goles_rival || 0);
+    const penalties = String(game.penaltis ?? "").trim();
+    gf += goalsFor;
+    ga += goalsAgainst;
+    if (goalsFor > goalsAgainst || (goalsFor === goalsAgainst && penalties === "1")) wins += 1;
+    else if (goalsFor < goalsAgainst || (goalsFor === goalsAgainst && penalties === "0")) losses += 1;
+    else draws += 1;
+}
+
+const OFFICIAL = new Set([
+    "Liga F",
+    "Primera Iberdrola",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+]);
+const grouped = new Map<string, any>();
+for (const row of rankingRows.filter((item: any) => OFFICIAL.has(item.competicion))) {
+    const key = String(row.id_jugadora || row.slug || row.nombre);
+    const current = grouped.get(key) || {
+        nombre: row.nombre,
+        slug: row.slug,
+        goles: 0,
+        asistencias: 0,
+        partidos: 0,
+        minutos: 0,
+    };
+    current.goles += Number(row.goles || 0);
+    current.asistencias += Number(row.asistencias || 0);
+    current.partidos += Number(row.partidos || 0);
+    current.minutos += Number(row.minutos || 0);
+    grouped.set(key, current);
+}
+const players = [...grouped.values()];
+const top = (key: string) =>
+    players
+        .filter((player) => player[key] > 0)
+        .sort((a, b) => b[key] - a[key])
+        .slice(0, 5);
+
+const competitions = [
+    ...new Set(games.map((game: any) => game.competicion_nombre).filter(Boolean)),
+];
+
+const resultScore = (game: any) => {
+    const madridHome = String(game.club_local || "").toLowerCase().includes("real madrid");
+    return madridHome
+        ? `${game.goles_rm}-${game.goles_rival}`
+        : `${game.goles_rival}-${game.goles_rm}`;
+};
+
+const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `Real Madrid Femenino ${season}`,
+    url: `https://www.madridfemeninoxtra.com/temporadas/${slug}`,
+    about: { "@type": "SportsTeam", name: "Real Madrid Femenino" },
+};
+---
+
+<Layout
+    title={`Real Madrid Femenino ${season}: plantilla, partidos y estadísticas | MFX`}
+    description={`Temporada ${season} del Real Madrid Femenino: ${played.length} partidos, resultados, balance, goleadoras, asistentes y estadísticas.`}
+>
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(schema)} />
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Temporadas", path: "/temporadas" },
+                { name: season, path: `/temporadas/${slug}` },
+            ]),
+        )}
+    />
+
+    <main class="season-page max-w-6xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">Real Madrid Femenino {season}</h1>
+            <p class="landing-subtitle">Partidos, balance, goleadoras, asistentes y protagonistas de la temporada</p>
+        </header>
+
+        <section class="summary" aria-label={`Balance de la temporada ${season}`}>
+            <div><strong>{played.length}</strong><span>Partidos</span></div>
+            <div><strong>{wins}</strong><span>Victorias</span></div>
+            <div><strong>{draws}</strong><span>Empates</span></div>
+            <div><strong>{losses}</strong><span>Derrotas</span></div>
+            <div><strong>{gf}</strong><span>GF</span></div>
+            <div><strong>{ga}</strong><span>GC</span></div>
+        </section>
+
+        {competitions.length > 0 && (
+            <p class="competitions"><strong>Competiciones:</strong> {competitions.join(" · ")}</p>
+        )}
+
+        <section class="leaders">
+            <div class="leader">
+                <h2>Máximas goleadoras</h2>
+                {top("goles").map((row: any, index: number) => (
+                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.goles).toLocaleString("es-ES")}</b></a>
+                ))}
+            </div>
+            <div class="leader">
+                <h2>Máximas asistentes</h2>
+                {top("asistencias").map((row: any, index: number) => (
+                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.asistencias).toLocaleString("es-ES")}</b></a>
+                ))}
+            </div>
+            <div class="leader">
+                <h2>Más partidos</h2>
+                {top("partidos").map((row: any, index: number) => (
+                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.partidos).toLocaleString("es-ES")}</b></a>
+                ))}
+            </div>
+            <div class="leader">
+                <h2>Más minutos</h2>
+                {top("minutos").map((row: any, index: number) => (
+                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.minutos).toLocaleString("es-ES")}</b></a>
+                ))}
+            </div>
+        </section>
+
+        {upcoming.length > 0 && (
+            <section class="matches">
+                <h2>Próximos partidos</h2>
+                {upcoming.slice(0, 6).map((game: any) => (
+                    <a href={`/partidos/${game.slug}`}>
+                        <span>{game.fecha_formateada}</span>
+                        <strong>{game.club_local} - {game.club_visitante}</strong>
+                    </a>
+                ))}
+            </section>
+        )}
+
+        {played.length > 0 && (
+            <section class="matches">
+                <h2>Últimos resultados</h2>
+                {played.slice(0, 8).map((game: any) => (
+                    <a href={`/partidos/${game.slug}`}>
+                        <span>{game.fecha_formateada}</span>
+                        <strong>{game.club_local} {resultScore(game)} {game.club_visitante}</strong>
+                    </a>
+                ))}
+            </section>
+        )}
+
+        <nav class="season-links" aria-label="Más datos del Real Madrid Femenino">
+            <a href="/rankings">Rankings históricos</a>
+            <a href="/partidos">Todos los partidos</a>
+            <a href="/plantilla">Plantilla actual</a>
+            <a href="/estadisticas-real-madrid-femenino">Centro de datos</a>
+        </nav>
+    </main>
+</Layout>
+
+<style>
+    .summary {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+    }
+    .summary div {
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        background: rgba(10, 10, 14, 0.65);
+        padding: 1rem;
+        text-align: center;
+    }
+    .summary strong {
+        display: block;
+        color: #d4a843;
+        font: 700 1.5rem "Cinzel", serif;
+    }
+    .summary span {
+        font: 0.68rem "DM Sans", sans-serif;
+        color: #999;
+        text-transform: uppercase;
+    }
+    .competitions {
+        color: #aaa;
+        font: 0.82rem "DM Sans", sans-serif;
+    }
+    .competitions strong { color: #d4a843; }
+    .leaders {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+    .leader {
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        background: rgba(10, 10, 14, 0.62);
+        padding: 1rem;
+    }
+    .leader h2,
+    .matches h2 {
+        font: 700 1.05rem "Cinzel", serif;
+        color: #d4a843;
+        margin: 0 0 0.8rem;
+    }
+    .leader a {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        color: #ddd;
+        text-decoration: none;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .leader a:last-child { border: 0; }
+    .leader b { color: #d4a843; }
+    .matches { margin: 2rem 0; }
+    .matches > a {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        text-decoration: none;
+        color: #eee;
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .matches > a span {
+        min-width: 110px;
+        color: #999;
+        font-size: 0.75rem;
+    }
+    .matches > a:hover strong { color: #d4a843; }
+    .season-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 2rem;
+    }
+    .season-links a {
+        color: #d4a843;
+        border: 1px solid rgba(212, 168, 67, 0.25);
+        padding: 0.65rem 0.8rem;
+        text-decoration: none;
+        font-size: 0.78rem;
+    }
+    @media (max-width: 760px) {
+        .summary { grid-template-columns: repeat(3, 1fr); }
+        .leaders { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 430px) {
+        .summary { grid-template-columns: repeat(2, 1fr); }
+        .matches > a {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+    }
+</style>
