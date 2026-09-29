@@ -33,7 +33,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 args: [rivalId, rivalId],
             });
             topScorer = topScorerResult.rows[0] || null;
-            console.log('Top scorer:', topScorer);
         } catch (error) {
             console.error('Error fetching top scorer:', error);
         }
@@ -55,7 +54,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 args: [rivalId, rivalId],
             });
             biggestWin = biggestWinResult.rows[0] || null;
-            console.log('Biggest win:', biggestWin);
         } catch (error) {
             console.error('Error fetching biggest win:', error);
         }
@@ -77,7 +75,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 args: [rivalId, rivalId],
             });
             biggestLoss = biggestLossResult.rows[0] || null;
-            console.log('Biggest loss:', biggestLoss);
         } catch (error) {
             console.error('Error fetching biggest loss:', error);
         }
@@ -90,6 +87,8 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                         COUNT(*) as veces
                     FROM partidos p
                     WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                     GROUP BY resultado
                     ORDER BY veces DESC
                     LIMIT 1
@@ -97,7 +96,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 args: [rivalId, rivalId],
             });
             mostRepeated = mostRepeatedResult.rows[0] || null;
-            console.log('Most repeated:', mostRepeated);
         } catch (error) {
             console.error('Error fetching most repeated:', error);
         }
@@ -119,12 +117,11 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 args: [rivalId, rivalId],
             });
             mostAppearances = mostAppearancesResult.rows[0] || null;
-            console.log('Most appearances:', mostAppearances);
         } catch (error) {
             console.error('Error fetching most appearances:', error);
         }
 
-        const records = {
+        return {
             maximo_goleador: topScorer,
             goleador_rival: null,
             mas_partidos: mostAppearances,
@@ -132,9 +129,6 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
             mayor_derrota: biggestLoss,
             mas_repetido: mostRepeated,
         };
-
-        console.log('Final rival records object:', records);
-        return records;
     } catch (error) {
         console.error("Error fetching rival records:", error);
         return null;
@@ -149,8 +143,6 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
         if (!db) {
             return { topScorers: [], topAssisters: [], topContributors: [] };
         }
-
-        console.log('Fetching rival top players for rival ID:', rivalId);
 
         const topScorersResult = await db.execute({
             sql: `
@@ -198,7 +190,6 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     SUM(asistencias) as asistencias,
                     SUM(goles) + SUM(asistencias) as total
                 FROM (
-
                     SELECT j.id_jugadora, j.nombre, COUNT(*) as goles, 0 as asistencias
                     FROM goles_y_asistencias ga
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
@@ -248,15 +239,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             return [];
         }
 
-        console.log('========== DEBUG: Fetching matches ==========');
-        console.log('Rival ID:', rivalId, 'Type:', typeof rivalId);
-
-        const countResult = await db.execute({
-            sql: 'SELECT COUNT(*) as total FROM partidos',
-            args: []
-        });
-        console.log('Total matches in database:', countResult.rows[0]);
-
         const matchesResult = await db.execute({
             sql: `
                 SELECT
@@ -281,6 +263,8 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
                 LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
                 WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                 ORDER BY p.fecha DESC
             `,
             args: [rivalId, rivalId],
@@ -342,7 +326,6 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
             const rivalCards = rivalCardsByMatch[match.id_partido] || { yellow: 0, red: 0 };
 
             const esLocal = Number(match.id_club_local) === Number(rivalId);
-
             const statsLocal = esLocal ? match.goles_rival : match.goles_rm;
             const statsVisitor = esLocal ? match.goles_rm : match.goles_rival;
 
@@ -351,7 +334,7 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 fecha: match.fecha,
                 id_temporada: match.id_temporada,
                 competicion: match.competicion || '-',
-                esLocal: esLocal,
+                esLocal,
                 ubicacion: esLocal ? 'Visitante' : 'Local',
                 resultado: `${statsLocal}-${statsVisitor}`,
                 golesRM: match.goles_rm,
@@ -439,19 +422,14 @@ export function calculateStreaks(matches: any[]) {
 
     let currentWinStreak = 0;
     let maxWinStreak = 0;
-
     let currentDrawStreak = 0;
     let maxDrawStreak = 0;
-
     let currentLossStreak = 0;
     let maxLossStreak = 0;
-
     let currentNoWinStreak = 0;
     let maxNoWinStreak = 0;
-
     let currentCleanSheetStreak = 0;
     let maxCleanSheetStreak = 0;
-
     let currentUndefeatedStreak = 0;
     let maxUndefeatedStreak = 0;
 
@@ -459,47 +437,29 @@ export function calculateStreaks(matches: any[]) {
         const golesRM = parseInt(match.golesRM) || 0;
         const golesRival = parseInt(match.golesRival) || 0;
 
-        if (golesRM > golesRival) {
-            currentWinStreak++;
-        } else {
-            currentWinStreak = 0;
-        }
-        if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+        if (golesRM > golesRival) currentWinStreak++;
+        else currentWinStreak = 0;
+        maxWinStreak = Math.max(maxWinStreak, currentWinStreak);
 
-        if (golesRM === golesRival) {
-            currentDrawStreak++;
-        } else {
-            currentDrawStreak = 0;
-        }
-        if (currentDrawStreak > maxDrawStreak) maxDrawStreak = currentDrawStreak;
+        if (golesRM === golesRival) currentDrawStreak++;
+        else currentDrawStreak = 0;
+        maxDrawStreak = Math.max(maxDrawStreak, currentDrawStreak);
 
-        if (golesRM < golesRival) {
-            currentLossStreak++;
-        } else {
-            currentLossStreak = 0;
-        }
-        if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+        if (golesRM < golesRival) currentLossStreak++;
+        else currentLossStreak = 0;
+        maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
 
-        if (golesRM <= golesRival) {
-            currentNoWinStreak++;
-        } else {
-            currentNoWinStreak = 0;
-        }
-        if (currentNoWinStreak > maxNoWinStreak) maxNoWinStreak = currentNoWinStreak;
+        if (golesRM <= golesRival) currentNoWinStreak++;
+        else currentNoWinStreak = 0;
+        maxNoWinStreak = Math.max(maxNoWinStreak, currentNoWinStreak);
 
-        if (golesRM >= golesRival) {
-            currentUndefeatedStreak++;
-        } else {
-            currentUndefeatedStreak = 0;
-        }
-        if (currentUndefeatedStreak > maxUndefeatedStreak) maxUndefeatedStreak = currentUndefeatedStreak;
+        if (golesRM >= golesRival) currentUndefeatedStreak++;
+        else currentUndefeatedStreak = 0;
+        maxUndefeatedStreak = Math.max(maxUndefeatedStreak, currentUndefeatedStreak);
 
-        if (golesRival === 0) {
-            currentCleanSheetStreak++;
-        } else {
-            currentCleanSheetStreak = 0;
-        }
-        if (currentCleanSheetStreak > maxCleanSheetStreak) maxCleanSheetStreak = currentCleanSheetStreak;
+        if (golesRival === 0) currentCleanSheetStreak++;
+        else currentCleanSheetStreak = 0;
+        maxCleanSheetStreak = Math.max(maxCleanSheetStreak, currentCleanSheetStreak);
     });
 
     return {
@@ -511,5 +471,3 @@ export function calculateStreaks(matches: any[]) {
         cleanSheets: maxCleanSheetStreak
     };
 }
-
-
