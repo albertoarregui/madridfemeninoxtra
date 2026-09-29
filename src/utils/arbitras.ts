@@ -1,4 +1,3 @@
-
 import { cleanApiValue } from "./partidos";
 import { generateSlug } from "./url-helper";
 
@@ -7,9 +6,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
 
-        if (!client) {
-            return [];
-        }
+        if (!client) return [];
 
         const query = `
             SELECT 
@@ -34,7 +31,6 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
                     ELSE 0 
                 END) as losses,
-                
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas t 
@@ -44,7 +40,6 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
                 ) as yellow_cards,
-                
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas t 
@@ -92,22 +87,15 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                           OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
                       )
                 ) as red_cards_against,
-                
                 SUM(COALESCE(ep.faltas_cometidas, 0)) as fouls_committed,
                 SUM(COALESCE(ep.faltas_recibidas, 0)) as fouls_received
-
-            FROM 
-                arbitras a
-            JOIN
-                partidos p ON p.id_arbitra = a.id_arbitra
-            LEFT JOIN
-                estadisticas_partidos ep ON p.id_partido = ep.id_partido
-            WHERE
-                p.goles_rm IS NOT NULL
-            GROUP BY
-                a.id_arbitra
-            ORDER BY 
-                played DESC, wins DESC
+            FROM arbitras a
+            JOIN partidos p ON p.id_arbitra = a.id_arbitra
+            LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
+            WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+            GROUP BY a.id_arbitra
+            ORDER BY played DESC, wins DESC
         `;
 
         const result = await client.execute(query);
@@ -151,7 +139,6 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
         return [];
     }
 }
-
 
 export async function fetchMatchesByReferee(refereeName: string): Promise<any[]> {
     try {
@@ -232,6 +219,8 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
             LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
             LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
             WHERE a.nombre = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
             ORDER BY p.fecha DESC
         `;
 
@@ -251,5 +240,3 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
         return [];
     }
 }
-
-
