@@ -5,6 +5,7 @@ import Footer from "../components/Footer.astro";
 import CookieConsent from "../components/CookieConsent.astro";
 import ScrollToTop from "../components/ScrollToTop.astro";
 import NextMatchCountdown from "../components/NextMatchCountdown.astro";
+import GoogleNewsBanner from "../components/GoogleNewsBanner.astro";
 import { getAssetUrl } from "../utils/assets";
 import { resolverOgImage } from "../utils/og";
 import "../styles/global.css";
@@ -60,6 +61,7 @@ const miniatura = await resolverOgImage(Astro.url.pathname, image);
 const imagenSocial = miniatura ?? image ?? ogImage;
 
 const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
+const isNewsArticle = /^\/noticias\/[^/]+\/?$/.test(Astro.url.pathname);
 
 const siteSchema = {
 	"@context": "https://schema.org",
@@ -129,6 +131,7 @@ const siteSchema = {
 		<Header />
 		<div class="page-wrapper">
 			<slot />
+			{isNewsArticle && <GoogleNewsBanner />}
 		</div>
 		<Footer />
 		{showMatchCountdown && <NextMatchCountdown />}
