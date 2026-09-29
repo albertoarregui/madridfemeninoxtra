@@ -27,12 +27,22 @@ const staticPages = [
     { url: 'arbitras', priority: 0.7, changefreq: 'monthly' },
     { url: 'fotogalerias', priority: 0.7, changefreq: 'weekly' },
     { url: 'plantilla', priority: 0.7, changefreq: 'monthly' },
-    { url: 'rankings', priority: 0.7, changefreq: 'weekly' },
+    { url: 'rankings', priority: 0.8, changefreq: 'weekly' },
+    { url: 'rankings/maximas-goleadoras', priority: 0.8, changefreq: 'weekly' },
+    { url: 'rankings/maximas-asistentes', priority: 0.8, changefreq: 'weekly' },
+    { url: 'rankings/mas-partidos', priority: 0.8, changefreq: 'weekly' },
+    { url: 'rankings/mas-minutos', priority: 0.7, changefreq: 'weekly' },
+    { url: 'rankings/mas-capitanias', priority: 0.7, changefreq: 'weekly' },
+    { url: 'rankings/porterias-a-cero', priority: 0.7, changefreq: 'weekly' },
+    { url: 'temporadas', priority: 0.8, changefreq: 'weekly' },
+    { url: 'estadisticas-real-madrid-femenino', priority: 0.9, changefreq: 'weekly' },
     { url: 'records', priority: 0.6, changefreq: 'weekly' },
     { url: 'comparador', priority: 0.6, changefreq: 'monthly' },
     { url: 'calendario', priority: 0.6, changefreq: 'weekly' },
     { url: 'donde-ver-real-madrid-femenino', priority: 0.7, changefreq: 'daily' },
     { url: 'sobre-nosotros', priority: 0.5, changefreq: 'monthly' },
+    { url: 'autor/alberto-arregui', priority: 0.6, changefreq: 'weekly' },
+    { url: 'politica-editorial', priority: 0.5, changefreq: 'monthly' },
     { url: 'contacto', priority: 0.5, changefreq: 'monthly' },
     { url: 'aviso-legal', priority: 0.3, changefreq: 'yearly' },
     { url: 'politica-privacidad', priority: 0.3, changefreq: 'yearly' },
@@ -62,6 +72,26 @@ export const GET: APIRoute = async () => {
                 priority: page.priority,
             });
         });
+
+        try {
+            const seasonGames = await fetchGamesDirectly();
+            const seasonNames = [
+                ...new Set(
+                    seasonGames
+                        .map((match: any) => String(match.temporada_nombre || '').trim())
+                        .filter(Boolean),
+                ),
+            ];
+            seasonNames.forEach((season) => {
+                urls.push({
+                    loc: `${SITE_URL}/temporadas/${season.replace('/', '-')}`,
+                    changefreq: 'weekly',
+                    priority: 0.8,
+                });
+            });
+        } catch (error) {
+            console.error('Error fetching seasons for sitemap:', error);
+        }
 
         try {
             const entries = await contentfulClient.getEntries({
