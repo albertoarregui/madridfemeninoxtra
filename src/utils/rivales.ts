@@ -82,7 +82,8 @@ async function fetchRivalsDirectlyUncached(): Promise<any[]> {
                 p.goles_rival,
                 p.penaltis
             FROM partidos p
-            WHERE p.goles_rm IS NOT NULL
+            WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
         `;
 
         const [clubsResult, matchesResult] = await Promise.all([
@@ -108,9 +109,6 @@ async function fetchRivalsDirectlyUncached(): Promise<any[]> {
             else if (pen === '1') result = 'W';
             else if (pen === '0') result = 'L';
             else result = 'D';
-
-
-
 
             for (const clubId of [localId, visitanteId]) {
                 if (!clubId) continue;
@@ -251,7 +249,6 @@ export async function fetchClubCountDirectly(): Promise<number> {
         const count = Number(result.rows[0]?.count || 0);
 
         if (count === 0) {
-
             const fallback = await client.execute("SELECT COUNT(*) as count FROM clubes");
             const total = Number(fallback.rows[0]?.count || 0);
             return Math.max(0, total - 1);
@@ -264,10 +261,5 @@ export async function fetchClubCountDirectly(): Promise<number> {
     }
 }
 
-
-
-
 export const fetchRivalsDirectly = cachear('rivals:all', TTL.medio, fetchRivalsDirectlyUncached, { tags: ['rivals', 'matches'] });
-
-
 export const fetchAllClubShields = cachear('shields:all', TTL.largo, fetchAllClubShieldsUncached, { tags: ['rivals'] });
