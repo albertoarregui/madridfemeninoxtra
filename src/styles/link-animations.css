@@ -1,9 +1,11 @@
 /*
- * MFX global link interaction
+ * MFX link interaction
  *
- * The same gold left-to-right fill used by the Google News CTA is applied
- * to every regular link on the site. The Google News CTA keeps its own
- * component animation so the two effects do not overlap.
+ * Scope is intentionally narrow:
+ * 1) Google News CTA keeps its own component animation.
+ * 2) This stylesheet only animates inline hyperlinks that appear inside
+ *    editorial/prose text. Navigation, cards, buttons, logos and other UI
+ *    links are deliberately untouched.
  */
 
 :root {
@@ -14,13 +16,9 @@
     --mfx-link-fill-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/*
- * Intentionally simple selector: the previous :has() based filtering was
- * too restrictive and caused real navigation/content links to be skipped.
- * Images and icons can remain inside the anchor; the gradient is painted
- * behind their content, so it does not tint the media itself.
- */
-a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]) {
+/* Inline word links only. */
+.page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
+.news-article-rich-text a[href] {
     background-image: linear-gradient(
         90deg,
         var(--mfx-link-fill-start) 0%,
@@ -32,41 +30,46 @@ a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]) {
     background-size: 0% 100% !important;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
-    transition-property: background-size, color, border-color, box-shadow, transform !important;
-    transition-duration: var(--mfx-link-fill-duration), 180ms, 180ms, 220ms, 220ms !important;
-    transition-timing-function: var(--mfx-link-fill-easing), ease, ease, ease, ease !important;
+    transition:
+        background-size var(--mfx-link-fill-duration) var(--mfx-link-fill-easing),
+        color 180ms ease !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
-    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):hover {
+    .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href]:hover,
+    .news-article-rich-text a[href]:hover {
         background-size: 100% 100% !important;
         color: #ffffff !important;
         text-decoration-color: transparent !important;
     }
 }
 
-/* Keyboard and touch feedback use the same visual language. */
-a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):focus-visible,
-a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):active {
+.page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href]:focus-visible,
+.page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href]:active,
+.news-article-rich-text a[href]:focus-visible,
+.news-article-rich-text a[href]:active {
     background-size: 100% 100% !important;
     color: #ffffff !important;
     text-decoration-color: transparent !important;
 }
 
-a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):focus-visible {
+.page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href]:focus-visible,
+.news-article-rich-text a[href]:focus-visible {
     outline: 2px solid rgba(212, 168, 67, 0.72);
-    outline-offset: 3px;
+    outline-offset: 2px;
 }
 
 @media (hover: none), (pointer: coarse) {
-    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]) {
+    .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
+    .news-article-rich-text a[href] {
         --mfx-link-fill-duration: 220ms;
         -webkit-tap-highlight-color: rgba(212, 168, 67, 0.16);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]) {
+    .page-wrapper :where(p, blockquote, figcaption, dd, dt) a[href],
+    .news-article-rich-text a[href] {
         transition-duration: 0.01ms !important;
     }
 }
