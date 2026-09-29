@@ -1,0 +1,86 @@
+/*
+ * MFX global link interaction
+ *
+ * Applies the gold left-to-right fill to text/navigation/CTA links while
+ * deliberately leaving media wrappers and structural cards untouched.
+ */
+
+:root {
+    --mfx-link-fill-start: #d4a843;
+    --mfx-link-fill-end: #c49030;
+    --mfx-link-fill-duration: 380ms;
+    --mfx-link-fill-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Eligible links:
+ * - regular text links
+ * - header/footer navigation
+ * - breadcrumbs
+ * - CTA links made from text/spans/icons
+ *
+ * Excluded:
+ * - Google News CTA (it already owns the same bespoke animation)
+ * - image/logo/media links
+ * - links that wrap complete cards/sections/headings
+ * - icon-only links
+ * - anything explicitly marked data-no-link-fill
+ */
+a[href]
+    :where(*) {
+    position: relative;
+    z-index: 1;
+}
+
+a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):not(:has(img, picture, video, canvas)):not(:has(h1, h2, h3, h4, h5, h6, article, section, figure)):not(:has(> svg:only-child)) {
+    background-image: linear-gradient(
+        90deg,
+        var(--mfx-link-fill-start) 0%,
+        var(--mfx-link-fill-end) 100%
+    ) !important;
+    background-repeat: no-repeat !important;
+    background-position: left center !important;
+    background-size: 0% 100% !important;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition:
+        background-size var(--mfx-link-fill-duration) var(--mfx-link-fill-easing),
+        color 180ms ease,
+        border-color 180ms ease,
+        box-shadow 220ms ease,
+        transform 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):not(:has(img, picture, video, canvas)):not(:has(h1, h2, h3, h4, h5, h6, article, section, figure)):not(:has(> svg:only-child)):hover {
+        background-size: 100% 100% !important;
+        color: #ffffff !important;
+        text-decoration-color: transparent !important;
+    }
+}
+
+/* Keyboard and touch feedback use the same visual language. */
+a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):not(:has(img, picture, video, canvas)):not(:has(h1, h2, h3, h4, h5, h6, article, section, figure)):not(:has(> svg:only-child)):focus-visible,
+a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):not(:has(img, picture, video, canvas)):not(:has(h1, h2, h3, h4, h5, h6, article, section, figure)):not(:has(> svg:only-child)):active {
+    background-size: 100% 100% !important;
+    color: #ffffff !important;
+    text-decoration-color: transparent !important;
+}
+
+a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):focus-visible {
+    outline: 2px solid rgba(212, 168, 67, 0.72);
+    outline-offset: 3px;
+}
+
+/* Keep the interaction responsive without forcing a permanent hover state on touch. */
+@media (hover: none), (pointer: coarse) {
+    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]):not(:has(img, picture, video, canvas)):not(:has(h1, h2, h3, h4, h5, h6, article, section, figure)):not(:has(> svg:only-child)) {
+        --mfx-link-fill-duration: 240ms;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    a[href]:not(.mfx-google-news-banner__cta):not([data-no-link-fill]) {
+        transition-duration: 0.01ms !important;
+    }
+}
