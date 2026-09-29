@@ -1,0 +1,241 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchRankingsDirectly } from "../../utils/rankings";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/global.css";
+
+type RankingConfig = {
+    key: string;
+    title: string;
+    h1: string;
+    description: string;
+    label: string;
+    keep?: (row: any) => boolean;
+};
+
+const CONFIG: Record<string, RankingConfig> = {
+    "maximas-goleadoras": {
+        key: "goles",
+        title: "Máximas goleadoras históricas del Real Madrid Femenino | MFX",
+        h1: "Máximas goleadoras del Real Madrid Femenino",
+        description: "Ranking histórico de máximas goleadoras del Real Madrid Femenino en partidos oficiales.",
+        label: "goles",
+    },
+    "maximas-asistentes": {
+        key: "asistencias",
+        title: "Máximas asistentes históricas del Real Madrid Femenino | MFX",
+        h1: "Máximas asistentes del Real Madrid Femenino",
+        description: "Ranking histórico de jugadoras con más asistencias del Real Madrid Femenino en partidos oficiales.",
+        label: "asistencias",
+    },
+    "mas-partidos": {
+        key: "partidos",
+        title: "Jugadoras con más partidos en el Real Madrid Femenino | MFX",
+        h1: "Jugadoras con más partidos en el Real Madrid Femenino",
+        description: "Ranking histórico de apariciones con el Real Madrid Femenino en partidos oficiales.",
+        label: "partidos",
+    },
+    "mas-minutos": {
+        key: "minutos",
+        title: "Jugadoras con más minutos en el Real Madrid Femenino | MFX",
+        h1: "Jugadoras con más minutos en el Real Madrid Femenino",
+        description: "Ranking histórico de minutos jugados con el Real Madrid Femenino en partidos oficiales.",
+        label: "minutos",
+    },
+    "mas-capitanias": {
+        key: "capitanias",
+        title: "Jugadoras con más capitanías en el Real Madrid Femenino | MFX",
+        h1: "Jugadoras con más capitanías en el Real Madrid Femenino",
+        description: "Ranking histórico de capitanías del Real Madrid Femenino en partidos oficiales.",
+        label: "capitanías",
+    },
+    "porterias-a-cero": {
+        key: "porterias_cero",
+        title: "Porteras con más porterías a cero del Real Madrid Femenino | MFX",
+        h1: "Porteras con más porterías a cero del Real Madrid Femenino",
+        description: "Ranking histórico de porteras del Real Madrid Femenino con más partidos sin encajar en competiciones oficiales.",
+        label: "porterías a cero",
+        keep: (row: any) => /porter/i.test(String(row.posicion || "")),
+    },
+};
+
+const { slug } = Astro.params;
+const config = CONFIG[String(slug || "")];
+if (!config) return Astro.redirect("/404");
+
+const OFFICIAL = new Set([
+    "Liga F",
+    "Primera Iberdrola",
+    "UWCL",
+    "Copa de la Reina",
+    "Supercopa de España",
+]);
+
+const rows = (await fetchRankingsDirectly()).filter(
+    (row: any) => OFFICIAL.has(row.competicion) && (!config.keep || config.keep(row)),
+);
+
+const grouped = new Map<string, any>();
+for (const row of rows) {
+    const id = String(row.id_jugadora || row.slug || row.nombre);
+    const previous = grouped.get(id) || {
+        nombre: row.nombre,
+        slug: row.slug,
+        posicion: row.posicion,
+        value: 0,
+    };
+    previous.value += Number(row[config.key] || 0);
+    grouped.set(id, previous);
+}
+
+const ranking = [...grouped.values()]
+    .filter((row) => row.value > 0)
+    .sort((a, b) => b.value - a.value || a.nombre.localeCompare(b.nombre, "es"));
+
+const itemList = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: config.h1,
+    itemListElement: ranking.slice(0, 50).map((row, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://www.madridfemeninoxtra.com/jugadoras/${row.slug}`,
+        name: row.nombre,
+    })),
+};
+
+const nav = Object.entries(CONFIG).map(([key, value]) => ({
+    href: `/rankings/${key}`,
+    label: value.h1
+        .replace(" del Real Madrid Femenino", "")
+        .replace("Jugadoras con ", "")
+        .replace("Porteras con ", ""),
+}));
+---
+
+<Layout title={config.title} description={config.description}>
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(itemList)} />
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "Rankings", path: "/rankings" },
+                { name: config.h1, path: `/rankings/${slug}` },
+            ]),
+        )}
+    />
+
+    <main class="ranking-page max-w-5xl mx-auto px-6 py-12">
+        <header class="page-header-container">
+            <h1 class="landing-title">{config.h1}</h1>
+            <p class="landing-subtitle">Datos acumulados de partidos oficiales desde la creación del Real Madrid Femenino</p>
+        </header>
+
+        <nav class="rank-nav" aria-label="Otros rankings históricos">
+            {nav.map((item) => (
+                <a class={item.href.endsWith(String(slug)) ? "active" : ""} href={item.href}>{item.label}</a>
+            ))}
+        </nav>
+
+        <section class="rank-table" aria-label={config.h1}>
+            {ranking.map((row: any, index: number) => (
+                <a class="rank-row" href={`/jugadoras/${row.slug}`}>
+                    <span class="rank-pos">{index + 1}</span>
+                    <span class="rank-name">
+                        <strong>{row.nombre}</strong>
+                        <small>{row.posicion || "Jugadora"}</small>
+                    </span>
+                    <span class="rank-value">
+                        {Number(row.value).toLocaleString("es-ES")}
+                        <small>{config.label}</small>
+                    </span>
+                </a>
+            ))}
+        </section>
+
+        <p class="rank-note">
+            Consulta todos los filtros por temporada y competición en <a href="/rankings">Estadísticas y rankings</a>,
+            o navega por <a href="/temporadas">todas las temporadas</a>.
+        </p>
+    </main>
+</Layout>
+
+<style>
+    .rank-nav {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0 0 2rem;
+    }
+    .rank-nav a {
+        border: 1px solid rgba(212, 168, 67, 0.2);
+        padding: 0.55rem 0.75rem;
+        color: #b9b9c0;
+        text-decoration: none;
+        font: 600 0.75rem "DM Sans", sans-serif;
+    }
+    .rank-nav a:hover,
+    .rank-nav a.active {
+        color: #d4a843;
+        border-color: #d4a843;
+    }
+    .rank-table { border-top: 1px solid rgba(212, 168, 67, 0.28); }
+    .rank-row {
+        display: grid;
+        grid-template-columns: 56px 1fr auto;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0.8rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        text-decoration: none;
+        color: #eee;
+        background: rgba(9, 9, 12, 0.55);
+        transition: 0.18s;
+    }
+    .rank-row:hover {
+        background: rgba(212, 168, 67, 0.06);
+        transform: translateX(3px);
+    }
+    .rank-pos {
+        font: 700 1.1rem "Cinzel", serif;
+        color: #d4a843;
+        text-align: center;
+    }
+    .rank-name {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .rank-name strong { font-family: "Cinzel", serif; }
+    .rank-name small,
+    .rank-value small {
+        color: #8f8f99;
+        font: 0.68rem "DM Sans", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .rank-value {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font: 700 1.15rem "DM Sans", sans-serif;
+        color: #d4a843;
+    }
+    .rank-note {
+        color: #aaa;
+        margin: 1.5rem 0 0;
+        font: 0.85rem "DM Sans", sans-serif;
+    }
+    .rank-note a { color: #d4a843; }
+    @media (max-width: 520px) {
+        .rank-row {
+            grid-template-columns: 38px 1fr auto;
+            gap: 0.6rem;
+            padding: 0.9rem 0.4rem;
+        }
+        .rank-value { font-size: 1rem; }
+    }
+</style>
