@@ -28,7 +28,13 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     try {
-        const matchWhere: string[] = ['p.goles_rm IS NOT NULL'];
+        const matchWhere: string[] = [
+            'p.goles_rm IS NOT NULL',
+            "p.goles_rm != ''",
+            'p.goles_rival IS NOT NULL',
+            "p.goles_rival != ''",
+            "date(p.fecha) <= date('now')",
+        ];
         const params: (string | number)[] = [];
 
         if (temporada) {

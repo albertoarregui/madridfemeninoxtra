@@ -35,7 +35,10 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     SELECT COUNT(*) 
                     FROM tarjetas t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
-                    WHERE p2.id_arbitra = a.id_arbitra 
+                    WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') 
                       AND (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%')
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
@@ -44,7 +47,10 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     SELECT COUNT(*) 
                     FROM tarjetas t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
-                    WHERE p2.id_arbitra = a.id_arbitra 
+                    WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') 
                       AND (
                           UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
                           OR UPPER(t.tipo_tarjeta) LIKE '%RED%'
@@ -54,23 +60,38 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                 ) as red_cards,
                 (
                     SELECT COUNT(*) FROM (
-                        SELECT ga.id_gol FROM goles_y_asistencias ga JOIN partidos p2 ON ga.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
+                        SELECT ga.id_gol FROM goles_y_asistencias ga JOIN partidos p2 ON ga.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                         UNION ALL
-                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND pf.id_jugadora IS NOT NULL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') AND pf.id_jugadora IS NOT NULL
                     )
                 ) as penalties_for,
                 (
                     SELECT COUNT(*) FROM (
-                        SELECT gr.id_gol_rival FROM goles_rival gr JOIN partidos p2 ON gr.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
+                        SELECT gr.id_gol_rival FROM goles_rival gr JOIN partidos p2 ON gr.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') AND (LOWER(gr.tipo) = 'penalti' OR LOWER(gr.tipo) = 'p')
                         UNION ALL
-                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra AND pf.id_jugadora IS NULL
+                        SELECT pf.id_penalti_fallado FROM penaltis_fallados pf JOIN partidos p2 ON pf.id_partido = p2.id_partido WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') AND pf.id_jugadora IS NULL
                     )
                 ) as penalties_against,
                 (
                     SELECT COUNT(*) 
                     FROM tarjetas_rival t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
-                    WHERE p2.id_arbitra = a.id_arbitra 
+                    WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') 
                       AND (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%')
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
                       AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
@@ -79,7 +100,10 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
                     SELECT COUNT(*) 
                     FROM tarjetas_rival t 
                     JOIN partidos p2 ON t.id_partido = p2.id_partido 
-                    WHERE p2.id_arbitra = a.id_arbitra 
+                    WHERE p2.id_arbitra = a.id_arbitra
+                      AND p2.goles_rm IS NOT NULL AND p2.goles_rm != ''
+                      AND p2.goles_rival IS NOT NULL AND p2.goles_rival != ''
+                      AND date(p2.fecha) <= date('now') 
                       AND (
                           UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
                           OR UPPER(t.tipo_tarjeta) LIKE '%RED%'
@@ -94,6 +118,7 @@ export async function fetchRefereesDirectly(): Promise<any[]> {
             LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
             WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY a.id_arbitra
             ORDER BY played DESC, wins DESC
         `;
@@ -221,6 +246,7 @@ export async function fetchMatchesByReferee(refereeName: string): Promise<any[]>
             WHERE a.nombre = ?
               AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             ORDER BY p.fecha DESC
         `;
 

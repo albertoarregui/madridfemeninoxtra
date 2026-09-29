@@ -43,6 +43,8 @@ export const GET: APIRoute = async ({ url }) => {
                     WHERE ep.xg_a_favor IS NOT NULL
                       AND p.goles_rm IS NOT NULL
                       AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                       ${seasonFilter} ${competitionFilter}
                     ORDER BY p.fecha ASC, p.id_partido ASC
                 `,
@@ -56,6 +58,9 @@ export const GET: APIRoute = async ({ url }) => {
                     JOIN temporadas t    ON p.id_temporada    = t.id_temporada
                     JOIN competiciones c ON p.id_competicion  = c.id_competicion
                     WHERE ep.xg_a_favor IS NOT NULL
+                      AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                     ORDER BY t.temporada DESC, c.competicion ASC
                 `,
                 args: [],

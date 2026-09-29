@@ -120,6 +120,9 @@ export const GET = async ({ params }) => {
             LEFT JOIN tarjetas tj ON tj.id_partido = a.id_partido
                 AND tj.id_jugadora = a.id_jugadora
             WHERE a.id_jugadora = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY t.temporada, t.id_temporada, c.competicion, c.id_competicion
             ORDER BY t.id_temporada DESC, c.competicion ASC
         `;

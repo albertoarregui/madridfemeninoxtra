@@ -84,6 +84,7 @@ async function fetchRivalsDirectlyUncached(): Promise<any[]> {
             FROM partidos p
             WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
         `;
 
         const [clubsResult, matchesResult] = await Promise.all([

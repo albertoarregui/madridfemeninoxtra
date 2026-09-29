@@ -47,7 +47,7 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN partidos p ON al.id_partido = p.id_partido
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
-                WHERE al.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+                WHERE al.id_jugadora = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != '' AND p.goles_rival IS NOT NULL AND p.goles_rival != '' AND date(p.fecha) <= date('now') ${seasonFilter} ${competitionFilter}`,
             args: [id, ...filterArgs],
         });
 
@@ -58,7 +58,7 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN partidos p ON g.id_partido = p.id_partido
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
-                WHERE g.goleadora = ? ${seasonFilter} ${competitionFilter}`,
+                WHERE g.goleadora = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != '' AND p.goles_rival IS NOT NULL AND p.goles_rival != '' AND date(p.fecha) <= date('now') ${seasonFilter} ${competitionFilter}`,
             args: [id, ...filterArgs],
         });
 
@@ -69,7 +69,7 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN partidos p ON g.id_partido = p.id_partido
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
-                WHERE g.asistente = ? ${seasonFilter} ${competitionFilter}`,
+                WHERE g.asistente = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != '' AND p.goles_rival IS NOT NULL AND p.goles_rival != '' AND date(p.fecha) <= date('now') ${seasonFilter} ${competitionFilter}`,
             args: [id, ...filterArgs],
         });
 
@@ -82,7 +82,7 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN partidos p ON tk.id_partido = p.id_partido
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
-                WHERE tk.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+                WHERE tk.id_jugadora = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != '' AND p.goles_rival IS NOT NULL AND p.goles_rival != '' AND date(p.fecha) <= date('now') ${seasonFilter} ${competitionFilter}`,
             args: [id, ...filterArgs],
         });
 
@@ -115,7 +115,7 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN partidos p ON ej.id_partido = p.id_partido
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
-                WHERE ej.id_jugadora = ? ${seasonFilter} ${competitionFilter}`,
+                WHERE ej.id_jugadora = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != '' AND p.goles_rival IS NOT NULL AND p.goles_rival != '' AND date(p.fecha) <= date('now') ${seasonFilter} ${competitionFilter}`,
             args: [id, ...filterArgs],
         });
 
@@ -127,6 +127,9 @@ export const GET: APIRoute = async ({ params, url }) => {
                 JOIN temporadas t ON p.id_temporada = t.id_temporada
                 JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE al.id_jugadora = ? AND al.minutos_jugados > 0
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                  AND date(p.fecha) <= date('now')
                 ORDER BY t.temporada DESC, c.competicion ASC`,
             args: [id],
         });

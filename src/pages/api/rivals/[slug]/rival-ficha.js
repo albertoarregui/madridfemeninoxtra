@@ -148,6 +148,9 @@ export const GET = async ({ params }) => {
             JOIN partidos p ON g.id_partido = p.id_partido
             JOIN jugadoras j ON g.id_jugadora = j.id_jugadora
             WHERE g.tipo = 'GOL' AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY j.nombre
             ORDER BY total_goles DESC
             LIMIT 5
@@ -161,6 +164,9 @@ export const GET = async ({ params }) => {
             JOIN partidos p ON g.id_partido = p.id_partido
             JOIN jugadoras j ON g.id_jugadora_asistente = j.id_jugadora
             WHERE g.tipo = 'ASISTENCIA' AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY j.nombre
             ORDER BY total_asistencias DESC
             LIMIT 5
@@ -176,6 +182,7 @@ export const GET = async ({ params }) => {
             WHERE (cl.nombre = ? OR cv.nombre = ?)
               AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
         `;
 
         const [goleadorasResult, asistentesResult, partidosResult] = await Promise.all([

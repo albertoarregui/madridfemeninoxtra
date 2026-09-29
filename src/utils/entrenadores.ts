@@ -165,6 +165,7 @@ export async function fetchCoachStats(coachId: string | number): Promise<any> {
             WHERE p.id_entrenador = ?
               AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY t.temporada, c.competicion
             ORDER BY t.temporada DESC, 
                 CASE c.competicion

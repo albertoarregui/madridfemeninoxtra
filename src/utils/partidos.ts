@@ -131,7 +131,8 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
             }
 
             const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
-            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival);
+            const today = new Date().toISOString().slice(0, 10);
+            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival) && (!game.fecha || String(game.fecha).slice(0, 10) <= today);
 
             return {
                 ...game,
@@ -182,7 +183,8 @@ export async function fetchGames(): Promise<any[]> {
         return games.map(game => {
             const dateSlug = game.fecha ? new Date(game.fecha).toISOString().split('T')[0] : 'sin-fecha';
             const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
-            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival);
+            const today = new Date().toISOString().slice(0, 10);
+            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival) && (!game.fecha || String(game.fecha).slice(0, 10) <= today);
             return {
                 ...game,
                 isPlayed,
@@ -234,10 +236,14 @@ export async function fetchH2HStats(homeTeam: string, awayTeam: string): Promise
                     fecha,
                     competicion_nombre
                 FROM partidos
-                WHERE
+                WHERE (
                     (LOWER(club_local) = LOWER(?) AND LOWER(club_visitante) = LOWER(?))
                     OR
                     (LOWER(club_local) = LOWER(?) AND LOWER(club_visitante) = LOWER(?))
+                )
+                  AND goles_rm IS NOT NULL AND TRIM(CAST(goles_rm AS TEXT)) != ''
+                  AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
+                  AND date(fecha) <= date('now')
                 ORDER BY fecha DESC
                 LIMIT 10
             `,
@@ -344,7 +350,8 @@ export function calculateRivalStats(matches: any[], rivalName: string = '') {
 
         const rivalInMatch = isRivalMatch(clubLocal) || isRivalMatch(clubVisitante);
 
-        const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '' && match.goles_rival !== null && match.goles_rival !== undefined && String(match.goles_rival).trim() !== '';
+        const today = new Date().toISOString().slice(0, 10);
+        const isPlayed = match.goles_rm !== null && match.goles_rm !== undefined && String(match.goles_rm).trim() !== '' && match.goles_rival !== null && match.goles_rival !== undefined && String(match.goles_rival).trim() !== '' && (!match.fecha || String(match.fecha).slice(0, 10) <= today);
         if (!rivalInMatch || !isPlayed) return;
 
         stats.total++;
@@ -744,7 +751,10 @@ export async function fetchStadiumStats(stadiumName: string | null, options: Mat
                 COUNT(*) as total
             FROM partidos p
             LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
-            WHERE e.nombre = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+            WHERE e.nombre = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
         `;
 
         const result = await client.execute({
@@ -795,7 +805,10 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
                 END) as losses,
                 COUNT(*) as total
             FROM partidos p
-            WHERE p.id_arbitra = ? AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+            WHERE p.id_arbitra = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
         `;
 
         const cardQuery = `
@@ -814,6 +827,9 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
             FROM tarjetas t
             INNER JOIN partidos p ON t.id_partido = p.id_partido
             WHERE p.id_arbitra = ?
+              AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
         `;
 
         const [matchResult, cardResult] = await Promise.all([
@@ -1158,7 +1174,9 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
             -- Foto dorsal asistente última temporada
             LEFT JOIN dorsales d_ast2 ON (g.asistente = d_ast2.id_jugadora AND d_ast2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.asistente))
 
-            WHERE 1=1
+            WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+              AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             -- Deduplicate by goal ID in case joins have multiple matches
             GROUP BY g.id_gol
         `;

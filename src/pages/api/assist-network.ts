@@ -42,6 +42,9 @@ export const GET: APIRoute = async ({ url }) => {
                     WHERE g.asistente IS NOT NULL
                       AND g.asistente != ''
                       AND g.asistente != '0'
+                      AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                       ${seasonFilter} ${competitionFilter}
                     GROUP BY g.asistente, g.goleadora
                     ORDER BY weight DESC
@@ -56,6 +59,9 @@ export const GET: APIRoute = async ({ url }) => {
                     JOIN temporadas t    ON p.id_temporada   = t.id_temporada
                     JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE g.asistente IS NOT NULL AND g.asistente != '' AND g.asistente != '0'
+                      AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                     ORDER BY t.temporada DESC, c.competicion ASC
                 `,
                 args: [],

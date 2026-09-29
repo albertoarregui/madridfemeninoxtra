@@ -24,7 +24,13 @@ export const GET = async ({ url }) => {
     const competicion = url.searchParams.get('competicion');
     const temporada = url.searchParams.get('temporada');
 
-    let whereClauses = [];
+    let whereClauses = [
+        `p.goles_rm IS NOT NULL`,
+        `p.goles_rm != ''`,
+        `p.goles_rival IS NOT NULL`,
+        `p.goles_rival != ''`,
+        `date(p.fecha) <= date('now')`,
+    ];
     let params = [];
 
     if (competicion) {

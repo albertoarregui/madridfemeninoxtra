@@ -65,6 +65,7 @@ export async function fetchMatchesByStadium(stadiumName: string): Promise<any[]>
             WHERE e.nombre = ?
               AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             ORDER BY p.fecha DESC
         `;
 
@@ -122,6 +123,7 @@ export async function fetchAllStadiumsWithStats(): Promise<any[]> {
             JOIN partidos p ON e.id_estadio = p.id_estadio
             WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
               AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+              AND date(p.fecha) <= date('now')
             GROUP BY e.id_estadio, e.nombre, e.ciudad, e.capacidad, e.foto_url
             ORDER BY played DESC
         `;
@@ -192,6 +194,9 @@ export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ t
                 INNER JOIN estadios e ON p.id_estadio = e.id_estadio
                 INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
                 WHERE ga.goleadora IS NOT NULL AND e.nombre = ?
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                  AND date(p.fecha) <= date('now')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY goles DESC
                 LIMIT 10
@@ -207,6 +212,9 @@ export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ t
                 INNER JOIN estadios e ON p.id_estadio = e.id_estadio
                 INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
                 WHERE ga.asistente IS NOT NULL AND e.nombre = ?
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                  AND date(p.fecha) <= date('now')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY asistencias DESC
                 LIMIT 10
@@ -224,6 +232,9 @@ export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ t
                     INNER JOIN estadios e ON p.id_estadio = e.id_estadio
                     INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
                     WHERE ga.goleadora IS NOT NULL AND e.nombre = ?
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                  AND date(p.fecha) <= date('now')
                     GROUP BY j.id_jugadora, j.nombre
                     UNION ALL
                     SELECT j.id_jugadora, j.nombre, 0 as goles, COUNT(*) as asistencias
@@ -232,6 +243,9 @@ export async function fetchTopPlayersByStadium(stadiumName: string): Promise<{ t
                     INNER JOIN estadios e ON p.id_estadio = e.id_estadio
                     INNER JOIN jugadoras j ON ga.asistente = j.id_jugadora
                     WHERE ga.asistente IS NOT NULL AND e.nombre = ?
+                  AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                  AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                  AND date(p.fecha) <= date('now')
                     GROUP BY j.id_jugadora, j.nombre
                 )
                 GROUP BY nombre

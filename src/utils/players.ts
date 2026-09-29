@@ -205,13 +205,19 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         }
 
         const statsQuery = `
-    WITH base_matches AS (
+    WITH completed_matches AS (
+        SELECT * FROM partidos
+        WHERE goles_rm IS NOT NULL AND TRIM(CAST(goles_rm AS TEXT)) != ''
+          AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
+          AND date(fecha) <= date('now')
+    ),
+    base_matches AS (
         SELECT 
             p.id_temporada, 
             p.id_competicion,
             t.temporada,
             c.competicion
-        FROM partidos p
+        FROM completed_matches p
         JOIN temporadas t ON p.id_temporada = t.id_temporada
         JOIN competiciones c ON p.id_competicion = c.id_competicion
         GROUP BY p.id_temporada, p.id_competicion
@@ -231,7 +237,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             SUM(CASE WHEN p.goles_rival = 0 AND al.minutos_jugados > 0 THEN 1 ELSE 0 END) as porterias_cero,
             SUM(CASE WHEN al.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) as victorias
         FROM alineaciones al
-        JOIN partidos p ON al.id_partido = p.id_partido
+        JOIN completed_matches p ON al.id_partido = p.id_partido
         WHERE al.id_jugadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
@@ -242,7 +248,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             p.id_competicion,
             COUNT(g.id_gol) as goles
         FROM goles_y_asistencias g
-        JOIN partidos p ON g.id_partido = p.id_partido
+        JOIN completed_matches p ON g.id_partido = p.id_partido
         WHERE g.goleadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
@@ -253,7 +259,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             p.id_competicion,
             COUNT(a.id_gol) as asistencias
         FROM goles_y_asistencias a
-        JOIN partidos p ON a.id_partido = p.id_partido
+        JOIN completed_matches p ON a.id_partido = p.id_partido
         WHERE a.asistente = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
@@ -265,7 +271,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
             SUM(CASE WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) = 'RED' THEN 1 ELSE 0 END) as tarjetas_rojas
         FROM tarjetas t
-        JOIN partidos p ON t.id_partido = p.id_partido
+        JOIN completed_matches p ON t.id_partido = p.id_partido
         WHERE t.id_jugadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
@@ -275,7 +281,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
             p.id_temporada,
             p.id_competicion,
             COUNT(*) as capitanias
-        FROM partidos p
+        FROM completed_matches p
         WHERE p.capitana = ?
         GROUP BY p.id_temporada, p.id_competicion
     )

@@ -26,6 +26,9 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                     INNER JOIN jugadoras j ON ga.goleadora = j.id_jugadora
                     WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                     GROUP BY j.id_jugadora, j.nombre
                     ORDER BY goles DESC
                     LIMIT 1
@@ -46,7 +49,10 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                         (p.goles_rm - p.goles_rival) as diferencia,
                         p.goles_rm || '-' || p.goles_rival as resultado
                     FROM partidos p
-                    WHERE (p.id_club_local = ? OR p.id_club_visitante = ?) 
+                    WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now') 
                     AND p.goles_rm > p.goles_rival
                     ORDER BY diferencia DESC, p.goles_rm DESC
                     LIMIT 1
@@ -67,7 +73,10 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                         (p.goles_rival - p.goles_rm) as diferencia,
                         p.goles_rm || '-' || p.goles_rival as resultado
                     FROM partidos p
-                    WHERE (p.id_club_local = ? OR p.id_club_visitante = ?) 
+                    WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now') 
                     AND p.goles_rm < p.goles_rival
                     ORDER BY diferencia DESC, p.goles_rival DESC
                     LIMIT 1
@@ -87,6 +96,9 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                         COUNT(*) as veces
                     FROM partidos p
                     WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                     AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
                     AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                     GROUP BY resultado
@@ -110,6 +122,9 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                     INNER JOIN partidos p ON ga.id_partido = p.id_partido
                     INNER JOIN jugadoras j ON ga.id_jugadora = j.id_jugadora
                     WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                     GROUP BY j.id_jugadora, j.nombre
                     ORDER BY partidos DESC
                     LIMIT 1
@@ -155,6 +170,9 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.goleadora IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                 AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY goles DESC
@@ -174,6 +192,9 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE ga.asistente IS NOT NULL
                 AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                 AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                 GROUP BY j.id_jugadora, j.nombre
                 ORDER BY asistencias DESC
@@ -197,6 +218,9 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.goleadora IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                     AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                     
@@ -209,6 +233,9 @@ export async function fetchRivalTopPlayers(rivalId: string | number): Promise<an
                     INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                     WHERE ga.asistente IS NOT NULL
                     AND (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                     AND c.competicion IN ('Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España')
                     GROUP BY j.id_jugadora, j.nombre
                 )
@@ -263,6 +290,9 @@ export async function fetchRivalMatches(rivalId: string | number): Promise<any[]
                 LEFT JOIN arbitras a ON p.id_arbitra = a.id_arbitra
                 LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
                 WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                    AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                    AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                    AND date(p.fecha) <= date('now')
                 AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
                 AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                 ORDER BY p.fecha DESC

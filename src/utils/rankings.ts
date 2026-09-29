@@ -86,7 +86,13 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
         }
 
         const query = `
-            WITH 
+            WITH
+            completed_matches AS (
+                SELECT * FROM partidos
+                WHERE goles_rm IS NOT NULL AND TRIM(CAST(goles_rm AS TEXT)) != ''
+                  AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
+                  AND date(fecha) <= date('now')
+            ),
             lineup_data AS (
                 SELECT 
                     a.id_jugadora,
@@ -101,7 +107,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(CASE WHEN a.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) as victorias,
                     SUM(CASE WHEN a.minutos_jugados > 0 AND p.goles_rival = 0 THEN 1 ELSE 0 END) as porterias_cero
                 FROM alineaciones a
-                JOIN partidos p ON a.id_partido = p.id_partido
+                JOIN completed_matches p ON a.id_partido = p.id_partido
                 GROUP BY a.id_jugadora, p.id_temporada, p.id_competicion
             ),
             goal_data AS (
@@ -111,7 +117,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     p.id_competicion,
                     COUNT(*) as goles
                 FROM goles_y_asistencias ga
-                JOIN partidos p ON ga.id_partido = p.id_partido
+                JOIN completed_matches p ON ga.id_partido = p.id_partido
                 WHERE goleadora IS NOT NULL
                 GROUP BY goleadora, p.id_temporada, p.id_competicion
             ),
@@ -126,7 +132,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                         p.goles_rival,
                         ROW_NUMBER() OVER (PARTITION BY ga.id_partido ORDER BY ga.minuto ASC) as goal_rank
                     FROM goles_y_asistencias ga
-                    JOIN partidos p ON ga.id_partido = p.id_partido
+                    JOIN completed_matches p ON ga.id_partido = p.id_partido
                     WHERE ga.goleadora IS NOT NULL
                 )
                 SELECT
@@ -152,7 +158,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     p.id_competicion,
                     COUNT(*) as asistencias
                 FROM goles_y_asistencias ga
-                JOIN partidos p ON ga.id_partido = p.id_partido
+                JOIN completed_matches p ON ga.id_partido = p.id_partido
                 WHERE asistente IS NOT NULL
                 GROUP BY asistente, p.id_temporada, p.id_competicion
             ),
@@ -163,7 +169,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     p.id_competicion,
                     COUNT(*) as penaltis
                 FROM goles_y_asistencias ga
-                JOIN partidos p ON ga.id_partido = p.id_partido
+                JOIN completed_matches p ON ga.id_partido = p.id_partido
                 WHERE ga.goleadora IS NOT NULL 
                 AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                 GROUP BY goleadora, p.id_temporada, p.id_competicion
@@ -176,7 +182,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
                     SUM(CASE WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) = 'RED' THEN 1 ELSE 0 END) as tarjetas_rojas
                 FROM tarjetas t
-                JOIN partidos p ON t.id_partido = p.id_partido
+                JOIN completed_matches p ON t.id_partido = p.id_partido
                 GROUP BY t.id_jugadora, p.id_temporada, p.id_competicion
             ),
             u_captain_data AS (
@@ -185,7 +191,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     p.id_temporada,
                     p.id_competicion,
                     COUNT(*) as capitanias
-                FROM partidos p
+                FROM completed_matches p
                 WHERE p.capitana IS NOT NULL
                 GROUP BY p.capitana, p.id_temporada, p.id_competicion
             ),
@@ -226,7 +232,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(COALESCE(ej.faltas_cometidas, 0)) as faltas_cometidas,
                     SUM(COALESCE(ej.pases_ultimo_tercio_totales, 0)) as pases_ultimo_tercio_totales
                 FROM estadisticas_jugadoras ej
-                JOIN partidos p ON ej.id_partido = p.id_partido
+                JOIN completed_matches p ON ej.id_partido = p.id_partido
                 GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
             )
 
@@ -375,6 +381,12 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
         if (!client) return [];
 
         const query = `
+            WITH completed_matches AS (
+                SELECT * FROM partidos
+                WHERE goles_rm IS NOT NULL AND TRIM(CAST(goles_rm AS TEXT)) != ''
+                  AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
+                  AND date(fecha) <= date('now')
+            )
             SELECT 
                 j.id_jugadora,
                 j.nombre,
@@ -388,7 +400,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND ga.asistente = j.id_jugadora) as assists
             FROM alineaciones a
             JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
-            JOIN partidos p ON a.id_partido = p.id_partido
+            JOIN completed_matches p ON a.id_partido = p.id_partido
             JOIN temporadas t ON p.id_temporada = t.id_temporada
             JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE 

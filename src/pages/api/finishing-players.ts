@@ -35,7 +35,10 @@ export const GET: APIRoute = async ({ url }) => {
                     JOIN temporadas t    ON p.id_temporada    = t.id_temporada
                     JOIN competiciones c ON p.id_competicion  = c.id_competicion
                     JOIN jugadoras j     ON ej.id_jugadora    = j.id_jugadora
-                    WHERE 1=1 ${seasonFilter} ${competitionFilter}
+                    WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
+                      ${seasonFilter} ${competitionFilter}
                     GROUP BY ej.id_jugadora
                     HAVING tiros > 0
                     ORDER BY tiros DESC
@@ -50,6 +53,9 @@ export const GET: APIRoute = async ({ url }) => {
                     JOIN temporadas t    ON p.id_temporada    = t.id_temporada
                     JOIN competiciones c ON p.id_competicion  = c.id_competicion
                     WHERE g.goleadora IS NOT NULL AND g.goleadora != '' AND g.goleadora != '0'
+                      AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                       AND EXISTS (
                           SELECT 1 FROM estadisticas_jugadoras ej2
                           WHERE ej2.id_partido = g.id_partido AND ej2.id_jugadora = g.goleadora
@@ -66,6 +72,9 @@ export const GET: APIRoute = async ({ url }) => {
                     JOIN partidos p      ON ej.id_partido     = p.id_partido
                     JOIN temporadas t    ON p.id_temporada    = t.id_temporada
                     JOIN competiciones c ON p.id_competicion  = c.id_competicion
+                    WHERE p.goles_rm IS NOT NULL AND p.goles_rm != ''
+                      AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+                      AND date(p.fecha) <= date('now')
                     ORDER BY t.temporada DESC, c.competicion ASC
                 `,
                 args: [],
