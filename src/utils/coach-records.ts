@@ -3,11 +3,12 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
         const { getPlayersDbClient } = await import('../db/client');
         const db = await getPlayersDbClient();
 
-        if (!db) {
-            return null;
-        }
+        if (!db) return null;
 
-        console.log('Fetching coach records for coach ID:', coachId);
+        const playedFilter = `
+            AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
+            AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
+        `;
 
         const mostFacedResult = await db.execute({
             sql: `
@@ -22,13 +23,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso'
+                ${playedFilter}
                 GROUP BY rival
                 ORDER BY partidos DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Most faced:', mostFacedResult.rows[0]);
 
         const mostWinsResult = await db.execute({
             sql: `
@@ -43,13 +44,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm > p.goles_rival
+                ${playedFilter}
                 GROUP BY rival
                 ORDER BY victorias DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Most wins:', mostWinsResult.rows[0]);
 
         const mostDrawsResult = await db.execute({
             sql: `
@@ -64,13 +65,13 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm = p.goles_rival
+                ${playedFilter}
                 GROUP BY rival
                 ORDER BY empates DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Most draws:', mostDrawsResult.rows[0]);
 
         const biggestWinResult = await db.execute({
             sql: `
@@ -87,12 +88,12 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm > p.goles_rival
+                ${playedFilter}
                 ORDER BY diferencia DESC, p.goles_rm DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Biggest win:', biggestWinResult.rows[0]);
 
         const biggestLossResult = await db.execute({
             sql: `
@@ -109,12 +110,12 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
                 LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso' AND p.goles_rm < p.goles_rival
+                ${playedFilter}
                 ORDER BY diferencia DESC, p.goles_rival DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Biggest loss:', biggestLossResult.rows[0]);
 
         const mostRepeatedResult = await db.execute({
             sql: `
@@ -122,15 +123,15 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
                 FROM partidos p
                 INNER JOIN competiciones c ON p.id_competicion = c.id_competicion
                 WHERE p.id_entrenador = ? AND c.competicion != 'Amistoso'
+                ${playedFilter}
                 GROUP BY resultado
                 ORDER BY veces DESC
                 LIMIT 1
             `,
             args: [coachId],
         });
-        console.log('Most repeated:', mostRepeatedResult.rows[0]);
 
-        const records = {
+        return {
             mas_partido: mostFacedResult.rows[0] || null,
             mas_victorias: mostWinsResult.rows[0] || null,
             mas_empates: mostDrawsResult.rows[0] || null,
@@ -138,13 +139,8 @@ export async function fetchCoachRecords(coachId: string | number): Promise<any> 
             mayor_derrota: biggestLossResult.rows[0] || null,
             mas_repetido: mostRepeatedResult.rows[0] || null,
         };
-
-        console.log('Final records object:', records);
-        return records;
     } catch (error) {
         console.error("Error fetching coach records:", error);
         return null;
     }
 }
-
-
