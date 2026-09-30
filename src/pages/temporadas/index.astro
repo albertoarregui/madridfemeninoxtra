@@ -42,12 +42,15 @@ const seasons = [...seasonMap.values()].sort((a, b) => b.season.localeCompare(a.
 
         <div class="season-grid">
             {seasons.map((season) => (
-                <a href={`/temporadas/${season.season.replace("/", "-")}`}>
-                    <strong>{season.season}</strong>
-                    <span>
-                        {season.played} partidos disputados
-                        {season.upcoming ? ` · ${season.upcoming} programados` : ""}
-                    </span>
+                <a class="season-card" href={`/temporadas/${season.season.replace("/", "-")}`}>
+                    <div class="season-card-head">Temporada</div>
+                    <div class="season-card-body">
+                        <strong>{season.season}</strong>
+                        <span>
+                            {season.played} partidos disputados
+                            {season.upcoming ? ` · ${season.upcoming} programados` : ""}
+                        </span>
+                    </div>
                 </a>
             ))}
         </div>
@@ -60,25 +63,59 @@ const seasons = [...seasonMap.values()].sort((a, b) => b.season.localeCompare(a.
         grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
         gap: 1rem;
     }
-    .season-grid a {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
+    .season-card {
+        display: block;
+        position: relative;
+        overflow: hidden;
         text-decoration: none;
-        border: 1px solid rgba(212, 168, 67, 0.22);
-        background: rgba(10, 10, 14, 0.65);
-        padding: 1.4rem;
-        transition: 0.2s;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        border-radius: 4px;
+        background: rgba(8, 16, 34, 0.85);
+        transition: 0.2s ease;
     }
-    .season-grid a:hover {
-        border-color: #d4a843;
+    .season-card::before,
+    .season-card::after {
+        content: "";
+        position: absolute;
+        width: 11px;
+        height: 11px;
+        pointer-events: none;
+    }
+    .season-card::before {
+        top: 0; left: 0;
+        border-top: 1px solid rgba(212, 168, 67, 0.5);
+        border-left: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .season-card::after {
+        right: 0; bottom: 0;
+        border-right: 1px solid rgba(212, 168, 67, 0.5);
+        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .season-card:hover {
+        border-color: rgba(212, 168, 67, 0.5);
+        background: rgba(10, 20, 42, 0.92);
         transform: translateY(-3px);
     }
-    .season-grid strong {
+    .season-card-head {
+        padding: 0.78rem 1rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+        background: rgba(212, 168, 67, 0.03);
+        color: rgba(212, 168, 67, 0.78);
+        font: 600 0.66rem "Cinzel", serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+    }
+    .season-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 1.1rem;
+    }
+    .season-card strong {
         font: 700 1.45rem "Cinzel", serif;
         color: #d4a843;
     }
-    .season-grid span {
+    .season-card span {
         font: 0.78rem "DM Sans", sans-serif;
         color: #aaa;
     }

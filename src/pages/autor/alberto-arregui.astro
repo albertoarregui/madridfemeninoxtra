@@ -76,22 +76,25 @@ const personSchema = {
         </header>
 
         <section class="author-card">
-            <p>
-                Alberto Arregui es el fundador y director de <strong>Madrid Femenino Xtra</strong>,
-                proyecto especializado exclusivamente en el Real Madrid Femenino. Sigue al equipo
-                desde 2019 y puso en marcha la comunidad de MFX en septiembre de 2023; la web y su
-                base de datos histórica se publicaron en diciembre de 2025.
-            </p>
-            <p>
-                En MFX se encarga de la cobertura editorial, la investigación y mantenimiento de
-                datos, la producción multimedia y el desarrollo del producto. El objetivo es combinar
-                actualidad con un archivo estadístico verificable que permita consultar la historia del
-                equipo por jugadora, partido, rival, estadio, árbitra y temporada.
-            </p>
-            <p>
-                Consulta la <a href="/politica-editorial">política editorial y metodología de datos</a>
-                para conocer cómo se verifican, corrigen y actualizan las publicaciones y estadísticas.
-            </p>
+            <div class="author-card-head">Autor y responsable editorial</div>
+            <div class="author-card-body">
+                <p>
+                    Alberto Arregui es el fundador y director de <strong>Madrid Femenino Xtra</strong>,
+                    proyecto especializado exclusivamente en el Real Madrid Femenino. Sigue al equipo
+                    desde 2019 y puso en marcha la comunidad de MFX en septiembre de 2023; la web y su
+                    base de datos histórica se publicaron en diciembre de 2025.
+                </p>
+                <p>
+                    En MFX se encarga de la cobertura editorial, la investigación y mantenimiento de
+                    datos, la producción multimedia y el desarrollo del producto. El objetivo es combinar
+                    actualidad con un archivo estadístico verificable que permita consultar la historia del
+                    equipo por jugadora, partido, rival, estadio, árbitra y temporada.
+                </p>
+                <p>
+                    Consulta la <a href="/politica-editorial">política editorial y metodología de datos</a>
+                    para conocer cómo se verifican, corrigen y actualizan las publicaciones y estadísticas.
+                </p>
+            </div>
         </section>
 
         {articles.length > 0 && (
@@ -100,15 +103,17 @@ const personSchema = {
                 <div class="article-grid">
                     {articles.map((article: any) => (
                         <a class="article-card" href={`/noticias/${article.slug}`}>
-                            <span>{article.category || "ACTUALIDAD"}</span>
-                            <strong>{article.title}</strong>
-                            <time>
-                                {new Date(article.date).toLocaleDateString("es-ES", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                })}
-                            </time>
+                            <div class="article-card-head">{article.category || "ACTUALIDAD"}</div>
+                            <div class="article-card-body">
+                                <strong>{article.title}</strong>
+                                <time>
+                                    {new Date(article.date).toLocaleDateString("es-ES", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                    })}
+                                </time>
+                            </div>
                         </a>
                     ))}
                 </div>
@@ -118,14 +123,54 @@ const personSchema = {
 </Layout>
 
 <style>
-    .author-card {
-        border: 1px solid rgba(212, 168, 67, 0.25);
-        background: rgba(10, 10, 14, 0.68);
-        padding: clamp(1.4rem, 4vw, 2.6rem);
+    .author-card,
+    .article-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        border-radius: 4px;
+        background: rgba(8, 16, 34, 0.85);
+    }
+    .author-card::before,
+    .article-card::before,
+    .author-card::after,
+    .article-card::after {
+        content: "";
+        position: absolute;
+        width: 11px;
+        height: 11px;
+        pointer-events: none;
+    }
+    .author-card::before,
+    .article-card::before {
+        top: 0; left: 0;
+        border-top: 1px solid rgba(212, 168, 67, 0.5);
+        border-left: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .author-card::after,
+    .article-card::after {
+        right: 0; bottom: 0;
+        border-right: 1px solid rgba(212, 168, 67, 0.5);
+        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .author-card-head,
+    .article-card-head {
+        padding: 0.85rem 1.15rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+        background: rgba(212, 168, 67, 0.03);
+        color: rgba(212, 168, 67, 0.82);
+        font: 600 0.68rem "Cinzel", serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+    .author-card-body {
+        padding: clamp(1.3rem, 4vw, 2.3rem);
         font-family: "DM Sans", sans-serif;
         line-height: 1.75;
         color: #d7d7dc;
     }
+    .author-card-body p:first-child { margin-top: 0; }
+    .author-card-body p:last-child { margin-bottom: 0; }
     .author-card strong,
     .author-card a,
     .author-articles h2 { color: #d4a843; }
@@ -142,21 +187,22 @@ const personSchema = {
         gap: 1rem;
     }
     .article-card {
-        display: flex;
-        flex-direction: column;
-        gap: 0.55rem;
+        display: block;
         text-decoration: none;
-        border: 1px solid rgba(212, 168, 67, 0.18);
-        background: rgba(14, 14, 18, 0.58);
-        padding: 1.1rem;
         color: #f0f0f0;
         transition: 0.2s ease;
     }
     .article-card:hover {
-        border-color: rgba(212, 168, 67, 0.65);
+        border-color: rgba(212, 168, 67, 0.5);
+        background: rgba(10, 20, 42, 0.92);
         transform: translateY(-2px);
     }
-    .article-card span,
+    .article-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+        padding: 1rem 1.1rem 1.15rem;
+    }
     .article-card time {
         font-size: 0.72rem;
         color: #a8a8b0;
