@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { fetchRankingsDirectly } from "../../utils/rankings";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../../utils/players";
 import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
 
@@ -71,7 +72,35 @@ const OFFICIAL = new Set([
     "Supercopa de España",
 ]);
 
-const rows = (await fetchRankingsDirectly()).filter(
+const [rankingRows, allPlayers] = await Promise.all([
+    fetchRankingsDirectly(),
+    fetchPlayersDirectly(),
+]);
+
+const playerById = new Map(
+    allPlayers.map((player: any) => [String(player.id_jugadora), player]),
+);
+
+const getRankingPlayerImage = (id: string, name: string): string => {
+    const player = playerById.get(String(id));
+    if (!player) return getPlayerImageUrl({ nombre: name });
+
+    const seasons = [
+        ...new Set([
+            ...Object.keys(player.profile_photos || {}),
+            ...Object.keys(player.season_photos || {}),
+        ]),
+    ].sort().reverse();
+
+    for (const season of seasons) {
+        const photo = player.profile_photos?.[season] || player.season_photos?.[season];
+        if (photo) return getPlayerImageUrl({ ...player, foto_url: photo });
+    }
+
+    return player.imageUrl || getPlayerImageUrl(player);
+};
+
+const rows = rankingRows.filter(
     (row: any) => OFFICIAL.has(row.competicion) && (!config.keep || config.keep(row)),
 );
 
@@ -82,6 +111,7 @@ for (const row of rows) {
         nombre: row.nombre,
         slug: row.slug,
         posicion: row.posicion,
+        imageUrl: getRankingPlayerImage(id, row.nombre),
         value: 0,
     };
     previous.value += Number((row as any)[config.key] || 0);
@@ -139,18 +169,37 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
             ))}
         </nav>
 
-        <section class="rank-table" aria-label={config.h1}>
+        <section class="rank-grid" aria-label={config.h1}>
             {ranking.map((row: any, index: number) => (
-                <a class="rank-row" href={`/jugadoras/${row.slug}`}>
-                    <span class="rank-pos">{index + 1}</span>
-                    <span class="rank-name">
-                        <strong>{row.nombre}</strong>
-                        <small>{row.posicion || "Jugadora"}</small>
-                    </span>
-                    <span class="rank-value">
-                        {Number(row.value).toLocaleString("es-ES")}
-                        <small>{config.label}</small>
-                    </span>
+                <a class="rank-card" href={`/jugadoras/${row.slug}`}>
+                    <div class="rank-card-header">
+                        <span class="rank-card-title">POSICIÓN</span>
+                        <span class="rank-pos">{index + 1}</span>
+                    </div>
+
+                    <div class="rank-card-body">
+                        <div class="rank-player">
+                            <span class="rank-avatar" aria-hidden="true">
+                                <img
+                                    src={row.imageUrl}
+                                    alt=""
+                                    width="64"
+                                    height="64"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                            </span>
+                            <span class="rank-name">
+                                <strong>{row.nombre}</strong>
+                                <small>{row.posicion || "Jugadora"}</small>
+                            </span>
+                        </div>
+
+                        <span class="rank-value">
+                            {Number(row.value).toLocaleString("es-ES")}
+                            <small>{config.label}</small>
+                        </span>
+                    </div>
                 </a>
             ))}
         </section>
@@ -182,34 +231,119 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
         color: #d4a843;
         border-color: #d4a843;
     }
-    .rank-table { border-top: 1px solid rgba(212, 168, 67, 0.28); }
-    .rank-row {
+
+    .rank-grid {
         display: grid;
-        grid-template-columns: 56px 1fr auto;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem 0.8rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        text-decoration: none;
-        color: #eee;
-        background: rgba(9, 9, 12, 0.55);
-        transition: 0.18s;
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
     }
-    .rank-row:hover {
-        background: rgba(212, 168, 67, 0.06);
-        transform: translateX(3px);
+
+    .rank-card {
+        display: block;
+        position: relative;
+        overflow: hidden;
+        background: rgba(8, 16, 34, 0.85);
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        border-radius: 4px;
+        color: #eee;
+        text-decoration: none;
+        transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+    .rank-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 12px;
+        height: 12px;
+        border-top: 1px solid rgba(212, 168, 67, 0.5);
+        border-left: 1px solid rgba(212, 168, 67, 0.5);
+        pointer-events: none;
+        z-index: 2;
+    }
+    .rank-card::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 12px;
+        height: 12px;
+        border-right: 1px solid rgba(212, 168, 67, 0.5);
+        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
+        pointer-events: none;
+        z-index: 2;
+    }
+    .rank-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(212, 168, 67, 0.42);
+        background: rgba(10, 20, 42, 0.92);
+    }
+
+    .rank-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.82rem 1.2rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+        background: rgba(212, 168, 67, 0.03);
+    }
+    .rank-card-title {
+        font-family: "Cinzel", serif;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        color: rgba(212, 168, 67, 0.75);
+        text-transform: uppercase;
     }
     .rank-pos {
-        font: 700 1.1rem "Cinzel", serif;
+        font: 700 1.05rem "Cinzel", serif;
         color: #d4a843;
-        text-align: center;
+        line-height: 1;
+    }
+
+    .rank-card-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1rem 1.2rem;
+    }
+    .rank-player {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        min-width: 0;
+    }
+    .rank-avatar {
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 1px solid rgba(212, 168, 67, 0.42);
+        background: rgba(212, 168, 67, 0.06);
+        box-shadow: inset 0 0 0 2px rgba(6, 13, 28, 0.75);
+    }
+    .rank-avatar img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: center 18%;
     }
     .rank-name {
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
+        min-width: 0;
     }
-    .rank-name strong { font-family: "Cinzel", serif; }
+    .rank-name strong {
+        font-family: "Cinzel", serif;
+        font-size: 0.98rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
     .rank-name small,
     .rank-value small {
         color: #8f8f99;
@@ -221,8 +355,9 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        font: 700 1.15rem "DM Sans", sans-serif;
+        font: 700 1.2rem "DM Sans", sans-serif;
         color: #d4a843;
+        white-space: nowrap;
     }
     .rank-note {
         color: #aaa;
@@ -230,12 +365,36 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
         font: 0.85rem "DM Sans", sans-serif;
     }
     .rank-note a { color: #d4a843; }
+
     @media (max-width: 520px) {
-        .rank-row {
-            grid-template-columns: 38px 1fr auto;
-            gap: 0.6rem;
-            padding: 0.9rem 0.4rem;
+        .ranking-page {
+            padding-left: 1rem;
+            padding-right: 1rem;
         }
-        .rank-value { font-size: 1rem; }
+        .rank-card-header {
+            padding: 0.72rem 0.9rem;
+        }
+        .rank-card-body {
+            gap: 0.7rem;
+            padding: 0.85rem 0.9rem;
+        }
+        .rank-player {
+            gap: 0.7rem;
+        }
+        .rank-avatar {
+            width: 52px;
+            height: 52px;
+            flex-basis: 52px;
+        }
+        .rank-name strong {
+            font-size: 0.86rem;
+        }
+        .rank-name small,
+        .rank-value small {
+            font-size: 0.58rem;
+        }
+        .rank-value {
+            font-size: 1rem;
+        }
     }
 </style>
