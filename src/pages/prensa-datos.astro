@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { fetchGamesDirectly } from "../utils/partidos";
 import { fetchRankingsDirectly } from "../utils/rankings";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 import { breadcrumbSchema } from "../utils/seo";
 import "../styles/global.css";
 
@@ -13,12 +14,33 @@ const officialCompetitions = new Set([
     "Supercopa de España",
 ]);
 
-const games = (await fetchGamesDirectly()).filter(
+const [allGames, allRankings, allPlayers] = await Promise.all([
+    fetchGamesDirectly(),
+    fetchRankingsDirectly(),
+    fetchPlayersDirectly(),
+]);
+const games = allGames.filter(
     (game: any) => game.isPlayed && officialCompetitions.has(game.competicion_nombre),
 );
-const rankings = (await fetchRankingsDirectly()).filter((row: any) =>
-    officialCompetitions.has(row.competicion),
-);
+const rankings = allRankings.filter((row: any) => officialCompetitions.has(row.competicion));
+
+const playerById = new Map(allPlayers.map((player: any) => [String(player.id_jugadora), player]));
+const getFrontPhoto = (id: string, name: string): string => {
+    const player = playerById.get(String(id));
+    if (!player) return getPlayerImageUrl({ nombre: name, foto_perfil_url: undefined });
+
+    const seasons = Object.keys(player.season_photos || {}).sort().reverse();
+    for (const season of seasons) {
+        const photo = player.season_photos?.[season];
+        if (photo) return getPlayerImageUrl({ ...player, foto_url: photo, foto_perfil_url: undefined });
+    }
+
+    return getPlayerImageUrl({
+        ...player,
+        foto_url: player.foto_url || player.nombre,
+        foto_perfil_url: undefined,
+    });
+};
 
 const goalsFor = games.reduce((sum: number, game: any) => sum + Number(game.goles_rm || 0), 0);
 const goalsAgainst = games.reduce((sum: number, game: any) => sum + Number(game.goles_rival || 0), 0);
@@ -33,8 +55,11 @@ const byPlayer = new Map<string, any>();
 for (const row of rankings) {
     const key = String(row.id_jugadora || row.slug || row.nombre);
     const current = byPlayer.get(key) || {
+        id: key,
         nombre: row.nombre,
         slug: row.slug,
+        posicion: row.posicion,
+        imageUrl: getFrontPhoto(key, row.nombre),
         goles: 0,
         asistencias: 0,
         partidos: 0,
@@ -45,7 +70,7 @@ for (const row of rankings) {
     byPlayer.set(key, current);
 }
 const players = [...byPlayer.values()];
-const topScorer = players.sort((a, b) => b.goles - a.goles)[0];
+const topScorer = [...players].sort((a, b) => b.goles - a.goles)[0];
 const topAssister = [...players].sort((a, b) => b.asistencias - a.asistencias)[0];
 const mostApps = [...players].sort((a, b) => b.partidos - a.partidos)[0];
 const updatedAt = new Date().toLocaleDateString("es-ES", {
@@ -77,11 +102,14 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
         </header>
 
         <section class="press-intro">
-            <p>
-                Esta página reúne datos históricos listos para consulta periodística. Las cifras se
-                calculan directamente desde la base de datos de MFX y solo incluyen partidos oficiales
-                con marcador final registrado.
-            </p>
+            <div class="section-head">Sala de datos</div>
+            <div class="section-body">
+                <p>
+                    Esta página reúne datos históricos listos para consulta periodística. Las cifras se
+                    calculan directamente desde la base de datos de MFX y solo incluyen partidos oficiales
+                    con marcador final registrado.
+                </p>
+            </div>
         </section>
 
         <section class="press-kpis" aria-label="Cifras históricas">
@@ -94,27 +122,25 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
         <section class="press-leaders">
             <h2>Líderes históricas</h2>
             <div class="leader-grid">
-                {topScorer && (
-                    <a href={`/jugadoras/${topScorer.slug}`}>
-                        <span>Máxima goleadora</span>
-                        <strong>{topScorer.nombre}</strong>
-                        <b>{topScorer.goles} goles</b>
+                {[
+                    [topScorer, "Máxima goleadora", `${topScorer?.goles || 0} goles`],
+                    [topAssister, "Máxima asistente", `${topAssister?.asistencias || 0} asistencias`],
+                    [mostApps, "Más partidos", `${mostApps?.partidos || 0} partidos`],
+                ].map(([player, label, value]: any) => player && (
+                    <a href={`/jugadoras/${player.slug}`}>
+                        <div class="leader-head">{label}</div>
+                        <div class="leader-body">
+                            <span class="leader-avatar" aria-hidden="true">
+                                <img src={player.imageUrl} alt="" width="58" height="58" loading="lazy" decoding="async" />
+                            </span>
+                            <span class="leader-name">
+                                <strong>{player.nombre}</strong>
+                                <small>{player.posicion || "Jugadora"}</small>
+                            </span>
+                            <b>{value}</b>
+                        </div>
                     </a>
-                )}
-                {topAssister && (
-                    <a href={`/jugadoras/${topAssister.slug}`}>
-                        <span>Máxima asistente</span>
-                        <strong>{topAssister.nombre}</strong>
-                        <b>{topAssister.asistencias} asistencias</b>
-                    </a>
-                )}
-                {mostApps && (
-                    <a href={`/jugadoras/${mostApps.slug}`}>
-                        <span>Más partidos</span>
-                        <strong>{mostApps.nombre}</strong>
-                        <b>{mostApps.partidos} partidos</b>
-                    </a>
-                )}
+                ))}
             </div>
         </section>
 
@@ -131,29 +157,85 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
         </section>
 
         <section class="press-method">
-            <h2>Cómo citar MFX</h2>
-            <p>
-                Puedes citar las cifras como “Madrid Femenino Xtra (MFX)” enlazando a la página de datos
-                correspondiente. Para comprobar criterios, fuentes y correcciones consulta la
-                <a href="/politica-editorial">metodología editorial y estadística</a>.
-            </p>
-            <p>
-                Para una verificación concreta, una consulta de datos o una solicitud para medios,
-                utiliza <a href="/contacto">Contacto</a>.
-            </p>
+            <div class="section-head">Cómo citar MFX</div>
+            <div class="section-body">
+                <p>
+                    Puedes citar las cifras como “Madrid Femenino Xtra (MFX)” enlazando a la página de datos
+                    correspondiente. Para comprobar criterios, fuentes y correcciones consulta la
+                    <a href="/politica-editorial">metodología editorial y estadística</a>.
+                </p>
+                <p>
+                    Para una verificación concreta, una consulta de datos o una solicitud para medios,
+                    utiliza <a href="/contacto">Contacto</a>.
+                </p>
+            </div>
         </section>
     </main>
 </Layout>
 
 <style>
     .press-intro,
-    .press-method {
-        border-left: 3px solid #d4a843;
-        background: rgba(212, 168, 67, 0.055);
-        padding: 1.25rem 1.4rem;
+    .press-method,
+    .press-kpis div,
+    .leader-grid a,
+    .resource-list a {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        border-radius: 4px;
+        background: rgba(8, 16, 34, 0.85);
+    }
+    .press-intro::before,
+    .press-method::before,
+    .press-kpis div::before,
+    .leader-grid a::before,
+    .resource-list a::before,
+    .press-intro::after,
+    .press-method::after,
+    .press-kpis div::after,
+    .leader-grid a::after,
+    .resource-list a::after {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        pointer-events: none;
+    }
+    .press-intro::before,
+    .press-method::before,
+    .press-kpis div::before,
+    .leader-grid a::before,
+    .resource-list a::before {
+        top: 0; left: 0;
+        border-top: 1px solid rgba(212, 168, 67, 0.5);
+        border-left: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .press-intro::after,
+    .press-method::after,
+    .press-kpis div::after,
+    .leader-grid a::after,
+    .resource-list a::after {
+        right: 0; bottom: 0;
+        border-right: 1px solid rgba(212, 168, 67, 0.5);
+        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .section-head,
+    .leader-head {
+        padding: 0.82rem 1.1rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+        background: rgba(212, 168, 67, 0.03);
+        color: rgba(212, 168, 67, 0.82);
+        font: 600 0.68rem "Cinzel", serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+    .section-body {
+        padding: 1.05rem 1.25rem;
         color: #c9c9cf;
         font: 0.9rem/1.7 "DM Sans", sans-serif;
     }
+    .section-body p { margin: 0.45rem 0; }
+    .section-body a { color: #d4a843; }
     .press-kpis {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -162,8 +244,6 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
     }
     .press-kpis div {
         text-align: center;
-        border: 1px solid rgba(212, 168, 67, 0.22);
-        background: rgba(10, 10, 14, 0.65);
         padding: 1.15rem;
     }
     .press-kpis strong {
@@ -179,8 +259,7 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
     .press-leaders,
     .press-resources { margin: 2.4rem 0; }
     .press-leaders h2,
-    .press-resources h2,
-    .press-method h2 {
+    .press-resources h2 {
         color: #d4a843;
         font: 700 1.1rem "Cinzel", serif;
         margin: 0 0 1rem;
@@ -191,17 +270,61 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
         gap: 0.8rem;
     }
     .leader-grid a {
+        display: block;
+        text-decoration: none;
+        transition: 0.18s ease;
+    }
+    .leader-grid a:hover,
+    .resource-list a:hover {
+        border-color: rgba(212, 168, 67, 0.5);
+        background: rgba(10, 20, 42, 0.92);
+        transform: translateY(-2px);
+    }
+    .leader-body {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem;
+    }
+    .leader-avatar {
+        width: 58px;
+        height: 58px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 1px solid rgba(212, 168, 67, 0.42);
+        background: rgba(212, 168, 67, 0.06);
+        box-shadow: inset 0 0 0 2px rgba(6, 13, 28, 0.75);
+    }
+    .leader-avatar img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: center 18%;
+    }
+    .leader-name {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        border: 1px solid rgba(212, 168, 67, 0.18);
-        background: rgba(10, 10, 14, 0.62);
-        padding: 1.1rem;
-        text-decoration: none;
+        gap: 0.16rem;
+        min-width: 0;
     }
-    .leader-grid span { color: #999; font: 0.7rem "DM Sans", sans-serif; text-transform: uppercase; }
-    .leader-grid strong { color: #eee; font-family: "Cinzel", serif; }
-    .leader-grid b { color: #d4a843; font: 700 0.88rem "DM Sans", sans-serif; }
+    .leader-name strong {
+        color: #eee;
+        font: 700 0.88rem "Cinzel", serif;
+        line-height: 1.25;
+    }
+    .leader-name small {
+        color: #8f8f99;
+        font: 0.6rem "DM Sans", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .leader-grid b {
+        grid-column: 1 / -1;
+        color: #d4a843;
+        font: 700 0.86rem "DM Sans", sans-serif;
+    }
     .resource-list {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -210,11 +333,10 @@ const updatedAt = new Date().toLocaleDateString("es-ES", {
     .resource-list a {
         color: #d4a843;
         text-decoration: none;
-        border: 1px solid rgba(212, 168, 67, 0.2);
-        padding: 0.8rem;
+        padding: 0.9rem;
         font: 0.8rem "DM Sans", sans-serif;
+        transition: 0.18s ease;
     }
-    .press-method a { color: #d4a843; }
     @media (max-width: 720px) {
         .press-kpis { grid-template-columns: repeat(2, 1fr); }
         .leader-grid { grid-template-columns: 1fr; }
