@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import { fetchGamesDirectly } from "../../utils/partidos";
 import { fetchRankingsDirectly } from "../../utils/rankings";
+import { fetchPlayersDirectly, getPlayerImageUrl } from "../../utils/players";
 import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
 
@@ -9,13 +10,36 @@ const { slug } = Astro.params;
 if (!/^\d{4}-\d{2}$/.test(String(slug || ""))) return Astro.redirect("/404");
 
 const season = String(slug).replace("-", "/");
-const allGames = await fetchGamesDirectly();
+const [allGames, allRankingRows, allPlayers] = await Promise.all([
+    fetchGamesDirectly(),
+    fetchRankingsDirectly(),
+    fetchPlayersDirectly(),
+]);
 const games = allGames.filter((game: any) => String(game.temporada_nombre || "") === season);
-const rankingRows = (await fetchRankingsDirectly()).filter(
-    (row: any) => String(row.temporada || "") === season,
-);
+const rankingRows = allRankingRows.filter((row: any) => String(row.temporada || "") === season);
 
 if (!games.length && !rankingRows.length) return Astro.redirect("/404");
+
+const playerById = new Map(allPlayers.map((player: any) => [String(player.id_jugadora), player]));
+const getFrontPhoto = (id: string, name: string): string => {
+    const player = playerById.get(String(id));
+    if (!player) return getPlayerImageUrl({ nombre: name, foto_perfil_url: undefined });
+
+    const exact = player.season_photos?.[season];
+    if (exact) return getPlayerImageUrl({ ...player, foto_url: exact, foto_perfil_url: undefined });
+
+    const seasons = Object.keys(player.season_photos || {}).sort().reverse();
+    for (const seasonKey of seasons) {
+        const photo = player.season_photos?.[seasonKey];
+        if (photo) return getPlayerImageUrl({ ...player, foto_url: photo, foto_perfil_url: undefined });
+    }
+
+    return getPlayerImageUrl({
+        ...player,
+        foto_url: player.foto_url || player.nombre,
+        foto_perfil_url: undefined,
+    });
+};
 
 const played = games
     .filter((game: any) => game.isPlayed)
@@ -52,8 +76,11 @@ const grouped = new Map<string, any>();
 for (const row of rankingRows.filter((item: any) => OFFICIAL.has(item.competicion))) {
     const key = String(row.id_jugadora || row.slug || row.nombre);
     const current = grouped.get(key) || {
+        id: key,
         nombre: row.nombre,
         slug: row.slug,
+        posicion: row.posicion,
+        imageUrl: getFrontPhoto(key, row.nombre),
         goles: 0,
         asistencias: 0,
         partidos: 0,
@@ -72,9 +99,7 @@ const top = (key: string) =>
         .sort((a, b) => b[key] - a[key])
         .slice(0, 5);
 
-const competitions = [
-    ...new Set(games.map((game: any) => game.competicion_nombre).filter(Boolean)),
-];
+const competitions = [...new Set(games.map((game: any) => game.competicion_nombre).filter(Boolean))];
 
 const resultScore = (game: any) => {
     const madridHome = String(game.club_local || "").toLowerCase().includes("real madrid");
@@ -129,53 +154,59 @@ const schema = {
         )}
 
         <section class="leaders">
-            <div class="leader">
-                <h2>Máximas goleadoras</h2>
-                {top("goles").map((row: any, index: number) => (
-                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.goles).toLocaleString("es-ES")}</b></a>
-                ))}
-            </div>
-            <div class="leader">
-                <h2>Máximas asistentes</h2>
-                {top("asistencias").map((row: any, index: number) => (
-                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.asistencias).toLocaleString("es-ES")}</b></a>
-                ))}
-            </div>
-            <div class="leader">
-                <h2>Más partidos</h2>
-                {top("partidos").map((row: any, index: number) => (
-                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.partidos).toLocaleString("es-ES")}</b></a>
-                ))}
-            </div>
-            <div class="leader">
-                <h2>Más minutos</h2>
-                {top("minutos").map((row: any, index: number) => (
-                    <a href={`/jugadoras/${row.slug}`}><span>{index + 1}. {row.nombre}</span><b>{Number(row.minutos).toLocaleString("es-ES")}</b></a>
-                ))}
-            </div>
+            {[
+                ["Máximas goleadoras", "goles", "goles"],
+                ["Máximas asistentes", "asistencias", "asistencias"],
+                ["Más partidos", "partidos", "partidos"],
+                ["Más minutos", "minutos", "minutos"],
+            ].map(([title, key, label]) => (
+                <div class="leader">
+                    <div class="leader-head">{title}</div>
+                    <div class="leader-body">
+                        {top(key).map((row: any, index: number) => (
+                            <a href={`/jugadoras/${row.slug}`}>
+                                <span class="leader-player">
+                                    <span class="leader-avatar" aria-hidden="true">
+                                        <img src={row.imageUrl} alt="" width="48" height="48" loading="lazy" decoding="async" />
+                                    </span>
+                                    <span class="leader-name">
+                                        <strong>{row.nombre}</strong>
+                                        <small>{index + 1}. {row.posicion || "Jugadora"}</small>
+                                    </span>
+                                </span>
+                                <b>{Number(row[key]).toLocaleString("es-ES")} <small>{label}</small></b>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            ))}
         </section>
 
         {upcoming.length > 0 && (
             <section class="matches">
-                <h2>Próximos partidos</h2>
-                {upcoming.slice(0, 6).map((game: any) => (
-                    <a href={`/partidos/${game.slug}`}>
-                        <span>{game.fecha_formateada}</span>
-                        <strong>{game.club_local} - {game.club_visitante}</strong>
-                    </a>
-                ))}
+                <div class="matches-head">Próximos partidos</div>
+                <div class="matches-body">
+                    {upcoming.slice(0, 6).map((game: any) => (
+                        <a href={`/partidos/${game.slug}`}>
+                            <span>{game.fecha_formateada}</span>
+                            <strong>{game.club_local} - {game.club_visitante}</strong>
+                        </a>
+                    ))}
+                </div>
             </section>
         )}
 
         {played.length > 0 && (
             <section class="matches">
-                <h2>Últimos resultados</h2>
-                {played.slice(0, 8).map((game: any) => (
-                    <a href={`/partidos/${game.slug}`}>
-                        <span>{game.fecha_formateada}</span>
-                        <strong>{game.club_local} {resultScore(game)} {game.club_visitante}</strong>
-                    </a>
-                ))}
+                <div class="matches-head">Últimos resultados</div>
+                <div class="matches-body">
+                    {played.slice(0, 8).map((game: any) => (
+                        <a href={`/partidos/${game.slug}`}>
+                            <span>{game.fecha_formateada}</span>
+                            <strong>{game.club_local} {resultScore(game)} {game.club_visitante}</strong>
+                        </a>
+                    ))}
+                </div>
             </section>
         )}
 
@@ -195,9 +226,47 @@ const schema = {
         gap: 0.6rem;
         margin-bottom: 1.5rem;
     }
+    .summary div,
+    .leader,
+    .matches,
+    .season-links a {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(212, 168, 67, 0.18);
+        border-radius: 4px;
+        background: rgba(8, 16, 34, 0.85);
+    }
+    .summary div::before,
+    .leader::before,
+    .matches::before,
+    .season-links a::before,
+    .summary div::after,
+    .leader::after,
+    .matches::after,
+    .season-links a::after {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        pointer-events: none;
+    }
+    .summary div::before,
+    .leader::before,
+    .matches::before,
+    .season-links a::before {
+        top: 0; left: 0;
+        border-top: 1px solid rgba(212, 168, 67, 0.5);
+        border-left: 1px solid rgba(212, 168, 67, 0.5);
+    }
+    .summary div::after,
+    .leader::after,
+    .matches::after,
+    .season-links a::after {
+        right: 0; bottom: 0;
+        border-right: 1px solid rgba(212, 168, 67, 0.5);
+        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
+    }
     .summary div {
-        border: 1px solid rgba(212, 168, 67, 0.2);
-        background: rgba(10, 10, 14, 0.65);
         padding: 1rem;
         text-align: center;
     }
@@ -210,6 +279,7 @@ const schema = {
         font: 0.68rem "DM Sans", sans-serif;
         color: #999;
         text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
     .competitions {
         color: #aaa;
@@ -222,44 +292,95 @@ const schema = {
         gap: 1rem;
         margin: 2rem 0;
     }
-    .leader {
-        border: 1px solid rgba(212, 168, 67, 0.18);
-        background: rgba(10, 10, 14, 0.62);
-        padding: 1rem;
+    .leader-head,
+    .matches-head {
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.12);
+        background: rgba(212, 168, 67, 0.03);
+        color: rgba(212, 168, 67, 0.82);
+        font: 600 0.7rem "Cinzel", serif;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
     }
-    .leader h2,
-    .matches h2 {
-        font: 700 1.05rem "Cinzel", serif;
-        color: #d4a843;
-        margin: 0 0 0.8rem;
-    }
+    .leader-body { padding: 0.2rem 1rem 0.4rem; }
     .leader a {
         display: flex;
+        align-items: center;
         justify-content: space-between;
         gap: 1rem;
         color: #ddd;
         text-decoration: none;
-        padding: 0.55rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 0.65rem 0;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.07);
     }
-    .leader a:last-child { border: 0; }
-    .leader b { color: #d4a843; }
+    .leader a:last-child { border-bottom: 0; }
+    .leader-player {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        min-width: 0;
+    }
+    .leader-avatar {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 1px solid rgba(212, 168, 67, 0.42);
+        background: rgba(212, 168, 67, 0.06);
+        box-shadow: inset 0 0 0 2px rgba(6, 13, 28, 0.75);
+    }
+    .leader-avatar img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+        object-position: center 18%;
+    }
+    .leader-name {
+        display: flex;
+        flex-direction: column;
+        gap: 0.16rem;
+        min-width: 0;
+    }
+    .leader-name strong {
+        color: #eee;
+        font: 700 0.84rem "Cinzel", serif;
+        line-height: 1.25;
+    }
+    .leader-name small,
+    .leader b small {
+        color: #8f8f99;
+        font: 0.58rem "DM Sans", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .leader b {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        color: #d4a843;
+        font: 700 0.9rem "DM Sans", sans-serif;
+        white-space: nowrap;
+    }
     .matches { margin: 2rem 0; }
-    .matches > a {
+    .matches-body { padding: 0.15rem 1rem 0.35rem; }
+    .matches-body > a {
         display: flex;
         gap: 1rem;
         align-items: center;
         text-decoration: none;
         color: #eee;
-        padding: 0.75rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(212, 168, 67, 0.07);
     }
-    .matches > a span {
+    .matches-body > a:last-child { border-bottom: 0; }
+    .matches-body > a span {
         min-width: 110px;
         color: #999;
         font-size: 0.75rem;
     }
-    .matches > a:hover strong { color: #d4a843; }
+    .matches-body > a:hover strong { color: #d4a843; }
     .season-links {
         display: flex;
         flex-wrap: wrap;
@@ -268,10 +389,14 @@ const schema = {
     }
     .season-links a {
         color: #d4a843;
-        border: 1px solid rgba(212, 168, 67, 0.25);
         padding: 0.65rem 0.8rem;
         text-decoration: none;
         font-size: 0.78rem;
+        transition: 0.18s ease;
+    }
+    .season-links a:hover {
+        border-color: rgba(212, 168, 67, 0.5);
+        background: rgba(10, 20, 42, 0.92);
     }
     @media (max-width: 760px) {
         .summary { grid-template-columns: repeat(3, 1fr); }
@@ -279,10 +404,15 @@ const schema = {
     }
     @media (max-width: 430px) {
         .summary { grid-template-columns: repeat(2, 1fr); }
-        .matches > a {
+        .matches-body > a {
             align-items: flex-start;
             flex-direction: column;
             gap: 0.2rem;
+        }
+        .leader-avatar {
+            width: 44px;
+            height: 44px;
+            flex-basis: 44px;
         }
     }
 </style>
