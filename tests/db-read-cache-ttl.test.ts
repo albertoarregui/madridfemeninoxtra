@@ -7,6 +7,7 @@ test('los datos deportivos dinámicos se renuevan cada cinco minutos', () => {
     assert.equal(readCacheTtlMs([tableCacheTag('partidos')]), 5 * 60 * 1000);
     assert.equal(readCacheTtlMs([tableCacheTag('goles_y_asistencias')]), 5 * 60 * 1000);
     assert.equal(readCacheTtlMs([tableCacheTag('estadisticas_partidos')]), 5 * 60 * 1000);
+    assert.equal(readCacheTtlMs([tableCacheTag('mvp')]), 5 * 60 * 1000);
 });
 
 test('los catálogos estáticos conservan la caché larga', () => {
