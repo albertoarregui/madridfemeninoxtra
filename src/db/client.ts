@@ -13,6 +13,8 @@ const globalForDb = globalThis as unknown as {
 const STATIC_DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DYNAMIC_DB_READ_TTL_MS = 5 * 60 * 1000;
 const DB_CACHE_VERSION = 'v9';
+const MVP_DB_CACHE_VERSION = 'v2';
+const MVP_READ_TAG = tableCacheTag('mvp');
 
 const DYNAMIC_READ_TAGS = new Set([
     tableCacheTag('partidos'),
@@ -27,6 +29,7 @@ const DYNAMIC_READ_TAGS = new Set([
     tableCacheTag('cambios'),
     tableCacheTag('penaltis_fallados'),
     tableCacheTag('tanda_penaltis'),
+    MVP_READ_TAG,
 ]);
 
 export function readCacheTtlMs(tags: readonly string[]): number {
@@ -186,7 +189,12 @@ function withReadCache(client: Client, database: string, forceRefresh = false): 
                 const args = statementArgs(statement, executeArgs);
                 const normalizedSql = sql.replace(/\s+/g, ' ').trim();
                 const tags = tagsForReadSql(sql);
-                const key = `turso:${DB_CACHE_VERSION}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
+                // Versionar solo las lecturas de MVP permite purgar el premio
+                // actual sin invalidar el resto de catálogos de larga duración.
+                const cacheVersion = tags.includes(MVP_READ_TAG)
+                    ? `${DB_CACHE_VERSION}:${MVP_DB_CACHE_VERSION}`
+                    : DB_CACHE_VERSION;
+                const key = `turso:${cacheVersion}:${database}:${normalizedSql}:${JSON.stringify(stableValue(args))}`;
                 const ttlMs = readCacheTtlMs(tags);
 
                 return cached(key, ttlMs, async () => {
