@@ -1,0 +1,115 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import LaFabricaNav from "../../components/LaFabricaNav.astro";
+import { fetchFabricaHistory } from "../../utils/fabrica";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/la-fabrica.css";
+
+const milestones = await fetchFabricaHistory();
+const promotions = milestones.filter((item) => /ascenso/i.test(item.titulo) || /ascend/i.test(item.descripcion)).length;
+const youthTitles = milestones.filter((item) => item.categoria === "Juvenil" && /Campeón/i.test(item.titulo)).length;
+
+function formatDate(date: string | null): string {
+    if (!date) return "";
+    return new Intl.DateTimeFormat("es-ES", {
+        timeZone: "UTC",
+        year: "numeric",
+        month: "long",
+    }).format(new Date(date + "T12:00:00Z"));
+}
+---
+
+<Layout
+    title="Historia de La Fábrica | Cantera del Real Madrid Femenino | MFX"
+    description="Historia de la cantera del Real Madrid Femenino desde 2020: títulos, ascensos del filial, éxitos del Juvenil y promociones al primer equipo."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "La Fábrica", path: "/la-fabrica" },
+                { name: "Historia", path: "/la-fabrica/historia" },
+            ]),
+        )}
+    />
+
+    <main class="fabrica-page">
+        <div class="fabrica-shell">
+            <header class="fabrica-hero">
+                <p class="fabrica-eyebrow">La Fábrica · Historia</p>
+                <h1 class="fabrica-title">Una cantera en <em>construcción</em></h1>
+                <p class="fabrica-lead">
+                    Desde su nacimiento en 2020, la estructura femenina ha ido ganando
+                    categorías, títulos y presencia en el primer equipo. Esta cronología
+                    recoge los hitos deportivos documentados de La Fábrica.
+                </p>
+            </header>
+
+            <LaFabricaNav />
+
+            <section class="fabrica-kpis" aria-label="Resumen histórico">
+                <article class="fabrica-kpi">
+                    <strong>2020</strong>
+                    <span>nacimiento de la cantera femenina</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{promotions}</strong>
+                    <span>hitos de ascenso registrados en el filial</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{youthTitles}</strong>
+                    <span>títulos juveniles destacados registrados</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>2ª</strong>
+                    <span>categoría nacional alcanzada por el Real Madrid B</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{milestones.length}</strong>
+                    <span>hitos documentados actualmente en la base histórica</span>
+                </article>
+            </section>
+
+            <section class="fabrica-section">
+                <div class="fabrica-section-header">
+                    <div>
+                        <p class="fabrica-eyebrow">Cronología</p>
+                        <h2 class="fabrica-section-title">Hitos de La Fábrica</h2>
+                        <p class="fabrica-section-copy">
+                            Del primer título invicto del filial a las promociones de
+                            futbolistas formadas en Valdebebas.
+                        </p>
+                    </div>
+                </div>
+
+                {milestones.length > 0 ? (
+                    <div class="timeline">
+                        {milestones.map((item) => (
+                            <article class="timeline-card">
+                                <div class="timeline-meta">
+                                    {item.temporada && <span class="meta-pill">{item.temporada}</span>}
+                                    <span class="meta-pill">{item.categoria}</span>
+                                    {item.fecha && <span class="meta-pill">{formatDate(item.fecha)}</span>}
+                                </div>
+                                <h2>{item.titulo}</h2>
+                                <p>{item.descripcion}</p>
+                                <a
+                                    class="source-link"
+                                    href={item.fuente_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Fuente oficial ↗
+                                </a>
+                            </article>
+                        ))}
+                    </div>
+                ) : (
+                    <div class="fabrica-empty">No hay hitos disponibles.</div>
+                )}
+            </section>
+        </div>
+    </main>
+</Layout>

@@ -1,0 +1,253 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import LaFabricaNav from "../../components/LaFabricaNav.astro";
+import { fetchFabricaSpain } from "../../utils/fabrica";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/la-fabrica.css";
+
+const { summary, tournaments } = await fetchFabricaSpain();
+const share = summary.plazas_totales > 0
+    ? (summary.plazas_rm / summary.plazas_totales * 100).toLocaleString("es-ES", { maximumFractionDigits: 1 })
+    : "0";
+
+const linkLabel = (url: string) => {
+    try {
+        const host = new URL(url).hostname.replace(/^www\./, "");
+        if (host.includes("rfef")) return "RFEF";
+        if (host.includes("uefa")) return "UEFA";
+        if (host.includes("fifa")) return "FIFA";
+        if (host.includes("realmadrid")) return "Real Madrid";
+        return host;
+    } catch {
+        return "Fuente";
+    }
+};
+
+const rankText = (ranking: number, shared: boolean) =>
+    `${ranking}.º${shared ? " (empatado)" : ""}`;
+
+const roleText = (item: any) => {
+    const roles = [];
+    if (item.capitana_final) roles.push("capitana");
+    if (item.titular_final === true) roles.push("titular en la final");
+    else if (item.jugo_final === true) roles.push("jugó la final");
+    if (item.goles_torneo != null) roles.push(`${item.goles_torneo} goles`);
+    if (item.vinculo_rm === "antes_de_llegar") roles.push("llegó después al Madrid");
+    if (item.vinculo_rm === "despues_de_salir") roles.push("formada previamente en el Madrid");
+    return roles.join(" · ");
+};
+
+const datasetSchema = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: "Aportación del Real Madrid a las selecciones inferiores femeninas de España",
+    description: "Histórico de las jugadoras del Real Madrid y canteranas madridistas en las fases finales europeas y mundiales en las que España fue campeona o subcampeona desde 2022.",
+    url: "https://www.madridfemeninoxtra.com/la-fabrica/espana",
+    temporalCoverage: "2022/2026",
+    creator: {
+        "@type": "Organization",
+        name: "Madrid Femenino Xtra",
+        url: "https://www.madridfemeninoxtra.com/",
+    },
+};
+---
+
+<Layout
+    title="Canteranas del Real Madrid con España: Europeos y Mundiales | La Fábrica"
+    description="Datos torneo a torneo del peso del Real Madrid en las selecciones inferiores de España: jugadoras aportadas, ranking por clubes, finales y premios UEFA y FIFA."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "La Fábrica", path: "/la-fabrica" },
+                { name: "España", path: "/la-fabrica/espana" },
+            ]),
+        )}
+    />
+    <script type="application/ld+json" slot="head" set:html={JSON.stringify(datasetSchema)} />
+
+    <main class="fabrica-page">
+        <div class="fabrica-shell">
+            <header class="fabrica-hero">
+                <p class="fabrica-eyebrow">La Fábrica · España</p>
+                <h1 class="fabrica-title">Una cantera con peso en <em>España</em></h1>
+                <p class="fabrica-lead">
+                    En las diez fases finales europeas y mundiales analizadas desde 2022,
+                    el Real Madrid nunca bajó del top-2 de clubes que más jugadoras
+                    aportaron a las selecciones españolas finalistas.
+                </p>
+            </header>
+
+            <LaFabricaNav />
+
+            <section class="fabrica-kpis" aria-label="España en cifras">
+                <article class="fabrica-kpi">
+                    <strong>{summary.total_torneos}</strong>
+                    <span>finales con España campeona o subcampeona</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.plazas_rm}</strong>
+                    <span>plazas acumuladas de jugadoras del Real Madrid</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{share}%</strong>
+                    <span>de las {summary.plazas_totales} plazas acumuladas de España</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.torneos_lider}/{summary.total_torneos}</strong>
+                    <span>torneos como club líder o colíder en aportación</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.torneos_top2}/{summary.total_torneos}</strong>
+                    <span>torneos dentro del top-2 de clubes representados</span>
+                </article>
+            </section>
+
+            <div class="fabrica-note">
+                <strong>Criterio:</strong> “madridistas oficiales” cuenta a las jugadoras que
+                pertenecían al Real Madrid durante el torneo. También se identifican por
+                separado las futbolistas que pasaron por La Fábrica antes o después, para
+                no mezclar formación histórica con la aportación oficial del club en cada convocatoria.
+            </div>
+
+            <section class="fabrica-section">
+                <div class="fabrica-section-header">
+                    <div>
+                        <p class="fabrica-eyebrow">2022—2026</p>
+                        <h2 class="fabrica-section-title">Torneo por torneo</h2>
+                        <p class="fabrica-section-copy">
+                            Aportación de jugadoras, posición del Real Madrid frente a los
+                            demás clubes y protagonismo de las canteranas en cada campeonato.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="tournaments">
+                    {tournaments.map((tournament) => {
+                        const maxClub = Math.max(...tournament.clubs.map((club) => club.jugadoras), 1);
+                        return (
+                            <article class="tournament-card" id={tournament.slug}>
+                                <div class="tournament-topline">
+                                    <div>
+                                        <div class="tournament-meta">
+                                            <span class="meta-pill">{tournament.anio}</span>
+                                            <span class="meta-pill">{tournament.categoria}</span>
+                                            <span class="result-pill">{tournament.resultado_espana}</span>
+                                            <span class="rank-pill">RM {rankText(tournament.ranking_rm, tournament.ranking_compartido)}</span>
+                                        </div>
+                                        <h2>{tournament.competicion} {tournament.categoria} {tournament.anio}</h2>
+                                    </div>
+                                    <div class="tournament-rm-count">
+                                        <strong>{tournament.madridistas_oficiales}</strong>
+                                        <span>madridistas de {tournament.total_convocadas} convocadas</span>
+                                    </div>
+                                </div>
+
+                                <p>{tournament.resumen}</p>
+
+                                <div class="tournament-columns">
+                                    <div class="tournament-block">
+                                        <h3>Aportación por clubes</h3>
+                                        <div class="club-ranking">
+                                            {tournament.clubs.map((club) => (
+                                                <div class:list={["club-row", { rm: club.club === "Real Madrid CF" }]}>
+                                                    <span>{club.club === "Real Madrid CF" ? "Real Madrid" : club.club}</span>
+                                                    <span class="club-bar" aria-hidden="true">
+                                                        <span style={`width: ${(club.jugadoras / maxClub) * 100}%`}></span>
+                                                    </span>
+                                                    <strong>{club.jugadoras}</strong>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div class="tournament-block">
+                                        <h3>Canteranas y madridistas</h3>
+                                        <div class="people-list">
+                                            {tournament.participations.map((item) => (
+                                                <div class="person-row">
+                                                    <div class="person-head">
+                                                        <span class="person-name">{item.nombre}</span>
+                                                        {roleText(item) && <span class="person-role">{roleText(item)}</span>}
+                                                    </div>
+                                                    {item.resumen && <p>{item.resumen}</p>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {tournament.awards.length > 0 && (
+                                    <div class="tournament-block tournament-awards">
+                                        <h3>Galardones individuales</h3>
+                                        <div class="awards-list">
+                                            {tournament.awards.map((award) => (
+                                                <div class="award-row">
+                                                    <div class="award-head">
+                                                        <span class="award-name">
+                                                            {award.nombre} · <span>{award.galardon}</span>
+                                                        </span>
+                                                        <span class="meta-pill">{award.organismo}</span>
+                                                    </div>
+                                                    {award.detalle && <p>{award.detalle}</p>}
+                                                    <a
+                                                        class="award-source"
+                                                        href={award.fuente_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        Fuente {award.organismo} ↗
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div class="tournament-links">
+                                    <a
+                                        class="link-pill"
+                                        href={tournament.fuente_convocatoria_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {linkLabel(tournament.fuente_convocatoria_url)} · convocatoria ↗
+                                    </a>
+                                    {tournament.fuente_resultado_url && (
+                                        <a
+                                            class="link-pill"
+                                            href={tournament.fuente_resultado_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            {linkLabel(tournament.fuente_resultado_url)} · torneo ↗
+                                        </a>
+                                    )}
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
+            </section>
+
+            <section class="fabrica-section">
+                <div class="fabrica-panel">
+                    <p class="fabrica-eyebrow">Lectura global</p>
+                    <h2 class="fabrica-section-title">
+                        {summary.titulos} títulos y {summary.subcampeonatos} subcampeonatos
+                    </h2>
+                    <p class="fabrica-section-copy">
+                        El dato de club se mantiene separado del dato de formación:
+                        en cada edición se identifica quién pertenecía al Real Madrid en
+                        ese momento y quién había pasado o pasaría después por La Fábrica.
+                        Así, la comparación entre clubes y el impacto formativo pueden
+                        leerse sin mezclar criterios.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </main>
+</Layout>

@@ -8,7 +8,7 @@ export const cacheTags = {
     coaches: 'coaches', coach: (id: string | number) => `coach-${id}`,
     calendar: 'calendar', rivals: 'rivals', homepage: 'homepage',
     news: 'news', newsItem: (slug: string) => `news-${slug}`,
-    awards: 'awards',
+    awards: 'awards', fabrica: 'fabrica',
 } as const;
 
 export function tagsForPath(pathname: string): string[] {
@@ -34,6 +34,7 @@ export function tagsForPath(pathname: string): string[] {
         tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics, cacheTags.stadiums, cacheTags.coaches, 'referees');
     }
     if (/^\/(jugadoras|plantilla)/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics);
+    if (/^\/la-fabrica(?:\/|$)/.test(pathname)) tags.push(cacheTags.fabrica);
     if (/^\/(estadisticas|rankings|records|comparador)/.test(pathname)) tags.push(cacheTags.statistics, cacheTags.rankings);
     if (/^\/estadios/.test(pathname)) tags.push(cacheTags.stadiums, cacheTags.matches, cacheTags.statistics, cacheTags.goals);
     if (/^\/arbitras/.test(pathname)) tags.push(cacheTags.referees, cacheTags.matches, cacheTags.statistics);
