@@ -18,9 +18,6 @@ const SITE_URL = 'https://www.madridfemeninoxtra.com';
 const staticPages = [
     { url: '', priority: 1.0, changefreq: 'daily' },
     { url: 'historia', priority: 0.5, changefreq: 'monthly' },
-    { url: 'la-fabrica', priority: 0.8, changefreq: 'weekly' },
-    { url: 'la-fabrica/historia', priority: 0.7, changefreq: 'monthly' },
-    { url: 'la-fabrica/espana', priority: 0.8, changefreq: 'monthly' },
     { url: 'la-fabrica', priority: 0.8, changefreq: 'monthly' },
     { url: 'la-fabrica/historia', priority: 0.7, changefreq: 'monthly' },
     { url: 'la-fabrica/espana', priority: 0.8, changefreq: 'monthly' },
