@@ -96,7 +96,7 @@ async function main() {
     // Una sola lectura de Turso para reconstruir todo el archivo público.
     const result = await client.execute(query);
     const rows = result.rows.map((row) => Object.fromEntries(
-        result.columns.map((column, index) => [column, row[index]]),
+        result.columns.map((column) => [column, row[column]]),
     ));
 
     const players = {};
