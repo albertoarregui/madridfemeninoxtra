@@ -4,6 +4,7 @@ import LaFabricaNav from "../../components/LaFabricaNav.astro";
 import { fetchFabricaSpain } from "../../utils/fabrica";
 import { breadcrumbSchema } from "../../utils/seo";
 import { getAssetUrl } from "../../utils/assets";
+import { getFabricaTournamentStats } from "../../data/fabrica-estadisticas";
 import "../../styles/la-fabrica.css";
 
 const { summary, tournaments } = await fetchFabricaSpain();
@@ -32,10 +33,24 @@ const roleText = (item: any) => {
     if (item.capitana_final) roles.push("capitana");
     if (item.titular_final === true) roles.push("titular en la final");
     else if (item.jugo_final === true) roles.push("jugó la final");
-    if (item.goles_torneo != null) roles.push(`${item.goles_torneo} goles`);
     if (item.vinculo_rm === "antes_de_llegar") roles.push("llegó después al Madrid");
     if (item.vinculo_rm === "despues_de_salir") roles.push("formada previamente en el Madrid");
     return roles.join(" · ");
+};
+
+const statValue = (value: number | null | undefined) => value == null ? "—" : value.toLocaleString("es-ES");
+
+const statItems = (slug: string, playerName: string) => {
+    const playerStats = getFabricaTournamentStats(slug, playerName);
+    if (!playerStats) return [];
+    return [
+        { label: "Partidos", short: "PJ", value: playerStats.partidos },
+        { label: "Titularidades", short: "TIT", value: playerStats.titularidades },
+        { label: "Minutos", short: "MIN", value: playerStats.minutos },
+        { label: "Goles", short: "G", value: playerStats.goles },
+        { label: "Asistencias", short: "A", value: playerStats.asistencias },
+        ...(playerStats.portera ? [{ label: "Porterías a cero", short: "PC", value: playerStats.porterias_cero }] : []),
+    ];
 };
 
 const competitionLogo = (competition: string, category: string, year: number) => {
@@ -222,7 +237,9 @@ const datasetSchema = {
                                             <div class="fabrica-card-head">Canteranas y madridistas</div>
                                             <div class="tournament-block-body">
                                                 <div class="people-list">
-                                                    {tournament.participations.map((item) => (
+                                                    {tournament.participations.map((item) => {
+                                                        const playerStats = statItems(tournament.slug, item.nombre);
+                                                        return (
                                                         <div class="person-row">
                                                             <div class="person-avatar">
                                                                 <img
@@ -239,10 +256,21 @@ const datasetSchema = {
                                                                     <span class="person-name">{item.nombre}</span>
                                                                     {roleText(item) && <span class="person-role">{roleText(item)}</span>}
                                                                 </div>
+                                                                {playerStats.length > 0 && (
+                                                                    <div class="person-stats" aria-label={`Estadísticas de ${item.nombre} en el torneo`}>
+                                                                        {playerStats.map((stat) => (
+                                                                            <span class="person-stat" title={stat.label}>
+                                                                                <strong>{statValue(stat.value)}</strong>
+                                                                                <small>{stat.short}</small>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                                 {item.resumen && <p>{item.resumen}</p>}
                                                             </div>
                                                         </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>
@@ -253,9 +281,11 @@ const datasetSchema = {
                                             <div class="fabrica-card-head">Galardones individuales</div>
                                             <div class="tournament-block-body">
                                                 <div class="awards-list">
-                                                    {tournament.awards.map((award) => (
-                                                        <div class="award-row">
-                                                            <div class="award-avatar">
+                                                    {tournament.awards.map((award) => {
+                                                        const playerStats = statItems(tournament.slug, award.nombre);
+                                                        return (
+                                                        <div class="person-row award-card">
+                                                            <div class="person-avatar">
                                                                 <img
                                                                     src={playerPhoto(award)}
                                                                     alt={award.nombre}
@@ -265,13 +295,22 @@ const datasetSchema = {
                                                                     decoding="async"
                                                                 />
                                                             </div>
-                                                            <div class="award-content">
-                                                                <div class="award-head">
-                                                                    <span class="award-name">
-                                                                        {award.nombre} · <span>{award.galardon}</span>
-                                                                    </span>
+                                                            <div class="person-content">
+                                                                <div class="person-head">
+                                                                    <span class="person-name">{award.nombre}</span>
+                                                                    <span class="person-role">{award.galardon}</span>
                                                                     <span class="meta-pill">{award.organismo}</span>
                                                                 </div>
+                                                                {playerStats.length > 0 && (
+                                                                    <div class="person-stats" aria-label={`Estadísticas de ${award.nombre} en el torneo`}>
+                                                                        {playerStats.map((stat) => (
+                                                                            <span class="person-stat" title={stat.label}>
+                                                                                <strong>{statValue(stat.value)}</strong>
+                                                                                <small>{stat.short}</small>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                                 {award.detalle && <p>{award.detalle}</p>}
                                                                 <a
                                                                     class="award-source"
@@ -283,7 +322,8 @@ const datasetSchema = {
                                                                 </a>
                                                             </div>
                                                         </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </div>
