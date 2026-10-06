@@ -40,12 +40,24 @@ const roleText = (item: any) => {
 
 const competitionLogo = (competition: string, category: string) => {
     const key = `${competition.toLowerCase()}-${category.toLowerCase()}`;
-    if (key.includes("europeo-sub-17")) return getAssetUrl("competiciones", "euro_femenino_sub17.svg");
-    if (key.includes("europeo-sub-19")) return getAssetUrl("competiciones", "euro_femenino_sub19.svg");
-    if (key.includes("mundial-sub-17")) return getAssetUrl("competiciones", "mundial_femenino_sub17.svg");
-    if (key.includes("mundial-sub-20")) return getAssetUrl("competiciones", "mundial_femenino_sub20.svg");
+
+    if (key.includes("europeo-sub-17")) {
+        return "https://cdn.freebiesupply.com/logos/large/2x/uefa-under-17-championship-logo-png-transparent.png";
+    }
+    if (key.includes("europeo-sub-19")) {
+        return "https://cdn.freebiesupply.com/logos/large/2x/uefa-womens-under-19-championship-logo-png-transparent.png";
+    }
+    if (key.includes("mundial-sub-17")) {
+        return getAssetUrl("competiciones", "mundial_femenino_sub17.svg");
+    }
+    if (key.includes("mundial-sub-20")) {
+        return getAssetUrl("competiciones", "mundial_femenino_sub20.svg");
+    }
+
     return "";
 };
+
+const playerPlaceholder = getAssetUrl("jugadoras", "placeholder.png");
 
 const datasetSchema = {
     "@context": "https://schema.org",
@@ -199,11 +211,23 @@ const datasetSchema = {
                                                 <div class="people-list">
                                                     {tournament.participations.map((item) => (
                                                         <div class="person-row">
-                                                            <div class="person-head">
-                                                                <span class="person-name">{item.nombre}</span>
-                                                                {roleText(item) && <span class="person-role">{roleText(item)}</span>}
+                                                            <div class="person-avatar">
+                                                                <img
+                                                                    src={item.foto_url || playerPlaceholder}
+                                                                    alt={item.nombre}
+                                                                    width="55"
+                                                                    height="55"
+                                                                    loading="lazy"
+                                                                    decoding="async"
+                                                                />
                                                             </div>
-                                                            {item.resumen && <p>{item.resumen}</p>}
+                                                            <div class="person-content">
+                                                                <div class="person-head">
+                                                                    <span class="person-name">{item.nombre}</span>
+                                                                    {roleText(item) && <span class="person-role">{roleText(item)}</span>}
+                                                                </div>
+                                                                {item.resumen && <p>{item.resumen}</p>}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -218,21 +242,33 @@ const datasetSchema = {
                                                 <div class="awards-list">
                                                     {tournament.awards.map((award) => (
                                                         <div class="award-row">
-                                                            <div class="award-head">
-                                                                <span class="award-name">
-                                                                    {award.nombre} · <span>{award.galardon}</span>
-                                                                </span>
-                                                                <span class="meta-pill">{award.organismo}</span>
+                                                            <div class="award-avatar">
+                                                                <img
+                                                                    src={award.foto_url || playerPlaceholder}
+                                                                    alt={award.nombre}
+                                                                    width="55"
+                                                                    height="55"
+                                                                    loading="lazy"
+                                                                    decoding="async"
+                                                                />
                                                             </div>
-                                                            {award.detalle && <p>{award.detalle}</p>}
-                                                            <a
-                                                                class="award-source"
-                                                                href={award.fuente_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                            >
-                                                                Fuente {award.organismo} ↗
-                                                            </a>
+                                                            <div class="award-content">
+                                                                <div class="award-head">
+                                                                    <span class="award-name">
+                                                                        {award.nombre} · <span>{award.galardon}</span>
+                                                                    </span>
+                                                                    <span class="meta-pill">{award.organismo}</span>
+                                                                </div>
+                                                                {award.detalle && <p>{award.detalle}</p>}
+                                                                <a
+                                                                    class="award-source"
+                                                                    href={award.fuente_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                >
+                                                                    Fuente {award.organismo} ↗
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
