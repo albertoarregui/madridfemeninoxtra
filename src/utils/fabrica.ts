@@ -314,7 +314,11 @@ export async function fetchFabricaSpain(): Promise<FabricaSpainData> {
             .sort((a, b) => a.anio - b.anio || a.id_torneo - b.id_torneo)
             .map((tournament) => ({
                 ...tournament,
-                clubs: tournament.clubs.sort((a, b) => b.jugadoras - a.jugadoras || a.club.localeCompare(b.club, 'es')),
+                clubs: tournament.clubs.sort((a, b) =>
+                    b.jugadoras - a.jugadoras
+                    || Number(b.club === 'Real Madrid CF') - Number(a.club === 'Real Madrid CF')
+                    || a.club.localeCompare(b.club, 'es')
+                ),
                 participations: tournament.participations.sort((a, b) => {
                     if (a.es_aportacion_oficial_rm !== b.es_aportacion_oficial_rm) {
                         return Number(b.es_aportacion_oficial_rm) - Number(a.es_aportacion_oficial_rm);
