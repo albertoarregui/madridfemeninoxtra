@@ -17,6 +17,7 @@ export interface FabricaParticipation {
     goles_torneo: number | null;
     resumen: string | null;
     fuente_url: string | null;
+    foto_url: string | null;
 }
 
 export interface FabricaAward {
@@ -101,6 +102,22 @@ WITH resumen AS (
         SUM(CASE WHEN posicion = 2 THEN 1 ELSE 0 END) AS subcampeonatos,
         (SELECT COUNT(*) FROM fabrica_galardones) AS galardones
     FROM fabrica_torneos
+),
+latest_player_photo AS (
+    SELECT id_jugadora, foto_url
+    FROM (
+        SELECT
+            d.id_jugadora,
+            COALESCE(NULLIF(TRIM(d.foto_url), ''), NULLIF(TRIM(d.foto_perfil_url), '')) AS foto_url,
+            ROW_NUMBER() OVER (
+                PARTITION BY d.id_jugadora
+                ORDER BY t.temporada DESC, CASE WHEN d.id_categoria = 4 THEN 0 ELSE 1 END, d.id_dorsal DESC
+            ) AS rn
+        FROM dorsales d
+        JOIN temporadas t ON t.id_temporada = d.id_temporada
+        WHERE COALESCE(NULLIF(TRIM(d.foto_url), ''), NULLIF(TRIM(d.foto_perfil_url), '')) IS NOT NULL
+    )
+    WHERE rn = 1
 )
 SELECT
     'summary' AS kind,
@@ -156,20 +173,22 @@ UNION ALL
 SELECT
     'participation' AS kind,
     json_object(
-        'id_torneo', id_torneo,
-        'id_jugadora', id_jugadora,
-        'nombre', nombre,
-        'club_en_torneo', club_en_torneo,
-        'vinculo_rm', vinculo_rm,
-        'es_aportacion_oficial_rm', es_aportacion_oficial_rm,
-        'jugo_final', jugo_final,
-        'titular_final', titular_final,
-        'capitana_final', capitana_final,
-        'goles_torneo', goles_torneo,
-        'resumen', resumen,
-        'fuente_url', fuente_url
+        'id_torneo', p.id_torneo,
+        'id_jugadora', p.id_jugadora,
+        'nombre', p.nombre,
+        'club_en_torneo', p.club_en_torneo,
+        'vinculo_rm', p.vinculo_rm,
+        'es_aportacion_oficial_rm', p.es_aportacion_oficial_rm,
+        'jugo_final', p.jugo_final,
+        'titular_final', p.titular_final,
+        'capitana_final', p.capitana_final,
+        'goles_torneo', p.goles_torneo,
+        'resumen', p.resumen,
+        'fuente_url', p.fuente_url,
+        'foto_url', ph.foto_url
     ) AS payload
-FROM fabrica_participaciones
+FROM fabrica_participaciones p
+LEFT JOIN latest_player_photo ph ON ph.id_jugadora = p.id_jugadora
 
 UNION ALL
 
