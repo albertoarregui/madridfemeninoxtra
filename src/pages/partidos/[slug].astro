@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 53623)
-Total output lines: 4330
-
 ---
 import Layout from "../../layouts/Layout.astro";
 import {
@@ -1591,7 +1588,207 @@ const matchSchema = matchStartISO ? {
                                                                             }
                                                                         </span>
                                                                     </span>
-                   …3623 tokens truncated…0) : (game.rm_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {event.videoUrl && (
+                                                            <button
+                                                                class="play-video-btn"
+                                                                onclick={`openVideoModal('${event.videoUrl}', 'Gol de ${event.scorer.replace(/'/g, "\\'")}')`}
+                                                                title="Ver gol"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="currentColor"
+                                                                >
+                                                                    <path
+                                                                        stroke="none"
+                                                                        d="M0 0h24v24H0z"
+                                                                        fill="none"
+                                                                    />
+                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : event.type ===
+                                                  "shootout" ? (
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <span
+                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
+                                                        >
+                                                            {event.player}
+                                                        </span>
+                                                        {event.videoUrl && (
+                                                            <button
+                                                                class="play-video-btn"
+                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
+                                                                title="Ver video"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="currentColor"
+                                                                >
+                                                                    <path
+                                                                        stroke="none"
+                                                                        d="M0 0h24v24H0z"
+                                                                        fill="none"
+                                                                    />
+                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : event.type === "penalty" ? (
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <span
+                                                            style={`font-weight: 600; color: ${event.outcome === "scored" ? "#000" : "#ff6b6b"}`}
+                                                        >
+                                                            {event.text}
+                                                        </span>
+                                                        {event.videoUrl && (
+                                                            <button
+                                                                class="play-video-btn"
+                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
+                                                                title="Ver video"
+                                                            >
+                                                                <svg
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                    width="20"
+                                                                    height="20"
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="currentColor"
+                                                                >
+                                                                    <path
+                                                                        stroke="none"
+                                                                        d="M0 0h24v24H0z"
+                                                                        fill="none"
+                                                                    />
+                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
+                                                                </svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : event.type === "card" ? (
+                                                    <strong>
+                                                        {event.player ||
+                                                            "Jugadora"}
+                                                        {event.team ===
+                                                            "rival" && (
+                                                            <span style="color: rgba(200,210,220,0.6); font-size: 0.8em; font-weight: normal; margin-left: 4px;">
+                                                                (
+                                                                {isLocalRM
+                                                                    ? game.club_visitante
+                                                                    : game.club_local}
+                                                                )
+                                                            </span>
+                                                        )}
+                                                    </strong>
+                                                ) : event.type ===
+                                                  "own_goal" ? (
+                                                    <span style="font-weight: 600; color: #ff6b6b;">
+                                                        {event.text}
+                                                    </span>
+                                                ) : (
+                                                    event.text
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                            {
+                                timelineEvents.length === 0 && (
+                                    <p class="no-data-msg">
+                                        Sin eventos registrados
+                                    </p>
+                                )
+                            }
+                        </div>
+                    </div>
+                </section>
+            )}
+            {game.isPlayed && hasMatchMetricsData && (
+                <section class="metrics-card" style="margin-top: 2rem;">
+                    <h2 class="section-header">Métricas</h2>
+                    <div
+                        class="metrics-content"
+                        style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;"
+                    >
+                        <>
+                            {}
+                            <div class="metrics-category">
+                                <h3 class="stat-category-title">
+                                    Distribución
+                                </h3>
+                                <div class="stats-grid">
+                                    {}
+                                    <div class="stat-row">
+                                        <div class="stat-labels">
+                                            <span>
+                                                {isLocalRM
+                                                    ? game.posesion_rm
+                                                        ? `${game.posesion_rm}%`
+                                                        : "50%"
+                                                    : game.posesion_rival
+                                                      ? `${game.posesion_rival}%`
+                                                      : "50%"}
+                                            </span>
+                                            <span class="stat-name">
+                                                Posesión
+                                            </span>
+                                            <span>
+                                                {isLocalRM
+                                                    ? game.posesion_rival
+                                                        ? `${game.posesion_rival}%`
+                                                        : "50%"
+                                                    : game.posesion_rm
+                                                      ? `${game.posesion_rm}%`
+                                                      : "50%"}
+                                            </span>
+                                        </div>
+                                        <div class="stat-bar-container">
+                                            <div
+                                                class="stat-bar rm"
+                                                style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%`}
+                                            />
+                                            <div
+                                                class="stat-bar rival"
+                                                style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {}
+                                    <div class="stat-row">
+                                        <div class="stat-labels">
+                                            <span>
+                                                {isLocalRM
+                                                    ? formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)
+                                                    : formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)}
+                                            </span>
+                                            <span class="stat-name">
+                                                Pases
+                                            </span>
+                                            <span>
+                                                {isLocalRM
+                                                    ? formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)
+                                                    : formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)}
+                                            </span>
+                                        </div>
+                                        <div class="stat-bar-container">
+                                            <div
+                                                class="stat-bar rm"
+                                                style={`width: ${((isLocalRM ? (game.rm_pases_totales || 0) : (game.rival_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
+                                            />
+                                            <div
+                                                class="stat-bar rival"
+                                                style={`width: ${((isLocalRM ? (game.rival_pases_totales || 0) : (game.rm_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
                                             />
                                         </div>
                                     </div>
