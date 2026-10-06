@@ -30,6 +30,7 @@ export interface FabricaAward {
     detalle: string | null;
     orden: number;
     fuente_url: string;
+    foto_url: string | null;
 }
 
 export interface FabricaTournament {
@@ -195,17 +196,19 @@ UNION ALL
 SELECT
     'award' AS kind,
     json_object(
-        'id_galardon', id_galardon,
-        'id_torneo', id_torneo,
-        'id_jugadora', id_jugadora,
-        'nombre', nombre,
-        'galardon', galardon,
-        'organismo', organismo,
-        'detalle', detalle,
-        'orden', orden,
-        'fuente_url', fuente_url
+        'id_galardon', a.id_galardon,
+        'id_torneo', a.id_torneo,
+        'id_jugadora', a.id_jugadora,
+        'nombre', a.nombre,
+        'galardon', a.galardon,
+        'organismo', a.organismo,
+        'detalle', a.detalle,
+        'orden', a.orden,
+        'fuente_url', a.fuente_url,
+        'foto_url', ph.foto_url
     ) AS payload
-FROM fabrica_galardones
+FROM fabrica_galardones a
+LEFT JOIN latest_player_photo ph ON ph.id_jugadora = a.id_jugadora
 `;
 
 export async function fetchFabricaSpain(): Promise<FabricaSpainData> {
