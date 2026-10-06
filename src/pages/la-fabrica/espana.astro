@@ -38,14 +38,29 @@ const roleText = (item: any) => {
     return roles.join(" · ");
 };
 
-const competitionLogo = (competition: string, category: string) => {
+const competitionLogo = (competition: string, category: string, year: number) => {
     const key = `${competition.toLowerCase()}-${category.toLowerCase()}`;
-    if (key.includes("europeo-sub-17")) return getAssetUrl("competiciones", "euro_femenino_sub17.svg");
-    if (key.includes("europeo-sub-19")) return getAssetUrl("competiciones", "euro_femenino_sub19.svg");
-    if (key.includes("mundial-sub-17")) return getAssetUrl("competiciones", "mundial_femenino_sub17.svg");
-    if (key.includes("mundial-sub-20")) return getAssetUrl("competiciones", "mundial_femenino_sub20.svg");
+
+    if (key.includes("europeo-sub-17")) {
+        return "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA%20femenina%20sub17.png";
+    }
+    if (key.includes("europeo-sub-19")) {
+        return "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA%20femenina%20sub19.png";
+    }
+    if (key.includes("mundial-sub-17") && year === 2022) {
+        return "https://fr.wikipedia.org/wiki/Special:Redirect/file/2022%20FIFA%20U-17%20Women%27s%20World%20Cup.png";
+    }
+    if (key.includes("mundial-sub-17") && year === 2024) {
+        return "https://fr.wikipedia.org/wiki/Special:Redirect/file/2024%20FIFA%20U-17%20Women%27s%20World%20Cup%20logo.svg";
+    }
+    if (key.includes("mundial-sub-20") && year === 2026) {
+        return "https://commons.wikimedia.org/wiki/Special:Redirect/file/2026%20FIFA%20U-20%20Women%27s%20World%20Cup%20logo.png";
+    }
+
     return "";
 };
+
+const playerPlaceholder = getAssetUrl("jugadoras", "placeholder.png");
 
 const datasetSchema = {
     "@context": "https://schema.org",
@@ -135,7 +150,7 @@ const datasetSchema = {
                 <div class="tournaments">
                     {tournaments.map((tournament) => {
                         const maxClub = Math.max(...tournament.clubs.map((club) => club.jugadoras), 1);
-                        const logo = competitionLogo(tournament.competicion, tournament.categoria);
+                        const logo = competitionLogo(tournament.competicion, tournament.categoria, tournament.anio);
 
                         return (
                             <details class="tournament-card" id={tournament.slug}>
@@ -199,11 +214,23 @@ const datasetSchema = {
                                                 <div class="people-list">
                                                     {tournament.participations.map((item) => (
                                                         <div class="person-row">
-                                                            <div class="person-head">
-                                                                <span class="person-name">{item.nombre}</span>
-                                                                {roleText(item) && <span class="person-role">{roleText(item)}</span>}
+                                                            <div class="person-avatar">
+                                                                <img
+                                                                    src={item.foto_url || playerPlaceholder}
+                                                                    alt={item.nombre}
+                                                                    width="55"
+                                                                    height="55"
+                                                                    loading="lazy"
+                                                                    decoding="async"
+                                                                />
                                                             </div>
-                                                            {item.resumen && <p>{item.resumen}</p>}
+                                                            <div class="person-content">
+                                                                <div class="person-head">
+                                                                    <span class="person-name">{item.nombre}</span>
+                                                                    {roleText(item) && <span class="person-role">{roleText(item)}</span>}
+                                                                </div>
+                                                                {item.resumen && <p>{item.resumen}</p>}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
