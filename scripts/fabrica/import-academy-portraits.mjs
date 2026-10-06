@@ -27,6 +27,7 @@ function extractPortraitAsset(html) {
     const decoded = html
         .replace(/\\u002F/g, '/')
         .replace(/\\u0026/g, '&')
+        .replace(/\\\//g, '/')
         .replace(/&amp;/g, '&');
 
     const matches = decoded.match(
@@ -116,6 +117,11 @@ async function main() {
         WHERE fp.temporada = '2026/27'
           AND NULLIF(TRIM(fj.portrait_url), '') IS NULL
           AND fj.portrait_source_url LIKE 'https://www.realmadrid.com/%'
+          AND RTRIM(fj.portrait_source_url, '/') NOT IN (
+              'https://www.realmadrid.com/es-ES/futbol/cantera-femenino/real-madrid-b',
+              'https://www.realmadrid.com/es-ES/futbol/cantera-femenino/juvenil',
+              'https://www.realmadrid.com/es-ES/futbol/cantera-femenino/cadete'
+          )
         ORDER BY fj.nombre
     `);
 
