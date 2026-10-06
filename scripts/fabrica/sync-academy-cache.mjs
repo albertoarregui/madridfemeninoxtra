@@ -11,6 +11,8 @@ const accountId = env('CLOUDFLARE_ACCOUNT_ID');
 const apiToken = env('CLOUDFLARE_API_TOKEN');
 const bucket = env('CLOUDFLARE_R2_BUCKET') || 'realmadridfem-database';
 const objectKey = 'data/la-fabrica/academy.json';
+const zoneId = env('CLOUDFLARE_ZONE_ID') || '2b76fb725b13b447aa89c146f80fa059';
+const publicCacheUrl = `https://${env('CLOUDFLARE_IMAGES_DOMAIN') || 'media.madridfemeninoxtra.com'}/${objectKey}`;
 
 if (!databaseUrl || !databaseToken) {
     throw new Error('Faltan credenciales de Turso.');
@@ -163,6 +165,24 @@ async function main() {
 
     if (!response.ok) {
         throw new Error(`Cloudflare R2 respondió ${response.status}: ${await response.text()}`);
+    }
+
+    const purgeResponse = await fetch(
+        `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`,
+        {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${apiToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ files: [publicCacheUrl] }),
+        },
+    );
+
+    if (!purgeResponse.ok) {
+        console.warn(
+            `La caché de R2 se actualizó, pero no se pudo purgar CDN (${purgeResponse.status}).`,
+        );
     }
 
     console.log(
