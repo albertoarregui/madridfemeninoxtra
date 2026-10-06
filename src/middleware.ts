@@ -11,6 +11,7 @@ const SIN_CACHE = [/^\/api\//, /^\/premios/];
 const CACHE_LARGA = [
     /^\/(aviso-legal|politica-cookies|politica-privacidad|terminos-condiciones|sobre-nosotros|contacto)/,
     /^\/(historia|records|premios-historicos)/,
+    /^\/la-fabrica(?:\/|$)/,
 ];
 
 // La CDN absorbe las visitas; las escrituras revalidan solo las etiquetas
