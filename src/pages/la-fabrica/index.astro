@@ -1,0 +1,129 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import LaFabricaNav from "../../components/LaFabricaNav.astro";
+import { fetchFabricaSpain } from "../../utils/fabrica";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/la-fabrica.css";
+
+const { summary, tournaments } = await fetchFabricaSpain();
+const share = summary.plazas_totales > 0
+    ? (summary.plazas_rm / summary.plazas_totales * 100).toLocaleString("es-ES", { maximumFractionDigits: 1 })
+    : "0";
+const world2026 = tournaments.find((t) => t.slug === "mundial-sub20-2026");
+---
+
+<Layout
+    title="La Fábrica del Real Madrid Femenino: cantera, historia y España | MFX"
+    description="La Fábrica del Real Madrid Femenino: historia de la cantera, ascensos, títulos y peso de sus jugadoras en las selecciones inferiores de España."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "La Fábrica", path: "/la-fabrica" },
+            ]),
+        )}
+    />
+
+    <main class="fabrica-page">
+        <div class="fabrica-shell">
+            <header class="fabrica-hero">
+                <p class="fabrica-eyebrow">Cantera · Real Madrid Femenino</p>
+                <h1 class="fabrica-title">La <em>Fábrica</em></h1>
+                <p class="fabrica-lead">
+                    La evolución de la cantera femenina del Real Madrid desde 2020:
+                    ascensos, títulos, promociones al primer equipo y su peso creciente
+                    en las selecciones inferiores de España.
+                </p>
+            </header>
+
+            <LaFabricaNav />
+
+            <section class="fabrica-kpis" aria-label="La Fábrica en cifras">
+                <article class="fabrica-kpi">
+                    <strong>2020</strong>
+                    <span>inicio de la estructura de cantera femenina</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.total_torneos}</strong>
+                    <span>finales europeas o mundiales analizadas desde 2022</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.plazas_rm}</strong>
+                    <span>plazas acumuladas de madridistas en esas convocatorias</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{share}%</strong>
+                    <span>del total de plazas de España en esos diez torneos</span>
+                </article>
+                <article class="fabrica-kpi">
+                    <strong>{summary.torneos_top2}/{summary.total_torneos}</strong>
+                    <span>torneos en los que el Madrid estuvo entre los dos clubes que más aportaron</span>
+                </article>
+            </section>
+
+            <section class="fabrica-grid-2" aria-label="Secciones de La Fábrica">
+                <a class="fabrica-feature" href="/la-fabrica/historia">
+                    <span class="feature-index">01 · HISTORIA</span>
+                    <h2>De Preferente al primer equipo</h2>
+                    <p>
+                        Una cronología de la cantera: nacimiento, ascensos del filial,
+                        títulos del Juvenil y jugadoras que completaron el camino hasta
+                        la primera plantilla.
+                    </p>
+                    <span class="feature-link">Explorar Historia →</span>
+                </a>
+
+                <a class="fabrica-feature" href="/la-fabrica/espana">
+                    <span class="feature-index">02 · ESPAÑA</span>
+                    <h2>Una base de las campeonas</h2>
+                    <p>
+                        Torneo a torneo: número de madridistas, posición del club frente
+                        al resto de canteras, protagonismo en las finales y premios
+                        individuales de UEFA y FIFA.
+                    </p>
+                    <span class="feature-link">Explorar España →</span>
+                </a>
+            </section>
+
+            {world2026 && (
+                <section class="fabrica-section">
+                    <div class="fabrica-section-header">
+                        <div>
+                            <p class="fabrica-eyebrow">Último gran hito internacional</p>
+                            <h2 class="fabrica-section-title">Mundial sub-20 de 2026</h2>
+                        </div>
+                    </div>
+
+                    <div class="fabrica-highlight">
+                        <div class="fabrica-highlight-main">
+                            <strong>5/11</strong>
+                            <h2>madridistas titulares en la final</h2>
+                            <p>
+                                Laia López, Noe Bejarano, Silvia Cristóbal, Irune Dorado
+                                y Pau Comendador salieron de inicio en la final que dio a
+                                España el título mundial.
+                            </p>
+                        </div>
+                        <div class="fabrica-highlight-side">
+                            <div class="fabrica-mini-stat">
+                                <strong>Laia</strong>
+                                <span>Guante de Oro · 2 penaltis detenidos en la final</span>
+                            </div>
+                            <div class="fabrica-mini-stat">
+                                <strong>Silvia</strong>
+                                <span>Jugadora del Partido de la final</span>
+                            </div>
+                            <div class="fabrica-mini-stat">
+                                <strong>Pau</strong>
+                                <span>Bota de Oro · Balón de Bronce</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+        </div>
+    </main>
+</Layout>
