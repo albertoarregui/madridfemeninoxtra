@@ -2,7 +2,10 @@
 import Layout from "../../layouts/Layout.astro";
 import LaFabricaNav from "../../components/LaFabricaNav.astro";
 import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/global.css";
 import "../../styles/la-fabrica.css";
+
+const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","2020/21"];
 ---
 
 <Layout
@@ -34,9 +37,8 @@ import "../../styles/la-fabrica.css";
                 <div class="fabrica-card-head">Archivo histórico</div>
                 <div class="fabrica-card-body">
                     <p>
-                        Selecciona equipo y temporada para consultar sus jugadoras. Cuando una
-                        canterana ya tiene ficha por haber sido convocada con el primer equipo,
-                        su tarjeta enlaza directamente a esa página.
+                        Selecciona equipo y temporada para consultar sus jugadoras.
+                        Las fichas ya existentes del primer equipo se reutilizan, sin duplicar perfiles.
                     </p>
                 </div>
             </section>
@@ -45,17 +47,48 @@ import "../../styles/la-fabrica.css";
                 <div class="section-label">Archivo de plantillas</div>
                 <h2 class="section-title" id="academy-browser-title">EQUIPO Y TEMPORADA</h2>
 
-                <div class="academy-controls fabrica-card">
-                    <div class="academy-team-tabs" role="tablist" aria-label="Equipo de cantera">
-                        <button type="button" class="academy-team-tab active" data-team="Real Madrid B">Real Madrid B</button>
-                        <button type="button" class="academy-team-tab" data-team="Juvenil">Juvenil</button>
-                        <button type="button" class="academy-team-tab" data-team="Cadete">Cadete</button>
+                <div class="academy-filters-panel">
+                    <div class="academy-filter-field">
+                        <span class="academy-filter-label">Equipo</span>
+                        <div class="custom-select-container" data-custom-select="true">
+                            <div class="custom-select-trigger">
+                                <span class="selected-text">Real Madrid B</span>
+                                <span class="custom-select-arrow" aria-hidden="true">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                                </span>
+                            </div>
+                            <select id="academy-team" class="native-select" hidden>
+                                <option value="Real Madrid B" selected>Real Madrid B</option>
+                                <option value="Juvenil">Juvenil</option>
+                                <option value="Cadete">Cadete</option>
+                            </select>
+                            <div class="custom-select-options">
+                                <div class="custom-select-option selected" data-value="Real Madrid B">Real Madrid B</div>
+                                <div class="custom-select-option" data-value="Juvenil">Juvenil</div>
+                                <div class="custom-select-option" data-value="Cadete">Cadete</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <label class="academy-season-control">
-                        <span>Temporada</span>
-                        <select id="academy-season" aria-label="Seleccionar temporada"></select>
-                    </label>
+                    <div class="academy-filter-field">
+                        <span class="academy-filter-label">Temporada</span>
+                        <div class="custom-select-container" data-custom-select="true">
+                            <div class="custom-select-trigger">
+                                <span class="selected-text">2026/27</span>
+                                <span class="custom-select-arrow" aria-hidden="true">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                                </span>
+                            </div>
+                            <select id="academy-season" class="native-select" hidden>
+                                {seasons.map((season, index) => <option value={season} selected={index === 0}>{season}</option>)}
+                            </select>
+                            <div class="custom-select-options">
+                                {seasons.map((season, index) => (
+                                    <div class:list={["custom-select-option", { selected: index === 0 }]} data-value={season}>{season}</div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="academy-roster-meta" aria-live="polite">
@@ -86,8 +119,8 @@ import "../../styles/la-fabrica.css";
     const statusEl = document.getElementById("academy-status");
     const countEl = document.getElementById("academy-count");
     const selectionEl = document.getElementById("academy-selection");
+    const teamEl = document.getElementById("academy-team");
     const seasonEl = document.getElementById("academy-season");
-    const teamButtons = [...document.querySelectorAll(".academy-team-tab")];
 
     const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
         "&": "&amp;",
@@ -112,15 +145,49 @@ import "../../styles/la-fabrica.css";
         return 2;
     };
 
-    function refreshSeasons() {
+    function syncSelectAvailability() {
         if (!state.data) return;
-        const available = state.data.seasons.filter((season) =>
-            state.data.rosters.some((row) => row.team === state.team && row.season === season)
+        const available = new Set(
+            state.data.rosters
+                .filter((row) => row.team === state.team)
+                .map((row) => row.season)
         );
-        if (!available.includes(state.season)) state.season = available[0] || "";
-        seasonEl.innerHTML = available.map((season) =>
-            `<option value="${esc(season)}"${season === state.season ? " selected" : ""}>${esc(season)}</option>`
-        ).join("");
+
+        for (const option of seasonEl.options) {
+            option.disabled = !available.has(option.value);
+        }
+
+        if (!available.has(state.season)) {
+            const firstAvailable = state.data.seasons.find((season) => available.has(season));
+            if (firstAvailable) {
+                state.season = firstAvailable;
+                seasonEl.value = firstAvailable;
+
+                const container = seasonEl.closest(".custom-select-container");
+                const selectedText = container?.querySelector(".selected-text");
+                const options = container?.querySelectorAll(".custom-select-option");
+                if (selectedText) selectedText.textContent = firstAvailable;
+                options?.forEach((option) => {
+                    option.classList.toggle("selected", option.dataset.value === firstAvailable);
+                    option.toggleAttribute("hidden", !available.has(option.dataset.value));
+                });
+            }
+        } else {
+            const container = seasonEl.closest(".custom-select-container");
+            container?.querySelectorAll(".custom-select-option").forEach((option) => {
+                option.toggleAttribute("hidden", !available.has(option.dataset.value));
+            });
+        }
+    }
+
+    function statusBadge(player) {
+        if (player.firstTeamStatus === "permanent") {
+            return '<span class="academy-player-badge">PRIMER EQUIPO</span>';
+        }
+        if (player.firstTeamStatus === "debut") {
+            return '<span class="academy-player-badge academy-player-badge--debut">DEBUT PRIMER EQUIPO</span>';
+        }
+        return "";
     }
 
     function render() {
@@ -153,18 +220,22 @@ import "../../styles/la-fabrica.css";
             .filter((group) => groups.get(group).length)
             .map((group) => {
                 const cards = groups.get(group).map((player) => {
-                    const number = player.number
-                        ? `<span class="academy-player-number">#${esc(player.number)}</span>`
-                        : "";
-                    const firstTeam = player.hasFirstTeamPage
-                        ? '<span class="academy-player-badge">Primer equipo</span>'
-                        : "";
                     const extra = player.membership && player.membership !== "Plantilla nominal"
                         ? `<span class="academy-player-badge academy-player-badge--muted">${esc(player.membership)}</span>`
                         : "";
+                    const dorsal = player.number
+                        ? `<span class="academy-roster-dorsal${String(player.number).length === 1 ? " is-single" : ""}" aria-label="Dorsal ${esc(player.number)}">${esc(player.number)}</span>`
+                        : '<span class="academy-roster-dorsal academy-roster-dorsal--empty" aria-hidden="true"></span>';
+
                     return `
-                        <a class="academy-player-card" href="${esc(player.profileUrl)}">
-                            <div class="academy-player-photo">
+                        <a class="player-portrait-card academy-roster-card" href="${esc(player.profileUrl)}" aria-label="Ver ficha de ${esc(player.name)}">
+                            <span class="pg-corner pg-corner-tl" aria-hidden="true"></span>
+                            <span class="pg-corner pg-corner-tr" aria-hidden="true"></span>
+                            <span class="pg-corner pg-corner-bl" aria-hidden="true"></span>
+                            <span class="pg-corner pg-corner-br" aria-hidden="true"></span>
+                            <div class="pg-card-glow" aria-hidden="true"></div>
+
+                            <div class="pg-card-photo academy-roster-photo">
                                 <img
                                     src="${esc(player.photoUrl || PLACEHOLDER)}"
                                     alt="${esc(player.name)}"
@@ -172,12 +243,21 @@ import "../../styles/la-fabrica.css";
                                     decoding="async"
                                     onerror="this.onerror=null;this.src='${PLACEHOLDER}'"
                                 />
-                                ${number}
                             </div>
-                            <div class="academy-player-info">
-                                <strong>${esc(player.name)}</strong>
-                                <span>${esc(player.position || group)}</span>
-                                <div class="academy-player-badges">${firstTeam}${extra}</div>
+
+                            <div class="pg-card-overlay academy-roster-overlay">
+                                <span class="pg-card-divider" aria-hidden="true"></span>
+                                <div class="academy-roster-mainline">
+                                    <div class="academy-roster-copy">
+                                        <div class="pg-card-name">${esc(player.name)}</div>
+                                        <div class="academy-roster-position">${esc(player.position || group)}</div>
+                                    </div>
+                                    ${dorsal}
+                                </div>
+                                <div class="academy-player-badges">
+                                    ${statusBadge(player)}
+                                    ${extra}
+                                </div>
                             </div>
                         </a>
                     `;
@@ -198,13 +278,10 @@ import "../../styles/la-fabrica.css";
         rosterEl.hidden = false;
     }
 
-    teamButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            state.team = button.dataset.team || "Real Madrid B";
-            teamButtons.forEach((item) => item.classList.toggle("active", item === button));
-            refreshSeasons();
-            render();
-        });
+    teamEl.addEventListener("change", () => {
+        state.team = teamEl.value;
+        syncSelectAvailability();
+        render();
     });
 
     seasonEl.addEventListener("change", () => {
@@ -220,7 +297,8 @@ import "../../styles/la-fabrica.css";
         .then((data) => {
             state.data = data;
             state.season = data.seasons?.[0] || state.season;
-            refreshSeasons();
+            seasonEl.value = state.season;
+            syncSelectAvailability();
             render();
         })
         .catch((error) => {

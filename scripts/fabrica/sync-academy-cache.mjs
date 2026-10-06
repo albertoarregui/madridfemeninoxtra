@@ -60,6 +60,14 @@ WITH latest_player_photo AS (
         ) IS NOT NULL
     )
     WHERE rn = 1
+),
+first_team_status AS (
+    SELECT
+        d.id_jugadora,
+        MAX(CASE WHEN d.id_categoria = 4 THEN 1 ELSE 0 END) AS permanently_promoted,
+        MAX(CASE WHEN NULLIF(TRIM(d.fecha_debut), '') IS NOT NULL THEN 1 ELSE 0 END) AS debuted
+    FROM dorsales d
+    GROUP BY d.id_jugadora
 )
 SELECT
     fj.id_fabrica_jugadora,
@@ -70,6 +78,8 @@ SELECT
     fj.portrait_source_url,
     fj.id_jugadora,
     j.nombre AS nombre_primer_equipo,
+    COALESCE(fts.permanently_promoted, 0) AS permanently_promoted,
+    COALESCE(fts.debuted, 0) AS debuted,
     fp.temporada,
     fp.equipo,
     fp.posicion,
@@ -83,6 +93,8 @@ LEFT JOIN jugadoras j
     ON j.id_jugadora = fj.id_jugadora
 LEFT JOIN latest_player_photo ph
     ON ph.id_jugadora = fj.id_jugadora
+LEFT JOIN first_team_status fts
+    ON fts.id_jugadora = fj.id_jugadora
 ORDER BY
     fp.temporada DESC,
     CASE fp.equipo
@@ -122,6 +134,11 @@ async function main() {
                 portraitUrl: row.portrait_url ? String(row.portrait_url) : null,
                 portraitSourceUrl: row.portrait_source_url ? String(row.portrait_source_url) : null,
                 firstTeamPlayerId: row.id_jugadora == null ? null : Number(row.id_jugadora),
+                firstTeamStatus: Number(row.permanently_promoted) === 1
+                    ? 'permanent'
+                    : Number(row.debuted) === 1
+                        ? 'debut'
+                        : null,
                 profileUrl,
                 hasFirstTeamPage,
             };
@@ -140,6 +157,7 @@ async function main() {
             photoUrl: players[academySlug].portraitUrl,
             profileUrl,
             hasFirstTeamPage,
+            firstTeamStatus: players[academySlug].firstTeamStatus,
             confidence: String(row.confianza || 'Alta'),
         });
     }
