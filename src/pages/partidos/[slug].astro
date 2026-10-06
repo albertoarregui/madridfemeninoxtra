@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 53623)
+Total output lines: 4330
+
 ---
 import Layout from "../../layouts/Layout.astro";
 import {
@@ -100,6 +103,22 @@ const formatStatRatio = (completados: number | string | null | undefined, totale
 const formatTime = (timeString: string | null | undefined): string => {
     if (!timeString) return "-";
     return timeString.substring(0, 5);
+};
+
+const playerRating = (player: any): number | null => {
+    const rawRating = player?.stats?.valoracion;
+    const rating = typeof rawRating === "string"
+        ? Number(rawRating.replace(",", "."))
+        : Number(rawRating);
+    return Number.isFinite(rating) && rating > 0 ? rating : null;
+};
+
+const playerRatingClass = (player: any): string => {
+    const rating = playerRating(player);
+    if (rating === null) return "";
+    if (rating >= 8) return "high";
+    if (rating >= 6.5) return "medium";
+    return "low";
 };
 
 const matchStatus = getMatchStatus(game.fecha, game.hora);
@@ -783,6 +802,14 @@ const matchSchema = matchStartISO ? {
                                                 <span class="player-name-bold">
                                                     {player.name}
                                                 </span>
+                                                {playerRating(player) !== null && (
+                                                    <span
+                                                        class={`match-rating-badge ${playerRatingClass(player)}`}
+                                                        title="Valoración del partido"
+                                                    >
+                                                        {playerRating(player)!.toFixed(1)}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div class="player-meta-row">
                                                 <span class="player-pos-label">
@@ -966,6 +993,14 @@ const matchSchema = matchStartISO ? {
                                                 <span class="sub-name">
                                                     {sub.playerIn.name}
                                                 </span>
+                                                {playerRating(sub.playerIn) !== null && (
+                                                    <span
+                                                        class={`match-rating-badge ${playerRatingClass(sub.playerIn)}`}
+                                                        title="Valoración del partido"
+                                                    >
+                                                        {playerRating(sub.playerIn)!.toFixed(1)}
+                                                    </span>
+                                                )}
                                                 {sub.playerIn.goals > 0 && (
                                                     <span
                                                         class="event-icon-small"
@@ -1089,6 +1124,14 @@ const matchSchema = matchStartISO ? {
                                                 <span class="sub-name">
                                                     {sub.playerOut.name}
                                                 </span>
+                                                {playerRating(sub.playerOut) !== null && (
+                                                    <span
+                                                        class={`match-rating-badge ${playerRatingClass(sub.playerOut)}`}
+                                                        title="Valoración del partido"
+                                                    >
+                                                        {playerRating(sub.playerOut)!.toFixed(1)}
+                                                    </span>
+                                                )}
                                                 {sub.playerOut.goals > 0 && (
                                                     <span
                                                         class="event-icon-small"
@@ -1548,207 +1591,7 @@ const matchSchema = matchStartISO ? {
                                                                             }
                                                                         </span>
                                                                     </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', 'Gol de ${event.scorer.replace(/'/g, "\\'")}')`}
-                                                                title="Ver gol"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type ===
-                                                  "shootout" ? (
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span
-                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
-                                                        >
-                                                            {event.player}
-                                                        </span>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
-                                                                title="Ver video"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type === "penalty" ? (
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span
-                                                            style={`font-weight: 600; color: ${event.outcome === "scored" ? "#000" : "#ff6b6b"}`}
-                                                        >
-                                                            {event.text}
-                                                        </span>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
-                                                                title="Ver video"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type === "card" ? (
-                                                    <strong>
-                                                        {event.player ||
-                                                            "Jugadora"}
-                                                        {event.team ===
-                                                            "rival" && (
-                                                            <span style="color: rgba(200,210,220,0.6); font-size: 0.8em; font-weight: normal; margin-left: 4px;">
-                                                                (
-                                                                {isLocalRM
-                                                                    ? game.club_visitante
-                                                                    : game.club_local}
-                                                                )
-                                                            </span>
-                                                        )}
-                                                    </strong>
-                                                ) : event.type ===
-                                                  "own_goal" ? (
-                                                    <span style="font-weight: 600; color: #ff6b6b;">
-                                                        {event.text}
-                                                    </span>
-                                                ) : (
-                                                    event.text
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                            {
-                                timelineEvents.length === 0 && (
-                                    <p class="no-data-msg">
-                                        Sin eventos registrados
-                                    </p>
-                                )
-                            }
-                        </div>
-                    </div>
-                </section>
-            )}
-            {game.isPlayed && hasMatchMetricsData && (
-                <section class="metrics-card" style="margin-top: 2rem;">
-                    <h2 class="section-header">Métricas</h2>
-                    <div
-                        class="metrics-content"
-                        style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;"
-                    >
-                        <>
-                            {}
-                            <div class="metrics-category">
-                                <h3 class="stat-category-title">
-                                    Distribución
-                                </h3>
-                                <div class="stats-grid">
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.posesion_rm
-                                                        ? `${game.posesion_rm}%`
-                                                        : "50%"
-                                                    : game.posesion_rival
-                                                      ? `${game.posesion_rival}%`
-                                                      : "50%"}
-                                            </span>
-                                            <span class="stat-name">
-                                                Posesión
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.posesion_rival
-                                                        ? `${game.posesion_rival}%`
-                                                        : "50%"
-                                                    : game.posesion_rm
-                                                      ? `${game.posesion_rm}%`
-                                                      : "50%"}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)
-                                                    : formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Pases
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)
-                                                    : formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_pases_totales || 0) : (game.rival_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_pases_totales || 0) : (game.rm_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
+                   …3623 tokens truncated…0) : (game.rm_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
                                             />
                                         </div>
                                     </div>
@@ -3577,12 +3420,51 @@ const matchSchema = matchStartISO ? {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        min-width: 0;
+        flex: 1;
+    }
+    .player-name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
     }
     .player-name-bold {
         font-weight: 600;
         font-size: 1rem;
         line-height: 1.2;
         color: #f0f0f0;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .match-rating-badge {
+        flex: 0 0 auto;
+        min-width: 2.15rem;
+        padding: 0.18rem 0.42rem;
+        border: 1px solid;
+        border-radius: 4px;
+        font-family: "Cinzel", serif;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+    }
+    .match-rating-badge.high {
+        color: rgba(74, 222, 128, 0.95);
+        background: rgba(74, 222, 128, 0.2);
+        border-color: rgba(74, 222, 128, 0.4);
+    }
+    .match-rating-badge.medium {
+        color: #d4a843;
+        background: rgba(212, 168, 67, 0.2);
+        border-color: rgba(212, 168, 67, 0.4);
+    }
+    .match-rating-badge.low {
+        color: rgba(248, 113, 113, 0.9);
+        background: rgba(248, 113, 113, 0.2);
+        border-color: rgba(248, 113, 113, 0.4);
     }
     .player-pos-label {
         font-size: 0.8rem;
