@@ -39,6 +39,11 @@ export const TABLE_EFFECT_TAGS = {
     competiciones: [cacheTags.matches, cacheTags.calendar, cacheTags.statistics],
     temporadas: [cacheTags.matches, cacheTags.calendar, cacheTags.statistics],
     mvp: [cacheTags.awards, cacheTags.players, cacheTags.homepage, cacheTags.matches],
+    fabrica_hitos: [cacheTags.academy],
+    fabrica_torneos: [cacheTags.academy],
+    fabrica_aportaciones_club: [cacheTags.academy],
+    fabrica_participaciones: [cacheTags.academy],
+    fabrica_galardones: [cacheTags.academy],
 } as const satisfies Record<string, readonly string[]>;
 
 export type CachedTable = keyof typeof TABLE_EFFECT_TAGS;
