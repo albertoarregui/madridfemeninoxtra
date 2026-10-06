@@ -1,0 +1,231 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import LaFabricaNav from "../../components/LaFabricaNav.astro";
+import { breadcrumbSchema } from "../../utils/seo";
+import "../../styles/la-fabrica.css";
+---
+
+<Layout
+    title="Plantillas históricas de La Fábrica | Real Madrid Femenino | MFX"
+    description="Consulta las plantillas históricas del Real Madrid B, Juvenil y Cadete femenino desde 2020/21, con fichas de jugadoras y enlaces al primer equipo."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "La Fábrica", path: "/la-fabrica" },
+                { name: "Plantillas", path: "/la-fabrica/plantillas" },
+            ]),
+        )}
+    />
+
+    <main class="fabrica-page">
+        <div class="fabrica-shell">
+            <header class="page-header-container fabrica-page-header">
+                <h1 class="landing-title">PLANTILLAS DE LA FÁBRICA</h1>
+                <p class="landing-subtitle">Real Madrid B · Juvenil · Cadete · Desde 2020/21</p>
+            </header>
+
+            <LaFabricaNav />
+
+            <section class="fabrica-intro fabrica-card">
+                <div class="fabrica-card-head">Archivo histórico</div>
+                <div class="fabrica-card-body">
+                    <p>
+                        Selecciona equipo y temporada para consultar sus jugadoras. Cuando una
+                        canterana ya tiene ficha por haber sido convocada con el primer equipo,
+                        su tarjeta enlaza directamente a esa página.
+                    </p>
+                </div>
+            </section>
+
+            <section class="academy-browser" aria-labelledby="academy-browser-title">
+                <div class="section-label">Archivo de plantillas</div>
+                <h2 class="section-title" id="academy-browser-title">EQUIPO Y TEMPORADA</h2>
+
+                <div class="academy-controls fabrica-card">
+                    <div class="academy-team-tabs" role="tablist" aria-label="Equipo de cantera">
+                        <button type="button" class="academy-team-tab active" data-team="Real Madrid B">Real Madrid B</button>
+                        <button type="button" class="academy-team-tab" data-team="Juvenil">Juvenil</button>
+                        <button type="button" class="academy-team-tab" data-team="Cadete">Cadete</button>
+                    </div>
+
+                    <label class="academy-season-control">
+                        <span>Temporada</span>
+                        <select id="academy-season" aria-label="Seleccionar temporada"></select>
+                    </label>
+                </div>
+
+                <div class="academy-roster-meta" aria-live="polite">
+                    <span id="academy-selection">Real Madrid B · 2026/27</span>
+                    <span id="academy-count"></span>
+                </div>
+
+                <div id="academy-status" class="fabrica-empty">Cargando plantilla…</div>
+                <div id="academy-roster" class="academy-roster" hidden></div>
+            </section>
+        </div>
+    </main>
+</Layout>
+
+<script is:inline>
+(() => {
+    const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json";
+    const PLACEHOLDER = "https://media.madridfemeninoxtra.com/jugadoras/placeholder.png";
+    const POSITION_ORDER = ["Portera", "Defensa", "Centrocampista", "Delantera", "Otros"];
+
+    const state = {
+        data: null,
+        team: "Real Madrid B",
+        season: "2026/27",
+    };
+
+    const rosterEl = document.getElementById("academy-roster");
+    const statusEl = document.getElementById("academy-status");
+    const countEl = document.getElementById("academy-count");
+    const selectionEl = document.getElementById("academy-selection");
+    const seasonEl = document.getElementById("academy-season");
+    const teamButtons = [...document.querySelectorAll(".academy-team-tab")];
+
+    const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }[char]));
+
+    const positionGroup = (position) => {
+        const p = String(position || "").toLowerCase();
+        if (p.includes("porter")) return "Portera";
+        if (p.includes("defensa") || p.includes("lateral") || p.includes("central")) return "Defensa";
+        if (p.includes("centro") || p.includes("medio") || p.includes("pivote") || p.includes("interior")) return "Centrocampista";
+        if (p.includes("delantera") || p.includes("extremo") || p.includes("ariete")) return "Delantera";
+        return "Otros";
+    };
+
+    const membershipRank = (value) => {
+        if (value === "Plantilla nominal") return 0;
+        if (/ficha/i.test(value || "")) return 1;
+        return 2;
+    };
+
+    function refreshSeasons() {
+        if (!state.data) return;
+        const available = state.data.seasons.filter((season) =>
+            state.data.rosters.some((row) => row.team === state.team && row.season === season)
+        );
+        if (!available.includes(state.season)) state.season = available[0] || "";
+        seasonEl.innerHTML = available.map((season) =>
+            `<option value="${esc(season)}"${season === state.season ? " selected" : ""}>${esc(season)}</option>`
+        ).join("");
+    }
+
+    function render() {
+        if (!state.data) return;
+
+        const filtered = state.data.rosters
+            .filter((row) => row.team === state.team && row.season === state.season)
+            .sort((a, b) => membershipRank(a.membership) - membershipRank(b.membership) || a.name.localeCompare(b.name, "es"));
+
+        const unique = new Map();
+        for (const row of filtered) {
+            if (!unique.has(row.slug)) unique.set(row.slug, row);
+        }
+        const players = [...unique.values()];
+
+        selectionEl.textContent = `${state.team} · ${state.season}`;
+        countEl.textContent = `${players.length} jugadoras`;
+
+        if (!players.length) {
+            rosterEl.hidden = true;
+            statusEl.hidden = false;
+            statusEl.textContent = "No hay una plantilla documentada para esta selección.";
+            return;
+        }
+
+        const groups = new Map(POSITION_ORDER.map((key) => [key, []]));
+        players.forEach((player) => groups.get(positionGroup(player.position)).push(player));
+
+        rosterEl.innerHTML = POSITION_ORDER
+            .filter((group) => groups.get(group).length)
+            .map((group) => {
+                const cards = groups.get(group).map((player) => {
+                    const number = player.number
+                        ? `<span class="academy-player-number">#${esc(player.number)}</span>`
+                        : "";
+                    const firstTeam = player.hasFirstTeamPage
+                        ? '<span class="academy-player-badge">Primer equipo</span>'
+                        : "";
+                    const extra = player.membership && player.membership !== "Plantilla nominal"
+                        ? `<span class="academy-player-badge academy-player-badge--muted">${esc(player.membership)}</span>`
+                        : "";
+                    return `
+                        <a class="academy-player-card" href="${esc(player.profileUrl)}">
+                            <div class="academy-player-photo">
+                                <img
+                                    src="${esc(player.photoUrl || PLACEHOLDER)}"
+                                    alt="${esc(player.name)}"
+                                    loading="lazy"
+                                    decoding="async"
+                                    onerror="this.onerror=null;this.src='${PLACEHOLDER}'"
+                                />
+                                ${number}
+                            </div>
+                            <div class="academy-player-info">
+                                <strong>${esc(player.name)}</strong>
+                                <span>${esc(player.position || group)}</span>
+                                <div class="academy-player-badges">${firstTeam}${extra}</div>
+                            </div>
+                        </a>
+                    `;
+                }).join("");
+
+                return `
+                    <section class="academy-position-group">
+                        <div class="fabrica-card-head">
+                            <span>${esc(group)}</span>
+                            <span>${groups.get(group).length}</span>
+                        </div>
+                        <div class="academy-player-grid">${cards}</div>
+                    </section>
+                `;
+            }).join("");
+
+        statusEl.hidden = true;
+        rosterEl.hidden = false;
+    }
+
+    teamButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            state.team = button.dataset.team || "Real Madrid B";
+            teamButtons.forEach((item) => item.classList.toggle("active", item === button));
+            refreshSeasons();
+            render();
+        });
+    });
+
+    seasonEl.addEventListener("change", () => {
+        state.season = seasonEl.value;
+        render();
+    });
+
+    fetch(DATA_URL, { cache: "no-cache" })
+        .then((response) => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then((data) => {
+            state.data = data;
+            state.season = data.seasons?.[0] || state.season;
+            refreshSeasons();
+            render();
+        })
+        .catch((error) => {
+            console.error("[LA FABRICA] Error cargando plantillas:", error);
+            statusEl.textContent = "No se ha podido cargar el archivo de plantillas.";
+        });
+})();
+</script>

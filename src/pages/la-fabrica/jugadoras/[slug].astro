@@ -1,0 +1,150 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import LaFabricaNav from "../../../components/LaFabricaNav.astro";
+import { breadcrumbSchema } from "../../../utils/seo";
+import "../../../styles/la-fabrica.css";
+
+const { slug } = Astro.params;
+---
+
+<Layout
+    title="Jugadora de La Fábrica | Real Madrid Femenino | MFX"
+    description="Ficha histórica de una jugadora de la cantera femenina del Real Madrid."
+>
+    <script
+        type="application/ld+json"
+        slot="head"
+        set:html={JSON.stringify(
+            breadcrumbSchema([
+                { name: "Inicio", path: "/" },
+                { name: "La Fábrica", path: "/la-fabrica" },
+                { name: "Plantillas", path: "/la-fabrica/plantillas" },
+                { name: "Jugadora", path: `/la-fabrica/jugadoras/${slug}` },
+            ]),
+        )}
+    />
+
+    <main class="fabrica-page">
+        <div class="fabrica-shell">
+            <header class="page-header-container fabrica-page-header">
+                <h1 class="landing-title" id="academy-player-title">LA FÁBRICA</h1>
+                <p class="landing-subtitle" id="academy-player-subtitle">Ficha histórica de cantera</p>
+            </header>
+
+            <LaFabricaNav />
+
+            <div id="academy-player-status" class="fabrica-empty">Cargando ficha…</div>
+
+            <article id="academy-player-profile" class="academy-profile" hidden>
+                <section class="academy-profile-hero fabrica-card">
+                    <div class="academy-profile-photo">
+                        <img id="academy-player-photo" alt="" loading="eager" decoding="async" />
+                    </div>
+                    <div class="academy-profile-copy">
+                        <span class="section-label">Jugadora · La Fábrica</span>
+                        <h2 id="academy-player-name"></h2>
+                        <p id="academy-player-position"></p>
+                        <div id="academy-player-source-wrap" hidden>
+                            <a id="academy-player-source" class="source-link" target="_blank" rel="noopener noreferrer">
+                                Fuente de la ficha ↗
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="fabrica-section">
+                    <div class="section-label">Trayectoria</div>
+                    <h2 class="section-title">PASO POR LA FÁBRICA</h2>
+                    <div id="academy-player-trajectory" class="academy-trajectory"></div>
+                </section>
+
+                <p class="academy-profile-back">
+                    <a class="link-pill" href="/la-fabrica/plantillas">← Volver a plantillas</a>
+                </p>
+            </article>
+        </div>
+    </main>
+</Layout>
+
+<script is:inline>
+(() => {
+    const slug = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
+    const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json";
+    const PLACEHOLDER = "https://media.madridfemeninoxtra.com/jugadoras/placeholder.png";
+    const statusEl = document.getElementById("academy-player-status");
+    const profileEl = document.getElementById("academy-player-profile");
+
+    const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }[char]));
+
+    fetch(DATA_URL, { cache: "no-cache" })
+        .then((response) => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then((data) => {
+            const player = data.players?.[slug];
+            if (!player) {
+                statusEl.innerHTML = 'No se ha encontrado esta jugadora. <a class="source-link" href="/la-fabrica/plantillas">Volver a plantillas</a>';
+                return;
+            }
+
+            if (player.hasFirstTeamPage && player.profileUrl) {
+                window.location.replace(player.profileUrl);
+                return;
+            }
+
+            const appearances = data.rosters
+                .filter((row) => row.slug === slug)
+                .sort((a, b) => a.season.localeCompare(b.season) || a.team.localeCompare(b.team, "es"));
+
+            document.title = `${player.name} | La Fábrica | MFX`;
+            document.getElementById("academy-player-title").textContent = player.name.toUpperCase();
+            document.getElementById("academy-player-subtitle").textContent = "Trayectoria en la cantera del Real Madrid";
+            document.getElementById("academy-player-name").textContent = player.name;
+            document.getElementById("academy-player-position").textContent = player.position || "Jugadora";
+
+            const image = document.getElementById("academy-player-photo");
+            image.src = player.portraitUrl || PLACEHOLDER;
+            image.alt = player.name;
+            image.onerror = () => {
+                image.onerror = null;
+                image.src = PLACEHOLDER;
+            };
+
+            if (player.portraitSourceUrl) {
+                const sourceWrap = document.getElementById("academy-player-source-wrap");
+                const source = document.getElementById("academy-player-source");
+                source.href = player.portraitSourceUrl;
+                sourceWrap.hidden = false;
+            }
+
+            const trajectory = document.getElementById("academy-player-trajectory");
+            trajectory.innerHTML = appearances.map((row) => `
+                <article class="academy-trajectory-row fabrica-card">
+                    <div class="academy-trajectory-season">${esc(row.season)}</div>
+                    <div class="academy-trajectory-main">
+                        <strong>${esc(row.team)}</strong>
+                        <span>${esc(row.position || player.position || "Jugadora")}</span>
+                    </div>
+                    <div class="academy-trajectory-side">
+                        ${row.number ? `<span class="meta-pill">Dorsal ${esc(row.number)}</span>` : ""}
+                        ${row.membership && row.membership !== "Plantilla nominal" ? `<span class="meta-pill">${esc(row.membership)}</span>` : ""}
+                    </div>
+                </article>
+            `).join("");
+
+            statusEl.hidden = true;
+            profileEl.hidden = false;
+        })
+        .catch((error) => {
+            console.error("[LA FABRICA] Error cargando ficha:", error);
+            statusEl.textContent = "No se ha podido cargar la ficha.";
+        });
+})();
+</script>
