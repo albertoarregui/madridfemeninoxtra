@@ -28,20 +28,10 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
         <div class="fabrica-shell">
             <header class="page-header-container fabrica-page-header">
                 <h1 class="landing-title">PLANTILLAS DE LA FÁBRICA</h1>
-                <p class="landing-subtitle">Real Madrid B · Juvenil · Cadete · Desde 2020/21</p>
+                <p class="landing-subtitle">Real Madrid B · Juvenil · Cadete</p>
             </header>
 
             <LaFabricaNav />
-
-            <section class="fabrica-intro fabrica-card">
-                <div class="fabrica-card-head">Archivo histórico</div>
-                <div class="fabrica-card-body">
-                    <p>
-                        Selecciona equipo y temporada para consultar sus jugadoras.
-                        Las fichas ya existentes del primer equipo se reutilizan, sin duplicar perfiles.
-                    </p>
-                </div>
-            </section>
 
             <section class="academy-browser" aria-labelledby="academy-browser-title">
                 <div class="section-label">Archivo de plantillas</div>
@@ -139,10 +129,27 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
         return "Otros";
     };
 
-    const membershipRank = (value) => {
-        if (value === "Plantilla nominal") return 0;
-        if (/ficha/i.test(value || "")) return 1;
-        return 2;
+    const MIDDLE_GIVEN_NAMES = new Set(["aniela", "grace", "luisa", "nayaded"]);
+
+    const shortName = (fullName) => {
+        const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+        if (parts.length <= 2) return parts.join(" ");
+        const first = parts[0];
+        const second = parts[1]?.toLowerCase();
+
+        if (MIDDLE_GIVEN_NAMES.has(second) && parts[2]) {
+            return `${first} ${parts[2]}`;
+        }
+
+        if (second === "de" && parts[2]) {
+            const third = parts[2].toLowerCase();
+            if (["la", "las", "los"].includes(third) && parts[3]) {
+                return `${first} de ${parts[2]} ${parts[3]}`;
+            }
+            return `${first} de ${parts[2]}`;
+        }
+
+        return `${first} ${parts[1]}`;
     };
 
     function syncSelectAvailability() {
@@ -195,7 +202,14 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
 
         const filtered = state.data.rosters
             .filter((row) => row.team === state.team && row.season === state.season)
-            .sort((a, b) => membershipRank(a.membership) - membershipRank(b.membership) || a.name.localeCompare(b.name, "es"));
+            .sort((a, b) => {
+                const na = Number(a.number);
+                const nb = Number(b.number);
+                if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+                if (Number.isFinite(na) && !Number.isFinite(nb)) return -1;
+                if (!Number.isFinite(na) && Number.isFinite(nb)) return 1;
+                return a.name.localeCompare(b.name, "es");
+            });
 
         const unique = new Map();
         for (const row of filtered) {
@@ -220,9 +234,6 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
             .filter((group) => groups.get(group).length)
             .map((group) => {
                 const cards = groups.get(group).map((player) => {
-                    const extra = player.membership && player.membership !== "Plantilla nominal"
-                        ? `<span class="academy-player-badge academy-player-badge--muted">${esc(player.membership)}</span>`
-                        : "";
                     const dorsal = player.number
                         ? `<span class="academy-roster-dorsal${String(player.number).length === 1 ? " is-single" : ""}" aria-label="Dorsal ${esc(player.number)}">${esc(player.number)}</span>`
                         : '<span class="academy-roster-dorsal academy-roster-dorsal--empty" aria-hidden="true"></span>';
@@ -249,14 +260,13 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
                                 <span class="pg-card-divider" aria-hidden="true"></span>
                                 <div class="academy-roster-mainline">
                                     <div class="academy-roster-copy">
-                                        <div class="pg-card-name">${esc(player.name)}</div>
+                                        <div class="pg-card-name" title="${esc(player.name)}">${esc(shortName(player.name))}</div>
                                         <div class="academy-roster-position">${esc(player.position || group)}</div>
                                     </div>
                                     ${dorsal}
                                 </div>
                                 <div class="academy-player-badges">
                                     ${statusBadge(player)}
-                                    ${extra}
                                 </div>
                             </div>
                         </a>
@@ -289,21 +299,49 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
         render();
     });
 
-    fetch(DATA_URL, { cache: "no-cache" })
-        .then((response) => {
+    const fetchJsonWithTimeout = async (url, timeoutMs = 9000) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, {
+                cache: "default",
+                signal: controller.signal,
+                headers: { Accept: "application/json" },
+            });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        })
-        .then((data) => {
+            return await response.json();
+        } finally {
+            clearTimeout(timeout);
+        }
+    };
+
+    const loadAcademyData = async () => {
+        statusEl.hidden = false;
+        statusEl.textContent = "Cargando plantilla…";
+
+        try {
+            let data;
+            try {
+                data = await fetchJsonWithTimeout(DATA_URL);
+            } catch (firstError) {
+                console.warn("[LA FABRICA] Reintentando caché de plantillas:", firstError);
+                data = await fetchJsonWithTimeout(`${DATA_URL}?retry=${Date.now()}`, 7000);
+            }
+
             state.data = data;
             state.season = data.seasons?.[0] || state.season;
             seasonEl.value = state.season;
             syncSelectAvailability();
             render();
-        })
-        .catch((error) => {
+        } catch (error) {
             console.error("[LA FABRICA] Error cargando plantillas:", error);
-            statusEl.textContent = "No se ha podido cargar el archivo de plantillas.";
-        });
+            rosterEl.hidden = true;
+            statusEl.hidden = false;
+            statusEl.innerHTML = 'No se ha podido cargar la plantilla. <button type="button" class="academy-retry-btn" id="academy-retry">Reintentar</button>';
+            document.getElementById("academy-retry")?.addEventListener("click", loadAcademyData, { once: true });
+        }
+    };
+
+    loadAcademyData();
 })();
 </script>
