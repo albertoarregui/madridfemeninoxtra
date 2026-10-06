@@ -38,19 +38,22 @@ const roleText = (item: any) => {
     return roles.join(" · ");
 };
 
-const competitionLogo = (competition: string, category: string) => {
+const competitionLogo = (competition: string, category: string, year: number) => {
     const key = `${competition.toLowerCase()}-${category.toLowerCase()}`;
 
     if (key.includes("europeo-sub-17")) {
         return "https://cdn.freebiesupply.com/logos/large/2x/uefa-under-17-championship-logo-png-transparent.png";
     }
     if (key.includes("europeo-sub-19")) {
-        return "https://cdn.freebiesupply.com/logos/large/2x/uefa-womens-under-19-championship-logo-png-transparent.png";
+        return getAssetUrl("competiciones", "euro_femenino_sub19_oficial.png");
     }
     if (key.includes("mundial-sub-17")) {
+        if (year === 2022) return getAssetUrl("competiciones", "mundial_femenino_sub17_2022.jpeg");
+        if (year === 2024) return getAssetUrl("competiciones", "mundial_femenino_sub17_2024.png");
         return getAssetUrl("competiciones", "mundial_femenino_sub17.svg");
     }
     if (key.includes("mundial-sub-20")) {
+        if (year === 2026) return getAssetUrl("competiciones", "mundial_femenino_sub20_2026.png");
         return getAssetUrl("competiciones", "mundial_femenino_sub20.svg");
     }
 
@@ -58,6 +61,14 @@ const competitionLogo = (competition: string, category: string) => {
 };
 
 const playerPlaceholder = getAssetUrl("jugadoras", "placeholder.png");
+const playerPhoto = (item: { nombre: string; foto_url: string | null }) => {
+    const name = item.nombre.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (name.includes("raquel") && name.includes("inigo")) {
+        return getAssetUrl("jugadoras", "raquel_inigo.webp");
+    }
+    if (name.includes("correro")) return getAssetUrl("jugadoras", "noe_correro.jpeg");
+    return item.foto_url || playerPlaceholder;
+};
 
 const datasetSchema = {
     "@context": "https://schema.org",
@@ -147,14 +158,16 @@ const datasetSchema = {
                 <div class="tournaments">
                     {tournaments.map((tournament) => {
                         const maxClub = Math.max(...tournament.clubs.map((club) => club.jugadoras), 1);
-                        const logo = competitionLogo(tournament.competicion, tournament.categoria);
+                        const logo = competitionLogo(tournament.competicion, tournament.categoria, tournament.anio);
 
                         return (
                             <details class="tournament-card" id={tournament.slug}>
                                 <summary class="tournament-summary">
                                     <div class="tournament-summary-main">
                                         {logo && (
-                                            <span class="competition-logo-wrap">
+                                            <span class:list={["competition-logo-wrap", {
+                                                "competition-logo-wrap--light": tournament.competicion.toLowerCase().includes("mundial") && tournament.categoria.toLowerCase() === "sub-17" && tournament.anio === 2024,
+                                            }]}>
                                                 <img
                                                     src={logo}
                                                     alt={`${tournament.competicion} ${tournament.categoria}`}
@@ -213,7 +226,7 @@ const datasetSchema = {
                                                         <div class="person-row">
                                                             <div class="person-avatar">
                                                                 <img
-                                                                    src={item.foto_url || playerPlaceholder}
+                                                                    src={playerPhoto(item)}
                                                                     alt={item.nombre}
                                                                     width="55"
                                                                     height="55"
@@ -244,7 +257,7 @@ const datasetSchema = {
                                                         <div class="award-row">
                                                             <div class="award-avatar">
                                                                 <img
-                                                                    src={award.foto_url || playerPlaceholder}
+                                                                    src={playerPhoto(award)}
                                                                     alt={award.nombre}
                                                                     width="55"
                                                                     height="55"
