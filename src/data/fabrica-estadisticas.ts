@@ -98,13 +98,13 @@ const records: Record<string, FabricaTournamentStats> = {
     "europeo-sub19-2026::silviacristobal": stats(5, 5, 450, 0, null),
 
     // Mundial sub-20 2026
-    "mundial-sub20-2026::irunedorado": stats(6, 5, 438, 0, 0),
-    "mundial-sub20-2026::laialopez": stats(6, 6, 540, 0, 0, 6),
-    "mundial-sub20-2026::paucomendador": stats(7, 5, 422, 6, 1),
-    "mundial-sub20-2026::noebeltran": stats(null, null, null, null, null),
-    "mundial-sub20-2026::silviacristobal": stats(null, null, null, null, null),
-    "mundial-sub20-2026::amayagarcia": stats(null, null, null, null, null),
-    "mundial-sub20-2026::marisagarcia": stats(null, null, null, null, null),
+    "mundial-sub20-2026::irunedorado": stats(6, 5, 439, 0, 0),
+    "mundial-sub20-2026::laialopez": stats(6, 6, 540, 0, 0, 5),
+    "mundial-sub20-2026::paucomendador": stats(7, 5, 424, 6, 1),
+    "mundial-sub20-2026::noebeltran": stats(5, 5, 406, 0, 1),
+    "mundial-sub20-2026::silviacristobal": stats(6, 6, 540, 0, 0),
+    "mundial-sub20-2026::amayagarcia": stats(2, 2, 180, 0, 0),
+    "mundial-sub20-2026::marisagarcia": stats(7, 3, 237, 4, 0),
 };
 
 export const getFabricaTournamentStats = (tournamentSlug: string, playerName: string) =>

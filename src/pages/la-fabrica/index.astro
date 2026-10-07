@@ -3,13 +3,32 @@ import Layout from "../../layouts/Layout.astro";
 import LaFabricaNav from "../../components/LaFabricaNav.astro";
 import { fetchFabricaSpain } from "../../utils/fabrica";
 import { breadcrumbSchema } from "../../utils/seo";
+import { getAssetUrl } from "../../utils/assets";
 import "../../styles/la-fabrica.css";
 
 const { summary, tournaments } = await fetchFabricaSpain();
-const share = summary.plazas_totales > 0
-    ? (summary.plazas_rm / summary.plazas_totales * 100).toLocaleString("es-ES", { maximumFractionDigits: 1 })
-    : "0";
 const world2026 = tournaments.find((t) => t.slug === "mundial-sub20-2026");
+const world2026Image = getAssetUrl("intro", "mundial_sub20_2026_campeonas.webp");
+const world2026Players = [
+    {
+        shortName: "Laia López",
+        fullName: "Laia López de la Morena",
+        detail: "Guante de Oro · 2 penaltis detenidos en la final",
+    },
+    {
+        shortName: "Silvia Cristóbal",
+        fullName: "Silvia Cristóbal Fernández",
+        detail: "Jugadora del Partido de la final",
+    },
+    {
+        shortName: "Pau Comendador",
+        fullName: "Paula Comendador Prado",
+        detail: "Bota de Oro · Balón de Bronce",
+    },
+].map((player) => ({
+    ...player,
+    photo: world2026?.participations.find((item) => item.nombre === player.shortName)?.foto_url,
+}));
 ---
 
 <Layout
@@ -45,29 +64,6 @@ const world2026 = tournaments.find((t) => t.slug === "mundial-sub20-2026");
                         en las selecciones inferiores de España.
                     </p>
                 </div>
-            </section>
-
-            <section class="fabrica-kpis" aria-label="La Fábrica en cifras">
-                <article class="fabrica-kpi">
-                    <strong>2020</strong>
-                    <span>inicio de la estructura de cantera femenina</span>
-                </article>
-                <article class="fabrica-kpi">
-                    <strong>{summary.total_torneos}</strong>
-                    <span>finales europeas o mundiales analizadas desde 2022</span>
-                </article>
-                <article class="fabrica-kpi">
-                    <strong>{summary.plazas_rm}</strong>
-                    <span>plazas acumuladas de madridistas en esas convocatorias</span>
-                </article>
-                <article class="fabrica-kpi">
-                    <strong>{share}%</strong>
-                    <span>del total de plazas de España en esos diez torneos</span>
-                </article>
-                <article class="fabrica-kpi">
-                    <strong>{summary.torneos_top2}/{summary.total_torneos}</strong>
-                    <span>torneos en los que el Madrid estuvo entre los dos clubes que más aportaron</span>
-                </article>
             </section>
 
             <section class="fabrica-section">
@@ -121,6 +117,17 @@ const world2026 = tournaments.find((t) => t.slug === "mundial-sub20-2026");
                     <div class="section-label">Último gran hito internacional</div>
                     <h2 class="section-title">MUNDIAL SUB-20 DE 2026</h2>
 
+                    <figure class="fabrica-world-photo">
+                        <img
+                            src={world2026Image}
+                            alt="La selección española celebra el título del Mundial femenino sub-20 de 2026"
+                            width="2048"
+                            height="1365"
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    </figure>
+
                     <div class="fabrica-highlight">
                         <div class="fabrica-highlight-main fabrica-card">
                             <div class="fabrica-card-head">Final · España campeona</div>
@@ -128,25 +135,33 @@ const world2026 = tournaments.find((t) => t.slug === "mundial-sub20-2026");
                                 <strong>5/11</strong>
                                 <h3>madridistas titulares en la final</h3>
                                 <p>
-                                    Laia López, Noe Bejarano, Silvia Cristóbal, Irune Dorado
+                                    Laia López, Noe Beltrán, Silvia Cristóbal, Irune Dorado
                                     y Pau Comendador salieron de inicio en la final que dio a
                                     España el título mundial.
                                 </p>
                             </div>
                         </div>
                         <div class="fabrica-highlight-side">
-                            <div class="fabrica-mini-stat">
-                                <strong>Laia</strong>
-                                <span>Guante de Oro · 2 penaltis detenidos en la final</span>
-                            </div>
-                            <div class="fabrica-mini-stat">
-                                <strong>Silvia</strong>
-                                <span>Jugadora del Partido de la final</span>
-                            </div>
-                            <div class="fabrica-mini-stat">
-                                <strong>Pau</strong>
-                                <span>Bota de Oro · Balón de Bronce</span>
-                            </div>
+                            {world2026Players.map((player) => (
+                                <div class="fabrica-mini-stat fabrica-mini-stat--player">
+                                    {player.photo && (
+                                        <span class="fabrica-mini-stat-photo">
+                                            <img
+                                                src={player.photo}
+                                                alt=""
+                                                width="54"
+                                                height="54"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </span>
+                                    )}
+                                    <span class="fabrica-mini-stat-copy">
+                                        <strong>{player.fullName}</strong>
+                                        <span>{player.detail}</span>
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>
