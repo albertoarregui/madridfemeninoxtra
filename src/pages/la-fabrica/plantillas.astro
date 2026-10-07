@@ -97,7 +97,7 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
 
 <script is:inline data-astro-rerun>
 (() => {
-    const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json";
+    const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json?v=20261007-2";
     const biographies = JSON.parse(document.getElementById("academy-biographies")?.textContent || "{}");
     const PLACEHOLDER = "https://media.madridfemeninoxtra.com/jugadoras/placeholder.png";
     const POSITION_ORDER = ["Portera", "Defensa", "Centrocampista", "Delantera", "Otros"];
@@ -303,7 +303,7 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
         const timeout = setTimeout(() => controller.abort(), timeoutMs);
         try {
             const response = await fetch(url, {
-                cache: "default",
+                cache: "no-store",
                 signal: controller.signal,
                 headers: { Accept: "application/json" },
             });
@@ -324,7 +324,7 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
                 data = await fetchJsonWithTimeout(DATA_URL);
             } catch (firstError) {
                 console.warn("[LA FABRICA] Reintentando caché de plantillas:", firstError);
-                data = await fetchJsonWithTimeout(`${DATA_URL}?retry=${Date.now()}`, 7000);
+                data = await fetchJsonWithTimeout(`${DATA_URL}&retry=${Date.now()}`, 7000);
             }
 
             state.data = data;
