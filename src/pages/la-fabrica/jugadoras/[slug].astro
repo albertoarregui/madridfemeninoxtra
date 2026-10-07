@@ -1,4 +1,5 @@
 ---
+import biographies from "../../../data/fabrica-biografias.json";
 import Layout from "../../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../../utils/seo";
 import "../../../styles/global.css";
@@ -12,6 +13,7 @@ const { slug } = Astro.params;
     title="Jugadora de La Fábrica | Real Madrid Femenino | MFX"
     description="Ficha histórica de una jugadora de la cantera femenina del Real Madrid."
 >
+    <script id="academy-biographies" type="application/json" set:html={JSON.stringify(biographies).replace(/</g, "\\u003c")} />
     <script
         type="application/ld+json"
         slot="head"
@@ -58,6 +60,9 @@ const { slug } = Astro.params;
             <div class="hero-info-col">
                 <div id="academy-hero-chips" class="hero-chips">
                     <span id="academy-position-chip" class="hero-chip hero-chip-gold"></span>
+                    <span class="hero-chip hero-chip-canterana" title="Formada en La Fábrica, la cantera del Real Madrid">★ Canterana</span>
+                    <span id="academy-nationality-chip" class="hero-chip" hidden></span>
+                    <span id="academy-age-chip" class="hero-chip" hidden></span>
                     <span id="academy-status-chip" class="hero-chip academy-first-team-chip" hidden></span>
                 </div>
 
@@ -71,6 +76,14 @@ const { slug } = Astro.params;
 
     <main id="academy-player-content" class="player-content" hidden>
         <div class="content-grid">
+            <section class="profile-card ficha-card full-col">
+                <h2 class="card-title">FICHA PERSONAL</h2>
+                <div id="academy-player-biography" class="card-body"></div>
+            </section>
+            <section class="profile-card trajectory-card full-col">
+                <h2 class="card-title">TRAYECTORIA</h2>
+                <div id="academy-player-career" class="card-body" style="padding:1.25rem 1.5rem;"></div>
+            </section>
             <section class="profile-card full-col">
                 <h2 class="card-title">TRAYECTORIA EN LA FÁBRICA</h2>
                 <div class="card-body academy-profile-trajectory-body">
@@ -85,6 +98,7 @@ const { slug } = Astro.params;
 (() => {
     const slug = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
     const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json";
+    const biographies = JSON.parse(document.getElementById("academy-biographies")?.textContent || "{}");
     const PLACEHOLDER = "https://media.madridfemeninoxtra.com/jugadoras/placeholder.png";
 
     const statusEl = document.getElementById("academy-player-status");
@@ -234,6 +248,56 @@ const { slug } = Astro.params;
             }
 
             renderPhoto();
+
+            const bio = { ...biographies[slug], ...player };
+            const match = String(bio.birthDate || "").match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+            let birth = "No documentada", age = "No documentada";
+            if (match) {
+                const [, y, m, d] = match.map(Number);
+                const date = new Date(Date.UTC(y, m - 1, d));
+                const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+                const parts = Object.fromEntries(today.map(({ type, value }) => [type, Number(value)]));
+                const years = parts.year - y - Number(parts.month < m || (parts.month === m && parts.day < d));
+                if (date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d && years >= 0) {
+                    birth = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+                    age = `${years} años`;
+                }
+            }
+            const countryCode = String(bio.nationalityCode || "").toLowerCase();
+            const flag = /^[a-z]{2}$/.test(countryCode)
+                ? `<img class="flag-icon" src="https://flagcdn.com/w40/${countryCode}.png" alt="" width="20" height="20" loading="lazy" />` : "";
+            document.getElementById("academy-player-biography").innerHTML = [
+                ["Nombre completo", player.name], ["Fecha de nacimiento", birth], ["Edad", age],
+                ["Lugar de nacimiento", bio.birthPlace || "No documentado"], ["Nacionalidad", bio.nationality || "No documentada"],
+            ].map(([label, value]) => `<div class="info-row"><span class="info-label">${esc(label)}</span><span class="info-value"${label === "Nacionalidad" ? ' style="display:flex;align-items:center;gap:0.5rem;"' : ""}>${esc(value)}${label === "Nacionalidad" ? flag : ""}</span></div>`).join("");
+
+            const ageChip = document.getElementById("academy-age-chip");
+            ageChip.textContent = age;
+            ageChip.hidden = age === "No documentada";
+            const nationalityChip = document.getElementById("academy-nationality-chip");
+            nationalityChip.innerHTML = `${flag.replace('class="flag-icon"', 'class="chip-flag"')}${esc(bio.nationality || "")}`;
+            nationalityChip.hidden = !bio.nationality;
+
+            const career = document.getElementById("academy-player-career");
+            let careerRows = bio.trajectory || [];
+            if (bio.officialTrajectory?.length) {
+                let academy = false;
+                careerRows = bio.officialTrajectory.flatMap((line) => {
+                    if (/^Categorías inferiores del Real Madrid:?$/i.test(line)) {
+                        academy = true;
+                        return [];
+                    }
+                    const match = line.match(/^(.*?)\s*\((\d{4})\s*[-–]\s*(\d{4})?\s*\)$/);
+                    const club = (match?.[1] || line).replace(/^[-–]\s*/, "");
+                    return [{
+                        club: academy && /^(Cadete|Juvenil|Real Madrid B)$/i.test(club) ? `Real Madrid · ${club}` : club,
+                        startYear: match?.[2] || null, endYear: match?.[3] || null,
+                    }];
+                });
+            }
+            career.innerHTML = careerRows.length
+                ? `<div class="trajectory-timeline">${[...careerRows].sort((a, b) => Number(b.startYear) - Number(a.startYear)).map((row) => `<div class="timeline-item"><div class="timeline-dot" aria-hidden="true"></div><div class="timeline-body">${row.startYear ? `<span class="timeline-years">${esc(row.startYear)} – ${esc(row.endYear || 'Act.')}</span>` : ""}<span class="timeline-club">${esc(row.club)}</span></div></div>`).join("")}</div>`
+                : '<p class="no-data">Sin datos disponibles</p>';
 
             const trajectory = document.getElementById("academy-player-trajectory");
             trajectory.innerHTML = appearances.map((row) => `

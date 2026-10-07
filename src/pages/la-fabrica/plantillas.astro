@@ -1,4 +1,5 @@
 ---
+import biographies from "../../data/fabrica-biografias.json";
 import Layout from "../../layouts/Layout.astro";
 import LaFabricaNav from "../../components/LaFabricaNav.astro";
 import { breadcrumbSchema } from "../../utils/seo";
@@ -12,6 +13,7 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
     title="Plantillas históricas de La Fábrica | Real Madrid Femenino | MFX"
     description="Consulta las plantillas históricas del Real Madrid B, Juvenil y Cadete femenino desde 2020/21, con fichas de jugadoras y enlaces al primer equipo."
 >
+    <script id="academy-biographies" type="application/json" set:html={JSON.stringify(biographies).replace(/</g, "\\u003c")} />
     <script
         type="application/ld+json"
         slot="head"
@@ -96,6 +98,7 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
 <script is:inline data-astro-rerun>
 (() => {
     const DATA_URL = "https://media.madridfemeninoxtra.com/data/la-fabrica/academy.json";
+    const biographies = JSON.parse(document.getElementById("academy-biographies")?.textContent || "{}");
     const PLACEHOLDER = "https://media.madridfemeninoxtra.com/jugadoras/placeholder.png";
     const POSITION_ORDER = ["Portera", "Defensa", "Centrocampista", "Delantera", "Otros"];
 
@@ -234,9 +237,12 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
             .filter((group) => groups.get(group).length)
             .map((group) => {
                 const cards = groups.get(group).map((player) => {
-                    const dorsal = player.number
-                        ? `<span class="academy-roster-dorsal${String(player.number).length === 1 ? " is-single" : ""}" aria-label="Dorsal ${esc(player.number)}">${esc(player.number)}</span>`
-                        : '<span class="academy-roster-dorsal academy-roster-dorsal--empty" aria-hidden="true"></span>';
+                    const bio = { ...biographies[player.slug], ...state.data.players?.[player.slug] };
+                    const country = bio.nationality || "Nacionalidad no documentada";
+                    const code = String(bio.nationalityCode || "").toLowerCase();
+                    const flag = /^[a-z]{2}$/.test(code)
+                        ? `<img src="https://flagcdn.com/w40/${code}.png" alt="" width="20" height="14" loading="lazy" />` : "";
+                    const position = { Portera: "POR", Defensa: "DEF", Centrocampista: "MED", Delantera: "DEL" }[group] || "JUG";
 
                     return `
                         <a class="player-portrait-card academy-roster-card" href="${esc(player.profileUrl)}" aria-label="Ver ficha de ${esc(player.name)}">
@@ -244,6 +250,8 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
                             <span class="pg-corner pg-corner-tr" aria-hidden="true"></span>
                             <span class="pg-corner pg-corner-bl" aria-hidden="true"></span>
                             <span class="pg-corner pg-corner-br" aria-hidden="true"></span>
+                            <span class="pg-pos-label" aria-label="${esc(player.position || group)}">♦ ${position}</span>
+                            <span class="pg-canterana-badge" aria-label="Canterana">★</span>
                             <div class="pg-card-glow" aria-hidden="true"></div>
 
                             <div class="pg-card-photo academy-roster-photo">
@@ -258,16 +266,8 @@ const seasons = ["2026/27","2025/26","2024/25","2023/24","2022/23","2021/22","20
 
                             <div class="pg-card-overlay academy-roster-overlay">
                                 <span class="pg-card-divider" aria-hidden="true"></span>
-                                <div class="academy-roster-mainline">
-                                    <div class="academy-roster-copy">
-                                        <div class="pg-card-name" title="${esc(player.name)}">${esc(shortName(player.name))}</div>
-                                        <div class="academy-roster-position">${esc(player.position || group)}</div>
-                                    </div>
-                                    ${dorsal}
-                                </div>
-                                <div class="academy-player-badges">
-                                    ${statusBadge(player)}
-                                </div>
+                                <div class="pg-card-name" title="${esc(player.name)}">${esc(shortName(player.name))}</div>
+                                <div class="pg-card-country">${flag}<span>${esc(country)}</span></div>
                             </div>
                         </a>
                     `;

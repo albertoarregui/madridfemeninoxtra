@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+const biographies = JSON.parse(readFileSync(new URL('../../src/data/fabrica-biografias.json', import.meta.url), 'utf8'));
+
 import { createClient } from '@libsql/client';
 import * as dotenv from 'dotenv';
 
@@ -115,6 +118,12 @@ SELECT
     fj.portrait_source_url,
     fj.id_jugadora,
     j.nombre AS nombre_primer_equipo,
+    j.fecha_nacimiento,
+    j.lugar_nacimiento,
+    j.pais_origen,
+    j.iso,
+    (SELECT json_group_array(json_object('club', tj.club, 'startYear', tj.año_inicio, 'endYear', tj.año_fin))
+     FROM trayectoria_jugadoras tj WHERE tj.id_jugadora = fj.id_jugadora) AS trajectory,
     COALESCE(fts.permanently_promoted, 0) AS permanently_promoted,
     COALESCE(fts.debuted, 0) AS debuted,
     fts.debut_date,
@@ -192,6 +201,12 @@ async function main() {
 
         if (!players[academySlug]) {
             players[academySlug] = {
+                ...biographies[academySlug],
+                birthDate: row.fecha_nacimiento || biographies[academySlug]?.birthDate || null,
+                birthPlace: row.lugar_nacimiento || biographies[academySlug]?.birthPlace || null,
+                nationality: row.pais_origen || biographies[academySlug]?.nationality || null,
+                nationalityCode: row.iso || biographies[academySlug]?.nationalityCode || null,
+                trajectory: JSON.parse(row.trajectory || '[]'),
                 id: Number(row.id_fabrica_jugadora),
                 name: String(row.nombre),
                 slug: academySlug,
