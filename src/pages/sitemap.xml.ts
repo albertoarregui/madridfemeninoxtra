@@ -21,7 +21,6 @@ const staticPages = [
     { url: 'la-fabrica', priority: 0.8, changefreq: 'monthly' },
     { url: 'la-fabrica/historia', priority: 0.7, changefreq: 'monthly' },
     { url: 'la-fabrica/espana', priority: 0.8, changefreq: 'monthly' },
-    { url: 'la-fabrica/plantillas', priority: 0.8, changefreq: 'monthly' },
     { url: 'noticias', priority: 0.9, changefreq: 'daily' },
     { url: 'jugadoras', priority: 0.8, changefreq: 'weekly' },
     { url: 'entrenadores', priority: 0.7, changefreq: 'monthly' },
