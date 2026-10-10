@@ -11,8 +11,8 @@ export default defineConfig({
   compressHTML: true,
   output: 'server',
   prefetch: {
-    // Evita solicitar todas las rutas simultáneamente: satura Turso y Vercel.
-    prefetchAll: false,
+    // Precarga al pasar el cursor sobre un enlace: navegación más rápida sin precargar en masa.
+    prefetchAll: true,
     defaultStrategy: 'hover',
   },
   adapter: vercel({
