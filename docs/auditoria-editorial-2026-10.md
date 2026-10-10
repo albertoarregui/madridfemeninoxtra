@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 120.
-- **Fichas con dos o más párrafos:** 177.
+- **Fichas con un solo párrafo:** 117.
+- **Fichas con dos o más párrafos:** 180.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (62)
+### jugadora (59)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -27,7 +27,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Lorena Navarro (330 caracteres) · `3r5giwNsiFiL8vd0ylpNQd`
 - Amaya García (331 caracteres) · `WKZET5p2ck2LUttR98bK0`
 - Sara López (341 caracteres) · `2q3TzFMR7Iu1KSMqlGxJiB`
-- Sheila García (344 caracteres) · `b6jlivCVobD2BmzrFUwrm`
 - Malena Ortiz (345 caracteres) · `3FI6wTpBToH8HwlCzLIOjb`
 - Freja Siri (349 caracteres) · `7qPY1jZYwtwvP1rwy4Rtf3`
 - Adriana Folgado (349 caracteres) · `7rMkIbNQ0HJiPTrcQQDhf6`
@@ -67,13 +66,11 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Sofía Fuente (387 caracteres) · `76tIteDoWOIef0VJKYurHo`
 - Maite Oroz (394 caracteres) · `1yTpoVRvswXJDj5vOB5qMQ`
 - Rocío Gálvez (398 caracteres) · `1E2hYrUYygWNlViKmFqxAX`
-- Hayley Raso (401 caracteres) · `eyplq0cKQXME24ScxnvKg`
 - Andrea Rodríguez (406 caracteres) · `1bBMRf3z1aXemQT7xm1ZFK`
 - Naiara Sanmartín (406 caracteres) · `3cxHtZlhZwPlPg9GsCMGT9`
 - Sofia Jakobsson (407 caracteres) · `6QfDDGEceWttDNyInvUw8F`
 - Claudia Florentino (411 caracteres) · `n5F89t0QtBHOp3gH2pznz`
 - Carla Camacho (416 caracteres) · `vbmNTuUv1Ikv7rDqORb0V`
-- Lineth Beerensteyn (425 caracteres) · `ZALUlRC7el2hhQAtewpMY`
 - Naomie Feller (425 caracteres) · `2a01E4pfCCVTKGLQVULime`
 - Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
 - Oihane Hernández (429 caracteres) · `75GYVNWvvleaUsvFYVEDfM`
@@ -162,4 +159,4 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 
 ## Fichas ampliadas y publicadas en esta revisión
 
-Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar; y los estadios San Mamés, FC Bayern Campus, De Grolsch Veste An der Alten Försterei, Meadow Park y Nuevo Los Cármenes.
+Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar; y los estadios San Mamés, FC Bayern Campus, De Grolsch Veste An der Alten Försterei, Meadow Park y Nuevo Los Cármenes; y Hayley Raso, Sheila García y Lineth Beerensteyn.
