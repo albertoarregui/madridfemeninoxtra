@@ -24,6 +24,7 @@ test('proxy only fetches approved public HTTPS image origins', () => {
 test('proxy rejects non-images and enforces a size ceiling', () => {
   assert.equal(permittedImageResponseType('image/webp'), true);
   assert.equal(permittedImageResponseType('image/jpeg; charset=binary'), true);
+  assert.equal(permittedImageResponseType('image/svg+xml'), false);
   assert.equal(permittedImageResponseType('text/html'), false);
   assert.equal(permittedImageResponseType('application/json'), false);
   assert.equal(MAX_PROXY_IMAGE_BYTES, 6 * 1024 * 1024);
