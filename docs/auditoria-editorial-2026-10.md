@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 80.
-- **Fichas con dos o más párrafos:** 217.
+- **Fichas con un solo párrafo:** 78.
+- **Fichas con dos o más párrafos:** 219.
 
 ## Criterios editoriales
 
@@ -64,10 +64,9 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (7)
+### club (5)
 
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
-- Fundación Osasuna (379 caracteres) · `6IfYSiBXvwBeYv5EqlzCtD`
 - Badalona Women (410 caracteres) · `6iafOv0CFCVyGGgb6wmON1`
 - Kharkiv (416 caracteres) · `7CPwl6wvFPXT8WD5sF7HLn`
 - SD Eibar (417 caracteres) · `73TOi0b7qfDPx22QTKbC0j`
@@ -206,3 +205,11 @@ En las seis fichas se modificó únicamente `body`; no se alteraron los metadato
 - New Douglas Park: apertura de 2001, evolución y regreso del Hamilton Academical en 2026; fuentes: https://scottishfootballhistory.scot/clubs/hamilton-academical/ y https://hamiltonacciesfc.co.uk/2026/05/07/new-douglas-park/
 
 Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Contentful. Las dos entradas que pasaron de uno a varios párrafos fueron Dépor ABANCA y New Douglas Park; Athletic y FC Barcelona ya tenían más de un párrafo.
+
+
+### Nuevas ampliaciones contrastadas — 11 de octubre de 2026
+
+- Fundación Osasuna Femenino: antecedentes desde 2002, estructura de 2016, Tajonar y crecimiento de cantera; https://www.osasuna.es/anos-2010 y https://www.osasuna.es/news/read/36588/osasuna-femenino-anade-un-quinto-equipo-a-su-estructura-con-el-objetivo-de-potenciar-su-futbol-base
+- Rayo Vallecano Femenino: Copa 2008, tres Superligas consecutivas y presencia europea; https://www.laliga.com/noticias/diez-cosas-que-quiza-no-sabias-del-rayo-femenino y https://es.uefa.com/womenschampionsleague/history/clubs/2600788--rayo-vallecano/
+
+Se actualizaron y publicaron exclusivamente los cuerpos de las dos fichas.
