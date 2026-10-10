@@ -50,6 +50,19 @@ Las capturas se incorporarán cuando estén tomadas de la versión actual de pro
 
 Una vez añadidas esas imágenes al repositorio, pueden incluirse aquí con `![Portada de Madrid Femenino Xtra](docs/screenshots/portada.webp)` y el mismo patrón para las demás vistas.
 
+**Generación de capturas reales:**
+
+```bash
+pnpm screenshots:readme
+# Para documentar también una ficha concreta de partido y otra de jugadora:
+MATCH_URL=/partidos/slug-real PLAYER_URL=/jugadoras/slug-real pnpm screenshots:readme
+```
+
+El comando usa Puppeteer y requiere Chrome/Chromium disponible. Guarda capturas en `docs/screenshots/` y **omite páginas con imágenes que no hayan cargado**, en lugar de generar documentación engañosa. Los nombres `slug-real` son marcadores que hay que sustituir por URLs existentes; no son páginas reales.
+
+La configuración de Cloudflare y R2 no se altera durante la captura.
+
+
 ## ✨ Funcionalidades
 
 | | Módulo | Qué ofrece |
@@ -138,6 +151,8 @@ La configuración local se realiza mediante `.env`. El archivo `.env.example` si
 | `pnpm build` | Generar la compilación de producción |
 | `pnpm preview` | Previsualizar la aplicación compilada |
 | `pnpm test` | Ejecutar las pruebas automatizadas |
+| `pnpm smoke:production` | Verificar rutas, redirecciones y SEO de la web desplegada (solo lecturas HTTP) |
+| `pnpm screenshots:readme` | Generar capturas reales para documentación |
 
 > Algunas páginas dependen de Turso, Contentful u otros proveedores y requieren credenciales válidas para mostrar su contenido completo.
 
