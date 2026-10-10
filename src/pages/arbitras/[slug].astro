@@ -1,6 +1,6 @@
 ---
 import FichaTexto from "../../components/FichaTexto.astro";
-import { fetchFicha } from "../../utils/fichas";
+import { fetchFicha, resumenEditorial } from "../../utils/fichas";
 import Layout from "../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
@@ -232,12 +232,11 @@ const refereeSchema = {
 };
 
 const seoTitle = `${referee.nombre}, árbitra: historial con el Real Madrid Femenino | Madrid Femenino Xtra`;
-const seoDescription = totalStats.pj
-    ? `Historial de ${referee.nombre} como árbitra del Real Madrid Femenino: ${totalStats.pj} partidos, ${totalStats.pg} victorias, ${totalStats.pe} empates y ${totalStats.pp} derrotas. Tarjetas y estadísticas.`
-    : `Historial de arbitraje de ${referee.nombre} con el Real Madrid Femenino.`;
+const seoDescription = resumenEditorial(ficha) ?? [`${referee.nombre} es árbitra de fútbol.`, referee.colegio ? `Pertenece al colegio arbitral de ${referee.colegio}.` : null, referee.pais_origen ? `País: ${referee.pais_origen}.` : null].filter(Boolean).join(' ');
+
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogTitle={`${referee.nombre}: historial arbitral del Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={`Consulta los partidos del Real Madrid Femenino dirigidos por ${referee.nombre}: resultados, balance de victorias, empates, derrotas, tarjetas, penaltis y estadísticas arbitrales.`} noindex={!indexableReferee} showAds={indexableReferee}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={`${referee.nombre}: historial arbitral del Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={seoDescription} noindex={!indexableReferee} showAds={indexableReferee}>
     <script type="application/ld+json" set:html={JSON.stringify(refereeSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Árbitras", path: "/arbitras" }, { name: referee.nombre, path: `/arbitras/${slug}` }]))} />
     <section class="referee-hero">
