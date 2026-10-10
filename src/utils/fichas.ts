@@ -99,3 +99,29 @@ export async function fetchCronicaPartido(
         String(item.fields?.category || '').toUpperCase() === category,
     ) : items, claves));
 }
+
+// Extrae un resumen editorial propio de la entidad; evita metadescripciones
+// masivas basadas en resultados de partidos.
+export function resumenEditorial(html: string | null | undefined, maxLength = 260): string | null {
+    if (!html) return null;
+    const paragraphs = [...html.matchAll(/<p\\b[^>]*>([\\s\\S]*?)<\\/p>/gi)]
+        .map((match) => match[1]
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;|&#160;/gi, ' ')
+            .replace(/&amp;/gi, '&')
+            .replace(/&quot;/gi, '"')
+            .replace(/&#(?:39|x27);/gi, "'")
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&#(\\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
+            .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16)))
+            .replace(/\\s+/g, ' ')
+            .trim())
+        .filter(Boolean);
+    const first = paragraphs[0];
+    if (!first) return null;
+    if (first.length <= maxLength) return first;
+    const cut = first.slice(0, maxLength + 1);
+    const boundary = cut.lastIndexOf(' ');
+    return (boundary > maxLength * 0.65 ? cut.slice(0, boundary) : cut.slice(0, maxLength)).replace(/[,:;\\s]+$/, '') + '…';
+}
