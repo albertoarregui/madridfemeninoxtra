@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 117.
-- **Fichas con dos o más párrafos:** 180.
+- **Fichas con un solo párrafo:** 110.
+- **Fichas con dos o más párrafos:** 187.
 
 ## Criterios editoriales
 
@@ -80,7 +80,7 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Caroline Weir (491 caracteres) · `62hncrOpCx01riSnoFdhrl`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (17)
+### club (16)
 
 - Deportivo Abanca (341 caracteres) · `19K0rOjbZsCRsIx0ZTB88f`
 - Rosenborg (346 caracteres) · `48iCv73Hjl2AJYBXuYwuwh`
@@ -98,7 +98,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Santa Teresa (418 caracteres) · `3yyJ6VTVjvHdiDwEOEFRcb`
 - Valencia CF (423 caracteres) · `4lGHhaALpeEriXU4TBdP7w`
 - Tigres UANL (441 caracteres) · `3YaUJcR4fXDfmsRVy3MK7E`
-- Slavia de Praga (463 caracteres) · `2gww9k8aO9kixwbThATDWV`
 
 ### arbitra (27)
 
@@ -130,19 +129,13 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Sara Fernández Ceferino (263 caracteres) · `4bR92dlTrZaYI3bRu8Sou6`
 - Ángeles González (267 caracteres) · `47sNkvBgrt1HxlDtikxTzU`
 
-### estadio (14)
+### estadio (8)
 
 - New Douglas Park (340 caracteres) · `WfQ0ce7jTTFdIM6KbPDh7`
 - Estadio Aurélio Pereira (365 caracteres) · `9TrcEi6ZQ4LTsql0rkhl4`
 - Campo 7 de la Ciudad Real Madrid (373 caracteres) · `rWNPN5VCe6ahFd8gvATvo`
-- Stadion am Brentanobad (373 caracteres) · `1SYLzgabNgxrcVgidOWwOU`
-- Estadio Francisco Artés Carrasco (377 caracteres) · `3yQXVHmMPfO9Za4i16q3Ag`
 - Estadio Municipal Los Cuartos (379 caracteres) · `32M5T5l4SAXpQJGgrFekDJ`
-- Estadio Castalia (381 caracteres) · `2oRN8HOUlZcW6o6AD0xe3`
-- Bravida Arena (381 caracteres) · `275b534qvFs7JUQaRhMc1x`
 - Estadio Sébastien Charléty (382 caracteres) · `1VbiizqkQoctjzexdMaEVI`
-- Estadio de Mendizorroza (387 caracteres) · `2mFL4jo6LagEE0caoiRPnL`
-- Estadio Heliodoro Rodríguez López (402 caracteres) · `25gAG9GvkjM6sjYHXco7ox`
 - Ciudad del Fútbol de Las Rozas (417 caracteres) · `7ghwgfTjWUzzjL1LaRqd47`
 - Emirates Stadium (420 caracteres) · `6UzrouwT7aV6bRZUP6xgK7`
 - Campus PSG (424 caracteres) · `13CpPERrckFN1QPnsLpoY8`
@@ -160,3 +153,22 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 ## Fichas ampliadas y publicadas en esta revisión
 
 Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar; y los estadios San Mamés, FC Bayern Campus, De Grolsch Veste An der Alten Försterei, Meadow Park y Nuevo Los Cármenes; y Hayley Raso, Sheila García y Lineth Beerensteyn.
+
+## Ampliaciones verificadas: 10 de octubre de 2026 (segunda revisión)
+
+- **Mendizorroza:** apertura en 1924 y reformas, contrastadas con la historia oficial del Deportivo Alavés y LaLiga.
+- **Castalia:** inauguración de 1987 y evolución del recinto, según el CD Castellón.
+- **Heliodoro Rodríguez López:** centenario, reformas y titularidad municipal-insular, según el CD Tenerife.
+- **Slavia Praha Femenino:** orígenes de 1966 y reconocimiento formal de 1967, según el propio club.
+- **Stadion am Brentanobad:** reforma 2014-2016 y relación con FFC Frankfurt, según el Ayuntamiento de Fráncfort.
+- **Nordic Wellness Arena (antiguo Bravida Arena):** sustitución de Rambergsvallen, estreno de 2015 y cambio de nombre en enero de 2026, según BK Häcken.
+- **Francisco Artés Carrasco:** apertura y características, según el Ayuntamiento de Lorca.
+
+Fuentes institucionales consultadas:
+- https://www.laliga.com/noticias/historia-mendizorroza-estadio-deportivo-alaves
+- https://www.cdcastellon.com/estadio/
+- https://www.clubdeportivotenerife.es/noticias/el-estadio-heliodoro-rodriguez-lopez-ya-cuenta-con-100-anos-de-historia
+- https://www.slavia.cz/eng/history-of-slavia-women
+- https://frankfurt.de/themen/sport/sportorte/outdoor/stadien/stadion-am-brentanobad
+- https://bkhacken.se/sida/bravida-arena
+- https://www.lorca.es/noticias/noticias.asp?idn=16161
