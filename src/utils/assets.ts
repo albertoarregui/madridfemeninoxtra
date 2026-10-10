@@ -74,12 +74,13 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     }
 
     if (cleanFileName) {
-        let normalizedFallback = normalizeName(cleanFileName);
+        // R2 almacena estas colecciones como .webp, aunque la base de datos
+        // todavía pueda conservar nombres antiguos .png o .jpg.
+        const r2Folders = new Set(['arbitras', 'escudos', 'estadios', 'entrenadores', 'competiciones', 'jugadoras']);
+        if (!r2Folders.has(folder)) return '';
 
-        if (!normalizedFallback.includes('.')) {
-            normalizedFallback += '.webp';
-        }
-        
+        let normalizedFallback = normalizeName(cleanFileName).replace(/\.(?:png|jpe?g|avif)$/i, '.webp');
+        if (!/\.[a-z0-9]+$/i.test(normalizedFallback)) normalizedFallback += '.webp';
         return `https://media.madridfemeninoxtra.com/${folder}/${normalizedFallback}`;
     }
 
