@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 94.
-- **Fichas con dos o más párrafos:** 203.
+- **Fichas con un solo párrafo:** 93.
+- **Fichas con dos o más párrafos:** 204.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (50)
+### jugadora (49)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -67,7 +67,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Carla Camacho (416 caracteres) · `vbmNTuUv1Ikv7rDqORb0V`
 - Naomie Feller (425 caracteres) · `2a01E4pfCCVTKGLQVULime`
 - Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
-- Oihane Hernández (429 caracteres) · `75GYVNWvvleaUsvFYVEDfM`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
@@ -197,3 +196,5 @@ Actualización exclusiva del campo `body` de cada ficha, sin modificar SEO, Open
 - Lineth Beerensteyn: se verificó que ya tenía tres párrafos completos y se conservó su versión editorial anterior; no se contabiliza como nueva ampliación.
 
 Únicamente se editó el cuerpo de las fichas en Contentful. No se alteraron las descripciones SEO, Open Graph, imágenes ni estadísticas deportivas.
+
+- Oihane Hernández: Athletic Club, Real Madrid, Orlando Pride y selección española; comunicados oficiales de ambos clubes y ficha del Orlando Pride, 11 de octubre de 2026.
