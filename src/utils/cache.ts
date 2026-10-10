@@ -35,7 +35,9 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
     const tags = [...new Set(options.tags ?? [])];
     const remote = options.remote ?? true;
     const forceRefresh = options.forceRefresh ?? false;
-    const memoryTtlMs = options.memoryTtlMs ?? (remote ? 0 : ttlMs);
+    // Evita una consulta a Runtime Cache por cada visita a la misma función caliente.
+    // Las invalidaciones por tags siguen limpiando esta caché de memoria.
+    const memoryTtlMs = options.memoryTtlMs ?? (remote ? Math.min(ttlMs, 30_000) : ttlMs);
     const hit = almacen.get(clave) as Entrada<T> | undefined;
 
     if (!forceRefresh && memoryTtlMs > 0 && hit?.data !== undefined && ahora - hit.at < memoryTtlMs) {
