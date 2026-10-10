@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 93.
-- **Fichas con dos o más párrafos:** 204.
+- **Fichas con un solo párrafo:** 82.
+- **Fichas con dos o más párrafos:** 215.
 
 ## Criterios editoriales
 
@@ -16,9 +16,9 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 ## Fichas breves por revisar
 
-Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
+Entradas con un único párrafo: prioridad de investigación; no son necesariamente incorrectas.
 
-### jugadora (49)
+### jugadora (43)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -40,19 +40,15 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - María Portolés (361 caracteres) · `7DpGzbLCXMUyCbHdJQpMFw`
 - Yasmim Ribeiro (363 caracteres) · `1UM2I2f39allyRMTJdY6ZT`
 - Marina Salas (365 caracteres) · `4TbU0AZeTUEOfMB4piooVj`
-- Marta Cardona (367 caracteres) · `co9EPzgtkTT6VPaAqkyG9`
 - Ariana Arias (367 caracteres) · `1kdKpte0uGEbv1xoseLULN`
 - Iris Ashley Santiago (368 caracteres) · `1kNSyJ9mUPi9sEyu9IA7Z0`
 - Aurelie Kaci (369 caracteres) · `bG7lz14pJBTtn4yAnVP07`
 - Clara Villanueva (370 caracteres) · `1eqYrql8tC7XUVF5noxcR0`
 - Sara Ezquerro (371 caracteres) · `kbYfMYT1PETKODXa3fh5z`
 - María Valle (373 caracteres) · `5JHb5GmKBuSYllYhALOiMO`
-- Sofie Svava (374 caracteres) · `78SOGKCia6bwwysRewFzNG`
-- Nahikari García (376 caracteres) · `3g7Hvm6NV04fJPaEdyed8J`
 - Dana Benitez (376 caracteres) · `7FNNsc35c3DdcwuLoGPrv9`
 - Noe Llamas (377 caracteres) · `3sbWyQwh82NFDtBTaX4TNJ`
 - Marta Corredera (378 caracteres) · `4lYJy4Rg40p3Rc4tE7A9oo`
-- Babett Peter (380 caracteres) · `2baWMMXkmp3UoSpdpSDnWR`
 - Chioma Obogagu (381 caracteres) · `66mOkYCA69yZ9y0U2nVzHZ`
 - Antonia Silva (385 caracteres) · `7kKBQsNutRGIBAKitbfJo2`
 - Méline Gerard (385 caracteres) · `4BylLP1UqFORnjrRv6bfNd`
@@ -64,26 +60,19 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Naiara Sanmartín (406 caracteres) · `3cxHtZlhZwPlPg9GsCMGT9`
 - Sofia Jakobsson (407 caracteres) · `6QfDDGEceWttDNyInvUw8F`
 - Claudia Florentino (411 caracteres) · `n5F89t0QtBHOp3gH2pznz`
-- Carla Camacho (416 caracteres) · `vbmNTuUv1Ikv7rDqORb0V`
-- Naomie Feller (425 caracteres) · `2a01E4pfCCVTKGLQVULime`
 - Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (13)
+### club (8)
 
 - Deportivo Abanca (341 caracteres) · `19K0rOjbZsCRsIx0ZTB88f`
-- Rosenborg (346 caracteres) · `48iCv73Hjl2AJYBXuYwuwh`
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
-- FC Barcelona (358 caracteres) · `qlAsrj5ngUz0zmL6q2ofi`
 - Fundación Osasuna (379 caracteres) · `6IfYSiBXvwBeYv5EqlzCtD`
-- Rayo Vallecano (391 caracteres) · `5IeEzhsCL5yiC9sYrbqLB9`
-- Athletic Club (393 caracteres) · `6YV5wVDFTGUbsClAEp7w2`
 - Badalona Women (410 caracteres) · `6iafOv0CFCVyGGgb6wmON1`
 - Kharkiv (416 caracteres) · `7CPwl6wvFPXT8WD5sF7HLn`
 - SD Eibar (417 caracteres) · `73TOi0b7qfDPx22QTKbC0j`
 - Santa Teresa (418 caracteres) · `3yyJ6VTVjvHdiDwEOEFRcb`
-- Valencia CF (423 caracteres) · `4lGHhaALpeEriXU4TBdP7w`
 - Tigres UANL (441 caracteres) · `3YaUJcR4fXDfmsRVy3MK7E`
 
 ### arbitra (27)
@@ -198,3 +187,14 @@ Actualización exclusiva del campo `body` de cada ficha, sin modificar SEO, Open
 Únicamente se editó el cuerpo de las fichas en Contentful. No se alteraron las descripciones SEO, Open Graph, imágenes ni estadísticas deportivas.
 
 - Oihane Hernández: Athletic Club, Real Madrid, Orlando Pride y selección española; comunicados oficiales de ambos clubes y ficha del Orlando Pride, 11 de octubre de 2026.
+
+### Ampliaciones contrastadas y publicadas el 11 de octubre de 2026
+
+- Naomie Feller: evolución en Creil, Chantilly, Reims, Lyon y Real Madrid, confirmada por comunicados y perfil oficial del club. https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-feller-15-06-2026
+- Babett Peter: clubes alemanes, etapa madridista, retirada y palmarés; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/homenaje-a-babett-peter-en-su-despedida-del-futbol-profesional
+- Marta Cardona: Real Sociedad, Real Madrid, Atlético, Parma y regreso a Zaragoza en 2026; https://zaragozacff.es/marta-cardona/
+- Sofie Svava: Brøndby, Rosengård, Wolfsburgo, Real Madrid, Lyon y fichaje por Como; https://comofootball.com/en/como-1907-women-welcome-sofie-svava/
+- Nahikari García: Copa de la Reina 2019 con Real Sociedad, Real Madrid, Athletic, Nottingham Forest y Denver; https://www.athletic-club.eus/jugadores/nahikari-garcia-perez/
+- Carla Camacho: cantera y primer equipo del Real Madrid, Mundial sub-17 de 2022, Brighton y cesión al Lazio; https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-carla-camacho-03-06-2025
+
+En las seis fichas se modificó únicamente `body`; no se alteraron los metadatos SEO, las imágenes ni las estadísticas almacenadas en Turso.
