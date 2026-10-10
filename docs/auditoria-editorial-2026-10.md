@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 78.
-- **Fichas con dos o más párrafos:** 219.
+- **Fichas con un solo párrafo:** 80.
+- **Fichas con dos o más párrafos:** 217.
 
 ## Criterios editoriales
 
@@ -64,7 +64,7 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (5)
+### club (7)
 
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
 - Fundación Osasuna (379 caracteres) · `6IfYSiBXvwBeYv5EqlzCtD`
@@ -205,4 +205,4 @@ En las seis fichas se modificó únicamente `body`; no se alteraron los metadato
 - Dépor ABANCA: recuperación de la sección 2016/17 y ascensos; fuente: https://www.rcdeportivo.es/es/noticias/abanca-riazor-homenajea-este-domingo-17-a-cris-martinez-que-se-retira-al-acabar-la-temporada-con
 - New Douglas Park: apertura de 2001, evolución y regreso del Hamilton Academical en 2026; fuentes: https://scottishfootballhistory.scot/clubs/hamilton-academical/ y https://hamiltonacciesfc.co.uk/2026/05/07/new-douglas-park/
 
-Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Contentful.
+Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Contentful. Las dos entradas que pasaron de uno a varios párrafos fueron Dépor ABANCA y New Douglas Park; Athletic y FC Barcelona ya tenían más de un párrafo.
