@@ -3,7 +3,7 @@ import {
   MAX_PROXY_IMAGE_BYTES,
   permittedImageResponseType,
   permittedImageSource,
-} from '../../../lib/image-proxy-policy';
+} from '../../lib/image-proxy-policy';
 
 export const prerender = false;
 
