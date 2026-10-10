@@ -27,7 +27,7 @@ import "@fontsource/dm-sans/500.css";
 // @ts-ignore
 import "@fontsource/dm-sans/700.css";
 
-const ogImage = "https://www.madridfemeninoxtra.com/og.png";
+const ogImage = "https://images.ctfassets.net/tw9ep67nuudj/46TjQrnBlppNehYWtkls5o/3fe171095c81fb9f8d1a3606885d506c/MINIATURA_PRINCIPAL_1_.png?w=1200&h=630&fit=fill&fm=jpg&q=85";
 const orgLogo = "https://www.madridfemeninoxtra.com/icon-512.png";
 const favicon = "/icon.webp";
 
@@ -60,8 +60,13 @@ const canonicalUrl = canonical
 	? new URL(canonical, Astro.site).href
 	: new URL(Astro.url.pathname, Astro.site).href;
 
-const miniatura = await resolverOgImage(Astro.url.pathname, image);
-const imagenSocial = miniatura ?? image ?? ogImage;
+// Las rutas fijas comparten la miniatura corporativa; las fichas dinámicas
+// conservan las miniaturas por URL y sus imágenes específicas.
+const esRutaDinamica = /\\[[^\\]]+\\]/.test(Astro.routePattern);
+const miniatura = esRutaDinamica
+	? await resolverOgImage(Astro.url.pathname, image)
+	: null;
+const imagenSocial = esRutaDinamica ? (miniatura ?? image ?? ogImage) : ogImage;
 
 const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
 const isNewsArticle = /^\/noticias\/[^/]+\/?$/.test(Astro.url.pathname);
