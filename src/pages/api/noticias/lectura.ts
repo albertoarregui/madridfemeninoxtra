@@ -2,6 +2,24 @@ import type { APIRoute } from 'astro';
 import { getAnalyticsDbClient } from '../../../db/client';
 
 export const prerender = false;
+
+// Bounded, per-instance throttle. It prevents repeated client retries from
+// becoming a burst of writes. No Turso SELECT and no persistent user tracking.
+const recent = new Map<string, number>();
+const MIN_INTERVAL_MS = 10 * 60 * 1000;
+const MAX_ENTRIES = 5_000;
+function throttle(key: string, now: number): boolean {
+  const last = recent.get(key);
+  if (last && now - last < MIN_INTERVAL_MS) return false;
+  if (recent.size >= MAX_ENTRIES) {
+    for (const [k, t] of recent) {
+      if (now - t >= MIN_INTERVAL_MS) recent.delete(k);
+    }
+    while (recent.size >= MAX_ENTRIES) recent.delete(recent.keys().next().value!);
+  }
+  recent.set(key, now);
+  return true;
+}
 const response = (status: number) => new Response(null, {
   status,
   headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -29,6 +47,11 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 160) return response(400);
 
+  // Same visitor/article requests within ten minutes are coalesced.
+  const address = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
+  const key = address + ':' + slug;
+  if (!throttle(key, Date.now())) return response(204);
+
   try {
     const db = await getAnalyticsDbClient();
     if (!db) return response(503);
@@ -40,6 +63,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
     return response(204);
   } catch (error) {
+    recent.delete(key);
     console.error('[NEWS VIEWS] Unable to record view:', error);
     return response(503);
   }
