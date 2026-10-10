@@ -26,7 +26,7 @@ function mapNoticia(item: any): NoticiaCard {
         createdAt: item.sys.createdAt,
         referenceId: f.referenceId != null ? String(f.referenceId) : undefined,
         player: f.player,
-        imageUrl: rawUrl ? `https:${rawUrl}` : FALLBACK_IMAGE,
+        imageUrl: rawUrl ? (String(rawUrl).startsWith("//") ? `https:${rawUrl}` : `${rawUrl}`) : FALLBACK_IMAGE,
     };
 }
 
