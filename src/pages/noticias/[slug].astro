@@ -114,7 +114,7 @@ const refsDe = (tipo: string): string[] => {
 };
 
 const featuredImageUrl = n.featuredImage?.fields?.file?.url
-    ? `https:${n.featuredImage.fields.file.url}`
+    ? (String(n.featuredImage.fields.file.url).startsWith("//") ? `https:${n.featuredImage.fields.file.url}` : `${n.featuredImage.fields.file.url}`)
     : "https://www.madridfemeninoxtra.com/og.png";
 const featuredImageWidth: number = n.featuredImage?.fields?.file?.details?.image?.width ?? 1200;
 const featuredImageHeight: number = n.featuredImage?.fields?.file?.details?.image?.height ?? 630;
@@ -133,7 +133,7 @@ if (n.body) {
                         const file = node.data?.target?.fields?.file;
                         const title = node.data?.target?.fields?.title || '';
                         if (file && file.url) {
-                            const url = file.url.startsWith('//') ? `https:${file.url}` : file.url;
+                            const url = file.url.startsWith('//') ? (String(file.url).startsWith("//") ? `https:${file.url}` : `${file.url}`) : file.url;
                             return `<figure class="media-centered"><img src="${url}" alt="${title}" />${title ? `<figcaption class="photo-caption">${title}</figcaption>` : ''}</figure>`;
                         }
                         return '';
@@ -1393,7 +1393,7 @@ const newsSchema = {
                                     <a href={`/noticias/${r.slug}`} class="related-card">
                                         <div class="related-card-image">
                                             <img
-                                                src={r.featuredImage?.fields?.file?.url ? `https:${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill` : "https://www.madridfemeninoxtra.com/og.png"}
+                                                src={r.featuredImage?.fields?.file?.url ? (String(r.featuredImage.fields.file.url).startsWith("//") ? `https:${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill` : `${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill`) : "https://www.madridfemeninoxtra.com/og.png"}
                                                 alt={r.title}
                                                 loading="lazy"
                                             />
