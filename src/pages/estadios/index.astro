@@ -8,7 +8,29 @@ import MatchMapWrapper from "../../components/MatchMapWrapper";
 import MatchStatsDashboard from "../../components/MatchStatsDashboard";
 
 const stadiums = await fetchAllStadiumsWithStats();
-const gamesData = (await fetchGamesDirectly()).filter((game: any) => game.resultado !== "P");
+// Enviar a las islas React solo los campos usados por el mapa y el resumen.
+// Evita serializar las estadísticas completas de cada partido dos veces.
+const gamesData = (await fetchGamesDirectly())
+    .filter((game: any) => game.resultado !== "P")
+    .map((game: any) => ({
+        id_partido: game.id_partido,
+        fecha: game.fecha,
+        temporada_nombre: game.temporada_nombre,
+        club_local: game.club_local,
+        club_visitante: game.club_visitante,
+        estadio: game.estadio,
+        ciudad: game.ciudad,
+        estadio_lat: game.estadio_lat,
+        estadio_lng: game.estadio_lng,
+        estadio_foto_url: game.estadio_foto_url,
+        slug: game.slug,
+        fecha_formateada: game.fecha_formateada,
+        competicion_nombre: game.competicion_nombre,
+        competicion_foto_url: game.competicion_foto_url,
+        goles_rm: game.goles_rm,
+        goles_rival: game.goles_rival,
+        resultado: game.resultado,
+    }));
 ---
 
 <Layout
