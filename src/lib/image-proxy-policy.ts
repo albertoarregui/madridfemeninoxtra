@@ -25,5 +25,5 @@ export function permittedImageSource(input: string): URL | null {
 
 export function permittedImageResponseType(value: string | null): boolean {
   if (!value) return false;
-  return /^image\/(?:avif|gif|jpeg|png|webp|svg\+xml)(?:\s*;|\s*$)/i.test(value);
+  return /^image\/(?:avif|gif|jpeg|png|webp)(?:\s*;|\s*$)/i.test(value);
 }
