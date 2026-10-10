@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 131.
-- **Fichas con dos o más párrafos:** 166.
+- **Fichas con un solo párrafo:** 126.
+- **Fichas con dos o más párrafos:** 171.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (67)
+### jugadora (62)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -79,14 +79,9 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Oihane Hernández (429 caracteres) · `75GYVNWvvleaUsvFYVEDfM`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Claudia Zornoza (448 caracteres) · `3hEIOFZRuAYnMIsWqdteSV`
-- Lotte Keukelaar (450 caracteres) · `5gQSQaUTtrrPeJ39conIfl`
 - Andreia Jacinto (453 caracteres) · `FvoaEm0j2s8Xg0DpxCxrk`
-- Filippa Angeldahl (470 caracteres) · `6lRULIlmIXCpshVT0EoRBz`
-- Felicia Schröder (487 caracteres) · `2nQyxQdKWpJflS9AGPe1Jm`
 - Caroline Weir (491 caracteres) · `62hncrOpCx01riSnoFdhrl`
-- Linda Caicedo (495 caracteres) · `4JcDfBvA9RfnNXtlIvad7h`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
-- Athenea del Castillo (512 caracteres) · `7DFrZ7S110wIu1elGYafMX`
 
 ### club (17)
 
@@ -173,4 +168,4 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 
 ## Fichas ampliadas y publicadas en esta revisión
 
-Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles.
+Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar.
