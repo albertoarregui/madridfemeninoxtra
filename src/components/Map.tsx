@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Map, { Marker, Popup, NavigationControl, FullscreenControl, ScaleControl } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapPin, Info, Users, Trophy, Calendar } from 'lucide-react';
@@ -28,6 +28,18 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     height = "500px"
 }) => {
     const [popupInfo, setPopupInfo] = useState<MapMarker | null>(null);
+    const [webglReady, setWebglReady] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        try {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+            setWebglReady(Boolean(context));
+            context?.getExtension('WEBGL_lose_context')?.loseContext();
+        } catch {
+            setWebglReady(false);
+        }
+    }, []);
 
     const pins = useMemo(
         () =>
@@ -102,6 +114,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 }
             `}</style>
 
+            {webglReady === false ? (
+                <div role="status" style={{ height: '100%', overflowY: 'auto', background: '#0c1222', color: '#f2f2f2', padding: '1.5rem' }}>
+                    <strong>El mapa no está disponible en este navegador.</strong>
+                    <p style={{ color: '#bfc6d5', marginTop: '0.5rem', marginBottom: '1rem' }}>Puedes consultar los lugares sin activar WebGL:</p>
+                    <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem' }}>
+                        {markers.map((marker, index) => (
+                            <li key={index} style={{ marginBottom: '0.65rem' }}>
+                                <strong>{marker.label}</strong>
+                                {marker.description && <span style={{ display: 'block', color: '#bfc6d5' }}>{marker.description}</span>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) : webglReady === null ? (
+                <div role="status" style={{ display: 'grid', placeItems: 'center', height: '100%', background: '#0c1222', color: '#bfc6d5' }}>Preparando mapa…</div>
+            ) : (
             <Map
                 initialViewState={{
                     longitude: center.lng,
@@ -385,9 +413,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </Popup>
                 )}
             </Map>
-            <div className="absolute bottom-1 right-1 bg-white/50 px-1 text-[10px] text-gray-500 pointer-events-none">
+            )}
+            {webglReady && <div className="absolute bottom-1 right-1 bg-white/50 px-1 text-[10px] text-gray-500 pointer-events-none">
                 © OpenStreetMap, © Carto
-            </div>
+            </div>}
 
             <style>{`
                 .maplibregl-popup-close-button {
