@@ -30,7 +30,9 @@ test('article views are recorded after engagement, never during SSR', () => {
 });
 
 test('sitemap, SEO and consent rules stay in place', () => {
-  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v2/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v3/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /escapeXml/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /'players', 'coaches', 'stadiums'/);
   assert.match(read('src/layouts/Layout.astro'), /isNewsArticle \? "article" : "website"/);
   assert.match(read('src/components/CookieConsent.astro'), /background: #0c1222/);
   assert.match(read('src/utils/og-metadata.ts'), /OG_ESTATICOS/);
