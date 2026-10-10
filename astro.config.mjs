@@ -15,8 +15,9 @@ export default defineConfig({
   },
   output: 'server',
   prefetch: {
-    // Precarga al pasar el cursor sobre un enlace: navegación más rápida sin precargar en masa.
-    prefetchAll: true,
+    // No abrir páginas SSR con consultas a Turso sólo por pasar el cursor.
+    // Las vistas que realmente lo necesiten pueden activar prefetch por enlace.
+    prefetchAll: false,
     defaultStrategy: 'hover',
   },
   adapter: vercel({
