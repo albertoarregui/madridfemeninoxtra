@@ -8,6 +8,7 @@ import NextMatchCountdown from "../components/NextMatchCountdown.astro";
 import GoogleNewsBanner from "../components/GoogleNewsBanner.astro";
 import { getAssetUrl } from "../utils/assets";
 import { resolverOgImage } from "../utils/og";
+import { OG_ESTATICOS } from "../utils/og-metadata";
 import "../styles/global.css";
 import "../styles/link-animations.css";
 // @ts-ignore
@@ -55,6 +56,11 @@ const {
 	noBg = false,
 	canonical,
 } = Astro.props;
+
+const ogRuta = Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/+$/, "") : "/";
+const ogConfig = OG_ESTATICOS[ogRuta];
+const tituloSocial = ogConfig?.title ?? title;
+const descripcionSocial = ogConfig?.description ?? ogDescription ?? description;
 
 const canonicalUrl = canonical
 	? new URL(canonical, Astro.site).href
@@ -137,15 +143,15 @@ const siteSchema = {
 		<meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href} />
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content="Madrid Femenino Xtra" />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={ogDescription ?? description} />
+		<meta property="og:title" content={tituloSocial} />
+		<meta property="og:description" content={descripcionSocial} />
 		<meta property="og:image" content={imagenSocial} />
 		<meta property="og:image:alt" content={title} />
 		<meta property="og:locale" content="es_ES" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:site" content="@madridfemxtra" />
-		<meta name="twitter:title" content={title} />
-		<meta name="twitter:description" content={ogDescription ?? description} />
+		<meta name="twitter:title" content={tituloSocial} />
+		<meta name="twitter:description" content={descripcionSocial} />
 		<meta name="twitter:image" content={imagenSocial} />
 		<meta
 			name="robots"
