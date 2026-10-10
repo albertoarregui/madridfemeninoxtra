@@ -56,7 +56,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   try {
     const db = await getAnalyticsDbClient();
-    if (!db) return response(503);
+    if (!db) {
+      recent.delete(key);
+      return response(503);
+    }
     await db.execute({
       sql: `INSERT INTO article_views (slug, views, updated_at)
             VALUES (?, 1, datetime('now'))
