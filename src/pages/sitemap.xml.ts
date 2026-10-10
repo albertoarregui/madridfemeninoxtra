@@ -55,11 +55,22 @@ const staticPages = [
     { url: 'terminos-condiciones', priority: 0.3, changefreq: 'yearly' },
 ];
 
+function escapeXml(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
 function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[]): string {
+    // Avoid duplicate canonical URLs and invalid XML when slugs contain '&'.
+    const uniqueUrls = [...new Map(urls.filter(item => {
+        try {
+            const value = new URL(item.loc);
+            return value.protocol === 'https:' && value.hostname === 'www.madridfemeninoxtra.com' && !value.pathname.includes('/rivales/estadios');
+        } catch { return false; }
+    }).map(item => [item.loc, item])).values()];
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(url => `  <url>
-    <loc>${url.loc}</loc>${url.lastmod ? `
+${uniqueUrls.map(url => `  <url>
+    <loc>${escapeXml(url.loc)}</loc>${url.lastmod ? `
     <lastmod>${url.lastmod}</lastmod>` : ''}
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
@@ -230,7 +241,7 @@ async function buildSitemap(): Promise<string> {
 
 export const GET: APIRoute = async () => {
     try {
-        const xml = await cached('seo:sitemap-2026-v2', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news'] });
+        const xml = await cached('seo:sitemap-2026-v3', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',
