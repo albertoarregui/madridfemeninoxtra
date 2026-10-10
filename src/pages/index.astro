@@ -139,42 +139,41 @@ const uniqueCompetitions = [
 
 let masLeidas: { slug: string; title: string; subtitle?: string; category?: string; imageUrl?: string }[] = [];
 try {
-	const { getAnalyticsDbClient } = await import("../db/client");
-	const analyticsClient = await getAnalyticsDbClient();
-	if (analyticsClient) {
-		const topSlugs = await cached('news:most-read-slugs', 5 * 60 * 1000, async () => {
-			const topResult = await analyticsClient.execute({
-				sql: `SELECT slug FROM article_views WHERE views > 0 ORDER BY views DESC, slug ASC LIMIT 20`,
-				args: [],
+	masLeidas = await cached('news:most-read-articles-v2', 60 * 60 * 1000, async () => {
+		const { getAnalyticsDbClient } = await import("../db/client");
+		const analyticsClient = await getAnalyticsDbClient();
+		if (!analyticsClient) return [];
+		const topResult = await analyticsClient.execute({
+			sql: `SELECT slug FROM article_views WHERE views > 0 ORDER BY views DESC, slug ASC LIMIT 10`,
+			args: [],
+		});
+		const topSlugs = topResult.rows.map((r: any) => String(r.slug));
+		if (!topSlugs.length) return [];
+
+		const { contentfulClient } = await import("../lib/contentful");
+		const related = await contentfulClient.getEntries({
+			content_type: "noticia",
+			"fields.slug[in]": topSlugs.join(","),
+			select: ["sys.id", "fields.slug", "fields.title", "fields.subtitle", "fields.category", "fields.featuredImage"] as any,
+			limit: 10,
+		});
+		const bySlug = new Map(related.items.map((entry: any) => [entry.fields.slug, entry.fields]));
+		return topSlugs
+			.map((slug: string) => bySlug.get(slug) as any)
+			.filter(Boolean)
+			.slice(0, 5)
+			.map((article: any) => {
+				const assetUrl = article.featuredImage?.fields?.file?.url;
+				const photo = assetUrl ? String(assetUrl).replace(/^\/\//, "https:") : undefined;
+				return {
+					slug: article.slug,
+					title: article.title,
+					subtitle: article.subtitle ?? "",
+					category: article.category,
+					imageUrl: photo ? `${photo}${photo.includes("?") ? "&" : "?"}fm=webp&w=120&h=80&q=75&fit=fill` : undefined,
+				};
 			});
-			return topResult.rows.map((r: any) => String(r.slug));
-		}, { tags: ['news-ranking'] });
-		if (topSlugs.length > 0) {
-			const { contentfulClient } = await import("../lib/contentful");
-			const related = await contentfulClient.getEntries({
-				content_type: "noticia",
-				"fields.slug[in]": topSlugs.join(","),
-				select: ["sys.id", "fields.slug", "fields.title", "fields.subtitle", "fields.category", "fields.featuredImage"] as any,
-				limit: 20,
-			});
-			const bySlug = Object.fromEntries(
-				related.items.map((i: any) => [i.fields.slug, i.fields])
-			);
-			masLeidas = topSlugs
-				.map((s: string) => bySlug[s])
-				.filter(Boolean)
-				.slice(0, 5)
-				.map((f: any) => ({
-					slug: f.slug,
-					title: f.title,
-					subtitle: f.subtitle ?? '',
-					category: f.category,
-					imageUrl: f.featuredImage?.fields?.file?.url
-						? (String(f.featuredImage.fields.file.url).startsWith("//") ? `https:${f.featuredImage.fields.file.url}?fm=webp&w=120&h=80&q=75&fit=fill` : `${f.featuredImage.fields.file.url}?fm=webp&w=120&h=80&q=75&fit=fill`)
-						: undefined,
-				}));
-		}
-	}
+	}, { tags: ['news-ranking'], memoryTtlMs: 60 * 1000 });
 } catch (error) {
 	console.error('Error al cargar el ranking de noticias más leídas:', error);
 }
