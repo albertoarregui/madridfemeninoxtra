@@ -31,6 +31,9 @@ function normalizeName(name: string): string {
 
 export function getAssetUrl(type: AssetType, fileName: string | null | undefined): string {
     if (!fileName) return "";
+    // Algunas imágenes ya llegan como URL completa de Contentful, R2 u otro CDN.
+    // No convertirlas en nombres de archivo ni reconstruir enlaces inexistentes.
+    if (/^https?:\/\//i.test(fileName)) return fileName;
 
     let cleanFileName = fileName;
     if (fileName.startsWith('/assets/')) {
