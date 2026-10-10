@@ -1,40 +1,108 @@
 ---
-interface Props {
-    showAds?: boolean;
-}
-
+interface Props { showAds?: boolean; }
 const { showAds = true } = Astro.props;
 ---
 
-{
-    showAds && (
-        <script is:inline>
-            function loadGoogleAdSense() {
-                if (
-                    document.querySelector(
-                        'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]',
-                    )
-                ) {
-                    return;
-                }
-
-                const script = document.createElement("script");
-                script.src =
-                    "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753331336777901";
-                script.async = true;
-                script.crossOrigin = "anonymous";
-                document.head.appendChild(script);
-            }
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", loadGoogleAdSense, {
-                    once: true,
-                });
-            } else {
-                loadGoogleAdSense();
-            }
-
-            document.addEventListener("astro:page-load", loadGoogleAdSense);
-        </script>
-    )
-}
+<div id="mfx-consent" class="mfx-consent" data-ads={String(showAds)} hidden>
+  <div class="mfx-consent-inner" role="dialog" aria-label="Preferencias de privacidad" aria-modal="false">
+    <div class="mfx-consent-copy">
+      <span class="mfx-consent-eyebrow">MADRID FEMENINO XTRA · PRIVACIDAD</span>
+      <h2>Tu privacidad, tu decisión.</h2>
+      <p>Utilizamos almacenamiento esencial para el funcionamiento de la web. Con tu permiso, también podemos mostrar publicidad personalizada. Puedes aceptar, rechazar o configurar tus preferencias.</p>
+      <a href="/politica-cookies">Consulta nuestra política de cookies <span aria-hidden="true">↗</span></a>
+      <p class="mfx-consent-note">La gestión de anuncios de Google puede requerir una plataforma de consentimiento certificada. Esta preferencia no sustituye el consentimiento solicitado por Google.</p>
+    </div>
+    <div class="mfx-consent-actions">
+      <button type="button" data-mfx-consent="accept" class="mfx-accept">Aceptar opcionales</button>
+      <button type="button" data-mfx-consent="reject" class="mfx-reject">Rechazar opcionales</button>
+      <button type="button" data-mfx-consent="configure" class="mfx-configure" aria-expanded="false" aria-controls="mfx-consent-details">Configurar preferencias</button>
+    </div>
+    <div id="mfx-consent-details" class="mfx-consent-details" hidden>
+      <label><span><strong>Necesarias</strong><small>Imprescindibles para la navegación.</small></span><input type="checkbox" checked disabled aria-label="Cookies necesarias, siempre activas" /></label>
+      <label><span><strong>Publicidad</strong><small>Controla la carga de AdSense. Google puede pedir consentimiento adicional.</small></span><input id="mfx-ads-choice" type="checkbox" /></label>
+      <button type="button" data-mfx-consent="save">Guardar selección</button>
+    </div>
+  </div>
+</div>
+<button id="mfx-manage-consent" class="mfx-manage-consent" type="button" hidden>Configurar cookies</button>
+<script is:inline>
+  (() => {
+    const KEY = 'mfx-consent-v1';
+    const ROOT = document.getElementById('mfx-consent');
+    const MANAGE = document.getElementById('mfx-manage-consent');
+    if (!ROOT || !MANAGE || ROOT.dataset.initialized === 'true') return;
+    ROOT.dataset.initialized = 'true';
+    const details = ROOT.querySelector('#mfx-consent-details');
+    const adsChoice = ROOT.querySelector('#mfx-ads-choice');
+    const config = ROOT.querySelector('[data-mfx-consent="configure"]');
+    let state = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && saved.version === 1 && typeof saved.ads === 'boolean') state = saved;
+    } catch {}
+    const enabled = ROOT.dataset.ads === 'true';
+    function loadAds() {
+      if (!enabled || !state?.ads) return;
+      if (document.querySelector('script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]')) return;
+      const script = document.createElement('script');
+      script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753331336777901';
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      document.head.appendChild(script);
+    }
+    function render() {
+      ROOT.hidden = !!state;
+      MANAGE.hidden = !state;
+      if (adsChoice) adsChoice.checked = !!state?.ads;
+      if (state) loadAds();
+    }
+    function save(ads) {
+      state = { version: 1, necessary: true, ads: !!ads && enabled, updatedAt: new Date().toISOString() };
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+      document.dispatchEvent(new CustomEvent('mfx:consent-change', { detail: state }));
+      render();
+      if (!state.ads && document.querySelector('script[src*="adsbygoogle.js"]')) location.reload();
+    }
+    ROOT.querySelectorAll('[data-mfx-consent]').forEach(button => button.addEventListener('click', () => {
+      const action = button.dataset.mfxConsent;
+      if (action === 'accept') save(true);
+      if (action === 'reject') save(false);
+      if (action === 'save') save(adsChoice?.checked);
+      if (action === 'configure') {
+        details.hidden = !details.hidden;
+        config.setAttribute('aria-expanded', String(!details.hidden));
+      }
+    }));
+    MANAGE.addEventListener('click', () => {
+      ROOT.hidden = false;
+      MANAGE.hidden = true;
+      details.hidden = false;
+      config.setAttribute('aria-expanded', 'true');
+    });
+    document.addEventListener('astro:page-load', () => { render(); });
+    render();
+  })();
+</script>
+<style>
+  .mfx-consent[hidden], .mfx-manage-consent[hidden], .mfx-consent-details[hidden] { display: none !important; }
+  .mfx-consent { position: fixed; inset: auto 16px 18px; z-index: 2147483000; color: #f6f3ee; font-family: 'DM Sans',sans-serif; }
+  .mfx-consent-inner { max-width: 980px; margin: auto; padding: 27px 30px; display: grid; grid-template-columns: minmax(0,1fr) 210px; gap: 22px 30px; background: rgba(12,13,19,.97); border: 1px solid rgba(212,168,67,.38); border-radius: 15px; box-shadow: 0 22px 70px rgba(0,0,0,.65); backdrop-filter: blur(20px); }
+  .mfx-consent-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .18em; color: #d4a843; }
+  .mfx-consent h2 { margin: 9px 0 8px; font-family: 'Cinzel',serif; font-size: clamp(17px,2vw,23px); line-height: 1.3; font-weight: 700; }
+  .mfx-consent p { margin: 0 0 10px; color: #d0d0d4; font-size: 13px; line-height: 1.65; }
+  .mfx-consent a { color: #e6c77c; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+  .mfx-consent .mfx-consent-note { margin: 10px 0 0; color: #92939d; font-size: 11px; }
+  .mfx-consent-actions { display: flex; flex-direction: column; justify-content: center; gap: 9px; }
+  .mfx-consent button, .mfx-manage-consent { border-radius: 7px; padding: 12px 14px; cursor: pointer; font: 600 12px 'DM Sans',sans-serif; transition: border-color .2s,background .2s; }
+  .mfx-consent button:focus-visible, .mfx-manage-consent:focus-visible { outline: 2px solid #e6c77c; outline-offset: 3px; }
+  .mfx-accept { background: #d4a843; border: 1px solid #d4a843; color: #16120a; }
+  .mfx-reject { background: transparent; border: 1px solid #d4a843; color: #f2dfb0; }
+  .mfx-configure { border: 1px solid #42434a; background: #24252c; color: #e1e1e6; }
+  .mfx-consent-details { border-top: 1px solid #33343c; grid-column: 1 / -1; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .mfx-consent-details label { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+  .mfx-consent-details strong { display:block; font-size: 13px; } .mfx-consent-details small { color:#a8a9af; font-size:11px; }
+  .mfx-consent-details input { width:18px; height:18px; accent-color:#d4a843; }
+  .mfx-consent-details button { align-self: flex-end; border:1px solid #d4a843; background:#d4a843; color:#16120a; }
+  .mfx-manage-consent { position: fixed; bottom: 16px; left: 16px; z-index: 2147482999; background: #13141a; border: 1px solid #957d47; color: #eee3c4; box-shadow:0 4px 20px #0009; }
+  @media(max-width:700px) { .mfx-consent { inset:auto 9px 9px; } .mfx-consent-inner { grid-template-columns: 1fr; max-height: 85vh; overflow-y: auto; padding: 20px; gap:14px; } .mfx-consent-actions { display:grid; grid-template-columns: 1fr 1fr; } .mfx-consent-actions .mfx-configure { grid-column:1/-1; } .mfx-manage-consent { bottom:9px; left:9px; } }
+</style>
