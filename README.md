@@ -183,15 +183,6 @@ La plataforma dispone de un panel propio de preferencias de cookies. La carga pu
 
 Los contenidos editoriales, las fotografías, los escudos y otros recursos visuales pueden estar sujetos a derechos distintos de los del código. No deben asumirse licencias de reutilización por el mero hecho de que el repositorio sea público.
 
-## 🧭 Próximas mejoras
-
-El desarrollo continúa en cuatro líneas:
-
-- 📈 **Análisis deportivo:** ampliar las herramientas de comparación y visualización.
-- 📚 **Archivo histórico:** completar temporadas, perfiles y relaciones entre datos.
-- 📱 **Experiencia de uso:** mejorar accesibilidad, rendimiento y navegación móvil.
-- 📷 **Documentación visual:** añadir capturas actualizadas de las principales pantallas.
-
 ---
 
 <div align="center">
