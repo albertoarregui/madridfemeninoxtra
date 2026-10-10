@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import Map, { Marker, Popup, NavigationControl, FullscreenControl, ScaleControl } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapPin, Info, Users, Trophy, Calendar } from 'lucide-react';
@@ -28,19 +28,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     height = "500px"
 }) => {
     const [popupInfo, setPopupInfo] = useState<MapMarker | null>(null);
-    const [webglAvailable, setWebglAvailable] = useState<boolean | null>(null);
-    useEffect(() => {
-        try {
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl2', { failIfMajorPerformanceCaveat: true })
-                || canvas.getContext('webgl', { failIfMajorPerformanceCaveat: true });
-            setWebglAvailable(Boolean(gl));
-            gl?.getExtension('WEBGL_lose_context')?.loseContext();
-        } catch {
-            setWebglAvailable(false);
-        }
-    }, []);
-
 
     const pins = useMemo(
         () =>
@@ -115,14 +102,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                 }
             `}</style>
 
-            {webglAvailable === false ? (
-                <div role="status" style={{ display: 'grid', placeContent: 'center', height: '100%', padding: '2rem', textAlign: 'center', color: '#e8e8ee', background: '#071b3b' }}>
-                    <strong>El mapa no está disponible en este navegador.</strong>
-                    <p style={{ marginTop: '8px', color: '#b4c0d3' }}>La visualización necesita aceleración WebGL. Actívala en el navegador o prueba desde otro dispositivo.</p>
-                </div>
-            ) : webglAvailable === null ? (
-                <div role="status" style={{ display: 'grid', placeContent: 'center', height: '100%', color: '#b4c0d3', background: '#071b3b' }}>Preparando mapa…</div>
-            ) : (
             <Map
                 initialViewState={{
                     longitude: center.lng,
@@ -406,7 +385,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     </Popup>
                 )}
             </Map>
-            )}
             <div className="absolute bottom-1 right-1 bg-white/50 px-1 text-[10px] text-gray-500 pointer-events-none">
                 © OpenStreetMap, © Carto
             </div>
