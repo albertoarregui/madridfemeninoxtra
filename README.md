@@ -1,102 +1,172 @@
-# Madrid Femenino Xtra
+<div align="center">
 
-**Medio independiente y archivo estadístico del Real Madrid Femenino.**
+# ⚽ MADRID FEMENINO XTRA
 
-[Visitar la web](https://www.madridfemeninoxtra.com) · [Noticias](https://www.madridfemeninoxtra.com/noticias) · [Estadísticas](https://www.madridfemeninoxtra.com/estadisticas-real-madrid-femenino) · [Partidos](https://www.madridfemeninoxtra.com/partidos)
+### Periodismo, estadísticas y memoria del Real Madrid Femenino
 
-Madrid Femenino Xtra reúne cobertura periodística, resultados, perfiles y datos históricos del Real Madrid Femenino. El proyecto combina una publicación editorial con una aplicación de consulta estadística y herramientas de exploración de datos.
+**Una plataforma independiente para seguir la actualidad del equipo y explorar su historia partido a partido.**
 
-> Proyecto independiente. No es un sitio oficial del Real Madrid CF.
+[🌐 **Visitar la web**](https://www.madridfemeninoxtra.com) · [📰 **Noticias**](https://www.madridfemeninoxtra.com/noticias) · [📅 **Partidos**](https://www.madridfemeninoxtra.com/partidos) · [📊 **Estadísticas**](https://www.madridfemeninoxtra.com/estadisticas-real-madrid-femenino)
 
-## La plataforma
+![Astro](https://img.shields.io/badge/Astro-5-BC52EE?logo=astro&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![Turso](https://img.shields.io/badge/Database-Turso-4FF8D2)
+![Contentful](https://img.shields.io/badge/CMS-Contentful-2478CC)
+![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel)
 
-La información está organizada para consultar tanto la actualidad como el archivo histórico del equipo.
+</div>
 
-- **Actualidad:** noticias, crónicas, previas, declaraciones y contenido multimedia, gestionados en Contentful.
-- **Partidos y temporadas:** resultados, calendarios, alineaciones, goleadoras, asistencias y datos por competición.
-- **Archivo de protagonistas:** perfiles de jugadoras, entrenadores, árbitras, clubes rivales y estadios, con datos deportivos y biografías editoriales.
-- **Análisis estadístico:** comparador de futbolistas, rankings, buscadores avanzados, gráficos de rendimiento, goles esperados (xG) y redes de asistencias.
-- **La Fábrica:** seguimiento de la cantera femenina, sus competiciones y el recorrido de las jugadoras.
-- **Fotogalerías:** contenido audiovisual indexado por partido y jugadora a partir de metadatos XMP y regiones faciales.
+---
 
-### Capturas
+## 📌 ¿Qué es Madrid Femenino Xtra?
 
-La documentación visual se mantiene en `docs/screenshots/`. Las imágenes deben mostrar la web real y actualizarse cuando se introduzcan cambios de diseño importantes.
+**Madrid Femenino Xtra** es un medio digital y una plataforma de datos especializada en el Real Madrid Femenino. El objetivo es que la información no desaparezca cuando termina un partido: cada crónica, estadística y ficha contribuye a construir un archivo consultable de la trayectoria del equipo.
 
-| Vista | Archivo recomendado |
-| --- | --- |
-| Portada y presentación editorial | `docs/screenshots/portada.webp` |
-| Ficha de partido con estadísticas y alineaciones | `docs/screenshots/partido.webp` |
-| Perfil de una jugadora | `docs/screenshots/jugadora.webp` |
-| Comparador de jugadoras | `docs/screenshots/comparador.webp` |
-| Estadísticas avanzadas | `docs/screenshots/estadisticas.webp` |
-| La Fábrica | `docs/screenshots/la-fabrica.webp` |
-| Menú y diseño móvil | `docs/screenshots/movil.webp` |
+La web combina dos vertientes que se complementan:
 
-_No se incluyen capturas antiguas como si reflejaran el estado actual de la web._
+- 📰 **Cobertura periodística:** noticias, previas, crónicas, declaraciones y contenido multimedia.
+- 📊 **Datos deportivos:** encuentros, alineaciones, rendimiento individual, competiciones e información histórica.
 
-## Arquitectura
+El proyecto está desarrollado y mantenido de manera independiente, y evoluciona conforme se incorporan nuevas temporadas y funcionalidades.
 
-| Capa | Tecnología | Responsabilidad |
-| --- | --- | --- |
-| Aplicación | Astro 5, React, TypeScript | Páginas renderizadas en servidor y herramientas interactivas |
-| Estilos | Tailwind CSS 4 y CSS propio | Sistema visual y diseño adaptable |
-| Base de datos | Turso / libSQL | Datos de partidos, estadísticas y catálogos |
-| Contenido editorial | Contentful | Noticias, fichas biográficas y recursos Open Graph |
-| Identidad | Clerk | Sesiones y acceso a funciones privadas |
-| Medios | Cloudflare R2 / Images | Almacenamiento y distribución de imágenes |
-| Notificaciones | Resend | Comunicaciones de la newsletter |
-| Infraestructura | Vercel | Despliegue de Astro SSR y caché de ejecución |
+> **Aviso:** Madrid Femenino Xtra no es un canal oficial del Real Madrid CF ni está afiliado al club.
 
-La separación entre datos deportivos y contenido editorial permite actualizar biografías y noticias sin modificar la estructura de estadísticas. Las fichas dinámicas consultan Turso y pueden incorporar texto enriquecido publicado desde Contentful.
+## 🖥️ Un vistazo a la plataforma
 
-### Organización del repositorio
+Las capturas se incorporarán cuando estén tomadas de la versión actual de producción, para evitar mostrar pantallas desactualizadas.
+
+| Pantalla | Qué merece la pena mostrar |
+|:--|:--|
+| 🏠 **Portada** | Identidad visual, noticias destacadas, próximos partidos y clasificación |
+| ⚽ **Ficha de partido** | Marcador, once inicial, estadísticas, eventos y valoraciones |
+| 👤 **Ficha de jugadora** | Fotografía, biografía, trayectoria y desglose estadístico |
+| 📊 **Comparador** | Selección de futbolistas y gráficos comparativos |
+| 🎯 **Estadísticas avanzadas** | xG, rankings, gráficos y redes de asistencias |
+| 🌱 **La Fábrica** | Cantera, equipos, clasificaciones y fichas |
+| 📱 **Versión móvil** | Navegación y adaptación de las principales vistas |
+
+📸 **Archivos previstos:** `docs/screenshots/portada.webp`, `partido.webp`, `jugadora.webp`, `comparador.webp`, `estadisticas.webp`, `la-fabrica.webp` y `movil.webp`.
+
+Una vez añadidas esas imágenes al repositorio, pueden incluirse aquí con `![Portada de Madrid Femenino Xtra](docs/screenshots/portada.webp)` y el mismo patrón para las demás vistas.
+
+## ✨ Funcionalidades
+
+| | Módulo | Qué ofrece |
+|:--:|---|---|
+| 📰 | **Actualidad** | Noticias, análisis, previas y crónicas de los partidos |
+| 🗓️ | **Partidos** | Resultados, calendario, fichas y estadísticas de cada encuentro |
+| 👥 | **Jugadoras** | Perfiles individuales, temporadas, goles, asistencias y minutos |
+| 🧠 | **Entrenadores** | Trayectorias, partidos dirigidos y rendimiento |
+| 🏟️ | **Estadios** | Datos del recinto, ubicación y archivo de encuentros |
+| 🛡️ | **Rivales** | Historial de enfrentamientos y resultados |
+| 🟨 | **Árbitras** | Fichas biográficas y partidos dirigidos |
+| 📈 | **Estadísticas** | Clasificaciones, rankings, evolución y comparaciones |
+| 🌱 | **La Fábrica** | Seguimiento de las categorías inferiores |
+| 📷 | **Galerías** | Fotografías relacionadas con partidos y protagonistas |
+
+### 🔍 Más allá del marcador
+
+Los datos están conectados entre sí: desde un partido se puede profundizar en sus protagonistas; desde la ficha de una jugadora, recorrer su rendimiento por temporadas; y desde las estadísticas generales, comparar futbolistas y detectar tendencias.
+
+Entre las herramientas disponibles figuran los gráficos de rendimiento, los **goles esperados (xG)**, las redes de asistencias y el comparador de jugadoras. El objetivo no es acumular cifras, sino hacerlas fáciles de interpretar.
+
+### 📚 Un archivo que sigue creciendo
+
+Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas editoriales** de jugadoras, entrenadores, árbitras, rivales y estadios. Las biografías y el contenido periodístico se gestionan por separado de los datos deportivos para facilitar su actualización.
+
+## 🧰 Stack tecnológico
+
+| Tecnología | Uso en el proyecto |
+|---|---|
+| 🚀 **Astro 5** | Renderizado en servidor, rutas y composición de páginas |
+| ⚛️ **React** | Herramientas y componentes interactivos |
+| 🔷 **TypeScript** | Tipado y mantenimiento del código |
+| 🎨 **Tailwind CSS 4 + CSS** | Interfaz responsive y sistema visual propio |
+| 🗄️ **Turso / libSQL** | Partidos, resultados, estadísticas y referencias |
+| ✍️ **Contentful** | Noticias, contenidos editoriales y biografías |
+| 🖼️ **Cloudflare R2 / Images** | Almacenamiento y distribución de recursos gráficos |
+| 🔐 **Clerk** | Autenticación y gestión de sesiones |
+| ✉️ **Resend** | Comunicaciones y newsletter |
+| ☁️ **Vercel** | Hosting, despliegue y ejecución SSR |
+
+### 🏗️ Cómo está organizado
 
 ```text
-src/
-  components/     Componentes Astro y React
-  db/             Conexiones y consultas de datos
-  layouts/        Estructuras comunes de página
-  pages/          Rutas públicas y endpoints de API
-  styles/         Hojas de estilo
-  utils/          Transformaciones, estadísticas y caché
-scripts/
-  contentful/     Utilidades editoriales y Open Graph
-  galerias/       Procesado e indexación de fotografías
-  migrations/     Cambios versionados de base de datos
-tests/            Pruebas automatizadas
+madridfemeninoxtra/
+├── src/
+│   ├── components/      # Componentes de interfaz
+│   ├── db/              # Acceso a los datos deportivos
+│   ├── layouts/         # Estructura compartida de las páginas
+│   ├── pages/           # Rutas y endpoints
+│   ├── styles/          # Estilos globales y específicos
+│   └── utils/           # Estadísticas, transformaciones y caché
+├── scripts/
+│   ├── contentful/      # Herramientas editoriales
+│   ├── galerias/        # Preparación e indexación de fotografías
+│   └── migrations/      # Evolución del modelo de datos
+├── tests/               # Pruebas automatizadas
+└── public/              # Recursos públicos
 ```
 
-## Desarrollo local
+## 💻 Puesta en marcha
 
-**Requisitos:** Node.js compatible con Astro 5 y pnpm.
+### 1. Requisitos
+
+- Node.js compatible con **Astro 5**.
+- **pnpm** como gestor de paquetes.
+- Acceso a los servicios externos correspondientes para consultar los datos reales.
+
+### 2. Instalación
 
 ```bash
 git clone https://github.com/albertoarregui/madridfemeninoxtra.git
 cd madridfemeninoxtra
+
 pnpm install
 cp .env.example .env
 pnpm dev
 ```
 
-El archivo `.env.example` documenta las variables necesarias. Las credenciales de Turso, Contentful, Clerk y otros proveedores deben configurarse localmente; **no deben incorporarse al repositorio**.
+La configuración local se realiza mediante `.env`. El archivo `.env.example` sirve de guía para las variables necesarias; las credenciales reales **no deben subirse a Git**.
 
-Comandos habituales:
+### 3. Comandos
 
-```bash
-pnpm dev          # Desarrollo
-pnpm build        # Compilación de producción
-pnpm test         # Pruebas automatizadas
-pnpm preview      # Vista previa de la compilación
+| Comando | Acción |
+|---|---|
+| `pnpm dev` | Iniciar el entorno de desarrollo |
+| `pnpm build` | Generar la compilación de producción |
+| `pnpm preview` | Previsualizar la aplicación compilada |
+| `pnpm test` | Ejecutar las pruebas automatizadas |
+
+> Algunas páginas dependen de Turso, Contentful u otros proveedores y requieren credenciales válidas para mostrar su contenido completo.
+
+## 🔄 Flujo de datos y publicación
+
+```text
+              ┌─────────────────┐        ┌─────────────────┐
+              │  Turso / libSQL │        │    Contentful   │
+              │  Datos deportivos│       │ Texto editorial │
+              └────────┬────────┘        └────────┬────────┘
+                       │                          │
+                       └──────────┬───────────────┘
+                                  ▼
+                        ┌─────────────────┐
+                        │  Astro + React  │
+                        │   Web y APIs    │
+                        └────────┬────────┘
+                                 ▼
+                      ┌───────────────────┐
+                      │   Vercel + CDN    │
+                      │  Web de producción│
+                      └───────────────────┘
 ```
 
-La aplicación depende de servicios externos. Para reproducir todas las vistas y datos en local se necesitan credenciales válidas y acceso a las fuentes correspondientes.
+Los registros deportivos se consultan desde Turso, mientras que noticias y biografías se administran en Contentful. Esto permite actualizar un texto editorial sin alterar las estadísticas de una jugadora o de un encuentro.
 
-## Datos y caché
+### ⚡ Caché y actualizaciones
 
-La aplicación utiliza Vercel Runtime Cache y caché de CDN para reducir lecturas repetidas. Las escrituras realizadas desde el cliente de datos incluyen invalidación por etiquetas.
-
-Si los datos se modifican desde fuera de la aplicación —por ejemplo, mediante una consola de Turso—, puede solicitarse la invalidación explícita:
+Se utilizan mecanismos de caché de ejecución y de CDN para reducir lecturas innecesarias. Cuando se modifican datos fuera del flujo normal de la aplicación, la caché puede invalidarse mediante un endpoint protegido:
 
 ```bash
 curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
@@ -105,26 +175,31 @@ curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
   --data '{"tables":["partidos","alineaciones","goles_y_asistencias"]}'
 ```
 
-La invalidación también admite etiquetas específicas mediante el campo `tags`. El valor de `CACHE_REVALIDATION_SECRET` debe mantenerse privado.
+El secreto de invalidación debe mantenerse fuera del repositorio y de la documentación pública.
 
-## Contenido y publicaciones
+## 🛡️ Privacidad y publicación responsable
 
-Las entradas editoriales se mantienen en Contentful. Las miniaturas de las páginas se resuelven según la ruta; los contenidos dinámicos pueden utilizar su imagen particular. Los títulos y las descripciones Open Graph se gestionan por separado de las etiquetas SEO tradicionales.
+La plataforma dispone de un panel propio de preferencias de cookies. La carga publicitaria opcional se condiciona a la decisión del visitante; la gestión del consentimiento exigida por Google para determinados territorios requiere, además, una **CMP certificada compatible con TCF**.
 
-Las imágenes de galerías se indexan a partir de metadatos de los archivos almacenados en Cloudflare. Los scripts de `scripts/galerias/` permiten preparar y actualizar esa información.
+Los contenidos editoriales, las fotografías, los escudos y otros recursos visuales pueden estar sujetos a derechos distintos de los del código. No deben asumirse licencias de reutilización por el mero hecho de que el repositorio sea público.
 
-## Privacidad y publicidad
+## 🧭 Próximas mejoras
 
-La web incorpora un panel propio de preferencias que distingue almacenamiento necesario y publicidad opcional. El cargador de AdSense de la aplicación espera una preferencia positiva antes de solicitar el script de anuncios. La gestión de consentimiento publicitario de Google, especialmente para visitantes del Espacio Económico Europeo, requiere comprobar la configuración de una CMP certificada; el panel propio no debe considerarse sustituto automático del marco TCF.
+El desarrollo continúa en cuatro líneas:
 
-La política de cookies y el resto de textos legales se publican en la web.
+- 📈 **Análisis deportivo:** ampliar las herramientas de comparación y visualización.
+- 📚 **Archivo histórico:** completar temporadas, perfiles y relaciones entre datos.
+- 📱 **Experiencia de uso:** mejorar accesibilidad, rendimiento y navegación móvil.
+- 📷 **Documentación visual:** añadir capturas actualizadas de las principales pantallas.
 
-## Estado y mantenimiento
+---
 
-Las modificaciones se integran en la rama principal y se despliegan en Vercel. Antes de publicar conviene ejecutar `pnpm test` y `pnpm build`, verificar los datos dinámicos con credenciales válidas y revisar la accesibilidad y la navegación móvil.
+<div align="center">
 
-La información deportiva se amplía conforme se incorporan partidos, jugadoras y nuevas temporadas. Las cifras totales cambian con frecuencia y por ello no se fijan estadísticas de cobertura en este README.
+### 🤍 Un proyecto independiente dedicado al fútbol femenino
 
-## Licencia y atribución
+**[madridfemeninoxtra.com](https://www.madridfemeninoxtra.com)**
 
-El código, los textos periodísticos, las fotografías y los elementos de marca pueden estar sujetos a derechos distintos. La disponibilidad pública del repositorio **no implica** que sus contenidos o recursos visuales se puedan reutilizar libremente. Para consultas editoriales o de colaboración, utiliza la [página de contacto](https://www.madridfemeninoxtra.com/contacto).
+[🌐 Web](https://www.madridfemeninoxtra.com) · [📰 Noticias](https://www.madridfemeninoxtra.com/noticias) · [📩 Contacto](https://www.madridfemeninoxtra.com/contacto)
+
+</div>
