@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 78.
-- **Fichas con dos o más párrafos:** 219.
+- **Fichas con un solo párrafo:** 79.
+- **Fichas con dos o más párrafos:** 218.
 
 ## Criterios editoriales
 
@@ -64,7 +64,7 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (5)
+### club (6)
 
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
 - Badalona Women (410 caracteres) · `6iafOv0CFCVyGGgb6wmON1`
@@ -212,4 +212,4 @@ Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Con
 - Fundación Osasuna Femenino: antecedentes desde 2002, estructura de 2016, Tajonar y crecimiento de cantera; https://www.osasuna.es/anos-2010 y https://www.osasuna.es/news/read/36588/osasuna-femenino-anade-un-quinto-equipo-a-su-estructura-con-el-objetivo-de-potenciar-su-futbol-base
 - Rayo Vallecano Femenino: Copa 2008, tres Superligas consecutivas y presencia europea; https://www.laliga.com/noticias/diez-cosas-que-quiza-no-sabias-del-rayo-femenino y https://es.uefa.com/womenschampionsleague/history/clubs/2600788--rayo-vallecano/
 
-Se actualizaron y publicaron exclusivamente los cuerpos de las dos fichas.
+Se actualizaron y publicaron exclusivamente los cuerpos de las dos fichas. La biografía de Rayo Vallecano ya tenía varios párrafos antes de esta revisión; la de Osasuna pasó de un párrafo a tres. La reducción del indicador de fichas breves en este bloque es de una entrada.
