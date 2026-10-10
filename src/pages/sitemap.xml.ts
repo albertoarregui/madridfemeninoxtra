@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { cached } from '../utils/cache';
 import { fetchPlayersDirectly } from '../utils/players';
 import { fetchCoachesDirectly } from '../utils/entrenadores';
 import { fetchRivalsDirectly } from '../utils/rivales';
@@ -66,7 +67,7 @@ ${urls.map(url => `  <url>
 </urlset>`;
 }
 
-export const GET: APIRoute = async () => {
+async function buildSitemap(): Promise<string> {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
         staticPages.forEach(page => {
@@ -220,17 +221,23 @@ export const GET: APIRoute = async () => {
             console.error('Error fetching galleries for sitemap:', error);
         }
 
-        const sitemap = generateSitemapXML(urls);
-
-        return new Response(sitemap, {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/xml; charset=utf-8',
-                'Cache-Control': 'public, max-age=300',
-            },
-        });
+        return generateSitemapXML(urls);
     } catch (error) {
         console.error('Error generating sitemap:', error);
-        return new Response('Error generating sitemap', { status: 500 });
+        throw error;
+    }
+}
+
+export const GET: APIRoute = async () => {
+    try {
+        const xml = await cached('seo:sitemap-2026-v2', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news'] });
+        return new Response(xml, { headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=300',
+            'Vercel-CDN-Cache-Control': 'max-age=3600, stale-while-revalidate=3600',
+        } });
+    } catch (error) {
+        console.error('Sitemap unavailable:', error);
+        return new Response('Error generating sitemap', { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }
 };
