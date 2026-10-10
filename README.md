@@ -146,7 +146,7 @@ La configuración local se realiza mediante `.env`. El archivo `.env.example` si
 ```text
               ┌─────────────────┐        ┌─────────────────┐
               │  Turso / libSQL │        │    Contentful   │
-              │  Datos deportivos│       │ Texto editorial │
+              │ Datos deportivos│       │ Texto editorial │
               └────────┬────────┘        └────────┬────────┘
                        │                          │
                        └──────────┬───────────────┘
