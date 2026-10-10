@@ -117,11 +117,12 @@ export async function fetchRivalRecords(rivalId: string | number): Promise<any> 
                 sql: `
                     SELECT 
                         j.nombre,
-                        COUNT(DISTINCT ga.id_partido) as partidos
-                    FROM goles_asistencias ga
-                    INNER JOIN partidos p ON ga.id_partido = p.id_partido
-                    INNER JOIN jugadoras j ON ga.id_jugadora = j.id_jugadora
-                    WHERE (p.id_club_local = ? OR p.id_club_visitante = ?)
+                        COUNT(DISTINCT a.id_partido) as partidos
+                    FROM alineaciones a
+                    INNER JOIN partidos p ON a.id_partido = p.id_partido
+                    INNER JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+                    WHERE COALESCE(a.minutos_jugados, 0) > 0
+                    AND (p.id_club_local = ? OR p.id_club_visitante = ?)
                     AND p.goles_rm IS NOT NULL AND p.goles_rm != ''
                     AND p.goles_rival IS NOT NULL AND p.goles_rival != ''
                     AND date(p.fecha) <= date('now')
