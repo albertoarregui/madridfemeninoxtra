@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 122.
-- **Fichas con dos o más párrafos:** 175.
+- **Fichas con un solo párrafo:** 120.
+- **Fichas con dos o más párrafos:** 177.
 
 ## Criterios editoriales
 
@@ -133,7 +133,7 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Sara Fernández Ceferino (263 caracteres) · `4bR92dlTrZaYI3bRu8Sou6`
 - Ángeles González (267 caracteres) · `47sNkvBgrt1HxlDtikxTzU`
 
-### estadio (16)
+### estadio (14)
 
 - New Douglas Park (340 caracteres) · `WfQ0ce7jTTFdIM6KbPDh7`
 - Estadio Aurélio Pereira (365 caracteres) · `9TrcEi6ZQ4LTsql0rkhl4`
@@ -145,12 +145,10 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Bravida Arena (381 caracteres) · `275b534qvFs7JUQaRhMc1x`
 - Estadio Sébastien Charléty (382 caracteres) · `1VbiizqkQoctjzexdMaEVI`
 - Estadio de Mendizorroza (387 caracteres) · `2mFL4jo6LagEE0caoiRPnL`
-- Estadio Municipal Nuevo Los Cármenes (389 caracteres) · `1cCGZ69b1mkMptI3DH1I4N`
 - Estadio Heliodoro Rodríguez López (402 caracteres) · `25gAG9GvkjM6sjYHXco7ox`
 - Ciudad del Fútbol de Las Rozas (417 caracteres) · `7ghwgfTjWUzzjL1LaRqd47`
 - Emirates Stadium (420 caracteres) · `6UzrouwT7aV6bRZUP6xgK7`
 - Campus PSG (424 caracteres) · `13CpPERrckFN1QPnsLpoY8`
-- Meadow Park (438 caracteres) · `4uJ26USptlBvVWDgjETrsz`
 
 ### entrenador (0)
 
@@ -164,4 +162,4 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 
 ## Fichas ampliadas y publicadas en esta revisión
 
-Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar; y los estadios San Mamés, FC Bayern Campus, De Grolsch Veste y An der Alten Försterei.
+Katalin Kulcsár, Mylène Chavas, Sporting CP, Ajax Vrouwen, Espanyol, Chelsea Women, Olga Carmona, Teresa Abelleira, Kosovare Asllani y Kenti Robles; además, Linda Caicedo, Athenea del Castillo, Felicia Schröder, Filippa Angeldahl y Lotte Keukelaar; y los estadios San Mamés, FC Bayern Campus, De Grolsch Veste An der Alten Försterei, Meadow Park y Nuevo Los Cármenes.
