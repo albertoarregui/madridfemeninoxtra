@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 107.
-- **Fichas con dos o más párrafos:** 190.
+- **Fichas con un solo párrafo:** 105.
+- **Fichas con dos o más párrafos:** 192.
 
 ## Criterios editoriales
 
@@ -126,16 +126,14 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Sara Fernández Ceferino (263 caracteres) · `4bR92dlTrZaYI3bRu8Sou6`
 - Ángeles González (267 caracteres) · `47sNkvBgrt1HxlDtikxTzU`
 
-### estadio (8)
+### estadio (6)
 
 - New Douglas Park (340 caracteres) · `WfQ0ce7jTTFdIM6KbPDh7`
 - Estadio Aurélio Pereira (365 caracteres) · `9TrcEi6ZQ4LTsql0rkhl4`
 - Campo 7 de la Ciudad Real Madrid (373 caracteres) · `rWNPN5VCe6ahFd8gvATvo`
 - Estadio Municipal Los Cuartos (379 caracteres) · `32M5T5l4SAXpQJGgrFekDJ`
 - Estadio Sébastien Charléty (382 caracteres) · `1VbiizqkQoctjzexdMaEVI`
-- Ciudad del Fútbol de Las Rozas (417 caracteres) · `7ghwgfTjWUzzjL1LaRqd47`
 - Emirates Stadium (420 caracteres) · `6UzrouwT7aV6bRZUP6xgK7`
-- Campus PSG (424 caracteres) · `13CpPERrckFN1QPnsLpoY8`
 
 ### entrenador (0)
 
@@ -175,3 +173,8 @@ Fuentes institucionales consultadas:
 - **Real Betis Féminas:** ascenso en junio de 2016 y temporada invicta; https://www.realbetisbalompie.es/noticias/feminas/se-cumple-un-ano-del-historico-ascenso-del-real-be-9386
 - **Sevilla FC Femenino:** título del grupo IV de Segunda División y ascenso en 2017; https://sevillafc.es/actualidad/noticias/el-sevilla-fc-recoge-el-titulo-de-campeon-del-grupo-iv-de-segunda-division
 - **Breiðablik:** palmarés y participación europea histórica en 2021/22; https://www.uefa.com/womenschampionsleague/news/026e-136580f3192a-0cc70858fbd0-1000--preview-breidablik-vs-paris/
+
+## Complejos deportivos ampliados con fuentes oficiales (10 de octubre de 2026)
+
+- **Campus Paris Saint-Germain:** incorporación del equipo femenino en enero de 2024 e inauguración oficial de noviembre de 2024; https://en.psg.fr/teams/club/content/paris-saint-germain-inaugurates-its-state-of-the-art-training-center-psg-club-news-2024-2025
+- **Ciudad del Fútbol de Las Rozas:** apertura en 2003, campos y usos de la federación; https://rfef.es/es/instalaciones/ciudad-del-futbol
