@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 103.
-- **Fichas con dos o más párrafos:** 194.
+- **Fichas con un solo párrafo:** 99.
+- **Fichas con dos o más párrafos:** 198.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (59)
+### jugadora (55)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -37,7 +37,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Ivana Andrés (355 caracteres) · `uzUW0A7mkwYdKkogyFTkM`
 - Yohana Gómez (355 caracteres) · `81d4dlR7ql0r3nTRp0yxF`
 - Sara Martín (355 caracteres) · `7bU3YR0PxALKlICYuiI8nO`
-- Melanie Leupolz (355 caracteres) · `6ZgNbbePLs8x2QjJffgUFU`
 - Bea Vélez (357 caracteres) · `4DrC5Gd5CWFMD1NY0tjDun`
 - María Portolés (361 caracteres) · `7DpGzbLCXMUyCbHdJQpMFw`
 - Esther González (362 caracteres) · `fYcniDhGgMAxmEQ2U9xw8`
@@ -54,7 +53,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Sofie Svava (374 caracteres) · `78SOGKCia6bwwysRewFzNG`
 - Nahikari García (376 caracteres) · `3g7Hvm6NV04fJPaEdyed8J`
 - Dana Benitez (376 caracteres) · `7FNNsc35c3DdcwuLoGPrv9`
-- Alba Redondo (376 caracteres) · `1CnIOAKbfDdse6kxo9TjAu`
 - Noe Llamas (377 caracteres) · `3sbWyQwh82NFDtBTaX4TNJ`
 - Marta Corredera (378 caracteres) · `4lYJy4Rg40p3Rc4tE7A9oo`
 - Babett Peter (380 caracteres) · `2baWMMXkmp3UoSpdpSDnWR`
@@ -64,7 +62,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Paula Partido (385 caracteres) · `4wBloMrX97gNkV9URxKEiN`
 - Caroline Møller (386 caracteres) · `4ypWRfRzH3x5bJcdSZPZq4`
 - Sofía Fuente (387 caracteres) · `76tIteDoWOIef0VJKYurHo`
-- Maite Oroz (394 caracteres) · `1yTpoVRvswXJDj5vOB5qMQ`
 - Rocío Gálvez (398 caracteres) · `1E2hYrUYygWNlViKmFqxAX`
 - Andrea Rodríguez (406 caracteres) · `1bBMRf3z1aXemQT7xm1ZFK`
 - Naiara Sanmartín (406 caracteres) · `3cxHtZlhZwPlPg9GsCMGT9`
@@ -77,7 +74,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Claudia Zornoza (448 caracteres) · `3hEIOFZRuAYnMIsWqdteSV`
 - Andreia Jacinto (453 caracteres) · `FvoaEm0j2s8Xg0DpxCxrk`
-- Caroline Weir (491 caracteres) · `62hncrOpCx01riSnoFdhrl`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
 ### club (13)
@@ -181,3 +177,12 @@ Fuentes institucionales consultadas:
 
 - **Sébastien-Charléty:** origen 1937-39, reconstrucción de 1994 y uso polivalente; contrastado con Ville de Paris, inventario patrimonial de Île-de-France y Paris FC: https://www.paris.fr/pages/le-paris-fc-va-demenager-au-stade-jean-bouin-30309 y https://inventaire.iledefrance.fr/dossier/IA75001124
 - **Emirates Stadium:** consolidación como sede del Arsenal Women: los once partidos ligueros de 2025/26 y los trece de 2026/27, según https://www.arsenal.com/women y https://www.arsenal.com/news/arsenals-202526-wsl-fixture-list-revealed-a6nZC5Q2iLhw
+
+### Ampliaciones verificadas, 11 de octubre de 2026
+
+- Melanie Leupolz: etapas en Freiburg, Bayern, Chelsea, Real Madrid y retirada; anuncio oficial del Real Madrid (3/7/2024 y 13/6/2025).
+- Caroline Weir: clubes, recuperación, etapa blanca y fichaje por OL Lyonnes; Real Madrid, Scottish FA y OL Lyonnes.
+- Alba Redondo: Fundación Albacete, Levante, Real Madrid y Juventus; comunicados de Real Madrid y Juventus (julio de 2026).
+- Maite Oroz: Osasuna, Athletic, Real Madrid y Tottenham; fichaje confirmado por Tottenham y Real Madrid (13/9/2024).
+
+En estas cuatro entradas se ha cambiado exclusivamente `body` en Contentful, sin modificar SEO, Open Graph, imágenes ni cifras de Turso. Los totales de las fichas son orientativos porque distintos proveedores aplican criterios de cómputo diferentes.
