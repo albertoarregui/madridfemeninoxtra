@@ -1,6 +1,6 @@
 ---
 import FichaTexto from "../../components/FichaTexto.astro";
-import { fetchFicha } from "../../utils/fichas";
+import { fetchFicha, resumenEditorial } from "../../utils/fichas";
 import Layout from "../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../utils/seo";
 import "../../styles/global.css";
@@ -254,12 +254,11 @@ const stadiumSchema = {
 };
 
 const seoTitle = `${stadium.name}: partidos y estadísticas del Real Madrid Femenino | Madrid Femenino Xtra`;
-const seoDescription = totalStats.pj
-    ? `El Real Madrid Femenino en el ${stadium.name}${stadium.city ? ` (${stadium.city})` : ""}: ${totalStats.pj} partidos, ${totalStats.pg} victorias, ${totalStats.gf} goles a favor. Historial y estadísticas completas.`
-    : `Estadísticas e historial de partidos del Real Madrid Femenino en el estadio ${stadium.name}.`;
+const seoDescription = resumenEditorial(ficha) ?? [stadium.name, stadium.city ? `Se encuentra en ${stadium.city}.` : null, stadium.capacity ? `Aforo de ${Number(stadium.capacity).toLocaleString('es-ES')} espectadores.` : null].filter(Boolean).join(' ');
+
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogTitle={`${stadium.name}: historial del Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={`Descubre el historial del Real Madrid Femenino en ${stadium.name}: ubicación, partidos disputados, resultados, victorias, goles y estadísticas del conjunto blanco.`} image={stadium.imageUrl || undefined} noindex={!indexableStadium} showAds={indexableStadium}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={`${stadium.name}: historial del Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={seoDescription} image={stadium.imageUrl || undefined} noindex={!indexableStadium} showAds={indexableStadium}>
     <script type="application/ld+json" set:html={JSON.stringify(stadiumSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Estadios", path: "/estadios" }, { name: stadium.name, path: `/estadios/${slug}` }]))} />
     <section class="stadium-hero">
