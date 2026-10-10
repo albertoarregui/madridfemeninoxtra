@@ -9,6 +9,10 @@ import clerk from '@clerk/astro';
 export default defineConfig({
   site: 'https://www.madridfemeninoxtra.com',
   compressHTML: true,
+  // Ruta histórica consolidada: el listado único es /estadios.
+  redirects: {
+    '/rivales/estadios': { status: 301, destination: '/estadios' },
+  },
   output: 'server',
   prefetch: {
     // Precarga al pasar el cursor sobre un enlace: navegación más rápida sin precargar en masa.
