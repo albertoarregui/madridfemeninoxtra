@@ -20,8 +20,11 @@ const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
 import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
 
-const gamesData = await fetchGamesDirectly();
-const allGoals = await fetchAllGoals();
+// Estas consultas son independientes; ejecutarlas en paralelo reduce el TTFB.
+const [gamesData, allGoals] = await Promise.all([
+	fetchGamesDirectly(),
+	fetchAllGoals(),
+]);
 
 let spotlightNews: any[] = [];
 try {
