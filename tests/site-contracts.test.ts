@@ -49,3 +49,24 @@ test('key interactive collections defer hydration until visible', () => {
     assert.match(read(path), /client:visible/, path);
   }
 });
+
+test('stadium map sends a minimal match payload and avoids duplicate Turso reads', () => {
+  const page = read('src/pages/estadios/index.astro');
+  assert.match(page, /\.map\(\(game: any\) => \(\{/);
+  assert.match(page, /<MatchMapWrapper matches=\{gamesData\}/);
+  assert.match(page, /<MatchStatsDashboard matches=\{gamesData\}/);
+  assert.equal((page.match(/fetchGamesDirectly\(\)/g) || []).length, 1);
+  assert.doesNotMatch(page, /\.\.\.game/);
+});
+
+test('rival records never query the obsolete goles_asistencias table', () => {
+  const records = read('src/utils/rival-records.ts');
+  assert.match(records, /FROM goles_y_asistencias/);
+  assert.doesNotMatch(records, /\b(?:FROM|JOIN)\s+goles_asistencias\b/i);
+});
+
+test('Astro uses no-op image transformations instead of the legacy image endpoint', () => {
+  const config = read('astro.config.mjs');
+  assert.match(config, /imageService:\s*false/);
+  assert.match(config, /astro\/assets\/services\/noop/);
+});
