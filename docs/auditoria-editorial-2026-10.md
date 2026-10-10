@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 110.
-- **Fichas con dos o más párrafos:** 187.
+- **Fichas con un solo párrafo:** 107.
+- **Fichas con dos o más párrafos:** 190.
 
 ## Criterios editoriales
 
@@ -80,18 +80,15 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Caroline Weir (491 caracteres) · `62hncrOpCx01riSnoFdhrl`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (16)
+### club (13)
 
 - Deportivo Abanca (341 caracteres) · `19K0rOjbZsCRsIx0ZTB88f`
 - Rosenborg (346 caracteres) · `48iCv73Hjl2AJYBXuYwuwh`
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
 - FC Barcelona (358 caracteres) · `qlAsrj5ngUz0zmL6q2ofi`
 - Fundación Osasuna (379 caracteres) · `6IfYSiBXvwBeYv5EqlzCtD`
-- Sevilla FC (380 caracteres) · `1TwoDlWqq08ZyUroZmDyLA`
-- Real Betis (386 caracteres) · `7CmDNqT7cvAO1Xynsg3qYv`
 - Rayo Vallecano (391 caracteres) · `5IeEzhsCL5yiC9sYrbqLB9`
 - Athletic Club (393 caracteres) · `6YV5wVDFTGUbsClAEp7w2`
-- Breidablik (402 caracteres) · `31pNWlX4R4Kw2vtmYdZUvk`
 - Badalona Women (410 caracteres) · `6iafOv0CFCVyGGgb6wmON1`
 - Kharkiv (416 caracteres) · `7CPwl6wvFPXT8WD5sF7HLn`
 - SD Eibar (417 caracteres) · `73TOi0b7qfDPx22QTKbC0j`
@@ -172,3 +169,9 @@ Fuentes institucionales consultadas:
 - https://frankfurt.de/themen/sport/sportorte/outdoor/stadien/stadion-am-brentanobad
 - https://bkhacken.se/sida/bravida-arena
 - https://www.lorca.es/noticias/noticias.asp?idn=16161
+
+## Nuevas fichas de clubes verificadas (10 de octubre de 2026)
+
+- **Real Betis Féminas:** ascenso en junio de 2016 y temporada invicta; https://www.realbetisbalompie.es/noticias/feminas/se-cumple-un-ano-del-historico-ascenso-del-real-be-9386
+- **Sevilla FC Femenino:** título del grupo IV de Segunda División y ascenso en 2017; https://sevillafc.es/actualidad/noticias/el-sevilla-fc-recoge-el-titulo-de-campeon-del-grupo-iv-de-segunda-division
+- **Breiðablik:** palmarés y participación europea histórica en 2021/22; https://www.uefa.com/womenschampionsleague/news/026e-136580f3192a-0cc70858fbd0-1000--preview-breidablik-vs-paris/
