@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 82.
-- **Fichas con dos o más párrafos:** 215.
+- **Fichas con un solo párrafo:** 78.
+- **Fichas con dos o más párrafos:** 219.
 
 ## Criterios editoriales
 
@@ -64,9 +64,8 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
-### club (8)
+### club (5)
 
-- Deportivo Abanca (341 caracteres) · `19K0rOjbZsCRsIx0ZTB88f`
 - Costa Adeje Tenerife (356 caracteres) · `3dYcBWFbIgCvjSGPL4qSlr`
 - Fundación Osasuna (379 caracteres) · `6IfYSiBXvwBeYv5EqlzCtD`
 - Badalona Women (410 caracteres) · `6iafOv0CFCVyGGgb6wmON1`
@@ -105,9 +104,8 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Sara Fernández Ceferino (263 caracteres) · `4bR92dlTrZaYI3bRu8Sou6`
 - Ángeles González (267 caracteres) · `47sNkvBgrt1HxlDtikxTzU`
 
-### estadio (4)
+### estadio (3)
 
-- New Douglas Park (340 caracteres) · `WfQ0ce7jTTFdIM6KbPDh7`
 - Estadio Aurélio Pereira (365 caracteres) · `9TrcEi6ZQ4LTsql0rkhl4`
 - Campo 7 de la Ciudad Real Madrid (373 caracteres) · `rWNPN5VCe6ahFd8gvATvo`
 - Estadio Municipal Los Cuartos (379 caracteres) · `32M5T5l4SAXpQJGgrFekDJ`
@@ -198,3 +196,13 @@ Actualización exclusiva del campo `body` de cada ficha, sin modificar SEO, Open
 - Carla Camacho: cantera y primer equipo del Real Madrid, Mundial sub-17 de 2022, Brighton y cesión al Lazio; https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-carla-camacho-03-06-2025
 
 En las seis fichas se modificó únicamente `body`; no se alteraron los metadatos SEO, las imágenes ni las estadísticas almacenadas en Turso.
+
+
+### Historias ampliadas, 11 de octubre de 2026
+
+- Athletic Club Femenino: fundación de la sección en 2002, integración del Leioa EFT y cinco ligas; fuentes: https://www.athletic-club.eus/club/historia/ y https://www.athletic-club.eus/noticias/2020/04/27/efemeride-las-primeras-leonas-las-primeras-campeonas/
+- FC Barcelona Femenino: primer encuentro de 1970, profesionalización y evolución europea; fuentes: https://www.fcbarcelona.es/es/ficha/887434/introduccion-historica-del-futbol-femenino y https://www.fcbarcelona.com/en/football/womens-football/honours
+- Dépor ABANCA: recuperación de la sección 2016/17 y ascensos; fuente: https://www.rcdeportivo.es/es/noticias/abanca-riazor-homenajea-este-domingo-17-a-cris-martinez-que-se-retira-al-acabar-la-temporada-con
+- New Douglas Park: apertura de 2001, evolución y regreso del Hamilton Academical en 2026; fuentes: https://scottishfootballhistory.scot/clubs/hamilton-academical/ y https://hamiltonacciesfc.co.uk/2026/05/07/new-douglas-park/
+
+Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Contentful.
