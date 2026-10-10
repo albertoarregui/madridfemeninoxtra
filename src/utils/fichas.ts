@@ -104,7 +104,7 @@ export async function fetchCronicaPartido(
 // masivas basadas en resultados de partidos.
 export function resumenEditorial(html: string | null | undefined, maxLength = 260): string | null {
     if (!html) return null;
-    const paragraphs = [...html.matchAll(/<p\\b[^>]*>([\\s\\S]*?)<\\/p>/gi)]
+    const paragraphs = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
         .map((match) => match[1]
             .replace(/<[^>]+>/g, ' ')
             .replace(/&nbsp;|&#160;/gi, ' ')
@@ -113,9 +113,9 @@ export function resumenEditorial(html: string | null | undefined, maxLength = 26
             .replace(/&#(?:39|x27);/gi, "'")
             .replace(/&lt;/gi, '<')
             .replace(/&gt;/gi, '>')
-            .replace(/&#(\\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
+            .replace(/&#(\d+);/g, (_, n: string) => String.fromCodePoint(Number(n)))
             .replace(/&#x([0-9a-f]+);/gi, (_, n: string) => String.fromCodePoint(parseInt(n, 16)))
-            .replace(/\\s+/g, ' ')
+            .replace(/\s+/g, ' ')
             .trim())
         .filter(Boolean);
     const first = paragraphs[0];
@@ -123,5 +123,5 @@ export function resumenEditorial(html: string | null | undefined, maxLength = 26
     if (first.length <= maxLength) return first;
     const cut = first.slice(0, maxLength + 1);
     const boundary = cut.lastIndexOf(' ');
-    return (boundary > maxLength * 0.65 ? cut.slice(0, boundary) : cut.slice(0, maxLength)).replace(/[,:;\\s]+$/, '') + '…';
+    return (boundary > maxLength * 0.65 ? cut.slice(0, boundary) : cut.slice(0, maxLength)).replace(/[,:;\s]+$/, '') + '…';
 }
