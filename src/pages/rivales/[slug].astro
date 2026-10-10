@@ -1,6 +1,6 @@
 ---
 import FichaTexto from "../../components/FichaTexto.astro";
-import { fetchFicha, resumenEditorial } from "../../utils/fichas";
+import { fetchFicha } from "../../utils/fichas";
 import Layout from "../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../utils/seo";
 import { fetchRivalsDirectly, slugify } from "../../utils/rivales";
@@ -219,11 +219,13 @@ const rivalSchema = {
 };
 
 const seoTitle = `Real Madrid Femenino vs ${rival.nombre}: historial y estadísticas | Madrid Femenino Xtra`;
-const seoDescription = resumenEditorial(ficha) ?? [rival.nombre, rival.estadio ? `Su estadio es ${rival.estadio}.` : null].filter(Boolean).join(' ');
+const seoDescription = (rt && rt.pj)
+    ? `Historial del Real Madrid Femenino contra ${rival.nombre}: ${rt.pj} partidos, ${rt.pg} victorias, ${rt.pe} empates y ${rt.pp} derrotas. Goleadoras, asistentes y todos los partidos.`
+    : `Historial completo del Real Madrid Femenino contra ${rival.nombre}. Estadísticas, goleadoras, asistentes y todos los partidos disputados.`;
 
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogTitle={`Real Madrid Femenino vs ${rival.nombre}: historial de enfrentamientos | Madrid Femenino Xtra`} ogDescription={seoDescription} noindex={!indexableRival} showAds={indexableRival}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={`Real Madrid Femenino vs ${rival.nombre}: historial de enfrentamientos | Madrid Femenino Xtra`} ogDescription={rt && rt.pj ? `Historial completo entre el Real Madrid Femenino y ${rival.nombre}: ${rt.pj} enfrentamientos, ${rt.pg} victorias, ${rt.pe} empates y ${rt.pp} derrotas, resultados y estadísticas.` : seoDescription} noindex={!indexableRival} showAds={indexableRival}>
     <script type="application/ld+json" set:html={JSON.stringify(rivalSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Rivales", path: "/rivales" }, { name: rival.nombre, path: `/rivales/${slug}` }]))} />
     <section class="rival-hero">
