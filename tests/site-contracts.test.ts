@@ -8,7 +8,7 @@ const exists = (path: string) => existsSync(new URL(`../${path}`, import.meta.ur
 test('there is only one stadium index and a permanent legacy redirect', () => {
   assert.equal(exists('src/pages/estadios/index.astro'), true);
   assert.equal(exists('src/pages/rivales/estadios.astro'), false);
-  assert.match(read('astro.config.mjs'), /['"]\\/rivales\\/estadios['"]:\\s*\\{\\s*status:\\s*301,\\s*destination:\\s*['"]\\/estadios['"]/);
+  assert.ok(read('astro.config.mjs').includes("'/rivales/estadios': { status: 301, destination: '/estadios' }"));
 });
 
 test('image proxy only accesses approved public origins', () => {
