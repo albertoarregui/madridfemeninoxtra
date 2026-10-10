@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { createHash, randomBytes } from 'node:crypto';
 import { getAnalyticsDbClient } from '../../../db/client';
 
 export const prerender = false;
@@ -6,6 +7,7 @@ export const prerender = false;
 // Bounded, per-instance throttle. It prevents repeated client retries from
 // becoming a burst of writes. No Turso SELECT and no persistent user tracking.
 const recent = new Map<string, number>();
+const ephemeralSalt = randomBytes(16).toString('hex');
 const MIN_INTERVAL_MS = 10 * 60 * 1000;
 const MAX_ENTRIES = 5_000;
 function throttle(key: string, now: number): boolean {
@@ -49,7 +51,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   // Same visitor/article requests within ten minutes are coalesced.
   const address = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
-  const key = address + ':' + slug;
+  const key = createHash('sha256').update(ephemeralSalt).update(address).update(':').update(slug).digest('hex');
   if (!throttle(key, Date.now())) return response(204);
 
   try {
