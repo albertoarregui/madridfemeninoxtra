@@ -547,22 +547,7 @@ const newsSchema = {
 };
 
 
-(async () => {
-    try {
-        const { getAnalyticsDbClient } = await import("../../db/client");
-        const client = await getAnalyticsDbClient();
-        if (client) {
-            await client.execute({
-                sql: `INSERT INTO article_views (slug, views, updated_at)
-                      VALUES (?, 1, datetime('now'))
-                      ON CONFLICT (slug) DO UPDATE SET
-                          views = views + 1,
-                          updated_at = datetime('now')`,
-                args: [slug as string],
-            });
-        }
-    } catch (_) {}
-})();
+
 ---
 
 <Layout
@@ -583,6 +568,33 @@ const newsSchema = {
         set:html={JSON.stringify(breadcrumbSchema)}
         slot="head"
     />
+    <script is:inline>
+      (() => {
+        const match = /^\\/noticias\\/([a-z0-9-]+)\\/?$/.exec(location.pathname);
+        if (!match) return;
+        const slug = match[1];
+        const storageKey = 'mfx:lectura:' + slug;
+        try {
+          const last = Number(localStorage.getItem(storageKey) || 0);
+          if (last && Date.now() - last < 24 * 60 * 60 * 1000) return;
+        } catch { return; }
+        if (document.visibilityState !== 'visible') return;
+        // Sólo contar una lectura con tiempo real de permanencia.
+        setTimeout(async () => {
+          if (document.visibilityState !== 'visible') return;
+          try {
+            const res = await fetch('/api/noticias/lectura', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ slug }),
+              keepalive: true,
+            });
+            if (res.ok) localStorage.setItem(storageKey, String(Date.now()));
+          } catch {}
+        }, 8000);
+      })();
+    </script>
     <meta property="og:type" content="article" slot="head" />
     <meta property="og:url" content={articleUrl} slot="head" />
     <meta
