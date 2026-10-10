@@ -1,75 +1,102 @@
-# ⚪️ Madrid Femenino Xtra 🟣
+# Madrid Femenino Xtra
 
-<div align="center">
-  <img src="https://i.gyazo.com/e869d44e9d7d11d24b2103b00f923fb1.jpg" alt="Madrid Femenino Xtra - Página principal" width="800" />
-</div>
+**Medio independiente y archivo estadístico del Real Madrid Femenino.**
 
-Bienvenido al repositorio oficial de **Madrid Femenino Xtra**, la base de datos histórica más grande del Real Madrid Femenino.
+[Visitar la web](https://www.madridfemeninoxtra.com) · [Noticias](https://www.madridfemeninoxtra.com/noticias) · [Estadísticas](https://www.madridfemeninoxtra.com/estadisticas-real-madrid-femenino) · [Partidos](https://www.madridfemeninoxtra.com/partidos)
 
-Este proyecto es una aplicación web moderna construida con **Astro**, diseñada para ser extremadamente rápida, visualmente atractiva y fácil de mantener.
+Madrid Femenino Xtra reúne cobertura periodística, resultados, perfiles y datos históricos del Real Madrid Femenino. El proyecto combina una publicación editorial con una aplicación de consulta estadística y herramientas de exploración de datos.
 
+> Proyecto independiente. No es un sitio oficial del Real Madrid CF.
 
-# 📊 Datos en cifras
+## La plataforma
 
-<div align="center">
+La información está organizada para consultar tanto la actualidad como el archivo histórico del equipo.
 
-| Estadística | Valor |
-|---|---|
-| ⚽ Temporadas | 6 |
-| 🗓️ Partidos | 248 |
-| ✅ Victorias | 170 |
-| 🤝 Empates | 24 |
-| ❌ Derrotas | 54 |
-| 🥅 Goles a favor | 552 |
-| 👟 Jugadoras | 86 |
-| 🏟️ Estadios | 62 |
-| 🆚 Rivales | 51 |
-| 👩‍⚖️ Árbitras | 58 |
+- **Actualidad:** noticias, crónicas, previas, declaraciones y contenido multimedia, gestionados en Contentful.
+- **Partidos y temporadas:** resultados, calendarios, alineaciones, goleadoras, asistencias y datos por competición.
+- **Archivo de protagonistas:** perfiles de jugadoras, entrenadores, árbitras, clubes rivales y estadios, con datos deportivos y biografías editoriales.
+- **Análisis estadístico:** comparador de futbolistas, rankings, buscadores avanzados, gráficos de rendimiento, goles esperados (xG) y redes de asistencias.
+- **La Fábrica:** seguimiento de la cantera femenina, sus competiciones y el recorrido de las jugadoras.
+- **Fotogalerías:** contenido audiovisual indexado por partido y jugadora a partir de metadatos XMP y regiones faciales.
 
-</div>
+### Capturas
 
-<div align="center">
-  <img src="https://i.gyazo.com/ca3d832a3493d966884c9c17495aebc7.png" alt="Madrid Femenino Xtra - Estadísticas" width="800" />
-</div>
+La documentación visual se mantiene en `docs/screenshots/`. Las imágenes deben mostrar la web real y actualizarse cuando se introduzcan cambios de diseño importantes.
 
-## ✨ Funcionalidades
+| Vista | Archivo recomendado |
+| --- | --- |
+| Portada y presentación editorial | `docs/screenshots/portada.webp` |
+| Ficha de partido con estadísticas y alineaciones | `docs/screenshots/partido.webp` |
+| Perfil de una jugadora | `docs/screenshots/jugadora.webp` |
+| Comparador de jugadoras | `docs/screenshots/comparador.webp` |
+| Estadísticas avanzadas | `docs/screenshots/estadisticas.webp` |
+| La Fábrica | `docs/screenshots/la-fabrica.webp` |
+| Menú y diseño móvil | `docs/screenshots/movil.webp` |
 
-- 📰 **Noticias y actualidad** — Cobertura completa del equipo con búsqueda, categorías y tiempo de lectura
-- 📅 **Calendario y resultados** — Todos los partidos, pasados y futuros
-- 📈 **Estadísticas históricas** — Balance por temporada y competición
-- 👩 **Fichas de jugadoras** — Partidos, goles, asistencias y más
-- 🏟️ **Estadios y árbitras** — Base de datos completa
-- 🏆 **Competiciones** — Primera Iberdrola (2020-2022), Liga F, UWCL, Copa de la Reina y Supercopa
-- 📧 **Newsletter** — Aviso por email a los suscriptores confirmados cuando se publica una noticia nueva (webhook de Contentful)
-- 🎠 **Carrusel "Jugadoras"** — Plantilla actual (+ entrenador) con foto, dorsal, posición y hasta 3 noticias relacionadas por persona; también en la ficha individual
-- ⚡ **Comparador de jugadoras** — Gráfico radar interactivo con tabla de stats por secciones, filtros por temporada y competición (incluyendo "Partidos oficiales"), modos totales/por 90 minutos, y descarga de imagen con logo y fotos de las jugadoras
-- 📊 **Estadísticas Avanzadas** — Tracker de xG por partido (goles reales vs esperados) y red interactiva de asistencias con D3, filtros por temporada y competición, con soporte táctil y diseño adaptado a móvil
-- 🔍 **Buscador Avanzado** — Tabla de estadísticas individual filtrable por temporada, competición (incluyendo "Partidos Oficiales"), posición, titularidad, fecha y partido; ordenación por columna, modo totales/por 90 minutos y búsqueda en tiempo real
-- 📸 **Fotogalerías con detección automática** — Cada foto detecta a las jugadoras etiquetadas en sus metadatos (XMP), y las galerías aparecen solas en la ficha de cada jugadora, en la ficha del partido y en la home. Miniaturas encuadradas en la cara mediante las regiones faciales de los metadatos
+_No se incluyen capturas antiguas como si reflejaran el estado actual de la web._
 
----
+## Arquitectura
 
-## 🚀 Tecnologías Principales
+| Capa | Tecnología | Responsabilidad |
+| --- | --- | --- |
+| Aplicación | Astro 5, React, TypeScript | Páginas renderizadas en servidor y herramientas interactivas |
+| Estilos | Tailwind CSS 4 y CSS propio | Sistema visual y diseño adaptable |
+| Base de datos | Turso / libSQL | Datos de partidos, estadísticas y catálogos |
+| Contenido editorial | Contentful | Noticias, fichas biográficas y recursos Open Graph |
+| Identidad | Clerk | Sesiones y acceso a funciones privadas |
+| Medios | Cloudflare R2 / Images | Almacenamiento y distribución de imágenes |
+| Notificaciones | Resend | Comunicaciones de la newsletter |
+| Infraestructura | Vercel | Despliegue de Astro SSR y caché de ejecución |
 
-- **Framework**: [Astro 5.x](https://astro.build/)
-- **Frontend**: [React](https://react.dev/) / [TailwindCSS 4](https://tailwindcss.com/)
-- **Base de Datos**: [Turso](https://turso.tech/) (LibSQL)
-- **Autenticación**: [Clerk](https://clerk.com/)
-- **CMS**: [Contentful](https://www.contentful.com/) (Noticias)
-- **Email**: [Resend](https://resend.com/) (Notificaciones de newsletter)
-- **Media**: [Cloudflare](https://www.cloudflare.com/) (R2 / Images)
-- **Despliegue**: [Vercel](https://vercel.com/)
+La separación entre datos deportivos y contenido editorial permite actualizar biografías y noticias sin modificar la estructura de estadísticas. Las fichas dinámicas consultan Turso y pueden incorporar texto enriquecido publicado desde Contentful.
 
-## Caché de datos de Turso
+### Organización del repositorio
 
-Las lecturas de las bases principal y de estadísticas se guardan en Vercel
-Runtime Cache durante 30 días. Las páginas HTML se guardan en la CDN y ambas
-capas se invalidan por etiquetas después de cualquier escritura hecha con el
-cliente de `src/db/client.ts`.
+```text
+src/
+  components/     Componentes Astro y React
+  db/             Conexiones y consultas de datos
+  layouts/        Estructuras comunes de página
+  pages/          Rutas públicas y endpoints de API
+  styles/         Hojas de estilo
+  utils/          Transformaciones, estadísticas y caché
+scripts/
+  contentful/     Utilidades editoriales y Open Graph
+  galerias/       Procesado e indexación de fotografías
+  migrations/     Cambios versionados de base de datos
+tests/            Pruebas automatizadas
+```
 
-Las escrituras realizadas fuera de la aplicación (Turso MCP, consola o scripts)
-deben terminar llamando a `POST /api/cache/revalidate`. El endpoint acepta las
-tablas modificadas y calcula las etiquetas afectadas:
+## Desarrollo local
+
+**Requisitos:** Node.js compatible con Astro 5 y pnpm.
+
+```bash
+git clone https://github.com/albertoarregui/madridfemeninoxtra.git
+cd madridfemeninoxtra
+pnpm install
+cp .env.example .env
+pnpm dev
+```
+
+El archivo `.env.example` documenta las variables necesarias. Las credenciales de Turso, Contentful, Clerk y otros proveedores deben configurarse localmente; **no deben incorporarse al repositorio**.
+
+Comandos habituales:
+
+```bash
+pnpm dev          # Desarrollo
+pnpm build        # Compilación de producción
+pnpm test         # Pruebas automatizadas
+pnpm preview      # Vista previa de la compilación
+```
+
+La aplicación depende de servicios externos. Para reproducir todas las vistas y datos en local se necesitan credenciales válidas y acceso a las fuentes correspondientes.
+
+## Datos y caché
+
+La aplicación utiliza Vercel Runtime Cache y caché de CDN para reducir lecturas repetidas. Las escrituras realizadas desde el cliente de datos incluyen invalidación por etiquetas.
+
+Si los datos se modifican desde fuera de la aplicación —por ejemplo, mediante una consola de Turso—, puede solicitarse la invalidación explícita:
 
 ```bash
 curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
@@ -78,152 +105,26 @@ curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
   --data '{"tables":["partidos","alineaciones","goles_y_asistencias"]}'
 ```
 
-También admite `tags` para una invalidación más específica, por ejemplo
-`{"tags":["match-314","matches"]}`.
+La invalidación también admite etiquetas específicas mediante el campo `tags`. El valor de `CACHE_REVALIDATION_SECRET` debe mantenerse privado.
 
-## 🛠️ Instalación y Configuración
+## Contenido y publicaciones
 
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/tu-usuario/madridfemeninoxtra.git
-cd madridfemeninoxtra
-```
+Las entradas editoriales se mantienen en Contentful. Las miniaturas de las páginas se resuelven según la ruta; los contenidos dinámicos pueden utilizar su imagen particular. Los títulos y las descripciones Open Graph se gestionan por separado de las etiquetas SEO tradicionales.
 
-### 2. Instalar dependencias
-```bash
-pnpm install
-```
+Las imágenes de galerías se indexan a partir de metadatos de los archivos almacenados en Cloudflare. Los scripts de `scripts/galerias/` permiten preparar y actualizar esa información.
 
-### 3. Configurar variables de entorno
-```bash
-cp .env.example .env
-```
+## Privacidad y publicidad
 
-### 4. Iniciar servidor de desarrollo
-```bash
-pnpm dev
-```
+La web incorpora un panel propio de preferencias que distingue almacenamiento necesario y publicidad opcional. El cargador de AdSense de la aplicación espera una preferencia positiva antes de solicitar el script de anuncios. La gestión de consentimiento publicitario de Google, especialmente para visitantes del Espacio Económico Europeo, requiere comprobar la configuración de una CMP certificada; el panel propio no debe considerarse sustituto automático del marco TCF.
 
-## 📁 Estructura del Proyecto
+La política de cookies y el resto de textos legales se publican en la web.
 
-- `/src/pages` — Rutas de la aplicación
-- `/src/pages/api/img-proxy.ts` — Proxy server-side para imágenes del CDN (necesario para la descarga de capturas con html2canvas)
-- `/src/components` — Componentes reutilizables (Astro y React)
-- `/src/db` — Clientes de base de datos Turso
-- `/src/utils` — Lógica de negocio y helpers
-- `/src/assets` — Recursos estáticos
-- `/scripts` — Scripts de mantenimiento y depuración
-- `/scripts/galerias` — Subida e indexado de fotogalerías (detección de jugadoras por metadatos)
-- `/scripts/migrations` — Migraciones de base de datos versionadas
+## Estado y mantenimiento
 
-<div align="center">
-  <img src="https://i.gyazo.com/a42415cdf2fcdb4b54b3fc0fce50bda2.png" alt="Madrid Femenino Xtra - Noticias" width="800" />
-</div>
+Las modificaciones se integran en la rama principal y se despliegan en Vercel. Antes de publicar conviene ejecutar `pnpm test` y `pnpm build`, verificar los datos dinámicos con credenciales válidas y revisar la accesibilidad y la navegación móvil.
 
-## 🔄 Cambios Recientes (Agosto 2026)
+La información deportiva se amplía conforme se incorporan partidos, jugadoras y nuevas temporadas. Las cifras totales cambian con frecuencia y por ello no se fijan estadísticas de cobertura en este README.
 
-### 🖼 Miniaturas para compartir (og:image) por página
-- ✅ Nuevo tipo de contenido en Contentful, **"Miniatura para compartir (og:image)"**: una `ruta` (`/premios`, `/jugadoras/*`, `/`) y una imagen
-- ✅ El `Layout` (y la portada) resuelven la miniatura sola en cada visita, con caché de 10 minutos: **no hace falta desplegar** para cambiarla
-- ✅ Una ruta exacta manda siempre; una ruta con comodín (`/jugadoras/*`) solo se aplica a las páginas de esa sección que no traigan ya su propia imagen (una noticia mantiene su foto destacada)
-- ✅ La imagen se recorta y comprime al servirla (1200x630, JPG), así que vale cualquier tamaño de origen
-- ✅ Se sube desde el panel de Contentful o con `npm run og -- <imagen> <ruta>` (`--lista` para verlas, `--borrar <ruta>` para quitarlas)
+## Licencia y atribución
 
-### 🏷 Nombres reconocibles en las fichas de Contentful
-- ✅ El tipo `ficha` usa como nombre de entrada un campo de texto interno (`titulo`, o el `title` que ya exista; se crea solo si no hay ninguno): en el listado se lee **"Jugadora · Noe Bejarano"** o **"Estadio · Pinatar Arena"** en vez de solo el tipo
-- ✅ `npm run contentful:titulos` cruza el `referenceId` de cada ficha con las tablas de Turso (jugadoras, entrenadores, árbitras, clubes, estadios), rellena los títulos y republica solo lo que ya estaba publicado (`--seco` para simular)
-- ✅ Avisa de las fichas cuyo `referenceId` no existe en la base de datos
-- ✅ Es un campo interno: no se muestra en la web
-
-### 🏟 Fichas de estadio visibles
-- ✅ Las 74 fichas de estadio guardadas en Contentful nunca llegaban a mostrarse: se buscaban por slug y estaban guardadas por `id_estadio`. Ahora la página busca por ambos
-
-## 🔄 Cambios Recientes (Julio 2026)
-
-### 📸 Fotogalerías con detección automática de jugadoras
-- ✅ Un script (`npm run galeria` / `npm run galeria:indexar`) lee los metadatos **XMP** de cada foto en Cloudflare R2 (descargando solo la cola del fichero), detecta a las jugadoras etiquetadas y sus **regiones faciales**, las cruza con la tabla `jugadoras` y publica los índices en R2
-- ✅ **Ficha de jugadora**: sección "Galería de {nombre}" con las fotos en las que aparece, cargando de 14 en 14, con miniaturas **encuadradas en su cara** y filtros por temporada y competición
-- ✅ **Ficha de partido**: sección "Galería del partido" (21 fotos), enlazada automáticamente por el `id_partido` del nombre de carpeta
-- ✅ **Home**: nueva sección "Galerías" bajo "Jugadoras", con el mismo hover que las tarjetas de noticias
-- ✅ Visor tipo lightbox con teclado, swipe y navegación; las páginas de cada galería las sigue generando **Contentful** (las tarjetas solo enlazan cuando la entrada existe)
-- ✅ Diccionario de alias editable (`scripts/galerias/overrides.json`) para variantes de escritura y personas que no son jugadoras
-- ✅ Todo adaptado a todo tipo de pantalla, sin scroll horizontal (grid de 2 a 7 columnas según el ancho)
-
-### ⚡ Rendimiento
-- ✅ **Caché de CDN** en el middleware: las páginas públicas se sirven desde el borde (`s-maxage` + `stale-while-revalidate`), excluyendo `/api`, `/premios` y cualquier usuario identificado
-- ✅ **Caché en memoria de los catálogos** de base de datos (jugadoras, partidos, goles, calendario, rivales, escudos) con TTL por tipo, deduplicando consultas repetidas y ráfagas concurrentes contra Turso
-- ✅ **Optimización de imágenes** (servicio de imágenes de Vercel) en galerías, MVP, carrusel de hitos, noticias de la home y "más leídas"; favicon reducido de 343 KB a 5,5 KB
-- ✅ **Prefetch** cambiado de `viewport` a `hover` para no renderizar en servidor decenas de páginas por visita
-- ✅ Corregido un error de hidratación preexistente en el dashboard de estadísticas (fechas y números con zona horaria e idioma fijos)
-
-### 🏠 Home
-- ✅ **Vídeo de fondo del hero eliminado**; el fondo global (`background.webp`) queda visible en toda la página, hero incluido
-- ✅ **Transiciones de página instantáneas** en todo el sitio: `ClientRouter` + prefetch (`hover`) en todas las rutas (incluida la intro `/`) y sin animación de cross-fade
-- ✅ **Dashboard de estadísticas**: si la temporada actual aún no tiene partidos oficiales jugados, arranca en "Todas las Temporadas" en vez de quedar vacío; en cuanto se juega el primero, vuelve a arrancar filtrado a la temporada en curso
-- ✅ **Nuevo carrusel "Jugadoras"**: plantilla actual (por dorsal de la última temporada) + entrenador del partido más reciente, con foto, dorsal/posición y hasta 3 noticias relacionadas por persona
-
-### 📰 Noticias
-- ✅ **Ficha de jugadora/entrenador**: sección de noticias relacionadas (vía `focusType` + `referenceId` de Contentful), mismo carrusel y efectos que el resto del sitio
-- ✅ **`/noticias`**: mosaico con la noticia más reciente destacada + 4 secundarias, debajo del título
-- ✅ **Estilo unificado**: todas las tarjetas de noticias (jugadoras, mosaico, archivo) comparten el mismo hover (borde cónico dorado giratorio) y la misma forma de esquina (`22px 0 22px 0`)
-- ✅ **Archivo de noticias**: badge de categoría junto a la fecha; corregido el hueco que dejaba la miniatura cuando el texto era más alto
-- ✅ **Newsletter**: retirado el digest semanal automático (cron de GitHub Actions); se mantiene el aviso por email al publicar cada noticia
-
-### 📅 Cambio de temporada automático
-- ✅ La temporada en curso se calcula **siempre en hora de Madrid** (`Europe/Madrid`), no en la del servidor; corrige que el calendario y la plantilla no cambiaran a la nueva temporada el 1 de julio en Vercel (que corre en UTC)
-- ✅ Nuevo helper `src/utils/season.ts` (`getCurrentSeason`, `getCurrentSeasonStartYear`, `nowInMadrid`) aplicado en calendario, plantilla y el componente `Calendar`
-
-### 👩 Fichas de jugadoras
-- ✅ **Fin de contrato** y **valor de mercado** (datos de Soccerdonna, tabla `contratos`) en la ficha personal; el valor se muestra completo en euros (p. ej. `135.000 euros`)
-- ✅ **Redes sociales** (Instagram, X y TikTok) como iconos enlazados desde la tabla `redes_sociales`
-- ✅ **Historial de lesiones** en una tarjeta propia (tipo, zona, fechas y partidos perdidos) desde la tabla `lesiones`, resaltando las lesiones en curso
-- ✅ **Badge "Lesionada"** junto a la edad cuando la jugadora tiene una lesión activa (sin alta o con alta futura)
-- ✅ Todo adaptado a todo tipo de pantalla (`clamp()` y `flex-wrap`)
-
-### 🔎 SEO y datos estructurados
-- ✅ **Biografías/crónicas únicas e indexables** generadas desde la BD en las 6 fichas dinámicas (jugadoras, entrenadores, rivales, estadios, árbitras y partidos)
-- ✅ **Datos estructurados schema.org**: `Person`, `SportsEvent`, `SportsTeam`, `StadiumOrArena` por ficha; `Organization` + `WebSite` con `SearchAction` global; `BreadcrumbList` en todas las fichas
-- ✅ **Canonical** normalizado por ruta (sin query) y `og:url` por página
-- ✅ **Portada en `/`**: `/home` redirige con 301 a `/`; la antigua introducción está en `/historia`; `/search` (noindex) sigue fuera del sitemap
-
-### 🏆 Competición "Primera Iberdrola"
-- ✅ Nueva competición en la tabla `competiciones`; reasignados los **64 partidos** de liga de 2020/21 y 2021/22 (la liga se llamaba así hasta 2022)
-- ✅ Incluida en todos los filtros de competiciones oficiales (las estadísticas históricas se mantienen intactas) y ordenada **la primera** como liga doméstica
-- ✅ Logo propio con fondo transparente
-
-### ⭐ Canteranas (jugadoras de La Fábrica)
-- ✅ **Filtro "Canteranas"** en /jugadoras (categoría FIFA *club-trained*)
-- ✅ **Badge lila** (★) en el grid y en la ficha
-- ✅ Bio "formada en La Fábrica" + schema `alumniOf`
-
-### ⚽ Crónica de partido
-- ✅ Incluye **alineación, cambios, estadísticas** (solo si existen), **equipación, MVP, árbitra y hora**
-- ✅ Los goles en propia puerta del Real Madrid **no** cuentan como gol del equipo
-
-### 🧹 Otros
-- ✅ Eliminada la columna `tiempo_partido` (sin uso) de la tabla `partidos`
-- ✅ **Plantilla**: la portera con el dorsal más bajo aparece destacada por defecto
-- ✅ Fichas: nombres completos en las tarjetas de estadísticas, retirado "Dorsal" de la ficha personal, textos justificados y adaptados a todo tipo de pantalla (`clamp()`)
-- ✅ Migraciones añadidas: `11-drop-tiempo-partido`, `12-primera-iberdrola`
-
-## � Cambios Recientes (Mayo 2026)
-
-### Buscador Avanzado
-- ✅ **Conteo de jugadoras**: Arreglado el filtrado para mostrar todas las 86 jugadoras en la BD (incluyendo convocadas sin minutos)
-- ✅ **Layout de filtros**: Reorganizado en 2 líneas (grid 2 columnas) para mejor usabilidad
-- ✅ **Filtros de fecha**: Añadida la funcionalidad de limpiar fechas con botón X
-- ✅ **Estilos de fechas**: Consistencia visual con el resto de la web (amarillo #ffde59, sombras y bordes redondeados)
-- ✅ **Color encabezado tabla**: Cambiado de #2b2b2b a #f0f0f0 (gris claro) para mayor contraste y coherencia visual
-
-### Limpieza de Código
-- ✅ **Archivos no usados eliminados**: 
-  - `src/scripts/form.js`
-  - `src/scripts/menu.js`
-
-## �📄 Licencia
-
-Este proyecto está bajo la licencia [MIT](LICENSE).
-
----
-
-*Hala Madrid y nada más.* 🟣⚪️
+El código, los textos periodísticos, las fotografías y los elementos de marca pueden estar sujetos a derechos distintos. La disponibilidad pública del repositorio **no implica** que sus contenidos o recursos visuales se puedan reutilizar libremente. Para consultas editoriales o de colaboración, utiliza la [página de contacto](https://www.madridfemeninoxtra.com/contacto).
