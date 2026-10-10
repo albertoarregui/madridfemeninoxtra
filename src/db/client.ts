@@ -11,7 +11,9 @@ const globalForDb = globalThis as unknown as {
 };
 
 const STATIC_DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const DYNAMIC_DB_READ_TTL_MS = 5 * 60 * 1000;
+// Las páginas dinámicas conservan frescura mediante invalidación por tabla;
+// el TTL reduce consultas repetitivas cuando no hay actualizaciones.
+const DYNAMIC_DB_READ_TTL_MS = 10 * 60 * 1000;
 const DB_CACHE_VERSION = 'v9';
 const MVP_DB_CACHE_VERSION = 'v2';
 const MVP_READ_TAG = tableCacheTag('mvp');
