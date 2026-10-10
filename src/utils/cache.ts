@@ -80,7 +80,18 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
             }
         }
 
-        const data = await fn();
+        // Si Turso o Contentful fallan temporalmente, conserva el último dato
+        // conocido en memoria. No se aplica a lecturas forzadas ni invalidadas.
+        let data: T;
+        try {
+            data = await fn();
+        } catch (error) {
+            if (!forceRefresh && sigueVigente() && hit?.data !== undefined) {
+                console.error('[CACHE] Origen temporalmente no disponible; devolviendo dato anterior:', error);
+                return hit.data;
+            }
+            throw error;
+        }
         const vigente = sigueVigente();
 
         if (vigente && almacen.get(clave)?.enCurso === enCurso) {
