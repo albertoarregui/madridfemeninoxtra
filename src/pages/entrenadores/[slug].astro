@@ -1,6 +1,6 @@
 ---
 import FichaTexto from "../../components/FichaTexto.astro";
-import { fetchFicha } from "../../utils/fichas";
+import { fetchFicha, resumenEditorial } from "../../utils/fichas";
 import Layout from "../../layouts/Layout.astro";
 import { breadcrumbSchema } from "../../utils/seo";
 import {
@@ -122,12 +122,12 @@ const coachSchema = {
 };
 
 const seoTitle = `${nombre}, entrenador del Real Madrid Femenino | Madrid Femenino Xtra`;
-const seoDescription = (tc && tc.partidos)
+const seoDescription = resumenEditorial(ficha) ?? ((tc && tc.partidos)
     ? `${nombre}, entrenador del Real Madrid Femenino${nat ? ` (${nat})` : ""}. ${tc.partidos} partidos dirigidos, ${tc.victorias} victorias (${tc.porcentaje_victorias}%). Estadísticas, récords y trayectoria.`
-    : `Perfil de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`;
+    : `Perfil de ${nombre}, entrenador del Real Madrid Femenino. Estadísticas, récords y trayectoria.`);
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogTitle={`${nombre}: trayectoria y estadísticas en el Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={`Trayectoria de ${nombre} en el Real Madrid Femenino: partidos dirigidos, victorias, derrotas, porcentaje de triunfos, estadísticas y récords como técnico del equipo blanco.`} noindex={!indexableCoach} showAds={indexableCoach}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={`${nombre}: trayectoria y estadísticas en el Real Madrid Femenino | Madrid Femenino Xtra`} ogDescription={seoDescription} noindex={!indexableCoach} showAds={indexableCoach}>
     <script type="application/ld+json" set:html={JSON.stringify(coachSchema)} />
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Entrenadores", path: "/entrenadores" }, { name: nombre, path: `/entrenadores/${slug}` }]))} />
     <section class="coach-hero">
