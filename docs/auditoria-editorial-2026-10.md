@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 99.
-- **Fichas con dos o más párrafos:** 198.
+- **Fichas con un solo párrafo:** 96.
+- **Fichas con dos o más párrafos:** 201.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (55)
+### jugadora (52)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -34,12 +34,10 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Lucia Rodríguez (350 caracteres) · `3A9Z4XoK6nCLItML2VzsQB`
 - Claudia de la Cuerda (351 caracteres) · `6GWg5WwrqM8YPTQP0oFV9e`
 - Thaisa Moreno (353 caracteres) · `NwZvRRtWTkwfJ6SZAvv9y`
-- Ivana Andrés (355 caracteres) · `uzUW0A7mkwYdKkogyFTkM`
 - Yohana Gómez (355 caracteres) · `81d4dlR7ql0r3nTRp0yxF`
 - Sara Martín (355 caracteres) · `7bU3YR0PxALKlICYuiI8nO`
 - Bea Vélez (357 caracteres) · `4DrC5Gd5CWFMD1NY0tjDun`
 - María Portolés (361 caracteres) · `7DpGzbLCXMUyCbHdJQpMFw`
-- Esther González (362 caracteres) · `fYcniDhGgMAxmEQ2U9xw8`
 - Yasmim Ribeiro (363 caracteres) · `1UM2I2f39allyRMTJdY6ZT`
 - Marina Salas (365 caracteres) · `4TbU0AZeTUEOfMB4piooVj`
 - Marta Cardona (367 caracteres) · `co9EPzgtkTT6VPaAqkyG9`
@@ -72,7 +70,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
 - Oihane Hernández (429 caracteres) · `75GYVNWvvleaUsvFYVEDfM`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
-- Claudia Zornoza (448 caracteres) · `3hEIOFZRuAYnMIsWqdteSV`
 - Andreia Jacinto (453 caracteres) · `FvoaEm0j2s8Xg0DpxCxrk`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
@@ -186,3 +183,11 @@ Fuentes institucionales consultadas:
 - Maite Oroz: Osasuna, Athletic, Real Madrid y Tottenham; fichaje confirmado por Tottenham y Real Madrid (13/9/2024).
 
 En estas cuatro entradas se ha cambiado exclusivamente `body` en Contentful, sin modificar SEO, Open Graph, imágenes ni cifras de Turso. Los totales de las fichas son orientativos porque distintos proveedores aplican criterios de cómputo diferentes.
+
+### Ampliaciones verificadas adicionales, 11 de octubre de 2026
+
+- Claudia Zornoza: trayectoria en España, etapa blanca y Utah Royals; fuentes oficiales de Utah Royals.
+- Ivana Andrés: Valencia, Levante, capitanía del Real Madrid, Mundial de 2023 e Inter; perfil oficial de Inter.
+- Esther González: Levante, Atlético, Real Madrid y Gotham; comunicados oficiales de Gotham, incluida la salida en julio de 2026.
+
+Actualización exclusiva del campo `body` de cada ficha, sin modificar SEO, Open Graph, fotografías ni estadísticas.
