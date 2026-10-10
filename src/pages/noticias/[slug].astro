@@ -568,8 +568,9 @@ const newsSchema = {
         set:html={JSON.stringify(breadcrumbSchema)}
         slot="head"
     />
-    <script is:inline>
+    <script is:inline data-astro-rerun>
       (() => {
+        const pagePath = location.pathname;
         const match = /^\\/noticias\\/([a-z0-9-]+)\\/?$/.exec(location.pathname);
         if (!match) return;
         const slug = match[1];
@@ -581,7 +582,7 @@ const newsSchema = {
         if (document.visibilityState !== 'visible') return;
         // Sólo contar una lectura con tiempo real de permanencia.
         setTimeout(async () => {
-          if (document.visibilityState !== 'visible') return;
+          if (document.visibilityState !== 'visible' || location.pathname !== pagePath) return;
           try {
             const res = await fetch('/api/noticias/lectura', {
               method: 'POST',
