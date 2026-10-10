@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 96.
-- **Fichas con dos o más párrafos:** 201.
+- **Fichas con un solo párrafo:** 94.
+- **Fichas con dos o más párrafos:** 203.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Las siguientes entradas contienen un párrafo; requieren un examen editorial individual para determinar si existen datos verificables que permitan ampliarlas.
 
-### jugadora (52)
+### jugadora (50)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -44,7 +44,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Ariana Arias (367 caracteres) · `1kdKpte0uGEbv1xoseLULN`
 - Iris Ashley Santiago (368 caracteres) · `1kNSyJ9mUPi9sEyu9IA7Z0`
 - Aurelie Kaci (369 caracteres) · `bG7lz14pJBTtn4yAnVP07`
-- Hanna Bennison (369 caracteres) · `p0Ywc011TPP9zS2e1SSHG`
 - Clara Villanueva (370 caracteres) · `1eqYrql8tC7XUVF5noxcR0`
 - Sara Ezquerro (371 caracteres) · `kbYfMYT1PETKODXa3fh5z`
 - María Valle (373 caracteres) · `5JHb5GmKBuSYllYhALOiMO`
@@ -70,7 +69,6 @@ Las siguientes entradas contienen un párrafo; requieren un examen editorial ind
 - Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
 - Oihane Hernández (429 caracteres) · `75GYVNWvvleaUsvFYVEDfM`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
-- Andreia Jacinto (453 caracteres) · `FvoaEm0j2s8Xg0DpxCxrk`
 - Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
 ### club (13)
@@ -191,3 +189,11 @@ En estas cuatro entradas se ha cambiado exclusivamente `body` en Contentful, sin
 - Esther González: Levante, Atlético, Real Madrid y Gotham; comunicados oficiales de Gotham, incluida la salida en julio de 2026.
 
 Actualización exclusiva del campo `body` de cada ficha, sin modificar SEO, Open Graph, fotografías ni estadísticas.
+
+### Nuevas biografías ampliadas, 11 de octubre de 2026
+
+- Hanna Bennison: Rosengård, Everton, Juventus, Real Madrid, Eintracht Frankfurt y selección sueca, según comunicados de Real Madrid y Frankfurt.
+- Andreia Jacinto: Sporting CP, Real Sociedad, Real Madrid y selección portuguesa, según comunicado oficial del Real Madrid.
+- Lineth Beerensteyn: se verificó que ya tenía tres párrafos completos y se conservó su versión editorial anterior; no se contabiliza como nueva ampliación.
+
+Únicamente se editó el cuerpo de las fichas en Contentful. No se alteraron las descripciones SEO, Open Graph, imágenes ni estadísticas deportivas.
