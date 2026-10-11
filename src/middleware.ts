@@ -20,7 +20,11 @@ const CACHE_CORTA_S = 24 * 60 * 60;
 const SWR_S = 7 * 24 * 60 * 60;
 const CACHE_LARGA_S = 7 * 24 * 60 * 60;
 const SWR_LARGA_S = 30 * 24 * 60 * 60;
-const CACHE_HOME_S = 5 * 60;
+// La portada ejecuta agregados deportivos y consultas a Contentful.
+// Una regeneración cada 15 minutos reduce los fallos de caché y CPU;
+// las etiquetas siguen permitiendo invalidar cuando se actualiza el contenido.
+const CACHE_HOME_S = 15 * 60;
+const SWR_HOME_S = 60 * 60;
 
 export const onRequest = clerkMiddleware(async (auth, context, next) => {
     const requestStartedAt = new Date();
@@ -62,7 +66,7 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             const sMaxage = seasonPage
                 ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
-            const swr = fastRefresh || seasonPage ? 0 : (larga ? SWR_LARGA_S : SWR_S);
+            const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             // Astro establece Cache-Control: public, max-age=0. La cabecera
             // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(
