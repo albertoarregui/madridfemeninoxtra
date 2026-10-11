@@ -1,0 +1,166 @@
+---
+import X from "../assets/redes/x.svg";
+import Instagram from "../assets/redes/instagram.svg";
+import TikTok from "../assets/redes/tiktok.svg";
+import Youtube from "../assets/redes/youtube.svg";
+
+// El mismo recurso usado por el header: una única identidad corporativa.
+const logo = "/icon.webp";
+const descripcion = "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!";
+const sections = [
+  { label: "Home", href: "/" },
+  { label: "Noticias", href: "/noticias" },
+  { label: "Plantilla", href: "/plantilla" },
+  { label: "Calendario", href: "/calendario" },
+  { label: "Rankings", href: "/rankings" },
+  { label: "La Fábrica", href: "/la-fabrica" },
+];
+const company = [
+  { label: "Sobre nosotros", href: "/sobre-nosotros" },
+  { label: "Contacto", href: "/contacto" },
+  { label: "Política de Privacidad", href: "/politica-privacidad" },
+  { label: "Política de Cookies", href: "/politica-cookies" },
+];
+---
+<section class="mfx-upper-footer" aria-label="Enlaces, comunidad y newsletter de Madrid Femenino Xtra">
+  <div class="mfx-upper-footer__container">
+    <div class="mfx-footer-column mfx-footer-brand">
+      <a href="/" class="mfx-footer-brand__link" aria-label="Madrid Femenino Xtra, inicio">
+        <img src={logo} width="100" height="100" loading="lazy" alt="Logotipo de Madrid Femenino Xtra" />
+      </a>
+      <p>{descripcion}</p>
+    </div>
+
+    <nav class="mfx-footer-column" aria-label="Secciones">
+      <h2>SECCIONES</h2>
+      {sections.map(item => <a href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <nav class="mfx-footer-column" aria-label="Empresa">
+      <h2>EMPRESA</h2>
+      {company.map(item => <a href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <nav class="mfx-footer-column" aria-label="Más recursos">
+      <h2>MÁS</h2>
+      <a href="/sitemap.xml">Sitemap</a>
+      <a href="/rss.xml" type="application/rss+xml">RSS</a>
+    </nav>
+
+    <nav class="mfx-footer-column mfx-footer-social" aria-label="Redes sociales">
+      <h2>SOCIAL</h2>
+      <a href="https://x.com/madridfemxtra" rel="noopener noreferrer" target="_blank"><X aria-hidden="true" /><span>X</span></a>
+      <a href="https://instagram.com/madridfemxtra" rel="noopener noreferrer" target="_blank"><Instagram aria-hidden="true" /><span>Instagram</span></a>
+      <a href="https://tiktok.com/@madridfemeninoxtra" rel="noopener noreferrer" target="_blank"><TikTok aria-hidden="true" /><span>TikTok</span></a>
+      <a href="https://www.youtube.com/@MadridFemeninoXtra" rel="noopener noreferrer" target="_blank"><Youtube aria-hidden="true" /><span>YouTube</span></a>
+    </nav>
+
+    <div class="mfx-footer-column mfx-footer-newsletter">
+      <h2>NEWSLETTER</h2>
+      <p>Última hora, análisis y estadísticas directamente en tu correo.</p>
+      <form id="mfx-newsletter-form" class="mfx-newsletter-form" novalidate>
+        <label class="mfx-visually-hidden" for="mfx-newsletter-email">Correo electrónico</label>
+        <input id="mfx-newsletter-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="Tu correo electrónico" required />
+        <label class="mfx-newsletter-consent">
+          <input name="consent" type="checkbox" required />
+          <span>Acepto recibir comunicaciones y la <a href="/politica-privacidad">Política de Privacidad</a>.</span>
+        </label>
+        <input class="mfx-newsletter-trap" aria-hidden="true" tabindex="-1" autocomplete="off" name="website" type="text" />
+        <button type="submit" class="mfx-newsletter-submit">SUSCRIBIRSE <span aria-hidden="true">→</span></button>
+        <p class="mfx-newsletter-status" role="status" aria-live="polite" data-newsletter-status></p>
+      </form>
+      <p class="mfx-newsletter-note">Sin spam. Puedes darte de baja en cualquier momento.</p>
+    </div>
+  </div>
+</section>
+
+<script is:inline data-astro-rerun>
+  (() => {
+    const form = document.getElementById('mfx-newsletter-form');
+    if (!form || form.dataset.initialized) return;
+    form.dataset.initialized = 'true';
+    const button = form.querySelector('button[type="submit"]');
+    const confirmation = new URL(location.href).searchParams.get('newsletter');
+    if (confirmation === 'confirmed') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = '¡Suscripción confirmada! Gracias por unirte a Madrid Femenino Xtra.';
+    } else if (confirmation === 'already') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = 'Esta confirmación ya se ha utilizado o el enlace ha caducado.';
+    } else if (confirmation === 'error') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = 'No se ha podido confirmar la suscripción. Inténtalo de nuevo.';
+    }
+    const message = form.querySelector('[data-newsletter-status]');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const emailField = form.querySelector('input[name="email"]');
+      const consent = form.querySelector('input[name="consent"]');
+      const email = emailField?.value.trim() || '';
+      if (!emailField?.checkValidity()) {
+        message.textContent = 'Introduce un correo electrónico válido.';
+        emailField?.focus();
+        return;
+      }
+      if (!consent?.checked) {
+        message.textContent = 'Debes aceptar el envío de comunicaciones para suscribirte.';
+        consent?.focus();
+        return;
+      }
+      button.disabled = true;
+      message.textContent = 'Procesando suscripción…';
+      try {
+        const response = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            consent: true,
+            website: form.querySelector('input[name="website"]')?.value || ''
+          })
+        });
+        if (!response.ok) throw new Error('subscription failed');
+        message.textContent = 'Comprueba tu correo para confirmar la suscripción. Si ya te habías suscrito, no es necesario repetir el proceso.';
+        form.reset();
+      } catch {
+        message.textContent = 'No se ha podido tramitar la suscripción. Inténtalo más tarde.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<style>
+  .mfx-upper-footer { width:100%; border-top:1px solid rgba(212,168,67,.4); border-bottom:1px solid rgba(212,168,67,.16); background:linear-gradient(120deg,#101d31 0%,#07101f 85%); color:#e9edf4; position:relative; }
+  .mfx-upper-footer__container { display:grid; grid-template-columns:minmax(175px,1.55fr) minmax(92px,.87fr) minmax(145px,1.3fr) minmax(65px,.67fr) minmax(102px,.9fr) minmax(195px,1.55fr); gap:clamp(13px,2vw,32px); max-width:1700px; margin:0 auto; padding:clamp(38px,4.2vw,70px) clamp(16px,3.3vw,52px); }
+  .mfx-footer-column { display:flex; flex-direction:column; align-items:flex-start; gap:11px; min-width:0; }
+  .mfx-footer-column h2 { color:#d4a843; font:700 .71rem 'Cinzel',serif; letter-spacing:.12em; margin:3px 0 12px; }
+  .mfx-footer-column > a { color:#c4ccd9; font:400 .82rem 'DM Sans',sans-serif; text-decoration:none; line-height:1.45; transition:color .2s ease; }
+  .mfx-footer-column > a:hover { color:#eec66d; }
+  .mfx-footer-column > a:focus-visible,.mfx-newsletter-form a:focus-visible,.mfx-newsletter-submit:focus-visible,.mfx-newsletter-form input:focus-visible { outline:2px solid #eec66d; outline-offset:3px; }
+  .mfx-footer-brand__link { display:inline-flex; margin:-15px 0 8px; width:110px; min-height:108px; align-items:center; }
+  .mfx-footer-brand__link img { width:105px; height:105px; object-fit:contain; }
+  .mfx-footer-brand p,.mfx-footer-newsletter > p { color:#abb8ca; font:400 .8rem/1.8 'DM Sans',sans-serif; margin:0; max-width:310px; }
+  .mfx-footer-social > a { display:inline-flex; align-items:center; gap:10px; }
+  .mfx-footer-social > a :global(svg) { width:17px; height:17px; color:#d4a843; flex-shrink:0; }
+  .mfx-footer-newsletter { gap:12px; }
+  .mfx-footer-newsletter h2 { margin-bottom:1px; }
+  .mfx-newsletter-form { display:flex; flex-direction:column; width:100%; gap:10px; }
+  .mfx-newsletter-form > input[name="email"] { width:100%; min-width:0; border-radius:6px; border:1px solid rgba(212,168,67,.3); background:#121f32; color:#f2f5f8; padding:13px 12px; font:400 .82rem 'DM Sans',sans-serif; }
+  .mfx-newsletter-form > input[name="email"]::placeholder { color:#8393a8; }
+  .mfx-newsletter-consent { display:flex; align-items:flex-start; gap:9px; cursor:pointer; color:#b9c3d0; font:400 .69rem/1.6 'DM Sans',sans-serif; }
+  .mfx-newsletter-consent input { flex:0 0 15px; width:15px; height:15px; accent-color:#d4a843; margin:2px 0 0; }
+  .mfx-newsletter-consent a { color:#e5c279; text-underline-offset:3px; }
+  .mfx-newsletter-submit { width:100%; min-height:44px; display:flex; justify-content:center; align-items:center; gap:7px; background:linear-gradient(115deg,#d4a843,#bf9234); color:#07101f; border:1px solid #e0b454; border-radius:6px; padding:11px 14px; font:700 .7rem 'Cinzel',serif; letter-spacing:.08em; cursor:pointer; transition:filter .2s ease,transform .2s ease; }
+  .mfx-newsletter-submit:hover:not(:disabled) { filter:brightness(1.13); transform:translateY(-1px); }
+  .mfx-newsletter-submit:disabled { opacity:.6; cursor:wait; }
+  .mfx-newsletter-status { min-height:0; color:#e7d092; font:400 .72rem/1.6 'DM Sans',sans-serif; margin:0; }
+  .mfx-footer-newsletter .mfx-newsletter-note { color:#8190a5; font-size:.67rem; }
+  .mfx-visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .mfx-newsletter-trap { position:absolute; left:-9999px; opacity:0; pointer-events:none; width:1px; height:1px; }
+  @media(max-width:1230px) { .mfx-upper-footer__container { grid-template-columns:1.2fr 1fr 1.3fr; gap:38px 26px; } .mfx-footer-newsletter { grid-column:auto; } }
+  @media(max-width:750px) { .mfx-upper-footer__container { grid-template-columns:1fr 1fr; gap:38px 23px; padding:36px 20px; } .mfx-footer-brand { grid-column:1/-1; } .mfx-footer-newsletter { grid-column:1/-1; max-width:480px; } .mfx-footer-brand__link { min-height:80px; margin:-12px 0 2px; } .mfx-footer-brand__link img { width:90px; height:90px; } }
+  @media(max-width:400px) { .mfx-upper-footer__container { gap:30px 16px; } .mfx-footer-column h2 { font-size:.67rem; } .mfx-footer-column > a { font-size:.76rem; } .mfx-footer-newsletter { grid-column:1/-1; } }
+</style>

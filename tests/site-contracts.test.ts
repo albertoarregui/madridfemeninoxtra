@@ -97,3 +97,51 @@ test('Astro uses no-op image transformations instead of the legacy image endpoin
   assert.match(config, /imageService:\s*false/);
   assert.match(config, /astro\/assets\/services\/noop/);
 });
+
+
+test('upper footer has six navigational columns, social icons and working newsletter wiring', () => {
+  const footer = read('src/components/FooterUpper.astro');
+  const layout = read('src/layouts/Layout.astro');
+  assert.match(layout, /<FooterUpper\s*\/>\s*<Footer\s*\/>/);
+  for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL', 'NEWSLETTER']) {
+    assert.ok(footer.includes(label), label);
+  }
+  for (const href of ['/', '/noticias', '/plantilla', '/calendario', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
+    assert.ok(footer.includes(`href="${href}"`) || footer.includes(`href: "${href}"`), href);
+  }
+  for (const brand of ['<X ', '<Instagram ', '<TikTok ', '<Youtube ']) {
+    assert.ok(footer.includes(brand), brand);
+  }
+  assert.match(footer, /id="mfx-newsletter-form"/);
+  assert.match(footer, /\/api\/newsletter\/subscribe/);
+  assert.match(footer, /name="consent" type="checkbox" required/);
+  assert.match(footer, /@media\(max-width:1230px\)/);
+  assert.match(footer, /@media\(max-width:750px\)/);
+  assert.match(footer, /@media\(max-width:400px\)/);
+});
+
+test('original footer style stays with exact requested legal and cookie controls', () => {
+  const footer = read('src/components/Footer.astro');
+  assert.match(footer, /footer-container/);
+  assert.match(footer, /footer-social-row/);
+  for (const href of ['/aviso-legal', '/politica-privacidad', '/politica-cookies', '/terminos-condiciones']) {
+    assert.ok(footer.includes(`href="${href}"`), href);
+  }
+  assert.match(footer, /id="mfx-footer-manage-cookies"/);
+  assert.match(footer, /getElementById\('mfx-manage-consent'\)/);
+  assert.match(footer, /getElementById\('mfx-consent'\)/);
+});
+
+test('newsletter double opt-in and unsubscribe use existing safe endpoints', () => {
+  const signup = read('src/pages/api/newsletter/subscribe.ts');
+  const confirmation = read('src/pages/api/confirm.ts');
+  const unsubscribe = read('src/pages/api/unsubscribe.ts');
+  assert.match(signup, /request\.headers\.get\('origin'\)/);
+  assert.match(signup, /body\?\.consent !== true/);
+  assert.match(signup, /randomBytes\(32\)/);
+  assert.match(signup, /newsletter_subscribers/);
+  assert.match(signup, /resend\.emails\.send/);
+  assert.match(confirmation, /SET confirmed_at/);
+  assert.match(unsubscribe, /DELETE FROM newsletter_subscribers WHERE unsubscribe_token/);
+  assert.match(unsubscribe, /<form method="POST"/);
+});

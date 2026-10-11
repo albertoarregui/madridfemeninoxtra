@@ -46,30 +46,41 @@ import TikTok from "../assets/redes/tiktok.svg";
         </a>
     </div>
 
-    <div class="footer-legal-row">
-        <a href="/historia">Nuestra historia</a>
+    <div class="footer-legal-row" aria-label="Avisos y preferencias legales">
+        <a href="/aviso-legal">Aviso legal</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/estadisticas-real-madrid-femenino">Datos y estadísticas</a>
+        <a href="/politica-privacidad">Privacidad</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/prensa-datos">Datos para medios</a>
+        <a href="/politica-cookies">Cookies</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/autor/alberto-arregui">Autor</a>
+        <a href="/terminos-condiciones">Condiciones</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/politica-editorial">Política editorial</a>
-        <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/aviso-legal">Aviso Legal</a>
-        <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/terminos-condiciones">Términos y condiciones</a>
-        <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/politica-privacidad">Política de privacidad</a>
-        <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/politica-cookies">Política de cookies</a>
+        <button type="button" class="footer-manage-cookies" id="mfx-footer-manage-cookies">Configurar cookies</button>
     </div>
 
     <div class="footer-bottom">
         <p>&copy; {new Date().getFullYear()} Madrid Femenino Xtra. Todos los derechos reservados.</p>
     </div>
 </footer>
+<script is:inline data-astro-rerun>
+  (() => {
+    const link = document.getElementById('mfx-footer-manage-cookies');
+    if (!link || link.dataset.initialized) return;
+    link.dataset.initialized = 'true';
+    link.addEventListener('click', () => {
+      const existing = document.getElementById('mfx-manage-consent');
+      const banner = document.getElementById('mfx-consent');
+      if (existing && !existing.hidden) existing.click();
+      else if (banner) {
+        banner.hidden = false;
+        const details = document.getElementById('mfx-consent-details');
+        const configure = banner.querySelector('[data-mfx-consent="configure"]');
+        if (details) details.hidden = false;
+        if (configure) configure.setAttribute('aria-expanded', 'true');
+      }
+    });
+  })();
+</script>
 
 <style>
     .footer-container {
@@ -174,7 +185,7 @@ import TikTok from "../assets/redes/tiktok.svg";
         padding: 0 1rem;
     }
 
-    .footer-legal-row a {
+    .footer-legal-row a, .footer-manage-cookies {
         color: rgba(180, 185, 200, 0.45);
         text-decoration: none;
         font-family: 'DM Sans', sans-serif;
@@ -183,7 +194,9 @@ import TikTok from "../assets/redes/tiktok.svg";
         transition: color 0.25s ease;
     }
 
-    .footer-legal-row a:hover { color: rgba(212, 168, 67, 0.75); }
+    .footer-legal-row a:hover, .footer-manage-cookies:hover { color: rgba(212, 168, 67, 0.9); }
+    .footer-manage-cookies { background:none; border:0; cursor:pointer; padding:0; color:rgba(180,185,200,.45); }
+    .footer-manage-cookies:focus-visible { outline:2px solid #d4a843; outline-offset:4px; }
     .footer-dot {
         color: rgba(212, 168, 67, 0.2);
         font-size: 0.8rem;
@@ -206,6 +219,6 @@ import TikTok from "../assets/redes/tiktok.svg";
         .footer-social-sep { display: none; }
         .footer-social-item { font-size: 0.72rem; padding: 0.4rem 0.75rem; }
         .footer-legal-row { gap: 0.4rem; padding: 0 1rem; }
-        .footer-legal-row a { font-size: 0.68rem; }
+        .footer-legal-row a, .footer-manage-cookies { font-size: 0.68rem; }
     }
 </style>
