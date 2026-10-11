@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
-import InteractiveMap from './Map';
+import React, { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
+// MapLibre (1 MB+) se descarga sólo cuando el mapa está cerca del viewport.
+const InteractiveMap = lazy(() => import('./Map'));
 import { getAssetUrl } from '../utils/assets';
 
 function getCompetitionLogo(name: string): string | null {
@@ -32,6 +33,25 @@ interface MatchMapWrapperProps {
 }
 
 const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches, height = 'clamp(420px, 52vw, 650px)' }) => {
+    const target = useRef<HTMLDivElement>(null);
+    const [mapVisible, setMapVisible] = useState(false);
+
+    useEffect(() => {
+        const element = target.current;
+        if (!element || typeof IntersectionObserver === 'undefined') {
+            setMapVisible(true);
+            return;
+        }
+        const observer = new IntersectionObserver((entries) => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                setMapVisible(true);
+                observer.disconnect();
+            }
+        }, { rootMargin: '200px' });
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, []);
+
     const markers = useMemo(() => {
 
         const locationMap = new Map<string, {
@@ -98,13 +118,17 @@ const MatchMapWrapper: React.FC<MatchMapWrapperProps> = ({ matches, height = 'cl
     }, [matches]);
 
     return (
-        <div className="match-map-wrapper">
-            <InteractiveMap
-                markers={markers}
-                height={height}
-                center={{ lat: 40, lng: -3 }}
-                zoom={4}
-            />
+        <div className="match-map-wrapper" ref={target} style={{ minHeight: height }}>
+            {mapVisible ? (
+                <Suspense fallback={<div role="status" style={{ minHeight: height }}>Cargando mapa de estadios…</div>}>
+                    <InteractiveMap
+                        markers={markers}
+                        height={height}
+                        center={{ lat: 40, lng: -3 }}
+                        zoom={4}
+                    />
+                </Suspense>
+            ) : <div role="status" style={{ minHeight: height }}>El mapa se cargará al desplazarte hasta él.</div>}
             <style>{`
                 .match-map-wrapper {
                     width: 100%;
