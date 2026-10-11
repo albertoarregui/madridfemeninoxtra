@@ -141,3 +141,36 @@ test('newsletter double opt-in and unsubscribe use existing safe endpoints', () 
   assert.match(unsubscribe, /DELETE FROM newsletter_subscribers WHERE unsubscribe_token/);
   assert.match(unsubscribe, /<form method="POST"/);
 });
+
+test('weekly newsletter is isolated from preview and uses Madrid local Monday 10', () => {
+  const code = read('src/pages/api/newsletter/weekly.ts');
+  const cron = read('vercel.json');
+  assert.match(code, /Europe\/Madrid/);
+  assert.match(code, /scheduledAt:schedule/);
+  assert.match(code, /if\(process\.env\.VERCEL_ENV !== 'production'\)/);
+  assert.match(code, /newsletter_weekly_deliveries/);
+  assert.match(code, /confirmed_at IS NOT NULL/);
+  assert.match(code, /return Response\.json\(\{skipped:'No hay noticias/);
+  assert.match(cron, /0 6 \* \* 1/);
+  const immediate = read('src/pages/api/newsletter/send.ts');
+  assert.match(immediate, /NEWSLETTER_PER_ARTICLE_ENABLED/);
+});
+
+test('reader ratings routes and menu follow the requested structure', () => {
+  const archive = read('src/pages/valoraciones/index.astro');
+  const individual = read('src/pages/valoraciones/[slug].astro');
+  const api = read('src/pages/api/valoraciones/[id].ts');
+  const layout = read('src/styles/valoraciones.css');
+  const header = read('src/components/Header.astro');
+  assert.match(header, /href="\/fotogalerias"[\s\S]*?href="\/valoraciones"/);
+  assert.match(archive, /RatingScoreboard/);
+  assert.match(archive, /ÚLTIMAS VALORACIONES/);
+  assert.match(individual, /ONCE INICIAL/);
+  assert.match(individual, /SUPLENTES/);
+  assert.match(individual, /ENTRENADOR\/A/);
+  assert.match(individual, /MVP DEL PARTIDO/);
+  assert.match(layout, /grid-template-columns:repeat\(10/);
+  assert.match(api, /currentUser/);
+  assert.match(api, /if\(isPreview\(\)\)/);
+  assert.match(api, /mvpCount>1/);
+});
