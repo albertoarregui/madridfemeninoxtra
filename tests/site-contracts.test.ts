@@ -141,3 +141,22 @@ test('newsletter double opt-in and unsubscribe use existing safe endpoints', () 
   assert.match(unsubscribe, /DELETE FROM newsletter_subscribers WHERE unsubscribe_token/);
   assert.match(unsubscribe, /<form method="POST"/);
 });
+
+
+test('Hobby CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
+  const middleware = read('src/middleware.ts');
+  const news = read('src/pages/noticias/index.astro');
+  const proxy = read('src/pages/api/img-proxy.ts');
+  assert.match(middleware, /const CACHE_HOME_S = 15 \* 60;/);
+  assert.match(middleware, /const SWR_HOME_S = 60 \* 60;/);
+  assert.match(middleware, /fastRefresh \? SWR_HOME_S/);
+  assert.match(middleware, /Vercel-CDN-Cache-Control/);
+  assert.match(news, /"fields.title"/);
+  assert.match(news, /"fields.featuredImage"/);
+  assert.doesNotMatch(news, /\.\.\.item\.fields/);
+  assert.match(news, /featuredImage: imageUrl \?/);
+  assert.match(proxy, /Vercel-CDN-Cache-Control/);
+  assert.match(proxy, /permittedImageSource\(src\)/);
+  assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
+  assert.match(proxy, /redirect: 'error'/);
+});
