@@ -21,7 +21,7 @@
 
 ## 🖥️ Vista de la portada
 
-![Portada real de Madrid Femenino Xtra: estadísticas, actualidad y navegación](docs/screenshots/portada.webp)
+<img src="https://raw.githubusercontent.com/albertoarregui/madridfemeninoxtra/main/docs/screenshots/portada.webp" alt="Portada de Madrid Femenino Xtra" width="1200" />
 
 *Captura de la portada de producción (11 de octubre de 2026).*
 
