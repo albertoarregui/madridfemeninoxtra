@@ -1191,6 +1191,73 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
 
 
 
+
+/**
+ * Lectura especializada para /estadios: evita las subconsultas de tarjetas,
+ * estadísticas por partido y relaciones no utilizadas por el mapa.
+ * El proxy de Turso aplica la misma caché por tabla e invalidación por tags.
+ */
+export async function fetchStadiumMapGames(): Promise<any[]> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return [];
+
+        const result = await client.execute(`
+            SELECT p.id_partido AS partido_id,
+                   p.fecha,
+                   t.temporada AS temporada_nombre,
+                   cl.nombre AS club_local,
+                   cv.nombre AS club_visitante,
+                   e.nombre AS estadio, e.ciudad,
+                   e.lat AS estadio_lat, e.lng AS estadio_lng,
+                   e.foto_url AS estadio_foto_url,
+                   c.competicion AS competicion_nombre,
+                   c.foto_url AS competicion_foto_url,
+                   p.goles_rm, p.goles_rival,
+                   CASE
+                     WHEN p.goles_rm IS NULL OR p.goles_rival IS NULL THEN 'P'
+                     WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 'V'
+                     WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 'D'
+                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER)
+                          AND TRIM(CAST(p.penaltis AS TEXT)) = '1' THEN 'V'
+                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER)
+                          AND TRIM(CAST(p.penaltis AS TEXT)) = '0' THEN 'D'
+                     ELSE 'E'
+                   END AS resultado
+              FROM partidos p
+              LEFT JOIN temporadas t ON p.id_temporada = t.id_temporada
+              LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
+              LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
+              LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
+              LEFT JOIN estadios e ON p.id_estadio = e.id_estadio
+             WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL
+             ORDER BY p.fecha ASC, p.hora ASC, p.id_partido ASC
+        `);
+
+        return result.rows.map((game: any) => {
+            let dateSlug = 'sin-fecha';
+            try {
+                const d = new Date(game.fecha);
+                if (!isNaN(d.getTime())) dateSlug = d.toISOString().slice(0, 10);
+            } catch {}
+            return {
+                ...game,
+                id_partido: resolveMatchId(game),
+                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
+                fecha_formateada: formatGameDate(game.fecha),
+                estadio_lat: game.estadio_lat != null ? Number(game.estadio_lat) : null,
+                estadio_lng: game.estadio_lng != null ? Number(game.estadio_lng) : null,
+                competicion_foto_url: cleanApiValue(game.competicion_foto_url) || null,
+            };
+        });
+    } catch (error) {
+        console.error('[fetchStadiumMapGames] ERROR:', error);
+        return [];
+    }
+}
+
+
 export const fetchGamesDirectly = (options: MatchReadOptions = {}) =>
     fetchGamesDirectlyUncached(options);
 
