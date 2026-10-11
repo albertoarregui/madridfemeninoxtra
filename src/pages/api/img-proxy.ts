@@ -59,6 +59,9 @@ export const GET: APIRoute = async ({ url }) => {
       headers: {
         'Content-Type': upstream.headers.get('content-type')!,
         'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        // Imágenes de orígenes permitidos: la CDN las reutiliza sin ejecutar
+        // esta función en cada visita. Los URLs de Contentful son versionados.
+        'Vercel-CDN-Cache-Control': 'max-age=604800, stale-while-revalidate=604800',
         'X-Content-Type-Options': 'nosniff',
       },
     });
