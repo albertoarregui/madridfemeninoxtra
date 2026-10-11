@@ -64,26 +64,22 @@ test('stadium map uses a dedicated minimal query without expensive match subquer
   assert.doesNotMatch(stadiumQuery, /SELECT COUNT\(\*\)/);
 });
 
-test('homepage shows native Liga F and UWCL tables in the requested order', () => {
+test('homepage embeds original Liga F and UWCL Sofascore widgets in this order', () => {
   const homepage = read('src/pages/index.astro');
-  const table = read('src/components/LigaFStandings.astro');
-  assert.match(homepage, /MAPA DE ESTADIOS<\/h2>[\s\S]*?<a href="\/estadios" class="sidebar-map-link">/);
+  const widget = read('src/components/LigaFStandings.astro');
   assert.match(homepage, /CLASIFICACIONES<\/h2>/);
   assert.match(homepage, /<LigaFStandings\s*\/>/);
-  assert.doesNotMatch(homepage, /<iframe|widgets\.sofascore\.com/);
-  assert.doesNotMatch(homepage, /Si la tabla no se muestra/);
-  assert.match(table, /source: 'Liga F Profesional'/);
-  assert.match(table, /source: 'UEFA'/);
-  assert.match(table, /season 97379/);
-  assert.match(table, /season 96633/);
-  const ligaSection = table.split('const liga: Team[] = [')[1]?.split('];')[0] || '';
-  const uwclSection = table.split('const uwcl: Team[] = [')[1]?.split('];')[0] || '';
-  assert.equal((ligaSection.match(/name: '/g) || []).length, 16);
-  assert.equal((uwclSection.match(/name: '/g) || []).length, 18);
-  // La derrota 7-0 en Barcelona deja al Madrid tercero con 13 goles encajados.
-  assert.match(ligaSection, /name: 'Real Madrid CF'[^\n]*ga: 13/);
-  assert.ok(ligaSection.indexOf("name: 'Madrid CFF'") < ligaSection.indexOf("name: 'Real Madrid CF'"));
-  assert.equal((uwclSection.slice(0,uwclSection.indexOf("name: 'Real Madrid CF'")).match(/name: '/g) || []).length, 11);
+  const liga = 'sofa-standings-embed-3739-97379';
+  const uwcl = 'sofa-standings-embed-198786-96633';
+  assert.ok(widget.indexOf(liga) >= 0);
+  assert.ok(widget.indexOf(uwcl) > widget.indexOf(liga));
+  assert.match(widget, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/3739\/season\/97379\/standings\/Primera%20Division%2C%20Women%2026%2F27/);
+  assert.match(widget, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/198786\/season\/96633\/standings\/UEFA%20Champions%20League%2C%20Women%2026%2F27/);
+  assert.match(widget, /height: 963/);
+  assert.match(widget, /height: 991/);
+  assert.match(widget, /Clasificación ofrecida por/);
+  assert.match(widget, /scrolling="no"/);
+  assert.doesNotMatch(widget, /const liga: Team\[\]/);
 });
 
 test('rival records never query the obsolete goles_asistencias table', () => {
