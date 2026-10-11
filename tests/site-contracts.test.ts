@@ -64,16 +64,26 @@ test('stadium map uses a dedicated minimal query without expensive match subquer
   assert.doesNotMatch(stadiumQuery, /SELECT COUNT\(\*\)/);
 });
 
-test('homepage renders native standings and has no blocked Sofascore iframe or failure link', () => {
+test('homepage shows native Liga F and UWCL tables in the requested order', () => {
   const homepage = read('src/pages/index.astro');
   const table = read('src/components/LigaFStandings.astro');
   assert.match(homepage, /MAPA DE ESTADIOS<\/h2>[\s\S]*?<a href="\/estadios" class="sidebar-map-link">/);
+  assert.match(homepage, /CLASIFICACIONES<\/h2>/);
   assert.match(homepage, /<LigaFStandings\s*\/>/);
-  assert.doesNotMatch(homepage, /widgets\.sofascore\.com/);
+  assert.doesNotMatch(homepage, /<iframe|widgets\.sofascore\.com/);
   assert.doesNotMatch(homepage, /Si la tabla no se muestra/);
-  assert.match(table, /Real Madrid CF/);
-  assert.match(table, /Datos oficiales de LaLiga/);
-  assert.equal((table.match(/\{ name: '/g) || []).length, 16);
+  assert.match(table, /source: 'Liga F Profesional'/);
+  assert.match(table, /source: 'UEFA'/);
+  assert.match(table, /season 97379/);
+  assert.match(table, /season 96633/);
+  const ligaSection = table.split('const liga: Team[] = [')[1]?.split('];')[0] || '';
+  const uwclSection = table.split('const uwcl: Team[] = [')[1]?.split('];')[0] || '';
+  assert.equal((ligaSection.match(/name: '/g) || []).length, 16);
+  assert.equal((uwclSection.match(/name: '/g) || []).length, 18);
+  // La derrota 7-0 en Barcelona deja al Madrid tercero con 13 goles encajados.
+  assert.match(ligaSection, /name: 'Real Madrid CF'[^\n]*ga: 13/);
+  assert.ok(ligaSection.indexOf("name: 'Madrid CFF'") < ligaSection.indexOf("name: 'Real Madrid CF'"));
+  assert.equal((uwclSection.slice(0,uwclSection.indexOf("name: 'Real Madrid CF'")).match(/name: '/g) || []).length, 11);
 });
 
 test('rival records never query the obsolete goles_asistencias table', () => {
