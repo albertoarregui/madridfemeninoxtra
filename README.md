@@ -30,39 +30,6 @@ La web combina dos vertientes que se complementan:
 
 El proyecto está desarrollado y mantenido de manera independiente, y evoluciona conforme se incorporan nuevas temporadas y funcionalidades.
 
-> **Aviso:** Madrid Femenino Xtra no es un canal oficial del Real Madrid CF ni está afiliado al club.
-
-## 🖥️ Un vistazo a la plataforma
-
-Las capturas se incorporarán cuando estén tomadas de la versión actual de producción, para evitar mostrar pantallas desactualizadas.
-
-| Pantalla | Qué merece la pena mostrar |
-|:--|:--|
-| 🏠 **Portada** | Identidad visual, noticias destacadas, próximos partidos y clasificación |
-| ⚽ **Ficha de partido** | Marcador, once inicial, estadísticas, eventos y valoraciones |
-| 👤 **Ficha de jugadora** | Fotografía, biografía, trayectoria y desglose estadístico |
-| 📊 **Comparador** | Selección de futbolistas y gráficos comparativos |
-| 🎯 **Estadísticas avanzadas** | xG, rankings, gráficos y redes de asistencias |
-| 🌱 **La Fábrica** | Cantera, equipos, clasificaciones y fichas |
-| 📱 **Versión móvil** | Navegación y adaptación de las principales vistas |
-
-📸 **Archivos previstos:** `docs/screenshots/portada.webp`, `partido.webp`, `jugadora.webp`, `comparador.webp`, `estadisticas.webp`, `la-fabrica.webp` y `movil.webp`.
-
-Una vez añadidas esas imágenes al repositorio, pueden incluirse aquí con `![Portada de Madrid Femenino Xtra](docs/screenshots/portada.webp)` y el mismo patrón para las demás vistas.
-
-**Generación de capturas reales:**
-
-```bash
-pnpm screenshots:readme
-# Para documentar también una ficha concreta de partido y otra de jugadora:
-MATCH_URL=/partidos/slug-real PLAYER_URL=/jugadoras/slug-real pnpm screenshots:readme
-```
-
-El comando usa Puppeteer y requiere Chrome/Chromium disponible. Guarda capturas en `docs/screenshots/` y **omite páginas con imágenes que no hayan cargado**, en lugar de generar documentación engañosa. Los nombres `slug-real` son marcadores que hay que sustituir por URLs existentes; no son páginas reales.
-
-La configuración de Cloudflare y R2 no se altera durante la captura.
-
-
 ## ✨ Funcionalidades
 
 | | Módulo | Qué ofrece |
@@ -122,40 +89,6 @@ madridfemeninoxtra/
 └── public/              # Recursos públicos
 ```
 
-## 💻 Puesta en marcha
-
-### 1. Requisitos
-
-- Node.js compatible con **Astro 5**.
-- **pnpm** como gestor de paquetes.
-- Acceso a los servicios externos correspondientes para consultar los datos reales.
-
-### 2. Instalación
-
-```bash
-git clone https://github.com/albertoarregui/madridfemeninoxtra.git
-cd madridfemeninoxtra
-
-pnpm install
-cp .env.example .env
-pnpm dev
-```
-
-La configuración local se realiza mediante `.env`. El archivo `.env.example` sirve de guía para las variables necesarias; las credenciales reales **no deben subirse a Git**.
-
-### 3. Comandos
-
-| Comando | Acción |
-|---|---|
-| `pnpm dev` | Iniciar el entorno de desarrollo |
-| `pnpm build` | Generar la compilación de producción |
-| `pnpm preview` | Previsualizar la aplicación compilada |
-| `pnpm test` | Ejecutar las pruebas automatizadas |
-| `pnpm smoke:production` | Verificar rutas, redirecciones y SEO de la web desplegada (solo lecturas HTTP) |
-| `pnpm screenshots:readme` | Generar capturas reales para documentación |
-
-> Algunas páginas dependen de Turso, Contentful u otros proveedores y requieren credenciales válidas para mostrar su contenido completo.
-
 ## 🔄 Flujo de datos y publicación
 
 ```text
@@ -191,42 +124,6 @@ curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
 ```
 
 El secreto de invalidación debe mantenerse fuera del repositorio y de la documentación pública.
-
-## 🍪 Consentimiento, publicidad y AdSense
-
-- El archivo `/ads.txt` identifica al editor de AdSense y debe seguir siendo accesible públicamente.
-- La selección local bloquea la carga opcional del script publicitario hasta que el visitante la acepta. El mensaje certificado de Google está publicado en AdSense, pero **la integración y su visualización efectivas aún requieren validación en navegadores del EEE**. La documentación de Google señala que el mensaje puede desplegarse a través de la propia etiqueta de AdSense.
-- En el panel de AdSense **Privacidad y mensajes → Reglamentos europeos**, comprueba que el mensaje publicado corresponde a `madridfemeninoxtra.com` y que registra visualizaciones desde visitantes del EEE. El estado `Publicado` no demuestra por sí solo que el mensaje aparezca.
-- La **aprobación de AdSense no se garantiza** por incluir un CMP y las páginas legales. Requiere contenido original útil, navegación clara, páginas accesibles e imágenes con derechos de uso claros; revisar también los motivos concretos de rechazo en AdSense.
-- No debe atribuirse a una etiqueta o a una CMP la aprobación o el rechazo sin consultar el mensaje de diagnóstico del panel de AdSense.
-
-## 🧭 Mantenimiento del plan gratuito de Vercel
-
-- Proyecto principal: `madridfemeninoxtra`; el proyecto histórico duplicado `repo` **no debe recibir nuevos despliegues**. Su eliminación definitiva exige confirmación del propietario desde Vercel.
-- Vercel Hobby limita almacenamiento de despliegues y tiempo de CPU. Se han extendido los TTL de la portada y de imágenes en CDN y reducido los datos cargados por el archivo de noticias.
-- Hacer un único despliegue por lote probado, mantener desactivadas las previsualizaciones automáticas cuando no sean necesarias y comprobar consumo después de cada cambio de infraestructura.
-- Las etiquetas de caché permiten renovar contenido desde Turso y Contentful sin necesitar despliegues por cada actualización editorial.
-
-## 📸 Capturas recomendadas para el README
-
-Guardar capturas **reales** de producción en `docs/screenshots/`. El README debe mostrar la interfaz actual, sin credenciales, paneles de administración, datos de suscriptores ni cookies personales. Prioriza:
-
-| Archivo | Pantalla | Captura |
-|---|---|---|
-| `portada.webp` | Portada de escritorio | Cabecera, noticia principal y bloque de partido |
-| `partido.webp` | Ficha de partido | Marcador, once inicial y estadísticas |
-| `jugadora.webp` | Perfil de jugadora | Fotografía, biografía y desglose estadístico |
-| `comparador.webp` | Comparador | Dos jugadoras y gráficos |
-| `estadisticas.webp` | Estadísticas | Gráficos, tablas y rankings |
-| `la-fabrica.webp` | La Fábrica | Archivo de cantera y uno de sus paneles |
-| `movil.webp` | Navegación responsive | Captura a 390 px de ancho mostrando menú y portada |
-| `noticias.webp` | Archivo de noticias | Mosaico, filtros y listado |
-| `estadios.webp` | Estadios | Mapa y estadísticas |
-| `footer.webp` | Footer doble | Seis columnas superiores y zona legal inferior |
-| `cookies.webp` | Consentimiento | Banner propio visible en ventana privada sin aceptación |
-| `valoraciones.webp` | Valoraciones | Añadir **solo tras la aprobación y publicación de la función**, nunca una vista de pruebas como si fuera producción |
-
-Para empezar bastan las primeras siete. Las restantes sirven para documentar las novedades sin recargar visualmente el README.
 
 ## 🛡️ Privacidad y publicación responsable
 
