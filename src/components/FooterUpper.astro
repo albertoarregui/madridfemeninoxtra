@@ -6,7 +6,7 @@ import Youtube from "../assets/redes/youtube.svg";
 
 // El mismo recurso usado por el header: una única identidad corporativa.
 const logo = "/icon.webp";
-const descripcion = "Noticias, actualidad, resultados y estadísticas del Real Madrid Femenino. Tu espacio dedicado al equipo blanco.";
+const descripcion = "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!";
 const sections = [
   { label: "Home", href: "/" },
   { label: "Noticias", href: "/noticias" },
@@ -80,6 +80,17 @@ const company = [
     if (!form || form.dataset.initialized) return;
     form.dataset.initialized = 'true';
     const button = form.querySelector('button[type="submit"]');
+    const confirmation = new URL(location.href).searchParams.get('newsletter');
+    if (confirmation === 'confirmed') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = '¡Suscripción confirmada! Gracias por unirte a Madrid Femenino Xtra.';
+    } else if (confirmation === 'already') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = 'Esta confirmación ya se ha utilizado o el enlace ha caducado.';
+    } else if (confirmation === 'error') {
+      const msg = form.querySelector('[data-newsletter-status]');
+      if (msg) msg.textContent = 'No se ha podido confirmar la suscripción. Inténtalo de nuevo.';
+    }
     const message = form.querySelector('[data-newsletter-status]');
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
