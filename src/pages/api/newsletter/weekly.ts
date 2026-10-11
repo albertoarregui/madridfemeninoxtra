@@ -25,7 +25,6 @@ async function weeklyItems(monday: string): Promise<Item[]> {
     order: ['-sys.createdAt'] as any,
     limit: 200,
     include: 1,
-    select: ['sys.id', 'sys.createdAt', 'sys.firstPublishedAt', 'sys.publishedAt', 'fields.slug', 'fields.title', 'fields.subtitle', 'fields.category', 'fields.featuredImage'] as any,
   });
   const seen = new Set<string>();
   return response.items.flatMap((item: any) => {
