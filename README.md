@@ -192,6 +192,42 @@ curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
 
 El secreto de invalidación debe mantenerse fuera del repositorio y de la documentación pública.
 
+## 🍪 Consentimiento, publicidad y AdSense
+
+- El archivo `/ads.txt` identifica al editor de AdSense y debe seguir siendo accesible públicamente.
+- La integración de mensajes de privacidad certificados por Google se carga independientemente de las preferencias del banner local. La selección local sigue bloqueando la carga opcional del script publicitario hasta que el visitante la acepta.
+- En el panel de AdSense **Privacidad y mensajes → Reglamentos europeos**, comprueba que el mensaje publicado corresponde a `madridfemeninoxtra.com` y que registra visualizaciones desde visitantes del EEE. El estado `Publicado` no demuestra por sí solo que el mensaje aparezca.
+- La **aprobación de AdSense no se garantiza** por incluir un CMP y las páginas legales. Requiere contenido original útil, navegación clara, páginas accesibles e imágenes con derechos de uso claros; revisar también los motivos concretos de rechazo en AdSense.
+- No debe atribuirse a una etiqueta o a una CMP la aprobación o el rechazo sin consultar el mensaje de diagnóstico del panel de AdSense.
+
+## 🧭 Mantenimiento del plan gratuito de Vercel
+
+- Proyecto principal: `madridfemeninoxtra`; el proyecto histórico duplicado `repo` **no debe recibir nuevos despliegues**. Su eliminación definitiva exige confirmación del propietario desde Vercel.
+- Vercel Hobby limita almacenamiento de despliegues y tiempo de CPU. Se han extendido los TTL de la portada y de imágenes en CDN y reducido los datos cargados por el archivo de noticias.
+- Hacer un único despliegue por lote probado, mantener desactivadas las previsualizaciones automáticas cuando no sean necesarias y comprobar consumo después de cada cambio de infraestructura.
+- Las etiquetas de caché permiten renovar contenido desde Turso y Contentful sin necesitar despliegues por cada actualización editorial.
+
+## 📸 Capturas recomendadas para el README
+
+Guardar capturas **reales** de producción en `docs/screenshots/`. El README debe mostrar la interfaz actual, sin credenciales, paneles de administración, datos de suscriptores ni cookies personales. Prioriza:
+
+| Archivo | Pantalla | Captura |
+|---|---|---|
+| `portada.webp` | Portada de escritorio | Cabecera, noticia principal y bloque de partido |
+| `partido.webp` | Ficha de partido | Marcador, once inicial y estadísticas |
+| `jugadora.webp` | Perfil de jugadora | Fotografía, biografía y desglose estadístico |
+| `comparador.webp` | Comparador | Dos jugadoras y gráficos |
+| `estadisticas.webp` | Estadísticas | Gráficos, tablas y rankings |
+| `la-fabrica.webp` | La Fábrica | Archivo de cantera y uno de sus paneles |
+| `movil.webp` | Navegación responsive | Captura a 390 px de ancho mostrando menú y portada |
+| `noticias.webp` | Archivo de noticias | Mosaico, filtros y listado |
+| `estadios.webp` | Estadios | Mapa y estadísticas |
+| `footer.webp` | Footer doble | Seis columnas superiores y zona legal inferior |
+| `cookies.webp` | Consentimiento | Banner propio visible en ventana privada sin aceptación |
+| `valoraciones.webp` | Valoraciones | Añadir **solo tras la aprobación y publicación de la función**, nunca una vista de pruebas como si fuera producción |
+
+Para empezar bastan las primeras siete. Las restantes sirven para documentar las novedades sin recargar visualmente el README.
+
 ## 🛡️ Privacidad y publicación responsable
 
 La plataforma dispone de un panel propio de preferencias de cookies. La carga publicitaria opcional se condiciona a la decisión del visitante; la gestión del consentimiento exigida por Google para determinados territorios requiere, además, una **CMP certificada compatible con TCF**.
