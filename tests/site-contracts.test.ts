@@ -50,13 +50,25 @@ test('key interactive collections defer hydration until visible', () => {
   }
 });
 
-test('stadium map sends a minimal match payload and avoids duplicate Turso reads', () => {
+test('stadium map uses a dedicated minimal query without expensive match subqueries', () => {
   const page = read('src/pages/estadios/index.astro');
-  assert.match(page, /\.map\(\(game: any\) => \(\{/);
+  const matches = read('src/utils/partidos.ts');
+  const stadiumQuery = matches.split('export async function fetchStadiumMapGames')[1]?.split('export const fetchGamesDirectly')[0] || '';
+  assert.match(page, /await fetchStadiumMapGames\(\)/);
   assert.match(page, /<MatchMapWrapper matches=\{gamesData\}/);
   assert.match(page, /<MatchStatsDashboard matches=\{gamesData\}/);
-  assert.equal((page.match(/fetchGamesDirectly\(\)/g) || []).length, 1);
-  assert.doesNotMatch(page, /\.\.\.game/);
+  assert.doesNotMatch(page, /fetchGamesDirectly\(/);
+  assert.match(stadiumQuery, /FROM partidos p/);
+  assert.match(stadiumQuery, /estadio_lat/);
+  assert.doesNotMatch(stadiumQuery, /LEFT JOIN estadisticas_partidos/);
+  assert.doesNotMatch(stadiumQuery, /SELECT COUNT\(\*\)/);
+});
+
+test('homepage stadium link and Sofascore fallback target the correct resources', () => {
+  const page = read('src/pages/index.astro');
+  assert.match(page, /MAPA DE ESTADIOS<\/h2>[\s\S]*?<a href="\/estadios" class="sidebar-map-link">/);
+  assert.match(page, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/3739\/season\/97379/);
+  assert.match(page, /www\.sofascore\.com\/es\/football\/tournament\/spain\/liga-f\/1127/);
 });
 
 test('rival records never query the obsolete goles_asistencias table', () => {
