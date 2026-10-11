@@ -160,3 +160,53 @@ test('Hobby CPU controls reuse HTML at the CDN and never serialize full article 
   assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
   assert.match(proxy, /redirect: 'error'/);
 });
+
+
+test('weekly cron is authenticated, idempotent and avoids unsolicited article mailings', () => {
+  const weekly = read('src/pages/api/newsletter/weekly.ts');
+  const config = JSON.parse(read('vercel.json'));
+  const immediate = read('src/pages/api/newsletter/send.ts');
+  assert.deepEqual(config.crons, [{ path: '/api/newsletter/weekly', schedule: '0 6 * * 1' }]);
+  assert.match(weekly, /process\.env\.VERCEL_ENV !== 'production'/);
+  assert.match(weekly, /authorization!==`Bearer \$\{expected\}`/);
+  assert.match(weekly, /mondayAt10Madrid\(monday\)/);
+  assert.match(weekly, /confirmed_at IS NOT NULL/);
+  assert.match(weekly, /INSERT OR IGNORE INTO newsletter_weekly_deliveries/);
+  assert.match(weekly, /idempotencyKey/);
+  assert.match(weekly, /scheduledAt:schedule/);
+  assert.match(weekly, /No hay noticias de las cinco categorías/);
+  assert.match(immediate, /NEWSLETTER_PER_ARTICLE_ENABLED !== 'true'/);
+});
+
+
+test('reader ratings pages have competition crests and one-row MVP UI', () => {
+  const archive = read('src/pages/valoraciones/index.astro');
+  const detail = read('src/pages/valoraciones/[slug].astro');
+  const board = read('src/components/RatingScoreboard.astro');
+  const header = read('src/components/Header.astro');
+  const css = read('src/styles/valoraciones.css');
+  assert.match(header, /href="\/fotogalerias"[\s\S]*?href="\/valoraciones"/);
+  assert.match(archive, /RatingScoreboard/);
+  assert.match(detail, /getAssetUrl\('competiciones'/);
+  assert.match(board, /getAssetUrl\('escudos'/);
+  assert.match(detail, /ONCE INICIAL/);
+  assert.match(detail, /SUPLENTES/);
+  assert.match(detail, /ENTRENADOR\/A/);
+  assert.match(detail, /MVP DEL PARTIDO/);
+  assert.match(detail, /Minutos no disponibles/);
+  assert.match(css, /grid-template-columns:repeat\(10/);
+  assert.match(read('src/middleware.ts'), /\/\^\\\/valoraciones/);
+});
+
+test('reader votes are authenticated, deduplicated, and cannot select the coach as MVP', () => {
+  const api = read('src/pages/api/valoraciones/[id].ts');
+  const db = read('src/lib/ratings.ts');
+  assert.match(api, /locals.currentUser/);
+  assert.match(api, /origin'\)!==url.origin/);
+  assert.match(api, /mvpCount>1/);
+  assert.match(api, /mvp && subject < 0/);
+  assert.match(api, /lastUpdate/);
+  assert.match(api, /db.batch\(statements,'write'\)/);
+  assert.match(db, /PRIMARY KEY\(match_id,user_id,subject_id\)/);
+  assert.match(db, /const opening = startTimeUTC\(m\) \+ 2 \* 60/);
+});
