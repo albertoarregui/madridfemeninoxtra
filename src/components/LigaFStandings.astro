@@ -1,167 +1,131 @@
 ---
 /**
- * Clasificaciones diseñadas para MFX, sin iframes de terceros.
- * Edición de datos: 2026-10-11, después de las jornadas Liga F 6 / UWCL 2.
+ * Widgets oficiales facilitados por el editor. El contenido de cada iframe
+ * conserva el formato nativo de Sofascore y se actualiza en su plataforma.
+ * No se almacena ni se replica ninguna clasificación en Turso.
  *
- * Identificadores de los widgets facilitados por el editor:
- * Liga F: Sofascore tournament 3739, season 97379.
- * UWCL: Sofascore tournament 198786, season 96633.
- *
- * Se usan tablas HTML propias porque los estilos de los iframe son cross-origin
- * y sus contenidos no se pueden personalizar desde este sitio.
- *
- * Fuentes de verdad para esta instantánea:
- * Liga F Profesional: https://ligaf.es/clasificacion/primera_division_femenina/6/2027
- * UEFA (clasificación): https://www.uefa.com/womenschampionsleague/match/2050561--barcelona-vs-arsenal/standings/
- *
- * IMPORTANTE: Esta versión no tiene actualización automática. Revisar tras
- * las jornadas 7 de Liga F (18-10-2026) y 3 de UWCL (28-29-10-2026).
+ * Nota: el contenido de terceros puede no estar disponible si Sofascore
+ * bloquea su acceso en el navegador del visitante.
  */
-type Team = { name: string; short: string; played: number; won: number; draw: number; lost: number; gf: number; ga: number; points: number };
-type Competition = { key: string; title: string; shortTitle: string; round: string; source: string; updated: string; teams: Team[] };
-const liga: Team[] = [
-  { name: 'FC Barcelona', short: 'FCB', points: 18, played: 6, won: 6, draw: 0, lost: 0, gf: 28, ga: 2 },
-  { name: 'Madrid CFF', short: 'MCF', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 11, ga: 9 },
-  { name: 'Real Madrid CF', short: 'RMA', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 13, ga: 13 },
-  { name: 'Athletic Club', short: 'ATH', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 11, ga: 8 },
-  { name: 'SD Eibar', short: 'EIB', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 4, ga: 4 },
-  { name: 'Atlético de Madrid', short: 'ATM', points: 9, played: 6, won: 3, draw: 0, lost: 3, gf: 10, ga: 11 },
-  { name: 'RCD Espanyol', short: 'ESP', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 6 },
-  { name: 'FC Badalona Women', short: 'BAD', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 8 },
-  { name: 'Costa Adeje Tenerife', short: 'CAT', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 6, ga: 11 },
-  { name: 'Sevilla FC', short: 'SEV', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 7, ga: 10 },
-  { name: 'Granada CF', short: 'GRA', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 5, ga: 9 },
-  { name: 'Logroño United', short: 'LOG', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 5, ga: 7 },
-  { name: 'Deportivo Alavés', short: 'ALA', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 3, ga: 9 },
-  { name: 'Dépor ABANCA', short: 'DEP', points: 5, played: 6, won: 1, draw: 2, lost: 3, gf: 5, ga: 6 },
-  { name: 'Real Sociedad', short: 'RSO', points: 5, played: 6, won: 1, draw: 2, lost: 3, gf: 7, ga: 11 },
-  { name: 'Valencia CF', short: 'VCF', points: 0, played: 6, won: 0, draw: 0, lost: 6, gf: 4, ga: 13 },
-];
-// Posiciones UEFA verificadas con la clasificación oficial tras la segunda jornada.
-const uwcl: Team[] = [
-  { name: 'FC Barcelona', short: 'FCB', played: 2, won: 2, draw: 0, lost: 0, gf: 11, ga: 2, points: 6 },
-  { name: 'OL Lyonnes', short: 'LYO', played: 2, won: 1, draw: 1, lost: 0, gf: 8, ga: 0, points: 4 },
-  { name: 'Paris Saint-Germain', short: 'PSG', played: 2, won: 1, draw: 1, lost: 0, gf: 6, ga: 1, points: 4 },
-  { name: 'Bayern Múnich', short: 'BAY', played: 2, won: 1, draw: 1, lost: 0, gf: 5, ga: 2, points: 4 },
-  { name: 'Arsenal', short: 'ARS', played: 2, won: 1, draw: 1, lost: 0, gf: 3, ga: 2, points: 4 },
-  { name: 'Inter', short: 'INT', played: 2, won: 1, draw: 1, lost: 0, gf: 2, ga: 1, points: 4 },
-  { name: 'Chelsea', short: 'CHE', played: 2, won: 1, draw: 1, lost: 0, gf: 1, ga: 0, points: 4 },
-  { name: 'HB Køge Women', short: 'HBK', played: 2, won: 1, draw: 0, lost: 1, gf: 5, ga: 2, points: 3 },
-  { name: 'Juventus', short: 'JUV', played: 2, won: 1, draw: 0, lost: 1, gf: 4, ga: 2, points: 3 },
-  { name: 'Benfica', short: 'BEN', played: 2, won: 1, draw: 0, lost: 1, gf: 2, ga: 4, points: 3 },
-  { name: 'Manchester City', short: 'MCI', played: 2, won: 0, draw: 2, lost: 0, gf: 3, ga: 3, points: 2 },
-  { name: 'Real Madrid CF', short: 'RMA', played: 2, won: 0, draw: 2, lost: 0, gf: 2, ga: 2, points: 2 },
-  { name: 'Austria Wien', short: 'AUS', played: 2, won: 0, draw: 1, lost: 1, gf: 1, ga: 2, points: 1 },
-  { name: 'Paris FC', short: 'PAR', played: 2, won: 0, draw: 1, lost: 1, gf: 4, ga: 7, points: 1 },
-  { name: 'OH Leuven', short: 'OHL', played: 2, won: 0, draw: 1, lost: 1, gf: 0, ga: 5, points: 1 },
-  { name: 'Roma', short: 'ROM', played: 2, won: 0, draw: 1, lost: 1, gf: 0, ga: 6, points: 1 },
-  { name: 'BK Häcken', short: 'HAC', played: 2, won: 0, draw: 0, lost: 2, gf: 0, ga: 4, points: 0 },
-  { name: 'Servette', short: 'SER', played: 2, won: 0, draw: 0, lost: 2, gf: 1, ga: 13, points: 0 },
-];
-const competitions: Competition[] = [
-  { key: 'ligaf', title: 'LIGA F MOEVE', shortTitle: 'LIGA F', round: 'JORNADA 6', source: 'Liga F Profesional', updated: '11/10/2026', teams: liga },
-  { key: 'uwcl', title: 'UEFA WOMEN’S CHAMPIONS LEAGUE', shortTitle: 'UWCL', round: 'JORNADA 2', source: 'UEFA', updated: '11/10/2026', teams: uwcl },
+const clasificaciones = [
+  {
+    id: "sofa-standings-embed-3739-97379",
+    title: "LIGA F MOEVE",
+    description: "Clasificación Liga F 2026/27",
+    src: "https://widgets.sofascore.com/es-ES/embed/tournament/3739/season/97379/standings/Primera%20Division%2C%20Women%2026%2F27?widgetTitle=Primera%20Division%2C%20Women%2026%2F27&showCompetitionLogo=true",
+    url: "https://www.sofascore.com/es/football/tournament/spain/liga-f/1127#id:97379",
+    height: 963,
+  },
+  {
+    id: "sofa-standings-embed-198786-96633",
+    title: "UEFA WOMEN'S CHAMPIONS LEAGUE",
+    description: "Clasificación UEFA Women's Champions League 2026/27",
+    src: "https://widgets.sofascore.com/es-ES/embed/tournament/198786/season/96633/standings/UEFA%20Champions%20League%2C%20Women%2026%2F27?widgetTitle=UEFA%20Champions%20League%2C%20Women%2026%2F27&showCompetitionLogo=true",
+    url: "https://www.sofascore.com/es/football/tournament/europe/uefa-champions-league-women/696#id:96633",
+    height: 991,
+  },
 ];
 ---
 <div class="mfx-standings-stack">
-  {competitions.map((competition) => (
-    <section class:list={['mfx-standing-card', competition.key === 'uwcl' && 'mfx-standing-card--uwcl']} aria-label={`Clasificación ${competition.title} temporada 2026/27`}>
-      <div class="mfx-standing-head">
-        <div class="mfx-standing-head__brand"><span class="mfx-standing-head__mark" aria-hidden="true">✦</span><span>{competition.title}</span></div>
-        <div class="mfx-standing-head__meta"><span>2026/27</span><span class="mfx-standing-head__round">{competition.round}</span></div>
-      </div>
-      <div class="mfx-table-scroll">
-        <table class="mfx-table">
-          <caption class="sr-only">{`Clasificación ${competition.title} 2026/27 tras ${competition.round.toLowerCase()}`}</caption>
-          <thead><tr>
-            <th scope="col" class="mfx-rank">#</th>
-            <th scope="col" class="mfx-name">EQUIPO</th>
-            <th scope="col" title="Puntos" class="mfx-points">PTS</th>
-            <th scope="col" title="Partidos jugados">PJ</th>
-            <th scope="col" title="Victorias">V</th>
-            <th scope="col" title="Empates">E</th>
-            <th scope="col" title="Derrotas">D</th>
-            <th scope="col" title="Diferencia de goles" class="mfx-diff">DG</th>
-          </tr></thead>
-          <tbody>
-            {competition.teams.map((team, index) => (
-              <tr class:list={[{ 'mfx-row--madrid': team.short === 'RMA', 'mfx-row--direct': competition.key === 'uwcl' && index < 4, 'mfx-row--playoff': competition.key === 'uwcl' && index >= 4 && index < 12, 'mfx-row--out': competition.key === 'uwcl' && index >= 12 }]}>
-                <td class="mfx-rank"><span class="mfx-position">{index + 1}</span></td>
-                <th scope="row" class="mfx-name" title={team.name}>
-                  <span class="mfx-team-wrap">
-                    <span class:list={['mfx-team-initials', { 'mfx-team-initials--madrid': team.short === 'RMA' }]} aria-hidden="true">{team.short}</span>
-                    <span class="mfx-team-label">{team.name}</span>
-                  </span>
-                </th>
-                <td class="mfx-points">{team.points}</td>
-                <td>{team.played}</td>
-                <td>{team.won}</td>
-                <td>{team.draw}</td>
-                <td>{team.lost}</td>
-                <td class="mfx-diff">{team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {competition.key === 'uwcl' && (
-        <div class="mfx-zone-key" aria-label="Leyenda de clasificación europea">
-          <span><i class="mfx-zone-key__direct"></i> Cuartos</span>
-          <span><i class="mfx-zone-key__playoff"></i> Play-off</span>
-          <span><i class="mfx-zone-key__out"></i> Eliminación</span>
+  {clasificaciones.map((competicion) => (
+    <section class="mfx-standings-card" aria-label={competicion.description}>
+      <header class="mfx-standings-head">
+        <span class="mfx-standings-mark" aria-hidden="true">✦</span>
+        <div class="mfx-standings-head-copy">
+          <h3>{competicion.title}</h3>
+          <span>TEMPORADA 2026/27</span>
         </div>
-      )}
-      <div class="mfx-standing-footer">
-        <span>Fuente: {competition.source}</span>
-        <span>Actualizado: {competition.updated}</span>
+      </header>
+      <div class="mfx-sofascore-frame">
+        <iframe
+          id={competicion.id}
+          title={competicion.description}
+          src={competicion.src}
+          height={competicion.height}
+          width="100%"
+          loading="lazy"
+          scrolling="no"
+          frameborder="0"
+          style={`height:${competicion.height}px!important;max-width:768px!important;width:100%!important;`}
+        ></iframe>
+      </div>
+      <div class="mfx-sofascore-source">
+        Clasificación ofrecida por <a href={competicion.url} target="_blank" rel="noopener noreferrer">Sofascore</a>
       </div>
     </section>
   ))}
 </div>
+
 <style>
-  .mfx-standings-stack { display: flex; flex-direction: column; gap: 26px; width: 100%; }
-  .mfx-standing-card { overflow: hidden; background: linear-gradient(145deg,#0b1424 0%,#07111f 100%); border: 1px solid rgba(212,168,67,.35); border-radius: 12px; color: #e8edf3; box-shadow: 0 12px 35px rgba(0,0,0,.26); font-family: 'DM Sans',Arial,sans-serif; }
-  .mfx-standing-card--uwcl { border-color: rgba(99,184,206,.34); }
-  .mfx-standing-head { padding: 14px 12px 12px; background: linear-gradient(90deg,rgba(212,168,67,.15),rgba(212,168,67,.025)); border-bottom: 1px solid rgba(212,168,67,.25); }
-  .mfx-standing-card--uwcl .mfx-standing-head { background: linear-gradient(90deg,rgba(71,156,191,.16),rgba(71,156,191,.025)); border-bottom-color: rgba(99,184,206,.3); }
-  .mfx-standing-head__brand { color: #e8c678; letter-spacing: .09em; font-family: 'Cinzel',serif; font-size: clamp(.67rem,.8vw,.81rem); font-weight: 700; line-height: 1.6; display: flex; align-items: center; gap: 8px; }
-  .mfx-standing-card--uwcl .mfx-standing-head__brand { color: #a7dfef; }
-  .mfx-standing-head__mark { flex-shrink: 0; font-size: 1.05rem; }
-  .mfx-standing-head__meta { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0 0 24px; color: #9aaabb; font-size: .63rem; font-weight: 700; letter-spacing: .07em; }
-  .mfx-standing-head__round { color: #e1c47d; }
-  .mfx-standing-card--uwcl .mfx-standing-head__round { color: #97cddd; }
-  .mfx-table-scroll { overflow-x: auto; scrollbar-width: thin; }
-  .mfx-table { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: 276px; font-size: .665rem; font-variant-numeric: tabular-nums; }
-  .mfx-table th,.mfx-table td { text-align: center; padding: 8px 2px; white-space: nowrap; border-bottom: 1px solid rgba(211,225,242,.075); }
-  .mfx-table thead th { color: #91a2b7; font-weight: 700; font-size: .58rem; padding-block: 11px; background: rgba(255,255,255,.025); }
-  .mfx-table tbody tr:last-child > * { border-bottom: none; }
-  .mfx-table .mfx-rank { width: 23px; }
-  .mfx-table .mfx-name { text-align: left; width: auto; min-width: 0; }
-  .mfx-table th:not(.mfx-rank):not(.mfx-name),.mfx-table td:not(.mfx-rank) { width: 23px; }
-  .mfx-table .mfx-points { width: 30px!important; color: #ffdb8d; font-weight: 800; }
-  .mfx-table .mfx-diff { display: none; }
-  .mfx-team-wrap { display: flex; align-items: center; gap: 5px; min-width: 0; }
-  .mfx-team-initials { display: grid; place-items: center; flex: 0 0 26px; height: 19px; border: 1px solid rgba(163,177,200,.3); border-radius: 3px; font-size: .52rem; font-weight: 800; color: #cad8eb; background: #17263b; }
-  .mfx-team-initials--madrid { background: #efe4c0; color: #16223a; border-color: #f5d78f; }
-  .mfx-team-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: #e4eaf3; min-width: 0; }
-  .mfx-position { color: #a8b3c2; font-size: .68rem; font-weight: 650; }
-  .mfx-row--madrid { background: rgba(212,168,67,.155); }
-  .mfx-row--madrid .mfx-team-label,.mfx-row--madrid .mfx-position { color: #ffdf95; font-weight: 800; }
-  .mfx-row--direct:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #5da995; }
-  .mfx-row--playoff:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #518fb5; }
-  .mfx-row--out:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #9e6670; }
-  .mfx-zone-key { display: flex; gap: 9px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.08); padding: 8px 10px; color: #aab8c8; font-size: .58rem; }
-  .mfx-zone-key > span { display: inline-flex; align-items: center; gap: 4px; }
-  .mfx-zone-key i { display: inline-block; height: 8px; width: 8px; border-radius: 2px; }
-  .mfx-zone-key__direct { background: #5da995; }
-  .mfx-zone-key__playoff { background: #518fb5; }
-  .mfx-zone-key__out { background: #9e6670; }
-  .mfx-standing-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; background: rgba(255,255,255,.025); border-top: 1px solid rgba(255,255,255,.08); padding: 10px 12px; font-size: .595rem; color: #93a3b8; }
-  @media (min-width: 405px) {
-    .mfx-table { font-size: .72rem; }
-    .mfx-table th,.mfx-table td { padding-block: 9px; }
-    .mfx-table th:not(.mfx-rank):not(.mfx-name),.mfx-table td:not(.mfx-rank) { width: 25px; }
-    .mfx-table .mfx-diff { display: table-cell; }
-    .mfx-team-initials { flex-basis: 29px; height: 21px; }
+  .mfx-standings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    min-width: 0;
+  }
+  .mfx-standings-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(212,168,67,.27);
+    border-radius: 10px;
+    background: #0b1424;
+    box-shadow: 0 12px 28px rgba(0,0,0,.23);
+  }
+  .mfx-standings-head {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    padding: 13px 12px;
+    background: linear-gradient(100deg, rgba(212,168,67,.13), rgba(212,168,67,.025));
+    border-bottom: 1px solid rgba(212,168,67,.22);
+  }
+  .mfx-standings-mark {
+    color: #d4a843;
+    font-size: 1.15rem;
+  }
+  .mfx-standings-head-copy {
+    min-width: 0;
+  }
+  .mfx-standings-head-copy h3 {
+    margin: 0;
+    font: 700 .74rem/1.55 'Cinzel',serif;
+    letter-spacing: .05em;
+    color: #e7c77d;
+  }
+  .mfx-standings-head-copy span {
+    color: #a7b4c5;
+    font: 600 .61rem/1.5 'DM Sans',sans-serif;
+    letter-spacing: .07em;
+  }
+  .mfx-sofascore-frame {
+    width: 100%;
+    max-width: 768px;
+    margin: 0 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .mfx-sofascore-frame iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    background: #fff;
+  }
+  .mfx-sofascore-source {
+    border-top: 1px solid rgba(212,168,67,.13);
+    padding: 12px;
+    color: #aebbcf;
+    font: 400 .72rem/1.5 'DM Sans',sans-serif;
+  }
+  .mfx-sofascore-source a {
+    color: #e5c279;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .mfx-sofascore-source a:hover { color: #ffe2a3; }
+  @media(max-width:480px) {
+    .mfx-standings-head { padding: 11px 10px; }
+    .mfx-standings-head-copy h3 { font-size: .68rem; }
+    .mfx-sofascore-source { padding: 10px; }
   }
 </style>
