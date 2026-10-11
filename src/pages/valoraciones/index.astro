@@ -3,19 +3,47 @@ import Layout from '../../layouts/Layout.astro';
 import RatingScoreboard from '../../components/RatingScoreboard.astro';
 import { recentRatingMatches, ratingHref, ratingsOpen } from '../../lib/ratings';
 import { getAssetUrl } from '../../utils/assets';
+import { getCurrentSeason } from '../../utils/season';
+import { breadcrumbSchema } from '../../utils/seo';
 import '../../styles/valoraciones.css';
 export const prerender=false;
-const matches=await recentRatingMatches(30);
+const season = getCurrentSeason();
+const matches=await recentRatingMatches();
 const [latest,...older]=matches;
 const fmt=(d:string)=>new Date(d+'T12:00:00Z').toLocaleDateString('es-ES',{timeZone:'Europe/Madrid',day:'numeric',month:'short',year:'numeric'});
 const competitions=[...new Set(matches.map(m=>m.competicion))].filter(Boolean);
-const seasons=[...new Set(matches.map(m=>m.fecha.slice(0,4)))];
 ---
-<Layout title="Valoraciones del Real Madrid Femenino: votaciones y MVP | MFX" description="Puntúa del 1 al 10 a las jugadoras y al entrenador del Real Madrid Femenino tras cada partido. Consulta medias y elige la MVP.">
+<Layout
+  title={`Valoraciones del Real Madrid Femenino ${season}: notas y MVP | MFX`}
+  description={`Vota del 1 al 10 a las jugadoras y al entrenador del Real Madrid Femenino en ${season}. Elige la MVP y consulta las medias de cada partido de la temporada.`}
+  ogTitle={`Valoraciones Real Madrid Femenino ${season} | Madrid Femenino Xtra`}
+  ogDescription={`Notas de los aficionados, votaciones de MVP y resultados de los partidos del Real Madrid Femenino en la temporada ${season}.`}
+>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(breadcrumbSchema([
+    {name:'Inicio',path:'/'},{name:'Valoraciones',path:'/valoraciones'}
+  ]))}/>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify({
+    '@context':'https://schema.org',
+    '@type':'CollectionPage',
+    name:`Valoraciones del Real Madrid Femenino ${season}`,
+    description:`Votaciones y medias de aficionados de los partidos del Real Madrid Femenino en ${season}.`,
+    url:'https://www.madridfemeninoxtra.com/valoraciones',
+    inLanguage:'es',
+    mainEntity:{
+      '@type':'ItemList',
+      itemListElement:matches.map((m,index)=>({
+        '@type':'ListItem',position:index+1,
+        name:`${m.club_local} vs ${m.club_visitante} - Valoraciones`,
+        url:`https://www.madridfemeninoxtra.com${ratingHref(m)}`
+      }))
+    }
+  })}/>
 <main class="mfx-rating-main">
   <div class="mfx-rating-container">
-    <h1 class="mfx-rating-heading">VALORACIONES</h1>
-    <p class="mfx-rating-lede">Valora el rendimiento. Elige a la mejor jugadora del partido.</p>
+    <header class="page-header-container mfx-rating-page-header">
+      <h1 class="landing-title">VALORACIONES</h1>
+      <p class="landing-subtitle">REAL MADRID FEMENINO · {season} · NOTAS Y MVP DE LOS AFICIONADOS</p>
+    </header>
     {latest ? (
       <>
         <a class="mfx-rating-hero-card" href={ratingHref(latest)}>
@@ -30,11 +58,9 @@ const seasons=[...new Set(matches.map(m=>m.fecha.slice(0,4)))];
         <div class="mfx-rating-filters" style="margin-top:28px">
           <label for="rating-competition-filter">Competición</label>
           <select id="rating-competition-filter"><option value="">Todas</option>{competitions.map(c=><option value={c}>{c}</option>)}</select>
-          <label for="rating-year-filter">Año</label>
-          <select id="rating-year-filter"><option value="">Todos</option>{seasons.map(s=><option value={s}>{s}</option>)}</select>
         </div>
         <div class="mfx-rating-grid" id="mfx-ratings-grid">
-          {older.map(match=><a href={ratingHref(match)} class="mfx-rating-match-card" data-competition={match.competicion} data-year={match.fecha.slice(0,4)}>
+          {older.map(match=><a href={ratingHref(match)} class="mfx-rating-match-card" data-competition={match.competicion}>
             <div class="mfx-rating-card-top"><span>VALORACIONES</span><span class:list={['mfx-rating-pill',{closed:!ratingsOpen(match)}]}>{ratingsOpen(match)?'VOTACIÓN ABIERTA':'ARCHIVO'}</span></div>
             <div class="mfx-rating-competition">
               {(() => {const url=getAssetUrl('competiciones',match.competicion_foto_url||match.competicion);return url?<img src={url} alt={match.competicion}/>:null;})()}
@@ -45,19 +71,17 @@ const seasons=[...new Set(matches.map(m=>m.fecha.slice(0,4)))];
           </a>)}
         </div>
       </>
-    ) : <p class="mfx-rating-empty">Todavía no hay partidos finalizados para valorar.</p>}
+    ) : <p class="mfx-rating-empty">Todavía no hay partidos finalizados en la temporada actual.</p>}
   </div>
 </main>
 </Layout>
 <script>
   function filterRatings(){
     const comp=(document.getElementById('rating-competition-filter') as HTMLSelectElement|null)?.value||'';
-    const year=(document.getElementById('rating-year-filter') as HTMLSelectElement|null)?.value||'';
     document.querySelectorAll<HTMLElement>('#mfx-ratings-grid [data-competition]').forEach(item=>{
-      item.hidden=!!((comp&&item.dataset.competition!==comp)||(year&&item.dataset.year!==year));
+      item.hidden=!!(comp&&item.dataset.competition!==comp);
       item.style.display=item.hidden?'none':'';
     });
   }
   document.getElementById('rating-competition-filter')?.addEventListener('change',filterRatings);
-  document.getElementById('rating-year-filter')?.addEventListener('change',filterRatings);
 </script>

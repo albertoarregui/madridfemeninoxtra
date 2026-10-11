@@ -210,3 +210,30 @@ test('reader votes are authenticated, deduplicated, and cannot select the coach 
   assert.match(db, /PRIMARY KEY\(match_id,user_id,subject_id\)/);
   assert.match(db, /const opening = startTimeUTC\(m\) \+ 2 \* 60/);
 });
+
+test('fan ratings use the current season and shared gold editorial styling', () => {
+  const archive=read('src/pages/valoraciones/index.astro');
+  const detail=read('src/pages/valoraciones/[slug].astro');
+  const data=read('src/lib/ratings.ts');
+  const css=read('src/styles/valoraciones.css');
+  assert.match(data, /JOIN temporadas t ON t.id_temporada=p.id_temporada/);
+  assert.match(data, /t.temporada=\?/);
+  assert.match(data, /getCurrentSeason\(\)/);
+  assert.match(archive, /recentRatingMatches\(\)/);
+  assert.doesNotMatch(archive, /rating-year-filter/);
+  assert.match(archive, /class="landing-title"/);
+  assert.match(archive, /class="landing-subtitle"/);
+  assert.match(detail, /class="landing-title"/);
+  assert.match(detail, /class="landing-subtitle"/);
+  assert.match(css, /\.mfx-rating-identity img\{[^\n]*border:2px solid var\(--rating-gold\)/);
+  assert.match(css, /\.mfx-rating-mvp-winner img\{[^\n]*border:2px solid var\(--rating-gold\)/);
+  assert.match(css, /\.mfx-rating-match-card::before/);
+  assert.match(css, /\.mfx-rating-match-card::after/);
+  assert.match(css, /\.mfx-rating-detail-hero::before/);
+  assert.match(archive, /'CollectionPage'/);
+  assert.match(archive, /breadcrumbSchema/);
+  assert.match(detail, /ogTitle=/);
+  assert.match(detail, /ogDescription=/);
+  assert.match(detail, /canonical=/);
+  assert.match(detail, /noindex=\{!match\}/);
+});

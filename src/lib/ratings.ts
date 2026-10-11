@@ -1,4 +1,5 @@
 import { getPlayersDbClient, getAnalyticsDbClient } from '../db/client';
+import { getCurrentSeason } from '../utils/season';
 
 export type RatingMatch = {
  id:number; fecha:string; hora:string; club_local:string; club_visitante:string;
@@ -17,7 +18,8 @@ const BASE_MATCH = `SELECT p.id_partido AS id, p.fecha, p.hora, cl.nombre AS clu
  LEFT JOIN clubes cv ON cv.id_club=p.id_club_visitante
  LEFT JOIN competiciones c ON c.id_competicion=p.id_competicion
  LEFT JOIN entrenadores en ON en.id_entrenador=p.id_entrenador
- WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL`;
+ JOIN temporadas t ON t.id_temporada=p.id_temporada
+ WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL AND t.temporada=?`;
 function asMatch(row:any):RatingMatch {return {
  id:Number(row.id),fecha:String(row.fecha||''),hora:String(row.hora||''),club_local:String(row.club_local||''),
  club_visitante:String(row.club_visitante||''),local_foto_url:row.local_foto_url?String(row.local_foto_url):null,
@@ -28,14 +30,17 @@ function asMatch(row:any):RatingMatch {return {
  entrenador_nombre:row.entrenador_nombre?String(row.entrenador_nombre):null,
  entrenador_foto_url:row.entrenador_foto_url?String(row.entrenador_foto_url):null
 };}
-export async function recentRatingMatches(limit=30):Promise<RatingMatch[]> {
+export async function recentRatingMatches(limit=100):Promise<RatingMatch[]> {
  const db=await getPlayersDbClient(); if(!db)return[];
- const r=await db.execute({sql:BASE_MATCH+' ORDER BY p.fecha DESC, p.hora DESC LIMIT ?',args:[Math.max(1,Math.min(36,limit))]});
+ const r=await db.execute({
+  sql:BASE_MATCH+' ORDER BY p.fecha DESC, p.hora DESC LIMIT ?',
+  args:[getCurrentSeason(),Math.max(1,Math.min(100,limit))]
+ });
  return r.rows.map(asMatch);
 }
 export async function ratingMatch(id:number):Promise<RatingMatch|null> {
  const db=await getPlayersDbClient(); if(!db)return null;
- const r=await db.execute({sql:BASE_MATCH+' AND p.id_partido=? LIMIT 1',args:[id]});
+ const r=await db.execute({sql:BASE_MATCH+' AND p.id_partido=? LIMIT 1',args:[getCurrentSeason(),id]});
  return r.rows[0]?asMatch(r.rows[0]):null;
 }
 export async function ratingPeople(id:number):Promise<RatingPerson[]> {

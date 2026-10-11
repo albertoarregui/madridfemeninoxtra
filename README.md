@@ -63,13 +63,16 @@ Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas
 
 ## ⭐ Valoraciones de las jugadoras
 
-- `/valoraciones` muestra el último partido finalizado y el archivo de encuentros anteriores, con **escudos**, **logo de la competición**, fecha y resultado.
+- `/valoraciones` muestra el último partido finalizado y los demás encuentros **exclusivamente de la temporada vigente**, con **escudos**, **logo de la competición**, fecha y resultado.
 - Cada partido tiene una ficha `/valoraciones/[id]-[partido]-[fecha]` con entrenador, once y suplentes, fotos, diez notas seleccionables en una única fila, elección de **MVP** a la izquierda y medias de los lectores.
 - Las páginas se generan a partir de **partidos y alineaciones de Turso**; no requiere crear una noticia para abrir cada votación. Los minutos ausentes se identifican como no disponibles.
-- Solo se permite votar cuando el resultado está registrado y han transcurrido dos horas desde el inicio programado; el plazo termina 72 horas después de la apertura. Los datos históricos quedan consultables.
+- Solo se permite votar cuando el resultado está registrado y han transcurrido dos horas desde el inicio programado; el plazo termina 72 horas después de la apertura. Las temporadas anteriores no aparecen en VALORACIONES; el resto de archivos históricos de MFX no se modifica.
 - Los visitantes pueden leer las medias. Para votar hay que iniciar sesión con Clerk. Cada cuenta tiene **un único juego de valoraciones por partido**, editable durante el plazo, y solo puede elegir una futbolista MVP. Se limitan los envíos repetidos a intervalos de 20 segundos.
 - Las valoraciones de los lectores se almacenan en `match_reader_ratings`, de forma independiente de las puntuaciones estadísticas deportivas; no se comparten tokens ni identificadores de votantes en el HTML.
 - Las páginas de valoraciones se excluyen de la caché CDN de HTML para no mostrar promedios desactualizados. La tabla de votos dispone de un índice por partido.
+
+- Las tarjetas replican las **esquinas doradas** de la web; los retratos de las jugadoras (y la MVP) llevan un aro circular dorado. El título y subtítulo usan las clases compartidas `landing-title` y `landing-subtitle`.
+- El índice incorpora metadatos SEO específicos para la temporada, Open Graph/Twitter, breadcrumb `BreadcrumbList` y datos estructurados `CollectionPage`/`ItemList`; cada partido tiene título/descripción, canonical y breadcrumb propios.
 
 **Captura adicional recomendada:** `docs/screenshots/valoraciones.webp` (índice con escudos y competición) y `docs/screenshots/valoraciones-partido.webp` (notas en una fila, MVP y medias), tomadas de producción tras comprobar el diseño.
 
