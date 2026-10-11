@@ -227,9 +227,21 @@ test('fan ratings use the current season and shared gold editorial styling', () 
   assert.match(detail, /class="landing-subtitle"/);
   assert.match(css, /\.mfx-rating-identity img\{[^\n]*border:2px solid var\(--rating-gold\)/);
   assert.match(css, /\.mfx-rating-mvp-winner img\{[^\n]*border:2px solid var\(--rating-gold\)/);
-  assert.match(css, /\.mfx-rating-match-card::before/);
-  assert.match(css, /\.mfx-rating-match-card::after/);
-  assert.match(css, /\.mfx-rating-detail-hero::before/);
+  const about=read('src/pages/sobre-nosotros.astro');
+  assert.match(about, /\.team-card \{[\s\S]*?background: rgba\(8,16,34,0\.85\)/);
+  assert.match(css, /background:rgba\(8,16,34,\.85\)/);
+  assert.match(css, /border-radius:4px/);
+  assert.match(css, /\.mfx-rating-corner-tl\{/);
+  assert.match(css, /\.mfx-rating-corner-tr\{/);
+  assert.match(css, /\.mfx-rating-corner-bl\{/);
+  assert.match(css, /\.mfx-rating-corner-br\{/);
+  assert.match(css, /width:14px/);
+  assert.match(css, /width:22px/);
+  for (const side of ['tl','tr','bl','br']) {
+    assert.equal((archive.match(new RegExp(`class="mfx-rating-corner mfx-rating-corner-${side}"`,'g'))||[]).length,2);
+    assert.equal((detail.match(new RegExp(`class="mfx-rating-corner mfx-rating-corner-${side}"`,'g'))||[]).length,1);
+  }
+  assert.doesNotMatch(css, /\.mfx-rating-match-card::before/);
   assert.match(archive, /'CollectionPage'/);
   assert.match(archive, /breadcrumbSchema/);
   assert.match(detail, /ogTitle=/);
