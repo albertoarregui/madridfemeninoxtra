@@ -19,12 +19,6 @@
 
 ---
 
-## 🖥️ Vista de la portada
-
-<a href="https://gyazo.com/52ba56aa667f05bf83d69d9532663e5b"><img src="https://i.gyazo.com/52ba56aa667f05bf83d69d9532663e5b.png" alt="Portada de Madrid Femenino Xtra" width="1200" /></a>
-
-*Captura de la portada de producción (11 de octubre de 2026).*
-
 ## 📌 ¿Qué es Madrid Femenino Xtra?
 
 **Madrid Femenino Xtra** es un medio digital y una plataforma de datos especializada en el Real Madrid Femenino. El objetivo es que la información no desaparezca cuando termina un partido: cada crónica, estadística y ficha contribuye a construir un archivo consultable de la trayectoria del equipo.
