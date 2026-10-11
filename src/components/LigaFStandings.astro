@@ -1,141 +1,167 @@
 ---
 /**
- * Clasificación editorial de Liga F Moeve 2026/27.
+ * Clasificaciones diseñadas para MFX, sin iframes de terceros.
+ * Edición de datos: 2026-10-11, después de las jornadas Liga F 6 / UWCL 2.
  *
- * Fuente: LaLiga, https://www.laliga.com/futbol-femenino/clasificacion
- * Captura de la jornada 6, contrastada el 11-10-2026.
- * No se presenta como datos en directo: actualizar tras la siguiente jornada.
- * Evita un iframe que devuelve 403 de Sofascore para parte de los visitantes.
+ * Identificadores de los widgets facilitados por el editor:
+ * Liga F: Sofascore tournament 3739, season 97379.
+ * UWCL: Sofascore tournament 198786, season 96633.
+ *
+ * Se usan tablas HTML propias porque los estilos de los iframe son cross-origin
+ * y sus contenidos no se pueden personalizar desde este sitio.
+ *
+ * Fuentes de verdad para esta instantánea:
+ * Liga F Profesional: https://ligaf.es/clasificacion/primera_division_femenina/6/2027
+ * UEFA (clasificación): https://www.uefa.com/womenschampionsleague/match/2050561--barcelona-vs-arsenal/standings/
+ *
+ * IMPORTANTE: Esta versión no tiene actualización automática. Revisar tras
+ * las jornadas 7 de Liga F (18-10-2026) y 3 de UWCL (28-29-10-2026).
  */
-const teams = [
-  { name: 'FC Barcelona', points: 18, played: 6, won: 6, draw: 0, lost: 0, gf: 22, ga: 2 },
-  { name: 'Real Madrid CF', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 13, ga: 7 },
-  { name: 'Madrid CFF', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 11, ga: 9 },
-  { name: 'Athletic Club', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 11, ga: 8 },
-  { name: 'SD Eibar', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 4, ga: 4 },
-  { name: 'Atlético de Madrid', points: 9, played: 6, won: 3, draw: 0, lost: 3, gf: 10, ga: 11 },
-  { name: 'RCD Espanyol', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 6 },
-  { name: 'FC Badalona Women', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 8 },
-  { name: 'Costa Adeje Tenerife', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 6, ga: 11 },
-  { name: 'Sevilla FC', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 7, ga: 10 },
-  { name: 'Granada CF', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 5, ga: 9 },
-  { name: 'Logroño United', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 5, ga: 7 },
-  { name: 'Deportivo Alavés', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 3, ga: 9 },
-  { name: 'Deportivo Abanca', points: 5, played: 6, won: 1, draw: 2, lost: 3, gf: 5, ga: 6 },
-  { name: 'Real Sociedad', points: 2, played: 5, won: 0, draw: 2, lost: 3, gf: 6, ga: 11 },
-  { name: 'VCF Femenino', points: 0, played: 5, won: 0, draw: 0, lost: 5, gf: 4, ga: 12 },
+type Team = { name: string; short: string; played: number; won: number; draw: number; lost: number; gf: number; ga: number; points: number };
+type Competition = { key: string; title: string; shortTitle: string; round: string; source: string; updated: string; teams: Team[] };
+const liga: Team[] = [
+  { name: 'FC Barcelona', short: 'FCB', points: 18, played: 6, won: 6, draw: 0, lost: 0, gf: 28, ga: 2 },
+  { name: 'Madrid CFF', short: 'MCF', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 11, ga: 9 },
+  { name: 'Real Madrid CF', short: 'RMA', points: 13, played: 6, won: 4, draw: 1, lost: 1, gf: 13, ga: 13 },
+  { name: 'Athletic Club', short: 'ATH', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 11, ga: 8 },
+  { name: 'SD Eibar', short: 'EIB', points: 11, played: 6, won: 3, draw: 2, lost: 1, gf: 4, ga: 4 },
+  { name: 'Atlético de Madrid', short: 'ATM', points: 9, played: 6, won: 3, draw: 0, lost: 3, gf: 10, ga: 11 },
+  { name: 'RCD Espanyol', short: 'ESP', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 6 },
+  { name: 'FC Badalona Women', short: 'BAD', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 9, ga: 8 },
+  { name: 'Costa Adeje Tenerife', short: 'CAT', points: 8, played: 6, won: 2, draw: 2, lost: 2, gf: 6, ga: 11 },
+  { name: 'Sevilla FC', short: 'SEV', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 7, ga: 10 },
+  { name: 'Granada CF', short: 'GRA', points: 7, played: 6, won: 2, draw: 1, lost: 3, gf: 5, ga: 9 },
+  { name: 'Logroño United', short: 'LOG', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 5, ga: 7 },
+  { name: 'Deportivo Alavés', short: 'ALA', points: 6, played: 6, won: 2, draw: 0, lost: 4, gf: 3, ga: 9 },
+  { name: 'Dépor ABANCA', short: 'DEP', points: 5, played: 6, won: 1, draw: 2, lost: 3, gf: 5, ga: 6 },
+  { name: 'Real Sociedad', short: 'RSO', points: 5, played: 6, won: 1, draw: 2, lost: 3, gf: 7, ga: 11 },
+  { name: 'Valencia CF', short: 'VCF', points: 0, played: 6, won: 0, draw: 0, lost: 6, gf: 4, ga: 13 },
+];
+// Posiciones UEFA verificadas con la clasificación oficial tras la segunda jornada.
+const uwcl: Team[] = [
+  { name: 'FC Barcelona', short: 'FCB', played: 2, won: 2, draw: 0, lost: 0, gf: 11, ga: 2, points: 6 },
+  { name: 'OL Lyonnes', short: 'LYO', played: 2, won: 1, draw: 1, lost: 0, gf: 8, ga: 0, points: 4 },
+  { name: 'Paris Saint-Germain', short: 'PSG', played: 2, won: 1, draw: 1, lost: 0, gf: 6, ga: 1, points: 4 },
+  { name: 'Bayern Múnich', short: 'BAY', played: 2, won: 1, draw: 1, lost: 0, gf: 5, ga: 2, points: 4 },
+  { name: 'Arsenal', short: 'ARS', played: 2, won: 1, draw: 1, lost: 0, gf: 3, ga: 2, points: 4 },
+  { name: 'Inter', short: 'INT', played: 2, won: 1, draw: 1, lost: 0, gf: 2, ga: 1, points: 4 },
+  { name: 'Chelsea', short: 'CHE', played: 2, won: 1, draw: 1, lost: 0, gf: 1, ga: 0, points: 4 },
+  { name: 'HB Køge Women', short: 'HBK', played: 2, won: 1, draw: 0, lost: 1, gf: 5, ga: 2, points: 3 },
+  { name: 'Juventus', short: 'JUV', played: 2, won: 1, draw: 0, lost: 1, gf: 4, ga: 2, points: 3 },
+  { name: 'Benfica', short: 'BEN', played: 2, won: 1, draw: 0, lost: 1, gf: 2, ga: 4, points: 3 },
+  { name: 'Manchester City', short: 'MCI', played: 2, won: 0, draw: 2, lost: 0, gf: 3, ga: 3, points: 2 },
+  { name: 'Real Madrid CF', short: 'RMA', played: 2, won: 0, draw: 2, lost: 0, gf: 2, ga: 2, points: 2 },
+  { name: 'Austria Wien', short: 'AUS', played: 2, won: 0, draw: 1, lost: 1, gf: 1, ga: 2, points: 1 },
+  { name: 'Paris FC', short: 'PAR', played: 2, won: 0, draw: 1, lost: 1, gf: 4, ga: 7, points: 1 },
+  { name: 'OH Leuven', short: 'OHL', played: 2, won: 0, draw: 1, lost: 1, gf: 0, ga: 5, points: 1 },
+  { name: 'Roma', short: 'ROM', played: 2, won: 0, draw: 1, lost: 1, gf: 0, ga: 6, points: 1 },
+  { name: 'BK Häcken', short: 'HAC', played: 2, won: 0, draw: 0, lost: 2, gf: 0, ga: 4, points: 0 },
+  { name: 'Servette', short: 'SER', played: 2, won: 0, draw: 0, lost: 2, gf: 1, ga: 13, points: 0 },
+];
+const competitions: Competition[] = [
+  { key: 'ligaf', title: 'LIGA F MOEVE', shortTitle: 'LIGA F', round: 'JORNADA 6', source: 'Liga F Profesional', updated: '11/10/2026', teams: liga },
+  { key: 'uwcl', title: 'UEFA WOMEN’S CHAMPIONS LEAGUE', shortTitle: 'UWCL', round: 'JORNADA 2', source: 'UEFA', updated: '11/10/2026', teams: uwcl },
 ];
 ---
-<div class="mfx-standings" aria-label="Clasificación de Liga F Moeve 2026/27, jornada 6">
-  <div class="mfx-standings__heading">
-    <span>LIGA F MOEVE · 2026/27</span>
-    <span>JORNADA 6</span>
-  </div>
-  <div class="mfx-standings__scroll">
-    <table>
-      <caption class="sr-only">Clasificación Liga F Moeve 2026/27 tras la sexta jornada</caption>
-      <thead>
-        <tr>
-          <th scope="col" class="mfx-rank">#</th>
-          <th scope="col" class="mfx-team">EQUIPO</th>
-          <th scope="col" title="Puntos">PTS</th>
-          <th scope="col" title="Partidos jugados">PJ</th>
-          <th scope="col" title="Victorias">V</th>
-          <th scope="col" title="Empates">E</th>
-          <th scope="col" title="Derrotas">D</th>
-          <th scope="col" title="Diferencia de goles" class="mfx-diff">DG</th>
-        </tr>
-      </thead>
-      <tbody>
-        {teams.map((team, index) => (
-          <tr class:list={[{ 'mfx-madrid': team.name === 'Real Madrid CF' }]}>
-            <td class="mfx-rank">{index + 1}</td>
-            <th scope="row" class="mfx-team" title={team.name}>{team.name}</th>
-            <td class="mfx-points">{team.points}</td>
-            <td>{team.played}</td>
-            <td>{team.won}</td>
-            <td>{team.draw}</td>
-            <td>{team.lost}</td>
-            <td class="mfx-diff">{team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-  <p class="mfx-standings__source">Datos oficiales de LaLiga · Jornada 6 · Revisión: 11/10/2026</p>
+<div class="mfx-standings-stack">
+  {competitions.map((competition) => (
+    <section class:list={['mfx-standing-card', competition.key === 'uwcl' && 'mfx-standing-card--uwcl']} aria-label={`Clasificación ${competition.title} temporada 2026/27`}>
+      <div class="mfx-standing-head">
+        <div class="mfx-standing-head__brand"><span class="mfx-standing-head__mark" aria-hidden="true">✦</span><span>{competition.title}</span></div>
+        <div class="mfx-standing-head__meta"><span>2026/27</span><span class="mfx-standing-head__round">{competition.round}</span></div>
+      </div>
+      <div class="mfx-table-scroll">
+        <table class="mfx-table">
+          <caption class="sr-only">{`Clasificación ${competition.title} 2026/27 tras ${competition.round.toLowerCase()}`}</caption>
+          <thead><tr>
+            <th scope="col" class="mfx-rank">#</th>
+            <th scope="col" class="mfx-name">EQUIPO</th>
+            <th scope="col" title="Puntos" class="mfx-points">PTS</th>
+            <th scope="col" title="Partidos jugados">PJ</th>
+            <th scope="col" title="Victorias">V</th>
+            <th scope="col" title="Empates">E</th>
+            <th scope="col" title="Derrotas">D</th>
+            <th scope="col" title="Diferencia de goles" class="mfx-diff">DG</th>
+          </tr></thead>
+          <tbody>
+            {competition.teams.map((team, index) => (
+              <tr class:list={[{ 'mfx-row--madrid': team.short === 'RMA', 'mfx-row--direct': competition.key === 'uwcl' && index < 4, 'mfx-row--playoff': competition.key === 'uwcl' && index >= 4 && index < 12, 'mfx-row--out': competition.key === 'uwcl' && index >= 12 }]}>
+                <td class="mfx-rank"><span class="mfx-position">{index + 1}</span></td>
+                <th scope="row" class="mfx-name" title={team.name}>
+                  <span class="mfx-team-wrap">
+                    <span class:list={['mfx-team-initials', { 'mfx-team-initials--madrid': team.short === 'RMA' }]} aria-hidden="true">{team.short}</span>
+                    <span class="mfx-team-label">{team.name}</span>
+                  </span>
+                </th>
+                <td class="mfx-points">{team.points}</td>
+                <td>{team.played}</td>
+                <td>{team.won}</td>
+                <td>{team.draw}</td>
+                <td>{team.lost}</td>
+                <td class="mfx-diff">{team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {competition.key === 'uwcl' && (
+        <div class="mfx-zone-key" aria-label="Leyenda de clasificación europea">
+          <span><i class="mfx-zone-key__direct"></i> Cuartos</span>
+          <span><i class="mfx-zone-key__playoff"></i> Play-off</span>
+          <span><i class="mfx-zone-key__out"></i> Eliminación</span>
+        </div>
+      )}
+      <div class="mfx-standing-footer">
+        <span>Fuente: {competition.source}</span>
+        <span>Actualizado: {competition.updated}</span>
+      </div>
+    </section>
+  ))}
 </div>
-
 <style>
-  .mfx-standings {
-    overflow: hidden;
-    width: 100%;
-    border-radius: 10px;
-    border: 1px solid rgba(212,168,67,.28);
-    background: rgba(6,13,28,.86);
-    box-shadow: 0 4px 16px rgba(0,0,0,.3);
-    font-family: 'DM Sans', Arial, sans-serif;
-    color: #e9edf4;
-  }
-  .mfx-standings__heading {
-    display: flex;
-    justify-content: space-between;
-    gap: .5rem;
-    align-items: center;
-    padding: .85rem .7rem;
-    font: 700 .64rem 'DM Sans', Arial, sans-serif;
-    color: #d4a843;
-    letter-spacing: .055em;
-    background: rgba(212,168,67,.09);
-    border-bottom: 1px solid rgba(212,168,67,.2);
-  }
-  .mfx-standings__scroll { overflow-x: auto; scrollbar-width: thin; }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 280px;
-    table-layout: fixed;
-    font-size: .65rem;
-    font-variant-numeric: tabular-nums;
-  }
-  th, td {
-    padding: .7rem .08rem;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,.075);
-    white-space: nowrap;
-  }
-  thead th {
-    padding: .7rem .08rem;
-    font-size: .57rem;
-    color: #9eaabc;
-    font-weight: 700;
-  }
-  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
-  .mfx-rank { width: 24px; color: #b3bdca; }
-  .mfx-team {
-    width: auto;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-left: .22rem;
-  }
-  tbody .mfx-team { font-weight: 600; }
-  th:not(.mfx-team):not(.mfx-rank), td:not(.mfx-rank) { width: 24px; }
-  .mfx-diff { display: none; }
-  .mfx-points { color: #f6d681; font-weight: 800; }
-  .mfx-madrid { background: rgba(212,168,67,.17); }
-  .mfx-madrid .mfx-team { color: #ffda75; }
-  .mfx-madrid .mfx-rank { color: #ffda75; font-weight: 800; }
-  .mfx-standings__source {
-    padding: .65rem .7rem;
-    color: rgba(233,237,244,.62);
-    font-size: .61rem;
-    line-height: 1.4;
-    border-top: 1px solid rgba(255,255,255,.08);
-    margin: 0;
-  }
-  @media (min-width: 440px) {
-    th:not(.mfx-team):not(.mfx-rank), td:not(.mfx-rank) { width: 30px; }
-    .mfx-diff { display: table-cell; }
-    table { font-size: .72rem; }
+  .mfx-standings-stack { display: flex; flex-direction: column; gap: 26px; width: 100%; }
+  .mfx-standing-card { overflow: hidden; background: linear-gradient(145deg,#0b1424 0%,#07111f 100%); border: 1px solid rgba(212,168,67,.35); border-radius: 12px; color: #e8edf3; box-shadow: 0 12px 35px rgba(0,0,0,.26); font-family: 'DM Sans',Arial,sans-serif; }
+  .mfx-standing-card--uwcl { border-color: rgba(99,184,206,.34); }
+  .mfx-standing-head { padding: 14px 12px 12px; background: linear-gradient(90deg,rgba(212,168,67,.15),rgba(212,168,67,.025)); border-bottom: 1px solid rgba(212,168,67,.25); }
+  .mfx-standing-card--uwcl .mfx-standing-head { background: linear-gradient(90deg,rgba(71,156,191,.16),rgba(71,156,191,.025)); border-bottom-color: rgba(99,184,206,.3); }
+  .mfx-standing-head__brand { color: #e8c678; letter-spacing: .09em; font-family: 'Cinzel',serif; font-size: clamp(.67rem,.8vw,.81rem); font-weight: 700; line-height: 1.6; display: flex; align-items: center; gap: 8px; }
+  .mfx-standing-card--uwcl .mfx-standing-head__brand { color: #a7dfef; }
+  .mfx-standing-head__mark { flex-shrink: 0; font-size: 1.05rem; }
+  .mfx-standing-head__meta { display: flex; justify-content: space-between; gap: 12px; margin: 6px 0 0 24px; color: #9aaabb; font-size: .63rem; font-weight: 700; letter-spacing: .07em; }
+  .mfx-standing-head__round { color: #e1c47d; }
+  .mfx-standing-card--uwcl .mfx-standing-head__round { color: #97cddd; }
+  .mfx-table-scroll { overflow-x: auto; scrollbar-width: thin; }
+  .mfx-table { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: 276px; font-size: .665rem; font-variant-numeric: tabular-nums; }
+  .mfx-table th,.mfx-table td { text-align: center; padding: 8px 2px; white-space: nowrap; border-bottom: 1px solid rgba(211,225,242,.075); }
+  .mfx-table thead th { color: #91a2b7; font-weight: 700; font-size: .58rem; padding-block: 11px; background: rgba(255,255,255,.025); }
+  .mfx-table tbody tr:last-child > * { border-bottom: none; }
+  .mfx-table .mfx-rank { width: 23px; }
+  .mfx-table .mfx-name { text-align: left; width: auto; min-width: 0; }
+  .mfx-table th:not(.mfx-rank):not(.mfx-name),.mfx-table td:not(.mfx-rank) { width: 23px; }
+  .mfx-table .mfx-points { width: 30px!important; color: #ffdb8d; font-weight: 800; }
+  .mfx-table .mfx-diff { display: none; }
+  .mfx-team-wrap { display: flex; align-items: center; gap: 5px; min-width: 0; }
+  .mfx-team-initials { display: grid; place-items: center; flex: 0 0 26px; height: 19px; border: 1px solid rgba(163,177,200,.3); border-radius: 3px; font-size: .52rem; font-weight: 800; color: #cad8eb; background: #17263b; }
+  .mfx-team-initials--madrid { background: #efe4c0; color: #16223a; border-color: #f5d78f; }
+  .mfx-team-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: #e4eaf3; min-width: 0; }
+  .mfx-position { color: #a8b3c2; font-size: .68rem; font-weight: 650; }
+  .mfx-row--madrid { background: rgba(212,168,67,.155); }
+  .mfx-row--madrid .mfx-team-label,.mfx-row--madrid .mfx-position { color: #ffdf95; font-weight: 800; }
+  .mfx-row--direct:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #5da995; }
+  .mfx-row--playoff:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #518fb5; }
+  .mfx-row--out:not(.mfx-row--madrid) .mfx-rank { box-shadow: inset 3px 0 0 #9e6670; }
+  .mfx-zone-key { display: flex; gap: 9px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,.08); padding: 8px 10px; color: #aab8c8; font-size: .58rem; }
+  .mfx-zone-key > span { display: inline-flex; align-items: center; gap: 4px; }
+  .mfx-zone-key i { display: inline-block; height: 8px; width: 8px; border-radius: 2px; }
+  .mfx-zone-key__direct { background: #5da995; }
+  .mfx-zone-key__playoff { background: #518fb5; }
+  .mfx-zone-key__out { background: #9e6670; }
+  .mfx-standing-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; background: rgba(255,255,255,.025); border-top: 1px solid rgba(255,255,255,.08); padding: 10px 12px; font-size: .595rem; color: #93a3b8; }
+  @media (min-width: 405px) {
+    .mfx-table { font-size: .72rem; }
+    .mfx-table th,.mfx-table td { padding-block: 9px; }
+    .mfx-table th:not(.mfx-rank):not(.mfx-name),.mfx-table td:not(.mfx-rank) { width: 25px; }
+    .mfx-table .mfx-diff { display: table-cell; }
+    .mfx-team-initials { flex-basis: 29px; height: 21px; }
   }
 </style>
