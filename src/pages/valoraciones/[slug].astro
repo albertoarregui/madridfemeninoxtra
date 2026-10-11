@@ -3,6 +3,9 @@ import Layout from '../../layouts/Layout.astro';
 import RatingScoreboard from '../../components/RatingScoreboard.astro';
 import { ratingMatch, ratingPeople, ratingSummary, ratingsOpen } from '../../lib/ratings';
 import { getAssetUrl } from '../../utils/assets';
+import { getCurrentSeason } from '../../utils/season';
+import { breadcrumbSchema } from '../../utils/seo';
+import { ratingHref } from '../../lib/ratings';
 import '../../styles/valoraciones.css';
 export const prerender = false;
 const raw=Astro.params.slug||'';
@@ -32,11 +35,26 @@ function photo(p:any){
 const legend=Array.from({length:10},(_,i)=>i+1);
 function scoreColor(n:number){return n<=4?'#db3830':n<=6?'#df8a2f':n===7?'#51bd50':n===8?'#50abc0':'#4c58f7';}
 ---
-<Layout title={match?`Valoraciones ${match.club_local} vs ${match.club_visitante} | MFX`:'Partido no encontrado | MFX'} description={match?`Valora a las jugadoras y entrenador del ${match.club_local} vs ${match.club_visitante} y elige la mejor jugadora del partido.`:'No encontramos el partido solicitado.'}>
+<Layout
+  title={match?`Valoraciones ${match.club_local} vs ${match.club_visitante}: notas y MVP | MFX`:'Partido no encontrado | MFX'}
+  description={match?`Puntúa a las jugadoras y al entrenador del ${match.club_local} vs ${match.club_visitante}, ${match.competicion} ${getCurrentSeason()}. Consulta las medias y vota a la MVP.`:'No encontramos el partido solicitado.'}
+  ogTitle={match?`Valoraciones y MVP: ${match.club_local} vs ${match.club_visitante} | MFX`:'Partido no encontrado | MFX'}
+  ogDescription={match?`Votaciones del ${match.club_local} vs ${match.club_visitante}, ${match.competicion}. Notas del 1 al 10 y MVP elegida por los aficionados.`:'Partido no encontrado.'}
+  canonical={match?ratingHref(match):undefined}
+  noindex={!match}
+>
+  {match && <script type="application/ld+json" slot="head" set:html={JSON.stringify(breadcrumbSchema([
+    {name:'Inicio',path:'/'},
+    {name:'Valoraciones',path:'/valoraciones'},
+    {name:`${match.club_local} vs ${match.club_visitante}`,path:ratingHref(match)}
+  ]))}/>}
   <main class="mfx-rating-main">
     <div class="mfx-rating-container">
       {match ? <>
-        <h1 class="mfx-rating-detail-title">{match.club_local} vs {match.club_visitante}: valoraciones</h1>
+        <header class="page-header-container mfx-rating-page-header">
+          <h1 class="landing-title">VALORACIONES</h1>
+          <p class="landing-subtitle">{match.club_local} VS {match.club_visitante} · {match.competicion} · {date}</p>
+        </header>
         <section class="mfx-rating-detail-hero" aria-label="Partido y resultado">
           <div class="mfx-rating-competition" style="margin-bottom:30px">
             {(() => {const src=getAssetUrl('competiciones',match.competicion_foto_url||match.competicion);return src?<img src={src} alt={match.competicion}/>:null;})()}
@@ -54,7 +72,7 @@ function scoreColor(n:number){return n<=4?'#db3830':n<=6?'#df8a2f':n===7?'#51bd5
           </div>
           <p class="mfx-rating-detail-copy">{totalVotes} valoraciones individuales · {open?'Votación abierta':'Votación cerrada'}</p>
         </section>
-        <h2 style="font-size:clamp(1.5rem,2.9vw,2.4rem);font-weight:800;margin:20px 0 7px">Tus valoraciones</h2>
+        <h2 class="mfx-rating-subheading">Tus valoraciones</h2>
         <p class="mfx-rating-detail-copy">Puntúa del 1 al 10 al entrenador y a las jugadoras. Puedes dejar alguna sin puntuar y elegir a una sola MVP del partido.</p>
         {demo?<p class="mfx-rating-alert"><strong>Vista previa:</strong> puedes probar la selección de notas y MVP, pero no se guardarán votos ni se enviarán correos.</p>:!open?<p class="mfx-rating-alert">La votación de este encuentro ya se ha cerrado. Puedes consultar los promedios históricos.</p>:null}
         {[
