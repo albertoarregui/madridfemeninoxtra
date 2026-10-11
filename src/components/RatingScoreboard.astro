@@ -1,0 +1,27 @@
+---
+import { getAssetUrl } from '../utils/assets';
+import type { RatingMatch } from '../lib/ratings';
+interface Props { match: RatingMatch; large?: boolean }
+const {match,large=false}=Astro.props;
+const isMadridHome=/real madrid/i.test(match.club_local);
+const leftScore=isMadridHome?match.goles_rm:match.goles_rival;
+const rightScore=isMadridHome?match.goles_rival:match.goles_rm;
+const local=getAssetUrl('escudos',match.local_foto_url || match.club_local);
+const away=getAssetUrl('escudos',match.visitante_foto_url || match.club_visitante);
+const competition=getAssetUrl('competiciones',match.competicion_foto_url || match.competicion);
+const date=new Date(match.fecha+'T12:00:00Z').toLocaleDateString('es-ES',{timeZone:'Europe/Madrid',day:'numeric',month:'short',year:'numeric'});
+---
+<div class:list={['mfx-rating-scoreboard',{'mfx-rating-scoreboard-large':large}]}>
+  <div class="mfx-rating-team">
+    {local&&<img src={local} alt={`Escudo de ${match.club_local}`} loading="lazy" width="72" height="72"/>}
+    <span>{match.club_local}</span>
+  </div>
+  <div class="mfx-rating-score">{leftScore}–{rightScore}<small>FINALIZADO</small></div>
+  <div class="mfx-rating-team">
+    {away&&<img src={away} alt={`Escudo de ${match.club_visitante}`} loading="lazy" width="72" height="72"/>}
+    <span>{match.club_visitante}</span>
+  </div>
+</div>
+<style>
+  .mfx-rating-scoreboard-large :global(.mfx-rating-team img){height:90px;width:90px}
+</style>
