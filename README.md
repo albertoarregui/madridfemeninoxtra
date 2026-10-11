@@ -71,7 +71,7 @@ Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas
 - Las valoraciones de los lectores se almacenan en `match_reader_ratings`, de forma independiente de las puntuaciones estadísticas deportivas; no se comparten tokens ni identificadores de votantes en el HTML.
 - Las páginas de valoraciones se excluyen de la caché CDN de HTML para no mostrar promedios desactualizados. La tabla de votos dispone de un índice por partido.
 
-- Las tarjetas replican las **esquinas doradas** de la web; los retratos de las jugadoras (y la MVP) llevan un aro circular dorado. El título y subtítulo usan las clases compartidas `landing-title` y `landing-subtitle`.
+- Las tarjetas de partidos y el marcador destacado reproducen el estilo de **DIRECCIÓN** en «Sobre nosotros»: fondo azul noche semitransparente, borde dorado fino, esquinas de 14 px en los cuatro vértices que crecen al pasar el cursor y radio de 4 px. Los retratos de las jugadoras (y la MVP) conservan su aro circular dorado. El título y subtítulo usan las clases compartidas `landing-title` y `landing-subtitle`.
 - El índice incorpora metadatos SEO específicos para la temporada, Open Graph/Twitter, breadcrumb `BreadcrumbList` y datos estructurados `CollectionPage`/`ItemList`; cada partido tiene título/descripción, canonical y breadcrumb propios.
 
 **Captura adicional recomendada:** `docs/screenshots/valoraciones.webp` (índice con escudos y competición) y `docs/screenshots/valoraciones-partido.webp` (notas en una fila, MVP y medias), tomadas de producción tras comprobar el diseño.
