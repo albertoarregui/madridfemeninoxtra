@@ -50,7 +50,7 @@ export async function ratingPeople(id:number):Promise<RatingPerson[]> {
  FROM alineaciones a JOIN jugadoras j ON a.id_jugadora=j.id_jugadora
  JOIN partidos p ON p.id_partido=a.id_partido
  LEFT JOIN dorsales d ON d.id_jugadora=a.id_jugadora AND d.id_temporada=p.id_temporada
- WHERE a.id_partido=? AND (a.titular=1 OR COALESCE(a.minutos_jugados,0)>0)
+ WHERE a.id_partido=? AND (a.titular=1 OR COALESCE(a.minutos_jugados,0)>0 OR (a.minuto_entrada IS NOT NULL AND CAST(a.minuto_entrada AS INTEGER)>0))
  ORDER BY a.titular DESC, CAST(d.dorsal AS INTEGER),j.nombre`,args:[id]});
  const unique=new Map<number,RatingPerson>();
  for(const x of result.rows) {
