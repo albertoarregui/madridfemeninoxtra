@@ -56,7 +56,6 @@ export async function ratingPeople(id:number):Promise<RatingPerson[]> {
  }
  return Array.from(unique.values());
 }
-// Fecha de cierre: 72 horas después de la hora española del partido.
 export function startTimeUTC(m:RatingMatch):number {
  const time=/^\d{1,2}:\d{2}/.test(m.hora)?m.hora.slice(0,5):'20:00';
  const guess=Date.parse(m.fecha+'T'+time+':00Z');
@@ -66,7 +65,8 @@ export function startTimeUTC(m:RatingMatch):number {
  return guess-(localEpoch-guess);
 }
 export function ratingsOpen(m:RatingMatch):boolean {
- return Date.now() < startTimeUTC(m)+72*60*60*1000 && Date.now() > startTimeUTC(m);
+ const opening = startTimeUTC(m) + 2 * 60 * 60 * 1000;
+ return Date.now() >= opening && Date.now() < opening + 72 * 60 * 60 * 1000;
 }
 export function ratingHref(m:RatingMatch):string {
  const slug=(m.club_local+'-vs-'+m.club_visitante).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
