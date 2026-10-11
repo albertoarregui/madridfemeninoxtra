@@ -107,7 +107,7 @@ test('upper footer has six navigational columns, social icons and working newsle
     assert.ok(footer.includes(label), label);
   }
   for (const href of ['/', '/noticias', '/plantilla', '/calendario', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
-    assert.ok(footer.includes(`href="${href}"`), href);
+    assert.ok(footer.includes(`href="${href}"`) || footer.includes(`href: "${href}"`), href);
   }
   for (const brand of ['<X ', '<Instagram ', '<TikTok ', '<Youtube ']) {
     assert.ok(footer.includes(brand), brand);
