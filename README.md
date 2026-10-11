@@ -21,7 +21,7 @@
 
 ## 🖥️ Vista de la portada
 
-<img src="https://raw.githubusercontent.com/albertoarregui/madridfemeninoxtra/main/docs/screenshots/portada.webp" alt="Portada de Madrid Femenino Xtra" width="1200" />
+<a href="https://gyazo.com/52ba56aa667f05bf83d69d9532663e5b"><img src="https://i.gyazo.com/52ba56aa667f05bf83d69d9532663e5b.png" alt="Portada de Madrid Femenino Xtra" width="1200" /></a>
 
 *Captura de la portada de producción (11 de octubre de 2026).*
 
