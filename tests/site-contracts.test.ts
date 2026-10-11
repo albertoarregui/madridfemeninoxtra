@@ -160,3 +160,20 @@ test('Hobby CPU controls reuse HTML at the CDN and never serialize full article 
   assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
   assert.match(proxy, /redirect: 'error'/);
 });
+
+
+test('weekly cron is authenticated, idempotent and avoids unsolicited article mailings', () => {
+  const weekly = read('src/pages/api/newsletter/weekly.ts');
+  const config = JSON.parse(read('vercel.json'));
+  const immediate = read('src/pages/api/newsletter/send.ts');
+  assert.deepEqual(config.crons, [{ path: '/api/newsletter/weekly', schedule: '0 6 * * 1' }]);
+  assert.match(weekly, /process\.env\.VERCEL_ENV !== 'production'/);
+  assert.match(weekly, /authorization!==`Bearer \$\{expected\}`/);
+  assert.match(weekly, /mondayAt10Madrid\(monday\)/);
+  assert.match(weekly, /confirmed_at IS NOT NULL/);
+  assert.match(weekly, /INSERT OR IGNORE INTO newsletter_weekly_deliveries/);
+  assert.match(weekly, /idempotencyKey/);
+  assert.match(weekly, /scheduledAt:schedule/);
+  assert.match(weekly, /No hay noticias de las cinco categorías/);
+  assert.match(immediate, /NEWSLETTER_PER_ARTICLE_ENABLED !== 'true'/);
+});
