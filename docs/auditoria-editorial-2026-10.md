@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 76.
-- **Fichas con dos o más párrafos:** 221.
+- **Fichas con un solo párrafo:** 0.
+- **Fichas con dos o más párrafos:** 297.
 
 ## Criterios editoriales
 
@@ -14,9 +14,9 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 - **Estadios:** inauguración, arquitectura, reformas y evolución deportiva.
 - Corregir hechos antes que aumentar artificialmente la longitud. No modificar las descripciones SEO ni Open Graph.
 
-## Fichas breves por revisar
+## Histórico de las 76 fichas breves revisadas y publicadas
 
-Entradas con un único párrafo: prioridad de investigación; no son necesariamente incorrectas.
+Inventario original de las 76 entradas que tenían un párrafo y fueron revisadas, estructuradas en varios párrafos y publicadas el 11 de octubre de 2026. Se conserva aquí como registro de intervención. El número de párrafos es una señal estructural, no prueba de profundidad biográfica ni de veracidad independiente.
 
 ### jugadora (40)
 
@@ -218,3 +218,31 @@ Se actualizaron y publicaron exclusivamente los cuerpos de las dos fichas. La bi
 - **Jessica Martínez:** período en CD Tacón/Real Madrid y dos campañas en Sevilla, con 57 partidos y 12 goles según el club. Fuente: https://sevillafc.es/actualidad/noticias/jessica-martinez-no-continua-femenino-2023
 
 En los tres casos se actualizó y publicó únicamente el campo `body` de Contentful. La lista de fichas breves se redujo de 79 a 76. Metadatos SEO, imágenes y estadísticas de Turso permanecieron sin cambios.
+
+## Cierre de la revisión del inventario de 76 fichas — 11 de octubre de 2026
+
+**Estado editorial estructural:** se actualizaron y publicaron en Contentful los 76 cuerpos de texto recogidos en la lista: **40 jugadoras, 6 clubes, 27 miembros del arbitraje y 3 estadios**. Las 297 entradas del inventario inicial cuentan ahora con varios párrafos. Se mantiene el listado histórico de identificadores para facilitar auditorías posteriores.
+
+**Alcance y limitaciones:** las 76 entradas se organizaron cronológicamente o por ámbito biográfico, manteniendo los hechos previamente documentados. Cuando se encontró información corroborada en fuentes oficiales, se añadieron fechas, méritos, partidos o hitos institucionales nuevos. En los casos donde la documentación pública sigue siendo limitada, especialmente en perfiles de árbitras territoriales y canteranas, la intervención fue de revisión y estructuración: **no se considera cerrada la investigación documental de esas personas ni debe confundirse una segunda separación de párrafo con una biografía exhaustiva**. El trabajo no consistió en inventar títulos, trayectorias o designaciones.
+
+**Correcciones y ampliaciones verificadas:**
+- Olaya Rodríguez: cifras y palmarés formativo en el Dépor ABANCA; https://www.rcdeportivo.es/es/jugadores/depor-abanca/olaya-rodriguez
+- Freja Siri Olofsson: incorporación al Real Madrid el 7 de septiembre de 2022 y trayectoria previa; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/freja-siri-nueva-jugadora-del-real-madrid
+- Yasmim Ribeiro: palmarés del Corinthians, plata olímpica, fichaje y final de etapa en 2026; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/yasmim-nueva-jugadora-del-real-madrid-02-01-2025 y https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-yasmim-14-06-2026
+- Antonia Silva: palmarés brasileño, plata olímpica y traspaso al Palmeiras; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/antonia-silva-nueva-jugadora-del-real-madrid-08-07-2024 y https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-antonia-silva-06-08-2026
+- Rocío Gálvez: Mundial de 2023 y comunicado oficial de salida con balance de 132 partidos y 13 goles según el club; https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-rocio-15-06-2026
+- Elsa Santos: debut oficial frente al Sevilla el 9 de marzo de 2025; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/cronicas/cronica-sevilla-real-madrid-f-09-03-2025
+- Adriana Folgado e Iris Ashley Santiago: Europeo sub-19 de 2026 y trayectoria de cantera; perfiles oficiales https://www.realmadrid.com/es-ES/futbol/cantera-femenino/real-madrid-b/adriana-folgado-blanco y https://www.realmadrid.com/es-ES/futbol/cantera-femenino/real-madrid-b/iris-ashley-santiago-garrido
+- Marisa García: 21 goles en 26 partidos con el filial en Segunda Federación 2023/24 y Europeo sub-19 de 2024; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/paula-comendador-y-marisa-garcia-premiadas-en-la-gala-de-la-afe-25-11-2024
+- Melissa López y Arantza Gallastegi: promoción arbitral contrastada con los informes y la plantilla de RFEF; https://rfef.es/es/noticias/esta-es-la-plantilla-arbitral-de-primera-division-femenina-20252026 y https://rfef.es/es/noticias/informe-arbitral-de-la-temporada-202526-para-las-categorias-profesionales-y-no
+- Iuliana Demetrescu y Silvia Gasperotti: designadas para la Eurocopa femenina de 2025; https://www.uefa.com/womenseuro/news/0297-1d68b522cde9-8731969a0d90-1000--referee-teams-appointed-for-uefa-women-s-euro-2025/
+- Lotta Vuorio: árbitra en Twente-Real Madrid de Champions femenina 2025/26; https://www.uefa.com/womenschampionsleague/match/2046636--twente-vs-real-madrid/matchinfo/
+- María Eugenia Gil Soriano: final de la Supercopa femenina 2026; https://rfef.es/es/noticias/el-sueno-de-eugenia-gil-de-nina-atleta-dirigir-el-clasico-de-la-final
+- Olatz Rivera Olmedo: UEFA Élite, Mundial sub-17 y final de Copa 2026; https://rfef.es/es/noticias/olatz-rivera-arbitra-de-la-final-de-la-copa-de-la-reina
+- SD Eibar: se corrigió el carácter del ascenso de 2020; el equipo ya jugó la Superliga entre 2009 y 2011; https://www.sdeibar.com/noticias/el-eibar-femenino-es-de-primera
+- Santa Teresa: ascenso a Primera División en junio de 2014; https://rfef.es/es/noticias/el-fundacion-albacete-y-santa-teresa-ascienda-primera-division-femenina
+- Academia Sporting CP: inauguración en junio de 2002; https://www.sporting.pt/pt/noticias/clube/noticias/2016-04-14/uma-revisita-para-esverdear-a-memoria
+- Campo 7 de la Ciudad Real Madrid: vinculación a la academia y fútbol femenino; https://www.realmadrid.com/es-ES/el-club/ciudad-real-madrid/instalaciones
+- Los Cuartos: inauguración de 1953 y vínculo con el Trofeo Teide, confirmado por fuentes históricas locales y ayuntamiento; https://www.laorotava.es/es/lugares/trofeo-teide y https://laorotava.es/es/noticias/presentada-la-liv-edicion-del-trofeo-teide
+
+**Alcance técnico:** se editó solamente el campo `body` de las entradas existentes de Contentful. No se modificaron campos SEO, Open Graph, imágenes ni estadísticas deportivas en Turso.
