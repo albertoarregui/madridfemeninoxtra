@@ -71,22 +71,9 @@ Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas
 - Las valoraciones de los lectores se almacenan en `match_reader_ratings`, de forma independiente de las puntuaciones estadísticas deportivas; no se comparten tokens ni identificadores de votantes en el HTML.
 - Las páginas de valoraciones se excluyen de la caché CDN de HTML para no mostrar promedios desactualizados. La tabla de votos dispone de un índice por partido.
 
-- Las tarjetas replican las **esquinas doradas** de la web; los retratos de las jugadoras (y la MVP) llevan un aro circular dorado. El título y subtítulo usan las clases compartidas `landing-title` y `landing-subtitle`.
-- El índice incorpora metadatos SEO específicos para la temporada, Open Graph/Twitter, breadcrumb `BreadcrumbList` y datos estructurados `CollectionPage`/`ItemList`; cada partido tiene título/descripción, canonical y breadcrumb propios.
-
-**Captura adicional recomendada:** `docs/screenshots/valoraciones.webp` (índice con escudos y competición) y `docs/screenshots/valoraciones-partido.webp` (notas en una fila, MVP y medias), tomadas de producción tras comprobar el diseño.
-
 ## ✉️ Newsletter semanal automática
 
 **La semana blanca** se confecciona sin intervención editorial adicional a partir de las noticias publicadas en Contentful. Los lunes, a las **10:00 (Europe/Madrid)**, se envía a los suscriptores confirmados por doble opt-in en Resend. Incluye solo las categorías que tengan publicaciones recientes: **Actualidad, Fichajes, Crónicas, La Fábrica y Datos**.
-
-- Vercel Hobby activa `GET /api/newsletter/weekly` el **lunes a las 06:00 UTC** (Vercel puede ejecutarlo durante esa hora); el endpoint prepara los envíos y Resend los programa para las 10:00 peninsulares, con cambio CET/CEST automático.
-- El cron requiere `Authorization: Bearer <CRON_SECRET>`; esa variable se guarda cifrada en **Production** de Vercel y nunca se publica en el código.
-- El contenido cubre desde el lunes anterior hasta el domingo inclusive. Las categorías vacías se omiten; **si no hay noticias, no se envían correos**.
-- Solo reciben mensajes las suscripciones **confirmadas**; todos los correos incluyen un enlace de baja y la versión de la semana queda registrada con una clave única por destinatario. Resend utiliza claves de idempotencia para evitar duplicados por reintentos.
-- El webhook de noticias `/api/newsletter/send` **no envía correos individuales por defecto**; requiere activar explícitamente `NEWSLETTER_PER_ARTICLE_ENABLED=true` para rehabilitar la modalidad antigua.
-- La creación y recepción de la newsletter de prueba se ha comprobado con un único destinatario autorizado. Las pruebas de regresión verifican el horario de verano e invierno, el cron y la prevención de envíos duplicados. Las vistas previas nunca ejecutan el envío.
-- Para revisar incidencias: **Vercel → Project → Settings → Cron Jobs** y **Resend → Emails**. No incluyas tokens, mensajes de suscriptores ni claves en capturas públicas.
 
 ## 🧰 Stack tecnológico
 
