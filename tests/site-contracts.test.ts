@@ -237,3 +237,11 @@ test('fan ratings use the current season and shared gold editorial styling', () 
   assert.match(detail, /canonical=/);
   assert.match(detail, /noindex=\{!match\}/);
 });
+
+test('reader ratings include substitutes who entered even without recorded minutes', () => {
+  const ratings = read('src/lib/ratings.ts');
+  const detail = read('src/pages/valoraciones/[slug].astro');
+  assert.match(ratings, /a\.minuto_entrada IS NOT NULL AND CAST\(a\.minuto_entrada AS INTEGER\)>0/);
+  assert.match(ratings, /COALESCE\(a\.minutos_jugados,0\)>0/);
+  assert.match(detail, /const substitutes=players\.filter\(x=>!x\.titular\)/);
+});
