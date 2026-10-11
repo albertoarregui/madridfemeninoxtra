@@ -1,12 +1,12 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 import { createHash } from 'node:crypto';
+import { madridDate, madridClock, isoDays, mondayAt10Madrid, norm } from '../../../lib/newsletter-time';
 import { contentfulClient } from '../../../lib/contentful';
 import { getAnalyticsDbClient } from '../../../db/client';
 
 export const prerender = false;
 const URL_BASE = 'https://www.madridfemeninoxtra.com';
-const FORM_ZONE = 'Europe/Madrid';
 const CATEGORIES: Record<string, string> = {
   actualidad: 'ACTUALIDAD', noticias: 'ACTUALIDAD', declaraciones: 'ACTUALIDAD', entrevista: 'ACTUALIDAD',
   entrevistas: 'ACTUALIDAD', seleccion: 'ACTUALIDAD', selecciones: 'ACTUALIDAD',
@@ -17,26 +17,6 @@ const CATEGORIES: Record<string, string> = {
 };
 const ORDER = ['ACTUALIDAD', 'FICHAJES', 'CRÓNICAS', 'LA FÁBRICA', 'DATOS'];
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
-function madridDate(d: Date): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: FORM_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
-  const v = (t: string) => parts.find(x => x.type === t)?.value;
-  return `${v('year')}-${v('month')}-${v('day')}`;
-}
-function madridClock(d: Date): number {
-  return Number(new Intl.DateTimeFormat('en-GB',{ timeZone:FORM_ZONE, hour:'2-digit', hourCycle:'h23'}).format(d));
-}
-function isoDays(date: string, shift: number) {
-  const d = new Date(date + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+shift); return d.toISOString().slice(0,10);
-}
-function mondayAt10Madrid(ymd: string): string {
-  const guess = new Date(ymd + 'T10:00:00Z');
-  const formatter = new Intl.DateTimeFormat('en-GB',{timeZone:FORM_ZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
-  const parts = formatter.formatToParts(guess);
-  const read = (k: string) => Number(parts.find(x=>x.type===k)?.value);
-  const localAsUTC = Date.UTC(read('year'),read('month')-1,read('day'),read('hour'),read('minute'));
-  return new Date(guess.getTime() - (localAsUTC - guess.getTime())).toISOString();
-}
-const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 type Item = { slug:string; title:string; description:string; category:string; date:string; image:string|null };
 async function weeklyItems(monday: string): Promise<Item[]> {
   const start = isoDays(monday,-7);
