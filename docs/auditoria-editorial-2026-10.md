@@ -3,8 +3,8 @@
 Esta revisión clasifica la **estructura de los textos publicados en Contentful**. La longitud y los párrafos son señales de priorización, no indicadores de veracidad o calidad garantizada.
 
 - **Fichas analizadas:** 297.
-- **Fichas con un solo párrafo:** 79.
-- **Fichas con dos o más párrafos:** 218.
+- **Fichas con un solo párrafo:** 76.
+- **Fichas con dos o más párrafos:** 221.
 
 ## Criterios editoriales
 
@@ -18,7 +18,7 @@ Esta revisión clasifica la **estructura de los textos publicados en Contentful*
 
 Entradas con un único párrafo: prioridad de investigación; no son necesariamente incorrectas.
 
-### jugadora (43)
+### jugadora (40)
 
 - Belén de Gracia (286 caracteres) · `761cth8YHmhkqjSkbFwJcB`
 - Olaya Rodríguez (327 caracteres) · `2tknxcm5EFa1BOyLXuHko9`
@@ -53,16 +53,13 @@ Entradas con un único párrafo: prioridad de investigación; no son necesariame
 - Antonia Silva (385 caracteres) · `7kKBQsNutRGIBAKitbfJo2`
 - Méline Gerard (385 caracteres) · `4BylLP1UqFORnjrRv6bfNd`
 - Paula Partido (385 caracteres) · `4wBloMrX97gNkV9URxKEiN`
-- Caroline Møller (386 caracteres) · `4ypWRfRzH3x5bJcdSZPZq4`
 - Sofía Fuente (387 caracteres) · `76tIteDoWOIef0VJKYurHo`
 - Rocío Gálvez (398 caracteres) · `1E2hYrUYygWNlViKmFqxAX`
 - Andrea Rodríguez (406 caracteres) · `1bBMRf3z1aXemQT7xm1ZFK`
 - Naiara Sanmartín (406 caracteres) · `3cxHtZlhZwPlPg9GsCMGT9`
 - Sofia Jakobsson (407 caracteres) · `6QfDDGEceWttDNyInvUw8F`
 - Claudia Florentino (411 caracteres) · `n5F89t0QtBHOp3gH2pznz`
-- Jessica Martínez (428 caracteres) · `30KCa6sTnQZoNawq52p8dQ`
 - Daiane Limeira (441 caracteres) · `36SJJ2wgOrbVatWy4XdWCF`
-- Kathellen Sousa (500 caracteres) · `1ObAP61NeqfO7JqZRE9fFO`
 
 ### club (6)
 
@@ -213,3 +210,11 @@ Las cuatro entradas se publicaron editando exclusivamente el campo `body` en Con
 - Rayo Vallecano Femenino: Copa 2008, tres Superligas consecutivas y presencia europea; https://www.laliga.com/noticias/diez-cosas-que-quiza-no-sabias-del-rayo-femenino y https://es.uefa.com/womenschampionsleague/history/clubs/2600788--rayo-vallecano/
 
 Se actualizaron y publicaron exclusivamente los cuerpos de las dos fichas. La biografía de Rayo Vallecano ya tenía varios párrafos antes de esta revisión; la de Osasuna pasó de un párrafo a tres. La reducción del indicador de fichas breves en este bloque es de una entrada.
+
+### Actualización de tres fichas verificadas — 11 de octubre de 2026
+
+- **Kathellen Sousa:** etapa formativa en Estados Unidos, Bordeaux, Inter, llegada al Real Madrid y fichaje por Al-Hilal en 2026. Fuentes: https://www.inter.it/en/news/2020-08-03-kathellen-sousa-signs-for-inter-women ; https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/kathellen-sousa-cuarto-fichaje-del-real-madrid ; https://alhilal.com/en/news/listing/womens-news
+- **Caroline Møller:** IK Skovbakken, Fortuna Hjørring, Inter, cuatro años en Real Madrid, fichaje por Benfica y convocatorias de Dinamarca. Fuentes: https://www.realmadrid.com/es-ES/noticias/club/comunicados/comunicado-oficial-mller-29-05-2025 ; https://www.slbenfica.pt/pt-pt/agora/noticias/2025/09/01/futebol-feminino-benfica-caroline-moller-contratacao ; https://www.slbenfica.pt/es-es/agora/noticias/2026/06/01/futebol-feminino-benfica-caroline-moller-convocada-selecao-da-dinamarca-qualificacao-mundial
+- **Jessica Martínez:** período en CD Tacón/Real Madrid y dos campañas en Sevilla, con 57 partidos y 12 goles según el club. Fuente: https://sevillafc.es/actualidad/noticias/jessica-martinez-no-continua-femenino-2023
+
+En los tres casos se actualizó y publicó únicamente el campo `body` de Contentful. La lista de fichas breves se redujo de 79 a 76. Metadatos SEO, imágenes y estadísticas de Turso permanecieron sin cambios.
