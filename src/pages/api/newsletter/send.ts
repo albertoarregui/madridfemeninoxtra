@@ -4,6 +4,9 @@ import { Resend } from 'resend';
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
+    // La modalidad por defecto es únicamente el resumen semanal; no enviar por cada publicación.
+    if (process.env.NEWSLETTER_PER_ARTICLE_ENABLED !== 'true') return Response.json({ skipped: true, reason: 'weekly-only' });
+
     const secret = new URL(request.url).searchParams.get('secret');
     if (secret !== process.env.NEWSLETTER_WEBHOOK_SECRET) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 });
