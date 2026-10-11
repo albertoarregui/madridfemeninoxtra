@@ -64,11 +64,16 @@ test('stadium map uses a dedicated minimal query without expensive match subquer
   assert.doesNotMatch(stadiumQuery, /SELECT COUNT\(\*\)/);
 });
 
-test('homepage stadium link and Sofascore fallback target the correct resources', () => {
-  const page = read('src/pages/index.astro');
-  assert.match(page, /MAPA DE ESTADIOS<\/h2>[\s\S]*?<a href="\/estadios" class="sidebar-map-link">/);
-  assert.match(page, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/3739\/season\/97379/);
-  assert.match(page, /www\.sofascore\.com\/es\/football\/tournament\/spain\/liga-f\/1127/);
+test('homepage renders native standings and has no blocked Sofascore iframe or failure link', () => {
+  const homepage = read('src/pages/index.astro');
+  const table = read('src/components/LigaFStandings.astro');
+  assert.match(homepage, /MAPA DE ESTADIOS<\/h2>[\s\S]*?<a href="\/estadios" class="sidebar-map-link">/);
+  assert.match(homepage, /<LigaFStandings\s*\/>/);
+  assert.doesNotMatch(homepage, /widgets\.sofascore\.com/);
+  assert.doesNotMatch(homepage, /Si la tabla no se muestra/);
+  assert.match(table, /Real Madrid CF/);
+  assert.match(table, /Datos oficiales de LaLiga/);
+  assert.equal((table.match(/\{ name: '/g) || []).length, 16);
 });
 
 test('rival records never query the obsolete goles_asistencias table', () => {
