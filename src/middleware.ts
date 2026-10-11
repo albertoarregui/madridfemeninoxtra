@@ -6,7 +6,7 @@ import { secondsUntilNextSeason } from "./utils/season";
 
 const isProtectedRoute = createRouteMatcher([]);
 
-const SIN_CACHE = [/^\/api\//, /^\/premios/];
+const SIN_CACHE = [/^\/api\//, /^\/premios/, /^\/valoraciones(?:\/|$)/];
 
 const CACHE_LARGA = [
     /^\/(aviso-legal|politica-cookies|politica-privacidad|terminos-condiciones|sobre-nosotros|contacto)/,
