@@ -38,12 +38,19 @@ export const POST: APIRoute=async({request,params,locals,url})=>{
  for(const entry of scores){
   const subject=Number(entry?.id),score=Number(entry?.score);
   if(!Number.isInteger(subject)||!allowed.has(subject)||used.has(subject)||!Number.isInteger(score)||score<1||score>10)return json({error:'Puntuación o participante no válido'},400);
-  const mvp=entry.mvp===true?1:0;if(mvp)mvpCount++;
+  const mvp=entry.mvp===true?1:0;if(mvp && subject < 0)return json({error:'La MVP debe ser una jugadora'},400);
+  if(mvp)mvpCount++;
   used.add(subject);valid.push({id:subject,score,mvp});
  }
  if(mvpCount>1)return json({error:'Elige una sola MVP'},400);
  try{
   const db=await ensureRatingsTable();
+  const recentVote=await db.execute({sql:'SELECT updated_at FROM match_reader_ratings WHERE match_id=? AND user_id=? LIMIT 1',args:[id,user.id]});
+  const lastUpdate=recentVote.rows[0]?.updated_at;
+  if(lastUpdate) {
+    const then=Date.parse(String(lastUpdate).replace(' ','T')+'Z');
+    if(Number.isFinite(then)&&Date.now()-then<20_000)return json({error:'Espera unos segundos antes de modificar tu voto.'},429);
+  }
   const statements:any[]=[{sql:'DELETE FROM match_reader_ratings WHERE match_id=? AND user_id=?',args:[id,user.id]}];
   for(const entry of valid)statements.push({sql:'INSERT INTO match_reader_ratings(match_id,user_id,subject_id,score,is_mvp) VALUES(?,?,?,?,?)',args:[id,user.id,entry.id,entry.score,entry.mvp]});
   await db.batch(statements,'write');
