@@ -246,3 +246,14 @@ En los tres casos se actualizó y publicó únicamente el campo `body` de Conten
 - Los Cuartos: inauguración de 1953 y vínculo con el Trofeo Teide, confirmado por fuentes históricas locales y ayuntamiento; https://www.laorotava.es/es/lugares/trofeo-teide y https://laorotava.es/es/noticias/presentada-la-liv-edicion-del-trofeo-teide
 
 **Alcance técnico:** se editó solamente el campo `body` de las entradas existentes de Contentful. No se modificaron campos SEO, Open Graph, imágenes ni estadísticas deportivas en Turso.
+
+## Ampliaciones documentales posteriores al cierre estructural (11 de octubre de 2026)
+
+Estas cuatro biografías, que ya habían pasado de un párrafo a varios, se han **ampliado con información sustantiva adicional** y publicado de nuevo en Contentful, modificando únicamente `body`:
+
+- **Marta Corredera:** cuatro Ligas y tres Copas de la Reina con el Barça, condición de primera goleadora del FC Barcelona en Champions femenina, etapas en Arsenal y Atlético, Mundial y Real Madrid (2020-2023). Fuente principal: https://players.fcbarcelona.com/es/jugador/2999-marta-corredera-marta-corredera-rueda
+- **Aurélie Kaci:** títulos en Francia y España y siete internacionalidades con Francia, además de etapas en México. Fuente: https://www.fff.fr/equipe-nationale/joueur/7456-kaci-aurelie/fiche.html
+- **Méline Gérard:** 14 internacionalidades, palmarés europeo, despedida de 2023 y entrada al cuerpo técnico del Lyon en 2024. Fuentes: https://www.fff.fr/equipe-nationale/joueur/7665-gerard-meline/fiche.html y https://www.realmadrid.com/es-ES/noticias/futbol/primer-equipo-femenino/actualidad/homenaje-a-meline-gerard-en-su-despedida-del-futbol-profesional
+- **Sofia Jakobsson:** bronce de 2019 con Suecia, goles decisivos ante Alemania e Inglaterra y etapa madridista. Fuentes: https://inside.fifa.com/tournaments/womens/womensworldcup/france2019/news/jakobsson-s-curling-strike-delivers-bronze-for-sweden y https://www.svenskfotboll.se/landslag/dam/historik-dam/vm-slutspel-dam/
+
+El inventario mantiene **297 fichas con dos o más párrafos**, y ninguna con un solo párrafo. Esto no supone que toda biografía haya agotado sus fuentes posibles; la valoración documental sigue separada de la mera estructura.
