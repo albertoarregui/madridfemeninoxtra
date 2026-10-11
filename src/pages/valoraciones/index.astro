@@ -1,0 +1,63 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RatingScoreboard from '../../components/RatingScoreboard.astro';
+import { recentRatingMatches, ratingHref, ratingsOpen } from '../../lib/ratings';
+import { getAssetUrl } from '../../utils/assets';
+import '../../styles/valoraciones.css';
+export const prerender=false;
+const matches=await recentRatingMatches(30);
+const [latest,...older]=matches;
+const fmt=(d:string)=>new Date(d+'T12:00:00Z').toLocaleDateString('es-ES',{timeZone:'Europe/Madrid',day:'numeric',month:'short',year:'numeric'});
+const competitions=[...new Set(matches.map(m=>m.competicion))].filter(Boolean);
+const seasons=[...new Set(matches.map(m=>m.fecha.slice(0,4)))];
+---
+<Layout title="Valoraciones del Real Madrid Femenino: votaciones y MVP | MFX" description="Puntúa del 1 al 10 a las jugadoras y al entrenador del Real Madrid Femenino tras cada partido. Consulta medias y elige la MVP.">
+<main class="mfx-rating-main">
+  <div class="mfx-rating-container">
+    <h1 class="mfx-rating-heading">VALORACIONES</h1>
+    <p class="mfx-rating-lede">Valora el rendimiento. Elige a la mejor jugadora del partido.</p>
+    {latest ? (
+      <>
+        <a class="mfx-rating-hero-card" href={ratingHref(latest)}>
+          <div class="mfx-rating-card-top"><span>ÚLTIMAS VALORACIONES</span><span class:list={['mfx-rating-pill',{closed:!ratingsOpen(latest)}]}>{ratingsOpen(latest)?'VOTACIÓN ABIERTA':'VOTACIÓN CERRADA'}</span></div>
+          <div class="mfx-rating-competition">
+            {(() => {const url=getAssetUrl('competiciones',latest.competicion_foto_url||latest.competicion);return url?<img src={url} alt={latest.competicion}/>:null;})()}
+            {latest.competicion} · {fmt(latest.fecha)}
+          </div>
+          <RatingScoreboard match={latest} large/>
+          <span class="mfx-rating-card-link">{ratingsOpen(latest)?'Valorar a las jugadoras':'Ver resultados'} →</span>
+        </a>
+        <div class="mfx-rating-filters" style="margin-top:28px">
+          <label for="rating-competition-filter">Competición</label>
+          <select id="rating-competition-filter"><option value="">Todas</option>{competitions.map(c=><option value={c}>{c}</option>)}</select>
+          <label for="rating-year-filter">Año</label>
+          <select id="rating-year-filter"><option value="">Todos</option>{seasons.map(s=><option value={s}>{s}</option>)}</select>
+        </div>
+        <div class="mfx-rating-grid" id="mfx-ratings-grid">
+          {older.map(match=><a href={ratingHref(match)} class="mfx-rating-match-card" data-competition={match.competicion} data-year={match.fecha.slice(0,4)}>
+            <div class="mfx-rating-card-top"><span>VALORACIONES</span><span class:list={['mfx-rating-pill',{closed:!ratingsOpen(match)}]}>{ratingsOpen(match)?'VOTACIÓN ABIERTA':'ARCHIVO'}</span></div>
+            <div class="mfx-rating-competition">
+              {(() => {const url=getAssetUrl('competiciones',match.competicion_foto_url||match.competicion);return url?<img src={url} alt={match.competicion}/>:null;})()}
+              {match.competicion} · {fmt(match.fecha)}
+            </div>
+            <RatingScoreboard match={match}/>
+            <span class="mfx-rating-card-link">{ratingsOpen(match)?'Valorar a las jugadoras':'Ver resultados'} →</span>
+          </a>)}
+        </div>
+      </>
+    ) : <p class="mfx-rating-empty">Todavía no hay partidos finalizados para valorar.</p>}
+  </div>
+</main>
+</Layout>
+<script>
+  function filterRatings(){
+    const comp=(document.getElementById('rating-competition-filter') as HTMLSelectElement|null)?.value||'';
+    const year=(document.getElementById('rating-year-filter') as HTMLSelectElement|null)?.value||'';
+    document.querySelectorAll<HTMLElement>('#mfx-ratings-grid [data-competition]').forEach(item=>{
+      item.hidden=!!((comp&&item.dataset.competition!==comp)||(year&&item.dataset.year!==year));
+      item.style.display=item.hidden?'none':'';
+    });
+  }
+  document.getElementById('rating-competition-filter')?.addEventListener('change',filterRatings);
+  document.getElementById('rating-year-filter')?.addEventListener('change',filterRatings);
+</script>
