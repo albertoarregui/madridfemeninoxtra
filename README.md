@@ -195,7 +195,7 @@ El secreto de invalidación debe mantenerse fuera del repositorio y de la docume
 ## 🍪 Consentimiento, publicidad y AdSense
 
 - El archivo `/ads.txt` identifica al editor de AdSense y debe seguir siendo accesible públicamente.
-- La integración de mensajes de privacidad certificados por Google se carga independientemente de las preferencias del banner local. La selección local sigue bloqueando la carga opcional del script publicitario hasta que el visitante la acepta.
+- La selección local bloquea la carga opcional del script publicitario hasta que el visitante la acepta. El mensaje certificado de Google está publicado en AdSense, pero **la integración y su visualización efectivas aún requieren validación en navegadores del EEE**. La documentación de Google señala que el mensaje puede desplegarse a través de la propia etiqueta de AdSense.
 - En el panel de AdSense **Privacidad y mensajes → Reglamentos europeos**, comprueba que el mensaje publicado corresponde a `madridfemeninoxtra.com` y que registra visualizaciones desde visitantes del EEE. El estado `Publicado` no demuestra por sí solo que el mensaje aparezca.
 - La **aprobación de AdSense no se garantiza** por incluir un CMP y las páginas legales. Requiere contenido original útil, navegación clara, páginas accesibles e imágenes con derechos de uso claros; revisar también los motivos concretos de rechazo en AdSense.
 - No debe atribuirse a una etiqueta o a una CMP la aprobación o el rechazo sin consultar el mensaje de diagnóstico del panel de AdSense.
