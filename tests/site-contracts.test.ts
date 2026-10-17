@@ -285,13 +285,20 @@ test('2026 U20 awards use dedicated framed photos with captions', () => {
 });
 
 
-test('about gallery replaces only the selected player photo', () => {
+test('about gallery keeps the approved order, captions and exact replacement', () => {
   const page = read('src/pages/sobre-nosotros.astro');
-  assert.match(page, /getAssetMetadata\("galeria", "foto-14"\)/);
-  assert.doesNotMatch(page, /getAssetMetadata\("galeria", "foto-16"\)/);
-  assert.match(page, /getAssetMetadata\("galeria", "foto-21"\)/);
-  assert.match(page, /Alberto con la bandera del Real Madrid en el Joie Stadium/);
-  assert.equal((page.match(/getAssetMetadata\("galeria", "foto-[0-9]+"/g) || []).length, 20);
+  const galleryBlock = page.match(/const gallery = \[([\s\S]*?)\];/)?.[1] ?? '';
+  const order = [...galleryBlock.matchAll(/"foto-(\d+)"/g)].map((match) => Number(match[1]));
+
+  assert.deepEqual(order, [7, 6, 3, 4, 5, 11, 12, 13, 1, 8, 9, 10, 2, 14, 15, 19, 17, 18, 20, 21]);
+  assert.doesNotMatch(galleryBlock, /"foto-16"/);
+  assert.match(page, /FC Barcelona vs Real Madrid - UWCL 2021\/22 Cuartos de Final \(vuelta\) \[30\/03\/2022\]/);
+  assert.match(page, /Real Madrid vs Manchester City - UWCL 2026\/27 Fase Liga Jornada 2 \[01\/10\/2026\]/);
+  assert.match(page, /<figcaption class="lightbox-caption"><\/figcaption>/);
+  assert.match(page, /galleryItems: gallery\.map\(\(img\) => \(\{ src: img\.src\?\.src, alt: img\.alt \}\)\)/);
+  assert.match(page, /lightboxCaption\.textContent = current\.alt/);
+  assert.match(page, /\.lightbox-prev \{ left: 0\.65rem; \}/);
+  assert.match(page, /\.lightbox-next \{ right: 0\.65rem; \}/);
   assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
 });
 
