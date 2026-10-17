@@ -99,7 +99,7 @@ const records: Record<string, FabricaTournamentStats> = {
 
     // Mundial sub-20 2026
     "mundial-sub20-2026::irunedorado": stats(6, 5, 439, 0, 0),
-    "mundial-sub20-2026::laialopez": stats(6, 6, 540, 0, 0, 5),
+    "mundial-sub20-2026::laialopez": stats(6, 6, 540, 0, 0, 6),
     "mundial-sub20-2026::paucomendador": stats(7, 5, 424, 6, 1),
     "mundial-sub20-2026::noebeltran": stats(5, 5, 406, 0, 1),
     "mundial-sub20-2026::silviacristobal": stats(6, 6, 540, 0, 0),
