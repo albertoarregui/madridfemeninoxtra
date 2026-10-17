@@ -285,11 +285,14 @@ test('2026 U20 awards use dedicated framed photos with captions', () => {
 });
 
 
-test('about gallery replaces the flag photo without duplicating the selected image', () => {
+test('about gallery replaces only the selected player photo', () => {
   const page = read('src/pages/sobre-nosotros.astro');
-  assert.doesNotMatch(page, /getAssetMetadata\("galeria", "foto-14"\)/);
-  assert.equal((page.match(/getAssetMetadata\("galeria", "foto-16"\)/g) || []).length, 1);
-  assert.match(page, /Alberto junto a una jugadora del fútbol formativo/);
+  assert.match(page, /getAssetMetadata\("galeria", "foto-14"\)/);
+  assert.doesNotMatch(page, /getAssetMetadata\("galeria", "foto-16"\)/);
+  assert.match(page, /getAssetMetadata\("galeria", "foto-21"\)/);
+  assert.match(page, /Alberto con la bandera del Real Madrid en el Joie Stadium/);
+  assert.equal((page.match(/getAssetMetadata\("galeria", "foto-[0-9]+"/g) || []).length, 20);
+  assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
 });
 
 test('about project description uses the approved wording', () => {
