@@ -85,6 +85,50 @@ const playerPhoto = (item: { nombre: string; foto_url: string | null }) => {
     return item.foto_url || playerPlaceholder;
 };
 
+const normalizeAwardText = (value: string) => value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const awardVisual = (tournamentSlug: string, award: { nombre: string; galardon: string }) => {
+    if (tournamentSlug !== "mundial-sub20-2026") return null;
+
+    const player = normalizeAwardText(award.nombre);
+    const prize = normalizeAwardText(award.galardon);
+    const base = {
+        "paucomendador::botadeoro": {
+            file: "mundial_sub20_2026_pau_comendador_bota_oro.webp",
+            alt: "Pau Comendador con la Bota de Oro del Mundial sub-20 de 2026",
+            caption: "Pau Comendador posa con la Bota de Oro del Mundial sub-20 de 2026.",
+        },
+        "paucomendador::balondebronce": {
+            file: "mundial_sub20_2026_pau_comendador_balon_bronce.webp",
+            alt: "Pau Comendador con el Balón de Bronce del Mundial sub-20 de 2026",
+            caption: "Pau Comendador posa con el Balón de Bronce del Mundial sub-20 de 2026.",
+        },
+        "laialopez::guantedeoro": {
+            file: "mundial_sub20_2026_laia_lopez_guante_oro.webp",
+            alt: "Laia López con el Guante de Oro del Mundial sub-20 de 2026",
+            caption: "Laia López posa con el Guante de Oro del Mundial sub-20 de 2026.",
+        },
+        "silviacristobal::jugadoradelpartido": {
+            file: "mundial_sub20_2026_silvia_cristobal_mvp_final.webp",
+            alt: "Silvia Cristóbal con el premio a la mejor jugadora de la final del Mundial sub-20 de 2026",
+            caption: "Silvia Cristóbal, mejor jugadora de la final del Mundial sub-20 de 2026.",
+        },
+    } as const;
+
+    const key = Object.keys(base).find((candidate) => {
+        const [candidatePlayer, candidatePrize] = candidate.split("::");
+        return player === candidatePlayer && prize.includes(candidatePrize);
+    });
+    if (!key) return null;
+
+    const visual = base[key as keyof typeof base];
+    return { ...visual, src: getAssetUrl("premios", visual.file) };
+};
+
 const datasetSchema = {
     "@context": "https://schema.org",
     "@type": "Dataset",
@@ -283,18 +327,35 @@ const datasetSchema = {
                                                 <div class="awards-list">
                                                     {tournament.awards.map((award) => {
                                                         const playerStats = statItems(tournament.slug, award.nombre);
+                                                        const visual = awardVisual(tournament.slug, award);
                                                         return (
-                                                        <div class="person-row award-card">
-                                                            <div class="person-avatar">
-                                                                <img
-                                                                    src={playerPhoto(award)}
-                                                                    alt={award.nombre}
-                                                                    width="55"
-                                                                    height="55"
-                                                                    loading="lazy"
-                                                                    decoding="async"
-                                                                />
-                                                            </div>
+                                                        <div class:list={["person-row", "award-card", { "award-card--featured": visual }]}>
+                                                            {visual ? (
+                                                                <figure class="award-photo">
+                                                                    <div class="award-photo-frame">
+                                                                        <img
+                                                                            src={visual.src}
+                                                                            alt={visual.alt}
+                                                                            width="900"
+                                                                            height="1200"
+                                                                            loading="lazy"
+                                                                            decoding="async"
+                                                                        />
+                                                                    </div>
+                                                                    <figcaption>{visual.caption}</figcaption>
+                                                                </figure>
+                                                            ) : (
+                                                                <div class="person-avatar">
+                                                                    <img
+                                                                        src={playerPhoto(award)}
+                                                                        alt={award.nombre}
+                                                                        width="55"
+                                                                        height="55"
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                    />
+                                                                </div>
+                                                            )}
                                                             <div class="person-content">
                                                                 <div class="person-head">
                                                                     <span class="person-name">{award.nombre}</span>
