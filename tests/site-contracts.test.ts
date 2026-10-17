@@ -279,7 +279,7 @@ test('2026 U20 awards use dedicated framed photos with captions', () => {
   assert.match(page, /class="award-details"/);
   assert.match(page, /visual \? stat\.label : stat\.short/);
   assert.match(css, /\.award-card--featured \.person-stats \{[\s\S]*?grid-template-columns:\s*1fr/);
-  assert.match(css, /\.award-details \{[\s\S]*?grid-template-columns:\s*minmax\(125px, 165px\) minmax\(0, 1fr\)/);
-  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.award-details \{[\s\S]*?minmax\(105px, 0\.42fr\)/);
+  assert.match(css, /\.award-card--featured \.award-details \{[\s\S]*?grid-template-columns:\s*minmax\(125px, 165px\) minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.award-card--featured \.award-details \{[\s\S]*?minmax\(105px, 0\.42fr\)/);
   assert.match(assets, /type === 'premios' \? 'awards'/);
 });
