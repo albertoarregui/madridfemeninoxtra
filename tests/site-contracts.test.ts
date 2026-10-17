@@ -252,3 +252,8 @@ test('homepage builds valid absolute URLs for most-read Contentful images', () =
   assert.ok(!homepage.includes('String(assetUrl).replace(/^\\/\\//, "https:")'));
   assert.ok(homepage.includes("news:most-read-articles-v3"));
 });
+
+test('Laia Lopez has six clean sheets at the 2026 U20 World Cup', () => {
+  const stats = read('src/data/fabrica-estadisticas.ts');
+  assert.match(stats, /"mundial-sub20-2026::laialopez": stats\(6, 6, 540, 0, 0, 6\)/);
+});
