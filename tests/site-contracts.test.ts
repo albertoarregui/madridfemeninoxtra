@@ -283,3 +283,11 @@ test('2026 U20 awards use dedicated framed photos with captions', () => {
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.award-card--featured \.award-details \{[\s\S]*?minmax\(105px, 0\.42fr\)/);
   assert.match(assets, /type === 'premios' \? 'awards'/);
 });
+
+
+test('about gallery replaces the flag photo without duplicating the selected image', () => {
+  const page = read('src/pages/sobre-nosotros.astro');
+  assert.doesNotMatch(page, /getAssetMetadata\("galeria", "foto-14"\)/);
+  assert.equal((page.match(/getAssetMetadata\("galeria", "foto-16"\)/g) || []).length, 1);
+  assert.match(page, /Alberto junto a una jugadora del fútbol formativo/);
+});
