@@ -43,7 +43,8 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
 
     const normalized = normalizeName(cleanFileName);
     const folder = type === 'jugadorasPerfil' ? 'jugadoras-perfil' :
-        type === 'jugadoras' ? 'jugadoras' : type;
+        type === 'jugadoras' ? 'jugadoras' :
+        type === 'premios' ? 'awards' : type;
 
     const directPath = `/src/assets/${folder}/${cleanFileName}`;
     if (assets[type] && assets[type][directPath]) {
@@ -92,7 +93,8 @@ export function getAssetMetadata(type: AssetType, fileName: string | null | unde
 
     const normalized = normalizeName(fileName);
     const folder = type === 'jugadorasPerfil' ? 'jugadoras-perfil' :
-        type === 'jugadoras' ? 'jugadoras' : type;
+        type === 'jugadoras' ? 'jugadoras' :
+        type === 'premios' ? 'awards' : type;
 
     const pathsToTry = [
         `/src/assets/${folder}/${fileName}`,
