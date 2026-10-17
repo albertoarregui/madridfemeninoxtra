@@ -250,4 +250,5 @@ test('homepage builds valid absolute URLs for most-read Contentful images', () =
   const homepage = read('src/pages/index.astro');
   assert.ok(homepage.includes('String(assetUrl).startsWith("//") ? `https:${assetUrl}` : String(assetUrl)'));
   assert.ok(!homepage.includes('String(assetUrl).replace(/^\\/\\//, "https:")'));
+  assert.ok(homepage.includes("news:most-read-articles-v3"));
 });
