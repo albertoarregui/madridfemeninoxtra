@@ -291,3 +291,11 @@ test('about gallery replaces the flag photo without duplicating the selected ima
   assert.equal((page.match(/getAssetMetadata\("galeria", "foto-16"\)/g) || []).length, 1);
   assert.match(page, /Alberto junto a una jugadora del fútbol formativo/);
 });
+
+test('about project description uses the approved wording', () => {
+  const page = read('src/pages/sobre-nosotros.astro');
+  assert.match(page, /día a día del Real Madrid Femenino/);
+  assert.match(page, /incluyendo gráficos interactivos, desde su fundación en 2020/);
+  assert.doesNotMatch(page, /proyecto sin ánimo de lucro/);
+  assert.doesNotMatch(page, /La comunidad ha acompañado el crecimiento/);
+});
