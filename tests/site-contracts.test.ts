@@ -257,3 +257,23 @@ test('Laia Lopez has six clean sheets at the 2026 U20 World Cup', () => {
   const stats = read('src/data/fabrica-estadisticas.ts');
   assert.match(stats, /"mundial-sub20-2026::laialopez": stats\(6, 6, 540, 0, 0, 6\)/);
 });
+
+test('2026 U20 awards use dedicated framed photos with captions', () => {
+  const page = read('src/pages/la-fabrica/espana.astro');
+  const css = read('src/styles/la-fabrica.css');
+  const assets = read('src/utils/assets.ts');
+  for (const file of [
+    'mundial_sub20_2026_pau_comendador_bota_oro.webp',
+    'mundial_sub20_2026_pau_comendador_balon_bronce.webp',
+    'mundial_sub20_2026_laia_lopez_guante_oro.webp',
+    'mundial_sub20_2026_silvia_cristobal_mvp_final.webp',
+  ]) {
+    assert.ok(page.includes(file), file);
+    assert.equal(exists(`src/assets/awards/${file}`), true, file);
+  }
+  assert.match(page, /<figure class="award-photo">/);
+  assert.match(page, /<figcaption>\{visual\.caption\}<\/figcaption>/);
+  assert.match(css, /\.award-card--featured/);
+  assert.match(css, /aspect-ratio:\s*3 \/ 4/);
+  assert.match(assets, /type === 'premios' \? 'awards'/);
+});
