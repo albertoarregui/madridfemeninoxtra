@@ -1,0 +1,36 @@
+---
+import type { UnoPorUnoMfx, NotaMfx } from "../utils/uno-por-uno";
+interface Props { data: UnoPorUnoMfx }
+const { data } = Astro.props;
+const puntuadas = data.jugadoras.filter((j) => j.nota !== null);
+const noPuntuadas = data.jugadoras.filter((j) => j.nota === null);
+const mvp = puntuadas.find((j) => j.mvp);
+function classFor(nota: number | null) {
+  if (nota === null) return "sin-nota";
+  if (nota < 5) return "nota-roja";
+  if (nota < 7) return "nota-naranja";
+  if (nota < 9) return "nota-verde";
+  if (nota < 10) return "nota-turquesa";
+  return "nota-azul";
+}
+const label = (n: number | null) => n === null ? "S/C" : n.toLocaleString("es-ES", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+---
+<section class="mfx-uno" aria-labelledby="uno-heading">
+  <header><p class="eyebrow">MADRID FEMENINO · {data.temporada}</p><h2 id="uno-heading">{data.titulo}</h2>{data.introduccion && <p>{data.introduccion}</p>}</header>
+  {mvp && <div class="group"><h3>🏆 MVP del partido</h3><article class="card standout">
+    <div class="top"><div class="identity">{mvp.fotoUrl ? <img src={mvp.fotoUrl} alt={mvp.nombre} loading="lazy" /> : <span class="fallback" aria-hidden="true">MF</span>}<strong>{mvp.nombre}</strong></div><strong class={`score ${classFor(mvp.nota)}`} aria-label={`Valoración: ${label(mvp.nota)}`}>{label(mvp.nota)}</strong></div>
+    {mvp.comentario && <p>{mvp.comentario}</p>}
+  </article></div>}
+  {puntuadas.length > 0 && <div class="group"><h3>Jugadoras puntuadas</h3><div class="cards">{puntuadas.map((j: NotaMfx) => <article class="card">
+    <div class="top"><div class="identity">{j.fotoUrl ? <img src={j.fotoUrl} alt={j.nombre} loading="lazy" /> : <span class="fallback" aria-hidden="true">MF</span>}<strong>{j.nombre}{j.mvp && <span class="mvp-tag"> · MVP</span>}</strong></div><strong class={`score ${classFor(j.nota)}`} aria-label={`Valoración: ${label(j.nota)}`}>{label(j.nota)}</strong></div>
+    {j.comentario && <p>{j.comentario}</p>}
+  </article>)}</div></div>}
+  {noPuntuadas.length > 0 && <div class="group"><h3>No puntuadas</h3><div class="cards">{noPuntuadas.map((j: NotaMfx) => <article class="card">
+    <div class="top"><div class="identity">{j.fotoUrl ? <img src={j.fotoUrl} alt={j.nombre} loading="lazy" /> : <span class="fallback" aria-hidden="true">MF</span>}<strong>{j.nombre}</strong></div><strong class="score sin-nota" aria-label="Sin calificación">S/C</strong></div>
+    {j.comentario && <p>{j.comentario}</p>}
+  </article>)}</div></div>}
+</section>
+<style>
+.mfx-uno{max-width:950px;margin:2rem auto;padding:0 1rem;color:var(--text-color,inherit)}
+.mfx-uno header{margin-bottom:1.5rem}.mfx-uno header h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800}.eyebrow{font-size:.76rem;letter-spacing:.12em;opacity:.7}.group{margin:1.7rem 0}.group h3{font-size:1.2rem;font-weight:800;margin-bottom:.85rem}.cards{display:grid;gap:.85rem}.card{padding:1rem;border:1px solid #d7dce3;border-radius:18px;background:var(--card-bg,#fff);color:var(--card-text,#20252e);box-shadow:0 4px 16px #0000000b}.standout{border:2px solid #53b8bc}.top{display:flex;align-items:center;justify-content:space-between;gap:1rem}.identity{display:flex;align-items:center;gap:.85rem;min-width:0}.identity img,.fallback{height:72px;width:72px;flex-shrink:0;border-radius:50%;object-fit:cover;object-position:center top;background:#e9edf2}.fallback{display:grid;place-items:center;color:#526173;font-weight:800}.identity strong{font-size:1.04rem;line-height:1.35}.score{min-width:64px;padding:.8rem .6rem;text-align:center;border-radius:13px;font-size:1.24rem;font-variant-numeric:tabular-nums}.nota-roja{background:#f8d7da;color:#842029}.nota-naranja{background:#ffe5c2;color:#9a4d00}.nota-verde{background:#d8f3dc;color:#1b5e20}.nota-turquesa{background:#d7f3f0;color:#006d77}.nota-azul{background:#dce6f9;color:#1d3557}.sin-nota{background:#e8ebef;color:#505765;font-size:1rem}.mvp-tag{color:#117b82;font-size:.8rem}.card p{margin:.9rem 0 0;line-height:1.6}@media(min-width:720px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.identity img,.fallback{width:58px;height:58px}.score{min-width:56px}.card{padding:.8rem}}
+</style>
