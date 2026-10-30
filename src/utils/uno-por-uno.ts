@@ -1,0 +1,61 @@
+import { contentfulClient } from "../lib/contentful";
+
+export type NotaMfx = {
+  id: string;
+  nombre: string;
+  nota: number | null;
+  comentario: string;
+  mvp: boolean;
+  orden: number;
+  estado: "Puntuada" | "No puntuada";
+  fotoUrl: string | null;
+};
+export type UnoPorUnoMfx = { titulo: string; partidoId: string; temporada: string; introduccion: string; jugadoras: NotaMfx[] };
+
+const assetUrl = (asset: any): string | null => {
+  const url = asset?.fields?.file?.url;
+  if (typeof url !== "string" || !url) return null;
+  return url.startsWith("//") ? `https:${url}` : url;
+};
+const yearSeason = (s: string) => /^20\d{2}\/\d{2}$/.test(s);
+
+export async function getUnoPorUnoPartido(partidoId: string): Promise<UnoPorUnoMfx | null> {
+  if (!partidoId) return null;
+  const response = await contentfulClient.getEntries({
+    content_type: "unoPorUnoMfx",
+    "fields.partidoId": String(partidoId),
+    include: 4,
+    limit: 2,
+  });
+  const entry: any = response.items[0];
+  if (!entry || response.items.length !== 1) return null;
+  const f = entry.fields ?? {};
+  const temporada = String(f.temporada ?? "");
+  if (!yearSeason(temporada)) return null;
+  const jugadoras: NotaMfx[] = (f.valoraciones ?? []).filter((j: any) => j?.fields).map((item: any, index: number) => {
+    const j = item.fields;
+    const estado = j.estado === "No puntuada" ? "No puntuada" : "Puntuada";
+    const nota = estado === "Puntuada" && typeof j.nota === "number" && j.nota >= 0 && j.nota <= 10 ? j.nota : null;
+    const fotoTemporada = j.fotoTemporada?.fields;
+    // Nunca sustituir una foto histórica por la actual o una foto sin temporada verificada.
+    const fotoUrl = fotoTemporada?.temporada === temporada && (!j.jugadoraId || String(fotoTemporada.jugadoraId) === String(j.jugadoraId))
+      ? assetUrl(fotoTemporada.foto) : null;
+    return {
+      id: item.sys.id,
+      nombre: String(j.nombre ?? ""),
+      nota,
+      comentario: String(j.comentario ?? ""),
+      mvp: Boolean(j.mvp) && nota !== null,
+      orden: typeof j.orden === "number" ? j.orden : index,
+      estado: nota === null ? "No puntuada" : estado,
+      fotoUrl,
+    };
+  }).sort((a, b) => a.orden - b.orden);
+  // Solo una MVP, incluso si el editor marca varias por error.
+  let foundMvp = false;
+  for (const jugadora of jugadoras) {
+    if (jugadora.mvp && !foundMvp) foundMvp = true;
+    else jugadora.mvp = false;
+  }
+  return { titulo: String(f.titulo ?? "El 1x1 del Real Madrid"), partidoId: String(f.partidoId ?? ""), temporada, introduccion: String(f.introduccion ?? ""), jugadoras };
+}
