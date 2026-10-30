@@ -31,18 +31,14 @@ let spotlightNews: any[] = [];
 try {
 	const { contentfulClient } = await import("../lib/contentful");
 
-	const cronicaEntry = await contentfulClient.getEntries({
-		content_type: "noticia",
-		limit: 1,
-		"fields.category": "CRÓNICA",
-		order: ["-sys.createdAt"],
-	});
-	const previaEntry = await contentfulClient.getEntries({
-		content_type: "noticia",
-		limit: 1,
-		"fields.category": "PREVIA",
-		order: ["-sys.createdAt"],
-	});
+	const [cronicaEntry, previaEntry] = await cached("contentful:home:spotlight-v1", 10 * 60 * 1000, async () => Promise.all([
+		contentfulClient.getEntries({
+			content_type: "noticia", limit: 1, "fields.category": "CRÓNICA", order: ["-sys.createdAt"],
+		}),
+		contentfulClient.getEntries({
+			content_type: "noticia", limit: 1, "fields.category": "PREVIA", order: ["-sys.createdAt"],
+		}),
+	]), { tags: ["news", "homepage"] });
 
 	const cronica = cronicaEntry.items[0];
 	const previa = previaEntry.items[0];
