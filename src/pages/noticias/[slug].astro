@@ -16,6 +16,7 @@ import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
 import { fetchGamesDirectly } from "../../utils/partidos";
 import { getFlagSrc } from "../../utils/flags";
 import { generateSlug } from "../../utils/url-helper";
+import { cached } from "../../utils/cache";
 
 export const prerender = false;
 
@@ -29,12 +30,12 @@ let relatedNoticias: any[] = [];
 
 try {
     const { contentfulClient } = await import("../../lib/contentful");
-    const entries = await contentfulClient.getEntries({
+    const entries = await cached(`contentful:news:item:${slug}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
         content_type: "noticia",
         "fields.slug": slug,
         include: 3,
         limit: 1,
-    });
+    }), { tags: ["news", `news-${slug}`] });
 
     if (entries && entries.items.length > 0) {
         noticia = entries.items[0].fields;
@@ -44,13 +45,13 @@ try {
 
         if (noticia?.category && noticiaId) {
             try {
-                const relatedEntries = await contentfulClient.getEntries({
+                const relatedEntries = await cached(`contentful:news:related:${noticia.category}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
                     content_type: "noticia",
                     "fields.category": noticia.category,
                     "sys.id[ne]": noticiaId,
                     order: ["-sys.createdAt"],
                     limit: 3,
-                });
+                }), { tags: ["news"] });
                 relatedNoticias = relatedEntries.items.map((item: any) => ({
                     ...item.fields,
                     id: item.sys.id,
