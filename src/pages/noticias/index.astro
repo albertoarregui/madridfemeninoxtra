@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import { contentfulClient } from "../../lib/contentful";
 import NewsArchive from "../../components/NewsArchive";
+import { cached } from "../../utils/cache";
 
 export const prerender = false;
 
@@ -11,7 +12,8 @@ let error = null;
 try {
     // La portada del archivo no necesita el cuerpo Rich Text de cada artículo.
     // Proyectar sólo las columnas visibles ahorra CPU, memoria y HTML serializado.
-    const entries = await contentfulClient.getEntries({
+    noticias = await cached("contentful:news:archive-v1", 10 * 60 * 1000, async () => {
+        const entries = await contentfulClient.getEntries({
         content_type: "noticia",
         order: ["-sys.createdAt"],
         limit: 100,
@@ -22,7 +24,7 @@ try {
             "fields.category", "fields.featuredImage",
         ] as any,
     });
-    noticias = entries.items.map((item: any) => {
+        return entries.items.map((item: any) => {
         const fields = item.fields || {};
         const imageUrl = fields.featuredImage?.fields?.file?.url;
         return {
@@ -37,6 +39,7 @@ try {
             featuredImage: imageUrl ? { fields: { file: { url: imageUrl } } } : null,
         };
     });
+    }, { tags: ["news"] });
 } catch (e: any) {
     console.error("Error fetching news:", e);
     error = e.message;
