@@ -1,4 +1,6 @@
 import { contentfulClient } from "../lib/contentful";
+import { fetchPlayersDirectly } from "./players";
+import { cached, TTL } from "./cache";
 
 export type NotaMfx = {
   id: string;
@@ -32,17 +34,28 @@ export async function getUnoPorUnoPartido(partidoId: string): Promise<UnoPorUnoM
   const f = entry.fields ?? {};
   const temporada = String(f.temporada ?? "");
   if (!yearSeason(temporada)) return null;
+  // La fotografía se toma de Turso por ID y temporada, nunca de la foto actual
+  // de la jugadora. Solo se admiten fichas del primer equipo (categoría 4).
+  const plantilla = await cached(`uno-por-uno:plantilla:${temporada}`, TTL.medio, async () => {
+    const players = await fetchPlayersDirectly();
+    return Object.fromEntries(players
+      .filter((p: any) => Number(p.season_info?.[temporada]?.id_categoria) === 4)
+      .map((p: any) => [String(p.id_jugadora), {
+        nombre: String(p.nombre),
+        fotoUrl: String(p.season_photos?.[temporada] || ""),
+      }]));
+  }, { tags: ["players"] });
   const jugadoras: NotaMfx[] = (f.valoraciones ?? []).filter((j: any) => j?.fields).map((item: any, index: number) => {
     const j = item.fields;
     const estado = j.estado === "No puntuada" ? "No puntuada" : "Puntuada";
     const nota = estado === "Puntuada" && typeof j.nota === "number" && j.nota >= 0 && j.nota <= 10 ? j.nota : null;
-    const fotoTemporada = j.fotoTemporada?.fields;
-    // Nunca sustituir una foto histórica por la actual o una foto sin temporada verificada.
-    const fotoUrl = fotoTemporada?.temporada === temporada && (!j.jugadoraId || String(fotoTemporada.jugadoraId) === String(j.jugadoraId))
-      ? assetUrl(fotoTemporada.foto) : null;
+    const id = String(j.jugadoraId ?? "").trim();
+    const perfil = id ? plantilla[id] : undefined;
+    // Sin coincidencia por ID y temporada: no se muestra una fotografía incorrecta.
+    const fotoUrl = perfil?.fotoUrl || null;
     return {
       id: item.sys.id,
-      nombre: String(j.nombre ?? ""),
+      nombre: perfil?.nombre || String(j.nombre ?? ""),
       nota,
       comentario: String(j.comentario ?? ""),
       mvp: Boolean(j.mvp) && nota !== null,
