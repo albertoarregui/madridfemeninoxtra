@@ -47,8 +47,10 @@ export async function getUnoPorUnoPartido(partidoId: string): Promise<UnoPorUnoM
   }, { tags: ["players"] });
   const jugadoras: NotaMfx[] = (f.valoraciones ?? []).filter((j: any) => j?.fields).map((item: any, index: number) => {
     const j = item.fields;
-    const estado = j.estado === "No puntuada" ? "No puntuada" : "Puntuada";
-    const nota = estado === "Puntuada" && typeof j.nota === "number" && j.nota >= 0 && j.nota <= 10 ? j.nota : null;
+    // La editora solo introduce la nota: las valoraciones con nota válida
+    // aparecen puntuadas automáticamente, sin cambiar el selector de estado.
+    const nota = typeof j.nota === "number" && j.nota >= 0 && j.nota <= 10 ? j.nota : null;
+    const estado = nota === null ? "No puntuada" : "Puntuada";
     const id = String(j.jugadoraId ?? "").trim();
     const perfil = id ? plantilla[id] : undefined;
     // Sin coincidencia por ID y temporada: no se muestra una fotografía incorrecta.
