@@ -312,7 +312,7 @@ test('about gallery keeps the approved order, captions and exact replacement', (
   assert.match(page, /<button type="button" class="lightbox-close"/);
   assert.match(page, /closeBtn\.addEventListener\("click", \(e\) => \{ e\.stopPropagation\(\); closeLightbox\(\); \}\)/);
   assert.match(page, /\.lightbox \{[\s\S]*?z-index: 3000000/);
-  assert.match(page, /\.lightbox-close:hover \{[\s\S]*?background: #d4a843/);
+  assert.match(page, /\.lightbox-close:hover \{[\s\S]*?color: #d4a843;[\s\S]*?background: transparent/);
   assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
 });
 
