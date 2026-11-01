@@ -198,6 +198,16 @@ test('reader ratings pages have competition crests and one-row MVP UI', () => {
   assert.match(read('src/middleware.ts'), /\/\^\\\/valoraciones/);
 });
 
+test('ratings archive shows every match without a competition selector', () => {
+  const page = read('src/pages/valoraciones/index.astro');
+  const css = read('src/styles/valoraciones.css');
+  assert.doesNotMatch(page, /rating-competition-filter/);
+  assert.doesNotMatch(page, /filterRatings/);
+  assert.doesNotMatch(page, /const competitions=/);
+  assert.doesNotMatch(css, /\.mfx-rating-filters/);
+  assert.match(page, /older\.map\(match=>/);
+});
+
 test('reader votes are authenticated, deduplicated, and cannot select the coach as MVP', () => {
   const api = read('src/pages/api/valoraciones/[id].ts');
   const db = read('src/lib/ratings.ts');
@@ -301,21 +311,25 @@ test('about gallery keeps the approved order, captions and exact replacement', (
   assert.match(page, /\.lightbox-next \{ right: 0\.65rem; \}/);
   assert.match(page, /<button type="button" class="lightbox-close"/);
   assert.match(page, /closeBtn\.addEventListener\("click", \(e\) => \{ e\.stopPropagation\(\); closeLightbox\(\); \}\)/);
+  assert.match(page, /\.lightbox \{[\s\S]*?z-index: 3000000/);
+  assert.match(page, /\.lightbox-close:hover \{[\s\S]*?background: #d4a843/);
   assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
 });
 
-test('ranking pages use concise headings and compact desktop grids', () => {
+test('ranking pages use concise headings and a compact vertical table', () => {
   const index = read('src/pages/rankings.astro');
   const detail = read('src/pages/rankings/[slug].astro');
 
   assert.match(index, /<h1 class="landing-title">RANKINGS<\/h1>/);
   assert.match(index, /Clasificaciones históricas de las jugadoras del Real Madrid Femenino a lo largo de su historia, por temporada y competición/);
   assert.match(index, /\.seo-ranking-links \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(index, /\.seo-ranking-links \{[\s\S]*?width: min\(100%, 1200px\);[\s\S]*?margin: 0 auto 2rem/);
   assert.match(detail, /h1: "Máximas goleadoras"/);
   assert.match(detail, /h1: "Más partidos"/);
   assert.doesNotMatch(detail, /h1: "[^"]*del Real Madrid Femenino/);
   assert.match(detail, /\{config\.h1\} del Real Madrid Femenino a lo largo de su historia/);
-  assert.match(detail, /\.rank-grid \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(detail, /\.rank-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?width: calc\(\(100% - 0\.8rem\) \/ 2\);[\s\S]*?margin-inline: auto/);
+  assert.match(detail, /@media \(max-width: 760px\)[\s\S]*?\.rank-grid \{ width: 100%; \}/);
 });
 
 test('records page uses the concise heading and centered narrow table', () => {
