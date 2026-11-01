@@ -31,8 +31,16 @@ export const GET: APIRoute = async ({ url }) => {
                         g.asistente  AS from_id,
                         g.goleadora  AS to_id,
                         COUNT(*)     AS weight,
-                        (SELECT foto_url FROM dorsales WHERE id_jugadora = g.asistente ORDER BY id_temporada DESC LIMIT 1) AS from_img,
-                        (SELECT foto_url FROM dorsales WHERE id_jugadora = g.goleadora  ORDER BY id_temporada DESC LIMIT 1) AS to_img
+                        (SELECT COALESCE(NULLIF(TRIM(foto_url), ''), NULLIF(TRIM(foto_perfil_url), ''))
+                           FROM dorsales
+                          WHERE id_jugadora = g.asistente
+                            AND COALESCE(NULLIF(TRIM(foto_url), ''), NULLIF(TRIM(foto_perfil_url), '')) IS NOT NULL
+                          ORDER BY id_temporada DESC LIMIT 1) AS from_img,
+                        (SELECT COALESCE(NULLIF(TRIM(foto_url), ''), NULLIF(TRIM(foto_perfil_url), ''))
+                           FROM dorsales
+                          WHERE id_jugadora = g.goleadora
+                            AND COALESCE(NULLIF(TRIM(foto_url), ''), NULLIF(TRIM(foto_perfil_url), '')) IS NOT NULL
+                          ORDER BY id_temporada DESC LIMIT 1) AS to_img
                     FROM goles_y_asistencias g
                     JOIN  partidos p      ON g.id_partido      = p.id_partido
                     JOIN  temporadas t    ON p.id_temporada    = t.id_temporada

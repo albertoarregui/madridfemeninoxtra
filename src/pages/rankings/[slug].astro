@@ -18,42 +18,42 @@ const CONFIG: Record<string, RankingConfig> = {
     "maximas-goleadoras": {
         key: "goles",
         title: "Máximas goleadoras históricas del Real Madrid Femenino | MFX",
-        h1: "Máximas goleadoras del Real Madrid Femenino",
+        h1: "Máximas goleadoras",
         description: "Ranking histórico de máximas goleadoras del Real Madrid Femenino en partidos oficiales.",
         label: "goles",
     },
     "maximas-asistentes": {
         key: "asistencias",
         title: "Máximas asistentes históricas del Real Madrid Femenino | MFX",
-        h1: "Máximas asistentes del Real Madrid Femenino",
+        h1: "Máximas asistentes",
         description: "Ranking histórico de jugadoras con más asistencias del Real Madrid Femenino en partidos oficiales.",
         label: "asistencias",
     },
     "mas-partidos": {
         key: "partidos",
         title: "Jugadoras con más partidos en el Real Madrid Femenino | MFX",
-        h1: "Jugadoras con más partidos en el Real Madrid Femenino",
+        h1: "Más partidos",
         description: "Ranking histórico de apariciones con el Real Madrid Femenino en partidos oficiales.",
         label: "partidos",
     },
     "mas-minutos": {
         key: "minutos",
         title: "Jugadoras con más minutos en el Real Madrid Femenino | MFX",
-        h1: "Jugadoras con más minutos en el Real Madrid Femenino",
+        h1: "Más minutos",
         description: "Ranking histórico de minutos jugados con el Real Madrid Femenino en partidos oficiales.",
         label: "minutos",
     },
     "mas-capitanias": {
         key: "capitanias",
         title: "Jugadoras con más capitanías en el Real Madrid Femenino | MFX",
-        h1: "Jugadoras con más capitanías en el Real Madrid Femenino",
+        h1: "Más capitanías",
         description: "Ranking histórico de capitanías del Real Madrid Femenino en partidos oficiales.",
         label: "capitanías",
     },
     "porterias-a-cero": {
         key: "porterias_cero",
         title: "Porteras con más porterías a cero del Real Madrid Femenino | MFX",
-        h1: "Porteras con más porterías a cero del Real Madrid Femenino",
+        h1: "Más porterías a cero",
         description: "Ranking histórico de porteras del Real Madrid Femenino con más partidos sin encajar en competiciones oficiales.",
         label: "porterías a cero",
         keep: (row: any) => /porter/i.test(String(row.posicion || "")),
@@ -136,10 +136,7 @@ const itemList = {
 
 const nav = Object.entries(CONFIG).map(([key, value]) => ({
     href: `/rankings/${key}`,
-    label: value.h1
-        .replace(" del Real Madrid Femenino", "")
-        .replace("Jugadoras con ", "")
-        .replace("Porteras con ", ""),
+    label: value.h1,
 }));
 ---
 
@@ -160,7 +157,7 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
     <main class="ranking-page max-w-5xl mx-auto px-6 py-12">
         <header class="page-header-container">
             <h1 class="landing-title">{config.h1}</h1>
-            <p class="landing-subtitle">Datos acumulados de partidos oficiales desde la creación del Real Madrid Femenino</p>
+            <p class="landing-subtitle">{config.h1} del Real Madrid Femenino a lo largo de su historia</p>
         </header>
 
         <nav class="rank-nav" aria-label="Otros rankings históricos">
@@ -248,7 +245,7 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
     }
     .rank-grid {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.8rem;
     }
     .rank-card {
@@ -381,5 +378,8 @@ const nav = Object.entries(CONFIG).map(([key, value]) => ({
         .rank-name small,
         .rank-value small { font-size: 0.58rem; }
         .rank-value { font-size: 1rem; }
+    }
+    @media (max-width: 760px) {
+        .rank-grid { grid-template-columns: 1fr; }
     }
 </style>

@@ -299,7 +299,36 @@ test('about gallery keeps the approved order, captions and exact replacement', (
   assert.match(page, /lightboxCaption\.textContent = current\.alt/);
   assert.match(page, /\.lightbox-prev \{ left: 0\.65rem; \}/);
   assert.match(page, /\.lightbox-next \{ right: 0\.65rem; \}/);
+  assert.match(page, /<button type="button" class="lightbox-close"/);
+  assert.match(page, /closeBtn\.addEventListener\("click", \(e\) => \{ e\.stopPropagation\(\); closeLightbox\(\); \}\)/);
   assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
+});
+
+test('ranking pages use concise headings and compact desktop grids', () => {
+  const index = read('src/pages/rankings.astro');
+  const detail = read('src/pages/rankings/[slug].astro');
+
+  assert.match(index, /<h1 class="landing-title">RANKINGS<\/h1>/);
+  assert.match(index, /Clasificaciones históricas de las jugadoras del Real Madrid Femenino a lo largo de su historia, por temporada y competición/);
+  assert.match(index, /\.seo-ranking-links \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(detail, /h1: "Máximas goleadoras"/);
+  assert.match(detail, /h1: "Más partidos"/);
+  assert.doesNotMatch(detail, /h1: "[^"]*del Real Madrid Femenino/);
+  assert.match(detail, /\{config\.h1\} del Real Madrid Femenino a lo largo de su historia/);
+  assert.match(detail, /\.rank-grid \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});
+
+test('records page uses the concise heading and centered narrow table', () => {
+  const page = read('src/pages/records.astro');
+  assert.match(page, /<h1 class="landing-title">RÉCORDS GOLEADORES<\/h1>/);
+  assert.match(page, /Marcas de goles redondos del Real Madrid femenino a lo largo de su historia/);
+  assert.match(page, /#records-content \{[\s\S]*?max-width: 1120px;[\s\S]*?margin-inline: auto/);
+});
+
+test('assist network normalizes player photos without extra database reads', () => {
+  const api = read('src/pages/api/assist-network.ts');
+  assert.match(api, /COALESCE\(NULLIF\(TRIM\(foto_url\), ''\), NULLIF\(TRIM\(foto_perfil_url\), ''\)\)/);
+  assert.equal((api.match(/client\.execute\(/g) || []).length, 2);
 });
 
 test('about project description uses the approved wording', () => {

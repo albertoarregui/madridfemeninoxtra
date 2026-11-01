@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import RatingScoreboard from '../../components/RatingScoreboard.astro';
+import RatingsShareCard from '../../components/RatingsShareCard.astro';
 import { ratingMatch, ratingPeople, ratingSummary, ratingsOpen } from '../../lib/ratings';
 import { getAssetUrl } from '../../utils/assets';
 import { getCurrentSeason } from '../../utils/season';
@@ -117,6 +118,15 @@ function scoreColor(n:number){return n<=4?'#db3830':n<=6?'#df8a2f':n===7?'#51bd5
       </> : <div class="mfx-rating-empty"><h1>Partido no encontrado</h1><a href="/valoraciones">Volver a las valoraciones</a></div>}
     </div>
   </main>
+  {match && <RatingsShareCard
+    match={match}
+    manager={manager}
+    starters={starter}
+    substitutes={substitutes}
+    aggregate={aggregate}
+    popularMvpId={mvp?.id ?? null}
+    date={date}
+  />}
 </Layout>
 {match&&<script is:inline define:vars={{matchId:match.id,isDemo:demo,isOpen:open}}>
   (() => {
@@ -143,11 +153,6 @@ function scoreColor(n:number){return n<=4?'#db3830':n<=6?'#df8a2f':n===7?'#51bd5
       });
     }
     const feedback=document.getElementById('mfx-rating-feedback');
-    document.getElementById('mfx-rating-share')?.addEventListener('click',async()=>{
-      const url=location.href;
-      if(navigator.share) {try{await navigator.share({title:document.title,url});return;}catch{}}
-      try{await navigator.clipboard.writeText(url);feedback.textContent='Enlace copiado.';}catch{feedback.textContent=url;}
-    });
     document.getElementById('mfx-rating-save')?.addEventListener('click',async(event)=>{
       if(selected.size===0){feedback.textContent='Selecciona al menos una valoración.';return;}
       if(isDemo){feedback.textContent='Demostración completada. Las notas y MVP no se guardan en la vista previa.';return;}

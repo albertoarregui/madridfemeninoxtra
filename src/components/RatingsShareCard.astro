@@ -1,0 +1,278 @@
+---
+import type { RatingAggregate, RatingMatch, RatingPerson } from '../lib/ratings';
+import { getAssetUrl } from '../utils/assets';
+
+interface Props {
+  match: RatingMatch;
+  manager: RatingPerson | null;
+  starters: RatingPerson[];
+  substitutes: RatingPerson[];
+  aggregate: RatingAggregate[];
+  popularMvpId: number | null;
+  date: string;
+}
+
+const { match, manager, starters, substitutes, aggregate, popularMvpId, date } = Astro.props;
+const isMadridHome = /real madrid/i.test(match.club_local);
+const leftScore = isMadridHome ? match.goles_rm : match.goles_rival;
+const rightScore = isMadridHome ? match.goles_rival : match.goles_rm;
+const localLogo = getAssetUrl('escudos', match.local_foto_url || match.club_local);
+const awayLogo = getAssetUrl('escudos', match.visitante_foto_url || match.club_visitante);
+const competitionLogo = getAssetUrl('competiciones', match.competicion_foto_url || match.competicion);
+const summary = (id: number) => aggregate.find((item) => item.id === id);
+
+function photo(person: RatingPerson) {
+  const external = person.image && /^https?:\/\//.test(person.image) ? person.image : null;
+  return external || getAssetUrl(person.coach ? 'entrenadores' : 'jugadorasPerfil', person.image || person.name)
+    || (!person.coach ? getAssetUrl('jugadoras', person.name) : '');
+}
+
+function captureSafe(src: string) {
+  return /^https?:\/\//.test(src) ? `/api/img-proxy?url=${encodeURIComponent(src)}` : src;
+}
+
+const sections = [
+  { title: 'ENTRENADOR/A', people: manager ? [manager] : [] },
+  { title: 'ONCE INICIAL', people: starters },
+  { title: 'SUPLENTES', people: substitutes },
+].filter((section) => section.people.length > 0);
+---
+
+<dialog class="mfx-share-dialog" id="mfx-share-dialog" aria-labelledby="mfx-share-title">
+  <div class="mfx-share-modal">
+    <header class="mfx-share-modal-header">
+      <div>
+        <p class="mfx-share-kicker">MADRID FEMENINO XTRA</p>
+        <h2 id="mfx-share-title">Compartir valoraciones</h2>
+      </div>
+      <button type="button" class="mfx-share-close" id="mfx-share-close" aria-label="Cerrar">×</button>
+    </header>
+
+    <div class="mfx-share-tabs" role="tablist" aria-label="Tipo de valoraciones">
+      <button type="button" role="tab" aria-selected="true" data-share-mode="own">MIS VALORACIONES</button>
+      <button type="button" role="tab" aria-selected="false" data-share-mode="average">MEDIA AFICIÓN</button>
+    </div>
+
+    <div class="mfx-share-preview-wrap">
+      <article
+        class="mfx-share-card"
+        id="mfx-share-card"
+        data-match-id={match.id}
+        data-popular-mvp={popularMvpId ?? ''}
+      >
+        <div class="mfx-share-brand">
+          <img src="/icon.webp" alt="" width="54" height="54" crossorigin="anonymous" />
+          <div>
+            <strong>MADRID FEMENINO XTRA</strong>
+            <span>madridfemeninoxtra.com</span>
+          </div>
+        </div>
+
+        <div class="mfx-share-card-heading">
+          <p id="mfx-share-card-mode">MIS VALORACIONES</p>
+          <h3>{match.club_local} VS {match.club_visitante}</h3>
+          <div class="mfx-share-competition">
+            {competitionLogo && <img src={captureSafe(competitionLogo)} alt="" crossorigin="anonymous" />}
+            <span>{match.competicion} · {date}</span>
+          </div>
+        </div>
+
+        <div class="mfx-share-match">
+          <div class="mfx-share-team">
+            {localLogo && <img src={captureSafe(localLogo)} alt="" crossorigin="anonymous" />}
+            <strong>{match.club_local}</strong>
+          </div>
+          <div class="mfx-share-score"><strong>{leftScore}–{rightScore}</strong><span>FINALIZADO</span></div>
+          <div class="mfx-share-team">
+            {awayLogo && <img src={captureSafe(awayLogo)} alt="" crossorigin="anonymous" />}
+            <strong>{match.club_visitante}</strong>
+          </div>
+        </div>
+
+        {sections.map((section) => (
+          <section class="mfx-share-section">
+            <h4>{section.title}</h4>
+            <div class:list={['mfx-share-people', { 'mfx-share-coach': section.title === 'ENTRENADOR/A' }] }>
+              {section.people.map((person) => {
+                const personPhoto = photo(person);
+                const average = summary(person.id)?.average;
+                return <div
+                  class="mfx-share-person"
+                  data-share-person={person.id}
+                  data-average={average ?? ''}
+                >
+                  <div class="mfx-share-photo-wrap">
+                    {personPhoto && <img src={captureSafe(personPhoto)} alt="" crossorigin="anonymous" />}
+                    <span class="mfx-share-mvp" hidden>MVP</span>
+                  </div>
+                  <div class="mfx-share-person-copy">
+                    <strong>{person.name}</strong>
+                    <span>{person.coach ? 'Entrenador/a' : person.position}</span>
+                  </div>
+                  <b class="mfx-share-person-score">—</b>
+                </div>;
+              })}
+            </div>
+          </section>
+        ))}
+
+        <footer class="mfx-share-card-footer">
+          <span>VALORACIONES DE LA AFICIÓN</span>
+          <strong>#MadridFemeninoXtra</strong>
+        </footer>
+      </article>
+    </div>
+
+    <div class="mfx-share-actions">
+      <button type="button" class="mfx-share-primary" id="mfx-share-download">DESCARGAR IMAGEN</button>
+      <button type="button" class="mfx-share-secondary" id="mfx-share-native">COMPARTIR IMAGEN</button>
+    </div>
+    <p class="mfx-share-status" id="mfx-share-status" role="status" aria-live="polite"></p>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('mfx-share-dialog') as HTMLDialogElement | null;
+  const card = document.getElementById('mfx-share-card') as HTMLElement | null;
+  const status = document.getElementById('mfx-share-status');
+  let mode: 'own' | 'average' = 'own';
+
+  const scoreColor = (score: number) => score < 5 ? '#ff7777' : score < 7 ? '#f2a45c' : score < 9 ? '#83d694' : score < 10 ? '#65d7df' : '#7da8ff';
+  const ownScores = () => {
+    const scores = new Map<number, number>();
+    document.querySelectorAll<HTMLElement>('[data-rating-person]').forEach((row) => {
+      const picked = row.querySelector<HTMLElement>('[data-score][aria-pressed="true"]');
+      if (picked) scores.set(Number(row.dataset.ratingPerson), Number(picked.dataset.score));
+    });
+    return scores;
+  };
+  const ownMvp = () => Number(document.querySelector<HTMLElement>('[data-mvp][aria-pressed="true"]')?.dataset.mvp || 0);
+
+  function renderCard(nextMode: 'own' | 'average') {
+    if (!card) return;
+    mode = nextMode;
+    const selected = ownScores();
+    const mvpId = mode === 'own' ? ownMvp() : Number(card.dataset.popularMvp || 0);
+    const heading = document.getElementById('mfx-share-card-mode');
+    if (heading) heading.textContent = mode === 'own' ? 'MIS VALORACIONES' : 'MEDIA DE LA AFICIÓN';
+
+    card.querySelectorAll<HTMLElement>('[data-share-person]').forEach((person) => {
+      const id = Number(person.dataset.sharePerson);
+      const raw = mode === 'own' ? selected.get(id) : Number(person.dataset.average || 0);
+      const score = raw && Number.isFinite(raw) ? raw : null;
+      const output = person.querySelector<HTMLElement>('.mfx-share-person-score');
+      if (output) {
+        output.textContent = score === null ? '—' : mode === 'own' ? String(score) : score.toFixed(1).replace('.', ',');
+        output.style.color = score === null ? '#8290a6' : scoreColor(score);
+      }
+      const badge = person.querySelector<HTMLElement>('.mfx-share-mvp');
+      if (badge) badge.hidden = id !== mvpId;
+    });
+
+    document.querySelectorAll<HTMLElement>('[data-share-mode]').forEach((tab) => {
+      tab.setAttribute('aria-selected', String(tab.dataset.shareMode === mode));
+    });
+  }
+
+  document.getElementById('mfx-rating-share')?.addEventListener('click', () => {
+    const hasOwnScores = ownScores().size > 0;
+    renderCard(hasOwnScores ? 'own' : 'average');
+    if (status) status.textContent = '';
+    dialog?.showModal();
+  });
+  document.getElementById('mfx-share-close')?.addEventListener('click', () => dialog?.close());
+  dialog?.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+  document.querySelectorAll<HTMLElement>('[data-share-mode]').forEach((tab) => tab.addEventListener('click', () => {
+    renderCard(tab.dataset.shareMode === 'average' ? 'average' : 'own');
+  }));
+
+  async function imageBlob() {
+    if (!card) throw new Error('No se ha podido preparar la tarjeta.');
+    if (status) status.textContent = 'Generando imagen…';
+    const { default: html2canvas } = await import('html2canvas');
+    await document.fonts.ready;
+    await Promise.all([...card.querySelectorAll('img')].map((image) => image.complete
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => {
+          image.addEventListener('load', () => resolve(), { once: true });
+          image.addEventListener('error', () => resolve(), { once: true });
+        })));
+    const canvas = await html2canvas(card, {
+      backgroundColor: '#07101f',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+    });
+    return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('No se pudo crear la imagen.')), 'image/png'));
+  }
+
+  function download(blob: Blob) {
+    if (!card) return;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `valoraciones-${card.dataset.matchId}-${mode === 'own' ? 'mis-notas' : 'media-aficion'}.png`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  document.getElementById('mfx-share-download')?.addEventListener('click', async () => {
+    try { const blob = await imageBlob(); download(blob); if (status) status.textContent = 'Imagen descargada.'; }
+    catch { if (status) status.textContent = 'No se ha podido generar la imagen.'; }
+  });
+  document.getElementById('mfx-share-native')?.addEventListener('click', async () => {
+    try {
+      const blob = await imageBlob();
+      const file = new File([blob], `valoraciones-${card?.dataset.matchId || 'partido'}.png`, { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Valoraciones · Madrid Femenino Xtra' });
+        if (status) status.textContent = 'Imagen compartida.';
+      } else {
+        download(blob);
+        if (status) status.textContent = 'Tu navegador no permite compartir archivos; se ha descargado la imagen.';
+      }
+    } catch (error) {
+      if ((error as Error)?.name !== 'AbortError' && status) status.textContent = 'No se ha podido compartir la imagen.';
+    }
+  });
+</script>
+
+<style>
+  .mfx-share-dialog{width:min(980px,calc(100vw - 24px));max-height:94vh;padding:0;border:1px solid rgba(212,168,67,.45);border-radius:8px;background:#091426;color:#eef2f8;box-shadow:0 30px 90px rgba(0,0,0,.75)}
+  .mfx-share-dialog::backdrop{background:rgba(1,5,13,.87);backdrop-filter:blur(8px)}
+  .mfx-share-modal{padding:clamp(18px,3vw,34px);overflow:auto;max-height:94vh}
+  .mfx-share-modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:20px}
+  .mfx-share-kicker{margin:0 0 6px;color:#d4a843;font:700 .68rem 'Cinzel',serif;letter-spacing:.16em}
+  .mfx-share-modal-header h2{margin:0;color:#eef2f8;font:700 clamp(1.35rem,3vw,2rem) 'Cinzel',serif}
+  .mfx-share-close{width:42px;height:42px;border:1px solid rgba(212,168,67,.4);border-radius:50%;background:transparent;color:#eef2f8;font-size:1.8rem;line-height:1;cursor:pointer}
+  .mfx-share-tabs{display:inline-flex;padding:4px;border:1px solid rgba(212,168,67,.35);border-radius:6px;margin-bottom:22px;background:#07101f}
+  .mfx-share-tabs button{border:0;border-radius:4px;padding:11px 17px;background:transparent;color:#9faabd;font:700 .72rem 'DM Sans',sans-serif;cursor:pointer}
+  .mfx-share-tabs button[aria-selected="true"]{background:#d4a843;color:#07101f}
+  .mfx-share-preview-wrap{overflow-x:auto;padding-bottom:4px}
+  .mfx-share-card{box-sizing:border-box;width:760px;max-width:100%;margin:0 auto;padding:34px 38px 28px;color:#eef2f8;background:radial-gradient(circle at 50% 0,rgba(28,47,76,.95),#07101f 54%);border:1px solid rgba(212,168,67,.46);font-family:'DM Sans',Arial,sans-serif}
+  .mfx-share-brand{display:flex;align-items:center;gap:12px;padding-bottom:18px;border-bottom:1px solid rgba(212,168,67,.28)}
+  .mfx-share-brand img{width:54px;height:54px;object-fit:contain}
+  .mfx-share-brand div{display:flex;flex-direction:column;gap:3px}
+  .mfx-share-brand strong{font:700 .82rem 'Cinzel',serif;letter-spacing:.08em;color:#efd08a}
+  .mfx-share-brand span{font-size:.68rem;color:#94a1b6}
+  .mfx-share-card-heading{text-align:center;padding:23px 0 18px}
+  .mfx-share-card-heading>p{margin:0 0 7px;color:#d4a843;font:700 .72rem 'Cinzel',serif;letter-spacing:.16em}
+  .mfx-share-card-heading h3{margin:0 0 10px;font:700 1.55rem 'Cinzel',serif;letter-spacing:.035em}
+  .mfx-share-competition{display:flex;align-items:center;justify-content:center;gap:8px;color:#aeb8c8;font-size:.72rem}
+  .mfx-share-competition img{width:24px;height:24px;object-fit:contain}
+  .mfx-share-match{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:18px;padding:20px;border:1px solid rgba(212,168,67,.24);background:rgba(4,10,22,.55)}
+  .mfx-share-team{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;text-align:center;font-size:.82rem}
+  .mfx-share-team img{width:64px;height:64px;object-fit:contain}
+  .mfx-share-score{text-align:center}.mfx-share-score strong{display:block;font:700 2.65rem 'Cinzel',serif}.mfx-share-score span{font-size:.58rem;letter-spacing:.14em;color:#d4a843}
+  .mfx-share-section{margin-top:21px}.mfx-share-section h4{margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(212,168,67,.3);color:#d4a843;font:700 .72rem 'Cinzel',serif;letter-spacing:.14em}
+  .mfx-share-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .mfx-share-coach{grid-template-columns:minmax(0,1fr)}
+  .mfx-share-person{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;background:rgba(17,31,52,.78);border:1px solid rgba(212,168,67,.12);min-width:0}
+  .mfx-share-photo-wrap{position:relative;width:48px;height:48px}.mfx-share-photo-wrap>img{width:48px;height:48px;object-fit:contain;border-radius:50%;background:#182741;border:1px solid rgba(212,168,67,.55)}
+  .mfx-share-mvp{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);padding:2px 5px;border-radius:10px;background:#d4a843;color:#07101f;font-size:.48rem;font-weight:900}
+  .mfx-share-person-copy{display:flex;flex-direction:column;min-width:0}.mfx-share-person-copy strong{font-size:.73rem;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mfx-share-person-copy span{margin-top:3px;color:#8f9cb0;font-size:.56rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mfx-share-person-score{font:700 1.15rem 'Cinzel',serif;color:#8290a6}
+  .mfx-share-card-footer{display:flex;justify-content:space-between;gap:12px;margin-top:25px;padding-top:14px;border-top:1px solid rgba(212,168,67,.3);color:#96a3b7;font-size:.6rem;letter-spacing:.09em}.mfx-share-card-footer strong{color:#d4a843}
+  .mfx-share-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.mfx-share-actions button{min-height:48px;border-radius:5px;font:700 .76rem 'Cinzel',serif;letter-spacing:.04em;cursor:pointer}.mfx-share-primary{border:1px solid #d4a843;background:#d4a843;color:#07101f}.mfx-share-secondary{border:1px solid rgba(212,168,67,.5);background:transparent;color:#efd08a}
+  .mfx-share-status{min-height:1.2em;margin:11px 0 0;text-align:center;color:#efd08a;font-size:.75rem}
+  @media(max-width:700px){.mfx-share-card{padding:24px 18px}.mfx-share-people{grid-template-columns:1fr 1fr}.mfx-share-card-heading h3{font-size:1.1rem}.mfx-share-team img{width:48px;height:48px}.mfx-share-score strong{font-size:2rem}.mfx-share-actions{grid-template-columns:1fr}.mfx-share-person{grid-template-columns:42px minmax(0,1fr) auto}.mfx-share-photo-wrap,.mfx-share-photo-wrap>img{width:42px;height:42px}}
+</style>
