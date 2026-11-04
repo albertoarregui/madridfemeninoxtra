@@ -1,5 +1,8 @@
 export const interfaceReplacements: Array<[string, string]> = [
   ["Real Madrid Femenino: noticias y estadísticas", "Real Madrid Women: news and statistics"],
+  ["Estadísticas del Real Madrid Femenino: goleadoras, asistentes y récords", "Real Madrid Women statistics: top scorers, assist providers and records"],
+  ["Historial de partidos del Real Madrid Femenino: resultados y estadísticas", "Real Madrid Women match history: results and statistics"],
+  ["Galería | Madrid Femenino Xtra", "Photo galleries | Madrid Femenino Xtra"],
   ["Tu fuente 100% dedicada al Real Madrid Femenino: Noticias, resultados, clasificación, calendario y estadísticas. ¡Entra y no te pierdas nada!", "Your dedicated source for Real Madrid Women news, results, standings, fixtures and statistics."],
   ["Consulta el archivo de partidos del Real Madrid Femenino por temporada y competición: resultados, marcadores y fichas de cada encuentro.", "Browse the Real Madrid Women match archive by season and competition, with results, scores and detailed match pages."],
   ["Récords goleadores del Real Madrid Femenino: goles redondos, protagonistas, rivales y fechas de cada marca.", "Real Madrid Women scoring milestones, including the players, opponents and dates behind every landmark goal."],
