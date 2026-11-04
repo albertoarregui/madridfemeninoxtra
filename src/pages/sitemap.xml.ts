@@ -67,10 +67,24 @@ function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: s
             return value.protocol === 'https:' && value.hostname === 'www.madridfemeninoxtra.com' && !value.pathname.includes('/rivales/estadios');
         } catch { return false; }
     }).map(item => [item.loc, item])).values()];
+    const localizedUrls = uniqueUrls.flatMap(url => {
+        const parsed = new URL(url.loc);
+        const spanishPath = parsed.pathname === '/' ? '/' : parsed.pathname.replace(/\/$/, '');
+        const englishPath = spanishPath === '/' ? '/en/' : `/en${spanishPath}`;
+        const spanishLoc = `${SITE_URL}${spanishPath}`;
+        const englishLoc = `${SITE_URL}${englishPath}`;
+        return [
+            { ...url, loc: spanishLoc, alternate: englishLoc, locale: 'es' },
+            { ...url, loc: englishLoc, alternate: spanishLoc, locale: 'en' },
+        ];
+    });
     return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${uniqueUrls.map(url => `  <url>
-    <loc>${escapeXml(url.loc)}</loc>${url.lastmod ? `
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${localizedUrls.map(url => `  <url>
+    <loc>${escapeXml(url.loc)}</loc>
+    <xhtml:link rel="alternate" hreflang="${url.locale}" href="${escapeXml(url.loc)}" />
+    <xhtml:link rel="alternate" hreflang="${url.locale === 'es' ? 'en' : 'es'}" href="${escapeXml(url.alternate)}" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(url.locale === 'es' ? url.loc : url.alternate)}" />${url.lastmod ? `
     <lastmod>${url.lastmod}</lastmod>` : ''}
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
@@ -81,6 +95,9 @@ ${uniqueUrls.map(url => `  <url>
 async function buildSitemap(): Promise<string> {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
+        // Temporadas y fichas de partido parten de la misma lectura. Compartirla
+        // evita consultar dos veces Turso durante la generación del sitemap.
+        const gamesPromise = fetchGamesDirectly();
         staticPages.forEach(page => {
             urls.push({
                 loc: `${SITE_URL}/${page.url}`,
@@ -90,7 +107,7 @@ async function buildSitemap(): Promise<string> {
         });
 
         try {
-            const seasonGames = await fetchGamesDirectly();
+            const seasonGames = await gamesPromise;
             const seasonNames = [
                 ...new Set(
                     seasonGames
@@ -170,7 +187,7 @@ async function buildSitemap(): Promise<string> {
         }
 
         try {
-            const matches = await fetchGamesDirectly();
+            const matches = await gamesPromise;
             matches.filter(isIndexableMatchSummary).forEach((match: any) => {
                 urls.push({
                     loc: `${SITE_URL}/partidos/${match.slug}`,
@@ -241,7 +258,7 @@ async function buildSitemap(): Promise<string> {
 
 export const GET: APIRoute = async () => {
     try {
-        const xml = await cached('seo:sitemap-2026-v3', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
+        const xml = await cached('seo:sitemap-2026-v4-i18n', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',

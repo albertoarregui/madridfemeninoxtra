@@ -40,7 +40,16 @@ const DynamicImage = ({ src, alt, className, originalIndex }: { src: string; alt
         setTriedFallback(false);
     }, [src]);
 
-    return <img src={currentSrc} alt={alt} className={className} onError={handleError} loading="lazy" />;
+    const thumbnail = className?.includes('thumb-img');
+    return <img
+        src={currentSrc}
+        alt={alt}
+        className={className}
+        width={thumbnail ? 100 : 1600}
+        height={thumbnail ? 65 : 1067}
+        onError={handleError}
+        loading="lazy"
+    />;
 };
 
 const GalleryViewer: React.FC<GalleryViewerProps> = ({ album, children }) => {

@@ -4,10 +4,15 @@ import Instagram from "../assets/redes/instagram.svg";
 import TikTok from "../assets/redes/tiktok.svg";
 import { Show } from "@clerk/astro/components";
 import HeaderSearch from "./HeaderSearch.astro";
+import { getUi, localizePath, stripLocale, type SiteLocale } from "../i18n";
 const LogoIcon = "/icon.webp";
 
-const pathname = new URL(Astro.request.url).pathname;
-const currentPath = pathname;
+interface Props { locale?: SiteLocale; }
+const { locale = "es" } = Astro.props;
+const t = getUi(locale);
+const pathname = Astro.locals.originPathname ?? new URL(Astro.request.url).pathname;
+const currentPath = stripLocale(pathname);
+const href = (path: string) => localizePath(path, locale);
 
 const clerkUser = typeof Astro.locals.currentUser === 'function'
     ? await Astro.locals.currentUser()
@@ -22,10 +27,12 @@ const userPhoto = clerkUser?.imageUrl || '';
         .nested-submenu { visibility: hidden; opacity: 0; transition: none; }
     </style>
     <div class="logo">
-        <a href="/">
+        <a href={href("/")}>
             <img
                 src={LogoIcon}
                 alt="Madrid Femenino Xtra"
+                width="48"
+                height="48"
                 loading="eager"
                 class="header-logo-icon"
             />
@@ -33,10 +40,12 @@ const userPhoto = clerkUser?.imageUrl || '';
     </div>
     <nav id="main-nav" class="main-nav">
         <div class="mobile-menu-logo">
-            <a href="/">
+            <a href={href("/")}>
                 <img
                     src={LogoIcon}
                     alt="Madrid Femenino Xtra"
+                    width="48"
+                    height="48"
                     loading="lazy"
                     class="header-logo-icon"
                 />
@@ -45,30 +54,32 @@ const userPhoto = clerkUser?.imageUrl || '';
         <div class="mobile-auth-zone">
             <Show when="signed-in">
                 <button class="mobile-login-btn auth-user-btn" data-action="signout">
-                    {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
+                    {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} width="40" height="40" />}
                     <span class="auth-user-name">{userName}</span>
                 </button>
             </Show>
             <Show when="signed-out">
                 <button class="mobile-login-btn" data-action="signin-google">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
-                    INICIAR SESIÓN
+                    {locale === "en" ? "SIGN IN" : "INICIAR SESIÓN"}
                 </button>
             </Show>
         </div>
 
         <div class="nav-island">
-            <a href="/" class="island-logo-link">
+            <a href={href("/")} class="island-logo-link">
                 <img
                     src={LogoIcon}
                     alt="Madrid Femenino Xtra"
+                    width="36"
+                    height="36"
                     loading="eager"
                     class="island-logo-img"
                 />
             </a>
             <ul class="nav-list">
             <li>
-                <a href="/" class={currentPath === "/" ? "active" : ""}>
+                <a href={href("/")} class={currentPath === "/" ? "active" : ""}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -87,7 +98,7 @@ const userPhoto = clerkUser?.imageUrl || '';
                             d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"
                         ></path></svg
                     >
-                    <span>Inicio</span>
+                    <span>{t.home}</span>
                 </a>
             </li>
             <li class="has-submenu">
@@ -96,7 +107,7 @@ const userPhoto = clerkUser?.imageUrl || '';
                         href="#"
                         aria-expanded="false"
                         aria-controls="submenu-actualidad"
-                        class={currentPath.startsWith("/noticias") || currentPath.startsWith("/plantilla") || currentPath.startsWith("/calendario") || currentPath.startsWith("/galeria") ? "active" : ""}
+                        class={currentPath.startsWith("/noticias") || currentPath.startsWith("/plantilla") || currentPath.startsWith("/calendario") || currentPath.startsWith("/fotogalerias") || currentPath.startsWith("/premios") ? "active" : ""}
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -115,23 +126,22 @@ const userPhoto = clerkUser?.imageUrl || '';
                             ></path><path d="M8 8l4 0"></path><path d="M8 12l4 0"
                             ></path><path d="M8 16l4 0"></path></svg
                         >
-                        <span>Actualidad</span>
+                        <span>{t.news}</span>
                     </a>
                     <button
                         class="submenu-toggle"
                         aria-expanded="false"
                         aria-controls="submenu-actualidad"
-                        aria-label="Abrir submenú de actualidad">▼</button
+                        aria-label={locale === "en" ? "Open news submenu" : "Abrir submenú de actualidad"}>▼</button
                     >
                 </div>
 
                 <ul class="submenu" id="submenu-actualidad">
-                    <li><a href="/noticias"><span>Noticias</span></a></li>
-                    <li><a href="/plantilla"><span>Plantilla</span></a></li>
-                    <li><a href="/calendario"><span>Calendario</span></a></li>
-                    <li><a href="/fotogalerias"><span>Fotogalerías</span></a></li>
-                    <li><a href="/valoraciones"><span>Valoraciones</span></a></li>
-                    <li><a href="/premios"><span>Premios 2025/26</span></a></li>
+                    <li><a href={href("/noticias")}><span>{t.articles}</span></a></li>
+                    <li><a href={href("/plantilla")}><span>{t.squad}</span></a></li>
+                    <li><a href={href("/calendario")}><span>{t.calendar}</span></a></li>
+                    <li><a href={href("/fotogalerias")}><span>{t.galleries}</span></a></li>
+                    <li><a href={href("/premios")}><span>{t.awards}</span></a></li>
                 </ul>
             </li>
             <li class="has-submenu">
@@ -140,7 +150,7 @@ const userPhoto = clerkUser?.imageUrl || '';
                         href="#"
                         aria-expanded="false"
                         aria-controls="submenu-hub"
-                        class={currentPath.startsWith("/estadisticas") || currentPath.startsWith("/jugadoras") || currentPath.startsWith("/entrenadores") || currentPath.startsWith("/arbitras") || currentPath.startsWith("/partidos") || currentPath.startsWith("/valoraciones") || currentPath.startsWith("/rivales") || currentPath.startsWith("/estadios") || currentPath.startsWith("/rankings") || currentPath.startsWith("/records") || currentPath.startsWith("/comparador") ? "active" : ""}
+                        class={currentPath.startsWith("/estadisticas") || currentPath.startsWith("/jugadoras") || currentPath.startsWith("/entrenadores") || currentPath.startsWith("/arbitras") || currentPath.startsWith("/partidos") || currentPath.startsWith("/rivales") || currentPath.startsWith("/estadios") || currentPath.startsWith("/rankings") || currentPath.startsWith("/records") || currentPath.startsWith("/comparador") ? "active" : ""}
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -175,37 +185,57 @@ const userPhoto = clerkUser?.imageUrl || '';
                 <ul class="submenu" id="submenu-hub">
                     <li class="has-nested-submenu">
                         <div class="nested-submenu-header">
-                            <span class="nested-submenu-label">Estadísticas</span>
+                            <span class="nested-submenu-label">{t.statistics}</span>
                         </div>
                         <ul class="nested-submenu">
-                            <li><a href="/jugadoras"><span>Jugadoras</span></a></li>
-                            <li><a href="/entrenadores"><span>Entrenadores</span></a></li>
-                            <li><a href="/arbitras"><span>Árbitras</span></a></li>
-                            <li><a href="/partidos"><span>Partidos</span></a></li>
-                            <li><a href="/rivales"><span>Rivales</span></a></li>
-                            <li><a href="/estadios"><span>Estadios</span></a></li>
+                            <li><a href={href("/jugadoras")}><span>{t.players}</span></a></li>
+                            <li><a href={href("/entrenadores")}><span>{t.coaches}</span></a></li>
+                            <li><a href={href("/arbitras")}><span>{t.referees}</span></a></li>
+                            <li><a href={href("/partidos")}><span>{t.matches}</span></a></li>
+                            <li><a href={href("/rivales")}><span>{t.rivals}</span></a></li>
+                            <li><a href={href("/estadios")}><span>{t.stadiums}</span></a></li>
                         </ul>
                     </li>
-                    <li><a href="/rankings"><span>Rankings</span></a></li>
-                    <li><a href="/estadisticas/avanzadas"><span>Gráficos</span></a></li>
+                    <li><a href={href("/rankings")}><span>Rankings</span></a></li>
+                    <li><a href={href("/estadisticas/avanzadas")}><span>{t.charts}</span></a></li>
                     <li class="has-nested-submenu">
                         <div class="nested-submenu-header">
-                            <span class="nested-submenu-label">Buscador avanzado</span>
+                            <span class="nested-submenu-label">{t.advancedSearch}</span>
                         </div>
                         <ul class="nested-submenu">
-                            <li><a href="/estadisticas/buscador-avanzado-jugadoras"><span>Jugadoras</span></a></li>
-                            <li><a href="/estadisticas/buscador-avanzado-partidos"><span>Partidos</span></a></li>
-                            <li><a href="/estadisticas/buscador-avanzado-temporadas"><span>Temporadas</span></a></li>
+                            <li><a href={href("/estadisticas/buscador-avanzado-jugadoras")}><span>{t.players}</span></a></li>
+                            <li><a href={href("/estadisticas/buscador-avanzado-partidos")}><span>{t.matches}</span></a></li>
+                            <li><a href={href("/estadisticas/buscador-avanzado-temporadas")}><span>{t.seasons}</span></a></li>
                         </ul>
                     </li>
-                    <li><a href="/records"><span>Récords</span></a></li>
-                    <li><a href="/comparador"><span>Comparador</span></a></li>
+                    <li><a href={href("/records")}><span>{t.records}</span></a></li>
+                    <li><a href={href("/comparador")}><span>{t.comparator}</span></a></li>
                 </ul>
+            </li>
+            <li>
+                <a href={href("/valoraciones")} class={currentPath.startsWith("/valoraciones") ? "active" : ""}>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="nav-icon"
+                    >
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"></path>
+                    </svg>
+                    <span>{t.ratings}</span>
+                </a>
             </li>
             <li class="has-submenu">
                 <div class="submenu-header">
                     <a
-                        href="/la-fabrica"
+                        href={href("/la-fabrica")}
                         aria-expanded="false"
                         aria-controls="submenu-fabrica"
                         class={currentPath.startsWith("/la-fabrica") ? "active" : ""}
@@ -239,14 +269,14 @@ const userPhoto = clerkUser?.imageUrl || '';
                     >
                 </div>
                 <ul class="submenu" id="submenu-fabrica">
-                    <li><a href="/la-fabrica/historia"><span>Historia</span></a></li>
-                    <li><a href="/la-fabrica/espana"><span>España</span></a></li>
+                    <li><a href={href("/la-fabrica/historia")}><span>{t.history}</span></a></li>
+                    <li><a href={href("/la-fabrica/espana")}><span>{t.spain}</span></a></li>
                 </ul>
             </li>
 
             <li>
                 <a
-                    href="/sobre-nosotros"
+                    href={href("/sobre-nosotros")}
                     class={currentPath === "/sobre-nosotros" ? "active" : ""}
                 >
                     <svg
@@ -265,12 +295,12 @@ const userPhoto = clerkUser?.imageUrl || '';
                         ></path><path d="M12 9h.01"></path><path
                             d="M11 12h1v4h1"></path></svg
                     >
-                    <span>Sobre Nosotros</span>
+                    <span>{t.about}</span>
                 </a>
             </li>
             <li>
                 <a
-                    href="/contacto"
+                    href={href("/contacto")}
                     class={currentPath === "/contacto" ? "active" : ""}
                 >
                     <svg
@@ -285,26 +315,30 @@ const userPhoto = clerkUser?.imageUrl || '';
                             d="M5.821 4.91c3.899 -2.765 9.468 -2.539 13.073 .535c3.667 3.129 4.168 8.238 1.152 11.898c-2.841 3.447 -7.965 4.583 -12.231 2.805l-.233 -.101l-4.374 .931l-.04 .006l-.035 .007h-.018l-.022 .005h-.038l-.033 .004l-.021 -.001l-.023 .001l-.033 -.003h-.035l-.022 -.004l-.022 -.002l-.035 -.007l-.034 -.005l-.016 -.004l-.024 -.005l-.049 -.016l-.024 -.005l-.011 -.005l-.022 -.007l-.045 -.02l-.03 -.012l-.011 -.006l-.014 -.006l-.031 -.018l-.045 -.024l-.016 -.011l-.037 -.026l-.04 -.027l-.002 -.004l-.013 -.009l-.043 -.04l-.025 -.02l-.006 -.007l-.056 -.062l-.013 -.014l-.011 -.014l-.039 -.056l-.014 -.019l-.005 -.01l-.042 -.073l-.007 -.012l-.004 -.008l-.007 -.012l-.014 -.038l-.02 -.042l-.004 -.016l-.004 -.01l-.017 -.061l-.007 -.018l-.002 -.015l-.005 -.019l-.005 -.033l-.008 -.042l-.002 -.031l-.003 -.01v-.016l-.004 -.054l.001 -.036l.001 -.023l.002 -.053l.004 -.025v-.019l.008 -.035l.005 -.034l.005 -.02l.004 -.02l.018 -.06l.003 -.013l1.15 -3.45l-.022 -.037c-2.21 -3.747 -1.209 -8.391 2.413 -11.119z"
                         ></path></svg
                     >
-                    <span>Contacto</span>
+                    <span>{t.contact}</span>
                 </a>
             </li>
             <li class="hs-nav-li">
-                <HeaderSearch />
+                <HeaderSearch locale={locale} />
             </li>
         </ul>
             <div class="nav-auth-item">
                 <Show when="signed-in">
                     <button class="island-auth-btn auth-user-btn" data-action="signout">
-                        {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} />}
+                        {userPhoto && <img class="auth-user-avatar" src={userPhoto} alt={userName} width="40" height="40" />}
                         <span class="auth-user-name">{userName}</span>
                     </button>
                 </Show>
                 <Show when="signed-out">
                     <button class="island-auth-btn" data-action="signin-google">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
-                        ENTRAR
+                        {locale === "en" ? "SIGN IN" : "ENTRAR"}
                     </button>
                 </Show>
+            </div>
+            <div class="nav-preferences" aria-label={locale === "en" ? "Display preferences" : "Preferencias de visualización"}>
+                <button type="button" class="theme-toggle" data-theme-toggle aria-label={locale === "en" ? "Switch colour theme" : "Cambiar tema de color"}>◐</button>
+                <a class="language-toggle" href={localizePath(currentPath, locale === "en" ? "es" : "en")} lang={locale === "en" ? "es" : "en"}>{locale === "en" ? "ES" : "EN"}</a>
             </div>
         </div>
 
@@ -320,7 +354,7 @@ const userPhoto = clerkUser?.imageUrl || '';
         id="menu-toggle"
         aria-controls="main-nav"
         aria-expanded="false"
-        aria-label="Abrir menú de navegación"
+        aria-label={locale === "en" ? "Open navigation menu" : "Abrir menú de navegación"}
     >
         <span class="line"></span>
         <span class="line"></span>
@@ -388,6 +422,17 @@ const userPhoto = clerkUser?.imageUrl || '';
         });
 
         overlay?.addEventListener('click', closeNav);
+
+        document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach(button => {
+            if (button.dataset.initialized) return;
+            button.dataset.initialized = 'true';
+            button.addEventListener('click', () => {
+                const root = document.documentElement;
+                const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+                root.dataset.theme = next;
+                try { localStorage.setItem('mfx-theme', next); } catch {}
+            });
+        });
 
         document.querySelectorAll<HTMLElement>('.submenu-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -471,6 +516,10 @@ const userPhoto = clerkUser?.imageUrl || '';
         z-index: 1000000;
         transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
+    .nav-preferences { display:flex; align-items:center; gap:.35rem; margin-left:.35rem; }
+    .theme-toggle,.language-toggle { display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px; border:1px solid rgba(212,168,67,.35); border-radius:999px; background:rgba(6,13,28,.72); color:#d4a843; font:700 .67rem 'DM Sans',sans-serif; text-decoration:none; cursor:pointer; transition:color .2s,border-color .2s,transform .2s; }
+    .theme-toggle:hover,.language-toggle:hover { color:#ffe0a0; border-color:#d4a843; transform:translateY(-1px); }
 
     .header--hidden {
         transform: translateY(-160%);

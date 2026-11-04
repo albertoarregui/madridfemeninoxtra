@@ -1,8 +1,11 @@
 ---
+import type { SiteLocale } from "../i18n";
+interface Props { locale?: SiteLocale; }
+const { locale = "es" } = Astro.props;
 ---
 
 
-<button class="hs-btn" id="headerSearchBtn" aria-label="Buscar" aria-expanded="false">
+<button class="hs-btn" id="headerSearchBtn" aria-label={locale === "en" ? "Search" : "Buscar"} aria-expanded="false">
     <svg class="hs-desktop-icon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
         <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
@@ -13,10 +16,10 @@
         <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/>
         <path d="M21 21l-6 -6"/>
     </svg>
-    <span class="hs-mobile-label">Buscar</span>
+    <span class="hs-mobile-label">{locale === "en" ? "Search" : "Buscar"}</span>
 </button>
 
-<div class="hs-overlay" id="headerSearchOverlay" aria-hidden="true">
+<div class="hs-overlay" id="headerSearchOverlay" aria-hidden="true" data-locale={locale}>
     <div class="hs-panel" role="search">
         <div class="hs-input-wrap">
             <svg class="hs-lupa" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -28,11 +31,11 @@
                 id="headerSearchInput"
                 class="hs-input"
                 type="search"
-                placeholder="Buscar jugadoras, partidos, rivales..."
+                placeholder={locale === "en" ? "Search players, matches, opponents..." : "Buscar jugadoras, partidos, rivales..."}
                 autocomplete="off"
-                aria-label="Campo de búsqueda"
+                aria-label={locale === "en" ? "Search field" : "Campo de búsqueda"}
             />
-            <button class="hs-close-btn" id="headerSearchClose" aria-label="Cerrar búsqueda">
+            <button class="hs-close-btn" id="headerSearchClose" aria-label={locale === "en" ? "Close search" : "Cerrar búsqueda"}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                     <path d="M18 6l-12 12"/>
@@ -287,6 +290,8 @@
         const dd       = document.getElementById('headerSearchDropdown') as HTMLDivElement    | null;
 
         if (!btn || !overlay || !input || !closeBtn || !dd) return;
+        const en = overlay.dataset.locale === 'en';
+        const prefix = en ? '/en' : '';
 
         function openSearch() {
             overlay!.classList.add('is-open');
@@ -312,10 +317,9 @@
             if (e.key === 'Escape' && overlay!.classList.contains('is-open')) closeSearch();
         });
 
-        const LABELS: Record<string, string> = {
-            player: 'Jugadora', coach: 'Entrenadora', rival: 'Rival',
-            match: 'Partido', referee: 'Árbitra', stadium: 'Estadio',
-        };
+        const LABELS: Record<string, string> = en
+            ? { player: 'Player', coach: 'Coach', rival: 'Opponent', match: 'Match', referee: 'Referee', stadium: 'Stadium' }
+            : { player: 'Jugadora', coach: 'Entrenadora', rival: 'Rival', match: 'Partido', referee: 'Árbitra', stadium: 'Estadio' };
         const SQUARE_TYPES = new Set(['rival', 'stadium', 'match']);
         const COMP_COLORS: Record<string, string> = {
             'liga f': '#0ea5c8', 'uwcl': '#1e3a6e',
@@ -363,11 +367,11 @@
 
         function render(results: any[], q: string) {
             if (!results.length) {
-                dd!.innerHTML = `<p class="hs-empty">Sin resultados para "<b>${esc(q)}</b>"</p>`;
+                dd!.innerHTML = `<p class="hs-empty">${en ? 'No results for' : 'Sin resultados para'} "<b>${esc(q)}</b>"</p>`;
                 return;
             }
             const rows = results.slice(0, 7).map((r: any) => `
-                <div class="hs-item" data-href="${esc(r.url)}">
+                <div class="hs-item" data-href="${esc(r.url?.startsWith('/') ? prefix + r.url : r.url)}">
                     ${avatar(r)}
                     <div class="hs-text">
                         <div class="hs-meta">
@@ -377,7 +381,7 @@
                         <span class="hs-title">${esc(r.title ?? '')}</span>
                     </div>
                 </div>`).join('');
-            dd!.innerHTML = rows + `<a class="hs-all" href="/search?q=${encodeURIComponent(q)}"><span>Ver todos los resultados</span><span>→</span></a>`;
+            dd!.innerHTML = rows + `<a class="hs-all" href="${prefix}/search?q=${encodeURIComponent(q)}"><span>${en ? 'View all results' : 'Ver todos los resultados'}</span><span>→</span></a>`;
         }
 
         dd.addEventListener('click', (e) => {
@@ -402,7 +406,7 @@
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 const q = input!.value.trim();
-                if (q) { closeSearch(); window.location.href = `/search?q=${encodeURIComponent(q)}`; }
+                if (q) { closeSearch(); window.location.href = `${prefix}/search?q=${encodeURIComponent(q)}`; }
             }
         });
     });

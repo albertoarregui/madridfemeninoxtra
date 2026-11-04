@@ -31,7 +31,8 @@ test('article views are recorded after engagement, never during SSR', () => {
 });
 
 test('sitemap, SEO and consent rules stay in place', () => {
-  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v3/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v4-i18n/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /hreflang=/);
   assert.match(read('src/pages/sitemap.xml.ts'), /escapeXml/);
   assert.match(read('src/pages/sitemap.xml.ts'), /'players', 'coaches', 'stadiums'/);
   assert.match(read('src/layouts/Layout.astro'), /isNewsArticle \? "article" : "website"/);
@@ -98,12 +99,12 @@ test('Astro uses no-op image transformations instead of the legacy image endpoin
 test('upper footer has six navigational columns, social icons and working newsletter wiring', () => {
   const footer = read('src/components/FooterUpper.astro');
   const layout = read('src/layouts/Layout.astro');
-  assert.match(layout, /<FooterUpper\s*\/>\s*<Footer\s*\/>/);
+  assert.match(layout, /<FooterUpper locale=\{locale\}\s*\/>\s*<Footer locale=\{locale\}\s*\/>/);
   for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL', 'NEWSLETTER']) {
     assert.ok(footer.includes(label), label);
   }
   for (const href of ['/', '/noticias', '/plantilla', '/calendario', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
-    assert.ok(footer.includes(`href="${href}"`) || footer.includes(`href: "${href}"`), href);
+    assert.ok(footer.includes(`href={href("${href}")}`) || footer.includes(`href="${href}"`) || footer.includes(`href: "${href}"`), href);
   }
   for (const brand of ['<X ', '<Instagram ', '<TikTok ', '<Youtube ']) {
     assert.ok(footer.includes(brand), brand);
@@ -121,7 +122,7 @@ test('original footer style stays with exact requested legal and cookie controls
   assert.match(footer, /footer-container/);
   assert.match(footer, /footer-social-row/);
   for (const href of ['/aviso-legal', '/politica-privacidad', '/politica-cookies', '/terminos-condiciones']) {
-    assert.ok(footer.includes(`href="${href}"`), href);
+    assert.ok(footer.includes(`href={href("${href}")}`) || footer.includes(`href="${href}"`), href);
   }
   assert.match(footer, /id="mfx-footer-manage-cookies"/);
   assert.match(footer, /getElementById\('mfx-manage-consent'\)/);
@@ -185,7 +186,7 @@ test('reader ratings pages have competition crests and one-row MVP UI', () => {
   const board = read('src/components/RatingScoreboard.astro');
   const header = read('src/components/Header.astro');
   const css = read('src/styles/valoraciones.css');
-  assert.match(header, /href="\/fotogalerias"[\s\S]*?href="\/valoraciones"/);
+  assert.match(header, /href=\{href\("\/fotogalerias"\)\}[\s\S]*?href=\{href\("\/valoraciones"\)\}/);
   assert.match(archive, /RatingScoreboard/);
   assert.match(detail, /getAssetUrl\('competiciones'/);
   assert.match(board, /getAssetUrl\('escudos'/);

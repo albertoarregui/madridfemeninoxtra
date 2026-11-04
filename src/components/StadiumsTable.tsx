@@ -34,6 +34,8 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
                             <img
                                 src={stadium.imageUrl}
                                 alt={`Vista de ${stadium.name}`}
+                                width={640}
+                                height={360}
                                 loading="lazy"
                                 onError={(event) => { event.currentTarget.style.display = 'none'; }}
                             />

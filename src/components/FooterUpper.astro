@@ -3,45 +3,51 @@ import X from "../assets/redes/x.svg";
 import Instagram from "../assets/redes/instagram.svg";
 import TikTok from "../assets/redes/tiktok.svg";
 import Youtube from "../assets/redes/youtube.svg";
+import { localizePath, type SiteLocale } from "../i18n";
+
+interface Props { locale?: SiteLocale; }
+const { locale = "es" } = Astro.props;
+const en = locale === "en";
+const href = (path: string) => localizePath(path, locale);
 
 const logo = "/icon.webp";
-const descripcion = "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!";
+const descripcion = en ? "Dedicated Real Madrid Women coverage: news, results, standings, fixtures and historical statistics in one place." : "Tu fuente 100% dedicada al Real Madrid Femenino. Consulta todas las noticias, resultados, clasificación, calendario y estadísticas en un solo lugar. ¡Entra y no te pierdas nada de la actualidad del equipo!";
 const sections = [
   { label: "Home", href: "/" },
-  { label: "Noticias", href: "/noticias" },
-  { label: "Plantilla", href: "/plantilla" },
-  { label: "Calendario", href: "/calendario" },
+  { label: en ? "News" : "Noticias", href: "/noticias" },
+  { label: en ? "Squad" : "Plantilla", href: "/plantilla" },
+  { label: en ? "Fixtures" : "Calendario", href: "/calendario" },
   { label: "Rankings", href: "/rankings" },
   { label: "La Fábrica", href: "/la-fabrica" },
 ];
 const company = [
-  { label: "Sobre nosotros", href: "/sobre-nosotros" },
-  { label: "Contacto", href: "/contacto" },
-  { label: "Política de Privacidad", href: "/politica-privacidad" },
-  { label: "Política de Cookies", href: "/politica-cookies" },
+  { label: en ? "About us" : "Sobre nosotros", href: "/sobre-nosotros" },
+  { label: en ? "Contact" : "Contacto", href: "/contacto" },
+  { label: en ? "Privacy Policy" : "Política de Privacidad", href: "/politica-privacidad" },
+  { label: en ? "Cookie Policy" : "Política de Cookies", href: "/politica-cookies" },
 ];
 ---
-<section class="mfx-upper-footer" aria-label="Enlaces, comunidad y newsletter de Madrid Femenino Xtra">
+<section class="mfx-upper-footer" aria-label={en ? "Madrid Femenino Xtra links, community and newsletter" : "Enlaces, comunidad y newsletter de Madrid Femenino Xtra"} data-locale={locale}>
   <div class="mfx-upper-footer__container">
     <div class="mfx-footer-column mfx-footer-brand">
-      <a href="/" class="mfx-footer-brand__link" aria-label="Madrid Femenino Xtra, inicio">
+      <a href={href("/")} class="mfx-footer-brand__link" aria-label={en ? "Madrid Femenino Xtra, home" : "Madrid Femenino Xtra, inicio"}>
         <img src={logo} width="100" height="100" loading="lazy" alt="Logotipo de Madrid Femenino Xtra" />
       </a>
       <p>{descripcion}</p>
     </div>
 
-    <nav class="mfx-footer-column" aria-label="Secciones">
-      <h2>SECCIONES</h2>
-      {sections.map(item => <a href={item.href}>{item.label}</a>)}
+    <nav class="mfx-footer-column" aria-label={en ? "Sections" : "Secciones"}>
+      <h2>{en ? "SECTIONS" : "SECCIONES"}</h2>
+      {sections.map(item => <a href={href(item.href)}>{item.label}</a>)}
     </nav>
 
-    <nav class="mfx-footer-column" aria-label="Empresa">
-      <h2>EMPRESA</h2>
-      {company.map(item => <a href={item.href}>{item.label}</a>)}
+    <nav class="mfx-footer-column" aria-label={en ? "Company" : "Empresa"}>
+      <h2>{en ? "COMPANY" : "EMPRESA"}</h2>
+      {company.map(item => <a href={href(item.href)}>{item.label}</a>)}
     </nav>
 
     <nav class="mfx-footer-column" aria-label="Más recursos">
-      <h2>MÁS</h2>
+      <h2>{en ? "MORE" : "MÁS"}</h2>
       <a href="/sitemap.xml">Sitemap</a>
       <a href="/rss.xml" type="application/rss+xml">RSS</a>
     </nav>
@@ -56,19 +62,19 @@ const company = [
 
     <div class="mfx-footer-column mfx-footer-newsletter">
       <h2>NEWSLETTER</h2>
-      <p>Última hora, análisis y estadísticas directamente en tu correo.</p>
+      <p>{en ? "Latest news, analysis and statistics delivered to your inbox." : "Última hora, análisis y estadísticas directamente en tu correo."}</p>
       <form id="mfx-newsletter-form" class="mfx-newsletter-form" novalidate>
-        <label class="mfx-visually-hidden" for="mfx-newsletter-email">Correo electrónico</label>
-        <input id="mfx-newsletter-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder="Tu correo electrónico" required />
+        <label class="mfx-visually-hidden" for="mfx-newsletter-email">{en ? "Email address" : "Correo electrónico"}</label>
+        <input id="mfx-newsletter-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" placeholder={en ? "Your email address" : "Tu correo electrónico"} required />
         <label class="mfx-newsletter-consent">
           <input name="consent" type="checkbox" required />
-          <span>Acepto recibir comunicaciones y la <a href="/politica-privacidad">Política de Privacidad</a>.</span>
+          <span>{en ? "I agree to receive updates and accept the" : "Acepto recibir comunicaciones y la"} <a href={href("/politica-privacidad")}>{en ? "Privacy Policy" : "Política de Privacidad"}</a>.</span>
         </label>
         <input class="mfx-newsletter-trap" aria-hidden="true" tabindex="-1" autocomplete="off" name="website" type="text" />
-        <button type="submit" class="mfx-newsletter-submit">SUSCRIBIRSE <span aria-hidden="true">→</span></button>
+        <button type="submit" class="mfx-newsletter-submit">{en ? "SUBSCRIBE" : "SUSCRIBIRSE"} <span aria-hidden="true">→</span></button>
         <p class="mfx-newsletter-status" role="status" aria-live="polite" data-newsletter-status></p>
       </form>
-      <p class="mfx-newsletter-note">Sin spam. Puedes darte de baja en cualquier momento.</p>
+      <p class="mfx-newsletter-note">{en ? "No spam. Unsubscribe at any time." : "Sin spam. Puedes darte de baja en cualquier momento."}</p>
     </div>
   </div>
 </section>
@@ -77,18 +83,19 @@ const company = [
   (() => {
     const form = document.getElementById('mfx-newsletter-form');
     if (!form || form.dataset.initialized) return;
+    const en = form.closest('[data-locale]')?.dataset.locale === 'en';
     form.dataset.initialized = 'true';
     const button = form.querySelector('button[type="submit"]');
     const confirmation = new URL(location.href).searchParams.get('newsletter');
     if (confirmation === 'confirmed') {
       const msg = form.querySelector('[data-newsletter-status]');
-      if (msg) msg.textContent = '¡Suscripción confirmada! Gracias por unirte a Madrid Femenino Xtra.';
+      if (msg) msg.textContent = en ? 'Subscription confirmed. Welcome to Madrid Femenino Xtra.' : '¡Suscripción confirmada! Gracias por unirte a Madrid Femenino Xtra.';
     } else if (confirmation === 'already') {
       const msg = form.querySelector('[data-newsletter-status]');
-      if (msg) msg.textContent = 'Esta confirmación ya se ha utilizado o el enlace ha caducado.';
+      if (msg) msg.textContent = en ? 'This confirmation has already been used or the link has expired.' : 'Esta confirmación ya se ha utilizado o el enlace ha caducado.';
     } else if (confirmation === 'error') {
       const msg = form.querySelector('[data-newsletter-status]');
-      if (msg) msg.textContent = 'No se ha podido confirmar la suscripción. Inténtalo de nuevo.';
+      if (msg) msg.textContent = en ? 'The subscription could not be confirmed. Please try again.' : 'No se ha podido confirmar la suscripción. Inténtalo de nuevo.';
     }
     const message = form.querySelector('[data-newsletter-status]');
     form.addEventListener('submit', async (event) => {
@@ -97,17 +104,17 @@ const company = [
       const consent = form.querySelector('input[name="consent"]');
       const email = emailField?.value.trim() || '';
       if (!emailField?.checkValidity()) {
-        message.textContent = 'Introduce un correo electrónico válido.';
+        message.textContent = en ? 'Enter a valid email address.' : 'Introduce un correo electrónico válido.';
         emailField?.focus();
         return;
       }
       if (!consent?.checked) {
-        message.textContent = 'Debes aceptar el envío de comunicaciones para suscribirte.';
+        message.textContent = en ? 'You must accept email updates to subscribe.' : 'Debes aceptar el envío de comunicaciones para suscribirte.';
         consent?.focus();
         return;
       }
       button.disabled = true;
-      message.textContent = 'Procesando suscripción…';
+      message.textContent = en ? 'Processing subscription…' : 'Procesando suscripción…';
       try {
         const response = await fetch('/api/newsletter/subscribe', {
           method: 'POST',
@@ -120,10 +127,10 @@ const company = [
           })
         });
         if (!response.ok) throw new Error('subscription failed');
-        message.textContent = 'Comprueba tu correo para confirmar la suscripción. Si ya te habías suscrito, no es necesario repetir el proceso.';
+        message.textContent = en ? 'Check your inbox to confirm the subscription. If you were already subscribed, no further action is needed.' : 'Comprueba tu correo para confirmar la suscripción. Si ya te habías suscrito, no es necesario repetir el proceso.';
         form.reset();
       } catch {
-        message.textContent = 'No se ha podido tramitar la suscripción. Inténtalo más tarde.';
+        message.textContent = en ? 'The subscription could not be processed. Please try again later.' : 'No se ha podido tramitar la suscripción. Inténtalo más tarde.';
       } finally {
         button.disabled = false;
       }

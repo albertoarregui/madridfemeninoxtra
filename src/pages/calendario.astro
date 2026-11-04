@@ -15,17 +15,36 @@ const currentSeason = getCurrentSeason();
 try {
     const allMatches = await fetchGamesDirectly();
 
-    matches = allMatches.filter(
-        (m) =>
-            m.temporada_nombre === currentSeason ||
-            (!m.temporada_nombre && !m.isPlayed),
-    );
+    matches = allMatches
+        .filter(
+            (m) =>
+                m.temporada_nombre === currentSeason ||
+                (!m.temporada_nombre && !m.isPlayed),
+        )
+        .map((m) => ({
+            id_partido: m.id_partido,
+            fecha: m.fecha,
+            hora: m.hora,
+            club_local: m.club_local,
+            club_visitante: m.club_visitante,
+            goles_rm: m.goles_rm,
+            goles_rival: m.goles_rival,
+            competicion_nombre: m.competicion_nombre,
+            competicion_foto_url: m.competicion_foto_url,
+            estadio: m.estadio,
+            resultado: m.resultado,
+            isPlayed: m.isPlayed,
+            local_shield_url: m.local_shield_url,
+            visitante_shield_url: m.visitante_shield_url,
+            slug: m.slug,
+            jornada: m.jornada,
+        }));
 } catch (e: any) {
     console.error("Error fetching matches for calendar:", e);
     error = e.message;
 }
 
-const title = `Partidos del Real Madrid Femenino ${currentSeason}: calendario y resultados | MFX`;
+const title = `Calendario Real Madrid Femenino ${currentSeason} | MFX`;
 const description =
     `Calendario y resultados del Real Madrid Femenino en la temporada ${currentSeason}. Consulta fechas, horarios, rivales y próximos partidos.`;
 ---

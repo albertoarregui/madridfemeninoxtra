@@ -3,6 +3,9 @@ import { addCacheTag } from "@vercel/functions";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
 import { isFreshMatchPath } from "./lib/match-freshness";
 import { secondsUntilNextSeason } from "./utils/season";
+import { localeFromPath, stripLocale } from "./i18n";
+import { runWithRequestLocale } from "./i18n/request-locale";
+import { translateInterfaceHtml } from "./i18n/translate-html";
 
 const isProtectedRoute = createRouteMatcher([]);
 
@@ -28,22 +31,50 @@ const SWR_HOME_S = 60 * 60;
 
 export const onRequest = clerkMiddleware(async (auth, context, next) => {
     const requestStartedAt = new Date();
+    const requestUrl = new URL(context.request.url);
+    const locale = localeFromPath(requestUrl.pathname);
+    const routePath = stripLocale(requestUrl.pathname);
+    context.locals.locale = locale;
+    context.locals.originPathname = requestUrl.pathname;
     if (isProtectedRoute(context.request)) {
         auth().protect();
     }
 
-    const response = await next();
+    let response = await runWithRequestLocale(locale, () => locale === "en"
+        ? next(routePath + requestUrl.search)
+        : next());
+
+    if (locale === "en" && (response.headers.get("content-type") || "").includes("text/html")) {
+        const headers = new Headers(response.headers);
+        headers.delete("content-length");
+        const html = translateInterfaceHtml(await response.text());
+        // Astro resuelve correctamente el componente reescrito desde una ruta
+        // catch-all, pero conserva el 404 con el que entró `/en/*`. Solo se
+        // corrige cuando el contenido devuelto no es la página 404 real.
+        const isNotFoundPage = /<h1\b[^>]*class="[^"]*\berror-title\b[^"]*"[^>]*>\s*404\s*<\/h1>/i.test(html);
+        const successfulRewrite = !isNotFoundPage;
+        if (successfulRewrite) headers.delete("x-robots-tag");
+        // Esta cabecera solo sirve dentro del renderizador de Astro. Si llega
+        // al adaptador, Vercel conserva el estado de la ruta `/en/*` original.
+        headers.delete("x-astro-rewrite");
+        headers.delete("x-astro-reroute");
+        response = new Response(html, {
+            status: successfulRewrite ? 200 : response.status,
+            statusText: successfulRewrite ? "OK" : response.statusText,
+            headers,
+        });
+    }
 
     try {
         const { request } = context;
         const url = new URL(request.url);
-        const freshMatch = isFreshMatchPath(url.pathname);
+        const freshMatch = isFreshMatchPath(routePath);
 
         const cacheable =
             request.method === "GET" &&
             response.status === 200 &&
             (response.headers.get("content-type") || "").includes("text/html") &&
-            !SIN_CACHE.some((re) => re.test(url.pathname)) &&
+            !SIN_CACHE.some((re) => re.test(routePath)) &&
             !freshMatch &&
             !auth().userId;
 
@@ -51,7 +82,7 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
         // etiquetas. Las APIs y las fichas `no-store` no deben registrar una
         // escritura de caché en cada petición.
         if (cacheable) {
-            const tags = tagsForPath(url.pathname);
+            const tags = tagsForPath(routePath);
             if (tags.length > 0) await addCacheTag([cacheTags.database, ...tags]);
         }
 
@@ -60,9 +91,9 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             response.headers.set("CDN-Cache-Control", "no-store");
             response.headers.set("Vercel-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
-            const larga = CACHE_LARGA.some((re) => re.test(url.pathname));
-            const fastRefresh = url.pathname === '/' || url.pathname === '/donde-ver-real-madrid-femenino';
-            const seasonPage = url.pathname === '/plantilla' || url.pathname === '/calendario';
+            const larga = CACHE_LARGA.some((re) => re.test(routePath));
+            const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
+            const seasonPage = routePath === '/plantilla' || routePath === '/calendario';
             const sMaxage = seasonPage
                 ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);

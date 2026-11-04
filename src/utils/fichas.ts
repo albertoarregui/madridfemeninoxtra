@@ -1,5 +1,6 @@
 import { contentfulClient } from '../lib/contentful';
 import { cached, TTL } from './cache';
+import { getRequestLocale } from '../i18n/request-locale';
 
 export type TipoFicha = 'jugadora' | 'entrenador' | 'arbitra' | 'club' | 'estadio';
 
@@ -37,7 +38,7 @@ function partir(html: string): FichaTexto {
 }
 
 async function listar(contentType: string, focusType: string): Promise<any[]> {
-    return cached(`contentful:${contentType}:${focusType}`, TTL.medio, async () => {
+    return cached(`contentful:${contentType}:${focusType}:${getRequestLocale()}`, TTL.medio, async () => {
         try {
             const entries = await contentfulClient.getEntries({
                 content_type: contentType,

@@ -563,7 +563,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals,
                                     <div className="flex items-center gap-3">
                                         <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#d4a843]' : 'text-[rgba(212,168,67,0.18)]'}`}>{i + 1}</span>
                                         <div className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden border-2 border-[#060d1c] shadow-sm">
-                                            <img src={getPlayerImage(p.name, type, p.photo)} alt={p.name} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} />
+                                            <img src={getPlayerImage(p.name, type, p.photo)} alt={p.name} width={80} height={107} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} />
                                         </div>
                                         <span className="text-sm font-bold text-[#c8c8c8] group-hover/p:text-[#d4a843] transition-colors">{p.name}</span>
                                     </div>

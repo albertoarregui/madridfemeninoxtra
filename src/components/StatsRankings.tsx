@@ -490,7 +490,7 @@ export default function StatsRankings({
                                 <div className="flex flex-col items-center mb-4">
                                     <div className="podium-img-wrapper">
                                         <a href={`/jugadoras/${podium[1].slug}`}>
-                                            <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} className="w-full h-full object-cover object-top" />
+                                            <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} width={200} height={267} className="w-full h-full object-cover object-top" />
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
@@ -513,7 +513,7 @@ export default function StatsRankings({
                                     <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
                                     <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4" style={{ringOffsetColor: '#060d1c'}}>
                                         <a href={`/jugadoras/${podium[0].slug}`}>
-                                            <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} className="w-full h-full object-cover object-top" />
+                                            <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} width={200} height={267} className="w-full h-full object-cover object-top" />
                                         </a>
                                     </div>
                                     <div className="text-center mt-6 podium-stat-value">
@@ -535,7 +535,7 @@ export default function StatsRankings({
                                 <div className="flex flex-col items-center mb-4">
                                     <div className="podium-img-wrapper">
                                         <a href={`/jugadoras/${podium[2].slug}`}>
-                                            <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} className="w-full h-full object-cover object-top" />
+                                            <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} width={200} height={267} className="w-full h-full object-cover object-top" />
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
@@ -575,7 +575,7 @@ export default function StatsRankings({
                                                 <td className="px-6 py-5 text-left">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-full overflow-hidden" style={{background: 'rgba(6,13,28,0.8)', border: '1px solid rgba(212,168,67,0.25)'}}>
-                                                            <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} className="w-full h-full object-cover object-top" />
+                                                            <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} width={80} height={107} className="w-full h-full object-cover object-top" />
                                                         </div>
                                                         <a href={`/jugadoras/${player.slug}`} className="text-base font-bold transition-colors" style={{color: '#f0f0f0'}} onMouseEnter={e => (e.currentTarget.style.color='#d4a843')} onMouseLeave={e => (e.currentTarget.style.color='#f0f0f0')}>{player.nombre}</a>
                                                     </div>

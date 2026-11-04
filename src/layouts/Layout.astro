@@ -7,6 +7,7 @@ import CookieConsent from "../components/CookieConsent.astro";
 import ScrollToTop from "../components/ScrollToTop.astro";
 import NextMatchCountdown from "../components/NextMatchCountdown.astro";
 import GoogleNewsBanner from "../components/GoogleNewsBanner.astro";
+import EnglishInterface from "../components/EnglishInterface.astro";
 import { getAssetUrl } from "../utils/assets";
 import { resolverOgImage } from "../utils/og";
 import { OG_ESTATICOS } from "../utils/og-metadata";
@@ -20,6 +21,7 @@ import "@fontsource/cinzel/700.css";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
 import "@fontsource/dm-sans/700.css";
+import { localeFromPath, localizePath, stripLocale } from "../i18n";
 
 const ogImage = "https://images.ctfassets.net/tw9ep67nuudj/46TjQrnBlppNehYWtkls5o/3fe171095c81fb9f8d1a3606885d506c/MINIATURA_PRINCIPAL_1_.png?w=1200&h=630&fit=fill&fm=jpg&q=85";
 const orgLogo = "https://www.madridfemeninoxtra.com/icon-512.png";
@@ -52,23 +54,28 @@ const {
 	canonical,
 } = Astro.props;
 
-const ogRuta = Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/+$/, "") : "/";
+const locale = Astro.locals.locale ?? localeFromPath(Astro.url.pathname);
+const originalPath = Astro.locals.originPathname ?? Astro.url.pathname;
+const resourcePath = stripLocale(originalPath);
+
+const ogRuta = resourcePath.length > 1 ? resourcePath.replace(/\/+$/, "") : "/";
 const ogConfig = OG_ESTATICOS[ogRuta];
 const tituloSocial = ogConfig?.title ?? ogTitle ?? title;
 const descripcionSocial = ogConfig?.description ?? ogDescription ?? description;
 
-const canonicalUrl = canonical
-	? new URL(canonical, Astro.site).href
-	: new URL(Astro.url.pathname, Astro.site).href;
+const canonicalResource = canonical ? stripLocale(new URL(canonical, Astro.site).pathname) : resourcePath;
+const canonicalUrl = new URL(localizePath(canonicalResource, locale), Astro.site).href;
+const spanishUrl = new URL(localizePath(canonicalResource, "es"), Astro.site).href;
+const englishUrl = new URL(localizePath(canonicalResource, "en"), Astro.site).href;
 
 const esRutaDinamica = Astro.routePattern.includes("[");
 const miniatura = esRutaDinamica
-	? await resolverOgImage(Astro.url.pathname, image)
+	? await resolverOgImage(resourcePath, image)
 	: null;
 const imagenSocial = esRutaDinamica ? (miniatura ?? image ?? ogImage) : ogImage;
 
 const bgUrl = noBg ? null : getAssetUrl("background", "background.webp");
-const isNewsArticle = /^\/noticias\/[^/]+\/?$/.test(Astro.url.pathname);
+const isNewsArticle = /^\/noticias\/[^/]+\/?$/.test(resourcePath);
 
 const siteSchema = {
 	"@context": "https://schema.org",
@@ -103,7 +110,7 @@ const siteSchema = {
 			"@id": "https://www.madridfemeninoxtra.com/#website",
 			url: "https://www.madridfemeninoxtra.com/",
 			name: "Madrid Femenino Xtra",
-			inLanguage: "es",
+			inLanguage: locale,
 			publisher: { "@id": "https://www.madridfemeninoxtra.com/#organization" },
 			potentialAction: {
 				"@type": "SearchAction",
@@ -116,7 +123,7 @@ const siteSchema = {
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={locale} data-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -126,6 +133,12 @@ const siteSchema = {
 		<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<link rel="canonical" href={canonicalUrl} />
+		<link rel="alternate" hreflang="es" href={spanishUrl} />
+		<link rel="alternate" hreflang="en" href={englishUrl} />
+		<link rel="alternate" hreflang="x-default" href={spanishUrl} />
+		<script is:inline>
+			try { document.documentElement.dataset.theme = localStorage.getItem('mfx-theme') || 'dark'; } catch {}
+		</script>
 		<script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
 		<link rel="alternate" type="application/rss+xml" title="Madrid Femenino Xtra Noticias" href="/rss.xml" />
 		<link rel="preconnect" href="https://i.ytimg.com" />
@@ -133,14 +146,14 @@ const siteSchema = {
 		<meta name="author" content={author} />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="theme-color" content="#090909" />
-		<meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href} />
+		<meta property="og:url" content={canonicalUrl} />
 		<meta property="og:type" content={isNewsArticle ? "article" : "website"} />
 		<meta property="og:site_name" content="Madrid Femenino Xtra" />
 		<meta property="og:title" content={tituloSocial} />
 		<meta property="og:description" content={descripcionSocial} />
 		<meta property="og:image" content={imagenSocial} />
 		<meta property="og:image:alt" content={title} />
-		<meta property="og:locale" content="es_ES" />
+		<meta property="og:locale" content={locale === "en" ? "en_GB" : "es_ES"} />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:site" content="@madridfemxtra" />
 		<meta name="twitter:title" content={tituloSocial} />
@@ -157,16 +170,17 @@ const siteSchema = {
 	</head>
 	<body>
 		{bgUrl && <div class="global-bg" style={`background-image:url(${bgUrl})`}></div>}
-		<Header />
+		<Header locale={locale} />
 		<div class="page-wrapper">
 			{isNewsArticle && <GoogleNewsBanner />}
 			<slot />
 		</div>
-		<FooterUpper />
-		<Footer />
+		<FooterUpper locale={locale} />
+		<Footer locale={locale} />
 		{showMatchCountdown && <NextMatchCountdown />}
 		<CookieConsent showAds={showAds} />
 		<ScrollToTop />
+		{locale === "en" && <EnglishInterface />}
 		<script is:inline>
 			function setupGlobalSelects() {
 				const containers = document.querySelectorAll(

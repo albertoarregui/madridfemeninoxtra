@@ -31,7 +31,18 @@ try {
         const subtitle = getV("competition") || getV("competicion") || "";
         const dateRaw = getV("date") || getV("fecha");
         const total = getV("totalphotos") || getV("totalFotos") || 0;
+        const rawDescription = getV("description") || getV("descripcion");
         const folder = (getV("route") || getV("rutaDeCarpetas") || "").replace(/^\/+|\/+$/g, "");
+        const dateLabel = dateRaw
+            ? new Date(dateRaw).toLocaleDateString("es-ES", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+              })
+            : "";
+        const description = typeof rawDescription === "string" && rawDescription.trim()
+            ? rawDescription.trim()
+            : `Fotografías de ${title}${subtitle ? ` (${subtitle})` : ""}${dateLabel ? `, del ${dateLabel}` : ""}. La galería reúne una selección de imágenes del encuentro y sus protagonistas.`;
 
         const realRoute = (await resolveIndexRoute(folder)) || folder;
         const index = await fetchGallery(realRoute);
@@ -44,15 +55,10 @@ try {
         albumData = {
             title: title,
             subtitle: subtitle,
-            date: dateRaw
-                ? new Date(dateRaw)
-                      .toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                      })
-                      .toUpperCase()
+            date: dateLabel
+                ? dateLabel.toUpperCase()
                 : "SIN FECHA",
+            description,
             photos,
         };
     }
@@ -69,7 +75,7 @@ const gallerySchema = {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
     name: albumData.title,
-    description: `Galería de fotos de ${albumData.title} del Real Madrid Femenino.`,
+    description: albumData.description,
     url: `https://www.madridfemeninoxtra.com/fotogalerias/${slug}`,
     ...(cover ? { image: cover } : {}),
     ...(albumData.photos.length ? { numberOfItems: albumData.photos.length } : {}),
@@ -82,10 +88,10 @@ const galleryBreadcrumb = breadcrumbSchema([
 ---
 
 <Layout
-    title={`${albumData.title} | Fotogalerías | Madrid Femenino Xtra`}
-    description={`Explora las fotos de ${albumData.title} del Real Madrid Femenino.`}
+    title={`${albumData.title} | Fotogalería MFX`}
+    description={albumData.description}
     ogTitle={`${albumData.title} | Madrid Femenino Xtra`}
-    ogDescription={`Fotogalería del Real Madrid Femenino: ${albumData.title}. Explora todas las imágenes de este álbum.`}
+    ogDescription={albumData.description}
     image={cover || undefined}
     noBg={true}
 >
@@ -106,6 +112,11 @@ const galleryBreadcrumb = breadcrumbSchema([
                     </p>
                 </div>
             </header>
+
+            <section class="gal-description-card" aria-label="Descripción de la fotogalería">
+                <h2>Sobre esta galería</h2>
+                <p>{albumData.description}</p>
+            </section>
 
             <GalleryViewer album={albumData} client:only="react" />
         </div>
@@ -182,6 +193,30 @@ const galleryBreadcrumb = breadcrumbSchema([
         flex-wrap: wrap;
     }
     .gal-sep { color: rgba(212,168,67,0.4); }
+    .gal-description-card {
+        position: relative;
+        margin: -1rem 0 2rem;
+        padding: 1.1rem 1.25rem;
+        border: 1px solid rgba(212,168,67,0.2);
+        border-radius: 4px;
+        background: rgba(8,16,34,0.85);
+    }
+    .gal-description-card h2 {
+        margin: 0 0 0.5rem;
+        color: #d4a843;
+        font-family: 'Cinzel', serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+    }
+    .gal-description-card p {
+        margin: 0;
+        color: rgba(220,225,232,0.78);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.7;
+        text-wrap: pretty;
+    }
 
     @media (max-width: 640px) {
         .gal-detail-page { padding-top: calc(56px + 1.25rem); }

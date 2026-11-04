@@ -5,6 +5,8 @@ import "../../styles/buscador.css";
 import { fetchPlayersDirectly } from "../../utils/players";
 import { getMatchFilterOptions } from "../../utils/buscador-filtros";
 import BuscadorAvanzado from "../../components/BuscadorAvanzado";
+import BreadcrumbTrail from "../../components/BreadcrumbTrail.astro";
+import EditorialInfoCards from "../../components/EditorialInfoCards.astro";
 
 const playersData = await fetchPlayersDirectly();
 const { seasons: uniqueSeasons, competitions: uniqueCompetitions } = await getMatchFilterOptions();
@@ -15,16 +17,27 @@ const playerImageMap = Object.fromEntries(
 ---
 
 <Layout
-    title="Buscador Avanzado de Estadísticas | Madrid Femenino Xtra"
+    title="Buscador de estadísticas de jugadoras | MFX"
     description="Busca, filtra y ordena las estadísticas del Real Madrid Femenino por jugadora, temporada, competición, posición y mucho más."
 >
     <main class="max-w-7xl mx-auto px-6 md:px-0 py-10">
+        <BreadcrumbTrail items={[
+            { label: "Inicio", href: "/" },
+            { label: "Hub", href: "/estadisticas-real-madrid-femenino" },
+            { label: "Buscador de jugadoras" },
+        ]} />
         <header class="page-header-container">
             <h1 class="landing-title" data-title="BUSCADOR AVANZADO">BUSCADOR AVANZADO</h1>
             <p class="landing-subtitle">
                 Filtra y ordena las estadísticas por jugadora, temporada y competición
             </p>
         </header>
+
+        <EditorialInfoCards
+            introduction="Consulta la base de datos histórica de jugadoras del Real Madrid Femenino y ordena sus estadísticas por temporada, competición, posición o métrica."
+            utility="Combina filtros para localizar perfiles concretos, crear rankings personalizados y comparar el rendimiento de una jugadora en diferentes etapas."
+            methodology="Solo se contabilizan partidos finalizados. Los resultados se agregan a partir de los registros disponibles y las estadísticas sin dato no se convierten en cero."
+        />
 
         <BuscadorAvanzado
             client:load

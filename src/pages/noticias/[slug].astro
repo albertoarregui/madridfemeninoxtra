@@ -17,6 +17,7 @@ import { fetchGamesDirectly } from "../../utils/partidos";
 import { getFlagSrc } from "../../utils/flags";
 import { generateSlug } from "../../utils/url-helper";
 import { cached } from "../../utils/cache";
+import { getRequestLocale } from "../../i18n/request-locale";
 
 export const prerender = false;
 
@@ -30,7 +31,7 @@ let relatedNoticias: any[] = [];
 
 try {
     const { contentfulClient } = await import("../../lib/contentful");
-    const entries = await cached(`contentful:news:item:${slug}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
+    const entries = await cached(`contentful:news:item:${slug}:${getRequestLocale()}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
         content_type: "noticia",
         "fields.slug": slug,
         include: 3,
@@ -45,7 +46,7 @@ try {
 
         if (noticia?.category && noticiaId) {
             try {
-                const relatedEntries = await cached(`contentful:news:related:${noticiaId}:${noticia.category}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
+                const relatedEntries = await cached(`contentful:news:related:${noticiaId}:${noticia.category}:${getRequestLocale()}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
                     content_type: "noticia",
                     "fields.category": noticia.category,
                     "sys.id[ne]": noticiaId,
@@ -552,7 +553,7 @@ const newsSchema = {
 ---
 
 <Layout
-    title={`${title} | Madrid Femenino Xtra`}
+    title={`${title} | MFX`}
     description={subtitle || `${title} - Madrid Femenino Xtra`}
     ogTitle={`${title} | Madrid Femenino Xtra`}
     ogDescription={subtitle || `${title} - Madrid Femenino Xtra`}

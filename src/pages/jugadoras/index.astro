@@ -17,10 +17,25 @@ const playersData = playersRaw.map((player) => {
         flagUrl: getFlagSrc(pais_origin, iso),
     };
 });
+
+// El mapa solo necesita estos datos. PlayersSection conserva la ficha completa,
+// pero evitamos duplicarla dentro de una segunda isla React.
+const mapPlayers = playersData.map((player) => ({
+    nombre: player.nombre,
+    lugar_nacimiento: player.lugar_nacimiento,
+    pais_origen: player.pais_origen,
+    pais_origin: player.pais_origin,
+    lat: player.lat,
+    lng: player.lng,
+    imageUrl: player.imageUrl,
+    slug: player.slug,
+    posicion: player.posicion,
+    fecha_nacimiento: player.fecha_nacimiento,
+}));
 ---
 
 <Layout
-    title="Jugadoras del Real Madrid Femenino | Madrid Femenino Xtra"
+    title="Jugadoras del Real Madrid Femenino | MFX"
     description="Todas las jugadoras del Real Madrid Femenino a lo largo de su historia: ficha técnica, posiciones, dorsales, estadísticas y trayectoria."
 >
     <main class="py-10">
@@ -32,7 +47,7 @@ const playersData = playersRaw.map((player) => {
         </div>
 
         <div class="max-w-[1500px] mx-auto px-4 md:px-6 mt-6">
-            <PlayerMapWrapper players={playersData} client:only="react" />
+            <PlayerMapWrapper players={mapPlayers} client:only="react" />
             <div class="mt-10">
                 <PlayersSection players={playersData} />
             </div>

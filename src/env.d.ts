@@ -17,6 +17,14 @@ interface ImportMetaEnv {
     readonly PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
     readonly CLERK_SECRET_KEY?: string;
     readonly GOOGLE_GENERATIVE_AI_API_KEY?: string;
+    readonly PUBLIC_ENGLISH_SITE_ENABLED?: string;
+}
+
+declare namespace App {
+    interface Locals {
+        locale: import("./i18n").SiteLocale;
+        originPathname: string;
+    }
 }
 
 interface ImportMeta {

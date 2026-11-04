@@ -1,0 +1,63 @@
+---
+import { interfaceReplacements } from "../i18n/translate-html";
+---
+
+<script define:vars={{ interfaceReplacements }}>
+  const ignored = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "CODE", "PRE"]);
+  const internalExceptions = /^(?:\/en(?:\/|$)|\/api\/|\/_astro\/|\/assets\/|\/icon|\/site\.webmanifest|\/rss\.xml|\/sitemap\.xml)/;
+  const orderedReplacements = [...interfaceReplacements].sort((a, b) => b[0].length - a[0].length);
+
+  function translate(value) {
+    let result = value;
+    for (const [source, target] of orderedReplacements) result = result.split(source).join(target);
+    return result;
+  }
+
+  function translateElement(root) {
+    if (!(root instanceof Element) || ignored.has(root.tagName)) return;
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      if (node.parentElement && !ignored.has(node.parentElement.tagName)) {
+        const next = translate(node.nodeValue || "");
+        if (next !== node.nodeValue) node.nodeValue = next;
+      }
+    }
+
+    for (const element of [root, ...root.querySelectorAll("[placeholder], [title], [aria-label]")]) {
+      for (const attribute of ["placeholder", "title", "aria-label"]) {
+        const value = element.getAttribute(attribute);
+        if (!value) continue;
+        const next = translate(value);
+        if (next !== value) element.setAttribute(attribute, next);
+      }
+    }
+
+    for (const anchor of [root, ...root.querySelectorAll("a[href]")]) {
+      if (!(anchor instanceof HTMLAnchorElement)) continue;
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/") || internalExceptions.test(href)) continue;
+      anchor.setAttribute("href", href === "/" ? "/en/" : `/en${href}`);
+    }
+  }
+
+  function setupEnglishInterface() {
+    translateElement(document.body);
+    if (window.__mfxEnglishObserver) return;
+    window.__mfxEnglishObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof Element) translateElement(node);
+          else if (node.nodeType === Node.TEXT_NODE && node.parentElement) translateElement(node.parentElement);
+        }
+      }
+    });
+    window.__mfxEnglishObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setupEnglishInterface);
+  else setupEnglishInterface();
+  document.addEventListener("astro:page-load", setupEnglishInterface);
+</script>

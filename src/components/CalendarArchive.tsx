@@ -211,7 +211,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                 <div className="match-main-content">
                                     <div className="mobile-match-heading">
                                         {match.competicion_foto_url ? (
-                                            <img src={match.competicion_foto_url} alt={match.competicion_nombre} className="mobile-comp-logo" />
+                                            <img src={match.competicion_foto_url} alt={match.competicion_nombre} width={40} height={40} className="mobile-comp-logo" />
                                         ) : (
                                             <Trophy size={26} className="mobile-comp-placeholder" />
                                         )}
@@ -221,7 +221,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                     <div className="teams-interaction-row">
                                         <div className="team-side local">
                                             <span className="team-name">{match.club_local}</span>
-                                            <img src={match.local_shield_url} alt="" className="team-shield" />
+                                            <img src={match.local_shield_url} alt="" width={72} height={72} className="team-shield" />
                                         </div>
 
                                         <div className="match-score-box">
@@ -240,7 +240,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
                                         </div>
 
                                         <div className="team-side visitor">
-                                            <img src={match.visitante_shield_url} alt="" className="team-shield" />
+                                            <img src={match.visitante_shield_url} alt="" width={72} height={72} className="team-shield" />
                                             <span className="team-name">{match.club_visitante}</span>
                                         </div>
                                     </div>
@@ -266,7 +266,7 @@ const CalendarArchive: React.FC<CalendarArchiveProps> = ({ matches }) => {
 
                                 <div className="match-comp-logo-right">
                                     {match.competicion_foto_url ? (
-                                        <img src={match.competicion_foto_url} alt={match.competicion_nombre} className="comp-logo-large" />
+                                        <img src={match.competicion_foto_url} alt={match.competicion_nombre} width={64} height={64} className="comp-logo-large" />
                                     ) : (
                                         <Trophy size={32} className="opacity-10" />
                                     )}

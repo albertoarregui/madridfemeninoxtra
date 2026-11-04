@@ -251,6 +251,12 @@ const visitorScore = isLocalRM ? (game.goles_rival ?? 0) : (game.goles_rm ?? 0);
 const rmGoals = game.goles_rm ?? 0;
 const rivalGoals = game.goles_rival ?? 0;
 const rivalName = isLocalRM ? game.club_visitante : game.club_local;
+const rivalHref = `/rivales/${slugify(rivalName)}`;
+const playerHref = (player: { name?: string; slug?: string } | string | null | undefined) => {
+    const name = typeof player === "string" ? player : player?.name;
+    const playerSlug = typeof player === "string" ? slugify(player) : (player?.slug || slugify(name || ""));
+    return playerSlug && playerSlug !== "#" ? `/jugadoras/${playerSlug}` : null;
+};
 
 const fechaLarga = game.fecha
     ? (() => { try { return new Date(game.fecha).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }); } catch { return ""; } })()
@@ -352,8 +358,8 @@ const cronicaHeading = tieneCronica
       : "INFORMACIÓN DEL PARTIDO";
 
 const seoTitle = isLiveOrPlayed
-    ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`
-    : `${game.club_local} vs ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`;
+    ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}: resultado y estadísticas | MFX`
+    : `${game.club_local} vs ${game.club_visitante}: horario y previa | MFX`;
 const seoDescription = isLiveOrPlayed
     ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante} (${fechaCorta}). Resultado, goleadoras, alineaciones y estadísticas completas${compLabel ? ` de ${compLabel}` : ""}.`
     : `${game.club_local} vs ${game.club_visitante} (${fechaCorta}). Previa, horario, alineaciones y estadísticas del partido${compLabel ? ` de ${compLabel}` : ""}.`;
@@ -407,7 +413,14 @@ const matchSchema = matchStartISO ? {
         </a>
         <div class="match-header-grid">
             <section class="match-card-new">
-                <h2 class="section-header">FICHA DEL PARTIDO</h2>
+                <h1 class="section-header">
+                    <span aria-hidden="true">FICHA DEL PARTIDO</span>
+                    <span class="match-page-title">
+                        {isLiveOrPlayed
+                            ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""}`
+                            : `${game.club_local} vs ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""}`}
+                    </span>
+                </h1>
                 <div class="match-content-body">
                     <div class="match-metadata-top">
                         <span class="metadata-text">
@@ -446,13 +459,19 @@ const matchSchema = matchStartISO ? {
                                         <img
                                             src={localShield}
                                             alt={game.club_local}
+                                            width="120"
+                                            height="120"
                                             class="team-shield-xl"
                                             data-proxy-fallback
                                         />
                                     )
                                 }
                             </div>
-                            <span class="team-name-xl">{game.club_local}</span>
+                            {isLocalRM ? (
+                                <span class="team-name-xl">{game.club_local}</span>
+                            ) : (
+                                <a class="team-name-xl entity-link" href={rivalHref}>{game.club_local}</a>
+                            )}
                         </div>
                         <div class="score-block-large">
                             {isLiveOrPlayed ? (
@@ -494,15 +513,19 @@ const matchSchema = matchStartISO ? {
                                         <img
                                             src={visitorShield}
                                             alt={game.club_visitante}
+                                            width="120"
+                                            height="120"
                                             class="team-shield-xl"
                                             data-proxy-fallback
                                         />
                                     )
                                 }
                             </div>
-                            <span class="team-name-xl"
-                                >{game.club_visitante}</span
-                            >
+                            {isLocalRM ? (
+                                <a class="team-name-xl entity-link" href={rivalHref}>{game.club_visitante}</a>
+                            ) : (
+                                <span class="team-name-xl">{game.club_visitante}</span>
+                            )}
                         </div>
                     </div>
                     <div class="match-metadata-bottom">
@@ -550,6 +573,8 @@ const matchSchema = matchStartISO ? {
                         <img
                             src={stadiumImageSrc}
                             alt={game.estadio}
+                            width="1600"
+                            height="900"
                             class="stadium-img-rect"
                             data-proxy-fallback
                         />
@@ -788,6 +813,8 @@ const matchSchema = matchStartISO ? {
                                                     <img
                                                         src={player.imageUrl}
                                                         alt={player.name}
+                                                        width="75"
+                                                        height="95"
                                                         class="player-img-rect"
                                                         data-proxy-fallback
                                                     />
@@ -798,9 +825,17 @@ const matchSchema = matchStartISO ? {
                                         </span>
                                         <div class="player-info-col">
                                             <div class="player-name-row">
-                                                <span class="player-name-bold">
-                                                    {player.name}
-                                                </span>
+                                                {playerHref(player) ? (
+                                                    <a
+                                                        class="player-name-bold entity-link"
+                                                        href={playerHref(player)!}
+                                                        onclick="event.stopPropagation()"
+                                                    >
+                                                        {player.name}
+                                                    </a>
+                                                ) : (
+                                                    <span class="player-name-bold">{player.name}</span>
+                                                )}
                                                 {playerRating(player) !== null && (
                                                     <span
                                                         class={`match-rating-badge ${playerRatingClass(player)}`}
@@ -985,13 +1020,19 @@ const matchSchema = matchStartISO ? {
                                                                 sub.playerIn
                                                                     .imageUrl
                                                             }
+                                                            width="60"
+                                                            height="75"
                                                             class="sub-img"
                                                             data-proxy-fallback
                                                         />
                                                     )}
-                                                <span class="sub-name">
-                                                    {sub.playerIn.name}
-                                                </span>
+                                                {playerHref(sub.playerIn) ? (
+                                                    <a class="sub-name entity-link" href={playerHref(sub.playerIn)!} onclick="event.stopPropagation()">
+                                                        {sub.playerIn.name}
+                                                    </a>
+                                                ) : (
+                                                    <span class="sub-name">{sub.playerIn.name}</span>
+                                                )}
                                                 {playerRating(sub.playerIn) !== null && (
                                                     <span
                                                         class={`match-rating-badge ${playerRatingClass(sub.playerIn)}`}
@@ -1117,12 +1158,18 @@ const matchSchema = matchStartISO ? {
                                                                 sub.playerOut
                                                                     .imageUrl
                                                             }
+                                                            width="60"
+                                                            height="75"
                                                             class="sub-img"
                                                         />
                                                     )}
-                                                <span class="sub-name">
-                                                    {sub.playerOut.name}
-                                                </span>
+                                                {playerHref(sub.playerOut) ? (
+                                                    <a class="sub-name entity-link" href={playerHref(sub.playerOut)!} onclick="event.stopPropagation()">
+                                                        {sub.playerOut.name}
+                                                    </a>
+                                                ) : (
+                                                    <span class="sub-name">{sub.playerOut.name}</span>
+                                                )}
                                                 {playerRating(sub.playerOut) !== null && (
                                                     <span
                                                         class={`match-rating-badge ${playerRatingClass(sub.playerOut)}`}
@@ -1255,17 +1302,19 @@ const matchSchema = matchStartISO ? {
                                                     mvpPlayer.image
                                                 }
                                                 alt={mvpPlayer.name}
+                                                width="600"
+                                                height="800"
                                                 class="mvp-photo-full"
                                                 data-proxy-fallback
                                             />
-                                            <div class="mvp-name-badge">
+                                            <a class="mvp-name-badge entity-link" href={playerHref(mvpPlayer)!}>
                                                 {mvpPlayer.name}
-                                            </div>
+                                            </a>
                                         </div>
                                     ) : (
-                                        <span class="mvp-name-dark">
+                                        <a class="mvp-name-dark entity-link" href={playerHref(mvpPlayer)!}>
                                             {mvpPlayer.name}
-                                        </span>
+                                        </a>
                                     )}
                                 </div>
                             ) : (
@@ -1289,6 +1338,8 @@ const matchSchema = matchStartISO ? {
                                 <img
                                     src={matchKit.url}
                                     alt={matchKit.nombre || "Equipación del partido"}
+                                    width="800"
+                                    height="1000"
                                     class="kit-image"
                                     loading="eager"
                                     data-proxy-fallback
@@ -1306,6 +1357,8 @@ const matchSchema = matchStartISO ? {
                                     <img
                                         src={game.once_inicial_url}
                                         alt={`XI Inicial ${game.club_local} vs ${game.club_visitante}`}
+                                        width="1600"
+                                        height="900"
                                         class="xi-photo"
                                         loading="eager"
                                         data-proxy-fallback
@@ -2638,6 +2691,27 @@ const matchSchema = matchStartISO ? {
 </script>
 
 <style>
+    .match-page-title {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    .entity-link {
+        color: inherit;
+        text-decoration: none;
+    }
+    .entity-link:hover,
+    .entity-link:focus-visible {
+        color: #d4a843;
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+    }
     .match-details-page {
         max-width: 1400px;
         margin: 0 auto;

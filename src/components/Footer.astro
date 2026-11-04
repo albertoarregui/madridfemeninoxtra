@@ -2,6 +2,11 @@
 import X from "../assets/redes/x.svg";
 import Instagram from "../assets/redes/instagram.svg";
 import TikTok from "../assets/redes/tiktok.svg";
+import { localizePath, type SiteLocale } from "../i18n";
+interface Props { locale?: SiteLocale; }
+const { locale = "es" } = Astro.props;
+const en = locale === "en";
+const href = (path: string) => localizePath(path, locale);
 ---
 
 <footer class="footer-container">
@@ -46,20 +51,20 @@ import TikTok from "../assets/redes/tiktok.svg";
         </a>
     </div>
 
-    <div class="footer-legal-row" aria-label="Avisos y preferencias legales">
-        <a href="/aviso-legal">Aviso legal</a>
+    <div class="footer-legal-row" aria-label={en ? "Legal notices and preferences" : "Avisos y preferencias legales"}>
+        <a href={href("/aviso-legal")}>{en ? "Legal notice" : "Aviso legal"}</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/politica-privacidad">Privacidad</a>
+        <a href={href("/politica-privacidad")}>{en ? "Privacy" : "Privacidad"}</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/politica-cookies">Cookies</a>
+        <a href={href("/politica-cookies")}>Cookies</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <a href="/terminos-condiciones">Condiciones</a>
+        <a href={href("/terminos-condiciones")}>{en ? "Terms" : "Condiciones"}</a>
         <span class="footer-dot" aria-hidden="true">·</span>
-        <button type="button" class="footer-manage-cookies" id="mfx-footer-manage-cookies">Configurar cookies</button>
+        <button type="button" class="footer-manage-cookies" id="mfx-footer-manage-cookies">{en ? "Cookie settings" : "Configurar cookies"}</button>
     </div>
 
     <div class="footer-bottom">
-        <p>&copy; {new Date().getFullYear()} Madrid Femenino Xtra. Todos los derechos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} Madrid Femenino Xtra. {en ? "All rights reserved." : "Todos los derechos reservados."}</p>
     </div>
 </footer>
 <script is:inline data-astro-rerun>

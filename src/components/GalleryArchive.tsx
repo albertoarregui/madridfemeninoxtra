@@ -9,6 +9,9 @@ interface GalleryAlbum {
     date: string;
     cover: string;
     count: number;
+    description: string;
+    coverWidth: number;
+    coverHeight: number;
 }
 
 interface GalleryArchiveProps {
@@ -43,6 +46,8 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                             <img 
                                 src={album.cover} 
                                 alt={album.title} 
+                                width={album.coverWidth}
+                                height={album.coverHeight}
                                 loading="lazy"
                                 onError={(e) => {
                                     const img = e.currentTarget;
@@ -66,6 +71,7 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                                 <span>{album.subtitle}</span>
                             </div>
                             <h2 className="gallery-title">{album.title}</h2>
+                            <p className="gallery-description">{album.description}</p>
                             <div className="gallery-footer">
                                 <Calendar size={10} />
                                 <span>{album.date}</span>
@@ -193,6 +199,17 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                 .gallery-card:hover .gallery-title {
                     color: #d4a843;
                 }
+                .gallery-description {
+                    display: -webkit-box;
+                    margin: 0 0 1rem;
+                    overflow: hidden;
+                    -webkit-box-orient: vertical;
+                    -webkit-line-clamp: 3;
+                    color: rgba(200,210,220,0.64);
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 0.78rem;
+                    line-height: 1.55;
+                }
                 .gallery-footer {
                     display: flex;
                     align-items: center;
@@ -273,6 +290,10 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                     }
                     .gallery-footer, .gallery-meta {
                         display: none;
+                    }
+                    .gallery-description {
+                        -webkit-line-clamp: 2;
+                        font-size: 0.7rem;
                     }
                 }
             ` }} />
