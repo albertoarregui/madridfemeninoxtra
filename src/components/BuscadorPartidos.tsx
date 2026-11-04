@@ -421,7 +421,7 @@ export default function BuscadorPartidos({ seasons, competitions, rivals }: Busc
                                         <a href={`/partidos/${m.slug}`} className="bus-player-link">
                                             <span className={`bus-res-dot ${RESULT_CLASS[m.resultado] ?? ''}`}>{m.resultado}</span>
                                             {m.rival_foto
-                                                ? <img src={m.rival_foto} alt={m.rival} className="bus-player-img bus-shield" loading="lazy" />
+                                                ? <img src={m.rival_foto} alt={m.rival} className="bus-player-img bus-shield" width={30} height={30} loading="lazy" decoding="async" />
                                                 : <div className="bus-player-img-ph" />
                                             }
                                             <span className="bus-player-info">

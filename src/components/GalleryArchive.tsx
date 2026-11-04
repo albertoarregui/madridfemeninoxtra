@@ -18,6 +18,12 @@ interface GalleryArchiveProps {
     initialAlbums: GalleryAlbum[];
 }
 
+const contentfulSrcSet = (url: string) => {
+    if (!url.includes('images.ctfassets.net')) return undefined;
+    const separator = url.includes('?') ? '&' : '?';
+    return [360, 600, 900].map(width => `${url}${separator}fm=webp&w=${width}&q=82 ${width}w`).join(', ');
+};
+
 const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [galleriesPerPage, setGalleriesPerPage] = useState(9);
@@ -45,10 +51,13 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
                         <div className="gallery-image-wrapper">
                             <img 
                                 src={album.cover} 
+                                srcSet={contentfulSrcSet(album.cover)}
+                                sizes="(max-width: 720px) 92vw, (max-width: 1100px) 46vw, 390px"
                                 alt={album.title} 
                                 width={album.coverWidth}
                                 height={album.coverHeight}
                                 loading="lazy"
+                                decoding="async"
                                 onError={(e) => {
                                     const img = e.currentTarget;
                                     const match = img.src.match(/1\.[a-z]+$/i);

@@ -10,6 +10,12 @@ const { title, noticias } = Astro.props;
 
 const FALLBACK =
     "https://www.madridfemeninoxtra.com/og.png";
+
+const responsiveNewsSrcSet = (url?: string | null) => {
+    if (!url?.includes("images.ctfassets.net")) return undefined;
+    const separator = url.includes("?") ? "&" : "?";
+    return [360, 640, 960].map((width) => `${url}${separator}fm=webp&w=${width}&q=82 ${width}w`).join(", ");
+};
 ---
 
 {
@@ -29,9 +35,14 @@ const FALLBACK =
                                     <div class="hito-img-wrapper">
                                         <img
                                             src={n.imageUrl || FALLBACK}
+                                            srcset={responsiveNewsSrcSet(n.imageUrl)}
+                                            sizes="(max-width: 768px) 88vw, 360px"
                                             alt={n.title}
                                             class="hito-img"
                                             loading="lazy"
+                                            decoding="async"
+                                            width="640"
+                                            height="360"
                                         />
                                     </div>
                                     <div class="hito-info">

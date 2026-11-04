@@ -15,6 +15,7 @@ import { getAssetUrl } from "../utils/assets";
 import { cached } from "../utils/cache";
 import { getCurrentSeason } from "../utils/season";
 import { getRequestLocale } from "../i18n/request-locale";
+import { compactDashboardPayload } from "../lib/dashboard-payload";
 
 const mapaJugadoras = getAssetUrl("sidebar", "mapa_jugadoras.png");
 const mapaPartidos = getAssetUrl("sidebar", "mapa_partidos.png");
@@ -109,6 +110,7 @@ function proyectar<T extends Record<string, any>>(
 
 const statsMatches = proyectar(gamesData, CAMPOS_PARTIDO_STATS);
 const statsGoals = proyectar(allGoals, CAMPOS_GOL_STATS);
+const dashboardPayload = compactDashboardPayload(statsMatches, statsGoals);
 
 const uniqueSeasons = [
 	...new Set(gamesData.map((g) => g.temporada_nombre).filter((s) => s)),
@@ -263,8 +265,9 @@ try {
 						</p>
 					</div>
 					<ClubStatsDashboard
-						matches={statsMatches}
-						goals={statsGoals}
+						matchRows={dashboardPayload.matchRows}
+						goalRows={dashboardPayload.goalRows}
+						playerImages={dashboardPayload.playerImages}
 						seasons={uniqueSeasons}
 						competitions={uniqueCompetitions}
 						client:visible
@@ -340,6 +343,7 @@ try {
 						width="450"
 						height="180"
 						loading="lazy"
+						decoding="async"
 					/>
 					<div class="sidebar-map-overlay">Ver mapa →</div>
 				</div>
@@ -356,6 +360,7 @@ try {
 						width="450"
 						height="180"
 						loading="lazy"
+						decoding="async"
 					/>
 					<div class="sidebar-map-overlay">Ver mapa →</div>
 				</div>

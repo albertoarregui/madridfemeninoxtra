@@ -22,6 +22,19 @@ test("la interfaz inglesa traduce etiquetas y mantiene fuera los recursos técni
   assert.match(html, /href="\/assets\/a\.webp"/);
 });
 
+test("la interfaz inglesa traduce textos editoriales, rankings y fechas", () => {
+  const html = translateInterfaceHtml(`
+    <p>Historial de partidos disputados por el Real Madrid Femenino a lo largo de su historia, por temporada y competición</p>
+    <span>Mayor racha con gol o asistencia</span>
+    <time>4 de noviembre de 2026</time>
+    <a href="/estadisticas/avanzadas">Metodología</a>
+  `);
+  assert.match(html, /Complete Real Madrid Women match history by season and competition/);
+  assert.match(html, /Longest goal contribution streak/);
+  assert.match(html, /4 November 2026/);
+  assert.match(html, /href="\/en\/estadisticas\/avanzadas">Methodology/);
+});
+
 test("layout publica alternates de idioma y mantiene un único tema oscuro", () => {
   const layout = read("src/layouts/Layout.astro");
   const css = read("src/styles/global.css");
@@ -48,4 +61,8 @@ test("sitemap anuncia las dos versiones sin repetir lecturas de partidos", () =>
   assert.match(sitemap, /xmlns:xhtml/);
   assert.match(sitemap, /englishPath/);
   assert.equal((sitemap.match(/fetchGamesDirectly\(\)/g) || []).length, 1);
+  assert.match(sitemap, /estadisticas\/avanzadas/);
+  assert.match(sitemap, /estadisticas\/buscador-avanzado-jugadoras/);
+  assert.match(sitemap, /estadisticas\/buscador-avanzado-partidos/);
+  assert.match(sitemap, /estadisticas\/buscador-avanzado-temporadas/);
 });

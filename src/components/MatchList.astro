@@ -1,6 +1,5 @@
 ---
 import { Image } from "astro:assets";
-import type { ImageMetadata } from "astro";
 import { competitionDisplayName } from "../utils/competiciones";
 
 interface Match {
@@ -36,6 +35,47 @@ function getCompetitionLogo(competitionName: string) {
 function getTeamLogo(teamName: string) {
     return getAssetMetadata("escudos", teamName);
 }
+
+function compactDate(dateString: string, timeString?: string) {
+    if (!dateString) return "-";
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, "0");
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const year = date.getFullYear().toString().slice(-2);
+        const timeDisplay = timeString && timeString !== "00:00"
+            ? timeString.substring(0, 5)
+            : `${date.getUTCHours().toString().padStart(2, "0")}:${date.getUTCMinutes().toString().padStart(2, "0")}`;
+        return `${day}.${month}.${year} ${timeDisplay}`;
+    } catch {
+        return "-";
+    }
+}
+
+const INITIAL_MATCH_COUNT = 40;
+const initialMatches = matches.slice(0, INITIAL_MATCH_COUNT);
+const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
+    const madridIsLocal = (match.club_local || "").toLowerCase().includes("real madrid");
+    const localLogo = match.local_shield_url || getTeamLogo(match.club_local);
+    const visitorLogo = match.visitante_shield_url || getTeamLogo(match.club_visitante);
+    const competitionLogo = getCompetitionLogo(match.competicion_nombre);
+    return [
+        match.temporada_nombre,
+        match.competicion_nombre,
+        match.resultado,
+        match.resultado === "V" ? "win" : match.resultado === "D" ? "loss" : "draw",
+        match.slug,
+        compactDate(match.fecha, match.hora),
+        match.club_local,
+        match.club_visitante,
+        madridIsLocal ? match.goles_rm : match.goles_rival,
+        madridIsLocal ? match.goles_rival : match.goles_rm,
+        typeof localLogo === "string" ? localLogo : localLogo?.src || "",
+        typeof visitorLogo === "string" ? visitorLogo : visitorLogo?.src || "",
+        typeof competitionLogo === "string" ? competitionLogo : competitionLogo?.src || "",
+        competitionDisplayName(match.competicion_nombre, { temporada: match.temporada_nombre }),
+    ];
+});
 ---
 
 <div class="match-list-ui">
@@ -148,7 +188,7 @@ function getTeamLogo(teamName: string) {
 
     <div id="matches-container" class="matches-container">
         {
-            matches.map((match) => {
+            initialMatches.map((match) => {
                 const formatDate = (
                     dateString: string,
                     timeString?: string,
@@ -250,6 +290,8 @@ function getTeamLogo(teamName: string) {
                                             class="team-shield"
                                             width={28}
                                             height={28}
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />
@@ -287,6 +329,8 @@ function getTeamLogo(teamName: string) {
                                             class="team-shield"
                                             width={28}
                                             height={28}
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     ) : (
                                         <div class="team-shield-placeholder" />
@@ -303,6 +347,94 @@ function getTeamLogo(teamName: string) {
         }
     </div>
 </div>
+
+<script is:inline define:vars={{ deferredMatches }} data-astro-rerun>
+    (() => {
+        const container = document.getElementById("matches-container");
+        if (!container || container.dataset.deferredReady === "true") return;
+        container.dataset.deferredReady = "true";
+
+        const addText = (parent, tag, className, value) => {
+            const node = document.createElement(tag);
+            node.className = className;
+            node.textContent = value == null ? "" : String(value);
+            parent.appendChild(node);
+            return node;
+        };
+
+        const addLogo = (parent, src, alt) => {
+            if (!src) {
+                const placeholder = document.createElement("div");
+                placeholder.className = "team-shield-placeholder";
+                parent.appendChild(placeholder);
+                return;
+            }
+            const image = document.createElement("img");
+            image.src = src;
+            image.alt = alt;
+            image.className = "team-shield";
+            image.width = 28;
+            image.height = 28;
+            image.loading = "lazy";
+            image.decoding = "async";
+            parent.appendChild(image);
+        };
+
+        for (const row of deferredMatches) {
+            const [season, competition, result, resultClass, slug, date, local, visitor, localScore, visitorScore, localLogo, visitorLogo, competitionLogo, competitionLabel] = row;
+            const item = document.createElement("div");
+            item.className = "match-item";
+            item.dataset.season = season;
+            item.dataset.competition = competition;
+
+            const competitionRow = document.createElement("div");
+            competitionRow.className = "match-competition";
+            const competitionInfo = document.createElement("div");
+            competitionInfo.className = "competition-info";
+            if (competitionLogo) {
+                const logo = document.createElement("img");
+                logo.src = competitionLogo;
+                logo.alt = competition;
+                logo.className = "competition-logo";
+                logo.width = 24;
+                logo.height = 24;
+                logo.loading = "lazy";
+                logo.decoding = "async";
+                competitionInfo.appendChild(logo);
+            }
+            addText(competitionInfo, "span", "competition-name", competitionLabel);
+            competitionRow.appendChild(competitionInfo);
+            addText(competitionRow, "div", `result-indicator ${resultClass}`, result);
+            item.appendChild(competitionRow);
+
+            const detail = document.createElement("a");
+            detail.href = `/partidos/${slug}`;
+            detail.className = "match-detail";
+            addText(detail, "div", "match-date-time", date);
+            const teams = document.createElement("div");
+            teams.className = "match-teams-score";
+            const localTeam = document.createElement("div");
+            localTeam.className = "team team-local";
+            addText(localTeam, "span", "team-name", local);
+            addLogo(localTeam, localLogo, local);
+            teams.appendChild(localTeam);
+            const score = document.createElement("div");
+            score.className = "score-wrapper";
+            addText(score, "span", "score", localScore);
+            addText(score, "span", "vs", "-");
+            addText(score, "span", "score", visitorScore);
+            teams.appendChild(score);
+            const visitorTeam = document.createElement("div");
+            visitorTeam.className = "team team-visitor";
+            addLogo(visitorTeam, visitorLogo, visitor);
+            addText(visitorTeam, "span", "team-name", visitor);
+            teams.appendChild(visitorTeam);
+            detail.appendChild(teams);
+            item.appendChild(detail);
+            container.appendChild(item);
+        }
+    })();
+</script>
 
 <script>
     function filterMatches() {

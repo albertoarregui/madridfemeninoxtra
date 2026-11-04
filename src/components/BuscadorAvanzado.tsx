@@ -545,7 +545,7 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
                                         <td className="bus-td bus-td-player">
                                             <a href={`/jugadoras/${player.slug}`} className="bus-player-link">
                                                 {img
-                                                    ? <img src={img} alt={player.nombre} className="bus-player-img" loading="lazy" />
+                                                    ? <img src={img} alt={player.nombre} className="bus-player-img" width={28} height={34} loading="lazy" decoding="async" />
                                                     : <div className="bus-player-img-ph" />
                                                 }
                                                 <span className="bus-player-info">

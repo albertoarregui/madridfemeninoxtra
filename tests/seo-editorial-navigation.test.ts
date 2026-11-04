@@ -37,14 +37,15 @@ test("las fotogalerías muestran descripciones y reservan las dimensiones de por
     const archive = read("src/components/GalleryArchive.tsx");
     assert.match(index, /getV\("description"\)/);
     assert.match(detail, /gal-description-card/);
-    assert.match(detail, /description=\{albumData\.description\}/);
+    assert.match(detail, /<p>\{albumData\.description\}<\/p>/);
+    assert.match(detail, /description=\{`Explora las fotos de \$\{albumData\.title\} del Real Madrid Femenino\.`\}/);
     assert.match(archive, /className="gallery-description"/);
     assert.match(archive, /width=\{album\.coverWidth\}/);
     assert.match(archive, /height=\{album\.coverHeight\}/);
 });
 
-test("los títulos SEO usan la marca corta", () => {
-    assert.match(read("src/pages/noticias/[slug].astro"), /title=\{`\$\{title\} \| MFX`\}/);
-    assert.match(read("src/pages/partidos/[slug].astro"), /resultado y estadísticas \| MFX/);
-    assert.match(read("src/pages/calendario.astro"), /Calendario Real Madrid Femenino/);
+test("los metatítulos conservan la redacción editorial anterior", () => {
+    assert.match(read("src/pages/noticias/[slug].astro"), /title=\{`\$\{title\} \| Madrid Femenino Xtra`\}/);
+    assert.match(read("src/pages/partidos/[slug].astro"), /\| Madrid Femenino Xtra/);
+    assert.match(read("src/pages/calendario.astro"), /Partidos del Real Madrid Femenino/);
 });

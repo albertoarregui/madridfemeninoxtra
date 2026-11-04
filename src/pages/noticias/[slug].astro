@@ -122,6 +122,12 @@ const featuredImageWidth: number = n.featuredImage?.fields?.file?.details?.image
 const featuredImageHeight: number = n.featuredImage?.fields?.file?.details?.image?.height ?? 630;
 const hasCfImage = Boolean(n.featuredImage?.fields?.file?.url);
 
+function contentfulSrcSet(url: string, widths: number[] = [480, 768, 1200]): string | undefined {
+    if (!url.includes("images.ctfassets.net")) return undefined;
+    const separator = url.includes("?") ? "&" : "?";
+    return widths.map((width) => `${url}${separator}fm=webp&w=${width}&q=82 ${width}w`).join(", ");
+}
+
 let bodyHtml = ``;
 
 if (n.body) {
@@ -136,7 +142,10 @@ if (n.body) {
                         const title = node.data?.target?.fields?.title || '';
                         if (file && file.url) {
                             const url = file.url.startsWith('//') ? (String(file.url).startsWith("//") ? `https:${file.url}` : `${file.url}`) : file.url;
-                            return `<figure class="media-centered"><img src="${url}" alt="${title}" />${title ? `<figcaption class="photo-caption">${title}</figcaption>` : ''}</figure>`;
+                            const width = Number(file.details?.image?.width) || 1200;
+                            const height = Number(file.details?.image?.height) || 675;
+                            const srcset = contentfulSrcSet(url);
+                            return `<figure class="media-centered"><img src="${url}"${srcset ? ` srcset="${srcset}" sizes="(max-width: 768px) 100vw, 900px"` : ''} alt="${title}" width="${width}" height="${height}" loading="lazy" decoding="async" />${title ? `<figcaption class="photo-caption">${title}</figcaption>` : ''}</figure>`;
                         }
                         return '';
                     }
@@ -553,7 +562,7 @@ const newsSchema = {
 ---
 
 <Layout
-    title={`${title} | MFX`}
+    title={`${title} | Madrid Femenino Xtra`}
     description={subtitle || `${title} - Madrid Femenino Xtra`}
     ogTitle={`${title} | Madrid Femenino Xtra`}
     ogDescription={subtitle || `${title} - Madrid Femenino Xtra`}
@@ -651,10 +660,11 @@ const newsSchema = {
                             format="webp"
                             quality={85}
                             loading="eager"
+                            fetchpriority="high"
                             class="featured-news-img"
                         />
                     ) : (
-                        <img src={featuredImageUrl} alt={title} class="featured-news-img" loading="eager" />
+                        <img src={featuredImageUrl} alt={title} class="featured-news-img" width={featuredImageWidth} height={featuredImageHeight} loading="eager" decoding="async" fetchpriority="high" />
                     )}
                 </div>
 
@@ -1409,6 +1419,9 @@ const newsSchema = {
                                                 src={r.featuredImage?.fields?.file?.url ? (String(r.featuredImage.fields.file.url).startsWith("//") ? `https:${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill` : `${r.featuredImage.fields.file.url}?fm=webp&w=600&h=320&q=80&fit=fill`) : "https://www.madridfemeninoxtra.com/og.png"}
                                                 alt={r.title}
                                                 loading="lazy"
+                                                decoding="async"
+                                                width="600"
+                                                height="320"
                                             />
                                         </div>
                                         <div class="related-card-info">

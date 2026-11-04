@@ -2,6 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 import CustomSelect from './CustomSelect';
+import {
+    expandDashboardGoals,
+    expandDashboardMatches,
+    type CompactDashboardRow,
+} from '../lib/dashboard-payload';
 
 interface Match {
     temporada_nombre: string;
@@ -36,8 +41,9 @@ interface Goal {
 }
 
 interface ClubStatsDashboardProps {
-    matches: Match[];
-    goals: Goal[];
+    matchRows: CompactDashboardRow[];
+    goalRows: CompactDashboardRow[];
+    playerImages: Record<string, string>;
     seasons: string[];
     competitions: string[];
 }
@@ -49,7 +55,9 @@ const divider = "w-full h-px bg-[rgba(255,255,255,0.07)]";
 
 const OFFICIAL_COMPETITIONS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
 
-const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matches, goals, seasons, competitions }) => {
+const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goalRows, playerImages, seasons, competitions }) => {
+    const matches = useMemo(() => expandDashboardMatches(matchRows) as Match[], [matchRows]);
+    const goals = useMemo(() => expandDashboardGoals(goalRows, playerImages) as Goal[], [goalRows, playerImages]);
     const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
     const currentSeasonHasPlayed = seasons.length > 0 && matches.some(m =>
         m.temporada_nombre === seasons[0] &&

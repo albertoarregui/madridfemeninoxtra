@@ -6,8 +6,10 @@ import { fetchPlayerAwards } from "../utils/awards";
 import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 import { breadcrumbSchema } from "../utils/seo";
 import StatsRankings from "../components/StatsRankings.tsx";
+import { compactRankingRows } from "../lib/ranking-payload";
 
 const rankingsData = await fetchRankingsDirectly();
+const compactRankings = compactRankingRows(rankingsData);
 const streaksData = await fetchPlayerStreaks();
 const awardsData = await fetchPlayerAwards();
 const playersData = await fetchPlayersDirectly();
@@ -66,7 +68,7 @@ const featuredRankings = [
 ---
 
 <Layout
-    title="Rankings del Real Madrid Femenino | MFX"
+    title="Estadísticas del Real Madrid Femenino: goleadoras, asistentes y récords | MFX"
     description="Rankings históricos del Real Madrid Femenino: máximas goleadoras y asistentes, jugadoras con más partidos, minutos, capitanías y porterías a cero."
 >
     <script
@@ -93,7 +95,8 @@ const featuredRankings = [
         {rankingsData.length > 0 ? (
             <StatsRankings
                 client:visible
-                rankingsData={rankingsData}
+                rankingsData={compactRankings.rows}
+                rankingPlayers={compactRankings.players}
                 streaksData={streaksData}
                 awardsData={awardsData}
                 seasons={uniqueSeasons}
