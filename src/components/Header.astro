@@ -13,6 +13,9 @@ const t = getUi(locale);
 const pathname = Astro.locals.originPathname ?? new URL(Astro.request.url).pathname;
 const currentPath = stripLocale(pathname);
 const href = (path: string) => localizePath(path, locale);
+const languageHref = locale === "en"
+    ? new URL(currentPath, Astro.url.origin).toString()
+    : localizePath(currentPath, "en");
 
 const clerkUser = typeof Astro.locals.currentUser === 'function'
     ? await Astro.locals.currentUser()
@@ -337,7 +340,7 @@ const userPhoto = clerkUser?.imageUrl || '';
                 </Show>
             </div>
             <div class="nav-preferences" aria-label={locale === "en" ? "Language" : "Idioma"}>
-                <a class="language-toggle" href={localizePath(currentPath, locale === "en" ? "es" : "en")} lang={locale === "en" ? "es" : "en"}>{locale === "en" ? "ES" : "EN"}</a>
+                <a class="language-toggle" href={languageHref} lang={locale === "en" ? "es" : "en"}>{locale === "en" ? "ES" : "EN"}</a>
             </div>
         </div>
 
