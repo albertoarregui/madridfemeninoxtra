@@ -22,21 +22,15 @@ test("la interfaz inglesa traduce etiquetas y mantiene fuera los recursos técni
   assert.match(html, /href="\/assets\/a\.webp"/);
 });
 
-test("layout publica alternates de idioma y modo claro persistente", () => {
+test("layout publica alternates de idioma y mantiene un único tema oscuro", () => {
   const layout = read("src/layouts/Layout.astro");
   const css = read("src/styles/global.css");
   assert.match(layout, /hreflang="es"/);
   assert.match(layout, /hreflang="en"/);
-  assert.match(layout, /mfx-theme/);
   assert.match(layout, /<EnglishInterface/);
-  assert.match(css, /html\[data-theme="light"\]/);
-  assert.match(css, /--light-card: #fffdf8/);
-  assert.match(css, /\.stat-card,/);
-  assert.match(css, /\.ranking-table-row,/);
-  assert.match(css, /\.mfx-rating-match-card,/);
-  assert.match(css, /\.stadium-card,/);
-  assert.match(css, /\.stats-dashboard \[class\*="bg-\[rgba/);
-  assert.match(css, /\.podium-stat-value :is\(h3, a\)/);
+  assert.doesNotMatch(layout, /mfx-theme|data-theme=/);
+  assert.doesNotMatch(css, /html\[data-theme="light"\]/);
+  assert.doesNotMatch(read("src/components/Header.astro"), /data-theme-toggle|theme-toggle/);
 });
 
 test("el rewrite inglés corrige el estado heredado sin convertir la página 404 en 200", () => {
