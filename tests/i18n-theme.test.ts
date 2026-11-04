@@ -36,6 +36,7 @@ test("layout publica alternates de idioma y modo claro persistente", () => {
   assert.match(css, /\.mfx-rating-match-card,/);
   assert.match(css, /\.stadium-card,/);
   assert.match(css, /\.stats-dashboard \[class\*="bg-\[rgba/);
+  assert.match(css, /\.podium-stat-value :is\(h3, a\)/);
 });
 
 test("el rewrite inglés corrige el estado heredado sin convertir la página 404 en 200", () => {
