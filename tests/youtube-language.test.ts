@@ -19,4 +19,5 @@ test("el selector inglés vuelve al español sin que el traductor reescriba el e
   assert.match(header, /locale === "en"/);
   assert.match(header, /new URL\(currentPath, Astro\.url\.origin\)\.toString\(\)/);
   assert.match(header, /href=\{languageHref\}/);
+  assert.match(header, /data-astro-reload/);
 });
