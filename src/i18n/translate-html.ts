@@ -111,9 +111,26 @@ export const interfaceReplacements: Array<[string, string]> = [
   ["Consulta también:", "See also:"], ["VER PERFIL COMPLETO", "VIEW FULL PROFILE"],
   ["VER BALANCE COMPLETO", "VIEW FULL RECORD"], ["VER TODOS LOS PARTIDOS", "VIEW ALL MATCHES"],
   ["MÁS NOTICIAS DE", "MORE NEWS FROM"], ["XI inicial no disponible", "Starting XI unavailable"],
-  ["enero", "January"], ["febrero", "February"], ["marzo", "March"], ["abril", "April"],
-  ["mayo", "May"], ["junio", "June"], ["julio", "July"], ["agosto", "August"],
-  ["septiembre", "September"], ["octubre", "October"], ["noviembre", "November"], ["diciembre", "December"],
+  ["GOLES A FAVOR", "GOALS FOR"], ["GOLES EN CONTRA", "GOALS AGAINST"],
+  ["BALANCE DE RESULTADOS", "RESULTS RECORD"], ["PUNTOS", "POINTS"],
+  ["por partido", "per match"], ["NOTICIAS DE", "NEWS ABOUT"],
+  ["VER TODAS LAS NOTICIAS", "VIEW ALL NEWS"], ["FOTOGALERÍA", "PHOTO GALLERY"],
+  ["FOTOGALERÍAS", "PHOTO GALLERIES"], ["GALERÍAS", "GALLERIES"],
+  ["DÍAS", "DAYS"], ["HORAS", "HOURS"], ["MINUTOS", "MINUTES"], ["SEGUNDOS", "SECONDS"],
+  ["Minimizar", "Minimise"],
+  ["Preferencias de privacidad", "Privacy preferences"],
+  ["MADRID FEMENINO XTRA · PRIVACIDAD", "MADRID FEMENINO XTRA · PRIVACY"],
+  ["Tu privacidad, tu decisión.", "Your privacy, your choice."],
+  ["Utilizamos almacenamiento esencial para el funcionamiento de la web. Con tu permiso, también podemos mostrar publicidad personalizada. Puedes aceptar, rechazar o configurar tus preferencias.", "We use essential storage to operate the website. With your permission, we may also show personalised advertising. You can accept, reject or configure your preferences."],
+  ["Consulta nuestra política de cookies", "Read our cookie policy"],
+  ["Para anuncios en Europa, Google también puede solicitar consentimiento mediante su mensaje certificado.", "For advertising in Europe, Google may also request consent through its certified message."],
+  ["Aceptar opcionales", "Accept optional cookies"], ["Rechazar opcionales", "Reject optional cookies"],
+  ["Configurar preferencias", "Configure preferences"], ["Necesarias", "Necessary"],
+  ["Imprescindibles para la navegación.", "Required for browsing."],
+  ["Cookies necesarias, siempre activas", "Necessary cookies, always enabled"],
+  ["Publicidad", "Advertising"],
+  ["Controla la carga de AdSense. Google puede pedir consentimiento adicional.", "Controls AdSense loading. Google may request additional consent."],
+  ["Guardar selección", "Save selection"], ["Configurar cookies", "Configure cookies"],
   ["Real Madrid Femenino: noticias, partidos, plantilla y estadísticas", "Real Madrid Women: news, matches, squad and statistics"],
   ["Real Madrid Femenino: noticias, resultados y estadísticas", "Real Madrid Women: news, results and statistics"],
   ["Real Madrid Femenino: últimas noticias y actualidad", "Real Madrid Women: latest news and updates"],
@@ -178,11 +195,7 @@ export function translateInterfaceHtml(input: string): string {
     mayo: "May", junio: "June", julio: "July", agosto: "August",
     septiembre: "September", octubre: "October", noviembre: "November", diciembre: "December",
   };
-  html = html.replace(/\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/gi, (month) => {
-    const translated = monthNames[month.toLowerCase()];
-    return month === month.toUpperCase() ? translated.toUpperCase() : translated;
-  });
-  html = html.replace(/(\d{1,2}) de (January|February|March|April|May|June|July|August|September|October|November|December) de (\d{4})/gi, "$1 $2 $3");
+  html = html.replace(/(\d{1,2}) de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de (\d{4})/gi, (_match, day, month, year) => `${day} ${monthNames[month.toLowerCase()]} ${year}`);
   html = html.replace(/href="\/(?!en(?:\/|\")|api\/|_astro\/|assets\/|icon|site\.webmanifest|rss\.xml|sitemap\.xml)([^"]*)"/g, 'href="/en/$1"');
   html = html.replace(/href="\/en\/"/g, 'href="/en/"');
   return html;

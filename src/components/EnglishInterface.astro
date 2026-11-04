@@ -11,11 +11,7 @@ import { interfaceReplacements } from "../i18n/translate-html";
     let result = value;
     for (const [source, target] of orderedReplacements) result = result.split(source).join(target);
     const months = { enero: "January", febrero: "February", marzo: "March", abril: "April", mayo: "May", junio: "June", julio: "July", agosto: "August", septiembre: "September", octubre: "October", noviembre: "November", diciembre: "December" };
-    result = result.replace(/\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b/gi, (month) => {
-      const translated = months[month.toLowerCase()];
-      return month === month.toUpperCase() ? translated.toUpperCase() : translated;
-    });
-    result = result.replace(/(\d{1,2}) de (January|February|March|April|May|June|July|August|September|October|November|December) de (\d{4})/gi, "$1 $2 $3");
+    result = result.replace(/(\d{1,2}) de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de (\d{4})/gi, (_match, day, month, year) => `${day} ${months[month.toLowerCase()]} ${year}`);
     return result;
   }
 
