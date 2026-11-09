@@ -354,8 +354,17 @@ const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
         if (!container || container.dataset.deferredReady === "true") return;
         container.dataset.deferredReady = "true";
 
-        const addText = (parent, tag, className, value) => {
+        const scopeAttribute = container.getAttributeNames().find((name) =>
+            name.startsWith("data-astro-cid-"),
+        );
+        const createScopedElement = (tag) => {
             const node = document.createElement(tag);
+            if (scopeAttribute) node.setAttribute(scopeAttribute, "");
+            return node;
+        };
+
+        const addText = (parent, tag, className, value) => {
+            const node = createScopedElement(tag);
             node.className = className;
             node.textContent = value == null ? "" : String(value);
             parent.appendChild(node);
@@ -364,12 +373,12 @@ const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
 
         const addLogo = (parent, src, alt) => {
             if (!src) {
-                const placeholder = document.createElement("div");
+                const placeholder = createScopedElement("div");
                 placeholder.className = "team-shield-placeholder";
                 parent.appendChild(placeholder);
                 return;
             }
-            const image = document.createElement("img");
+            const image = createScopedElement("img");
             image.src = src;
             image.alt = alt;
             image.className = "team-shield";
@@ -382,17 +391,17 @@ const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
 
         for (const row of deferredMatches) {
             const [season, competition, result, resultClass, slug, date, local, visitor, localScore, visitorScore, localLogo, visitorLogo, competitionLogo, competitionLabel] = row;
-            const item = document.createElement("div");
+            const item = createScopedElement("div");
             item.className = "match-item";
             item.dataset.season = season;
             item.dataset.competition = competition;
 
-            const competitionRow = document.createElement("div");
+            const competitionRow = createScopedElement("div");
             competitionRow.className = "match-competition";
-            const competitionInfo = document.createElement("div");
+            const competitionInfo = createScopedElement("div");
             competitionInfo.className = "competition-info";
             if (competitionLogo) {
-                const logo = document.createElement("img");
+                const logo = createScopedElement("img");
                 logo.src = competitionLogo;
                 logo.alt = competition;
                 logo.className = "competition-logo";
@@ -407,24 +416,24 @@ const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
             addText(competitionRow, "div", `result-indicator ${resultClass}`, result);
             item.appendChild(competitionRow);
 
-            const detail = document.createElement("a");
+            const detail = createScopedElement("a");
             detail.href = `/partidos/${slug}`;
             detail.className = "match-detail";
             addText(detail, "div", "match-date-time", date);
-            const teams = document.createElement("div");
+            const teams = createScopedElement("div");
             teams.className = "match-teams-score";
-            const localTeam = document.createElement("div");
+            const localTeam = createScopedElement("div");
             localTeam.className = "team team-local";
             addText(localTeam, "span", "team-name", local);
             addLogo(localTeam, localLogo, local);
             teams.appendChild(localTeam);
-            const score = document.createElement("div");
+            const score = createScopedElement("div");
             score.className = "score-wrapper";
             addText(score, "span", "score", localScore);
             addText(score, "span", "vs", "-");
             addText(score, "span", "score", visitorScore);
             teams.appendChild(score);
-            const visitorTeam = document.createElement("div");
+            const visitorTeam = createScopedElement("div");
             visitorTeam.className = "team team-visitor";
             addLogo(visitorTeam, visitorLogo, visitor);
             addText(visitorTeam, "span", "team-name", visitor);
@@ -459,6 +468,10 @@ const deferredMatches = matches.slice(INITIAL_MATCH_COUNT).map((match) => {
         if (visibleCount === 0 && !existingMessage) {
             const msg = document.createElement("p");
             msg.className = "no-results-message";
+            const scopeAttribute = matchesContainer2?.getAttributeNames().find((name) =>
+                name.startsWith("data-astro-cid-"),
+            );
+            if (scopeAttribute) msg.setAttribute(scopeAttribute, "");
             msg.textContent = "No se encontraron partidos con los filtros seleccionados.";
             matchesContainer2?.appendChild(msg);
         } else if (visibleCount > 0 && existingMessage) {
