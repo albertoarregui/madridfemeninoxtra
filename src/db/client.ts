@@ -1,4 +1,4 @@
-import { createClient, type Client } from '@libsql/client';
+import { createClient, type Client } from '@libsql/client/web';
 import { cached, invalidarTags } from '../utils/cache';
 import { isReadOnlySql, tableCacheTag, tagsForReadSql, tagsForWriteSql } from '../lib/db-cache-tags';
 
@@ -217,8 +217,18 @@ function withReadCache(client: Client, database: string, forceRefresh = false): 
     });
 }
 
-const env = (key: string): string | undefined =>
-    (import.meta.env?.[key] as string | undefined) ?? process.env[key];
+const env = (key: string): string | undefined => {
+    const workerValue = (globalThis as typeof globalThis & {
+        __MFX_WORKER_ENV__?: Record<string, unknown>;
+    }).__MFX_WORKER_ENV__?.[key];
+    if (typeof workerValue === 'string' && workerValue.length > 0) return workerValue;
+
+    const buildValue = import.meta.env?.[key] as string | undefined;
+    if (typeof buildValue === 'string' && buildValue.length > 0) return buildValue;
+
+    const processValue = process.env[key];
+    return processValue?.length ? processValue : undefined;
+};
 
 function makeClient(
     cacheKey: keyof typeof globalForDb,

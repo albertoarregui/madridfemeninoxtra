@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
+import { runtimeEnv } from '../../../lib/runtime-env';
 import { createHash } from 'node:crypto';
 import { madridDate, madridClock, isoDays, mondayAt10Madrid, norm } from '../../../lib/newsletter-time';
 import { contentfulClient } from '../../../lib/contentful';
@@ -58,9 +59,9 @@ function htmlFor(items: Item[], unsub: string, monday:string): string {
   </div></body></html>`;
 }
 export const GET: APIRoute = async ({ request }) => {
-  if(process.env.VERCEL_ENV !== 'production') return Response.json({preview:true,scheduled:false,reason:'La newsletter no se ejecuta en vistas previas.'},{status:200});
+  if(runtimeEnv('APP_ENV') !== 'production') return Response.json({preview:true,scheduled:false,reason:'La newsletter no se ejecuta en vistas previas.'},{status:200});
   const authorization=request.headers.get('authorization');
-  const expected=process.env.CRON_SECRET;
+  const expected=runtimeEnv('CRON_SECRET');
   if(!expected || authorization!==`Bearer ${expected}`) return new Response('Unauthorized',{status:401});
   const now=new Date(),monday=madridDate(now);
   if(new Date(monday+'T12:00:00Z').getUTCDay()!==1 || madridClock(now)>=10) return Response.json({skipped:'Fuera de ventana de programación'});
@@ -70,14 +71,15 @@ export const GET: APIRoute = async ({ request }) => {
     const items=await weeklyItems(monday);
     if(!items.length) return Response.json({skipped:'No hay noticias de las cinco categorías'});
     const db=await getAnalyticsDbClient();
-    if(!db || !process.env.RESEND_API_KEY) return Response.json({error:'Servicio no disponible'},{status:503});
+    const resendApiKey=runtimeEnv('RESEND_API_KEY');
+    if(!db || !resendApiKey) return Response.json({error:'Servicio no disponible'},{status:503});
     await db.execute(`CREATE TABLE IF NOT EXISTS newsletter_weekly_deliveries (
       week_start TEXT NOT NULL, email TEXT NOT NULL, resend_id TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY(week_start,email))`);
     const subscribers=await db.execute('SELECT email,unsubscribe_token FROM newsletter_subscribers WHERE confirmed_at IS NOT NULL');
     if(subscribers.rows.length===0) return Response.json({skipped:'No hay suscriptores confirmados'});
-    const resend=new Resend(process.env.RESEND_API_KEY);
+    const resend=new Resend(resendApiKey);
     let queued=0,failed=0;
     for(const row of subscribers.rows) {
       const email=String(row.email||'');

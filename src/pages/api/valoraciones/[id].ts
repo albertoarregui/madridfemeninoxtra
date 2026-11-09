@@ -1,10 +1,11 @@
 import type { APIRoute } from 'astro';
+import { runtimeEnv } from '../../../lib/runtime-env';
 import { ratingMatch, ratingPeople, ratingSummary, ratingsOpen, ensureRatingsTable } from '../../../lib/ratings';
 import { getAnalyticsDbClient } from '../../../db/client';
 export const prerender = false;
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const validId=(str:string|undefined)=>/^\d{1,8}$/.test(str||'')?Number(str):null;
-const isPreview=()=>process.env.VERCEL_ENV!=='production';
+const isPreview=()=>runtimeEnv('APP_ENV')!=='production';
 export const GET: APIRoute=async({params,locals})=>{
  const id=validId(params.id);if(!id)return json({error:'Partido no válido'},400);
  const match=await ratingMatch(id);if(!match)return json({error:'Partido no encontrado'},404);

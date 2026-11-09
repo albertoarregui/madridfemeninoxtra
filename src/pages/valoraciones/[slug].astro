@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { runtimeEnv } from '../../lib/runtime-env';
 import RatingScoreboard from '../../components/RatingScoreboard.astro';
 import RatingsShareCard from '../../components/RatingsShareCard.astro';
 import { ratingMatch, ratingPeople, ratingSummary, ratingsOpen } from '../../lib/ratings';
@@ -18,7 +19,7 @@ const aggregate=match?await ratingSummary(match.id):[];
 const starter=players.filter(x=>x.titular);
 const substitutes=players.filter(x=>!x.titular);
 const open=match?ratingsOpen(match):false;
-const demo=process.env.VERCEL_ENV !== 'production';
+const demo=runtimeEnv('APP_ENV') !== 'production';
 const manager=match?.entrenador_id?{
  id:-match.entrenador_id,name:match.entrenador_nombre||'Entrenador/a',
  image:match.entrenador_foto_url,number:'',position:'Entrenador/a',minutes:0,coach:true,titular:false

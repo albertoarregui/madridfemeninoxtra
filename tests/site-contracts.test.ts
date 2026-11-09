@@ -91,7 +91,7 @@ test('rival records never query the obsolete goles_asistencias table', () => {
 
 test('Astro uses no-op image transformations instead of the legacy image endpoint', () => {
   const config = read('astro.config.mjs');
-  assert.match(config, /imageService:\s*false/);
+  assert.match(config, /imageService:\s*'passthrough'/);
   assert.match(config, /astro\/assets\/services\/noop/);
 });
 
@@ -144,19 +144,30 @@ test('newsletter double opt-in and unsubscribe use existing safe endpoints', () 
 });
 
 
-test('Hobby CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
+test('Cloudflare CPU controls reuse HTML at the edge and never serialize full article bodies', () => {
   const middleware = read('src/middleware.ts');
+  const worker = read('src/worker.ts');
+  const header = read('src/components/Header.astro');
+  const translations = read('src/i18n/translate-html.ts');
   const news = read('src/pages/noticias/index.astro');
   const proxy = read('src/pages/api/img-proxy.ts');
   assert.match(middleware, /const CACHE_HOME_S = 15 \* 60;/);
   assert.match(middleware, /const SWR_HOME_S = 60 \* 60;/);
   assert.match(middleware, /fastRefresh \? SWR_HOME_S/);
-  assert.match(middleware, /Vercel-CDN-Cache-Control/);
+  assert.match(middleware, /Cloudflare-CDN-Cache-Control/);
+  assert.match(worker, /edgeCache\(\)\.match/);
+  assert.match(worker, /edgeCache\(\)\.put/);
+  assert.match(middleware, /const REQUIERE_CLERK = \/\^\\\/api/);
+  assert.match(middleware, /clerkApiMiddleware\(context, next\)/);
+  assert.match(header, /isStatic=\{true\}/);
+  assert.doesNotMatch(header, /Astro\.locals\.currentUser/);
+  assert.match(translations, /interfaceReplacementPattern/);
+  assert.doesNotMatch(translations, /html = html\.split\(source\)\.join\(target\)/);
   assert.match(news, /"fields.title"/);
   assert.match(news, /"fields.featuredImage"/);
   assert.doesNotMatch(news, /\.\.\.item\.fields/);
   assert.match(news, /featuredImage: imageUrl \?/);
-  assert.match(proxy, /Vercel-CDN-Cache-Control/);
+  assert.match(proxy, /Cloudflare-CDN-Cache-Control/);
   assert.match(proxy, /permittedImageSource\(src\)/);
   assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
   assert.match(proxy, /redirect: 'error'/);
@@ -165,10 +176,12 @@ test('Hobby CPU controls reuse HTML at the CDN and never serialize full article 
 
 test('weekly cron is authenticated, idempotent and avoids unsolicited article mailings', () => {
   const weekly = read('src/pages/api/newsletter/weekly.ts');
-  const config = JSON.parse(read('vercel.json'));
+  const config = read('wrangler.jsonc');
+  const worker = read('src/worker.ts');
   const immediate = read('src/pages/api/newsletter/send.ts');
-  assert.deepEqual(config.crons, [{ path: '/api/newsletter/weekly', schedule: '0 6 * * 1' }]);
-  assert.match(weekly, /process\.env\.VERCEL_ENV !== 'production'/);
+  assert.match(config, /"crons": \["0 6 \* \* 1"\]/);
+  assert.match(worker, /api\/newsletter\/weekly/);
+  assert.match(weekly, /runtimeEnv\('APP_ENV'\) !== 'production'/);
   assert.match(weekly, /authorization!==`Bearer \$\{expected\}`/);
   assert.match(weekly, /mondayAt10Madrid\(monday\)/);
   assert.match(weekly, /confirmed_at IS NOT NULL/);
@@ -176,7 +189,7 @@ test('weekly cron is authenticated, idempotent and avoids unsolicited article ma
   assert.match(weekly, /idempotencyKey/);
   assert.match(weekly, /scheduledAt:schedule/);
   assert.match(weekly, /No hay noticias de las cinco categorías/);
-  assert.match(immediate, /NEWSLETTER_PER_ARTICLE_ENABLED !== 'true'/);
+  assert.match(immediate, /runtimeEnv\('NEWSLETTER_PER_ARTICLE_ENABLED'\) !== 'true'/);
 });
 
 

@@ -266,7 +266,7 @@ export const GET: APIRoute = async () => {
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',
-            'Vercel-CDN-Cache-Control': 'max-age=3600, stale-while-revalidate=3600',
+            'Cloudflare-CDN-Cache-Control': 'max-age=3600, stale-while-revalidate=3600',
         } });
     } catch (error) {
         console.error('Sitemap unavailable:', error);

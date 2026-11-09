@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
-import { google } from 'googleapis';
+import { notifyGoogleIndexing } from '../../lib/google-indexing';
+import { runtimeEnv } from '../../lib/runtime-env';
 
 export const prerender = false;
 
@@ -9,7 +10,7 @@ export const POST: APIRoute = async ({ request }) => {
         const { url, secret } = body;
 
 
-        const ASSIGNED_SECRET = import.meta.env.INDEXING_SECRET;
+        const ASSIGNED_SECRET = runtimeEnv('INDEXING_SECRET');
         if (!ASSIGNED_SECRET || secret !== ASSIGNED_SECRET) {
             return new Response(JSON.stringify({ error: "No autorizado. Secreto inválido." }), {
                 status: 401,
@@ -25,42 +26,22 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
 
-        const clientEmail = import.meta.env.GOOGLE_CLIENT_EMAIL;
-        const privateKey = import.meta.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+        const clientEmail = runtimeEnv('GOOGLE_CLIENT_EMAIL');
+        const privateKey = runtimeEnv('GOOGLE_PRIVATE_KEY');
 
         if (!clientEmail || !privateKey) {
-            return new Response(JSON.stringify({ error: "Credenciales de Google no configuradas en Vercel." }), {
+            return new Response(JSON.stringify({ error: "Credenciales de Google no configuradas." }), {
                 status: 500,
                 headers: { "Content-Type": "application/json" }
             });
         }
 
-        const jwtClient = new google.auth.JWT({
-            email: clientEmail,
-            key: privateKey,
-            scopes: ["https://www.googleapis.com/auth/indexing"]
+        const result = await notifyGoogleIndexing(url, 'URL_UPDATED', {
+            clientEmail,
+            privateKey,
         });
-
-
-        await jwtClient.authorize();
-
-
-        const response = await fetch("https://indexing.googleapis.com/v3/urlNotifications:publish", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${jwtClient.credentials.access_token}`,
-            },
-            body: JSON.stringify({
-                url: url,
-                type: "URL_UPDATED",
-            }),
-        });
-
-        const result = await response.json();
-
-        return new Response(JSON.stringify({ success: true, googleResponse: result }), {
-            status: 200,
+        return new Response(JSON.stringify({ success: result.success, googleResponse: result.result, error: result.error }), {
+            status: result.success ? 200 : 502,
             headers: { "Content-Type": "application/json" }
         });
 

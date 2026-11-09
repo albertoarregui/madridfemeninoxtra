@@ -1,9 +1,10 @@
 import * as contentful from 'contentful';
 import { getRequestLocale } from '../i18n/request-locale';
+import { runtimeEnv } from './runtime-env';
 
 const baseClient = contentful.createClient({
-    space: import.meta.env.CONTENTFUL_SPACE_ID,
-    accessToken: import.meta.env.CONTENTFUL_ACCESS_TOKEN,
+    space: runtimeEnv('CONTENTFUL_SPACE_ID') ?? '',
+    accessToken: runtimeEnv('CONTENTFUL_ACCESS_TOKEN') ?? '',
 });
 
 export const contentfulClient = new Proxy(baseClient, {

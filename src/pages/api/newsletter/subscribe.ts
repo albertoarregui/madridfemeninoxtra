@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { Resend } from 'resend';
 import { getAnalyticsDbClient } from '../../../db/client';
+import { runtimeEnv } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
@@ -44,12 +45,13 @@ export const POST: APIRoute = async ({ request, url }) => {
   if (body?.consent !== true) return reply(400, 'Debes aceptar recibir comunicaciones');
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, 'Correo no válido');
 
-  const salt = process.env.NEWSLETTER_WEBHOOK_SECRET || 'mfx';
+  const salt = runtimeEnv('NEWSLETTER_WEBHOOK_SECRET') || 'mfx';
   const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
   const fingerprint = createHash('sha256').update(salt + ip + email).digest('hex');
   if (rateLimited(fingerprint)) return reply(429, 'Espera antes de volver a intentarlo');
 
-  if (!process.env.RESEND_API_KEY) return reply(503, 'Newsletter temporalmente no disponible');
+  const resendApiKey = runtimeEnv('RESEND_API_KEY');
+  if (!resendApiKey) return reply(503, 'Newsletter temporalmente no disponible');
   try {
     const db = await getAnalyticsDbClient();
     if (!db) return reply(503, 'Newsletter temporalmente no disponible');
@@ -73,7 +75,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
     const confirmation = new URL('/api/confirm', url.origin);
     confirmation.searchParams.set('token', token);
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resend = new Resend(resendApiKey);
     const result = await resend.emails.send({
       from: 'Madrid Femenino Xtra <newsletter@madridfemeninoxtra.com>',
       to: email,

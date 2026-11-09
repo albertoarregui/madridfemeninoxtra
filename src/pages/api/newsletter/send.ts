@@ -1,15 +1,16 @@
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
+import { runtimeEnv } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
-    if (process.env.NEWSLETTER_PER_ARTICLE_ENABLED !== 'true') {
+    if (runtimeEnv('NEWSLETTER_PER_ARTICLE_ENABLED') !== 'true') {
         return Response.json({ skipped: true, reason: 'weekly-only' });
     }
 
     const secret = new URL(request.url).searchParams.get('secret');
-    if (secret !== process.env.NEWSLETTER_WEBHOOK_SECRET) {
+    if (secret !== runtimeEnv('NEWSLETTER_WEBHOOK_SECRET')) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -51,7 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
             return Response.json({ sent: 0 });
         }
 
-        const resend = new Resend(process.env.RESEND_API_KEY);
+        const resend = new Resend(runtimeEnv('RESEND_API_KEY'));
         let sent = 0;
 
         const subscribers = rows.rows as { email: string; unsubscribe_token: string }[];

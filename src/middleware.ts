@@ -1,5 +1,6 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
-import { addCacheTag } from "@vercel/functions";
+import { clerkMiddleware } from "@clerk/astro/server";
+import { defineMiddleware } from "astro:middleware";
+import type { MiddlewareHandler } from "astro";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
 import { isFreshMatchPath } from "./lib/match-freshness";
 import { secondsUntilNextSeason } from "./utils/season";
@@ -7,9 +8,8 @@ import { localeFromPath, stripLocale } from "./i18n";
 import { runWithRequestLocale } from "./i18n/request-locale";
 import { translateInterfaceHtml } from "./i18n/translate-html";
 
-const isProtectedRoute = createRouteMatcher([]);
-
 const SIN_CACHE = [/^\/api\//, /^\/premios/, /^\/valoraciones(?:\/|$)/];
+const REQUIERE_CLERK = /^\/api\/(?:season-awards|valoraciones(?:\/|$))/;
 
 const CACHE_LARGA = [
     /^\/(aviso-legal|politica-cookies|politica-privacidad|terminos-condiciones|sobre-nosotros|contacto)/,
@@ -29,17 +29,17 @@ const SWR_LARGA_S = 30 * 24 * 60 * 60;
 const CACHE_HOME_S = 15 * 60;
 const SWR_HOME_S = 60 * 60;
 
-export const onRequest = clerkMiddleware(async (auth, context, next) => {
+async function handleRequest(
+    context: Parameters<MiddlewareHandler>[0],
+    next: Parameters<MiddlewareHandler>[1],
+    userId: string | null = null,
+) {
     const requestStartedAt = new Date();
     const requestUrl = new URL(context.request.url);
     const locale = localeFromPath(requestUrl.pathname);
     const routePath = stripLocale(requestUrl.pathname);
     context.locals.locale = locale;
     context.locals.originPathname = requestUrl.pathname;
-    if (isProtectedRoute(context.request)) {
-        auth().protect();
-    }
-
     let response = await runWithRequestLocale(locale, () => locale === "en"
         ? next(routePath + requestUrl.search)
         : next());
@@ -67,7 +67,6 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
 
     try {
         const { request } = context;
-        const url = new URL(request.url);
         const freshMatch = isFreshMatchPath(routePath);
 
         const cacheable =
@@ -76,20 +75,12 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
             (response.headers.get("content-type") || "").includes("text/html") &&
             !SIN_CACHE.some((re) => re.test(routePath)) &&
             !freshMatch &&
-            !auth().userId;
-
-        // Solo las respuestas que realmente se guardan en la CDN necesitan
-        // etiquetas. Las APIs y las fichas `no-store` no deben registrar una
-        // escritura de caché en cada petición.
-        if (cacheable) {
-            const tags = tagsForPath(routePath);
-            if (tags.length > 0) await addCacheTag([cacheTags.database, ...tags]);
-        }
+            !userId;
 
         if (freshMatch && request.method === "GET") {
             response.headers.set("Cache-Control", "private, no-store, max-age=0");
             response.headers.set("CDN-Cache-Control", "no-store");
-            response.headers.set("Vercel-CDN-Cache-Control", "no-store");
+            response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
             const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
@@ -98,16 +89,33 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
                 ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
-            // Astro establece Cache-Control: public, max-age=0. La cabecera
-            // específica de Vercel controla su CDN sin cachear en el navegador.
+            const tags = tagsForPath(routePath);
             response.headers.set(
-                "Vercel-CDN-Cache-Control",
+                "Cache-Control",
+                `public, max-age=0, s-maxage=${sMaxage}, stale-while-revalidate=${swr}`,
+            );
+            response.headers.set(
+                "Cloudflare-CDN-Cache-Control",
                 `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
             );
+            response.headers.set("Cache-Tag", [cacheTags.database, ...tags].join(","));
             response.headers.set("Vary", "Accept-Encoding");
         }
     } catch {
     }
 
     return response;
+}
+
+// Las páginas públicas resuelven el estado de sesión en el navegador. Clerk
+// solo se ejecuta en las API que necesitan verificar la identidad del usuario.
+const clerkApiMiddleware = clerkMiddleware(async (auth, context, next) =>
+    handleRequest(context, next, auth().userId),
+);
+
+export const onRequest = defineMiddleware((context, next) => {
+    const routePath = stripLocale(new URL(context.request.url).pathname);
+    return REQUIERE_CLERK.test(routePath)
+        ? clerkApiMiddleware(context, next)
+        : handleRequest(context, next);
 });

@@ -188,11 +188,19 @@ export const interfaceReplacements: Array<[string, string]> = [
   ["Clasificación ofrecida por", "Standings provided by"],
 ];
 
+const sortedInterfaceReplacements = [...interfaceReplacements].sort((a, b) => b[0].length - a[0].length);
+const interfaceReplacementMap = new Map(sortedInterfaceReplacements);
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const interfaceReplacementPattern = new RegExp(
+  sortedInterfaceReplacements.map(([source]) => escapeRegExp(source)).join("|"),
+  "g",
+);
+
 export function translateInterfaceHtml(input: string): string {
-  let html = input;
-  for (const [source, target] of [...interfaceReplacements].sort((a, b) => b[0].length - a[0].length)) {
-    html = html.split(source).join(target);
-  }
+  let html = input.replace(
+    interfaceReplacementPattern,
+    (source) => interfaceReplacementMap.get(source) ?? source,
+  );
   const monthNames: Record<string, string> = {
     enero: "January", febrero: "February", marzo: "March", abril: "April",
     mayo: "May", junio: "June", julio: "July", agosto: "August",

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { runtimeEnv } from '../../../lib/runtime-env';
 import { cacheTags } from '../../../lib/cache-tags';
 import { isCachedTable, tagsForTables, type CachedTable } from '../../../lib/db-cache-tags';
 import { invalidarTags } from '../../../utils/cache';
@@ -36,7 +37,7 @@ function response(data: unknown, status = 200): Response {
 }
 
 export const POST: APIRoute = async ({ request }) => {
-    const secret = import.meta.env.CACHE_REVALIDATION_SECRET;
+    const secret = runtimeEnv('CACHE_REVALIDATION_SECRET');
     if (!secret) return response({ error: 'Revalidación no configurada' }, 503);
 
     if (request.headers.get('x-cache-revalidation-secret') !== secret) {

@@ -1,47 +1,16 @@
 import type { APIRoute } from 'astro';
-import { google } from 'googleapis';
 import { cacheTags } from '../../lib/cache-tags';
+import { notifyGoogleIndexing } from '../../lib/google-indexing';
+import { runtimeEnv } from '../../lib/runtime-env';
 import { invalidarTags } from '../../utils/cache';
 
 export const prerender = false;
 
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 
-async function notifyGoogleIndexing(
-    url: string,
-    type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED',
-): Promise<{ success: boolean; result?: any; error?: string }> {
-    const clientEmail = import.meta.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = import.meta.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-    if (!clientEmail || !privateKey) {
-        return { success: false, error: 'Credenciales de Google no configuradas' };
-    }
-
-    const jwtClient = new google.auth.JWT({
-        email: clientEmail,
-        key: privateKey,
-        scopes: ['https://www.googleapis.com/auth/indexing'],
-    });
-
-    await jwtClient.authorize();
-
-    const response = await fetch('https://indexing.googleapis.com/v3/urlNotifications:publish', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwtClient.credentials.access_token}`,
-        },
-        body: JSON.stringify({ url, type }),
-    });
-
-    const result = await response.json();
-    return { success: response.ok, result };
-}
-
 export const POST: APIRoute = async ({ request }) => {
     try {
-        const webhookSecret = import.meta.env.CONTENTFUL_WEBHOOK_SECRET;
+        const webhookSecret = runtimeEnv('CONTENTFUL_WEBHOOK_SECRET');
         const incomingSecret = request.headers.get('x-contentful-webhook-secret');
 
         if (webhookSecret && incomingSecret !== webhookSecret) {
@@ -82,7 +51,10 @@ export const POST: APIRoute = async ({ request }) => {
         ]);
 
         console.log(`[Webhook] Notificando a Google (${type}): ${noticiaUrl}`);
-        const indexResult = await notifyGoogleIndexing(noticiaUrl, type);
+        const indexResult = await notifyGoogleIndexing(noticiaUrl, type, {
+            clientEmail: runtimeEnv('GOOGLE_CLIENT_EMAIL'),
+            privateKey: runtimeEnv('GOOGLE_PRIVATE_KEY'),
+        });
 
         if (indexResult.success) {
             console.log(`[Webhook] ✅ Indexada correctamente: ${noticiaUrl}`);
