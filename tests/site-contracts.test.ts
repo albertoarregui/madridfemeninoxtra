@@ -51,6 +51,14 @@ test('key interactive collections defer hydration until visible', () => {
   }
 });
 
+test('deferred match cards keep Astro scoped styles after filtering', () => {
+  const list = read('src/components/MatchList.astro');
+  assert.match(list, /const createScopedElement/);
+  assert.match(list, /name\\.startsWith\\(\"data-astro-cid-\"\\)/);
+  assert.match(list, /if \\(scopeAttribute\\) node\\.setAttribute\\(scopeAttribute, \"\"\\)/);
+  assert.match(list, /const item = createScopedElement\\(\"div\"\\)/);
+});
+
 test('stadium map uses a dedicated minimal query without expensive match subqueries', () => {
   const page = read('src/pages/estadios/index.astro');
   const matches = read('src/utils/partidos.ts');
