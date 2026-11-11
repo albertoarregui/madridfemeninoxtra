@@ -123,15 +123,16 @@ const playerRatingClass = (player: any): string => {
 const matchStatus = getMatchStatus(game.fecha, game.hora);
 const isLiveOrPlayed = game.isPlayed || matchStatus.status === 'in-progress';
 
+// Alineación, cambios, eventos y equipación se leen también antes del inicio:
+// si se cargan en Turso una hora antes (p. ej. el once), aparecen en la ficha
+// sin esperar al pitido inicial. Fuera de la ventana de partido van cacheadas.
 const [lineup, subs, stadiumStats, matchKit] = await Promise.all([
-    isLiveOrPlayed ? fetchMatchLineups(game.id_partido, matchReadOptions) : Promise.resolve([]),
-    isLiveOrPlayed ? fetchMatchSubstitutions(game.id_partido, matchReadOptions) : Promise.resolve([]),
+    fetchMatchLineups(game.id_partido, matchReadOptions),
+    fetchMatchSubstitutions(game.id_partido, matchReadOptions),
     fetchStadiumStats(game.estadio, matchReadOptions),
-    isLiveOrPlayed ? fetchMatchKit(game.id_partido, matchReadOptions) : Promise.resolve(null),
+    fetchMatchKit(game.id_partido, matchReadOptions),
 ]);
-const timelineEvents = isLiveOrPlayed
-    ? await fetchMatchEvents(game.id_partido, game.goles_rm, matchReadOptions, subs)
-    : [];
+const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm, matchReadOptions, subs);
 
 const MATCH_GALERIA_PREVIEW = 21;
 const matchGallery = await fetchGalleryForMatch(game.id_partido);
@@ -202,49 +203,30 @@ const isLocalRM =
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
-const now = new Date();
-const kickoffHora = game.hora
-    ? (game.hora.split(':').length === 2 ? `${game.hora}:00` : game.hora)
-    : '00:00:00';
-const kickoffTime = game.fecha ? new Date(`${game.fecha}T${kickoffHora}`) : null;
-const isWithinOneHour = kickoffTime
-    ? (kickoffTime.getTime() - now.getTime()) <= 60 * 60 * 1000
-    : false;
-
-let h2hStats: { totalMatches: number; wins: number; draws: number; losses: number; rmGoals: number; rivalGoals: number; } | null = null;
-if (!game.isPlayed && !isWithinOneHour) {
-    try {
-        const { getPlayersDbClient } = await import('../../db/client');
-        const client = await getPlayersDbClient();
-        if (client) {
-            const rivalName = isLocalRM ? game.club_visitante : game.club_local;
-            const rivalKeyword = `%${rivalName}%`;
-            const result = await client.execute({
-                sql: `SELECT p.goles_rm, p.goles_rival
-                      FROM partidos p
-                      LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
-                      LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-                      WHERE p.goles_rm IS NOT NULL AND p.goles_rival IS NOT NULL
-                        AND (LOWER(cl.nombre) LIKE '%real madrid%' OR LOWER(cv.nombre) LIKE '%real madrid%')
-                        AND (LOWER(cl.nombre) LIKE LOWER(?) OR LOWER(cv.nombre) LIKE LOWER(?))`,
-                args: [rivalKeyword, rivalKeyword]
-            });
-            const rows = result.rows || [];
-            if (rows.length > 0) {
-                h2hStats = { totalMatches: rows.length, wins: 0, draws: 0, losses: 0, rmGoals: 0, rivalGoals: 0 };
-                for (const m of rows) {
-                    const rg = Number(m.goles_rm) || 0;
-                    const ag = Number(m.goles_rival) || 0;
-                    h2hStats.rmGoals += rg;
-                    h2hStats.rivalGoals += ag;
-                    if (rg > ag) h2hStats.wins++;
-                    else if (rg < ag) h2hStats.losses++;
-                    else h2hStats.draws++;
-                }
-            }
-        }
-    } catch (_) { h2hStats = null; }
-}
+// Historial contra el rival: sale de los partidos ya cargados, sin otra lectura.
+const normalizeClub = (name: unknown) =>
+    String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const h2hRival = normalizeClub(isLocalRM ? game.club_visitante : game.club_local);
+const h2hMatches = isLiveOrPlayed ? [] : allGames
+    .filter((g) => g.isPlayed && g.slug !== game.slug
+        && [g.club_local, g.club_visitante].map(normalizeClub).includes(h2hRival))
+    .sort((a, b) => String(b.fecha ?? "").localeCompare(String(a.fecha ?? "")));
+const h2hStats = h2hMatches.length === 0 ? null : h2hMatches.reduce((acc, g) => {
+    acc.rmGoals += Number(g.goles_rm) || 0;
+    acc.rivalGoals += Number(g.goles_rival) || 0;
+    if (g.resultado === "V") acc.wins++;
+    else if (g.resultado === "D") acc.losses++;
+    else acc.draws++;
+    return acc;
+}, { totalMatches: h2hMatches.length, wins: 0, draws: 0, losses: 0, rmGoals: 0, rivalGoals: 0 });
+const H2H_LIMIT = 10;
+const h2hMonths = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const h2hDate = (fecha: unknown) => {
+    const [year, month, day] = String(fecha ?? "").slice(0, 10).split("-").map(Number);
+    return year && month && day ? `${day} ${h2hMonths[month - 1]} ${year}` : "";
+};
+const rmShieldSrc = isLocalRM ? localShield : visitorShield;
+const rivalShieldSrc = isLocalRM ? visitorShield : localShield;
 
 const localScore = isLocalRM ? (game.goles_rm ?? 0) : (game.goles_rival ?? 0);
 const visitorScore = isLocalRM ? (game.goles_rival ?? 0) : (game.goles_rm ?? 0);
@@ -328,10 +310,6 @@ if (isLiveOrPlayed) {
     if (statsBits.length) cronica += ` En el plano estadístico, el conjunto blanco firmó ${joinNatural(statsBits)}.`;
     if (kitText) cronica += ` Para la ocasión, el equipo vistió su ${kitText}.`;
     if (game.mvp && game.mvp_nombre) cronica += ` ${game.mvp_nombre} se llevó el premio a la MVP del partido.`;
-} else {
-    cronica = `El Real Madrid Femenino se medirá a ${rivalName} el ${fechaLarga}${game.hora ? ` a las ${formatTime(game.hora)}` : ""}${compLabel ? ` en ${compLabel}` : ""}.`;
-    cronica += ` El choque se jugará ${homeAway}${venueText}${game.arbitra_nombre ? `, con ${game.arbitra_nombre} como árbitra designada` : ""}.`;
-    cronica += ` En esta página podrás seguir el resultado en directo, las alineaciones, los cambios, las estadísticas y la crónica completa del encuentro en cuanto arranque.`;
 }
 
 const matchKeys = [game.id_partido, slug];
@@ -353,9 +331,7 @@ const indexableMatch = isIndexableMatchDetail(game, {
 });
 const cronicaHeading = tieneCronica
     ? matchArticleCategory === 'CRÓNICA' ? "CRÓNICA" : "CONTEXTO DEL PARTIDO"
-    : game.isPlayed
-      ? "RESUMEN DEL PARTIDO"
-      : "INFORMACIÓN DEL PARTIDO";
+    : "RESUMEN DEL PARTIDO";
 
 const seoTitle = isLiveOrPlayed
     ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante}${compLabel ? ` · ${compLabel}` : ""} | Madrid Femenino Xtra`
@@ -672,7 +648,7 @@ const matchSchema = matchStartISO ? {
             </section>
         )}
 
-        <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
+        {(tieneCronica || cronica) && <section class="match-card-new match-cronica" style="margin-bottom:1.25rem;">
             <h2 class="section-header">{cronicaHeading}</h2>
             {tieneCronica ? (
                 <div class="cronica-cuerpo">
@@ -698,28 +674,78 @@ const matchSchema = matchStartISO ? {
             ) : (
                 <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(220,225,230,0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>
             )}
-        </section>
-        {!game.isPlayed && !isWithinOneHour && h2hStats && h2hStats.totalMatches > 0 && (
-            <div class="h2h-row">
-                <div class="h2h-bare">
+        </section>}
+        {h2hStats && (
+            <section class="match-card-new h2h-card">
+                <h2 class="section-header">HISTORIAL</h2>
+                <div class="h2h-body">
+                    <p class="h2h-total">{h2hStats.totalMatches} {h2hStats.totalMatches === 1 ? "enfrentamiento" : "enfrentamientos"}</p>
+                    <div class="h2h-summary">
+                        <div class="h2h-side">
+                            {rmShieldSrc && <img src={rmShieldSrc} alt="Real Madrid" width="52" height="52" class="h2h-summary-shield" loading="lazy" decoding="async" />}
+                            <div class="h2h-figure"><strong class="h2h-num is-win">{h2hStats.wins}</strong><span>Victorias</span></div>
+                        </div>
+                        <div class="h2h-figure"><strong class="h2h-num">{h2hStats.draws}</strong><span>Empates</span></div>
+                        <div class="h2h-side">
+                            <div class="h2h-figure"><strong class="h2h-num is-loss">{h2hStats.losses}</strong><span>Victorias</span></div>
+                            {rivalShieldSrc && <img src={rivalShieldSrc} alt={rivalName} width="52" height="52" class="h2h-summary-shield" loading="lazy" decoding="async" />}
+                        </div>
+                    </div>
                     <div class="h2h-bar">
-                        <div class="h2h-seg h2h-seg-win" style={`width:${Math.round((h2hStats.wins/h2hStats.totalMatches)*100)}%`}>
+                        <div class="h2h-seg h2h-seg-win" style={`width:${(h2hStats.wins / h2hStats.totalMatches) * 100}%`}>
                             {h2hStats.wins > 0 && <span class="h2h-seg-label">{h2hStats.wins}</span>}
                         </div>
-                        <div class="h2h-seg h2h-seg-draw" style={`width:${Math.round((h2hStats.draws/h2hStats.totalMatches)*100)}%`}>
+                        <div class="h2h-seg h2h-seg-draw" style={`width:${(h2hStats.draws / h2hStats.totalMatches) * 100}%`}>
                             {h2hStats.draws > 0 && <span class="h2h-seg-label">{h2hStats.draws}</span>}
                         </div>
-                        <div class="h2h-seg h2h-seg-loss" style={`width:${Math.round((h2hStats.losses/h2hStats.totalMatches)*100)}%`}>
+                        <div class="h2h-seg h2h-seg-loss" style={`width:${(h2hStats.losses / h2hStats.totalMatches) * 100}%`}>
                             {h2hStats.losses > 0 && <span class="h2h-seg-label">{h2hStats.losses}</span>}
                         </div>
                     </div>
                     <div class="h2h-bar-bottom">
-                        <span class="h2h-meta-label">{h2hStats.totalMatches} partidos</span>
-                        <span class="h2h-meta-label">{h2hStats.rmGoals} goles a favor · {h2hStats.rivalGoals} en contra</span>
+                        <span class="h2h-meta-label">{h2hStats.rmGoals} goles a favor</span>
+                        <span class="h2h-meta-label">{h2hStats.rivalGoals} goles en contra</span>
                     </div>
+
+                    <div class="h2h-list-head">
+                        <h3>Enfrentamientos anteriores</h3>
+                        <span>{h2hStats.totalMatches} {h2hStats.totalMatches === 1 ? "partido" : "partidos"}</span>
+                    </div>
+                    <ul class="h2h-list">
+                        {h2hMatches.slice(0, H2H_LIMIT).map((m) => {
+                            const localIsRm = normalizeClub(m.club_local).includes("real madrid");
+                            const competitionLogo = m.competicion_foto_url || getAssetUrl("competiciones", m.competicion_nombre);
+                            return (
+                                <li>
+                                    <a class="h2h-match" href={`/partidos/${m.slug}`}>
+                                        <span class="h2h-match-meta">
+                                            <time datetime={String(m.fecha ?? "").slice(0, 10)}>{h2hDate(m.fecha)}</time>
+                                            <span class="h2h-comp">
+                                                {competitionLogo && <img src={competitionLogo} alt="" width="16" height="16" loading="lazy" decoding="async" />}
+                                                {competitionDisplayName(m.competicion_nombre, { temporada: m.temporada_nombre })}
+                                            </span>
+                                        </span>
+                                        <span class="h2h-team">
+                                            {m.local_shield_url && <img src={m.local_shield_url} alt="" width="30" height="30" loading="lazy" decoding="async" />}
+                                            <span class="h2h-team-name">{m.club_local}</span>
+                                        </span>
+                                        <strong class={`h2h-score is-${m.resultado === "V" ? "win" : m.resultado === "D" ? "loss" : "draw"}`}>
+                                            {localIsRm ? m.goles_rm : m.goles_rival} - {localIsRm ? m.goles_rival : m.goles_rm}
+                                        </strong>
+                                        <span class="h2h-team h2h-team-visitor">
+                                            <span class="h2h-team-name">{m.club_visitante}</span>
+                                            {m.visitante_shield_url && <img src={m.visitante_shield_url} alt="" width="30" height="30" loading="lazy" decoding="async" />}
+                                        </span>
+                                    </a>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    {h2hMatches.length > H2H_LIMIT && (
+                        <a class="h2h-all" href={rivalHref}>Ver todo el historial contra {rivalName} →</a>
+                    )}
                 </div>
-                <div></div>
-            </div>
+            </section>
         )}
         <div class="match-grid">
             <div class="left-column">
@@ -791,7 +817,7 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </div>
                 </div>
-                {isLiveOrPlayed && (
+                {(isLiveOrPlayed || lineup.length > 0) && (
                     <section class="lineup-card">
                         <h2 class="section-header">XI TITULAR</h2>
                         <div class="lineup-list">
@@ -974,7 +1000,7 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
-                {isLiveOrPlayed && (
+                {(isLiveOrPlayed || subs.length > 0) && (
                     <section class="subs-card">
                         <h2 class="section-header">Sustituciones</h2>
                         <div class="lineup-list">
@@ -1330,7 +1356,7 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
-                {game.isPlayed && matchKit && (
+                {matchKit && (
                     <section class="kit-card" style="margin-bottom: 2rem;">
                         <h2 class="section-header">EQUIPACIÓN</h2>
                         <div class="kit-content">
@@ -1348,7 +1374,7 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
-                {game.isPlayed && (
+                {(game.isPlayed || game.once_inicial_url) && (
                     <section class="xi-card" style="margin-bottom: 2rem;">
                         <h2 class="section-header">XI INICIAL</h2>
                         <div class="xi-img-wrap">
@@ -1372,7 +1398,7 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
-                {isLiveOrPlayed && (
+                {(isLiveOrPlayed || timelineEvents.length > 0) && (
                     <section class="timeline-card">
                     <h2 class="section-header">Timeline</h2>
                     <div class="timeline-container">
@@ -2737,17 +2763,69 @@ const matchSchema = matchStartISO ? {
         margin-bottom: 1.5rem;
         align-items: stretch;
     }
-    .h2h-row {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
+    .h2h-card { height: auto; margin-bottom: 1.5rem; }
+    .h2h-body { padding: clamp(1rem, 3.5vw, 1.75rem); }
+    .h2h-total {
+        margin: 0 0 1rem; text-align: center; font-family: 'Cinzel', serif; font-size: 0.72rem;
+        font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(212,168,67,0.75);
     }
-    .h2h-bare {
-        background: rgba(8,16,34,0.85);
-        border: 1px solid rgba(212,168,67,0.2);
-        border-radius: 8px;
-        padding: 1.25rem 1.5rem;
+    .h2h-summary {
+        display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .h2h-side { display: flex; align-items: center; justify-content: center; gap: 0.9rem; }
+    .h2h-summary-shield { width: 52px; height: 52px; object-fit: contain; }
+    .h2h-figure { display: grid; justify-items: center; gap: 0.25rem; }
+    .h2h-figure span { font-size: 0.78rem; color: rgba(200,210,220,0.65); }
+    .h2h-num { font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1; color: #f0f0f0; }
+    .h2h-num.is-win { color: rgba(74,222,128,0.95); }
+    .h2h-num.is-loss { color: rgba(248,113,113,0.95); }
+    .h2h-list-head {
+        display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+        margin: 1.75rem 0 0.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(212,168,67,0.15);
+    }
+    .h2h-list-head h3 { margin: 0; font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; color: #d4a843; }
+    .h2h-list-head span { font-size: 0.8rem; color: rgba(200,210,220,0.6); }
+    .h2h-list { list-style: none; margin: 0; padding: 0; }
+    .h2h-list li + li { border-top: 1px solid rgba(212,168,67,0.08); }
+    .h2h-match {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 0.6rem 1rem;
+        padding: 0.9rem 0.5rem; border-radius: 6px; color: inherit; text-decoration: none; transition: background 0.2s ease;
+    }
+    .h2h-match:hover { background: rgba(212,168,67,0.06); }
+    .h2h-match-meta {
+        grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+        font-size: 0.75rem; color: rgba(200,210,220,0.55);
+    }
+    .h2h-comp {
+        display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'Cinzel', serif; font-size: 0.62rem;
+        font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(212,168,67,0.7);
+    }
+    .h2h-comp img { width: 16px; height: 16px; object-fit: contain; }
+    .h2h-team { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+    .h2h-team-visitor { justify-content: flex-end; text-align: right; }
+    .h2h-team img { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+    .h2h-team-name { font-weight: 600; color: rgba(220,225,230,0.92); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .h2h-score {
+        min-width: 4.5rem; padding: 0.45rem 0.9rem; border-radius: 999px; text-align: center;
+        font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; white-space: nowrap;
+    }
+    .h2h-score.is-win { background: rgba(74,222,128,0.15); color: rgba(74,222,128,0.95); border: 1px solid rgba(74,222,128,0.3); }
+    .h2h-score.is-draw { background: rgba(148,163,184,0.15); color: rgba(226,232,240,0.9); border: 1px solid rgba(148,163,184,0.3); }
+    .h2h-score.is-loss { background: rgba(248,113,113,0.12); color: rgba(248,113,113,0.95); border: 1px solid rgba(248,113,113,0.3); }
+    .h2h-all { display: inline-block; margin-top: 1rem; color: #d4a843; font-size: 0.85rem; text-decoration: none; }
+    .h2h-all:hover { text-decoration: underline; }
+    @media (max-width: 640px) {
+        .h2h-summary { gap: 0.5rem; }
+        .h2h-side { flex-direction: column; gap: 0.4rem; }
+        .h2h-summary-shield { width: 40px; height: 40px; }
+        .h2h-side:last-child { flex-direction: column-reverse; }
+        /* En móvil los equipos van uno encima del otro y el marcador a la derecha. */
+        .h2h-match { grid-template-columns: minmax(0, 1fr) auto; gap: 0.45rem 0.75rem; padding: 0.8rem 0.25rem; }
+        .h2h-team { grid-column: 1; gap: 0.5rem; }
+        .h2h-team-visitor { flex-direction: row-reverse; justify-content: flex-end; text-align: left; }
+        .h2h-score { grid-column: 2; grid-row: 2 / span 2; min-width: 3.6rem; padding: 0.35rem 0.6rem; font-size: 0.88rem; }
+        .h2h-team img { width: 24px; height: 24px; }
+        .h2h-team-name { font-size: 0.85rem; }
     }
     .h2h-bar {
         display: flex;
@@ -2783,11 +2861,6 @@ const matchSchema = matchStartISO ? {
     .h2h-meta-label {
         font-size: 0.72rem;
         color: rgba(150,160,175,0.6);
-    }
-    @media (max-width: 1024px) {
-        .h2h-row {
-            grid-template-columns: 1fr;
-        }
     }
     .match-card-new,
     .stadium-card {

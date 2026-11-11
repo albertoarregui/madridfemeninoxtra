@@ -31,3 +31,12 @@ test("el sitemap comparte la lectura de partidos y temporadas", () => {
     assert.match(sitemap, /const gamesPromise = fetchGamesDirectly\(\)/);
     assert.equal((sitemap.match(/await gamesPromise/g) || []).length, 2);
 });
+
+test("la previa muestra el historial sin consultas extra y los datos en cuanto existen", () => {
+    assert.doesNotMatch(matchPage, /INFORMACIÓN DEL PARTIDO/);
+    assert.match(matchPage, /const h2hMatches = isLiveOrPlayed \? \[\] : allGames/);
+    assert.doesNotMatch(matchPage, /isWithinOneHour/);
+    assert.match(matchPage, /<h3>Enfrentamientos anteriores<\/h3>/);
+    assert.match(matchPage, /fetchMatchLineups\(game\.id_partido, matchReadOptions\),/);
+    assert.match(matchPage, /\(isLiveOrPlayed \|\| lineup\.length > 0\) && \(/);
+});
