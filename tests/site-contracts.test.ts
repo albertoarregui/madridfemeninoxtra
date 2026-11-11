@@ -369,6 +369,9 @@ test('homepage recent results reuse the existing match read and stay responsive'
   assert.match(recent, /game\.opponentLogo/);
   assert.match(recent, /href=\{`\/partidos\/\$\{game\.slug\}`\}/);
   assert.match(recent, /@media \(max-width: 420px\)/);
+  assert.match(recent, /score: `\$\{game\.goles_rm\} - \$\{game\.goles_rival\}`/);
+  assert.doesNotMatch(recent, /locationLabel|"VS"|"@"/);
+  assert.match(recent, /margin-bottom: 3rem;/);
 });
 
 test('homepage keeps only first-team players and removes the requested secondary blocks', () => {

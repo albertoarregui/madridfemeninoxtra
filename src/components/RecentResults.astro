@@ -39,11 +39,10 @@ const recentResults = games
 			competitionLogo:
 				game.competicion_foto_url ||
 				getAssetUrl("competiciones", game.competicion_nombre),
-			locationLabel: realMadridAtHome ? "VS" : "@",
 			monthLabel: monthNames[(month || 1) - 1],
 			dayLabel: day || "—",
 			result: ["V", "E", "D"].includes(game.resultado) ? game.resultado : "E",
-			score: `${game.goles_rm} : ${game.goles_rival}`,
+			score: `${game.goles_rm} - ${game.goles_rival}`,
 		};
 	});
 
@@ -83,7 +82,7 @@ const winRate = recentResults.length ? Math.round((wins / recentResults.length) 
 							<strong>{game.dayLabel}</strong>
 						</time>
 						<img class="recent-club-logo" src={game.opponentLogo} alt="" width="30" height="30" loading="lazy" decoding="async" />
-						<span class="recent-opponent"><small>{game.locationLabel}</small> {game.opponent}</span>
+						<span class="recent-opponent">{game.opponent}</span>
 						<strong class:list={["recent-score", `is-${game.result.toLowerCase()}`]}>{game.score}</strong>
 						<img class="recent-competition-logo" src={game.competitionLogo} alt={game.competicion_nombre || "Competición"} title={game.competicion_nombre || "Competición"} width="26" height="26" loading="lazy" decoding="async" />
 					</a>
@@ -109,6 +108,8 @@ const winRate = recentResults.length ? Math.round((wins / recentResults.length) 
 		background: linear-gradient(145deg, rgba(18, 25, 40, 0.98), rgba(8, 14, 29, 0.98));
 		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
 		color: #f4f4f6;
+		/* Misma separación con la sección siguiente que el calendario. */
+		margin-bottom: 3rem;
 	}
 
 	.recent-form,
@@ -193,7 +194,6 @@ const winRate = recentResults.length ? Math.round((wins / recentResults.length) 
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.recent-opponent small { color: #c9a44d; font: inherit; }
 	.recent-score {
 		flex: 0 0 auto;
 		padding: 0.38rem 0.48rem;
@@ -260,6 +260,10 @@ const winRate = recentResults.length ? Math.round((wins / recentResults.length) 
 	@media (max-width: 960px) {
 		.recent-results-card { max-width: 34rem; margin-inline: auto; padding: 1.25rem; }
 		.recent-opponent { font-size: 0.78rem; }
+	}
+
+	@media (max-width: 768px) {
+		.recent-results-card { margin-bottom: 2rem; }
 	}
 
 	@media (max-width: 420px) {
