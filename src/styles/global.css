@@ -1344,8 +1344,11 @@ html[data-skip-players-enter] .player-portrait-card {
     pointer-events: none;
     border-radius: inherit;
 }
-/* Igual que las miniaturas de la plantilla: esquinas metidas unos píxeles hacia
-   dentro, en dorado pleno, para que se distingan del borde de la tarjeta. */
+/* Esquinas en el límite de la tarjeta y sin ninguna otra línea dorada en el
+   contorno: el borde de la tarjeta pasa a transparente (conserva su tamaño). */
+.mfx-framed {
+    border-color: transparent !important;
+}
 .mfx-frame::before,
 .mfx-frame::after {
     content: "";
@@ -1354,8 +1357,14 @@ html[data-skip-players-enter] .player-portrait-card {
     height: 16px;
     border: 0 solid #d4a843;
 }
-.mfx-frame::before { top: 5px; left: 5px; border-width: 1.5px 0 0 1.5px; }
-.mfx-frame::after { bottom: 5px; right: 5px; border-width: 0 1.5px 1.5px 0; }
+.mfx-frame::before { top: 0; left: 0; border-width: 1.5px 0 0 1.5px; border-top-left-radius: inherit; }
+.mfx-frame::after { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; border-bottom-right-radius: inherit; }
+/* Estas tarjetas traían sus propias esquinas o una franja dorada en el borde:
+   las sustituye el marco común. */
+.mfx-framed:is(.editorial-info-card, .policy-card, .contact-card, .form-card, .profile-card, .team-card)::before,
+.mfx-framed:is(.editorial-info-card, .policy-card, .contact-card, .form-card, .profile-card)::after {
+    display: none !important;
+}
 
 @property --mfx-spin-angle {
     syntax: "<angle>";
