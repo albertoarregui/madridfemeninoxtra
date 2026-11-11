@@ -21,7 +21,7 @@ test("las entidades visibles de la ficha enlazan a sus páginas", () => {
 
 test("las islas reciben solo los campos que consumen", () => {
     // La lista de partidos se renderiza en el servidor: no envía datos a ninguna isla.
-    assert.match(matchesPage, /<MatchTimeline matches=\{games\} currentSeason=\{currentSeason\} \/>/);
+    assert.match(matchesPage, /<MatchTimeline matches=\{games\} \/>/);
     assert.doesNotMatch(matchesPage, /client:(load|only|visible|idle)/);
     assert.match(playersPage, /const mapPlayers = playersData\.map/);
     assert.match(playersPage, /<PlayerMapWrapper players=\{mapPlayers\}/);

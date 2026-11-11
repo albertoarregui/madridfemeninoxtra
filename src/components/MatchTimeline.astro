@@ -1,35 +1,18 @@
 ---
 import { getAssetUrl } from "../utils/assets";
+import { competitionDisplayName } from "../utils/competiciones";
 
 interface Props {
 	matches: any[];
-	currentSeason: string;
 }
 
-const { matches = [], currentSeason } = Astro.props;
-const en = Astro.locals.locale === "en";
+const { matches = [] } = Astro.props;
 
 // Partidos visibles al entrar y en cada «cargar más». Todo el HTML ya viene en
 // la página (≈30 KB comprimidos) y las imágenes ocultas no se descargan.
 const PAGE_SIZE = 100;
 
 const COMPETITION_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
-const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-const t = en
-	? {
-		upcoming: "UPCOMING", results: "RESULTS", competition: "Competition", venue: "Venue", season: "Season",
-		all: "All", allSeasons: "All seasons", home: "Home", away: "Away", final: "Full time",
-		tbc: "TBC", empty: "No matches for these filters.", w: "W", d: "D", l: "L", open: "Open match",
-		more: "Load 100 more matches", remaining: "remaining", nextUp: "Upcoming",
-	}
-	: {
-		upcoming: "PRÓXIMOS", results: "RESULTADOS", competition: "Competición", venue: "Sede", season: "Temporada",
-		all: "Todas", allSeasons: "Todas las temporadas", home: "Local", away: "Visitante", final: "Final",
-		tbc: "Por confirmar", empty: "No hay partidos con estos filtros.", w: "V", d: "E", l: "D", open: "Ver partido",
-		more: "Cargar 100 partidos más", remaining: "restantes", nextUp: "Por jugar",
-	};
 
 const isRealMadrid = (name: unknown) =>
 	String(name ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("real madrid");
@@ -39,42 +22,37 @@ const competitionRank = (name: string) => {
 	return index === -1 ? COMPETITION_ORDER.length : index;
 };
 
-// Las fechas vienen como YYYY-MM-DD: se formatean sin pasar por la zona horaria.
-const formatDate = (fecha: unknown) => {
-	const [year, month, day] = String(fecha ?? "").slice(0, 10).split("-").map(Number);
-	if (!year || !month || !day) return "—";
-	return en ? `${MONTHS_EN[month - 1]} ${day}, ${year}` : `${day} ${MONTHS_ES[month - 1]} ${year}`;
-};
-
 const formatTime = (hora: unknown) => {
 	const match = String(hora ?? "").match(/^(\d{1,2}):(\d{2})/);
-	return match ? `${match[1].padStart(2, "0")}:${match[2]}` : null;
+	return match && `${match[1]}:${match[2]}` !== "00:00" ? `${match[1].padStart(2, "0")}:${match[2]}` : null;
 };
 
-const sortKey = (m: any) => `${String(m.fecha ?? "").slice(0, 10)} ${formatTime(m.hora) ?? "99:99"}`;
+// Las fechas vienen como YYYY-MM-DD: se formatean sin pasar por la zona horaria.
+const formatDate = (fecha: unknown) => {
+	const [year, month, day] = String(fecha ?? "").slice(0, 10).split("-");
+	return year && month && day ? `${day}.${month}.${year.slice(-2)}` : "-";
+};
 
 const rows = matches
 	.filter((m) => m?.slug && m?.temporada_nombre)
 	.map((m) => {
-		const competition = String(m.competicion_nombre || (en ? "Other" : "Otras"));
 		const played = Boolean(m.isPlayed);
 		const localIsRm = isRealMadrid(m.club_local);
+		const time = formatTime(m.hora);
 		return {
 			slug: m.slug,
-			key: sortKey(m),
+			key: `${String(m.fecha ?? "").slice(0, 10)} ${time ?? "99:99"}`,
 			season: String(m.temporada_nombre),
-			competition,
-			competitionLogo: m.competicion_foto_url || getAssetUrl("competiciones", competition),
-			venue: localIsRm ? "home" : "away",
+			competition: String(m.competicion_nombre ?? ""),
+			competitionLabel: competitionDisplayName(m.competicion_nombre, { temporada: m.temporada_nombre }),
+			competitionLogo: m.competicion_foto_url || getAssetUrl("competiciones", m.competicion_nombre),
+			venue: localIsRm ? "local" : "visitante",
 			played,
 			result: played && ["V", "E", "D"].includes(m.resultado) ? m.resultado : "",
 			date: formatDate(m.fecha),
-			time: formatTime(m.hora),
-			score: played ? `${localIsRm ? m.goles_rm : m.goles_rival} - ${localIsRm ? m.goles_rival : m.goles_rm}` : "",
-			teams: [
-				{ name: m.club_local, shield: m.local_shield_url, rm: localIsRm },
-				{ name: m.club_visitante, shield: m.visitante_shield_url, rm: isRealMadrid(m.club_visitante) },
-			],
+			time,
+			local: { name: m.club_local, shield: m.local_shield_url, goals: localIsRm ? m.goles_rm : m.goles_rival },
+			visitor: { name: m.club_visitante, shield: m.visitante_shield_url, goals: localIsRm ? m.goles_rival : m.goles_rm },
 		};
 	});
 
@@ -83,118 +61,86 @@ const rows = matches
 const upcoming = rows.filter((r) => !r.played).sort((a, b) => a.key.localeCompare(b.key));
 const played = rows.filter((r) => r.played).sort((a, b) => b.key.localeCompare(a.key));
 const ordered = [...upcoming, ...played];
-const orderOf = new Map(ordered.map((row, index) => [row, index]));
 
 const seasons = [...new Set(rows.map((r) => r.season))].sort().reverse();
-const competitions = [...new Map(rows.map((r) => [r.competition, r.competitionLogo])).entries()]
-	.sort(([a], [b]) => competitionRank(a) - competitionRank(b) || a.localeCompare(b));
+const competitions = [...new Set(rows.map((r) => r.competition).filter(Boolean))]
+	.sort((a, b) => competitionRank(a) - competitionRank(b) || a.localeCompare(b));
+const venues = [["local", "Local"], ["visitante", "Visitante"]];
 
-// Una tarjeta por temporada, en el orden en que aparecen sus partidos.
-const groups = seasons
-	.map((season) => ({ season, rows: ordered.filter((r) => r.season === season) }))
-	.sort((a, b) => orderOf.get(a.rows[0])! - orderOf.get(b.rows[0])!);
-
-const count = {
-	upcoming: upcoming.length,
-	results: played.length,
-	w: played.filter((r) => r.result === "V").length,
-	d: played.filter((r) => r.result === "E").length,
-	l: played.filter((r) => r.result === "D").length,
-};
-const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
+const filters = [
+	{ id: "temporada", label: "Todas las Temporadas", aria: "Filtrar por temporada", options: seasons.map((s) => [s, s]) },
+	{ id: "competicion", label: "Todas las Competiciones", aria: "Filtrar por competición", options: competitions.map((c) => [c, c]) },
+	{ id: "sede", label: "Local y Visitante", aria: "Filtrar por sede", options: venues },
+];
 ---
 
-<div class="mt" data-match-timeline data-page-size={PAGE_SIZE}>
-	<section class="mt-bar" aria-label={en ? "Summary and filters" : "Resumen y filtros"}>
-		<div class="mt-totals">
-			<p class="mt-total"><strong data-count="upcoming">{count.upcoming}</strong><span>{t.upcoming}</span></p>
-			<p class="mt-total"><strong data-count="results">{count.results}</strong><span>{t.results}</span></p>
-			<p class="mt-record" aria-label={en ? "Wins, draws and losses" : "Victorias, empates y derrotas"}>
-				<span class="is-w"><b data-count="w">{count.w}</b>{t.w}</span>
-				<span class="is-d"><b data-count="d">{count.d}</b>{t.d}</span>
-				<span class="is-l"><b data-count="l">{count.l}</b>{t.l}</span>
-			</p>
-		</div>
-
-		<div class="mt-filters">
-			<fieldset class="mt-filter">
-				<legend>{t.competition}</legend>
-				<div class="mt-pills">
-					<button type="button" class="mt-pill is-active" data-filter="competition" data-value="" aria-pressed="true">{t.all}</button>
-					{competitions.map(([name, logo]) => (
-						<button type="button" class="mt-pill" data-filter="competition" data-value={name} aria-pressed="false">
-							<img src={logo} alt="" width="18" height="18" loading="lazy" decoding="async" />{name}
-						</button>
-					))}
+<div class="match-list-ui" data-match-timeline data-page-size={PAGE_SIZE}>
+	<div class="filters-container">
+		{filters.map((filter) => (
+			<div class="custom-select-container" data-custom-select="true">
+				<div class="custom-select-trigger">
+					<span class="selected-text">{filter.label}</span>
+					<div class="custom-select-arrow">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+					</div>
 				</div>
-			</fieldset>
-
-			<fieldset class="mt-filter">
-				<legend>{t.venue}</legend>
-				<div class="mt-pills">
-					<button type="button" class="mt-pill is-active" data-filter="venue" data-value="" aria-pressed="true">{t.all}</button>
-					<button type="button" class="mt-pill" data-filter="venue" data-value="home" aria-pressed="false">{t.home}</button>
-					<button type="button" class="mt-pill" data-filter="venue" data-value="away" aria-pressed="false">{t.away}</button>
+				<div class="custom-select-options">
+					<div class="custom-select-option selected" data-value="todos">{filter.label}</div>
+					{filter.options.map(([value, text]) => <div class="custom-select-option" data-value={value}>{text}</div>)}
 				</div>
-			</fieldset>
-
-			<label class="mt-filter mt-season">
-				<span>{t.season}</span>
-				<span class="mt-select">
-					<svg class="mt-select-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
-					<select data-filter="season">
-						<option value="" selected>{t.allSeasons}</option>
-						{seasons.map((season) => <option value={season}>{season}</option>)}
-					</select>
-					<svg class="mt-select-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-				</span>
-			</label>
-		</div>
-	</section>
-
-	<div class="mt-groups">
-		{groups.map((group) => (
-			<section class="mt-group" data-group hidden={!group.rows.some((r) => firstPage.has(r))}>
-				<h2 class="mt-group-head">{group.season}{group.season === currentSeason && <span>{en ? "Current season" : "Temporada actual"}</span>}</h2>
-				<ul class="mt-list">
-					{group.rows.map((row) => (
-						<li data-order={orderOf.get(row)} data-season={row.season} data-competition={row.competition} data-venue={row.venue} data-played={String(row.played)} data-result={row.result} hidden={!firstPage.has(row)}>
-							<a class="mt-row" href={`/partidos/${row.slug}`} aria-label={`${t.open}: ${row.teams[0].name} - ${row.teams[1].name}`}>
-								<span class="mt-when">
-									<time>{row.date}</time>
-									<span class="mt-comp"><img src={row.competitionLogo} alt="" width="16" height="16" loading="lazy" decoding="async" />{row.competition}</span>
-								</span>
-								<span class="mt-teams">
-									{row.teams.map((team) => (
-										<span class:list={["mt-team", { "is-rm": team.rm }]}>
-											<img src={team.shield} alt="" width="26" height="26" loading="lazy" decoding="async" />
-											<span class="mt-team-name">{team.name}</span>
-										</span>
-									))}
-								</span>
-								<span class="mt-status">
-									{row.played ? (
-										<>
-											<strong class:list={["mt-result", `is-${row.result.toLowerCase() || "e"}`]}>{row.score}</strong>
-											<small>{t.final}</small>
-										</>
-									) : (
-										<>
-											<strong class:list={{ "is-tbc": !row.time }}>{row.time ?? t.tbc}</strong>
-											<small class="mt-next">{t.nextUp}</small>
-										</>
-									)}
-								</span>
-								<svg class="mt-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-							</a>
-						</li>
-					))}
-				</ul>
-			</section>
+				<select class="native-select" data-filter={filter.id} aria-label={filter.aria} hidden>
+					<option value="todos" selected>{filter.label}</option>
+					{filter.options.map(([value, text]) => <option value={value}>{text}</option>)}
+				</select>
+			</div>
 		))}
-		<p class="mt-empty" data-empty hidden>{t.empty}</p>
-		<button type="button" class="mt-more" data-more hidden={ordered.length <= PAGE_SIZE}>
-			{t.more} <span>(<b data-remaining>{Math.max(0, ordered.length - PAGE_SIZE)}</b> {t.remaining})</span>
+	</div>
+
+	<div class="matches-container">
+		{ordered.map((row, index) => (
+			<div class="match-item" data-season={row.season} data-competition={row.competition} data-venue={row.venue} hidden={index >= PAGE_SIZE}>
+				<div class="match-competition">
+					<div class="competition-info">
+						{row.competitionLogo && <img src={row.competitionLogo} alt={row.competition} class="competition-logo" width="24" height="24" loading="lazy" decoding="async" />}
+						<span class="competition-name">{row.competitionLabel}</span>
+					</div>
+					{row.played
+						? <div class={`result-indicator ${row.result === "V" ? "win" : row.result === "D" ? "loss" : "draw"}`}>{row.result || "E"}</div>
+						: <span class="upcoming-label">Próximo</span>}
+				</div>
+
+				<a href={`/partidos/${row.slug}`} class="match-detail">
+					<div class="match-date-time">{row.date}{row.time ? ` ${row.time}` : ""}</div>
+					<div class="match-teams-score">
+						<div class="team team-local">
+							<span class="team-name">{row.local.name}</span>
+							<img src={row.local.shield} alt={row.local.name} class="team-shield" width="28" height="28" loading="lazy" decoding="async" />
+						</div>
+						<div class="score-wrapper">
+							{row.played ? (
+								<>
+									<span class="score">{row.local.goals}</span>
+									<span class="vs">-</span>
+									<span class="score">{row.visitor.goals}</span>
+								</>
+							) : (
+								<span class="vs upcoming-vs">VS</span>
+							)}
+						</div>
+						<div class="team team-visitor">
+							<img src={row.visitor.shield} alt={row.visitor.name} class="team-shield" width="28" height="28" loading="lazy" decoding="async" />
+							<span class="team-name">{row.visitor.name}</span>
+						</div>
+					</div>
+				</a>
+			</div>
+		))}
+		<p class="no-results-message" data-empty hidden>No se encontraron partidos con los filtros seleccionados.</p>
+	</div>
+
+	<div class="matches-footer" data-more-wrap hidden={ordered.length <= PAGE_SIZE}>
+		<button type="button" class="btn-more" data-more>
+			Cargar 100 partidos más (<span data-remaining>{Math.max(0, ordered.length - PAGE_SIZE)}</span> restantes)
 		</button>
 	</div>
 </div>
@@ -205,196 +151,129 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 			if (root.dataset.ready === "true") return;
 			root.dataset.ready = "true";
 			const pageSize = Number(root.dataset.pageSize) || 100;
-			const items = [...root.querySelectorAll("li[data-order]")].sort((a, b) => a.dataset.order - b.dataset.order);
-			const groups = [...root.querySelectorAll("[data-group]")];
-			const seasonSelect = root.querySelector('select[data-filter="season"]');
-			const moreButton = root.querySelector("[data-more]");
-			const params = new URLSearchParams(location.search);
-			const state = {
-				season: params.get("temporada") || "",
-				competition: params.get("competicion") || "",
-				venue: params.get("sede") || "",
-				limit: pageSize,
-			};
-			if (![...seasonSelect.options].some((o) => o.value === state.season)) state.season = "";
-			seasonSelect.value = state.season;
+			const items = [...root.querySelectorAll(".match-item")];
+			const selects = Object.fromEntries([...root.querySelectorAll("select[data-filter]")].map((s) => [s.dataset.filter, s]));
+			const attribute = { temporada: "season", competicion: "competition", sede: "venue" };
+			let limit = pageSize;
 
-			const setCount = (key, value) => { root.querySelector(`[data-count="${key}"]`).textContent = value; };
+			// Restaura los filtros de la URL (p. ej. ?temporada=2024/25) en el
+			// select oculto y en el desplegable visible.
+			const params = new URLSearchParams(location.search);
+			Object.entries(selects).forEach(([name, select]) => {
+				const value = params.get(name);
+				if (!value || ![...select.options].some((o) => o.value === value)) return;
+				select.value = value;
+				const container = select.closest(".custom-select-container");
+				container.querySelectorAll(".custom-select-option").forEach((option) => {
+					const selected = option.dataset.value === value;
+					option.classList.toggle("selected", selected);
+					if (selected) container.querySelector(".selected-text").textContent = option.textContent.trim();
+				});
+			});
 
 			function apply() {
-				const inSeason = items.filter((li) => !state.season || li.dataset.season === state.season);
-				const available = new Set(inSeason.map((li) => li.dataset.competition));
-				if (state.competition && !available.has(state.competition)) state.competition = "";
-
-				root.querySelectorAll(".mt-pill").forEach((pill) => {
-					const key = pill.dataset.filter;
-					const active = pill.dataset.value === state[key];
-					pill.classList.toggle("is-active", active);
-					pill.setAttribute("aria-pressed", String(active));
-					if (key === "competition" && pill.dataset.value) pill.hidden = !available.has(pill.dataset.value);
-				});
-
-				const matching = inSeason.filter((li) => (!state.competition || li.dataset.competition === state.competition)
-					&& (!state.venue || li.dataset.venue === state.venue));
-				const shown = new Set(matching.slice(0, state.limit));
-				items.forEach((li) => { li.hidden = !shown.has(li); });
-				groups.forEach((group) => { group.hidden = !group.querySelector("li:not([hidden])"); });
+				const matching = items.filter((item) => Object.entries(selects).every(([name, select]) =>
+					select.value === "todos" || item.dataset[attribute[name]] === select.value));
+				const shown = new Set(matching.slice(0, limit));
+				items.forEach((item) => { item.hidden = !shown.has(item); });
 				root.querySelector("[data-empty]").hidden = matching.length > 0;
 
 				const remaining = matching.length - shown.size;
-				moreButton.hidden = remaining <= 0;
+				root.querySelector("[data-more-wrap]").hidden = remaining <= 0;
 				root.querySelector("[data-remaining]").textContent = remaining;
 
-				setCount("upcoming", matching.filter((li) => li.dataset.played !== "true").length);
-				setCount("results", matching.filter((li) => li.dataset.played === "true").length);
-				setCount("w", matching.filter((li) => li.dataset.result === "V").length);
-				setCount("d", matching.filter((li) => li.dataset.result === "E").length);
-				setCount("l", matching.filter((li) => li.dataset.result === "D").length);
-
 				const url = new URL(location.href);
-				const sync = (name, value) => value ? url.searchParams.set(name, value) : url.searchParams.delete(name);
-				sync("temporada", state.season);
-				sync("competicion", state.competition);
-				sync("sede", state.venue);
+				Object.entries(selects).forEach(([name, select]) => {
+					if (select.value === "todos") url.searchParams.delete(name);
+					else url.searchParams.set(name, select.value);
+				});
 				history.replaceState(history.state, "", url);
 			}
 
-			root.querySelectorAll(".mt-pill").forEach((pill) => pill.addEventListener("click", () => {
-				state[pill.dataset.filter] = pill.dataset.value;
-				state.limit = pageSize;
-				apply();
-			}));
-			seasonSelect.addEventListener("change", () => { state.season = seasonSelect.value; state.limit = pageSize; apply(); });
-			moreButton.addEventListener("click", () => { state.limit += pageSize; apply(); });
+			Object.values(selects).forEach((select) => select.addEventListener("change", () => { limit = pageSize; apply(); }));
+			root.querySelector("[data-more]").addEventListener("click", () => { limit += pageSize; apply(); });
 			apply();
 		});
 	})();
 </script>
 
 <style>
-	.mt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; width: 100%; max-width: 66rem; min-width: 0; margin: 0 auto 4rem; color: #f4f4f6; font-family: "Montserrat", sans-serif; }
-	.mt [hidden] { display: none !important; }
+	.match-list-ui { width: 100%; max-width: 800px; margin: 0 auto 4rem; }
+	.match-list-ui [hidden] { display: none !important; }
+	.filters-container { display: flex; gap: 1.5rem; margin-bottom: 2.5rem; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
 
-	/* Barra de resumen y filtros */
-	.mt-bar {
-		display: grid; gap: 1.5rem; padding: 1.6rem 1.9rem;
-		border: 1px solid rgba(201, 164, 77, 0.32); border-radius: 22px;
-		background:
-			radial-gradient(120% 140% at 0% 0%, rgba(212, 168, 67, 0.09), transparent 55%),
-			linear-gradient(145deg, rgba(18, 25, 40, 0.98), rgba(8, 14, 29, 0.98));
-		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+	.matches-container {
+		display: flex; flex-direction: column; position: relative; overflow: hidden;
+		background: rgba(8, 16, 34, 0.85); border: 1px solid rgba(212, 168, 67, 0.18); border-radius: 4px;
 	}
-	.mt-totals { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.75rem; min-width: 0; padding-bottom: 1.4rem; border-bottom: 1px solid rgba(201, 164, 77, 0.18); }
-	.mt-total { display: flex; align-items: baseline; gap: 0.6rem; margin: 0; padding-right: 1.75rem; border-right: 1px solid rgba(255, 255, 255, 0.12); }
-	.mt-total strong { font: 800 2.2rem/1 "Montserrat", sans-serif; }
-	.mt-total span { font: 700 0.62rem/1.2 "Montserrat", sans-serif; letter-spacing: 0.18em; color: rgba(255, 255, 255, 0.56); }
-	.mt-record { display: flex; gap: 0.9rem; margin: 0; font: 800 1.3rem/1 "Montserrat", sans-serif; }
-	.mt-record .is-w { color: #29c79d; } .mt-record .is-d { color: #aeb4c2; } .mt-record .is-l { color: #ff7272; }
+	.matches-container::before,
+	.matches-container::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; z-index: 1; }
+	.matches-container::before { top: 0; left: 0; border-top: 1px solid rgba(212, 168, 67, 0.5); border-left: 1px solid rgba(212, 168, 67, 0.5); }
+	.matches-container::after { bottom: 0; right: 0; border-bottom: 1px solid rgba(212, 168, 67, 0.5); border-right: 1px solid rgba(212, 168, 67, 0.5); }
 
-	.mt-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1.25rem 2rem; min-width: 0; }
-	.mt-filter { display: grid; gap: 0.6rem; margin: 0; padding: 0; border: 0; min-width: 0; max-width: 100%; }
-	.mt-filter legend, .mt-season > span:first-child {
-		display: flex; align-items: center; gap: 0.5rem; padding: 0; margin-bottom: 0.6rem;
-		font: 700 0.7rem/1 "Cinzel", serif; letter-spacing: 0.22em; text-transform: uppercase; color: #d4a843;
+	.match-item { border-bottom: 1px solid rgba(212, 168, 67, 0.07); }
+	.match-item:last-of-type { border-bottom: none; }
+	.match-competition {
+		display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem;
+		background: rgba(212, 168, 67, 0.04); border-bottom: 1px solid rgba(212, 168, 67, 0.08);
 	}
-	.mt-season > span:first-child { margin-bottom: 0; }
-	.mt-filter legend::before, .mt-season > span:first-child::before { content: "♦"; font-size: 0.55rem; }
-	.mt-pills {
-		display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0.3rem;
-		border: 1px solid rgba(201, 164, 77, 0.28); border-radius: 999px; background: rgba(5, 9, 19, 0.55);
+	.competition-info { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+	.competition-logo { width: 18px; height: 18px; object-fit: contain; opacity: 0.85; }
+	.competition-name, .upcoming-label {
+		font-family: "Cinzel", serif; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
 	}
-	.mt-pill {
-		display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.55rem 1rem;
-		border: 1px solid transparent; border-radius: 999px; background: transparent; color: #d7d9e0; cursor: pointer;
-		font: 700 0.76rem/1 "Montserrat", sans-serif; letter-spacing: 0.03em; transition: background 0.2s, color 0.2s, border-color 0.2s;
-	}
-	.mt-pill img { width: 18px; height: 18px; object-fit: contain; }
-	.mt-pill:hover { color: #f2dfb0; border-color: rgba(201, 164, 77, 0.35); }
-	.mt-pill.is-active {
-		background: linear-gradient(180deg, #e3bf65, #c99a35); border-color: #e3bf65; color: #16120a;
-		box-shadow: 0 6px 18px rgba(212, 168, 67, 0.28);
-	}
-	.mt-select { position: relative; display: flex; align-items: center; }
-	.mt-select select {
-		appearance: none; -webkit-appearance: none; min-width: 15rem; padding: 0.7rem 2.6rem;
-		border: 1px solid rgba(201, 164, 77, 0.45); border-radius: 999px; background: rgba(5, 9, 19, 0.55);
-		color: #f4f4f6; font: 700 0.82rem/1 "Montserrat", sans-serif; cursor: pointer;
-	}
-	.mt-select select:hover { border-color: #e3bf65; }
-	.mt-select option { color: #0c1222; }
-	.mt-select svg { position: absolute; width: 1rem; height: 1rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-	.mt-select-icon { left: 0.95rem; }
-	.mt-select-arrow { right: 0.95rem; }
-	.mt-pill:focus-visible, .mt-select select:focus-visible, .mt-row:focus-visible, .mt-more:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
+	.competition-name { color: rgba(212, 168, 67, 0.65); }
+	.upcoming-label { padding: 0.35rem 0.55rem; border: 1px solid rgba(212, 168, 67, 0.35); border-radius: 3px; color: #d4a843; }
 
-	/* Tarjetas de temporada */
-	.mt-groups { display: grid; gap: 1.75rem; }
-	.mt-group {
-		padding: 1.25rem 1.5rem 0.5rem;
-		border: 1px solid rgba(201, 164, 77, 0.25); border-radius: 20px;
-		background: linear-gradient(145deg, rgba(18, 25, 40, 0.95), rgba(8, 14, 29, 0.95));
+	.match-detail {
+		display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 1rem;
+		padding: 0.9rem 1rem; text-decoration: none; transition: background 0.2s ease;
 	}
-	.mt-group-head { display: flex; align-items: center; gap: 0.75rem; margin: 0 0 0.5rem; font: 700 1.15rem/1.2 "Cinzel", serif; color: #e3bf65; }
-	.mt-group-head span { padding: 0.3rem 0.6rem; border: 1px solid rgba(201, 164, 77, 0.4); border-radius: 999px; font: 700 0.6rem/1 "Montserrat", sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #f2dfb0; }
-	.mt-list { list-style: none; margin: 0; padding: 0; }
-	.mt-list li + li { border-top: 1px solid rgba(255, 255, 255, 0.07); }
-
-	.mt-row {
-		display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) auto 1rem; align-items: center; gap: 1rem;
-		padding: 1rem 0.5rem; border-radius: 12px; color: inherit; text-decoration: none; transition: background 0.2s;
+	.match-detail:hover { background: rgba(212, 168, 67, 0.06); }
+	.match-date-time { font-family: "DM Sans", sans-serif; color: rgba(200, 210, 220, 0.4); font-size: 0.78rem; font-weight: 500; text-align: center; }
+	.match-teams-score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
+	.team { display: flex; align-items: center; gap: 0.65rem; flex: 1; min-width: 0; }
+	.team-local { justify-content: flex-end; text-align: right; }
+	.team-visitor { justify-content: flex-start; text-align: left; }
+	.team-shield { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+	.team-name {
+		font-family: "DM Sans", sans-serif; color: rgba(200, 210, 220, 0.88); font-size: 0.9rem; font-weight: 600;
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 	}
-	.mt-row:hover { background: rgba(201, 164, 77, 0.07); }
-	.mt-when { display: grid; gap: 0.35rem; }
-	.mt-when time { font: 700 0.9rem/1.2 "Montserrat", sans-serif; color: #f4f4f6; }
-	.mt-comp { display: flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: rgba(255, 255, 255, 0.55); }
-	.mt-comp img { width: 16px; height: 16px; object-fit: contain; }
-	.mt-teams { display: grid; gap: 0.45rem; min-width: 0; }
-	.mt-team { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: center; gap: 0.6rem; color: #c3c6cf; font-size: 0.95rem; }
-	.mt-team img { width: 26px; height: 26px; object-fit: contain; }
-	.mt-team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.mt-team.is-rm { color: #f4f4f6; font-weight: 700; }
-	.mt-status { display: grid; justify-items: end; gap: 0.3rem; text-align: right; }
-	.mt-status strong { font: 800 1rem/1 "Montserrat", sans-serif; white-space: nowrap; }
-	.mt-status strong.is-tbc { font-size: 0.8rem; color: #d7d9e0; }
-	.mt-status small { font-size: 0.72rem; color: rgba(255, 255, 255, 0.55); }
-	.mt-status .mt-next { color: #e3bf65; }
-	.mt-result { padding: 0.45rem 0.7rem; border-radius: 10px; }
-	.mt-result.is-v { color: #4ce0b5; background: rgba(8, 127, 102, 0.24); }
-	.mt-result.is-e { color: #e5e7eb; background: rgba(107, 114, 128, 0.24); }
-	.mt-result.is-d { color: #ff8a8a; background: rgba(182, 64, 64, 0.24); }
-	.mt-chevron { width: 1rem; height: 1rem; fill: none; stroke: rgba(255, 255, 255, 0.45); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-	.mt-empty { margin: 0; padding: 2rem; text-align: center; color: rgba(255, 255, 255, 0.6); }
+	.score-wrapper { display: flex; align-items: center; gap: 0.4rem; justify-content: center; min-width: 60px; }
+	.score { font-family: "Cinzel", serif; color: #d4a843; font-size: 1.15rem; font-weight: 700; }
+	.vs { font-family: "DM Sans", sans-serif; color: rgba(200, 210, 220, 0.3); font-size: 0.75rem; font-weight: 600; }
+	.upcoming-vs { font-family: "Cinzel", serif; color: rgba(212, 168, 67, 0.6); letter-spacing: 0.1em; }
 
-	.mt-more {
-		justify-self: center; padding: 0.95rem 1.8rem; border: 1px solid rgba(201, 164, 77, 0.55); border-radius: 999px;
-		background: rgba(5, 9, 19, 0.6); color: #f2dfb0; cursor: pointer;
-		font: 700 0.8rem/1 "Montserrat", sans-serif; letter-spacing: 0.08em; text-transform: uppercase; transition: background 0.2s, color 0.2s;
+	.result-indicator {
+		width: 30px; height: 30px; border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+		font-family: "Cinzel", serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.05em;
 	}
-	.mt-more span { color: rgba(255, 255, 255, 0.55); text-transform: none; letter-spacing: 0; }
-	.mt-more:hover { background: #d4a843; color: #16120a; }
-	.mt-more:hover span { color: rgba(22, 18, 10, 0.7); }
+	.result-indicator.win { background: rgba(74, 222, 128, 0.15); color: rgba(74, 222, 128, 0.9); border: 1px solid rgba(74, 222, 128, 0.25); }
+	.result-indicator.loss { background: rgba(248, 113, 113, 0.12); color: rgba(248, 113, 113, 0.85); border: 1px solid rgba(248, 113, 113, 0.2); }
+	.result-indicator.draw { background: rgba(212, 168, 67, 0.1); color: rgba(212, 168, 67, 0.8); border: 1px solid rgba(212, 168, 67, 0.2); }
+	.no-results-message { font-family: "DM Sans", sans-serif; color: rgba(200, 210, 220, 0.35); text-align: center; padding: 3rem 1rem; font-size: 0.9rem; margin: 0; }
 
-	@media (max-width: 900px) {
-		.mt-bar { padding: 1.2rem; }
-		.mt-total strong { font-size: 1.7rem; }
+	.matches-footer { display: flex; justify-content: center; margin-top: 1.5rem; }
+	.btn-more {
+		display: inline-block; padding: 0.65rem 1.5rem; background: transparent; color: #d4a843; cursor: pointer;
+		font-family: "Cinzel", serif; font-weight: 600; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+		border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 3px; transition: all 0.2s;
 	}
+	.btn-more:hover { background: rgba(212, 168, 67, 0.1); border-color: rgba(212, 168, 67, 0.7); color: #f5f0e8; }
+	.match-detail:focus-visible, .btn-more:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
 
-	@media (max-width: 600px) {
-		.mt-totals { gap: 0.6rem 1rem; }
-		.mt-total { padding-right: 0.9rem; gap: 0.35rem; }
-		.mt-total strong { font-size: 1.35rem; }
-		.mt-total span { letter-spacing: 0.08em; }
-		.mt-record { font-size: 1rem; }
-		.mt-filter, .mt-season, .mt-select, .mt-select select { width: 100%; min-width: 0; }
-		.mt-pills { border-radius: 18px; }
-		.mt-pill { padding: 0.5rem 0.75rem; font-size: 0.72rem; }
-		.mt-group { padding: 1rem 0.75rem 0.25rem; border-radius: 16px; }
-		.mt-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem 0.75rem; padding: 0.85rem 0.25rem; }
-		.mt-when { grid-column: 1 / -1; display: flex; justify-content: space-between; }
-		.mt-when time { font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); }
-		.mt-chevron { display: none; }
-		.mt-team { font-size: 0.85rem; grid-template-columns: 22px minmax(0, 1fr); }
-		.mt-team img { width: 22px; height: 22px; }
-		.mt-more { width: 100%; padding: 0.95rem 1rem; }
+	@media (max-width: 640px) {
+		.matches-container { width: calc(100% - 1.5rem); max-width: 31rem; margin-inline: auto; }
+		.match-competition { padding: 0.6rem 0.75rem; gap: 0.75rem; }
+		.competition-name { line-height: 1.35; }
+		.match-detail { grid-template-columns: 1fr; gap: 0.5rem; padding: 0.75rem; }
+		.match-date-time { text-align: left; }
+		.match-teams-score { gap: 0.5rem; }
+		.team { gap: 0.45rem; }
+		.team-shield { width: 24px; height: 24px; }
+		.team-name { font-size: 0.8rem; }
+		.score-wrapper { min-width: 48px; }
+		.btn-more { width: calc(100% - 1.5rem); }
 	}
 </style>
