@@ -180,7 +180,8 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   assert.match(middleware, /clerkApiMiddleware\(context, next\)/);
   assert.match(header, /isStatic=\{true\}/);
   assert.doesNotMatch(header, /Astro\.locals\.currentUser/);
-  assert.match(translations, /interfaceReplacementPattern/);
+  // Traducción por nodo completo: una sola pasada por segmento, sin sustituir fragmentos.
+  assert.match(translations, /translateText\(decode\(text\)\)/);
   assert.doesNotMatch(translations, /html = html\.split\(source\)\.join\(target\)/);
   assert.match(news, /"fields.title"/);
   assert.match(news, /"fields.featuredImage"/);

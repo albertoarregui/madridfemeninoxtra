@@ -1,38 +1,40 @@
 ---
-import { interfaceReplacements } from "../i18n/translate-html";
+// Traduce en el navegador el contenido que pintan los componentes después
+// del HTML del servidor (buscadores, comparador, pestañas de la ficha...).
+// Solo se incluye en las páginas inglesas.
 ---
 
-<script define:vars={{ interfaceReplacements }}>
+<script>
+  import { translateText } from "../i18n/translate-core";
+
   const ignored = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "CODE", "PRE"]);
   const internalExceptions = /^(?:\/en(?:\/|$)|\/api\/|\/_astro\/|\/assets\/|\/icon|\/site\.webmanifest|\/rss\.xml|\/sitemap\.xml)/;
-  const orderedReplacements = [...interfaceReplacements].sort((a, b) => b[0].length - a[0].length);
+  const attributes = ["placeholder", "title", "aria-label", "alt"];
 
-  function translate(value) {
-    let result = value;
-    for (const [source, target] of orderedReplacements) result = result.split(source).join(target);
-    const months = { enero: "January", febrero: "February", marzo: "March", abril: "April", mayo: "May", junio: "June", julio: "July", agosto: "August", septiembre: "September", octubre: "October", noviembre: "November", diciembre: "December" };
-    result = result.replace(/(\d{1,2}) de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de (\d{4})/gi, (_match, day, month, year) => `${day} ${months[month.toLowerCase()]} ${year}`);
-    return result;
+  function translateNode(node: Text) {
+    const parent = node.parentElement;
+    if (!parent || ignored.has(parent.tagName) || parent.isContentEditable) return;
+    const next = translateText(node.nodeValue || "");
+    if (next !== node.nodeValue) node.nodeValue = next;
   }
 
-  function translateElement(root) {
-    if (!(root instanceof Element) || ignored.has(root.tagName)) return;
-
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    for (const node of nodes) {
-      if (node.parentElement && !ignored.has(node.parentElement.tagName)) {
-        const next = translate(node.nodeValue || "");
-        if (next !== node.nodeValue) node.nodeValue = next;
-      }
+  function translateElement(root: Element) {
+    if (ignored.has(root.tagName)) return;
+    // Etiquetas ambiguas (V/E/D, días de la semana) llevan su traducción en data-en.
+    for (const element of [root, ...root.querySelectorAll<HTMLElement>("[data-en]")]) {
+      const en = element.getAttribute("data-en");
+      if (en !== null && element.textContent !== en && element.children.length === 0) element.textContent = en;
     }
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes: Text[] = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+    nodes.forEach(translateNode);
 
-    for (const element of [root, ...root.querySelectorAll("[placeholder], [title], [aria-label]")]) {
-      for (const attribute of ["placeholder", "title", "aria-label"]) {
+    for (const element of [root, ...root.querySelectorAll("[placeholder], [title], [aria-label], img[alt]")]) {
+      for (const attribute of attributes) {
         const value = element.getAttribute(attribute);
         if (!value) continue;
-        const next = translate(value);
+        const next = translateText(value);
         if (next !== value) element.setAttribute(attribute, next);
       }
     }
@@ -47,19 +49,30 @@ import { interfaceReplacements } from "../i18n/translate-html";
 
   function setupEnglishInterface() {
     translateElement(document.body);
-    if (window.__mfxEnglishObserver) return;
-    window.__mfxEnglishObserver = new MutationObserver((mutations) => {
+    const win = window as typeof window & { __mfxEnglishObserver?: MutationObserver };
+    if (win.__mfxEnglishObserver) return;
+    win.__mfxEnglishObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
+        if (mutation.type === "characterData" && mutation.target.nodeType === Node.TEXT_NODE) {
+          translateNode(mutation.target as Text);
+          continue;
+        }
+        if (mutation.type === "attributes" && mutation.target instanceof Element && mutation.attributeName) {
+          const value = mutation.target.getAttribute(mutation.attributeName);
+          if (value) { const next = translateText(value); if (next !== value) mutation.target.setAttribute(mutation.attributeName, next); }
+          continue;
+        }
         for (const node of mutation.addedNodes) {
           if (node instanceof Element) translateElement(node);
-          else if (node.nodeType === Node.TEXT_NODE && node.parentElement) translateElement(node.parentElement);
+          else if (node.nodeType === Node.TEXT_NODE) translateNode(node as Text);
         }
       }
     });
-    window.__mfxEnglishObserver.observe(document.body, { childList: true, subtree: true });
+    win.__mfxEnglishObserver.observe(document.body, {
+      childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: attributes,
+    });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setupEnglishInterface);
-  else setupEnglishInterface();
+  setupEnglishInterface();
   document.addEventListener("astro:page-load", setupEnglishInterface);
 </script>

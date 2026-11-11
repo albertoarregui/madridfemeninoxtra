@@ -57,9 +57,9 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
                         </div>
 
                         <div className="rival-card__stats">
-                            <span className="is-win"><strong>{rival.stats.wins}</strong>V</span>
-                            <span className="is-draw"><strong>{rival.stats.draws}</strong>E</span>
-                            <span className="is-loss"><strong>{rival.stats.losses}</strong>D</span>
+                            <span className="is-win"><strong>{rival.stats.wins}</strong><span data-en="W">V</span></span>
+                            <span className="is-draw"><strong>{rival.stats.draws}</strong><span data-en="D">E</span></span>
+                            <span className="is-loss"><strong>{rival.stats.losses}</strong><span data-en="L">D</span></span>
                             <span><strong>{rival.stats.gf}-{rival.stats.ga}</strong>Goles</span>
                             <span><strong>{rival.stats.cleanSheets}</strong>PaC</span>
                         </div>
