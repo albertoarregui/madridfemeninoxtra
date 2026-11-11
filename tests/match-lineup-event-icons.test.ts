@@ -7,6 +7,6 @@ test("lineup and substitute goal and assist icons use the timeline gold", () => 
 
   assert.match(
     source,
-    /\.lineup-card \.event-icon-small,\s*\.subs-card \.event-icon-small\s*{\s*color: #d4a843;/,
+    /\.lineup-card \.event-icon-small,\s*\.subs-card \.event-icon-small\s*{\s*color: (?:#d4a843|rgb\(var\(--l-gold, 212, 168, 67\)\));/,
   );
 });

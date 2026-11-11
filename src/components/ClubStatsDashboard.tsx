@@ -48,10 +48,10 @@ interface ClubStatsDashboardProps {
     competitions: string[];
 }
 
-const card = "bg-[rgba(10,20,40,0.6)] rounded-xl border border-[rgba(212,168,67,0.15)] transition-all cursor-default group hover:border-[rgba(212,168,67,0.38)] hover:shadow-[0_6px_28px_rgba(212,168,67,0.12)]";
-const cardTitle = "text-[10px] font-bold text-[#888] uppercase tracking-widest group-hover:text-[#d4a843] transition-colors";
-const statNum = "text-3xl font-black text-[#f0f0f0] leading-none group-hover:text-[#d4a843] transition-colors";
-const divider = "w-full h-px bg-[rgba(255,255,255,0.07)]";
+const card = "bg-[rgba(var(--l-field,10,20,40),0.6)] rounded-xl border border-[rgba(212,168,67,0.15)] transition-all cursor-default group hover:border-[rgba(212,168,67,0.38)] hover:shadow-[0_6px_28px_rgba(212,168,67,0.12)]";
+const cardTitle = "text-[10px] font-bold text-[#888] uppercase tracking-widest group-hover:text-[rgb(var(--l-gold,212,168,67))] transition-colors";
+const statNum = "text-3xl font-black text-[rgb(var(--l-ink,240,240,240))] leading-none group-hover:text-[rgb(var(--l-gold,212,168,67))] transition-colors";
+const divider = "w-full h-px bg-[rgba(var(--l-hi,255,255,255),0.07)]";
 
 const OFFICIAL_COMPETITIONS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
 
@@ -288,24 +288,24 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                         <p className={`${cardTitle} mb-1 truncate`}>Partidos</p>
                         <p className={statNum}>{stats.played}</p>
                     </div>
-                    <div className="bg-[rgba(255,255,255,0.06)] p-2.5 rounded-full text-[#888] group-hover:text-[#d4a843] transition-colors flex-shrink-0 ml-2"><Monitor size={20} /></div>
+                    <div className="bg-[rgba(var(--l-hi,255,255,255),0.06)] p-2.5 rounded-full text-[#888] group-hover:text-[rgb(var(--l-gold,212,168,67))] transition-colors flex-shrink-0 ml-2"><Monitor size={20} /></div>
                 </div>
                 <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
                         <p className={`${cardTitle} mb-1 truncate`}>Puntos</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                             <p className={statNum}>{stats.points}</p>
-                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.ppg}/partido)</span>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[rgb(var(--l-gold,212,168,67))]/80 transition-colors whitespace-nowrap">({stats.ppg}/partido)</span>
                         </div>
                     </div>
-                    <div className="bg-[rgba(212,168,67,0.12)] p-2.5 rounded-full text-[#d4a843] flex-shrink-0 ml-2"><Trophy size={20} /></div>
+                    <div className="bg-[rgba(212,168,67,0.12)] p-2.5 rounded-full text-[rgb(var(--l-gold,212,168,67))] flex-shrink-0 ml-2"><Trophy size={20} /></div>
                 </div>
                 <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
                         <p className={`${cardTitle} mb-1 truncate`}>Goles a Favor</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                             <p className={statNum}>{stats.gf}</p>
-                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.gf90}/partido)</span>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[rgb(var(--l-gold,212,168,67))]/80 transition-colors whitespace-nowrap">({stats.gf90}/partido)</span>
                         </div>
                     </div>
                     <div className="bg-[rgba(74,222,128,0.1)] p-2.5 rounded-full text-green-400 flex-shrink-0 ml-2"><Target size={20} /></div>
@@ -315,7 +315,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                         <p className={`${cardTitle} mb-1 truncate`}>Goles en Contra</p>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                             <p className={statNum}>{stats.ga}</p>
-                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[#d4a843]/80 transition-colors whitespace-nowrap">({stats.ga90}/partido)</span>
+                            <span className="text-[10px] text-[#888] font-bold group-hover:text-[rgb(var(--l-gold,212,168,67))]/80 transition-colors whitespace-nowrap">({stats.ga90}/partido)</span>
                         </div>
                     </div>
                     <div className="bg-[rgba(239,68,68,0.1)] p-2.5 rounded-full text-red-400 flex-shrink-0 ml-2"><Shield size={20} /></div>
@@ -328,19 +328,19 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                     <div className="flex items-end justify-between text-center divide-x divide-[rgba(255,255,255,0.08)]">
                         <div className="flex-1 px-2">
                             <div className="text-green-400 mb-2 flex justify-center"><ArrowUpRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.wins}</p>
+                            <p className="text-3xl font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.wins}</p>
                             <p className="text-xs text-[#888] uppercase font-bold mt-1">Victorias</p>
                             <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.wins / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
-                            <div className="text-[#d4a843] mb-2 flex justify-center"><Minus size={28} /></div>
-                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.draws}</p>
+                            <div className="text-[rgb(var(--l-gold,212,168,67))] mb-2 flex justify-center"><Minus size={28} /></div>
+                            <p className="text-3xl font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.draws}</p>
                             <p className="text-xs text-[#888] uppercase font-bold mt-1">Empates</p>
                             <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.draws / stats.played) * 100).toFixed(0)}%</p>
                         </div>
                         <div className="flex-1 px-2">
                             <div className="text-red-400 mb-2 flex justify-center"><ArrowDownRight size={28} /></div>
-                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.losses}</p>
+                            <p className="text-3xl font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.losses}</p>
                             <p className="text-xs text-[#888] uppercase font-bold mt-1">Derrotas</p>
                             <p className="text-sm font-bold text-[#888] font-mono mt-1">{((stats.losses / stats.played) * 100).toFixed(0)}%</p>
                         </div>
@@ -350,17 +350,17 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                 <div className={`${card} p-6 overflow-hidden`}>
                     <div className="flex items-center justify-between mb-4">
                         <h3 className={cardTitle}>Disciplina</h3>
-                        <Swords size={16} className="text-[rgba(212,168,67,0.3)]" />
+                        <Swords size={16} className="text-[rgba(var(--l-gold,212,168,67),0.3)]" />
                     </div>
                     <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                        <div className="col-span-2 flex items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.07)]">
+                        <div className="col-span-2 flex items-center justify-between pb-2 border-b border-[rgba(var(--l-hi,255,255,255),0.07)]">
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-[#888] font-bold uppercase">Faltas</span>
                                 <span className="text-xs text-[#666]">Cometidas vs Provocadas</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-lg font-black text-red-400">{stats.foulsCommitted}</span>
-                                <span className="text-lg font-black text-[rgba(255,255,255,0.15)]">/</span>
+                                <span className="text-lg font-black text-[rgba(var(--l-hi,255,255,255),0.15)]">/</span>
                                 <span className="text-lg font-black text-green-400">{stats.foulsReceived}</span>
                             </div>
                         </div>
@@ -368,25 +368,25 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                             <span className="text-[10px] text-[#888] font-bold uppercase">Amarillas</span>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">A favor</span></div>
-                                <span className="text-sm font-black text-[#f0f0f0]">{stats.yellowsRival}</span>
+                                <span className="text-sm font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.yellowsRival}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-yellow-400 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">En contra</span></div>
-                                <span className="text-sm font-black text-[#f0f0f0]">{stats.yellowsRM}</span>
+                                <span className="text-sm font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.yellowsRM}</span>
                             </div>
                         </div>
                         <div className="flex flex-col gap-1">
                             <span className="text-[10px] text-[#888] font-bold uppercase">Rojas</span>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">A favor</span></div>
-                                <span className="text-sm font-black text-[#f0f0f0]">{stats.redsRival}</span>
+                                <span className="text-sm font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.redsRival}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5"><div className="w-2.5 h-3.5 bg-red-600 rounded-sm"></div><span className="text-sm font-bold text-[#888] uppercase">En contra</span></div>
-                                <span className="text-sm font-black text-[#f0f0f0]">{stats.redsRM}</span>
+                                <span className="text-sm font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.redsRM}</span>
                             </div>
                         </div>
-                        <div className="col-span-2 pt-2 border-t border-[rgba(255,255,255,0.07)] flex items-center justify-between">
+                        <div className="col-span-2 pt-2 border-t border-[rgba(var(--l-hi,255,255,255),0.07)] flex items-center justify-between">
                             <span className="text-[10px] text-[#888] font-bold uppercase">Penaltis</span>
                             <div className="flex gap-4">
                                 <div className="flex items-center gap-2"><span className="text-[10px] font-bold text-[#888] uppercase">A favor</span><span className="text-sm font-black text-green-400">{stats.penaltisRM}</span></div>
@@ -402,17 +402,17 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                             <p className={`${cardTitle} mb-1`}>Diferencia de Goles</p>
                             <p className={`text-3xl font-black ${stats.gd.startsWith('+') ? 'text-green-400' : 'text-red-400'}`}>{stats.gd}</p>
                         </div>
-                        <TrendingUp size={24} className="text-[rgba(212,168,67,0.25)] mt-0.5" />
+                        <TrendingUp size={24} className="text-[rgba(var(--l-gold,212,168,67),0.25)] mt-0.5" />
                     </div>
                     <div className={divider}></div>
                     <div className="flex items-start justify-between">
                         <div>
                             <p className={`${cardTitle} mb-1`}>Porterías a Cero</p>
-                            <p className="text-3xl font-black text-[#f0f0f0]">{stats.cleanSheets}</p>
+                            <p className="text-3xl font-black text-[rgb(var(--l-ink,240,240,240))]">{stats.cleanSheets}</p>
                         </div>
                         <div className="text-right">
                             <p className={`${cardTitle} mb-1`}>% Imbatibilidad</p>
-                            <p className="text-lg font-bold text-[#c8c8c8]">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
+                            <p className="text-lg font-bold text-[rgb(var(--l-ink,200,200,200))]">{((stats.cleanSheets / stats.played) * 100).toFixed(1)}%</p>
                         </div>
                     </div>
                 </div>
@@ -423,7 +423,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                     <h3 className={cardTitle}>Evolución de Asistencia</h3>
                     <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
                         <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#d4a843]"></div><span className="text-[#888]">Asistencia</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full border border-[rgba(255,255,255,0.3)] border-dashed bg-transparent"></div><span className="text-[#666]">Capacidad</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full border border-[rgba(var(--l-hi,255,255,255),0.3)] border-dashed bg-transparent"></div><span className="text-[#666]">Capacidad</span></div>
                     </div>
                 </div>
                 <div className="h-64 w-full relative">
@@ -467,9 +467,9 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                                                 <line x1={getX(i)} y1="0" x2={getX(i)} y2="300" stroke="#d4a843" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
                                                 <circle cx={getX(i)} cy={getY(d.attendance)} r="4" fill="#d4a843" stroke="#060d1c" strokeWidth="1.5" vectorEffect="non-scaling-stroke" className="opacity-0 group-hover/point:opacity-100 transition-opacity" />
                                                 <foreignObject x={Math.max(0, Math.min(860, getX(i) - 70))} y={Math.max(0, getY(d.attendance) - 115)} width="140" height="110" className="overflow-visible pointer-events-none">
-                                                    <div className="transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[#060d1c] border border-[rgba(212,168,67,0.2)] text-white text-[10px] p-2 rounded shadow-lg whitespace-nowrap pointer-events-none w-full">
-                                                        <p className="font-bold border-b border-[rgba(212,168,67,0.2)] pb-1 mb-1 text-[#d4a843]">{d.fullDate}</p>
-                                                        <p className="text-[#c8c8c8] mb-1">vs {d.rival}</p>
+                                                    <div className="transition-opacity opacity-0 group-hover/point:opacity-100 z-[100] bg-[rgb(var(--l-bg,6,13,28))] border border-[rgba(212,168,67,0.2)] text-white text-[10px] p-2 rounded shadow-lg whitespace-nowrap pointer-events-none w-full">
+                                                        <p className="font-bold border-b border-[rgba(212,168,67,0.2)] pb-1 mb-1 text-[rgb(var(--l-gold,212,168,67))]">{d.fullDate}</p>
+                                                        <p className="text-[rgb(var(--l-ink,200,200,200))] mb-1">vs {d.rival}</p>
                                                         <div className="flex justify-between gap-3"><span className="text-[#888]">Asistencia:</span><span className="font-bold">{d.attendance.toLocaleString('es-ES')}</span></div>
                                                         <div className="flex justify-between gap-3"><span className="text-[#888]">Capacidad:</span><span className="font-mono text-[#666]">{d.capacity.toLocaleString('es-ES')}</span></div>
                                                         <div className="mt-1 pt-1 border-t border-[rgba(212,168,67,0.2)] flex justify-between gap-3"><span className="text-[#888]">% Ocupación:</span><span className={`font-bold ${d.attendance / d.capacity > 0.8 ? 'text-green-400' : 'text-white'}`}>{d.capacity > 0 ? ((d.attendance / d.capacity) * 100).toFixed(1) : 0}%</span></div>
@@ -493,7 +493,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
             <div className={`${card} p-6 mb-6 relative`}>
                 <div className="flex items-center justify-between mb-8">
                     <h3 className={cardTitle}>Distribución de Goles (Minutos)</h3>
-                    <Clock size={16} className="text-[rgba(212,168,67,0.3)]" />
+                    <Clock size={16} className="text-[rgba(var(--l-gold,212,168,67),0.3)]" />
                 </div>
                 <div className="w-full">
                     <div className="flex items-end justify-between h-40 gap-1 w-full pt-6">
@@ -502,20 +502,20 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                                 <div className="w-full relative h-full flex flex-col items-center justify-end">
                                     {bucket.count > 0 && (
                                         <div className="relative h-8 w-full flex items-center justify-center mb-1">
-                                            <span className="absolute text-[#d4a843] font-black text-xs opacity-70 group-hover:opacity-0 transition-opacity">
+                                            <span className="absolute text-[rgb(var(--l-gold,212,168,67))] font-black text-xs opacity-70 group-hover:opacity-0 transition-opacity">
                                                 {bucket.count}
                                             </span>
-                                            <span className="absolute text-[#d4a843] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity z-[100]">
+                                            <span className="absolute text-[rgb(var(--l-gold,212,168,67))] font-black text-xs opacity-0 group-hover:opacity-100 transition-opacity z-[100]">
                                                 {bucket.sharePercent}%
                                             </span>
                                         </div>
                                     )}
                                     <div
-                                        className={`w-full transition-all duration-300 ease-out rounded-t-sm relative ${bucket.count > 0 ? 'bg-[#d4a843]' : 'bg-[rgba(255,255,255,0.05)]'}`}
+                                        className={`w-full transition-all duration-300 ease-out rounded-t-sm relative ${bucket.count > 0 ? 'bg-[#d4a843]' : 'bg-[rgba(var(--l-hi,255,255,255),0.05)]'}`}
                                         style={{ height: `${bucket.heightPercent}%`, minHeight: bucket.count > 0 ? '4px' : '2px' }}
                                     ></div>
                                 </div>
-                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 min-h-[14px] flex items-center justify-center transition-colors ${bucket.label.includes('+') ? 'text-[#d4a843] font-black' : 'text-[rgba(255,255,255,0.35)] font-medium group-hover:text-[#888]'}`}>
+                                <span className={`text-[9px] font-mono text-center tracking-tighter w-full leading-none mt-2 min-h-[14px] flex items-center justify-center transition-colors ${bucket.label.includes('+') ? 'text-[rgb(var(--l-gold,212,168,67))] font-black' : 'text-[rgba(var(--l-hi,255,255,255),0.35)] font-medium group-hover:text-[#888]'}`}>
                                     {bucket.label}
                                 </span>
                             </div>
@@ -569,13 +569,13 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                             {players.map((p, i) => (
                                 <a key={p.name} href={`/jugadoras/${getSlug(p.name)}`} className="flex items-center justify-between group/p hover:bg-[rgba(212,168,67,0.06)] p-2 -m-2 rounded-lg transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[#d4a843]' : 'text-[rgba(212,168,67,0.18)]'}`}>{i + 1}</span>
-                                        <div className="w-10 h-10 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden border-2 border-[#060d1c] shadow-sm">
+                                        <span className={`text-lg font-black w-4 ${i === 0 ? 'text-[rgb(var(--l-gold,212,168,67))]' : 'text-[rgba(var(--l-gold,212,168,67),0.18)]'}`}>{i + 1}</span>
+                                        <div className="w-10 h-10 rounded-full bg-[rgba(var(--l-hi,255,255,255),0.06)] overflow-hidden border-2 border-[rgb(var(--l-bg,6,13,28))] shadow-sm">
                                             <img src={getPlayerImage(p.name, type, p.photo)} alt={p.name} width={80} height={107} className="w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).src = '/assets/jugadoras/placeholder.png'; }} />
                                         </div>
-                                        <span className="text-sm font-bold text-[#c8c8c8] group-hover/p:text-[#d4a843] transition-colors">{p.name}</span>
+                                        <span className="text-sm font-bold text-[rgb(var(--l-ink,200,200,200))] group-hover/p:text-[rgb(var(--l-gold,212,168,67))] transition-colors">{p.name}</span>
                                     </div>
-                                    <span className="text-lg font-black text-[#f0f0f0]">{stat(p)}</span>
+                                    <span className="text-lg font-black text-[rgb(var(--l-ink,240,240,240))]">{stat(p)}</span>
                                 </a>
                             ))}
                         </div>

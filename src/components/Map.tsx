@@ -57,24 +57,24 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     <div className="cursor-pointer group relative">
                         {marker.type === 'match' ? (
                             <div
-                                style={{ display:'inline-flex', flexDirection:'column', background:'rgba(6,13,28,0.95)', border:'1px solid rgba(212,168,67,0.55)', borderRadius:'4px', overflow:'hidden', maxWidth:'160px', boxShadow:'0 2px 14px rgba(0,0,0,0.55), 0 0 8px rgba(212,168,67,0.12)', transition:'transform 0.2s, box-shadow 0.2s, border-color 0.2s' }}
+                                style={{ display:'inline-flex', flexDirection:'column', background:'rgba(var(--l-bg, 6, 13, 28), 0.95)', border:'1px solid rgba(212,168,67,0.55)', borderRadius:'4px', overflow:'hidden', maxWidth:'160px', boxShadow:'0 2px 14px rgba(0,0,0,0.55), 0 0 8px rgba(212,168,67,0.12)', transition:'transform 0.2s, box-shadow 0.2s, border-color 0.2s' }}
                                 onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform='translateY(-2px)'; el.style.borderColor='rgba(212,168,67,0.9)'; el.style.boxShadow='0 6px 20px rgba(0,0,0,0.65), 0 0 16px rgba(212,168,67,0.28)'; }}
                                 onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.borderColor='rgba(212,168,67,0.55)'; el.style.boxShadow='0 2px 14px rgba(0,0,0,0.55), 0 0 8px rgba(212,168,67,0.12)'; }}
                             >
                                 {marker.imageUrl && (
                                     <div style={{ width:'100%', aspectRatio:'16/7', overflow:'hidden', position:'relative', flexShrink:0 }}>
                                         <img src={marker.imageUrl} alt={marker.label} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, top:0, background:'linear-gradient(to bottom, transparent 40%, rgba(6,13,28,0.7) 100%)' }} />
+                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, top:0, background:'linear-gradient(to bottom, transparent 40%, rgba(var(--l-bg, 6, 13, 28), 0.7) 100%)' }} />
                                     </div>
                                 )}
                                 <div style={{ padding:'4px 8px' }}>
-                                    <span style={{ color:'rgba(220,230,240,0.9)', fontFamily:"'DM Sans', sans-serif", fontSize:'0.58rem', fontWeight:600 }}>
+                                    <span style={{ color:'rgba(var(--l-ink, 220, 230, 240), 0.9)', fontFamily:"'DM Sans', sans-serif", fontSize:'0.58rem', fontWeight:600 }}>
                                         {marker.label}
                                     </span>
                                 </div>
                             </div>
                         ) : marker.imageUrl ? (
-                            <div style={{ width:'44px', height:'44px', borderRadius:'50%', border:'2px solid rgba(212,168,67,0.7)', boxShadow:'0 0 12px rgba(212,168,67,0.3)', overflow:'hidden', background:'#06080f', transition:'transform 0.2s, box-shadow 0.2s' }}
+                            <div style={{ width:'44px', height:'44px', borderRadius:'50%', border:'2px solid rgba(212,168,67,0.7)', boxShadow:'0 0 12px rgba(212,168,67,0.3)', overflow:'hidden', background:'rgb(var(--l-bg, 6, 8, 15))', transition:'transform 0.2s, box-shadow 0.2s' }}
                                 onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1.15)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 20px rgba(212,168,67,0.6)'; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform='scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow='0 0 12px rgba(212,168,67,0.3)'; }}
                             >
@@ -82,7 +82,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                             </div>
                         ) : (
                             <div className="hover:scale-110 transition-transform">
-                                <MapPin className="w-7 h-7 drop-shadow-md" style={{ color:'#d4a843', fill:'rgba(212,168,67,0.4)' }} />
+                                <MapPin className="w-7 h-7 drop-shadow-md" style={{ color:'rgb(var(--l-gold, 212, 168, 67))', fill:'rgba(212,168,67,0.4)' }} />
                             </div>
                         )}
 
@@ -115,20 +115,20 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             `}</style>
 
             {webglReady === false ? (
-                <div role="status" style={{ height: '100%', overflowY: 'auto', background: '#0c1222', color: '#f2f2f2', padding: '1.5rem' }}>
+                <div role="status" style={{ height: '100%', overflowY: 'auto', background: 'rgb(var(--l-card, 12, 18, 34))', color: 'rgb(var(--l-ink, 242, 242, 242))', padding: '1.5rem' }}>
                     <strong>El mapa no está disponible en este navegador.</strong>
-                    <p style={{ color: '#bfc6d5', marginTop: '0.5rem', marginBottom: '1rem' }}>Puedes consultar los lugares sin activar WebGL:</p>
+                    <p style={{ color: 'rgb(var(--l-ink, 191, 198, 213))', marginTop: '0.5rem', marginBottom: '1rem' }}>Puedes consultar los lugares sin activar WebGL:</p>
                     <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem' }}>
                         {markers.map((marker, index) => (
                             <li key={index} style={{ marginBottom: '0.65rem' }}>
                                 <strong>{marker.label}</strong>
-                                {marker.description && <span style={{ display: 'block', color: '#bfc6d5' }}>{marker.description}</span>}
+                                {marker.description && <span style={{ display: 'block', color: 'rgb(var(--l-ink, 191, 198, 213))' }}>{marker.description}</span>}
                             </li>
                         ))}
                     </ul>
                 </div>
             ) : webglReady === null ? (
-                <div role="status" style={{ display: 'grid', placeItems: 'center', height: '100%', background: '#0c1222', color: '#bfc6d5' }}>Preparando mapa…</div>
+                <div role="status" style={{ display: 'grid', placeItems: 'center', height: '100%', background: 'rgb(var(--l-card, 12, 18, 34))', color: 'rgb(var(--l-ink, 191, 198, 213))' }}>Preparando mapa…</div>
             ) : (
             <Map
                 initialViewState={{
@@ -157,11 +157,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                         className="custom-popup"
                         maxWidth="320px"
                     >
-                        <div style={{ minWidth:'260px', maxWidth:'90vw', background:'rgba(8,16,34,0.97)', borderRadius:'4px', overflow:'hidden', fontFamily:"'DM Sans', sans-serif" }}>
+                        <div style={{ minWidth:'260px', maxWidth:'90vw', background:'rgba(var(--l-card, 8, 16, 34), 0.97)', borderRadius:'4px', overflow:'hidden', fontFamily:"'DM Sans', sans-serif" }}>
 
                             <button
                                 onClick={(e) => { e.stopPropagation(); setPopupInfo(null); }}
-                                style={{ position:'absolute', top:'0.6rem', right:'0.6rem', zIndex:10, background:'transparent', border:'none', cursor:'pointer', color:'rgba(200,210,220,0.5)', padding:'4px', lineHeight:1 }}
+                                style={{ position:'absolute', top:'0.6rem', right:'0.6rem', zIndex:10, background:'transparent', border:'none', cursor:'pointer', color:'rgba(var(--l-ink, 200, 210, 220), 0.5)', padding:'4px', lineHeight:1 }}
                                 aria-label="Cerrar"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
@@ -169,31 +169,31 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
                             {popupInfo.type === 'player' && (
                                 <div style={{ display:'flex', flexDirection:'column' }}>
-                                    <div style={{ width:'100%', height:'200px', background:'#060d1c', position:'relative', display:'flex', alignItems:'flex-end', justifyContent:'center', overflow:'hidden' }}>
+                                    <div style={{ width:'100%', height:'200px', background:'rgb(var(--l-bg, 6, 13, 28))', position:'relative', display:'flex', alignItems:'flex-end', justifyContent:'center', overflow:'hidden' }}>
                                         <img
                                             src={popupInfo.imageUrl}
                                             alt={popupInfo.label}
                                             style={{ width:'100%', height:'100%', objectFit:'contain', objectPosition:'bottom center' }}
                                         />
-                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(to top, rgba(8,16,34,0.98) 0%, rgba(8,16,34,0.6) 50%, transparent 100%)', padding:'2rem 1rem 0.75rem', textAlign:'center' }}>
-                                            <span style={{ color:'#f0f0f0', fontFamily:"'Cinzel', serif", fontSize:'1.1rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', display:'block', lineHeight:1.1 }}>{popupInfo.label}</span>
+                                        <div style={{ position:'absolute', bottom:0, left:0, right:0, background:'linear-gradient(to top, rgba(var(--l-card, 8, 16, 34), 0.98) 0%, rgba(var(--l-card, 8, 16, 34), 0.6) 50%, transparent 100%)', padding:'2rem 1rem 0.75rem', textAlign:'center' }}>
+                                            <span style={{ color:'rgb(var(--l-ink, 240, 240, 240))', fontFamily:"'Cinzel', serif", fontSize:'1.1rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', display:'block', lineHeight:1.1 }}>{popupInfo.label}</span>
                                         </div>
                                     </div>
-                                    <div style={{ padding:'0.85rem 1rem 1rem', background:'rgba(8,16,34,0.97)' }}>
+                                    <div style={{ padding:'0.85rem 1rem 1rem', background:'rgba(var(--l-card, 8, 16, 34), 0.97)' }}>
                                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', marginBottom:'0.9rem', textAlign:'center' }}>
                                             <div>
-                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(212,168,67,0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Posición</span>
-                                                <span style={{ color:'rgba(200,210,220,0.85)', fontSize:'0.75rem' }}>{popupInfo.data?.posicion || '-'}</span>
+                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(var(--l-gold, 212, 168, 67), 0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Posición</span>
+                                                <span style={{ color:'rgba(var(--l-ink, 200, 210, 220), 0.85)', fontSize:'0.75rem' }}>{popupInfo.data?.posicion || '-'}</span>
                                             </div>
                                             <div>
-                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(212,168,67,0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Origen</span>
-                                                <span style={{ color:'rgba(200,210,220,0.85)', fontSize:'0.75rem' }}>{popupInfo.description?.replace('Nacida en ', '') || '-'}</span>
+                                                <span style={{ display:'block', fontFamily:"'Cinzel', serif", fontSize:'0.48rem', letterSpacing:'0.16em', color:'rgba(var(--l-gold, 212, 168, 67), 0.55)', textTransform:'uppercase', marginBottom:'0.25rem' }}>Origen</span>
+                                                <span style={{ color:'rgba(var(--l-ink, 200, 210, 220), 0.85)', fontSize:'0.75rem' }}>{popupInfo.description?.replace('Nacida en ', '') || '-'}</span>
                                             </div>
                                         </div>
 
                                         <a
                                             href={popupInfo.slug}
-                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'#d4a843', fontFamily:"'Cinzel', serif", fontSize:'0.55rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.55rem 1rem', borderRadius:'2px', textDecoration:'none', transition:'background 0.2s', boxSizing:'border-box' }}
+                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'rgb(var(--l-gold, 212, 168, 67))', fontFamily:"'Cinzel', serif", fontSize:'0.55rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.55rem 1rem', borderRadius:'2px', textDecoration:'none', transition:'background 0.2s', boxSizing:'border-box' }}
                                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.2)')}
                                             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.1)')}
                                         >
@@ -210,25 +210,25 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                     {popupInfo.imageUrl ? (
                                         <div style={{ width:'100%', height:'140px', position:'relative', overflow:'hidden', flexShrink:0 }}>
                                             <img src={popupInfo.imageUrl} alt={popupInfo.label} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                                            <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(8,16,34,0.97) 0%, rgba(8,16,34,0.2) 55%, transparent 100%)' }} />
+                                            <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(var(--l-card, 8, 16, 34), 0.97) 0%, rgba(var(--l-card, 8, 16, 34), 0.2) 55%, transparent 100%)' }} />
                                             <div style={{ position:'absolute', bottom:'0.6rem', left:'1rem', right:'2.5rem' }}>
-                                                <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.9rem', fontWeight:700, color:'#f0f0f0', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2, textShadow:'0 1px 6px rgba(0,0,0,0.9)' }}>
+                                                <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.9rem', fontWeight:700, color:'rgb(var(--l-ink, 240, 240, 240))', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2, textShadow:'0 1px 6px rgba(0,0,0,0.9)' }}>
                                                     {popupInfo.label}
                                                 </h3>
                                                 {popupInfo.data?.count && (
-                                                    <span style={{ fontSize:'0.6rem', color:'rgba(212,168,67,0.85)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+                                                    <span style={{ fontSize:'0.6rem', color:'rgba(var(--l-gold, 212, 168, 67), 0.85)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
                                                         {popupInfo.data.count} partidos jugados aquí
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                     ) : (
-                                        <div style={{ padding:'0.85rem 2.5rem 0.75rem 1rem', borderBottom:'1px solid rgba(212,168,67,0.15)', background:'rgba(12,20,40,0.6)' }}>
-                                            <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.85rem', fontWeight:700, color:'#f0f0f0', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2 }}>
+                                        <div style={{ padding:'0.85rem 2.5rem 0.75rem 1rem', borderBottom:'1px solid rgba(212,168,67,0.15)', background:'rgba(var(--l-field, 12, 20, 40), 0.6)' }}>
+                                            <h3 style={{ fontFamily:"'Cinzel', serif", fontSize:'0.85rem', fontWeight:700, color:'rgb(var(--l-ink, 240, 240, 240))', textTransform:'uppercase', letterSpacing:'0.05em', margin:0, lineHeight:1.2 }}>
                                                 {popupInfo.label}
                                             </h3>
                                             {popupInfo.data?.count && (
-                                                <span style={{ fontSize:'0.6rem', color:'rgba(212,168,67,0.65)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
+                                                <span style={{ fontSize:'0.6rem', color:'rgba(var(--l-gold, 212, 168, 67), 0.65)', letterSpacing:'0.1em', textTransform:'uppercase' }}>
                                                     {popupInfo.data.count} partidos jugados aquí
                                                 </span>
                                             )}
@@ -246,15 +246,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                 const resultColor = isWin ? '#4ade80' : isLoss ? '#f87171' : '#fbbf24';
                                                 const resultBg = isWin ? 'rgba(74,222,128,0.1)' : isLoss ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)';
                                                 return (
-                                                    <div key={idx} style={{ marginBottom:'0.5rem', padding:'0.65rem 0.75rem', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(212,168,67,0.1)', borderRadius:'3px' }}>
+                                                    <div key={idx} style={{ marginBottom:'0.5rem', padding:'0.65rem 0.75rem', background:'rgba(var(--l-hi, 255, 255, 255), 0.03)', border:'1px solid rgba(212,168,67,0.1)', borderRadius:'3px' }}>
                                                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'0.4rem' }}>
-                                                            <span style={{ fontSize:'0.6rem', color:'rgba(180,190,210,0.55)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em' }}>{m.fecha_formateada}</span>
+                                                            <span style={{ fontSize:'0.6rem', color:'rgba(var(--l-ink, 180, 190, 210), 0.55)', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em' }}>{m.fecha_formateada}</span>
                                                             {m.logo_competicion && (
                                                                 <img src={m.logo_competicion} alt={m.competicion_nombre} style={{ height:'16px', width:'auto', objectFit:'contain', opacity:0.8 }} title={m.competicion_nombre} />
                                                             )}
                                                         </div>
-                                                        <div style={{ textAlign:'center', marginBottom:'0.5rem', fontSize:'0.75rem', color:'rgba(220,230,240,0.85)', fontWeight:600, lineHeight:1.3 }}>
-                                                            {m.club_local} <span style={{ color:'rgba(180,190,210,0.4)', fontSize:'0.65rem', margin:'0 0.3rem', fontWeight:400 }}>vs</span> {m.club_visitante}
+                                                        <div style={{ textAlign:'center', marginBottom:'0.5rem', fontSize:'0.75rem', color:'rgba(var(--l-ink, 220, 230, 240), 0.85)', fontWeight:600, lineHeight:1.3 }}>
+                                                            {m.club_local} <span style={{ color:'rgba(var(--l-ink, 180, 190, 210), 0.4)', fontSize:'0.65rem', margin:'0 0.3rem', fontWeight:400 }}>vs</span> {m.club_visitante}
                                                         </div>
                                                         <div style={{ textAlign:'center', marginBottom:'0.6rem' }}>
                                                             <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:'1rem', color:resultColor, background:resultBg, padding:'2px 16px', borderRadius:'2px', border:`1px solid ${resultColor}40` }}>
@@ -265,7 +265,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                             href={`/partidos/${m.slug}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'#d4a843', fontFamily:"'Cinzel', serif", fontSize:'0.5rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.45rem 0.75rem', borderRadius:'2px', textDecoration:'none', boxSizing:'border-box', transition:'background 0.2s' }}
+                                                            style={{ display:'block', width:'100%', textAlign:'center', background:'rgba(212,168,67,0.1)', border:'1px solid rgba(212,168,67,0.35)', color:'rgb(var(--l-gold, 212, 168, 67))', fontFamily:"'Cinzel', serif", fontSize:'0.5rem', letterSpacing:'0.18em', textTransform:'uppercase', padding:'0.45rem 0.75rem', borderRadius:'2px', textDecoration:'none', boxSizing:'border-box', transition:'background 0.2s' }}
                                                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.2)')}
                                                             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.1)')}
                                                         >
@@ -275,13 +275,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                                 );
                                             })}
                                             {popupInfo.data.matches.length > 5 && (
-                                                <p style={{ textAlign:'center', fontSize:'0.65rem', color:'rgba(180,190,210,0.4)', margin:'0.5rem 0 0', fontStyle:'italic' }}>
+                                                <p style={{ textAlign:'center', fontSize:'0.65rem', color:'rgba(var(--l-ink, 180, 190, 210), 0.4)', margin:'0.5rem 0 0', fontStyle:'italic' }}>
                                                     ...y {popupInfo.data.matches.length - 5} más
                                                 </p>
                                             )}
                                         </div>
                                     ) : (
-                                        <p style={{ padding:'1rem', fontSize:'0.75rem', color:'rgba(180,190,210,0.5)', fontStyle:'italic' }}>Sin información detallada de partidos.</p>
+                                        <p style={{ padding:'1rem', fontSize:'0.75rem', color:'rgba(var(--l-ink, 180, 190, 210), 0.5)', fontStyle:'italic' }}>Sin información detallada de partidos.</p>
                                     )}
                                 </div>
                             )}

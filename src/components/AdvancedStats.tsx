@@ -123,8 +123,8 @@ function XGTooltip({ active, payload }: any) {
             {d.rival && <p className="adv-tooltip-title">{d.rival}</p>}
             {fecha && <p className="adv-tooltip-sub">{fecha} · {d.competicion}</p>}
             <div className="adv-tooltip-divider" />
-            <p style={{ color: '#d4a843', margin: 0 }}>xG: <strong>{d.xg.toFixed(2)}</strong></p>
-            <p style={{ color: 'rgba(200,210,220,0.85)', margin: 0 }}>Goles: <strong>{d.goles}</strong></p>
+            <p style={{ color: 'rgb(var(--l-gold, 212, 168, 67))', margin: 0 }}>xG: <strong>{d.xg.toFixed(2)}</strong></p>
+            <p style={{ color: 'rgba(var(--l-ink, 200, 210, 220), 0.85)', margin: 0 }}>Goles: <strong>{d.goles}</strong></p>
             {label && (
                 <p style={{ color: over ? '#4ade80' : '#f87171', margin: 0, fontSize: '0.72rem' }}>{label}</p>
             )}
@@ -184,7 +184,7 @@ function XGChart({ data }: { data: MatchPoint[] }) {
                         cursor={{ fill: 'rgba(212,168,67,0.06)' }}
                     />
                     <Legend
-                        wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: '8px', color: 'rgba(200,210,220,0.7)' }}
+                        wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: '8px', color: 'rgba(var(--l-ink, 200, 210, 220), 0.7)' }}
                         formatter={v => v === 'xg' ? 'xG esperado' : 'Goles reales'}
                     />
                     <Bar dataKey="goles" name="goles" barSize={barSize} radius={[3, 3, 0, 0]}>
@@ -556,8 +556,8 @@ function CumXGTooltip({ active, payload }: any) {
             {d.rival && <p className="adv-tooltip-title">{d.rival}</p>}
             {fecha && <p className="adv-tooltip-sub">{fecha} · {d.competicion}</p>}
             <div className="adv-tooltip-divider" />
-            <p style={{ color: 'rgba(200,210,220,0.85)', margin: 0 }}>Goles acum.: <strong>{d.cumGoals}</strong></p>
-            <p style={{ color: '#d4a843', margin: 0 }}>xG acum.: <strong>{d.cumXg.toFixed(1)}</strong></p>
+            <p style={{ color: 'rgba(var(--l-ink, 200, 210, 220), 0.85)', margin: 0 }}>Goles acum.: <strong>{d.cumGoals}</strong></p>
+            <p style={{ color: 'rgb(var(--l-gold, 212, 168, 67))', margin: 0 }}>xG acum.: <strong>{d.cumXg.toFixed(1)}</strong></p>
             <p style={{ color: over ? '#4ade80' : '#f87171', margin: 0, fontSize: '0.72rem' }}>
                 {over ? '↑ +' : '↓ '}{diff.toFixed(1)} sobre lo esperado
             </p>
@@ -592,7 +592,7 @@ function CumulativeChart({ data }: { data: MatchPoint[] }) {
                         tick={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 9 : 10, fill: 'rgba(200,210,220,0.5)' }}
                         axisLine={false} tickLine={false} />
                     <RTooltip content={<CumXGTooltip />} cursor={{ stroke: 'rgba(212,168,67,0.25)' }} />
-                    <Legend wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: 8, color: 'rgba(200,210,220,0.7)' }} />
+                    <Legend wrapperStyle={{ fontFamily: 'DM Sans, sans-serif', fontSize: small ? 10 : 11, paddingTop: 8, color: 'rgba(var(--l-ink, 200, 210, 220), 0.7)' }} />
                     <Area type="monotone" dataKey="cumGoals" name="Goles acumulados"
                         stroke="#d4a843" strokeWidth={2.5} fill="url(#cumGoalsFill)"
                         dot={false} activeDot={{ r: 5, fill: '#d4a843' }} />
@@ -612,7 +612,7 @@ function FunnelTooltip({ active, payload }: any) {
         <div className="adv-tooltip">
             <p className="adv-tooltip-title">{d.stage}</p>
             <div className="adv-tooltip-divider" />
-            <p style={{ color: '#d4a843', margin: 0 }}><strong>{d.value}</strong></p>
+            <p style={{ color: 'rgb(var(--l-gold, 212, 168, 67))', margin: 0 }}><strong>{d.value}</strong></p>
         </div>
     );
 }

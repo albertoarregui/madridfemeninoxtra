@@ -108,7 +108,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                         onClick={() => handleCategoryChange(cat)}
                         style={selectedCategory === cat
                             ? { background: '#d4a843', borderColor: '#d4a843', color: '#060d1c', border: '1px solid #d4a843', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }
-                            : { background: 'transparent', borderColor: 'rgba(212,168,67,0.25)', color: 'rgba(212,168,67,0.65)', border: '1px solid rgba(212,168,67,0.25)', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }}
+                            : { background: 'transparent', borderColor: 'rgba(212,168,67,0.25)', color: 'rgba(var(--l-gold, 212, 168, 67), 0.65)', border: '1px solid rgba(212,168,67,0.25)', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }}
                     >
                         {cat}
                     </button>
@@ -146,8 +146,8 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                     ))
                 ) : (
                     <div className="py-24 text-center">
-                        <Activity style={{ color: 'rgba(212,168,67,0.35)', margin: '0 auto 1rem' }} size={64} />
-                        <p style={{ color: 'rgba(200,210,220,0.5)', fontFamily: 'DM Sans, sans-serif', fontSize: '1.1rem' }}>
+                        <Activity style={{ color: 'rgba(var(--l-gold, 212, 168, 67), 0.35)', margin: '0 auto 1rem' }} size={64} />
+                        <p style={{ color: 'rgba(var(--l-ink, 200, 210, 220), 0.5)', fontFamily: 'DM Sans, sans-serif', fontSize: '1.1rem' }}>
                             {searchQuery.trim()
                                 ? `No hay resultados para "${searchQuery}"`
                                 : 'No hay noticias en esta sección'}

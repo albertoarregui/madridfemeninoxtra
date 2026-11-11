@@ -35,15 +35,19 @@ test("la interfaz inglesa traduce textos editoriales, rankings y fechas", () => 
   assert.match(html, /href="\/en\/estadisticas\/avanzadas">Methodology/);
 });
 
-test("layout publica alternates de idioma y mantiene un único tema oscuro", () => {
+test("layout publica alternates de idioma y ofrece modo claro con el oscuro por defecto", () => {
   const layout = read("src/layouts/Layout.astro");
   const css = read("src/styles/global.css");
   assert.match(layout, /hreflang="es"/);
   assert.match(layout, /hreflang="en"/);
   assert.match(layout, /<EnglishInterface/);
-  assert.doesNotMatch(layout, /mfx-theme|data-theme=/);
-  assert.doesNotMatch(css, /html\[data-theme="light"\]/);
-  assert.doesNotMatch(read("src/components/Header.astro"), /data-theme-toggle|theme-toggle/);
+  // El tema se aplica antes de pintar y se conserva en las navegaciones del router.
+  assert.match(layout, /localStorage\.getItem\("mfx-theme"\)/);
+  assert.match(layout, /astro:before-swap/);
+  assert.match(css, /:root\[data-theme="light"\] \{/);
+  // En oscuro no hay variables --l-*: cada color conserva su valor original.
+  assert.doesNotMatch(css.slice(0, css.indexOf(':root[data-theme="light"]')), /--l-bg:/);
+  assert.match(read("src/components/Header.astro"), /data-theme-toggle/);
 });
 
 test("el rewrite inglés corrige el estado heredado sin convertir la página 404 en 200", () => {

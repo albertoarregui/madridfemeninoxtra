@@ -123,6 +123,41 @@ const siteSchema = {
 <html lang={locale}>
 	<head>
 		<meta charset="UTF-8" />
+		<script is:inline>
+			// Tema guardado antes de pintar; el router de Astro sustituye los
+			// atributos de <html> en cada navegación, así que se vuelve a aplicar.
+			(function () {
+				function apply(doc) {
+					var theme = null;
+					try { theme = localStorage.getItem("mfx-theme"); } catch (e) {}
+					if (theme === "light") doc.documentElement.setAttribute("data-theme", "light");
+					else doc.documentElement.removeAttribute("data-theme");
+				}
+				apply(document);
+				if (window.__mfxTheme) return;
+				window.__mfxTheme = true;
+				document.addEventListener("astro:before-swap", function (event) { apply(event.newDocument); });
+				function sync() {
+					var light = document.documentElement.getAttribute("data-theme") === "light";
+					document.querySelectorAll("[data-theme-toggle]").forEach(function (button) {
+						button.setAttribute("aria-pressed", String(light));
+						button.setAttribute("aria-label", button.getAttribute(light ? "data-label-dark" : "data-label-light") || "");
+					});
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta) meta.setAttribute("content", light ? "#f6f3ec" : "#090909");
+				}
+				document.addEventListener("click", function (event) {
+					var button = event.target instanceof Element ? event.target.closest("[data-theme-toggle]") : null;
+					if (!button) return;
+					var light = document.documentElement.getAttribute("data-theme") !== "light";
+					try { localStorage.setItem("mfx-theme", light ? "light" : "dark"); } catch (e) {}
+					apply(document);
+					sync();
+				});
+				document.addEventListener("astro:page-load", sync);
+				document.addEventListener("DOMContentLoaded", sync);
+			})();
+		</script>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>{title}</title>
 		<link rel="icon" type="image/webp" href={favicon} />

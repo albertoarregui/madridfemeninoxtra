@@ -87,7 +87,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
 
     const getSortIcon = (key: string) => {
         if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(212,168,67,0.6)' }} />;
+            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(var(--l-gold, 212, 168, 67), 0.6)' }} />;
         }
         return sortConfig.direction === 'asc'
             ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" />
@@ -97,7 +97,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
     const SortableHeader = ({ label, sortKey, align = 'center', className = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string }) => (
         <th
             className={`py-4 px-4 font-bold cursor-pointer transition-colors select-none ${className}`}
-            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}
+            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
             onMouseLeave={e => (e.currentTarget.style.background = '')}
             onClick={() => requestSort(sortKey)}
@@ -110,13 +110,13 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
     );
 
     return (
-        <div className="w-full max-w-7xl mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(6,13,28,0.95)' }}>
+        <div className="w-full max-w-7xl mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(var(--l-bg, 6, 13, 28), 0.95)' }}>
             <div className="overflow-x-auto referees-scrollbar">
                 <table className="referees-table w-full border-collapse text-left min-w-[800px]">
                     <thead>
                         <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
                             <th className="ref-rank-col sticky left-0 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
+                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
                                 #
                             </th>
                             <SortableHeader
@@ -127,7 +127,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             />
 
                             <th className="py-3 px-2 text-center min-w-[60px]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(212,168,67,0.75)' }}>
+                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)' }}>
                                 País
                             </th>
 
@@ -155,7 +155,7 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                             <SortableHeader sortKey="stats.foulsReceivedAvg" label="FR/PJ" />
                         </tr>
                     </thead>
-                    <tbody className="text-sm" style={{ color: '#f0f0f0' }}>
+                    <tbody className="text-sm" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                         {sortedReferees.map((referee, index) => (
                             <tr
                                 key={referee.id_arbitra}
@@ -165,15 +165,15 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                 onMouseLeave={e => (e.currentTarget.style.background = '')}
                             >
                                 <td className="ref-rank-col sticky left-0 z-20 py-3 px-2 text-center font-mono w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                    style={{ color: 'rgba(212,168,67,0.55)', background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
+                                    style={{ color: 'rgba(var(--l-gold, 212, 168, 67), 0.55)', background: 'rgba(var(--l-bg, 6, 13, 28), 0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
                                     {index + 1}
                                 </td>
                                 <td className="ref-name-col sticky left-[50px] z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate min-w-[200px]"
-                                    style={{ background: 'rgba(6,13,28,0.98)', borderRight: '1px solid rgba(212,168,67,0.08)', color: '#f0f0f0' }}
+                                    style={{ background: 'rgba(var(--l-bg, 6, 13, 28), 0.98)', borderRight: '1px solid rgba(212,168,67,0.08)', color: 'rgb(var(--l-ink, 240, 240, 240))' }}
                                     title={referee.nombre}>
                                     <a href={`/arbitras/${generateSlug(referee.nombre)}`}
                                         className="transition-colors whitespace-normal break-words leading-tight block"
-                                        style={{ color: '#f0f0f0' }}
+                                        style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}
                                         onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
                                         onMouseLeave={e => (e.currentTarget.style.color = '#f0f0f0')}>
                                         {referee.nombre}
@@ -191,35 +191,35 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                     ) : '-'}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.played}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-green, 74, 222, 128), 0.9)', background: 'rgba(74,222,128,0.06)' }}>
                                     {referee.stats.wins}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(74,222,128,0.9)', background: 'rgba(74,222,128,0.06)' }}>
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-green, 74, 222, 128), 0.9)', background: 'rgba(74,222,128,0.06)' }}>
                                     {referee.stats.winPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-muted, 148, 163, 184), 0.8)', background: 'rgba(var(--l-muted, 148, 163, 184), 0.06)' }}>
                                     {referee.stats.draws}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(148,163,184,0.8)', background: 'rgba(148,163,184,0.06)' }}>
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-muted, 148, 163, 184), 0.8)', background: 'rgba(var(--l-muted, 148, 163, 184), 0.06)' }}>
                                     {referee.stats.drawPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-red, 248, 113, 113), 0.85)', background: 'rgba(248,113,113,0.06)' }}>
                                     {referee.stats.losses}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(248,113,113,0.85)', background: 'rgba(248,113,113,0.06)' }}>
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-red, 248, 113, 113), 0.85)', background: 'rgba(248,113,113,0.06)' }}>
                                     {referee.stats.lossPct}%
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold text-blue-400" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center font-bold text-blue-400" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.penaltiesFor}
                                 </td>
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.penaltiesAgainst}
                                 </td>
 
@@ -230,17 +230,17 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
                                     {referee.stats.yellowCardsAgainst}
                                 </td>
 
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.redCards}
                                 </td>
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.redCardsAgainst}
                                 </td>
 
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.foulsCommittedAvg}
                                 </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: '#f0f0f0' }}>
+                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
                                     {referee.stats.foulsReceivedAvg}
                                 </td>
                             </tr>

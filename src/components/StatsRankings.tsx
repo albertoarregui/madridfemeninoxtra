@@ -202,7 +202,7 @@ export default function StatsRankings({
             toques: { title: "Más toques de balón", headers: ["Pos", "Jugadora", "Toques"], dataKeys: ["toques"], primaryKey: "toques", icon: <Activity className="text-blue-400" /> },
             toques_area_rival: { title: "Toques en área rival", headers: ["Pos", "Jugadora", "Toques"], dataKeys: ["toques_area_rival"], primaryKey: "toques_area_rival", icon: <TrendingUp className="text-emerald-500" /> },
             perdidas: { title: "Más pérdidas de posesión", headers: ["Pos", "Jugadora", "Pérdidas"], dataKeys: ["perdidas"], primaryKey: "perdidas", icon: <Activity className="text-red-500" /> },
-            fueras_juego: { title: "Más fueras de juego", headers: ["Pos", "Jugadora", "F. Juego"], dataKeys: ["fueras_juego"], primaryKey: "fueras_juego", icon: <Activity style={{color: 'rgba(150,160,175,0.7)'}} /> },
+            fueras_juego: { title: "Más fueras de juego", headers: ["Pos", "Jugadora", "F. Juego"], dataKeys: ["fueras_juego"], primaryKey: "fueras_juego", icon: <Activity style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.7)'}} /> },
             pases_completados: { title: "Más pases completados", headers: ["Pos", "Jugadora", "Pases"], dataKeys: ["pases_completados"], primaryKey: "pases_completados", icon: <TrendingUp className="text-blue-500" /> },
             porcentaje_pases: { title: "% Pases completados", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_pases"], primaryKey: "porcentaje_pases", icon: <TrendingUp className="text-blue-300" /> },
             pases_ultimo_tercio: { title: "Pases al último tercio", headers: ["Pos", "Jugadora", "Pases"], dataKeys: ["pases_ultimo_tercio_completados"], primaryKey: "pases_ultimo_tercio_completados", icon: <Zap className="text-indigo-400" /> },
@@ -210,7 +210,7 @@ export default function StatsRankings({
             porcentaje_pases_largo: { title: "% Pases en largo", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_pases_largo"], primaryKey: "porcentaje_pases_largo", icon: <TrendingUp className="text-purple-300" /> },
             centros_completados: { title: "Centros completados", headers: ["Pos", "Jugadora", "Centros"], dataKeys: ["centros_completados"], primaryKey: "centros_completados", icon: <Zap className="text-rose-400" /> },
             porcentaje_centros: { title: "% Centros completados", headers: ["Pos", "Jugadora", "Comp./Tot.", "%"], dataKeys: ["display_ratio", "porcentaje_centros"], primaryKey: "porcentaje_centros", icon: <Zap className="text-rose-300" /> },
-            bloqueos: { title: "Más bloqueos", headers: ["Pos", "Jugadora", "Bloqueos"], dataKeys: ["bloqueos"], primaryKey: "bloqueos", icon: <Shield style={{color: 'rgba(150,160,175,0.7)'}} /> },
+            bloqueos: { title: "Más bloqueos", headers: ["Pos", "Jugadora", "Bloqueos"], dataKeys: ["bloqueos"], primaryKey: "bloqueos", icon: <Shield style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.7)'}} /> },
             recuperaciones: { title: "Más recuperaciones", headers: ["Pos", "Jugadora", "Recuperac."], dataKeys: ["recuperaciones"], primaryKey: "recuperaciones", icon: <Shield className="text-blue-600" /> },
             intercepciones: { title: "Más intercepciones", headers: ["Pos", "Jugadora", "Intercep."], dataKeys: ["intercepciones"], primaryKey: "intercepciones", icon: <Shield className="text-indigo-600" /> },
             regateada: { title: "Más veces regateada", headers: ["Pos", "Jugadora", "Regateada"], dataKeys: ["regateada"], primaryKey: "regateada", icon: <Activity className="text-orange-500" /> },
@@ -240,7 +240,7 @@ export default function StatsRankings({
             headers: ["Pos", "Jugadora", "Valor"],
             dataKeys: [selectedType.replace('cambios_', 'cambio_')],
             primaryKey: selectedType.replace('cambios_', 'cambio_'),
-            icon: <Activity style={{color: 'rgba(150,160,175,0.7)'}} />
+            icon: <Activity style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.7)'}} />
         };
     }, [selectedType]);
 
@@ -485,7 +485,7 @@ export default function StatsRankings({
                 .podium-stat-value { margin-bottom: 2rem; }
                 ` }} />
 
-            <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container" style={{color: '#f0f0f0'}}>
+            <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
                 <CustomSelect options={TYPE_OPTIONS} value={selectedType} onChange={setSelectedType} id="filtro-tipo" />
                 <CustomSelect options={[{ value: "todos", label: "Todas las Temporadas" }, ...seasons.map(s => ({ value: s, label: s }))]} value={selectedSeason} onChange={setSelectedSeason} id="filtro-temporada" />
                 {!currentConfig.isAward && (
@@ -505,15 +505,15 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: '#f0f0f0'}}>
-                                            <a href={`/jugadoras/${podium[1].slug}`} style={{color: '#f0f0f0'}} className="hover:text-[#C0C0C0] transition-colors">{podium[1].nombre}</a>
+                                        <h3 className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[1].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-ink,192,192,192))] transition-colors">{podium[1].nombre}</a>
                                         </h3>
-                                        <p className="text-3xl font-black" style={{color: '#C0C0C0'}}>{podium[1][currentConfig.primaryKey]}</p>
+                                        <p className="text-3xl font-black" style={{color: 'rgb(var(--l-ink, 192, 192, 192))'}}>{podium[1][currentConfig.primaryKey]}</p>
                                     </div>
                                 </div>
-                                <div className="podium-base h-40" style={{background: 'rgba(192,192,192,0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
+                                <div className="podium-base h-40" style={{background: 'rgba(var(--l-ink, 192, 192, 192), 0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
                                     <SpotStarIcon color="#C0C0C0" />
-                                    <span className="font-bold text-4xl mt-3" style={{color: 'rgba(192,192,192,0.5)'}}>2</span>
+                                    <span className="font-bold text-4xl mt-3" style={{color: 'rgba(var(--l-ink, 192, 192, 192), 0.5)'}}>2</span>
                                 </div>
                             </div>
                         )}
@@ -528,15 +528,15 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-6 podium-stat-value">
-                                        <h3 className="font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: '#f0f0f0'}}>
-                                            <a href={`/jugadoras/${podium[0].slug}`} style={{color: '#f0f0f0'}} className="hover:text-[#FFD700] transition-colors">{podium[0].nombre}</a>
+                                        <h3 className="font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[0].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-gold,255,215,0))] transition-colors">{podium[0].nombre}</a>
                                         </h3>
-                                        <p className="text-5xl font-black" style={{color: '#d4a843'}}>{podium[0][currentConfig.primaryKey]}</p>
+                                        <p className="text-5xl font-black" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{podium[0][currentConfig.primaryKey]}</p>
                                     </div>
                                 </div>
                                 <div className="podium-base h-64 shadow-lg" style={{background: 'rgba(212,168,67,0.18)', borderBottom: '4px solid rgba(212,168,67,0.5)'}}>
                                     <MainStarIcon color="#FFD700" className="drop-shadow-sm" />
-                                    <span className="font-black text-6xl mt-4 drop-shadow-md" style={{color: '#d4a843'}}>1</span>
+                                    <span className="font-black text-6xl mt-4 drop-shadow-md" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>1</span>
                                 </div>
                             </div>
                         )}
@@ -550,28 +550,28 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-base leading-tight truncate px-2 mb-1" style={{color: '#f0f0f0'}}>
-                                            <a href={`/jugadoras/${podium[2].slug}`} style={{color: '#f0f0f0'}} className="hover:text-[#CD7F32] transition-colors">{podium[2].nombre}</a>
+                                        <h3 className="font-bold text-base leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[2].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-red,205,127,50))] transition-colors">{podium[2].nombre}</a>
                                         </h3>
-                                        <p className="text-2xl font-black" style={{color: '#CD7F32'}}>{podium[2][currentConfig.primaryKey]}</p>
+                                        <p className="text-2xl font-black" style={{color: 'rgb(var(--l-red, 205, 127, 50))'}}>{podium[2][currentConfig.primaryKey]}</p>
                                     </div>
                                 </div>
                                 <div className="podium-base h-32" style={{background: 'rgba(205,127,50,0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
                                     <SpotStarIcon color="#CD7F32" />
-                                    <span className="font-bold text-3xl mt-2" style={{color: 'rgba(205,127,50,0.5)'}}>3</span>
+                                    <span className="font-bold text-3xl mt-2" style={{color: 'rgba(var(--l-red, 205, 127, 50), 0.5)'}}>3</span>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div id="ranking-table-top" className="rounded-2xl shadow-2xl overflow-hidden mb-12" style={{background: 'rgba(8,16,34,0.85)', border: '1px solid rgba(212,168,67,0.2)', backdropFilter: 'blur(12px)'}}>
+                    <div id="ranking-table-top" className="rounded-2xl shadow-2xl overflow-hidden mb-12" style={{background: 'rgba(var(--l-card, 8, 16, 34), 0.85)', border: '1px solid rgba(212,168,67,0.2)', backdropFilter: 'blur(12px)'}}>
                         <div className="ranking-title-header"><h2>{currentConfig.title}</h2></div>
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse">
                                 <thead>
-                                    <tr style={{background: 'rgba(6,13,28,0.9)', borderBottom: '2px solid rgba(212,168,67,0.2)'}}>
+                                    <tr style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.9)', borderBottom: '2px solid rgba(212,168,67,0.2)'}}>
                                         {currentConfig.headers.map((h: string, i: number) => (
-                                            <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-bold uppercase tracking-widest`} style={{fontFamily: "'Cinzel', serif", color: '#d4a843'}}>{h}</th>
+                                            <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-bold uppercase tracking-widest`} style={{fontFamily: "'Cinzel', serif", color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -581,20 +581,20 @@ export default function StatsRankings({
                                         return (
                                             <tr key={player.id_jugadora} className="ranking-table-row group transition-colors cursor-pointer" style={{borderBottom: '1px solid rgba(212,168,67,0.07)'}} onClick={() => window.location.href = `/jugadoras/${player.slug}`}>
                                                 <td className="px-6 py-5 text-center border-l-[6px] border-l-transparent transition-all group-hover:border-l-[#d4a843]">
-                                                    <span className="text-sm font-bold" style={{color: 'rgba(150,160,175,0.6)'}}>{globalIndex}</span>
+                                                    <span className="text-sm font-bold" style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}}>{globalIndex}</span>
                                                 </td>
                                                 <td className="px-6 py-5 text-left">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden" style={{background: 'rgba(6,13,28,0.8)', border: '1px solid rgba(212,168,67,0.25)'}}>
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden" style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.8)', border: '1px solid rgba(212,168,67,0.25)'}}>
                                                             <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} width={80} height={107} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
                                                         </div>
-                                                        <a href={`/jugadoras/${player.slug}`} className="text-base font-bold transition-colors" style={{color: '#f0f0f0'}} onMouseEnter={e => (e.currentTarget.style.color='#d4a843')} onMouseLeave={e => (e.currentTarget.style.color='#f0f0f0')}>{player.nombre}</a>
+                                                        <a href={`/jugadoras/${player.slug}`} className="text-base font-bold transition-colors" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} onMouseEnter={e => (e.currentTarget.style.color='#d4a843')} onMouseLeave={e => (e.currentTarget.style.color='#f0f0f0')}>{player.nombre}</a>
                                                     </div>
                                                 </td>
                                                 {currentConfig.dataKeys.map((key: string) => {
                                                     let val = player[key];
                                                     if (key.startsWith('porcentaje_')) val = `${val}%`;
-                                                    return <td key={key} className="px-6 py-5 text-center"><span className="text-lg font-black" style={{color: '#f0f0f0'}}>{val}</span></td>;
+                                                    return <td key={key} className="px-6 py-5 text-center"><span className="text-lg font-black" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>{val}</span></td>;
                                                 })}
                                             </tr>
                                         );
@@ -603,21 +603,21 @@ export default function StatsRankings({
                             </table>
                         </div>
                         {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-2 p-8 border-t" style={{background: 'rgba(6,13,28,0.6)', borderColor: 'rgba(212,168,67,0.15)'}}>
-                                <button onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(200,210,220,0.65)', background: 'transparent'}}><ChevronLeft size={20} /></button>
+                            <div className="flex justify-center items-center gap-2 p-8 border-t" style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.6)', borderColor: 'rgba(212,168,67,0.15)'}}>
+                                <button onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', background: 'transparent'}}><ChevronLeft size={20} /></button>
                                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                    <button key={page} onClick={() => handlePageChange(page)} className="w-10 h-10 rounded-lg font-bold transition-all" style={currentPage === page ? {background: '#d4a843', color: '#060d1c'} : {background: 'transparent', color: 'rgba(200,210,220,0.65)', border: '1px solid rgba(212,168,67,0.2)'}}>{page}</button>
+                                    <button key={page} onClick={() => handlePageChange(page)} className="w-10 h-10 rounded-lg font-bold transition-all" style={currentPage === page ? {background: '#d4a843', color: '#060d1c'} : {background: 'transparent', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', border: '1px solid rgba(212,168,67,0.2)'}}>{page}</button>
                                 ))}
-                                <button onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(200,210,220,0.65)', background: 'transparent'}}><ChevronRight size={20} /></button>
+                                <button onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', background: 'transparent'}}><ChevronRight size={20} /></button>
                             </div>
                         )}
                     </div>
                 </>
             ) : (
-                <div className="text-center py-40 rounded-3xl border-2 border-dashed" style={{background: 'rgba(8,16,34,0.5)', borderColor: 'rgba(212,168,67,0.2)'}}>
-                    <Activity className="mx-auto mb-6" size={80} style={{color: 'rgba(150,160,175,0.6)'}} />
-                    <h2 className="text-2xl font-bold" style={{color: 'rgba(200,210,220,0.65)'}}>Sin datos registrados</h2>
-                    <p className="mt-2" style={{color: 'rgba(150,160,175,0.6)'}}>No se encontraron estadísticas para los filtros seleccionados.</p>
+                <div className="text-center py-40 rounded-3xl border-2 border-dashed" style={{background: 'rgba(var(--l-card, 8, 16, 34), 0.5)', borderColor: 'rgba(212,168,67,0.2)'}}>
+                    <Activity className="mx-auto mb-6" size={80} style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}} />
+                    <h2 className="text-2xl font-bold" style={{color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)'}}>Sin datos registrados</h2>
+                    <p className="mt-2" style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}}>No se encontraron estadísticas para los filtros seleccionados.</p>
                 </div>
             )}
         </div>
