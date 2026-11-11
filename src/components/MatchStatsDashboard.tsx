@@ -71,21 +71,21 @@ const MatchStatsDashboard: React.FC<MatchStatsDashboardProps> = ({ matches }) =>
     return (
         <section className="travel-dashboard" aria-label="Resumen de desplazamientos">
             <div className="travel-cards">
-                <article className="travel-card travel-card--distance">
+                <article className="travel-card travel-card--distance mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     <MapPin aria-hidden="true" />
                     <div>
                         <p className="travel-label">Distancia total</p>
                         <p className="travel-value">{stats.totalKm.toLocaleString()} <small>km</small></p>
                     </div>
                 </article>
-                <article className="travel-card">
+                <article className="travel-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     <Navigation aria-hidden="true" />
                     <div>
                         <p className="travel-label">Desplazamientos</p>
                         <p className="travel-value">{stats.totalTrips}</p>
                     </div>
                 </article>
-                <article className="travel-card">
+                <article className="travel-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     <Clock aria-hidden="true" />
                     <div>
                         <p className="travel-label">Tiempo en ruta</p>

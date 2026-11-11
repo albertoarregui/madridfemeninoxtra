@@ -517,7 +517,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                             </div>
                         </div>
 
-                        <div className="cmp-chart-card">
+                        <div className="cmp-chart-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                             <ResponsiveContainer width="100%" height={380}>
                                 <RadarChart data={radarData!} margin={{ top: 16, right: 48, bottom: 16, left: 48 }}>
                                     <PolarGrid stroke="#e8e8e8" />
@@ -537,7 +537,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                             </ResponsiveContainer>
                         </div>
 
-                        <div className="cmp-table-card">
+                        <div className="cmp-table-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                             <div className="cmp-table-header">
                                 <div className="cmp-table-player cmp-table-player-a">
                                     <img src={dataA!.imageUrl} alt={dataA!.nombre} className="cmp-table-avatar" />

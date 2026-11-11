@@ -33,7 +33,7 @@ const RivalsTable: React.FC<RivalsTableProps> = ({ rivals }) => {
     return (
         <div className="rivals-card-grid">
             {sortedRivals.map((rival) => (
-                <a className="rival-card" href={`/rivales/${rival.slug}`} key={rival.id_club}>
+                <a className="rival-card mfx-link-card" href={`/rivales/${rival.slug}`} key={rival.id_club}><span className="mfx-spin" aria-hidden="true" />
                     <div className="rival-card__photo">
                         <img
                             src={rival.shieldUrl}

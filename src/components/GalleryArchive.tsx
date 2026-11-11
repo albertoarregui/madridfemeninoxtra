@@ -47,7 +47,7 @@ const GalleryArchive: React.FC<GalleryArchiveProps> = ({ initialAlbums }) => {
         <div className="gallery-archive-react">
             <div className="gallery-grid">
                 {paginatedAlbums.map((album) => (
-                    <a href={`/fotogalerias/${album.slug}`} className="gallery-card group" key={album.id}>
+                    <a href={`/fotogalerias/${album.slug}`} className="gallery-card group mfx-link-card" key={album.id}><span className="mfx-spin" aria-hidden="true" />
                         <div className="gallery-image-wrapper">
                             <img 
                                 src={album.cover} 

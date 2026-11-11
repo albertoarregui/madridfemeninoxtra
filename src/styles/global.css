@@ -1327,3 +1327,82 @@ html[data-skip-players-enter] .player-portrait-card {
     .pg-mobile-filter-content { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) { .pg-card-name { font-size: 0.72rem; } }
+
+/* ── Marcos de tarjeta comunes ───────────────────────────────────────────
+   Tarjetas informativas: esquinas doradas arriba a la izquierda y abajo a la
+   derecha (como las miniaturas de la plantilla).
+   Tarjetas que enlazan a otra página: se elevan y una línea dorada recorre
+   el borde al pasar por encima (como las tarjetas de noticias).
+   Ambas se dibujan con un <span> decorativo para no pisar fondos ni los
+   ::before/::after propios de cada tarjeta. */
+:where(.mfx-framed, .mfx-link-card) { position: relative; }
+
+.mfx-frame {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+    border-radius: inherit;
+}
+/* Igual que las miniaturas de la plantilla: esquinas metidas unos píxeles hacia
+   dentro, en dorado pleno, para que se distingan del borde de la tarjeta. */
+.mfx-frame::before,
+.mfx-frame::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 0 solid #d4a843;
+}
+.mfx-frame::before { top: 5px; left: 5px; border-width: 1.5px 0 0 1.5px; }
+.mfx-frame::after { bottom: 5px; right: 5px; border-width: 0 1.5px 1.5px 0; }
+
+@property --mfx-spin-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+.mfx-link-card {
+    transition: transform 0.3s ease, box-shadow 0.35s ease;
+}
+.mfx-link-card:hover,
+.mfx-link-card:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.mfx-spin {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    padding: 1px;
+    pointer-events: none;
+    border-radius: inherit;
+    background: conic-gradient(
+        from var(--mfx-spin-angle),
+        transparent 0%,
+        transparent 80%,
+        rgba(212, 168, 67, 0.4) 86%,
+        #d4a843 90%,
+        #f5d483 92%,
+        #d4a843 94%,
+        transparent 100%
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    animation: mfx-spin 1.8s linear infinite paused;
+}
+.mfx-link-card:hover > .mfx-spin,
+.mfx-link-card:focus-visible > .mfx-spin {
+    opacity: 1;
+    animation-play-state: running;
+}
+@keyframes mfx-spin {
+    to { --mfx-spin-angle: 360deg; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mfx-link-card:hover, .mfx-link-card:focus-visible { transform: none; }
+    .mfx-spin { animation: none; }
+}

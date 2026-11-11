@@ -805,7 +805,7 @@ function AdvancedStatsInner() {
                     <h2 className="adv-section-title">TRACKER XG</h2>
                     <p className="adv-section-sub">Goles reales (barras) vs xG esperado (línea) · Pasa el ratón sobre las barras para ver el detalle</p>
                 </div>
-                <div className="adv-card">
+                <div className="adv-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     {xgLoading  ? <Spinner />
                     : xgError || !xgData?.matches?.length
                     ? <Empty msg="Sin datos de xG para este filtro" />
@@ -817,7 +817,7 @@ function AdvancedStatsInner() {
                     <h2 className="adv-section-title">XG ACUMULADO</h2>
                     <p className="adv-section-sub">Goles acumulados vs xG acumulado · Si la línea dorada va por encima, el equipo marca más de lo esperado</p>
                 </div>
-                <div className="adv-card">
+                <div className="adv-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     {xgLoading  ? <Spinner />
                     : xgError || !xgData?.matches?.length
                     ? <Empty msg="Sin datos de xG para este filtro" />
@@ -829,7 +829,7 @@ function AdvancedStatsInner() {
                     <h2 className="adv-section-title">EMBUDO DE FINALIZACIÓN</h2>
                     <p className="adv-section-sub">De tiros a goles · Totales del filtro seleccionado</p>
                 </div>
-                <div className="adv-card">
+                <div className="adv-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     {teamLoading ? <Spinner />
                     : teamError || !teamData?.matchCount
                     ? <Empty msg="Sin datos de equipo para este filtro" />
@@ -841,7 +841,7 @@ function AdvancedStatsInner() {
                     <h2 className="adv-section-title">EMBUDO POR JUGADORA</h2>
                     <p className="adv-section-sub">De tiros a goles, jugadora a jugadora · Solo se incluyen jugadoras con registro de tiros completo</p>
                 </div>
-                <div className="adv-card">
+                <div className="adv-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     {pfLoading ? <Spinner />
                     : pfError || !pfData?.players?.length || !pfSelected
                     ? <Empty msg="Sin datos de finalización para este filtro" />
@@ -866,7 +866,7 @@ function AdvancedStatsInner() {
                     <h2 className="adv-section-title">RED DE ASISTENCIAS</h2>
                     <p className="adv-section-sub">Arrastra los nodos · Pellizca o usa la rueda para hacer zoom · Toca un nodo para ver sus conexiones</p>
                 </div>
-                <div className="adv-card adv-card-graph">
+                <div className="adv-card adv-card-graph mfx-framed"><span className="mfx-frame" aria-hidden="true" />
                     {netLoading ? <Spinner />
                     : netError || !netData?.nodes?.length
                     ? <Empty msg="Sin datos de asistencias para este filtro" />

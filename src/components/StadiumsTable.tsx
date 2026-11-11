@@ -28,7 +28,7 @@ const StadiumsTable: React.FC<StadiumsTableProps> = ({ stadiums }) => {
     return (
         <div className="stadiums-card-grid">
             {sortedStadiums.map((stadium) => (
-                <a className="stadium-card" href={`/estadios/${stadium.slug}`} key={stadium.slug}>
+                <a className="stadium-card mfx-link-card" href={`/estadios/${stadium.slug}`} key={stadium.slug}><span className="mfx-spin" aria-hidden="true" />
                     <div className="stadium-card__photo">
                         {stadium.imageUrl && (
                             <img
