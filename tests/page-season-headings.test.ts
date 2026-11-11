@@ -50,8 +50,10 @@ test('plantilla filtra por temporada y resume la plantilla con datos cacheados',
     for (const label of ['Jugadoras', 'Edad media', 'Estatura media', 'Peso medio']) assert.ok(squad.includes(`<dt>${label}</dt>`), label);
     assert.match(squad, /Entrenadores" : "Entrenador"/);
     assert.match(squad, /data-squad-season/);
-    // Partidos, goles y asistencias oficiales de la temporada bajo la jugadora.
+    // Bajo cada miniatura: partidos, goles y asistencias oficiales; porteras, solo porterías a cero.
     assert.match(squad, /row\.competicion === "Amistoso"/);
-    for (const id of ['player-apps', 'player-goals', 'player-assists']) assert.ok(squad.includes(`id="${id}"`), id);
+    assert.match(squad, /class="thumb-stats"/);
+    assert.match(squad, /isGoalkeeper\s*\?\s*\[\{ value: stats\.porterias_cero/);
+    assert.doesNotMatch(squad, /id="player-apps"/);
     assert.doesNotMatch(squad, /client\.execute/);
 });
