@@ -607,8 +607,14 @@ function calculateAge(birthDateString: string): number {
         if (label) label.textContent = "Generando…";
         try {
             const sameOrigin = location.hostname === "www.madridfemeninoxtra.com";
-            const resolve = (src: string) =>
-                sameOrigin || !src.startsWith("https://media.madridfemeninoxtra.com/") ? src : `/api/img-proxy?url=${encodeURIComponent(src)}`;
+            // Las fotos de R2 que la página ya cargó sin CORS (miniaturas) quedan en
+            // caché sin cabeceras CORS y mancharían el lienzo: se piden con un
+            // parámetro propio para forzar una petición nueva con CORS.
+            const resolve = (src: string) => {
+                if (!src.startsWith("https://media.madridfemeninoxtra.com/")) return src;
+                if (!sameOrigin) return `/api/img-proxy?url=${encodeURIComponent(src)}`;
+                return `${src}${src.includes("?") ? "&" : "?"}export=1`;
+            };
             await Promise.all([...node.querySelectorAll<HTMLImageElement>("img[data-src]")].map((img) =>
                 img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise<void>((done) => {
                     img.onload = img.onerror = () => done();
