@@ -28,6 +28,7 @@ const SWR_LARGA_S = 30 * 24 * 60 * 60;
 // las etiquetas siguen permitiendo invalidar cuando se actualiza el contenido.
 const CACHE_HOME_S = 15 * 60;
 const SWR_HOME_S = 60 * 60;
+const FRESH_MATCH_CACHE_S = 60;
 
 async function handleRequest(
     context: Parameters<MiddlewareHandler>[0],
@@ -77,9 +78,15 @@ async function handleRequest(
             !freshMatch &&
             !userId;
 
-        if (freshMatch && request.method === "GET") {
+        if (freshMatch && request.method === "GET" && response.status === 200 && !userId) {
+            // Las fichas recientes leen Turso sin caché de datos. La CDN agrupa
+            // las visitas durante un minuto: como mucho una lectura por minuto
+            // y región, en lugar de una por visita en día de partido.
+            response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+            response.headers.set("Vercel-CDN-Cache-Control", `max-age=${FRESH_MATCH_CACHE_S}`);
+            response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tagsForPath(routePath)].join(","));
+        } else if (freshMatch && request.method === "GET") {
             response.headers.set("Cache-Control", "private, no-store, max-age=0");
-            response.headers.set("CDN-Cache-Control", "no-store");
             response.headers.set("Vercel-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
