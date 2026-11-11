@@ -91,7 +91,7 @@ async function handleRequest(
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
             const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
-            const seasonPage = routePath === '/plantilla' || routePath === '/calendario';
+            const seasonPage = routePath === '/plantilla' || routePath === '/partidos';
             const sMaxage = seasonPage
                 ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);

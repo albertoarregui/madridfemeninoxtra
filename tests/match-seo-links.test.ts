@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const matchPage = readFileSync("src/pages/partidos/[slug].astro", "utf8");
-const calendarPage = readFileSync("src/pages/calendario.astro", "utf8");
+const matchesPage = readFileSync("src/pages/partidos/index.astro", "utf8");
 const playersPage = readFileSync("src/pages/jugadoras/index.astro", "utf8");
 const sitemap = readFileSync("src/pages/sitemap.xml.ts", "utf8");
 
@@ -20,7 +20,9 @@ test("las entidades visibles de la ficha enlazan a sus páginas", () => {
 });
 
 test("las islas reciben solo los campos que consumen", () => {
-    assert.match(calendarPage, /matches = allMatches[\s\S]*?\.map\(\(m\) => \(\{/);
+    // La lista de partidos se renderiza en el servidor: no envía datos a ninguna isla.
+    assert.match(matchesPage, /<MatchTimeline matches=\{games\} currentSeason=\{currentSeason\} \/>/);
+    assert.doesNotMatch(matchesPage, /client:(load|only|visible|idle)/);
     assert.match(playersPage, /const mapPlayers = playersData\.map/);
     assert.match(playersPage, /<PlayerMapWrapper players=\{mapPlayers\}/);
 });

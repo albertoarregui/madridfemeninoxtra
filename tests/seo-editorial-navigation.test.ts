@@ -47,5 +47,5 @@ test("las fotogalerías muestran descripciones y reservan las dimensiones de por
 test("los metatítulos conservan la redacción editorial anterior", () => {
     assert.match(read("src/pages/noticias/[slug].astro"), /title=\{`\$\{title\} \| Madrid Femenino Xtra`\}/);
     assert.match(read("src/pages/partidos/[slug].astro"), /\| Madrid Femenino Xtra/);
-    assert.match(read("src/pages/calendario.astro"), /Partidos del Real Madrid Femenino/);
+    assert.match(read("src/pages/partidos/index.astro"), /Partidos del Real Madrid Femenino/);
 });

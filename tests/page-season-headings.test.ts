@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const plantilla = readFileSync('src/pages/plantilla.astro', 'utf8');
-const calendario = readFileSync('src/pages/calendario.astro', 'utf8');
 const squad = readFileSync('src/sections/Squad.astro', 'utf8');
 const jugadoras = readFileSync('src/pages/jugadoras/index.astro', 'utf8');
 const entrenadores = readFileSync('src/pages/entrenadores/index.astro', 'utf8');
@@ -12,13 +11,13 @@ const partidos = readFileSync('src/pages/partidos/index.astro', 'utf8');
 const rivales = readFileSync('src/pages/rivales/index.astro', 'utf8');
 const estadios = readFileSync('src/pages/estadios/index.astro', 'utf8');
 
-test('plantilla y calendario muestran la temporada actual en sus títulos', () => {
+test('plantilla y partidos muestran la temporada actual', () => {
     assert.match(plantilla, /<h1 class="landing-title">PLANTILLA \{currentSeason\}<\/h1>/);
     assert.match(
         plantilla,
         /Jugadoras, dorsales y posiciones del Real Madrid Femenino de la temporada \{currentSeason\}/,
     );
-    assert.match(calendario, /<h1 class="landing-title">CALENDARIO \{currentSeason\}<\/h1>/);
+    assert.match(partidos, /Calendario, horarios y resultados de la temporada \{currentSeason\}/);
 });
 
 test('plantilla no duplica el índice textual de jugadoras y dorsales', () => {

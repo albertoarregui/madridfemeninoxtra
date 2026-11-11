@@ -12,6 +12,8 @@ export default defineConfig({
   // Ruta histórica consolidada: el listado único es /estadios.
   redirects: {
     '/rivales/estadios': { status: 301, destination: '/estadios' },
+    // El calendario se integró en /partidos (próximos partidos y resultados).
+    '/calendario': { status: 301, destination: '/partidos' },
   },
   output: 'server',
   prefetch: {

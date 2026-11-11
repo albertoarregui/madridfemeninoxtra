@@ -50,12 +50,15 @@ test('key interactive collections defer hydration until visible', () => {
   }
 });
 
-test('deferred match cards keep Astro scoped styles after filtering', () => {
-  const list = read('src/components/MatchList.astro');
-  assert.match(list, /const createScopedElement/);
-  assert.match(list, /name\.startsWith\("data-astro-cid-"\)/);
-  assert.match(list, /if \(scopeAttribute\) node\.setAttribute\(scopeAttribute, ""\)/);
-  assert.match(list, /const item = createScopedElement\("div"\)/);
+test('matches page replaces the calendar with a filterable chronological list', () => {
+  const timeline = read('src/components/MatchTimeline.astro');
+  const config = read('astro.config.mjs');
+  assert.match(config, /'\/calendario': \{ status: 301, destination: '\/partidos' \}/);
+  assert.equal(exists('src/pages/calendario.astro'), false);
+  for (const filter of ['competition', 'venue', 'season']) assert.match(timeline, new RegExp(`data-filter="${filter}"`));
+  assert.match(timeline, /data-season=\{row\.season\}/);
+  assert.match(timeline, /href=\{`\/partidos\/\$\{row\.slug\}`\}/);
+  assert.doesNotMatch(timeline, /fetchGamesDirectly|client\.execute|fetch\(/);
 });
 
 test('news pages avoid oversized SSR work and fetch only the referenced match', () => {
@@ -126,7 +129,7 @@ test('upper footer keeps navigation and social links without the newsletter form
   for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL']) {
     assert.ok(footer.includes(label), label);
   }
-  for (const href of ['/', '/noticias', '/plantilla', '/calendario', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
+  for (const href of ['/', '/noticias', '/plantilla', '/partidos', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
     assert.ok(footer.includes(`href={href("${href}")}`) || footer.includes(`href="${href}"`) || footer.includes(`href: "${href}"`), href);
   }
   for (const brand of ['<X ', '<Instagram ', '<TikTok ', '<Youtube ']) {
