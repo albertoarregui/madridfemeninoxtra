@@ -34,9 +34,11 @@ try {
     const entrySelect = [
         "sys.id", "sys.createdAt", "sys.updatedAt",
         "fields.title", "fields.subtitle", "fields.slug", "fields.body",
-        "fields.featuredImage", "fields.publishDate", "fields.author",
+        // Solo campos que existen en el tipo `noticia`: Contentful rechaza
+        // la consulta entera (422) si se selecciona uno desconocido.
+        "fields.featuredImage", "fields.author",
         "fields.player", "fields.category", "fields.focusType",
-        "fields.referenceId", "fields.id",
+        "fields.referenceId",
     ] as any;
     const entries = await cached(`contentful:news:item:${slug}:${getRequestLocale()}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
         content_type: "noticia",
