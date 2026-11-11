@@ -43,13 +43,24 @@ export function formatGameDate(dateString: string | null | undefined): string {
     }
 }
 
-async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: string } = {}): Promise<any[]> {
+async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: string; id?: string | number } = {}): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient({ forceRefresh: options.fresh });
 
         if (!client) {
             return [];
+        }
+
+        const filters: string[] = [];
+        const args: Array<string | number> = [];
+        if (options.date) {
+            filters.push('p.fecha = ?');
+            args.push(options.date);
+        }
+        if (options.id != null && String(options.id).trim() !== '') {
+            filters.push('p.id_partido = ?');
+            args.push(options.id);
         }
 
         const query = `
@@ -108,13 +119,13 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
               LEFT JOIN jugadoras jm ON p.mvp = jm.id_jugadora
               LEFT JOIN entrenadores en ON p.id_entrenador = en.id_entrenador
               LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
-              ${options.date ? 'WHERE p.fecha = ?' : ''}
+              ${filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : ''}
               ORDER BY p.fecha ASC, p.hora ASC, p.id_partido ASC
         `;
 
         const result = await client.execute({
             sql: query,
-            args: options.date ? [options.date] : [],
+            args,
         });
 
         return result.rows.map((game: any) => {
@@ -163,6 +174,11 @@ export async function fetchGameBySlug(slug: string, options: MatchReadOptions = 
     if (!date) return null;
     const games = await fetchGamesDirectlyUncached({ ...options, date });
     return games.find((game) => game.slug === slug) ?? null;
+}
+
+export async function fetchGameById(id: string | number, options: MatchReadOptions = {}): Promise<any | null> {
+    const games = await fetchGamesDirectlyUncached({ ...options, id });
+    return games[0] ?? null;
 }
 
 export async function fetchGames(): Promise<any[]> {
