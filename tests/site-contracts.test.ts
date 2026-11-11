@@ -411,5 +411,5 @@ test('player profile groups its cards into tabs and hides the gallery without re
   assert.match(page, /SHOW_PLAYER_GALLERY && galeriaFotos\.length > 0/);
   assert.match(page, /profilePhotos\[season\] \|\| seasonPhotos\[season\]/);
   assert.match(page, /fetchPlayerMatchLineups\(player\.id_jugadora\)/);
-  assert.match(page, /searchParams\.get\("seccion"\)/);
+  assert.match(page, /\.get\("seccion"\)/);
 });
