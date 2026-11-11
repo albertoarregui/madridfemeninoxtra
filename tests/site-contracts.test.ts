@@ -59,6 +59,10 @@ test('matches page replaces the calendar with a filterable chronological list', 
   assert.match(timeline, /data-season=\{row\.season\}/);
   assert.match(timeline, /href=\{`\/partidos\/\$\{row\.slug\}`\}/);
   assert.doesNotMatch(timeline, /fetchGamesDirectly|client\.execute|fetch\(/);
+  assert.match(timeline, /const PAGE_SIZE = 100;/);
+  assert.match(timeline, /const ordered = \[\.\.\.upcoming, \.\.\.played\];/);
+  assert.match(timeline, /state\.limit \+= pageSize/);
+  assert.doesNotMatch(timeline, /LISTA DE PARTIDOS/);
 });
 
 test('news pages avoid oversized SSR work and fetch only the referenced match', () => {
