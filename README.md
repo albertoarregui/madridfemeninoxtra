@@ -65,10 +65,6 @@ Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas
 - Las valoraciones de los lectores se almacenan en `match_reader_ratings`, de forma independiente de las puntuaciones estadísticas deportivas; no se comparten tokens ni identificadores de votantes en el HTML.
 - Las páginas de valoraciones se excluyen de la caché CDN de HTML para no mostrar promedios desactualizados. La tabla de votos dispone de un índice por partido.
 
-## ✉️ Newsletter semanal automática
-
-**La semana blanca** se confecciona sin intervención editorial adicional a partir de las noticias publicadas en Contentful. Los lunes, a las **10:00 (Europe/Madrid)**, se envía a los suscriptores confirmados por doble opt-in en Resend. Incluye solo las categorías que tengan publicaciones recientes: **Actualidad, Fichajes, Crónicas, La Fábrica y Datos**.
-
 ## 🧰 Stack tecnológico
 
 | Tecnología | Uso en el proyecto |
@@ -81,7 +77,6 @@ Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas
 | ✍️ **Contentful** | Noticias, contenidos editoriales y biografías |
 | 🖼️ **Cloudflare R2 / Images** | Almacenamiento y distribución de recursos gráficos |
 | 🔐 **Clerk** | Autenticación y gestión de sesiones |
-| ✉️ **Resend** | Comunicaciones y newsletter |
 | ☁️ **Vercel** | Hosting, despliegue y ejecución SSR |
 
 ### 🏗️ Cómo está organizado

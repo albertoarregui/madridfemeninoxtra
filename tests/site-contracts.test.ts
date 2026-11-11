@@ -150,20 +150,6 @@ test('original footer style stays with exact requested legal and cookie controls
   assert.match(footer, /getElementById\('mfx-consent'\)/);
 });
 
-test('newsletter double opt-in and unsubscribe use existing safe endpoints', () => {
-  const signup = read('src/pages/api/newsletter/subscribe.ts');
-  const confirmation = read('src/pages/api/confirm.ts');
-  const unsubscribe = read('src/pages/api/unsubscribe.ts');
-  assert.match(signup, /request\.headers\.get\('origin'\)/);
-  assert.match(signup, /body\?\.consent !== true/);
-  assert.match(signup, /randomBytes\(32\)/);
-  assert.match(signup, /newsletter_subscribers/);
-  assert.match(signup, /resend\.emails\.send/);
-  assert.match(confirmation, /SET confirmed_at/);
-  assert.match(unsubscribe, /DELETE FROM newsletter_subscribers WHERE unsubscribe_token/);
-  assert.match(unsubscribe, /<form method="POST"/);
-});
-
 
 test('Vercel CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
   const middleware = read('src/middleware.ts');
@@ -195,23 +181,6 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   assert.match(proxy, /redirect: 'error'/);
 });
 
-
-test('weekly cron is authenticated, idempotent and avoids unsolicited article mailings', () => {
-  const weekly = read('src/pages/api/newsletter/weekly.ts');
-  const config = JSON.parse(read('vercel.json'));
-  const immediate = read('src/pages/api/newsletter/send.ts');
-  assert.deepEqual(config.crons, [{ path: '/api/newsletter/weekly', schedule: '0 6 * * 1' }]);
-  assert.match(weekly, /export const GET: APIRoute/);
-  assert.match(weekly, /runtimeEnv\('APP_ENV'\) !== 'production'/);
-  assert.match(weekly, /authorization!==`Bearer \$\{expected\}`/);
-  assert.match(weekly, /mondayAt10Madrid\(monday\)/);
-  assert.match(weekly, /confirmed_at IS NOT NULL/);
-  assert.match(weekly, /INSERT OR IGNORE INTO newsletter_weekly_deliveries/);
-  assert.match(weekly, /idempotencyKey/);
-  assert.match(weekly, /scheduledAt:schedule/);
-  assert.match(weekly, /No hay noticias de las cinco categorías/);
-  assert.match(immediate, /runtimeEnv\('NEWSLETTER_PER_ARTICLE_ENABLED'\) !== 'true'/);
-});
 
 
 test('reader ratings pages have competition crests and one-row MVP UI', () => {
@@ -410,4 +379,10 @@ test('homepage keeps only first-team players and removes the requested secondary
   assert.match(players, /id_categoria === 4/);
   assert.match(players, /primera plantilla/);
   assert.doesNotMatch(players, /setInterval|jugScrollInterval|fetchCoachesDirectly/);
+});
+
+test('newsletter endpoints and cron stay removed', () => {
+  const config = JSON.parse(read('vercel.json'));
+  assert.equal(config.crons, undefined);
+  assert.doesNotMatch(read('package.json'), /"resend"/);
 });
