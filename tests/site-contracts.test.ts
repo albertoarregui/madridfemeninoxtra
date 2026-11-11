@@ -390,3 +390,16 @@ test('about project description uses the approved wording', () => {
   assert.doesNotMatch(page, /proyecto sin ánimo de lucro/);
   assert.doesNotMatch(page, /La comunidad ha acompañado el crecimiento/);
 });
+
+test('homepage recent results reuse the existing match read and stay responsive', () => {
+  const home = read('src/pages/index.astro');
+  const recent = read('src/components/RecentResults.astro');
+
+  assert.match(home, /<RecentResults games=\{gamesData\} \/>/);
+  assert.match(home, /ÚLTIMOS RESULTADOS/);
+  assert.doesNotMatch(recent, /fetchGamesDirectly|client\.execute|fetch\(/);
+  assert.match(recent, /game\.competicion_foto_url/);
+  assert.match(recent, /game\.opponentLogo/);
+  assert.match(recent, /href=\{`\/partidos\/\$\{game\.slug\}`\}/);
+  assert.match(recent, /@media \(max-width: 420px\)/);
+});

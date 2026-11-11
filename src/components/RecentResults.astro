@@ -1,0 +1,276 @@
+---
+import { getAssetUrl } from "../utils/assets";
+
+interface Props {
+	games: any[];
+}
+
+const { games = [] } = Astro.props;
+
+const isRealMadrid = (name: unknown) =>
+	String(name ?? "")
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase()
+		.includes("real madrid");
+
+const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+const recentResults = games
+	.filter((game) => game?.isPlayed && game?.goles_rm != null && game?.goles_rival != null)
+	.sort((a, b) => {
+		const dateDifference = String(b.fecha ?? "").localeCompare(String(a.fecha ?? ""));
+		if (dateDifference !== 0) return dateDifference;
+		return Number(b.id_partido ?? 0) - Number(a.id_partido ?? 0);
+	})
+	.slice(0, 5)
+	.map((game) => {
+		const realMadridAtHome = isRealMadrid(game.club_local);
+		const opponent = realMadridAtHome ? game.club_visitante : game.club_local;
+		const opponentLogo = realMadridAtHome
+			? game.visitante_shield_url || game.visitante_foto_url
+			: game.local_shield_url || game.local_foto_url;
+		const [, month, day] = String(game.fecha ?? "").slice(0, 10).split("-").map(Number);
+
+		return {
+			...game,
+			opponent,
+			opponentLogo: opponentLogo || getAssetUrl("escudos", opponent),
+			competitionLogo:
+				game.competicion_foto_url ||
+				getAssetUrl("competiciones", game.competicion_nombre),
+			locationLabel: realMadridAtHome ? "VS" : "@",
+			monthLabel: monthNames[(month || 1) - 1],
+			dayLabel: day || "—",
+			result: ["V", "E", "D"].includes(game.resultado) ? game.resultado : "E",
+			score: `${game.goles_rm} : ${game.goles_rival}`,
+		};
+	});
+
+const wins = recentResults.filter((game) => game.result === "V").length;
+const draws = recentResults.filter((game) => game.result === "E").length;
+const losses = recentResults.filter((game) => game.result === "D").length;
+const points = wins * 3 + draws;
+const winRate = recentResults.length ? Math.round((wins / recentResults.length) * 100) : 0;
+---
+
+{
+	recentResults.length > 0 && (
+		<section class="recent-results-card" aria-label="Últimos resultados del Real Madrid Femenino">
+			<div class="recent-form">
+				<span>ÚLTIMOS {recentResults.length}<br />PARTIDOS</span>
+				<div class="recent-form-list" aria-label="Racha de resultados">
+					{recentResults.map((game) => (
+						<span class:list={["recent-form-badge", `is-${game.result.toLowerCase()}`]} title={game.result === "V" ? "Victoria" : game.result === "E" ? "Empate" : "Derrota"}>
+							{game.result}
+						</span>
+					))}
+				</div>
+			</div>
+
+			<div class="recent-summary">
+				<div><strong>{wins}</strong><span>VICTORIAS</span></div>
+				<div><strong>{draws}</strong><span>EMPATES</span></div>
+				<div><strong>{losses}</strong><span>DERROTAS</span></div>
+				<div><strong>{points}</strong><span>PUNTOS</span></div>
+			</div>
+
+			<div class="recent-match-list">
+				{recentResults.map((game) => (
+					<a class="recent-match" href={`/partidos/${game.slug}`} aria-label={`Ver ${game.club_local} contra ${game.club_visitante}`}>
+						<time datetime={String(game.fecha ?? "").slice(0, 10)}>
+							<span>{game.monthLabel}</span>
+							<strong>{game.dayLabel}</strong>
+						</time>
+						<img class="recent-club-logo" src={game.opponentLogo} alt="" width="30" height="30" loading="lazy" decoding="async" />
+						<span class="recent-opponent"><small>{game.locationLabel}</small> {game.opponent}</span>
+						<strong class:list={["recent-score", `is-${game.result.toLowerCase()}`]}>{game.score}</strong>
+						<img class="recent-competition-logo" src={game.competitionLogo} alt={game.competicion_nombre || "Competición"} title={game.competicion_nombre || "Competición"} width="26" height="26" loading="lazy" decoding="async" />
+					</a>
+				))}
+			</div>
+
+			<div class="recent-rate">
+				<span>PORCENTAJE DE VICTORIAS</span>
+				<div class="recent-rate-value"><i style={`--win-rate: ${winRate}%`} /><strong>{winRate}%</strong></div>
+			</div>
+
+			<a class="recent-all-link" href="/partidos">VER PARTIDOS <span aria-hidden="true">→</span></a>
+		</section>
+	)
+}
+
+<style>
+	.recent-results-card {
+		width: 100%;
+		padding: 1.15rem;
+		border: 1px solid rgba(201, 164, 77, 0.32);
+		border-radius: 20px;
+		background: linear-gradient(145deg, rgba(18, 25, 40, 0.98), rgba(8, 14, 29, 0.98));
+		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+		color: #f4f4f6;
+	}
+
+	.recent-form,
+	.recent-summary,
+	.recent-match,
+	.recent-rate,
+	.recent-rate-value {
+		display: flex;
+		align-items: center;
+	}
+
+	.recent-form {
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.recent-form > span,
+	.recent-summary span,
+	.recent-rate > span {
+		font: 700 0.63rem/1.25 "Montserrat", sans-serif;
+		color: rgba(255, 255, 255, 0.56);
+		letter-spacing: 0.04em;
+	}
+
+	.recent-form-list { display: flex; gap: 0.35rem; }
+	.recent-form-badge {
+		display: grid;
+		width: 1.75rem;
+		height: 1.75rem;
+		place-items: center;
+		border-radius: 50%;
+		font: 800 0.72rem/1 "Montserrat", sans-serif;
+		color: white;
+	}
+
+	.is-v { background: #087f66; }
+	.is-e { background: #6b7280; }
+	.is-d { background: #b64040; }
+
+	.recent-summary {
+		justify-content: space-between;
+		padding: 1rem 0 0.85rem;
+	}
+
+	.recent-summary div { display: grid; gap: 0.2rem; text-align: center; }
+	.recent-summary strong { font: 800 1rem/1 "Montserrat", sans-serif; }
+	.recent-summary div:first-child strong { color: #29c79d; }
+	.recent-summary div:nth-child(3) strong { color: #ff7272; }
+	.recent-summary span { font-size: 0.5rem; }
+
+	.recent-match-list { display: grid; }
+	.recent-match {
+		min-width: 0;
+		gap: 0.55rem;
+		padding: 0.55rem 0;
+		border-radius: 10px;
+		color: inherit;
+		text-decoration: none;
+		transition: background 180ms ease, transform 180ms ease;
+	}
+
+	.recent-match:hover,
+	.recent-match:focus-visible {
+		background: rgba(201, 164, 77, 0.09);
+		transform: translateX(2px);
+		outline: none;
+	}
+
+	.recent-match time { flex: 0 0 1.85rem; text-align: center; }
+	.recent-match time span,
+	.recent-match time strong { display: block; }
+	.recent-match time span { font: 700 0.52rem/1 "Montserrat", sans-serif; color: rgba(255,255,255,.52); }
+	.recent-match time strong { margin-top: 0.15rem; font: 800 0.75rem/1 "Montserrat", sans-serif; }
+	.recent-club-logo { width: 1.65rem; height: 1.65rem; flex: 0 0 1.65rem; object-fit: contain; }
+	.recent-opponent {
+		min-width: 0;
+		flex: 1;
+		overflow: hidden;
+		font: 700 0.72rem/1.2 "Montserrat", sans-serif;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.recent-opponent small { color: #c9a44d; font: inherit; }
+	.recent-score {
+		flex: 0 0 auto;
+		padding: 0.38rem 0.48rem;
+		border-radius: 9px;
+		font: 800 0.72rem/1 "Montserrat", sans-serif;
+		color: white;
+	}
+	.recent-score.is-v { color: #4ce0b5; background: rgba(8, 127, 102, 0.24); }
+	.recent-score.is-e { color: #e5e7eb; background: rgba(107, 114, 128, 0.24); }
+	.recent-score.is-d { color: #ff8a8a; background: rgba(182, 64, 64, 0.24); }
+	.recent-competition-logo { width: 1.35rem; height: 1.35rem; flex: 0 0 1.35rem; object-fit: contain; }
+
+	.recent-rate {
+		justify-content: space-between;
+		gap: 0.65rem;
+		margin-top: 0.75rem;
+		padding-top: 0.9rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+	}
+	.recent-rate > span { font-size: 0.52rem; }
+	.recent-rate-value { flex: 1; justify-content: flex-end; gap: 0.45rem; }
+	.recent-rate-value i {
+		position: relative;
+		width: min(6rem, 65%);
+		height: 0.3rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.12);
+	}
+	.recent-rate-value i::after {
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: var(--win-rate);
+		border-radius: inherit;
+		background: #19b88d;
+		content: "";
+	}
+	.recent-rate-value strong { font: 800 0.65rem/1 "Montserrat", sans-serif; }
+
+	.recent-all-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		margin-top: 1rem;
+		padding: 0.82rem;
+		border: 1px solid rgba(201, 164, 77, 0.38);
+		border-radius: 13px;
+		background: rgba(255, 255, 255, 0.035);
+		color: white;
+		font: 800 0.68rem/1 "Montserrat", sans-serif;
+		letter-spacing: 0.07em;
+		text-decoration: none;
+		transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
+	}
+	.recent-all-link:hover,
+	.recent-all-link:focus-visible {
+		border-color: #c9a44d;
+		background: rgba(201, 164, 77, 0.1);
+		color: #e3bf65;
+		outline: none;
+	}
+
+	@media (max-width: 960px) {
+		.recent-results-card { max-width: 34rem; margin-inline: auto; padding: 1.25rem; }
+		.recent-opponent { font-size: 0.78rem; }
+	}
+
+	@media (max-width: 420px) {
+		.recent-results-card { padding: 0.9rem; border-radius: 16px; }
+		.recent-form-badge { width: 1.55rem; height: 1.55rem; font-size: 0.64rem; }
+		.recent-form-list { gap: 0.25rem; }
+		.recent-match { gap: 0.38rem; }
+		.recent-club-logo { width: 1.45rem; height: 1.45rem; flex-basis: 1.45rem; }
+		.recent-competition-logo { width: 1.15rem; height: 1.15rem; flex-basis: 1.15rem; }
+		.recent-opponent { font-size: 0.67rem; }
+		.recent-score { padding: 0.35rem 0.4rem; font-size: 0.66rem; }
+		.recent-summary strong { font-size: 0.9rem; }
+	}
+</style>
