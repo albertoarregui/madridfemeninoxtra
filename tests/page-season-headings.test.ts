@@ -48,7 +48,9 @@ test('plantilla filtra por temporada y resume la plantilla con datos cacheados',
     assert.match(plantilla, /searchParams\.get\("temporada"\)/);
     assert.match(plantilla, /seasons\.includes\(requestedSeason\) \? requestedSeason : currentSeason/);
     for (const label of ['Jugadoras', 'Edad media', 'Estatura media', 'Peso medio']) assert.ok(squad.includes(`<dt>${label}</dt>`), label);
-    assert.match(squad, /Entrenadores" : "Entrenador"/);
+    // Tarjeta de entrenador aparte, enlazada a su ficha.
+    assert.match(squad, /class="coach-card" href=\{`\/entrenadores\/\$\{coach\.slug\}`\}/);
+    assert.match(squad, /\.coach-card:hover/);
     assert.match(squad, /data-squad-season/);
     // Bajo cada miniatura: partidos, goles y asistencias oficiales; porteras, solo porterías a cero.
     assert.match(squad, /row\.competicion === "Amistoso"/);
