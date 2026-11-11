@@ -114,7 +114,8 @@ test('rival records never query the obsolete goles_asistencias table', () => {
 test('Astro uses no-op image transformations instead of the legacy image endpoint', () => {
   const config = read('astro.config.mjs');
   assert.match(config, /imageService:\s*false/);
-  assert.match(config, /astro\/assets\/services\/noop/);
+  assert.match(config, /passthrough-image-service/);
+  assert.match(read('src/lib/passthrough-image-service.ts'), /options\.src\.src/);
 });
 
 

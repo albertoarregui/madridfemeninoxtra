@@ -26,9 +26,10 @@ export default defineConfig({
     imageService: false,
   }),
   image: {
-    // Conserva el archivo original: no redimensiona ni recomprime las imágenes.
+    // Conserva el archivo original: no redimensiona ni recomprime las imágenes
+    // y enlaza al archivo directamente (sin el endpoint `/_image`).
     service: {
-      entrypoint: 'astro/assets/services/noop',
+      entrypoint: './src/lib/passthrough-image-service.ts',
     },
     domains: ['images.ctfassets.net', 'downloads.ctfassets.net', 'media.madridfemeninoxtra.com'],
   },
