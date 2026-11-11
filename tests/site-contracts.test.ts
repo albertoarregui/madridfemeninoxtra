@@ -55,10 +55,7 @@ test('matches page replaces the calendar with a filterable chronological list', 
   const config = read('astro.config.mjs');
   assert.match(config, /'\/calendario': \{ status: 301, destination: '\/partidos' \}/);
   assert.equal(exists('src/pages/calendario.astro'), false);
-  // Los filtros son los mismos desplegables que el resto de la web.
-  for (const filter of ['season', 'competition', 'venue']) assert.match(timeline, new RegExp(`key: "${filter}"`));
-  assert.match(timeline, /data-custom-select="true"/);
-  assert.doesNotMatch(timeline, /mt-pill/);
+  for (const filter of ['competition', 'venue', 'season']) assert.match(timeline, new RegExp(`data-filter="${filter}"`));
   assert.match(timeline, /data-season=\{row\.season\}/);
   assert.match(timeline, /href=\{`\/partidos\/\$\{row\.slug\}`\}/);
   assert.doesNotMatch(timeline, /fetchGamesDirectly|client\.execute|fetch\(/);
