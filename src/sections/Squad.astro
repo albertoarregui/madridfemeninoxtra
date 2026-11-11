@@ -1,6 +1,6 @@
 ---
 import { getFlagSrc } from "../utils/flags";
-import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds, isFirstTeamInSeason } from "../utils/players";
+import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds, isFirstTeamInSeason, fetchGoalkeeperMinutes } from "../utils/players";
 import { fetchRankingsDirectly } from "../utils/rankings";
 import { fetchGamesDirectly } from "../utils/partidos";
 import { fetchCoachesDirectly } from "../utils/entrenadores";
@@ -8,13 +8,31 @@ interface Props { season: string; currentSeason: string; seasons: string[]; }
 const { season, currentSeason, seasons = [] } = Astro.props;
 
 // Todo sale de lecturas ya cacheadas y compartidas con otras páginas.
-const [allPlayersDb, lesionadas, rankingRows, allGames, coaches] = await Promise.all([
+const [allPlayersDb, lesionadas, rankingRows, allGames, coaches, goalkeeperMinutes] = await Promise.all([
     fetchPlayersDirectly(),
     fetchInjuredPlayerIds(),
     fetchRankingsDirectly(),
     fetchGamesDirectly(),
     fetchCoachesDirectly(),
+    fetchGoalkeeperMinutes(),
 ]);
+
+const seasonMatchSaves = new Map<number, number>();
+for (const game of allGames) {
+    if (game.temporada_nombre !== season || !game.isPlayed || game.competicion_nombre === "Amistoso") continue;
+    seasonMatchSaves.set(Number(game.id_partido), Number(game.rm_paradas) || 0);
+}
+const mainGoalkeeper = new Map<number, { id: number; minutos: number }>();
+for (const row of goalkeeperMinutes) {
+    if (!seasonMatchSaves.has(row.id_partido)) continue;
+    const current = mainGoalkeeper.get(row.id_partido);
+    if (!current || row.minutos > current.minutos) mainGoalkeeper.set(row.id_partido, { id: row.id_jugadora, minutos: row.minutos });
+}
+const savesByPlayer = new Map<string, number>();
+for (const [matchId, keeper] of mainGoalkeeper) {
+    const id = String(keeper.id);
+    savesByPlayer.set(id, (savesByPlayer.get(id) ?? 0) + (seasonMatchSaves.get(matchId) ?? 0));
+}
 
 const squadPlayers = allPlayersDb.filter((player) => isFirstTeamInSeason(player, season));
 
@@ -44,7 +62,11 @@ const listofPlayers = squadPlayers.map((player) => {
     // temporada; en las porteras, solo las porterías a cero.
     const isGoalkeeper = (player.posicion || "").toLowerCase().includes("portera");
     const thumbStats = isGoalkeeper
-        ? [{ value: stats.porterias_cero, label: "Port. a 0", long: ["portería a cero", "porterías a cero"] }]
+        ? [
+            { value: stats.partidos, label: "PJ", long: ["partido", "partidos"] },
+            { value: savesByPlayer.get(String(player.id_jugadora)) ?? 0, label: "PAR", long: ["parada", "paradas"] },
+            { value: stats.porterias_cero, label: "A cero", long: ["portería a cero", "porterías a cero"] },
+        ]
         : [
             { value: stats.partidos, label: "PJ", long: ["partido", "partidos"] },
             { value: stats.goles, label: "G", long: ["gol", "goles"] },
@@ -118,6 +140,11 @@ const rows = [
 ].filter(row => row.players.length > 0);
 
 if (otros.length > 0) rows.push({ title: "OTRAS", players: otros });
+
+// Posición en singular para las tarjetas del PNG.
+const exportPosition: Record<string, string> = {
+    PORTERAS: "Portera", DEFENSAS: "Defensa", CENTROCAMPISTAS: "Centrocampista", DELANTERAS: "Delantera", OTRAS: "Jugadora",
+};
 
 // Resumen de la plantilla. En temporadas pasadas la edad se calcula al inicio
 // de la temporada (1 de septiembre); en la actual, a día de hoy.
@@ -219,6 +246,13 @@ function calculateAge(birthDateString: string): number {
         </div>
     </dl>
 
+    <div class="squad-actions">
+    {listofPlayers.length > 0 && (
+        <button type="button" class="squad-download" data-squad-download data-season={season}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+            <span data-squad-download-label>Descargar PNG</span>
+        </button>
+    )}
     {seasons.length > 1 && (
         <details class="squad-season" data-squad-season>
             <summary>
@@ -240,6 +274,7 @@ function calculateAge(birthDateString: string): number {
             </ul>
         </details>
     )}
+    </div>
 </section>
 
 {seasonCoaches.length > 0 && (
@@ -266,6 +301,46 @@ function calculateAge(birthDateString: string): number {
                 </span>
             </a>
         ))}
+    </div>
+)}
+
+{listofPlayers.length > 0 && (
+    <div class="squad-export" id="squad-export" aria-hidden="true">
+        <header class="sx-head">
+            <div>
+                <p class="sx-brand"><img data-src="/icon.webp" alt="" width="54" height="54" />MADRID FEMENINO <span>XTRA</span></p>
+                <p class="sx-sub">Plantilla del Real Madrid Femenino</p>
+            </div>
+            <div class="sx-meta">
+                <span class="sx-season">{season}</span>
+                <span class="sx-pill">{listofPlayers.length} jugadoras</span>
+            </div>
+        </header>
+        {seasonCoaches.map((coach) => (
+            <div class="sx-coach">
+                {coach.imageUrl && <span class="sx-coach-photo" data-bg={coach.imageUrl}></span>}
+                <div>
+                    <p class="sx-label">Entrenador</p>
+                    <p class="sx-coach-name">{coach.nombre}{coach.flagUrl && <img class="sx-flag" data-src={coach.flagUrl} alt="" />}<span class="sx-iso">{coach.iso?.toUpperCase()}</span></p>
+                </div>
+            </div>
+        ))}
+        {rows.map((row) => (
+            <section class="sx-group">
+                <div class="sx-group-head"><h3>{row.title}</h3><span>{row.players.length}</span></div>
+                <div class="sx-grid">
+                    {row.players.map((player) => (
+                        <div class="sx-card">
+                            <span class="sx-number">{player.number && `#${player.number}`}{player.flagUrl && <img class="sx-flag" data-src={player.flagUrl} alt="" />}</span>
+                            <span class="sx-photo" data-bg={player.imageUrl}></span>
+                            <p class="sx-name">{player.name}</p>
+                            <p class="sx-pos">{exportPosition[row.title]}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        ))}
+        <footer class="sx-foot">madridfemeninoxtra.com</footer>
     </div>
 )}
 
@@ -377,7 +452,7 @@ function calculateAge(birthDateString: string): number {
                                     data-profile-image={player.imageUrl}
                                     aria-label={player.thumbLabel}
                                 >
-                                    <span class="thumbnail-number">{player.number}</span>
+                                    <span class="thumbnail-number">{player.flagUrl && <img class="thumbnail-flag" src={player.flagUrl} alt="" width="18" height="12" loading="lazy" decoding="async" />}{player.number}</span>
                         {player.isInjured && (
                             <span class="thumb-injured" title="Lesionada" aria-hidden="true">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
@@ -415,7 +490,7 @@ function calculateAge(birthDateString: string): number {
                         data-profile-image={player.imageUrl}
                         aria-label={player.thumbLabel}
                     >
-                        <span class="thumbnail-number">{player.number}</span>
+                        <span class="thumbnail-number">{player.flagUrl && <img class="thumbnail-flag" src={player.flagUrl} alt="" width="18" height="12" loading="lazy" decoding="async" />}{player.number}</span>
                         {player.isInjured && (
                             <span class="thumb-injured" title="Lesionada" aria-hidden="true">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/><path d="M4 10a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -8"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
@@ -524,6 +599,81 @@ function calculateAge(birthDateString: string): number {
     });
 </script>
 
+<script>
+    // Descarga la plantilla como PNG. Las imágenes de la versión de exportación
+    // solo se piden al pulsar. R2 solo permite CORS desde producción, así que
+    // fuera de ella sus fotos pasan por el proxy (las banderas permiten CORS).
+    async function downloadSquad(button: HTMLButtonElement) {
+        const node = document.getElementById("squad-export");
+        const label = button.querySelector("[data-squad-download-label]");
+        if (!node || button.disabled) return;
+        button.disabled = true;
+        const original = label?.textContent ?? "";
+        if (label) label.textContent = "Generando…";
+        try {
+            const sameOrigin = location.hostname === "www.madridfemeninoxtra.com";
+            const resolve = (src: string) =>
+                sameOrigin || !src.startsWith("https://media.madridfemeninoxtra.com/") ? src : `/api/img-proxy?url=${encodeURIComponent(src)}`;
+            await Promise.all([...node.querySelectorAll<HTMLImageElement>("img[data-src]")].map((img) =>
+                img.complete && img.naturalWidth > 0 ? Promise.resolve() : new Promise<void>((done) => {
+                    img.onload = img.onerror = () => done();
+                    img.crossOrigin = "anonymous";
+                    img.src = resolve(img.dataset.src || "");
+                })));
+            // Las fotos van como fondo recortado a cabeza y hombros: se precargan y
+            // se asignan al pulsar.
+            await Promise.all([...node.querySelectorAll<HTMLElement>("[data-bg]")].map((el) => new Promise<void>((done) => {
+                const url = resolve(el.dataset.bg || "");
+                const probe = new Image();
+                probe.crossOrigin = "anonymous";
+                probe.onload = probe.onerror = () => { el.style.backgroundImage = `url("${url}")`; done(); };
+                probe.src = url;
+            })));
+            await document.fonts.ready;
+            const { default: html2canvas } = await import("html2canvas");
+            const height = node.scrollHeight;
+            const canvas = await html2canvas(node, {
+                backgroundColor: "#070d1c",
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: node.offsetWidth,
+                height,
+                windowWidth: node.offsetWidth,
+                windowHeight: height,
+                scrollX: 0,
+                scrollY: 0,
+                onclone: (doc) => {
+                    const clone = doc.getElementById("squad-export");
+                    if (clone) clone.style.visibility = "visible";
+                },
+            });
+            const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/png"));
+            if (!blob) throw new Error("No se pudo generar la imagen");
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `plantilla-real-madrid-femenino-${(button.dataset.season || "").replace("/", "-")}.png`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        } catch (error) {
+            console.error("[plantilla] Error al generar el PNG:", error);
+            alert("No se pudo generar la imagen. Inténtalo de nuevo.");
+        } finally {
+            button.disabled = false;
+            if (label) label.textContent = original;
+        }
+    }
+
+    const initSquadDownload = () => {
+        const button = document.querySelector<HTMLButtonElement>("[data-squad-download]");
+        if (!button || button.dataset.ready === "true") return;
+        button.dataset.ready = "true";
+        button.addEventListener("click", () => downloadSquad(button));
+    };
+    initSquadDownload();
+    document.addEventListener("astro:page-load", initSquadDownload);
+</script>
+
 <script is:inline data-astro-rerun>
     // Cierra el selector de temporada al pulsar fuera o con Escape.
     (() => {
@@ -612,6 +762,60 @@ function calculateAge(birthDateString: string): number {
     .coach-card-badge svg { width: 0.85rem; height: 0.85rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .coach-card-meta { font-family: 'DM Sans', sans-serif; font-size: 0.8rem; color: rgba(200, 210, 220, 0.6); }
 
+    .squad-actions { display: flex; align-items: flex-end; gap: 0.75rem; }
+    .squad-download {
+        display: inline-flex; align-items: center; gap: 0.5rem; height: 2.85rem; padding: 0 1.1rem;
+        border: 1px solid rgba(212, 168, 67, 0.45); border-radius: 3px; background: rgba(5, 9, 19, 0.6);
+        color: #d4a843; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.72rem; font-weight: 700;
+        letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .squad-download svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .squad-download:hover { background: rgba(212, 168, 67, 0.12); border-color: #d4a843; color: #f2dfb0; }
+    .squad-download:disabled { opacity: 0.6; cursor: progress; }
+    .squad-download:focus-visible { outline: 2px solid #e6c77c; outline-offset: 3px; }
+
+    /* Versión de exportación a PNG: fuera de la vista, sin afectar al scroll. */
+    .squad-export {
+        position: fixed; top: 0; left: 0; z-index: -1; width: 1300px; visibility: hidden; pointer-events: none;
+        padding: 44px 40px 36px; box-sizing: border-box; color: #f0f0f0; font-family: 'DM Sans', sans-serif;
+        background: radial-gradient(120% 60% at 0% 0%, rgba(212, 168, 67, 0.1), transparent 60%), #070d1c;
+    }
+    .squad-export p, .squad-export h3 { margin: 0; }
+    .sx-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+    .sx-brand { display: flex; align-items: center; gap: 14px; font-family: 'Cinzel', serif; font-size: 44px; font-weight: 700; letter-spacing: 0.04em; line-height: 1; }
+    .sx-brand img { width: 54px; height: 54px; object-fit: contain; }
+    .sx-brand span { color: #d4a843; }
+    .sx-sub { margin-top: 12px !important; font-size: 13px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(212, 168, 67, 0.75); }
+    .sx-meta { display: grid; justify-items: end; gap: 12px; }
+    .sx-season { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; letter-spacing: 0.18em; color: rgba(200, 210, 220, 0.75); }
+    .sx-pill { padding: 10px 20px; border: 1px solid rgba(212, 168, 67, 0.55); border-radius: 999px; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #d4a843; }
+    .sx-coach {
+        display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding: 18px 24px;
+        border: 1px solid rgba(212, 168, 67, 0.35); border-radius: 22px 0 22px 0; background: rgba(8, 16, 34, 0.9);
+    }
+    .sx-coach-photo, .sx-photo { display: block; overflow: hidden; border-radius: 50%; background: rgba(212, 168, 67, 0.12); border: 1px solid rgba(212, 168, 67, 0.45); }
+    .sx-coach-photo { width: 60px; height: 60px; }
+    /* Recorte a cabeza y hombros de los recortes de cuerpo entero. */
+    .sx-coach-photo, .sx-photo { background-repeat: no-repeat; background-size: 200% auto; background-position: 50% 6%; }
+    .sx-label { font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(212, 168, 67, 0.75); }
+    .sx-coach-name { display: flex; align-items: center; gap: 10px; margin-top: 6px !important; font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; }
+    .sx-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; }
+    .sx-iso { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: rgba(200, 210, 220, 0.65); }
+    .sx-group { margin-bottom: 18px; padding: 22px 18px 18px; border: 1px solid rgba(212, 168, 67, 0.22); border-radius: 4px; background: rgba(8, 16, 34, 0.75); }
+    .sx-group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 4px; }
+    .sx-group-head h3 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.22em; color: #d4a843; }
+    .sx-group-head span { min-width: 34px; padding: 6px 10px; border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 8px; text-align: center; font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: #d4a843; }
+    .sx-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+    .sx-card {
+        position: relative; display: grid; justify-items: center; width: 228px; padding: 16px 12px 14px; box-sizing: border-box;
+        border: 1px solid rgba(212, 168, 67, 0.2); border-radius: 14px; background: rgba(12, 20, 38, 0.95);
+    }
+    .sx-number { position: absolute; top: 12px; left: 14px; display: flex; align-items: center; gap: 7px; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: #d4a843; }
+    .sx-photo { width: 76px; height: 76px; }
+    .sx-name { margin-top: 12px !important; font-size: 17px; font-weight: 600; text-align: center; color: #f0f0f0; }
+    .sx-pos { margin-top: 5px !important; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(200, 210, 220, 0.6); }
+    .sx-foot { margin-top: 18px; text-align: right; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(212, 168, 67, 0.7); }
+
     .squad-season { position: relative; }
     .squad-season summary { display: grid; gap: 0.45rem; list-style: none; cursor: pointer; }
     .squad-season summary::-webkit-details-marker { display: none; }
@@ -652,6 +856,8 @@ function calculateAge(birthDateString: string): number {
     @media (max-width: 600px) {
         .squad-summary-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; width: 100%; }
         .squad-summary-item { padding: 0; border-left: 0; }
+        .squad-actions { width: 100%; flex-direction: column; align-items: stretch; }
+        .squad-download { justify-content: center; }
         .squad-season, .squad-season-value { width: 100%; }
         .squad-coaches { margin-top: -1rem; }
         .coach-card { width: 100%; }
@@ -754,12 +960,12 @@ function calculateAge(birthDateString: string): number {
 
     .player-dorsal {
         font-family: 'Cinzel', serif;
-        font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+        font-size: clamp(2.2rem, 5vw, 3.8rem);
         font-weight: 700;
         color: #d4a843;
-        letter-spacing: 0.3em;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
-        opacity: 0.7;
+        opacity: 0.85;
         line-height: 1;
         margin-bottom: 0.4rem;
     }
@@ -1053,16 +1259,27 @@ function calculateAge(birthDateString: string): number {
 
     .thumbnail-number {
         position: absolute;
-        top: 4px;
-        right: 5px;
+        top: 6px;
+        right: 7px;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
         font-family: 'Cinzel', serif;
-        color: rgba(212, 168, 67, 0.65);
-        font-size: 0.7rem;
+        color: rgba(212, 168, 67, 0.8);
+        font-size: 1.15rem;
         font-weight: 700;
         z-index: 4;
         line-height: 1;
         text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
         transition: color 0.2s ease;
+    }
+
+    .thumbnail-flag {
+        width: 18px;
+        height: 12px;
+        object-fit: cover;
+        border-radius: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     }
 
     .player-thumbnail:hover .thumbnail-number,
@@ -1165,7 +1382,7 @@ function calculateAge(birthDateString: string): number {
         }
 
         .mobile-thumbnails-track .thumbnail-number {
-            font-size: 0.82rem;
+            font-size: 1rem;
         }
 
         .mobile-thumbnails-track .thumb-stats { gap: 0.6rem; padding-top: 1.3rem; }
@@ -1205,7 +1422,7 @@ function calculateAge(birthDateString: string): number {
         }
 
         .player-dorsal {
-            font-size: clamp(0.9rem, 3vw, 1.3rem);
+            font-size: clamp(1.6rem, 6vw, 2.2rem);
         }
     }
 </style>

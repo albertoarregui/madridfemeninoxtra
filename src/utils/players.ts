@@ -758,3 +758,29 @@ export function firstTeamSeasons(players: any[]): string[] {
     }
     return [...seasons].sort().reverse();
 }
+
+/**
+ * Minutos de cada portera en cada partido. Las paradas solo se registran por
+ * equipo, así que se atribuyen a la portera con más minutos en ese partido.
+ */
+export async function fetchGoalkeeperMinutes(): Promise<Array<{ id_partido: number; id_jugadora: number; minutos: number }>> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return [];
+        const result = await client.execute(`
+            SELECT a.id_partido, a.id_jugadora, COALESCE(a.minutos_jugados, 0) AS minutos
+            FROM alineaciones a
+            JOIN jugadoras j ON j.id_jugadora = a.id_jugadora
+            WHERE LOWER(j.posicion) LIKE '%portera%' AND COALESCE(a.minutos_jugados, 0) > 0
+        `);
+        return result.rows.map((row: any) => ({
+            id_partido: Number(row.id_partido),
+            id_jugadora: Number(row.id_jugadora),
+            minutos: Number(row.minutos) || 0,
+        }));
+    } catch (error) {
+        console.error("Error al obtener los minutos de las porteras:", error);
+        return [];
+    }
+}

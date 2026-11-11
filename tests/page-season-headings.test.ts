@@ -55,7 +55,13 @@ test('plantilla filtra por temporada y resume la plantilla con datos cacheados',
     // Bajo cada miniatura: partidos, goles y asistencias oficiales; porteras, solo porterías a cero.
     assert.match(squad, /row\.competicion === "Amistoso"/);
     assert.match(squad, /class="thumb-stats"/);
-    assert.match(squad, /isGoalkeeper\s*\?\s*\[\{ value: stats\.porterias_cero/);
+    // Porteras: partidos, paradas (de los partidos en los que fue la portera principal) y porterías a cero.
+    assert.match(squad, /label: "PAR"/);
+    assert.match(squad, /savesByPlayer/);
+    assert.match(squad, /class="thumbnail-flag"/);
+    // Descarga en PNG con html2canvas cargado solo al pulsar.
+    assert.match(squad, /data-squad-download/);
+    assert.match(squad, /await import\("html2canvas"\)/);
     assert.doesNotMatch(squad, /id="player-apps"/);
     assert.doesNotMatch(squad, /client\.execute/);
 });
