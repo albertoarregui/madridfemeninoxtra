@@ -8,7 +8,9 @@ type Match = Record<string, any> & {
     slug: string; fecha: string; season: string; comp: string; compLabel: string; compLogo: string;
     official: boolean; home: boolean; rival: string; result: "V" | "E" | "D"; minutos: number;
 };
+type PickerPlayer = { slug: string; name: string; position: string; group: string; photo: string; squad: boolean; number: number | null; g: number | null; a: number | null };
 type Data = {
+    picker?: { current: string; players: PickerPlayer[] };
     isGoalkeeper: boolean;
     seasons: string[];
     competitions: Array<{ key: string; label: string; logo: string; official: boolean }>;
@@ -321,7 +323,8 @@ function setupPerformance(root: HTMLElement, data: Data) {
         input.type = "checkbox";
         input.checked = state.per90;
         input.addEventListener("change", () => { state.per90 = input.checked; render(); });
-        toggle.append(el("span", "", "Totales"), input, el("span", "pt-toggle-track"), el("span", "", "Por 90'"));
+        toggle.append(el("span", state.per90 ? "" : "is-on", "Totales"), input, el("span", "pt-toggle-track"), el("span", state.per90 ? "is-on" : "", "Por 90'"));
+        toggle.title = "Cambiar entre datos totales y por 90 minutos";
         bar.replaceChildren(
             dropdown("Temporada", [[ALL, "Todas las temporadas"], ...data.seasons.map((s) => [s, s] as [string, string])], state.season, (v) => { state.season = v; state.month = 0; render(); }),
             competitionPills(data, inSeason, state.comp, (v) => { state.comp = v; render(); }),
@@ -352,11 +355,14 @@ function setupPerformance(root: HTMLElement, data: Data) {
         const dates = matches.map((m) => m.fecha).sort();
         if (summaryTitle) summaryTitle.textContent = `${state.month ? MONTHS[state.month - 1].toUpperCase() : "TEMPORADA COMPLETA"} · ${matches.length} ${matches.length === 1 ? "PARTIDO" : "PARTIDOS"}`;
         if (rangeBox) rangeBox.textContent = dates.length ? `${shortDate(dates[0])} – ${shortDate(dates[dates.length - 1])}` : "";
+        const minutesTotal = sum(matches, "minutos");
+        const shown = (total: number) => state.per90 ? (minutesTotal > 0 ? fmt((total / minutesTotal) * 90, 2) : "–") : fmt(total);
+        const suffix = state.per90 ? " /90" : "";
         const summaryItems: Array<[string, string, string?]> = [
-            ["Partidos", fmt(matches.length)], ["Minutos", fmt(sum(matches, "minutos"))],
+            ["Partidos", fmt(matches.length)], ["Minutos", fmt(minutesTotal)],
             ["Valoración media", rating ? fmt(rating, 2) : "–", ratingClass(rating)],
-            ["Goles", fmt(sum(matches, "goles"))], ["Asistencias", fmt(sum(matches, "asistencias"))],
-            data.isGoalkeeper ? ["Paradas", fmt(sum(matches, "paradas"))] : ["G+A", fmt(sum(matches, "goles") + sum(matches, "asistencias"))],
+            [`Goles${suffix}`, shown(sum(matches, "goles"))], [`Asistencias${suffix}`, shown(sum(matches, "asistencias"))],
+            data.isGoalkeeper ? [`Paradas${suffix}`, shown(sum(matches, "paradas"))] : [`G+A${suffix}`, shown(sum(matches, "goles") + sum(matches, "asistencias"))],
         ];
         summary.replaceChildren(...summaryItems.map(([label, value, cls]) => {
             const item = el("div", "pt-summary-stat");
@@ -519,6 +525,81 @@ function setupStatsRange(root: HTMLElement) {
     update();
 }
 
+// ── Selector de jugadoras del encabezado ─────────────────────────────────────
+// Misma lógica que el buscador de la web (el nombre contiene lo escrito; antes
+// los que empiezan por ello), sin tildes y sin peticiones: la lista va en la página.
+const GROUP_ORDER = ["Porteras", "Defensas", "Centrocampistas", "Delanteras", "Otras"];
+const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+function setupPlayerPicker(data: Data) {
+    const root = document.querySelector<HTMLElement>("[data-player-picker]");
+    if (!root || !data.picker || root.dataset.ready === "true") return;
+    root.dataset.ready = "true";
+    const trigger = root.querySelector<HTMLButtonElement>("[data-picker-trigger]");
+    const panel = root.querySelector<HTMLElement>("[data-picker-panel]");
+    const search = root.querySelector<HTMLInputElement>("[data-picker-search]");
+    const list = root.querySelector<HTMLElement>("[data-picker-list]");
+    if (!trigger || !panel || !search || !list) return;
+    const { current, players } = data.picker;
+
+    const item = (p: PickerPlayer) => {
+        const link = el("a", `pc-item${p.slug === current ? " is-current" : ""}`);
+        link.href = `/jugadoras/${p.slug}`;
+        link.setAttribute("role", "option");
+        link.setAttribute("aria-selected", String(p.slug === current));
+        const photo = el("span", "pc-photo");
+        if (p.photo) { const img = el("img"); img.src = p.photo; img.alt = ""; img.width = 40; img.height = 40; img.loading = "lazy"; photo.append(img); }
+        const text = el("span", "pc-text");
+        const stats = p.g != null ? ` · ${p.g}G ${p.a ?? 0}A` : "";
+        text.append(el("strong", "", p.name), el("small", "", `${p.position || "Jugadora"}${stats}`));
+        link.append(photo, text);
+        if (p.number != null) link.append(el("span", "pc-number", p.number));
+        return link;
+    };
+    const render = () => {
+        const query = normalize(search.value);
+        list.replaceChildren();
+        if (!query) {
+            const squad = players.filter((p) => p.squad).sort((a, b) => (a.number ?? 99) - (b.number ?? 99));
+            GROUP_ORDER.forEach((group) => {
+                const inGroup = squad.filter((p) => p.group === group);
+                if (!inGroup.length) return;
+                list.append(el("p", "pc-group", group), ...inGroup.map(item));
+            });
+            return;
+        }
+        const results = players
+            .map((p) => ({ p, name: normalize(p.name) }))
+            .filter(({ name }) => name.includes(query))
+            .sort((x, y) => Number(y.name.startsWith(query)) - Number(x.name.startsWith(query))
+                || Number(y.p.squad) - Number(x.p.squad) || x.p.name.localeCompare(y.p.name, "es"))
+            .slice(0, 30);
+        if (!results.length) { list.append(el("p", "pc-empty", "Sin resultados")); return; }
+        list.append(el("p", "pc-group", "Resultados"), ...results.map(({ p }) => item(p)));
+    };
+    const open = (show: boolean) => {
+        panel.hidden = !show;
+        trigger.setAttribute("aria-expanded", String(show));
+        if (show) { search.value = ""; render(); search.focus(); list.querySelector(".is-current")?.scrollIntoView({ block: "nearest" }); }
+    };
+    trigger.addEventListener("click", (event) => { event.stopPropagation(); open(panel.hidden); });
+    search.addEventListener("input", render);
+    const items = () => [...list.querySelectorAll<HTMLAnchorElement>(".pc-item")];
+    root.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !panel.hidden) { open(false); trigger.focus(); return; }
+        if (panel.hidden || (event.key !== "ArrowDown" && event.key !== "ArrowUp" && event.key !== "Enter")) return;
+        const all = items();
+        const index = all.indexOf(document.activeElement as HTMLAnchorElement);
+        if (event.key === "Enter" && document.activeElement === search && all[0]) { event.preventDefault(); all[0].click(); return; }
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            const next = event.key === "ArrowDown" ? Math.min(all.length - 1, index + 1) : index - 1;
+            if (next < 0) search.focus(); else all[next]?.focus();
+        }
+    });
+    document.addEventListener("click", (event) => { if (!root.contains(event.target as Node)) open(false); });
+}
+
 // ── Pestañas ────────────────────────────────────────────────────────────────
 function setupTabs(root: HTMLElement) {
     const tabs = [...root.querySelectorAll<HTMLElement>("[data-tab]")];
@@ -562,4 +643,5 @@ export function initPlayerInsights() {
     setupInfo(root, data);
     setupPerformance(root, data);
     setupMatches(root, data);
+    setupPlayerPicker(data);
 }

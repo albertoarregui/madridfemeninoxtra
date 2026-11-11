@@ -13,6 +13,7 @@ import {
     fetchPlayerInjuries,
     fetchPlayerMatchStats,
     fetchGoalkeeperMinutes,
+    isFirstTeamInSeason,
 } from "../../utils/players";
 
 import { getAssetUrl } from "../../utils/assets";
@@ -22,6 +23,7 @@ import { fetchAllClubShields } from "../../utils/rivales";
 import { createClubShieldResolver } from "../../lib/club-shields";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { getCurrentSeason } from "../../utils/season";
+import { fetchRankingsDirectly } from "../../utils/rankings";
 import { getNewsForPlayer } from "../../utils/noticias";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
 import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
@@ -203,7 +205,44 @@ const insightMatches = playerMatchRows
     .sort((a: any, b: any) => b.fecha.localeCompare(a.fecha));
 const insightSeasons = [...new Set(insightMatches.map((m: any) => m.season))];
 const insightCompetitions = [...new Map(insightMatches.map((m: any) => [m.comp, { key: m.comp, label: m.compLabel, logo: m.compLogo, official: m.official }])).values()];
-const insightsData = { isGoalkeeper, seasons: insightSeasons, competitions: insightCompetitions, matches: insightMatches };
+// Selector de jugadoras del encabezado: plantilla actual agrupada por posición
+// (con goles y asistencias oficiales de la temporada) y, al buscar, todas.
+const pickerSeason = getCurrentSeason();
+const pickerGroupOf = (pos: unknown) => {
+    const p = String(pos ?? "").toLowerCase();
+    if (p.includes("portera")) return "Porteras";
+    if (p.includes("defensa") || p.includes("lateral") || p.includes("central")) return "Defensas";
+    if (p.includes("medio") || p.includes("centro") || p.includes("pivote") || p.includes("interior")) return "Centrocampistas";
+    if (p.includes("delantera") || p.includes("extremo") || p.includes("punta")) return "Delanteras";
+    return "Otras";
+};
+const pickerSeasonStats = new Map<string, { g: number; a: number }>();
+for (const row of await fetchRankingsDirectly()) {
+    if (row.temporada !== pickerSeason || row.competicion === "Amistoso") continue;
+    const entry = pickerSeasonStats.get(String(row.id_jugadora)) ?? { g: 0, a: 0 };
+    entry.g += Number(row.goles) || 0;
+    entry.a += Number(row.asistencias) || 0;
+    pickerSeasonStats.set(String(row.id_jugadora), entry);
+}
+const pickerPlayers = allPlayers
+    .filter((p: any) => p.slug && p.nombre)
+    .map((p: any) => {
+        const inSquad = isFirstTeamInSeason(p, pickerSeason);
+        const stats = pickerSeasonStats.get(String(p.id_jugadora));
+        return {
+            slug: p.slug,
+            name: p.nombre,
+            position: p.posicion || "",
+            group: pickerGroupOf(p.posicion),
+            photo: p.profile_photos?.[pickerSeason] || p.season_photos?.[pickerSeason] || p.imageUrl || "",
+            squad: inSquad,
+            number: inSquad ? p.season_info?.[pickerSeason]?.dorsal ?? null : null,
+            g: stats?.g ?? null,
+            a: stats?.a ?? null,
+        };
+    });
+const insightsData = { isGoalkeeper, seasons: insightSeasons, competitions: insightCompetitions, matches: insightMatches,
+    picker: { current: slug, players: pickerPlayers } };
 // Línea de temporadas (Estadísticas): temporadas con partidos, de la más antigua a la más reciente.
 const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
 const careerShield = createClubShieldResolver(await fetchAllClubShields());
@@ -395,6 +434,26 @@ const seoDescription = (tco && tco.partidos)
             </div>
 
             <div class="hero-info-col">
+                <div class="pc-bar" data-player-picker>
+                    <div class="pc-picker">
+                        <button type="button" class="pc-trigger" aria-haspopup="listbox" aria-expanded="false" data-picker-trigger>
+                            <img src={pickerPlayers.find((p: any) => p.slug === slug)?.photo || currentImageUrl} alt="" width="34" height="34" decoding="async" />
+                            <span>{player.nombre}</span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                        </button>
+                        <div class="pc-panel" data-picker-panel hidden>
+                            <label class="pc-search">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                                <input type="search" placeholder="Buscar jugadoras..." aria-label="Buscar jugadoras" autocomplete="off" data-picker-search />
+                            </label>
+                            <div class="pc-list" role="listbox" aria-label="Jugadoras" data-picker-list></div>
+                        </div>
+                    </div>
+                    <a class="pc-compare" href={`/comparador?a=${encodeURIComponent(slug!)}`}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+                        Comparar
+                    </a>
+                </div>
                 <div class="hero-chips">
                     <span class="hero-chip hero-chip-gold">♦ {player.posicion} ♦</span>
                     {esCanterana && <span class="hero-chip hero-chip-canterana" title="Formada en La Fábrica, la cantera del Real Madrid">★ Canterana</span>}
