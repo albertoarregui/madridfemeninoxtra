@@ -739,3 +739,22 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
 
 
 export const fetchPlayersDirectly = cachear('players:all', TTL.medio, fetchPlayersDirectlyUncached, { tags: ['players', 'statistics'] });
+
+/** Jugadora de la primera plantilla en esa temporada (dorsal 1-24 o categoría 4). */
+export function isFirstTeamInSeason(player: any, season: string): boolean {
+    const info = player?.season_info?.[season];
+    if (!info) return false;
+    if (info.dorsal === null) return info.id_categoria === 4;
+    return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
+}
+
+/** Temporadas con primera plantilla registrada, de la más reciente a la más antigua. */
+export function firstTeamSeasons(players: any[]): string[] {
+    const seasons = new Set<string>();
+    for (const player of players) {
+        for (const season of Object.keys(player?.season_info ?? {})) {
+            if (isFirstTeamInSeason(player, season)) seasons.add(season);
+        }
+    }
+    return [...seasons].sort().reverse();
+}

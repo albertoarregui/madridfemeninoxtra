@@ -1,18 +1,34 @@
 ---
 import { getFlagSrc } from "../utils/flags";
-import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds } from "../utils/players";
-interface Props { season: string; }
-const { season } = Astro.props;
+import { fetchPlayersDirectly, getPlayerImageUrl, fetchInjuredPlayerIds, isFirstTeamInSeason } from "../utils/players";
+import { fetchRankingsDirectly } from "../utils/rankings";
+import { fetchGamesDirectly } from "../utils/partidos";
+import { fetchCoachesDirectly } from "../utils/entrenadores";
+interface Props { season: string; currentSeason: string; seasons: string[]; }
+const { season, currentSeason, seasons = [] } = Astro.props;
 
-const allPlayersDb = await fetchPlayersDirectly();
-const lesionadas = await fetchInjuredPlayerIds();
+// Todo sale de lecturas ya cacheadas y compartidas con otras páginas.
+const [allPlayersDb, lesionadas, rankingRows, allGames, coaches] = await Promise.all([
+    fetchPlayersDirectly(),
+    fetchInjuredPlayerIds(),
+    fetchRankingsDirectly(),
+    fetchGamesDirectly(),
+    fetchCoachesDirectly(),
+]);
 
-const squadPlayers = allPlayersDb.filter((player) => {
-    const info = player.season_info && player.season_info[season];
-    if (!info) return false;
-    if (info.dorsal === null) return info.id_categoria === 4;
-    return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
-});
+const squadPlayers = allPlayersDb.filter((player) => isFirstTeamInSeason(player, season));
+
+// Partidos, goles y asistencias de la temporada (oficiales: sin amistosos).
+const seasonStats = new Map<string, { partidos: number; goles: number; asistencias: number }>();
+for (const row of rankingRows) {
+    if (row.temporada !== season || row.competicion === "Amistoso") continue;
+    const id = String(row.id_jugadora);
+    const stats = seasonStats.get(id) ?? { partidos: 0, goles: 0, asistencias: 0 };
+    stats.partidos += Number(row.partidos) || 0;
+    stats.goles += Number(row.goles) || 0;
+    stats.asistencias += Number(row.asistencias) || 0;
+    seasonStats.set(id, stats);
+}
 
 const listofPlayers = squadPlayers.map((player) => {
     const { pais_origin, iso } = player;
@@ -22,9 +38,14 @@ const listofPlayers = squadPlayers.map((player) => {
     const seasonPhoto =
         player.season_photos && player.season_photos[season];
 
+    const stats = seasonStats.get(String(player.id_jugadora)) ?? { partidos: 0, goles: 0, asistencias: 0 };
+
     return {
         ...player,
         id: player.id_jugadora.toString(),
+        seasonApps: stats.partidos,
+        seasonGoals: stats.goles,
+        seasonAssists: stats.asistencias,
         isInjured: lesionadas.has(String(player.id_jugadora)),
         name: player.nombre,
         number: dorsal != null ? dorsal.toString() : "",
@@ -88,6 +109,51 @@ const rows = [
 
 if (otros.length > 0) rows.push({ title: "OTRAS", players: otros });
 
+// Resumen de la plantilla. En temporadas pasadas la edad se calcula al inicio
+// de la temporada (1 de septiembre); en la actual, a día de hoy.
+const parseNumber = (value: unknown) => {
+    const n = Number.parseFloat(String(value ?? "").replace(",", "."));
+    return Number.isFinite(n) && n > 0 ? n : null;
+};
+const average = (values: (number | null)[]) => {
+    const valid = values.filter((v): v is number => v !== null);
+    return valid.length ? valid.reduce((sum, v) => sum + v, 0) / valid.length : null;
+};
+const ageReference = season === currentSeason
+    ? new Date()
+    : new Date(Number.parseInt(season.slice(0, 4), 10), 8, 1);
+const ageAt = (birth: string) => {
+    const date = new Date(birth);
+    if (!birth || Number.isNaN(date.getTime())) return null;
+    let age = ageReference.getFullYear() - date.getFullYear();
+    const m = ageReference.getMonth() - date.getMonth();
+    if (m < 0 || (m === 0 && ageReference.getDate() < date.getDate())) age--;
+    return age;
+};
+const avgAge = average(listofPlayers.map((p) => ageAt(p.date_birth)));
+const avgHeight = average(listofPlayers.map((p) => {
+    const h = parseNumber(p.height);
+    return h === null ? null : h > 3 ? h / 100 : h;
+}));
+const avgWeight = average(listofPlayers.map((p) => parseNumber(p.weight)));
+
+// Entrenador(es) con partidos dirigidos esa temporada, el principal primero.
+// Solo los que la web reconoce como entrenadores (excluye interinos puntuales).
+const coachMatches = new Map<string, number>();
+for (const game of allGames) {
+    if (game.temporada_nombre !== season || !game.entrenador_nombre) continue;
+    coachMatches.set(game.entrenador_nombre, (coachMatches.get(game.entrenador_nombre) ?? 0) + 1);
+}
+const seasonCoaches = [...coachMatches.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => coaches.find((coach) => coach.nombre === name))
+    .filter((coach) => coach !== undefined);
+
+const formatDecimal = (value: number | null, digits: number) =>
+    value === null ? "-" : value.toFixed(digits).replace(".", ",");
+const seasonHref = (value: string) =>
+    value === currentSeason ? "/plantilla" : `/plantilla?temporada=${encodeURIComponent(value)}`;
+
 function calculateAge(birthDateString: string): number {
     const birthDate = new Date(birthDateString);
     const today = new Date();
@@ -101,6 +167,62 @@ function calculateAge(birthDateString: string): number {
 {listofPlayers.length === 0 && (
     <p class="squad-empty">Todavía no hay jugadoras registradas para la temporada {season}.</p>
 )}
+
+<section class="squad-summary" aria-label="Resumen de la plantilla">
+    <dl class="squad-summary-stats">
+        <div class="squad-summary-item">
+            <dt>Jugadoras</dt>
+            <dd>{listofPlayers.length}</dd>
+        </div>
+        <div class="squad-summary-item">
+            <dt>Edad media</dt>
+            <dd>{formatDecimal(avgAge, 1)}<small>años</small></dd>
+        </div>
+        <div class="squad-summary-item">
+            <dt>Estatura media</dt>
+            <dd>{formatDecimal(avgHeight, 2)}<small>m</small></dd>
+        </div>
+        <div class="squad-summary-item">
+            <dt>Peso medio</dt>
+            <dd>{formatDecimal(avgWeight, 1)}<small>kg</small></dd>
+        </div>
+        {seasonCoaches.length > 0 && (
+            <div class="squad-summary-item squad-summary-coach">
+                <dt>{seasonCoaches.length > 1 ? "Entrenadores" : "Entrenador"}</dt>
+                <dd>
+                    {seasonCoaches.map((coach) => (
+                        <a class="squad-coach" href={`/entrenadores/${coach.slug}`}>
+                            {coach.imageUrl && <img src={coach.imageUrl} alt="" width="36" height="36" loading="lazy" decoding="async" />}
+                            <span>{coach.nombre}</span>
+                        </a>
+                    ))}
+                </dd>
+            </div>
+        )}
+    </dl>
+
+    {seasons.length > 1 && (
+        <details class="squad-season" data-squad-season>
+            <summary>
+                <span class="squad-season-label">Temporada</span>
+                <span class="squad-season-value">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
+                    {season}
+                    <svg class="squad-season-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </span>
+            </summary>
+            <ul>
+                {seasons.map((value) => (
+                    <li>
+                        <a href={seasonHref(value)} class:list={{ "is-active": value === season }} aria-current={value === season ? "page" : undefined}>
+                            {value}{value === currentSeason && <small>actual</small>}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </details>
+    )}
+</section>
 
 {listofPlayers.length > 0 && <section class="player-selector">
 
@@ -178,6 +300,23 @@ function calculateAge(birthDateString: string): number {
                     <span class="stat-value" id="player-weight">
                         {listofPlayers.length > 0 ? `${listofPlayers[0].weight}kg` : "-"}
                     </span>
+                </div>
+            </div>
+
+            <div class="player-stats player-stats-season" aria-label={`Estadísticas oficiales ${season}`}>
+                <div class="stat-item">
+                    <span class="stat-label">Partidos</span>
+                    <span class="stat-value" id="player-apps">{listofPlayers[0]?.seasonApps ?? 0}</span>
+                </div>
+                <div class="stat-sep" aria-hidden="true"></div>
+                <div class="stat-item">
+                    <span class="stat-label">Goles</span>
+                    <span class="stat-value" id="player-goals">{listofPlayers[0]?.seasonGoals ?? 0}</span>
+                </div>
+                <div class="stat-sep" aria-hidden="true"></div>
+                <div class="stat-item">
+                    <span class="stat-label">Asistencias</span>
+                    <span class="stat-value" id="player-assists">{listofPlayers[0]?.seasonAssists ?? 0}</span>
                 </div>
             </div>
 
@@ -292,6 +431,9 @@ function calculateAge(birthDateString: string): number {
             setContent("player-height", `${player.height}m`);
             setContent("player-weight", `${player.weight}kg`);
             setContent("player-age", calculateAge(player.date_birth));
+            setContent("player-apps", player.seasonApps);
+            setContent("player-goals", player.seasonGoals);
+            setContent("player-assists", player.seasonAssists);
 
             const flag = document.getElementById("player-flag");
             if (flag) { flag.src = player.flagUrl; flag.alt = player.countryName; }
@@ -347,7 +489,91 @@ function calculateAge(birthDateString: string): number {
     });
 </script>
 
+<script is:inline data-astro-rerun>
+    // Cierra el selector de temporada al pulsar fuera o con Escape.
+    (() => {
+        const picker = document.querySelector("[data-squad-season]");
+        if (!picker || picker.dataset.ready === "true") return;
+        picker.dataset.ready = "true";
+        document.addEventListener("click", (event) => {
+            if (picker.open && !picker.contains(event.target)) picker.open = false;
+        });
+        picker.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && picker.open) {
+                picker.open = false;
+                picker.querySelector("summary").focus();
+            }
+        });
+    })();
+</script>
+
 <style>
+    /* Resumen de la plantilla y filtro de temporada */
+    .squad-summary {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem 2rem;
+        margin: 0 0 2rem; padding: 1.25rem 1.75rem;
+        background: rgba(8, 16, 34, 0.85); border: 1px solid rgba(212, 168, 67, 0.25); border-radius: 4px;
+        position: relative;
+    }
+    .squad-summary-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 0; margin: 0; }
+    .squad-summary-item { display: grid; gap: 0.35rem; padding: 0 1.75rem; border-left: 1px solid rgba(212, 168, 67, 0.15); }
+    .squad-summary-item:first-child { padding-left: 0; border-left: 0; }
+    .squad-summary-item dt {
+        font-family: 'DM Sans', sans-serif; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase;
+        color: rgba(212, 168, 67, 0.6);
+    }
+    .squad-summary-item dd { margin: 0; font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 700; line-height: 1; color: #f0f0f0; }
+    .squad-summary-item dd small { margin-left: 0.3rem; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: rgba(200, 210, 220, 0.6); }
+    .squad-summary-coach dd { display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 1rem; }
+    .squad-coach { display: inline-flex; align-items: center; gap: 0.6rem; color: #f0f0f0; text-decoration: none; }
+    .squad-coach:hover span { color: #d4a843; }
+    .squad-coach img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; object-position: top; border: 1px solid rgba(212, 168, 67, 0.45); }
+
+    .squad-season { position: relative; }
+    .squad-season summary { display: grid; gap: 0.45rem; list-style: none; cursor: pointer; }
+    .squad-season summary::-webkit-details-marker { display: none; }
+    .squad-season-label {
+        font-family: 'DM Sans', sans-serif; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase;
+        color: rgba(212, 168, 67, 0.6);
+    }
+    .squad-season-value {
+        display: inline-flex; align-items: center; gap: 0.6rem; min-width: 11rem; padding: 0.65rem 1rem;
+        border: 1px solid rgba(212, 168, 67, 0.45); border-radius: 3px; background: rgba(5, 9, 19, 0.6);
+        font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 700; color: #f0f0f0; transition: border-color 0.2s;
+    }
+    .squad-season summary:hover .squad-season-value, .squad-season[open] .squad-season-value { border-color: #d4a843; }
+    .squad-season svg { width: 1rem; height: 1rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .squad-season-arrow { margin-left: auto; transition: transform 0.2s; }
+    .squad-season[open] .squad-season-arrow { transform: rotate(180deg); }
+    .squad-season summary:focus-visible { outline: 2px solid #e6c77c; outline-offset: 3px; }
+    .squad-season ul {
+        position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 40; min-width: 100%; max-height: 20rem; overflow-y: auto;
+        margin: 0; padding: 0.35rem; list-style: none;
+        background: rgba(8, 16, 34, 0.98); border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 3px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+    .squad-season li a {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0.8rem;
+        border-radius: 2px; font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; color: rgba(220, 225, 230, 0.85);
+        text-decoration: none; transition: background 0.2s, color 0.2s;
+    }
+    .squad-season li a:hover { background: rgba(212, 168, 67, 0.1); color: #f0f0f0; }
+    .squad-season li a.is-active { background: rgba(212, 168, 67, 0.18); color: #d4a843; }
+    .squad-season li small { font-family: 'DM Sans', sans-serif; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(212, 168, 67, 0.7); }
+
+    .player-stats-season { margin-top: -1.1rem; }
+
+    @media (max-width: 900px) {
+        .squad-summary { padding: 1rem 1.1rem; }
+        .squad-summary-item { padding: 0 1rem; }
+        .squad-summary-item dd { font-size: 1.3rem; }
+    }
+    @media (max-width: 600px) {
+        .squad-summary-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; width: 100%; }
+        .squad-summary-item { padding: 0; border-left: 0; }
+        .squad-summary-coach { grid-column: 1 / -1; }
+        .squad-season, .squad-season-value { width: 100%; }
+    }
     .squad-empty {
         max-width: 1200px;
         margin: 2rem auto 4rem;

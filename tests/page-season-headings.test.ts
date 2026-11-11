@@ -12,10 +12,10 @@ const rivales = readFileSync('src/pages/rivales/index.astro', 'utf8');
 const estadios = readFileSync('src/pages/estadios/index.astro', 'utf8');
 
 test('plantilla y partidos muestran la temporada actual', () => {
-    assert.match(plantilla, /<h1 class="landing-title">PLANTILLA \{currentSeason\}<\/h1>/);
+    assert.match(plantilla, /<h1 class="landing-title">PLANTILLA \{season\}<\/h1>/);
     assert.match(
         plantilla,
-        /Jugadoras, dorsales y posiciones del Real Madrid Femenino de la temporada \{currentSeason\}/,
+        /Jugadoras, dorsales y posiciones del Real Madrid Femenino de la temporada \{season\}/,
     );
     assert.match(partidos, /Calendario, horarios y resultados de la temporada \{currentSeason\}/);
 });
@@ -42,4 +42,16 @@ test('el mapa de estadios aparece después del desglose por temporada', () => {
     assert.ok(estadios.indexOf('<MatchStatsDashboard') < estadios.indexOf('<MatchMapWrapper'));
     assert.ok(estadios.indexOf('<MatchMapWrapper') < estadios.indexOf('<StadiumsTable'));
     assert.doesNotMatch(estadios, /stadiums-overview__grid/);
+});
+
+test('plantilla filtra por temporada y resume la plantilla con datos cacheados', () => {
+    assert.match(plantilla, /searchParams\.get\("temporada"\)/);
+    assert.match(plantilla, /seasons\.includes\(requestedSeason\) \? requestedSeason : currentSeason/);
+    for (const label of ['Jugadoras', 'Edad media', 'Estatura media', 'Peso medio']) assert.ok(squad.includes(`<dt>${label}</dt>`), label);
+    assert.match(squad, /Entrenadores" : "Entrenador"/);
+    assert.match(squad, /data-squad-season/);
+    // Partidos, goles y asistencias oficiales de la temporada bajo la jugadora.
+    assert.match(squad, /row\.competicion === "Amistoso"/);
+    for (const id of ['player-apps', 'player-goals', 'player-assists']) assert.ok(squad.includes(`id="${id}"`), id);
+    assert.doesNotMatch(squad, /client\.execute/);
 });
