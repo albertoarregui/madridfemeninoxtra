@@ -138,17 +138,21 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 				</div>
 			</fieldset>
 
-			<label class="mt-filter mt-season">
-				<span>{t.season}</span>
-				<span class="mt-select">
-					<svg class="mt-select-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
-					<select data-filter="season">
-						<option value="" selected>{t.allSeasons}</option>
-						{seasons.map((season) => <option value={season}>{season}</option>)}
-					</select>
-					<svg class="mt-select-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-				</span>
-			</label>
+			<div class="mt-filter mt-season">
+				<span id="mt-season-label">{t.season}</span>
+				<div class="mt-select" data-season-select>
+					<button type="button" class="mt-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="mt-season-label mt-season-value">
+						<svg class="mt-select-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
+						<span id="mt-season-value" data-season-text>{t.allSeasons}</span>
+						<svg class="mt-select-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+					</button>
+					<ul class="mt-select-list" role="listbox" aria-labelledby="mt-season-label" hidden>
+						{["", ...seasons].map((season) => (
+							<li role="option" tabindex="-1" class:list={["mt-select-option", { "is-active": season === "" }]} data-value={season} aria-selected={String(season === "")}>{season || t.allSeasons}</li>
+						))}
+					</ul>
+				</div>
+			</div>
 		</div>
 	</section>
 
@@ -207,7 +211,10 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 			const pageSize = Number(root.dataset.pageSize) || 100;
 			const items = [...root.querySelectorAll("li[data-order]")].sort((a, b) => a.dataset.order - b.dataset.order);
 			const groups = [...root.querySelectorAll("[data-group]")];
-			const seasonSelect = root.querySelector('select[data-filter="season"]');
+			const seasonSelect = root.querySelector("[data-season-select]");
+			const seasonTrigger = seasonSelect.querySelector(".mt-select-trigger");
+			const seasonList = seasonSelect.querySelector(".mt-select-list");
+			const seasonOptions = [...seasonSelect.querySelectorAll(".mt-select-option")];
 			const moreButton = root.querySelector("[data-more]");
 			const params = new URLSearchParams(location.search);
 			const state = {
@@ -216,12 +223,18 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 				venue: params.get("sede") || "",
 				limit: pageSize,
 			};
-			if (![...seasonSelect.options].some((o) => o.value === state.season)) state.season = "";
-			seasonSelect.value = state.season;
+			if (!seasonOptions.some((option) => option.dataset.value === state.season)) state.season = "";
 
 			const setCount = (key, value) => { root.querySelector(`[data-count="${key}"]`).textContent = value; };
 
 			function apply() {
+				seasonOptions.forEach((option) => {
+					const active = option.dataset.value === state.season;
+					option.classList.toggle("is-active", active);
+					option.setAttribute("aria-selected", String(active));
+					if (active) seasonSelect.querySelector("[data-season-text]").textContent = option.textContent;
+				});
+
 				const inSeason = items.filter((li) => !state.season || li.dataset.season === state.season);
 				const available = new Set(inSeason.map((li) => li.dataset.competition));
 				if (state.competition && !available.has(state.competition)) state.competition = "";
@@ -264,7 +277,35 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 				state.limit = pageSize;
 				apply();
 			}));
-			seasonSelect.addEventListener("change", () => { state.season = seasonSelect.value; state.limit = pageSize; apply(); });
+			const openSeasons = (open) => {
+				seasonList.hidden = !open;
+				seasonTrigger.setAttribute("aria-expanded", String(open));
+				if (open) (seasonOptions.find((option) => option.classList.contains("is-active")) || seasonOptions[0]).focus();
+			};
+			const chooseSeason = (option) => {
+				state.season = option.dataset.value;
+				state.limit = pageSize;
+				openSeasons(false);
+				seasonTrigger.focus();
+				apply();
+			};
+			seasonTrigger.addEventListener("click", () => openSeasons(seasonList.hidden));
+			seasonOptions.forEach((option) => option.addEventListener("click", () => chooseSeason(option)));
+			seasonList.addEventListener("keydown", (event) => {
+				const index = seasonOptions.indexOf(document.activeElement);
+				if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+					event.preventDefault();
+					const next = index + (event.key === "ArrowDown" ? 1 : -1);
+					seasonOptions[Math.max(0, Math.min(seasonOptions.length - 1, next))].focus();
+				} else if ((event.key === "Enter" || event.key === " ") && index >= 0) {
+					event.preventDefault();
+					chooseSeason(seasonOptions[index]);
+				}
+			});
+			seasonSelect.addEventListener("keydown", (event) => {
+				if (event.key === "Escape" && !seasonList.hidden) { openSeasons(false); seasonTrigger.focus(); }
+			});
+			document.addEventListener("click", (event) => { if (!seasonSelect.contains(event.target)) openSeasons(false); });
 			moreButton.addEventListener("click", () => { state.limit += pageSize; apply(); });
 			apply();
 		});
@@ -314,18 +355,33 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 		background: linear-gradient(180deg, #e3bf65, #c99a35); border-color: #e3bf65; color: #16120a;
 		box-shadow: 0 6px 18px rgba(212, 168, 67, 0.28);
 	}
-	.mt-select { position: relative; display: flex; align-items: center; }
-	.mt-select select {
-		appearance: none; -webkit-appearance: none; min-width: 15rem; padding: 0.7rem 2.6rem;
+	.mt-select { position: relative; }
+	.mt-select-trigger {
+		position: relative; display: flex; align-items: center; min-width: 15rem; padding: 0.7rem 2.6rem;
 		border: 1px solid rgba(201, 164, 77, 0.45); border-radius: 999px; background: rgba(5, 9, 19, 0.55);
-		color: #f4f4f6; font: 700 0.82rem/1 "Montserrat", sans-serif; cursor: pointer;
+		color: #f4f4f6; font: 700 0.82rem/1 "Montserrat", sans-serif; cursor: pointer; text-align: left;
 	}
-	.mt-select select:hover { border-color: #e3bf65; }
-	.mt-select option { color: #0c1222; }
-	.mt-select svg { position: absolute; width: 1rem; height: 1rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+	.mt-select-trigger:hover, .mt-select-trigger[aria-expanded="true"] { border-color: #e3bf65; }
+	.mt-select-trigger svg { position: absolute; width: 1rem; height: 1rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 	.mt-select-icon { left: 0.95rem; }
-	.mt-select-arrow { right: 0.95rem; }
-	.mt-pill:focus-visible, .mt-select select:focus-visible, .mt-row:focus-visible, .mt-more:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
+	.mt-select-arrow { right: 0.95rem; transition: transform 0.2s; }
+	.mt-select-trigger[aria-expanded="true"] .mt-select-arrow { transform: rotate(180deg); }
+	.mt-select-list {
+		position: absolute; top: calc(100% + 0.5rem); left: 0; z-index: 30; display: grid; gap: 0.2rem;
+		min-width: 100%; max-height: 22rem; margin: 0; padding: 0.35rem; overflow-y: auto; list-style: none;
+		border: 1px solid rgba(201, 164, 77, 0.45); border-radius: 18px;
+		background: linear-gradient(145deg, rgba(18, 25, 40, 0.99), rgba(8, 14, 29, 0.99));
+		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+		scrollbar-width: thin; scrollbar-color: rgba(201, 164, 77, 0.5) transparent;
+	}
+	.mt-select-option {
+		padding: 0.6rem 1rem; border: 1px solid transparent; border-radius: 999px; color: #d7d9e0; cursor: pointer;
+		font: 700 0.78rem/1 "Montserrat", sans-serif; letter-spacing: 0.03em; white-space: nowrap;
+		transition: background 0.2s, color 0.2s, border-color 0.2s;
+	}
+	.mt-select-option:hover, .mt-select-option:focus { color: #f2dfb0; border-color: rgba(201, 164, 77, 0.35); outline: none; }
+	.mt-select-option.is-active { background: linear-gradient(180deg, #e3bf65, #c99a35); border-color: #e3bf65; color: #16120a; }
+	.mt-pill:focus-visible, .mt-select-trigger:focus-visible, .mt-row:focus-visible, .mt-more:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
 
 	/* Tarjetas de temporada */
 	.mt-groups { display: grid; gap: 1.75rem; }
@@ -385,7 +441,7 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 		.mt-total strong { font-size: 1.35rem; }
 		.mt-total span { letter-spacing: 0.08em; }
 		.mt-record { font-size: 1rem; }
-		.mt-filter, .mt-season, .mt-select, .mt-select select { width: 100%; min-width: 0; }
+		.mt-filter, .mt-season, .mt-select, .mt-select-trigger { width: 100%; min-width: 0; }
 		.mt-pills { border-radius: 18px; }
 		.mt-pill { padding: 0.5rem 0.75rem; font-size: 0.72rem; }
 		.mt-group { padding: 1rem 0.75rem 0.25rem; border-radius: 16px; }
