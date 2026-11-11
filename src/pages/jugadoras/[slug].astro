@@ -11,7 +11,8 @@ import {
     fetchPlayerContract,
     fetchPlayerSocials,
     fetchPlayerInjuries,
-    fetchPlayerMatchLineups,
+    fetchPlayerMatchStats,
+    fetchGoalkeeperMinutes,
 } from "../../utils/players";
 
 import { getAssetUrl } from "../../utils/assets";
@@ -140,81 +141,74 @@ const socialLinks = socials
 const allGoals = await fetchAllGoals();
 
 // ── Pestañas de la ficha ──────────────────────────────────────────────────
+// Todos los partidos de la jugadora con sus estadísticas van a la página como
+// JSON; los filtros, totales, medias por 90', meses y radar se calculan en el
+// navegador sin más peticiones.
 const OFFICIAL_COMPETITIONS = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
 const isRealMadridClub = (name: unknown) =>
     String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("real madrid");
-const shortMonths = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const shortDate = (fecha: unknown) => {
-    const [y, m, d] = String(fecha ?? "").slice(0, 10).split("-").map(Number);
-    return y && m && d ? `${d} ${shortMonths[m - 1]} ${y}` : "";
-};
 const competitionLogoFor = (name: unknown) => getAssetUrl("competiciones", String(name ?? ""));
 
-// Info: resumen de la última temporada con partidos oficiales.
-const seasonsWithStats = (playerStats?.estadisticas ?? [])
-    .filter((s: any) => s.total?.partidos > 0)
-    .sort((a: any, b: any) => String(b.temporada).localeCompare(String(a.temporada)));
-const latestOfficial = seasonsWithStats.find((s: any) => s.official_total?.partidos > 0);
-const infoSummary = latestOfficial ? {
-    season: latestOfficial.temporada,
-    items: [
-        { value: latestOfficial.official_total.partidos, label: "Partidos" },
-        { value: latestOfficial.official_total.minutos, label: "Minutos" },
-        ...(isGoalkeeper
-            ? [{ value: latestOfficial.official_total.porterias_cero ?? 0, label: "Porterías a cero" }]
-            : [{ value: latestOfficial.official_total.goles, label: "Goles" }, { value: latestOfficial.official_total.asistencias, label: "Asistencias" }]),
-    ],
-} : null;
-
-// Rendimiento: datos por temporada y competición (se filtran en el navegador).
-const perfSeasons = seasonsWithStats.map((s: any) => ({
-    season: s.temporada,
-    comps: s.competiciones
-        .filter((c: any) => c.partidos > 0)
-        .map((c: any) => ({
-            name: competitionDisplayName(c.competicion, { temporada: s.temporada }),
-            key: c.competicion,
-            logo: competitionLogoFor(c.competicion),
-            official: OFFICIAL_COMPETITIONS.includes(c.competicion),
-            partidos: c.partidos, titularidades: c.titularidades, minutos: c.minutos, goles: c.goles,
-            asistencias: c.asistencias, victorias: c.victorias, porterias_cero: c.porterias_cero ?? 0,
-            amarillas: c.tarjetas_amarillas, rojas: c.tarjetas_rojas, capitanias: c.capitanias,
-        })),
-}));
-
-// Partidos: cada partido con minutos, con sus goles y asistencias.
-const [allGamesList, playerLineups] = await Promise.all([
+const [allGamesList, playerMatchRows, goalkeeperMinutes] = await Promise.all([
     fetchGamesDirectly(),
-    fetchPlayerMatchLineups(player.id_jugadora),
+    fetchPlayerMatchStats(player.id_jugadora),
+    isGoalkeeper ? fetchGoalkeeperMinutes() : Promise.resolve([]),
 ]);
 const gamesById = new Map(allGamesList.map((g: any) => [Number(g.id_partido), g]));
-const playerMatches = playerLineups
-    .map((lineup) => {
-        const g: any = gamesById.get(lineup.id_partido);
+// Porteras: paradas y goles encajados del equipo en los partidos en que fue la
+// portera con más minutos (no hay paradas por portera en los datos).
+const mainKeeperByMatch = new Map<number, { id: number; minutos: number }>();
+for (const row of goalkeeperMinutes) {
+    const current = mainKeeperByMatch.get(row.id_partido);
+    if (!current || row.minutos > current.minutos) mainKeeperByMatch.set(row.id_partido, { id: row.id_jugadora, minutos: row.minutos });
+}
+const playerId = Number(player.id_jugadora);
+const insightMatches = playerMatchRows
+    .map((row: any) => {
+        const g: any = gamesById.get(row.id_partido);
         if (!g || !g.isPlayed) return null;
         const home = isRealMadridClub(g.club_local);
-        const goalsInMatch = allGoals.filter((goal: any) => Number(goal.id_partido) === lineup.id_partido);
+        const goalsInMatch = allGoals.filter((goal: any) => Number(goal.id_partido) === row.id_partido);
+        const ownGoals = goalsInMatch.filter((goal: any) => Number(goal.goleadora) === playerId);
+        const isMainKeeper = isGoalkeeper && mainKeeperByMatch.get(row.id_partido)?.id === playerId;
         return {
+            ...row,
             slug: g.slug,
             fecha: String(g.fecha ?? "").slice(0, 10),
-            date: shortDate(g.fecha),
             season: String(g.temporada_nombre ?? ""),
-            competition: competitionDisplayName(g.competicion_nombre, { temporada: g.temporada_nombre }),
-            competitionLogo: g.competicion_foto_url || competitionLogoFor(g.competicion_nombre),
-            rival: home ? g.club_visitante : g.club_local,
-            rivalShield: home ? g.visitante_shield_url : g.local_shield_url,
+            comp: String(g.competicion_nombre ?? ""),
+            compLabel: competitionDisplayName(g.competicion_nombre, { temporada: g.temporada_nombre }),
+            compLogo: g.competicion_foto_url || competitionLogoFor(g.competicion_nombre),
+            official: OFFICIAL_COMPETITIONS.includes(g.competicion_nombre),
             home,
-            score: `${g.goles_rm} - ${g.goles_rival}`,
-            result: g.resultado === "V" ? "win" : g.resultado === "D" ? "loss" : "draw",
-            titular: lineup.titular,
-            minutos: lineup.minutos,
-            goals: goalsInMatch.filter((goal: any) => Number(goal.goleadora) === Number(player.id_jugadora)).length,
-            assists: goalsInMatch.filter((goal: any) => Number(goal.asistente) === Number(player.id_jugadora)).length,
+            rival: home ? g.club_visitante : g.club_local,
+            localName: g.club_local, localShield: g.local_shield_url,
+            visitorName: g.club_visitante, visitorShield: g.visitante_shield_url,
+            localGoals: home ? g.goles_rm : g.goles_rival,
+            visitorGoals: home ? g.goles_rival : g.goles_rm,
+            rmGoals: Number(g.goles_rm) || 0,
+            rivalGoals: Number(g.goles_rival) || 0,
+            result: g.resultado === "V" ? "V" : g.resultado === "D" ? "D" : "E",
+            goles: ownGoals.length,
+            golesPenalti: ownGoals.filter((goal: any) => /^(penalti|p)$/i.test(String(goal.tipo ?? ""))).length,
+            asistencias: goalsInMatch.filter((goal: any) => Number(goal.asistente) === playerId).length,
+            paradas: isMainKeeper ? Number(g.rm_paradas) || 0 : 0,
+            encajados: isMainKeeper ? Number(g.goles_rival) || 0 : 0,
+            porteriaCero: isMainKeeper && Number(g.goles_rival) === 0 ? 1 : 0,
+            mainKeeper: isMainKeeper,
         };
     })
     .filter((m): m is NonNullable<typeof m> => m !== null)
-    .sort((a, b) => b.fecha.localeCompare(a.fecha));
-const matchSeasons = [...new Set(playerMatches.map((m) => m.season))];
+    .sort((a: any, b: any) => b.fecha.localeCompare(a.fecha));
+const insightSeasons = [...new Set(insightMatches.map((m: any) => m.season))];
+const insightCompetitions = [...new Map(insightMatches.map((m: any) => [m.comp, { key: m.comp, label: m.compLabel, logo: m.compLogo, official: m.official }])).values()];
+const insightsData = { isGoalkeeper, seasons: insightSeasons, competitions: insightCompetitions, matches: insightMatches };
+// Línea de temporadas (Estadísticas): temporadas con partidos, de la más antigua a la más reciente.
+const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
+const statsSeasons = (playerStats?.estadisticas ?? [])
+    .filter((s: any) => s.total?.partidos > 0)
+    .map((s: any) => String(s.temporada))
+    .sort();
 const officialComps = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
 const clubShields = await fetchAllClubShields();
 
@@ -452,47 +446,6 @@ const seoDescription = (tco && tco.partidos)
             <button type="button" role="tab" id="tab-trayectoria" class="pt-tab" aria-selected="false" aria-controls="panel-trayectoria" data-tab="trayectoria">Trayectoria</button>
         </div>
         <div class="content-grid pt-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" data-panel="info">
-            {infoSummary && (
-                <section class="profile-card pt-summary-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="card-title">TEMPORADA {infoSummary.season}</h2>
-                    <div class="pt-summary">
-                        {infoSummary.items.map((item) => (
-                            <div class="pt-summary-item"><strong>{item.value}</strong><span>{item.label}</span></div>
-                        ))}
-                    </div>
-                    <p class="pt-note">Partidos oficiales</p>
-                </section>
-            )}
-
-            <section class="profile-card position-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="card-title">POSICIÓN</h2>
-                <div class="card-body" style="padding:1.25rem;">
-                    <div class="field-diagram">
-                        <svg viewBox="0 0 100 65" class="field-svg">
-                            <rect x="0" y="0" width="100" height="65" fill="#2d5a1b"/>
-                            <rect x="0" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
-                            <rect x="20" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
-                            <rect x="40" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
-                            <rect x="60" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
-                            <rect x="80" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
-                            <rect x="0" y="0" width="100" height="65" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <line x1="50" y1="0" x2="50" y2="65" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <circle cx="50" cy="32.5" r="8" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <rect x="0" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <rect x="0" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <rect x="85" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                            <rect x="95" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
-                        </svg>
-                        <div class="player-marker" style={`left: ${playerPosition.left}; top: ${playerPosition.top};`}>
-                            <div class="marker-icon"></div>
-                        </div>
-                    </div>
-                    <div style="text-align:center;margin-top:0.75rem;">
-                        <span style="font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:rgba(212,168,67,0.7);text-transform:uppercase;">{player.posicion}</span>
-                    </div>
-                </div>
-            </section>
-
             <section class="profile-card ficha-card full-col mfx-framed" style="margin-bottom:0;"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">SOBRE {player.nombre.toUpperCase()}</h2>
                 <div class="card-body">
@@ -503,7 +456,9 @@ const seoDescription = (tco && tco.partidos)
                 )}
                 </div>
             </section>
-
+            <div class="full-col pt-bar" data-filters="info"></div>
+            <div class="full-col pt-kpi-row" data-info-kpis></div>
+            <div class="full-col pt-trio">
             <section class="profile-card ficha-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">FICHA PERSONAL</h2>
                 <div class="card-body">
@@ -589,7 +544,39 @@ const seoDescription = (tco && tco.partidos)
                     )}
                 </div>
             </section>
-
+            <section class="profile-card pt-radar-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">PERFIL DE RENDIMIENTO</h2>
+                <div class="pt-radar" data-info-radar></div>
+            </section>
+            <section class="profile-card position-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">POSICIÓN</h2>
+                <div class="card-body" style="padding:1.25rem;">
+                    <div class="field-diagram">
+                        <svg viewBox="0 0 100 65" class="field-svg">
+                            <rect x="0" y="0" width="100" height="65" fill="#2d5a1b"/>
+                            <rect x="0" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="20" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="40" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="60" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="80" y="0" width="10" height="65" fill="#265016" opacity="0.4"/>
+                            <rect x="0" y="0" width="100" height="65" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <line x1="50" y1="0" x2="50" y2="65" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <circle cx="50" cy="32.5" r="8" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="0" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="0" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="85" y="20" width="15" height="25" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                            <rect x="95" y="26" width="5" height="13" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>
+                        </svg>
+                        <div class="player-marker" style={`left: ${playerPosition.left}; top: ${playerPosition.top};`}>
+                            <div class="marker-icon"></div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;margin-top:0.75rem;">
+                        <span style="font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:rgba(212,168,67,0.7);text-transform:uppercase;">{player.posicion}</span>
+                    </div>
+                </div>
+            </section>
+            </div>
             {injuries.length > 0 && (
                 <section class="profile-card injuries-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">LESIONES</h2>
@@ -624,14 +611,12 @@ const seoDescription = (tco && tco.partidos)
                     </div>
                 </section>
             )}
-
             <div class="full-col">
                 <PlayerNewsSection
                     title={`Noticias de ${player.nombre}`}
                     noticias={playerNews}
                 />
             </div>
-
             {SHOW_PLAYER_GALLERY && galeriaFotos.length > 0 && (
                 <section class="profile-card full-col galeria-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">GALERÍA DE {player.nombre.toUpperCase()}</h2>
@@ -648,6 +633,20 @@ const seoDescription = (tco && tco.partidos)
             )}
         </div>
         <div class="content-grid pt-panel" id="panel-estadisticas" role="tabpanel" aria-labelledby="tab-estadisticas" data-panel="estadisticas" hidden>
+            {statsSeasons.length > 1 && (
+                <section class="profile-card full-col pt-range-card mfx-framed" data-stats-range data-seasons={JSON.stringify(statsSeasons)}><span class="mfx-frame" aria-hidden="true"></span>
+                    <h2 class="card-title">LÍNEA DE TEMPORADAS</h2>
+                    <div class="pt-range-body">
+                        <p class="pt-range-label" data-range-label></p>
+                        <div class="pt-range">
+                            <div class="pt-range-track"><span class="pt-range-fill" data-range-fill></span></div>
+                            <input type="range" min="0" max={statsSeasons.length - 1} value="0" step="1" aria-label="Primera temporada" data-range-from />
+                            <input type="range" min="0" max={statsSeasons.length - 1} value={statsSeasons.length - 1} step="1" aria-label="Última temporada" data-range-to />
+                        </div>
+                        <ol class="pt-range-ticks">{statsSeasons.map((season: string) => <li>{season}</li>)}</ol>
+                    </div>
+                </section>
+            )}
             {playerStats && (
                 <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">ESTADÍSTICAS OFICIALES</h2>
@@ -678,7 +677,7 @@ const seoDescription = (tco && tco.partidos)
                                         .filter((s: any) => s.total.partidos > 0)
                                         .map((season: any) => (
                                             <>
-                                                <tr class="season-total-row" onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`} style="cursor:pointer;">
+                                                <tr class="season-total-row" data-season={season.temporada} onclick={`toggleSeason('${season.temporada.replace(/\//g, "-")}')`} style="cursor:pointer;">
                                                     <td><div class="flex items-center justify-start gap-2 w-full"><strong>{season.temporada}</strong><span class="toggle-icon">▼</span></div></td>
                                                     <td><strong>{season.total.convocatorias}</strong></td>
                                                     <td><strong>{season.total.partidos}</strong></td>
@@ -696,7 +695,7 @@ const seoDescription = (tco && tco.partidos)
                                                     <td><strong>{season.total.capitanias}</strong></td>
                                                 </tr>
                                                 {season.competiciones.map((comp: any) => (
-                                                    <tr class={`competition-row season-${season.temporada.replace(/\//g, "-")}`} style="display:none;">
+                                                    <tr class={`competition-row season-${season.temporada.replace(/\//g, "-")}`} data-season={season.temporada} style="display:none;">
                                                         <td class="competition-name">
                                                             <div class="competition-name-wrapper">
                                                                 {getAssetUrl("competiciones", comp.competicion.toLowerCase().includes("amistoso") ? "amistoso" : comp.competicion) && (
@@ -748,26 +747,22 @@ const seoDescription = (tco && tco.partidos)
             )}
         </div>
         <div class="content-grid pt-panel" id="panel-rendimiento" role="tabpanel" aria-labelledby="tab-rendimiento" data-panel="rendimiento" hidden>
-            {perfSeasons.length > 0 && (
-                <section class="profile-card full-col pt-perf-card mfx-framed" data-perf><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="card-title">RENDIMIENTO</h2>
-                    <div class="pt-filters">
-                        <div class="pt-filter">
-                            <span class="pt-filter-label">Temporada</span>
-                            <div class="pt-pills">
-                                <button type="button" class="pt-pill is-active" data-perf-season="">Todas</button>
-                                {perfSeasons.map((season) => <button type="button" class="pt-pill" data-perf-season={season.season}>{season.season}</button>)}
-                            </div>
-                        </div>
-                        <div class="pt-filter">
-                            <span class="pt-filter-label">Competición</span>
-                            <div class="pt-pills" data-perf-comps></div>
-                        </div>
-                    </div>
-                    <div class="pt-kpis" data-perf-kpis></div>
-                </section>
-            )}
-
+            <div class="full-col pt-bar" data-filters="perf"></div>
+            <div class="full-col pt-bar pt-bar-secondary" data-filters="perf-extra"></div>
+            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">TEMPORADA POR MESES</h2>
+                <p class="pt-card-sub">Valoración media · pulsa un mes para filtrar</p>
+                <div class="pt-months" data-perf-months></div>
+            </section>
+            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <div class="pt-summary-head"><h2 class="card-title" data-perf-summary-title>TEMPORADA COMPLETA</h2><span data-perf-range></span></div>
+                <div class="pt-summary-row" data-perf-summary></div>
+            </section>
+            <div class="full-col pt-cat-grid" data-perf-cats></div>
+            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <div class="pt-summary-head"><h2 class="card-title">PARTIDOS DE ESTA SELECCIÓN</h2><span data-perf-table-count></span></div>
+                <div class="pt-table-wrap"><table class="pt-table" data-perf-table></table></div>
+            </section>
             {milestones.length > 0 && (
                 <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">HITOS GOLEADORES</h2>
@@ -813,76 +808,34 @@ const seoDescription = (tco && tco.partidos)
             )}
         </div>
         <div class="content-grid pt-panel" id="panel-partidos" role="tabpanel" aria-labelledby="tab-partidos" data-panel="partidos" hidden>
-            <section class="profile-card full-col pt-matches-card mfx-framed" data-pmatches><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="card-title">PARTIDOS</h2>
-                {playerMatches.length === 0 ? (
-                    <p class="pt-empty">Todavía no hay partidos registrados.</p>
-                ) : (
-                    <>
-                        <div class="pt-filters">
-                            <div class="pt-filter">
-                                <span class="pt-filter-label">Temporada</span>
-                                <div class="pt-pills">
-                                    {matchSeasons.map((season, index) => <button type="button" class:list={["pt-pill", { "is-active": index === 0 }]} data-match-season={season}>{season}</button>)}
-                                    <button type="button" class="pt-pill" data-match-season="">Todas</button>
-                                </div>
-                            </div>
-                        </div>
-                        <ul class="pt-match-list">
-                            {playerMatches.map((m) => (
-                                <li data-season={m.season} hidden={m.season !== matchSeasons[0]}>
-                                    <a class="pt-match" href={`/partidos/${m.slug}`}>
-                                        <span class="pt-match-date">
-                                            <time datetime={m.fecha}>{m.date}</time>
-                                            <span class="pt-match-comp">{m.competitionLogo && <img src={m.competitionLogo} alt="" width="16" height="16" loading="lazy" decoding="async" />}{m.competition}</span>
-                                        </span>
-                                        <span class="pt-match-rival">
-                                            {m.rivalShield && <img src={m.rivalShield} alt="" width="28" height="28" loading="lazy" decoding="async" />}
-                                            <span class="pt-match-rival-name">{m.rival}<small>{m.home ? "Local" : "Visitante"}</small></span>
-                                        </span>
-                                        <strong class={`pt-match-score is-${m.result}`}>{m.score}</strong>
-                                        <span class="pt-match-player">
-                                            <span class="pt-match-role">{m.titular ? "Titular" : "Suplente"} · {m.minutos}'</span>
-                                            <span class="pt-match-ga">
-                                                {m.goals > 0 && <span title={`${m.goals} ${m.goals === 1 ? "gol" : "goles"}`}>⚽ {m.goals}</span>}
-                                                {m.assists > 0 && <span title={`${m.assists} ${m.assists === 1 ? "asistencia" : "asistencias"}`}>🅰 {m.assists}</span>}
-                                            </span>
-                                        </span>
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                        <p class="pt-note">{playerMatches.length} partidos con minutos · los más recientes primero</p>
-                    </>
-                )}
-            </section>
+            <div class="full-col pt-bar" data-filters="matches"></div>
+            <div class="full-col pt-match-cards" data-match-cards></div>
+            <p class="full-col pt-empty" data-match-empty hidden>No hay partidos con estos filtros.</p>
         </div>
         <div class="content-grid pt-panel" id="panel-trayectoria" role="tabpanel" aria-labelledby="tab-trayectoria" data-panel="trayectoria" hidden>
             <section class="profile-card trajectory-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">TRAYECTORIA</h2>
                 <div class="card-body" style="padding:1.25rem 1.5rem;">
-                    {trajectory && trajectory.length > 0 ? (
-                        <div class="trajectory-timeline">
-                            {trajectory.map((item: any) => (
-                                <div class="timeline-item">
-                                    <div class="timeline-dot"></div>
-                                    <div class="timeline-body">
-                                        <span class="timeline-years">{item.anio_inicio} – {item.anio_fin || 'Act.'}</span>
-                                        <span class="timeline-club">{item.club}</span>
+                    {careerSteps.length > 0 ? (
+                        <ol class="pt-career" style={`--steps:${careerSteps.length}`}>
+                            {careerSteps.map((item: any, index: number) => (
+                                <li class:list={["pt-career-step", index % 2 === 0 ? "is-up" : "is-down", { "is-current": !item.anio_fin }]}>
+                                    <span class="pt-career-dot" aria-hidden="true"></span>
+                                    <div class="pt-career-card">
+                                        {clubShields[item.club] && <img src={clubShields[item.club]} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+                                        <strong>{item.club}</strong>
+                                        <span>{item.anio_inicio} – {item.anio_fin || "Act."}</span>
                                     </div>
-                                </div>
+                                </li>
                             ))}
-                        </div>
+                        </ol>
                     ) : (
                         <p class="no-data">Sin datos disponibles</p>
                     )}
                 </div>
             </section>
         </div>
-        <nav class="player-related-links" aria-label="Más información del equipo">
-            <a href="/partidos">Partidos del Real Madrid Femenino →</a>
-            <a href="/plantilla">Plantilla actual →</a>
-        </nav>
+    <script type="application/json" id="player-insights-data" set:html={JSON.stringify(insightsData)} />
     </main>
 
     <div id="video-modal" class="video-modal-overlay">
@@ -950,106 +903,10 @@ const seoDescription = (tco && tco.partidos)
             modal.style.display = "none";
         }
     </script>
-    <script is:inline define:vars={{ perfSeasons, isGoalkeeper }}>
-        (() => {
-            const root = document.querySelector(".player-content");
-            if (!root || root.dataset.tabsReady === "true") return;
-            root.dataset.tabsReady = "true";
-
-            // Pestañas: la elegida se guarda en la URL (?seccion=partidos).
-            const tabs = [...root.querySelectorAll("[data-tab]")];
-            const panels = [...root.querySelectorAll("[data-panel]")];
-            const showTab = (key, updateUrl) => {
-                if (!panels.some((panel) => panel.dataset.panel === key)) key = "info";
-                tabs.forEach((tab) => {
-                    const active = tab.dataset.tab === key;
-                    tab.classList.toggle("is-active", active);
-                    tab.setAttribute("aria-selected", String(active));
-                    tab.tabIndex = active ? 0 : -1;
-                });
-                panels.forEach((panel) => { panel.hidden = panel.dataset.panel !== key; });
-                if (updateUrl) {
-                    const url = new URL(location.href);
-                    if (key === "info") url.searchParams.delete("seccion"); else url.searchParams.set("seccion", key);
-                    history.replaceState(history.state, "", url);
-                }
-            };
-            tabs.forEach((tab, index) => {
-                tab.addEventListener("click", () => showTab(tab.dataset.tab, true));
-                tab.addEventListener("keydown", (event) => {
-                    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-                    const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
-                    next.focus();
-                    showTab(next.dataset.tab, true);
-                });
-            });
-            showTab(new URLSearchParams(location.search).get("seccion") || "info", false);
-
-            // Rendimiento: temporada y competición. "Todas" suma solo competiciones oficiales.
-            const perf = root.querySelector("[data-perf]");
-            if (perf) {
-                const state = { season: "", comp: "" };
-                const compsBox = perf.querySelector("[data-perf-comps]");
-                const kpisBox = perf.querySelector("[data-perf-kpis]");
-                const fmt = (n) => Number(n).toLocaleString("es-ES", { maximumFractionDigits: 1 });
-                const render = () => {
-                    const seasons = perfSeasons.filter((s) => !state.season || s.season === state.season);
-                    const comps = new Map();
-                    seasons.forEach((s) => s.comps.forEach((c) => { if (!comps.has(c.key)) comps.set(c.key, c); }));
-                    if (state.comp && !comps.has(state.comp)) state.comp = "";
-                    compsBox.innerHTML = "";
-                    const addPill = (key, label, logo) => {
-                        const pill = document.createElement("button");
-                        pill.type = "button";
-                        pill.className = "pt-pill" + (state.comp === key ? " is-active" : "");
-                        if (logo) { const img = document.createElement("img"); img.src = logo; img.alt = ""; img.width = 16; img.height = 16; pill.appendChild(img); }
-                        pill.appendChild(document.createTextNode(label));
-                        pill.addEventListener("click", () => { state.comp = key; render(); });
-                        compsBox.appendChild(pill);
-                    };
-                    addPill("", "Oficiales");
-                    [...comps.values()].forEach((c) => addPill(c.key, c.name, c.logo));
-
-                    const rows = seasons.flatMap((s) => s.comps).filter((c) => state.comp ? c.key === state.comp : c.official);
-                    const sum = (field) => rows.reduce((acc, c) => acc + (Number(c[field]) || 0), 0);
-                    const t = { partidos: sum("partidos"), titularidades: sum("titularidades"), minutos: sum("minutos"), goles: sum("goles"), asistencias: sum("asistencias"),
-                        victorias: sum("victorias"), cero: sum("porterias_cero"), amarillas: sum("amarillas"), rojas: sum("rojas"), capitanias: sum("capitanias") };
-                    const pct = (a, b) => b ? `${fmt((a / b) * 100)}%` : "–";
-                    const per = (a, b) => b ? fmt(a / b) : "–";
-                    const kpis = [
-                        ["Partidos", fmt(t.partidos)], ["Titularidades", fmt(t.titularidades)], ["Minutos", fmt(t.minutos)], ["Min. por partido", per(t.minutos, t.partidos)],
-                        ...(isGoalkeeper
-                            ? [["Porterías a cero", fmt(t.cero)], ["% porterías a cero", pct(t.cero, t.partidos)]]
-                            : [["Goles", fmt(t.goles)], ["Asistencias", fmt(t.asistencias)], ["G+A", fmt(t.goles + t.asistencias)], ["Min. por G+A", t.goles + t.asistencias ? fmt(t.minutos / (t.goles + t.asistencias)) : "–"]]),
-                        ["% victorias", pct(t.victorias, t.partidos)], ["Amarillas", fmt(t.amarillas)], ["Rojas", fmt(t.rojas)], ["Capitanías", fmt(t.capitanias)],
-                    ];
-                    kpisBox.innerHTML = "";
-                    kpis.forEach(([label, value]) => {
-                        const item = document.createElement("div"); item.className = "pt-kpi";
-                        const strong = document.createElement("strong"); strong.textContent = value;
-                        const span = document.createElement("span"); span.textContent = label;
-                        item.append(strong, span); kpisBox.appendChild(item);
-                    });
-                };
-                perf.querySelectorAll("[data-perf-season]").forEach((pill) => pill.addEventListener("click", () => {
-                    state.season = pill.dataset.perfSeason;
-                    perf.querySelectorAll("[data-perf-season]").forEach((p) => p.classList.toggle("is-active", p === pill));
-                    render();
-                }));
-                render();
-            }
-
-            // Partidos: filtro por temporada.
-            const matches = root.querySelector("[data-pmatches]");
-            if (matches) {
-                const pills = [...matches.querySelectorAll("[data-match-season]")];
-                pills.forEach((pill) => pill.addEventListener("click", () => {
-                    const season = pill.dataset.matchSeason;
-                    pills.forEach((p) => p.classList.toggle("is-active", p === pill));
-                    matches.querySelectorAll("li[data-season]").forEach((li) => { li.hidden = Boolean(season) && li.dataset.season !== season; });
-                }));
-            }
-        })();
+    <script>
+        import { initPlayerInsights } from "../../lib/player-insights";
+        initPlayerInsights();
+        document.addEventListener("astro:page-load", initPlayerInsights);
     </script>
 </Layout>
 

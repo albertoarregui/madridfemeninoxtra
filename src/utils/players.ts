@@ -785,31 +785,45 @@ export async function fetchGoalkeeperMinutes(): Promise<Array<{ id_partido: numb
     }
 }
 
-/** Partidos en los que la jugadora fue titular o salió al campo (para su ficha). */
-export async function fetchPlayerMatchLineups(playerId: string | number): Promise<Array<{
-    id_partido: number; titular: boolean; minutos: number; minuto_entrada: number | null; minuto_salida: number | null;
-}>> {
+/**
+ * Partidos de la jugadora (titular o con minutos) con sus estadísticas
+ * individuales y tarjetas, para las pestañas de su ficha. Una sola lectura.
+ */
+export async function fetchPlayerMatchStats(playerId: string | number): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient();
         if (!client) return [];
         const result = await client.execute({
             sql: `
-                SELECT id_partido, titular, COALESCE(minutos_jugados, 0) AS minutos, minuto_entrada, minuto_salida
-                FROM alineaciones
-                WHERE id_jugadora = ? AND (titular = 1 OR COALESCE(minutos_jugados, 0) > 0)
+                SELECT a.id_partido, a.titular, COALESCE(a.minutos_jugados, 0) AS minutos,
+                       ej.valoracion, ej.tiros_totales, ej.tiros_puerta, ej.toques, ej.toques_area_rival,
+                       ej.regates_totales, ej.regates_completados, ej.perdidas, ej.fueras_juego,
+                       ej.pases_totales, ej.pases_completados, ej.pases_clave,
+                       ej.pases_ultimo_tercio_totales, ej.pases_ultimo_tercio_completados,
+                       ej.pases_largo_totales, ej.pases_largo_completados, ej.centros_totales, ej.centros_completados,
+                       ej.entradas, ej.bloqueos, ej.despejes, ej.intercepciones, ej.recuperaciones, ej.regateada,
+                       ej.duelos_suelo_totales, ej.duelos_suelo_ganados, ej.duelos_aereos_totales, ej.duelos_aereos_ganados,
+                       ej.faltas_recibidas, ej.faltas_cometidas,
+                       (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND t.tipo_tarjeta = 'Amarilla') AS amarillas,
+                       (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND t.tipo_tarjeta IN ('Roja Directa', 'Doble Amarilla')) AS rojas
+                FROM alineaciones a
+                LEFT JOIN estadisticas_jugadoras ej ON ej.id_partido = a.id_partido AND ej.id_jugadora = a.id_jugadora
+                WHERE a.id_jugadora = ? AND (a.titular = 1 OR COALESCE(a.minutos_jugados, 0) > 0)
             `,
             args: [playerId],
         });
-        return result.rows.map((row: any) => ({
-            id_partido: Number(row.id_partido),
-            titular: Number(row.titular) === 1,
-            minutos: Number(row.minutos) || 0,
-            minuto_entrada: row.minuto_entrada == null ? null : Number(row.minuto_entrada),
-            minuto_salida: row.minuto_salida == null ? null : Number(row.minuto_salida),
-        }));
+        return result.rows.map((row: any) => {
+            const out: Record<string, number | boolean | null> = {};
+            for (const [key, value] of Object.entries(row)) {
+                if (/^\d+$/.test(key)) continue;
+                out[key] = value == null ? null : Number(value);
+            }
+            out.titular = Number(row.titular) === 1;
+            return out;
+        });
     } catch (error) {
-        console.error("Error al obtener los partidos de la jugadora:", error);
+        console.error("Error al obtener las estadísticas por partido de la jugadora:", error);
         return [];
     }
 }

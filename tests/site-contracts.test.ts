@@ -410,6 +410,12 @@ test('player profile groups its cards into tabs and hides the gallery without re
   assert.match(page, /const SHOW_PLAYER_GALLERY = false;/);
   assert.match(page, /SHOW_PLAYER_GALLERY && galeriaFotos\.length > 0/);
   assert.match(page, /profilePhotos\[season\] \|\| seasonPhotos\[season\]/);
-  assert.match(page, /fetchPlayerMatchLineups\(player\.id_jugadora\)/);
-  assert.match(page, /\.get\("seccion"\)/);
+  assert.match(page, /fetchPlayerMatchStats\(player\.id_jugadora\)/);
+  assert.match(page, /id="player-insights-data"/);
+  assert.doesNotMatch(page, /player-related-links/);
+  const insights = read('src/lib/player-insights.ts');
+  assert.match(insights, /\.get\("seccion"\)/);
+  for (const hook of ['data-info-kpis', 'data-info-radar', 'data-perf-months', 'data-perf-cats', 'data-match-cards', 'data-stats-range']) {
+    assert.ok(page.includes(hook), hook);
+  }
 });
