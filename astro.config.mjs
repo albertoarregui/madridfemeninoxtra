@@ -34,6 +34,11 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      // Publican ESM sin "type": "module"; el runtime Node de Vercel no puede
+      // cargarlos desde node_modules, así que se incluyen en el bundle.
+      noExternal: ['@contentful/rich-text-html-renderer', '@contentful/rich-text-types'],
+    },
   },
 
   integrations: [clerk(), react()]
