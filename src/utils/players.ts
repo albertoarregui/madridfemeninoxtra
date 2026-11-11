@@ -784,3 +784,32 @@ export async function fetchGoalkeeperMinutes(): Promise<Array<{ id_partido: numb
         return [];
     }
 }
+
+/** Partidos en los que la jugadora fue titular o salió al campo (para su ficha). */
+export async function fetchPlayerMatchLineups(playerId: string | number): Promise<Array<{
+    id_partido: number; titular: boolean; minutos: number; minuto_entrada: number | null; minuto_salida: number | null;
+}>> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) return [];
+        const result = await client.execute({
+            sql: `
+                SELECT id_partido, titular, COALESCE(minutos_jugados, 0) AS minutos, minuto_entrada, minuto_salida
+                FROM alineaciones
+                WHERE id_jugadora = ? AND (titular = 1 OR COALESCE(minutos_jugados, 0) > 0)
+            `,
+            args: [playerId],
+        });
+        return result.rows.map((row: any) => ({
+            id_partido: Number(row.id_partido),
+            titular: Number(row.titular) === 1,
+            minutos: Number(row.minutos) || 0,
+            minuto_entrada: row.minuto_entrada == null ? null : Number(row.minuto_entrada),
+            minuto_salida: row.minuto_salida == null ? null : Number(row.minuto_salida),
+        }));
+    } catch (error) {
+        console.error("Error al obtener los partidos de la jugadora:", error);
+        return [];
+    }
+}

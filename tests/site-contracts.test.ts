@@ -401,3 +401,15 @@ test('newsletter endpoints and cron stay removed', () => {
   assert.equal(config.crons, undefined);
   assert.doesNotMatch(read('package.json'), /"resend"/);
 });
+
+test('player profile groups its cards into tabs and hides the gallery without removing it', () => {
+  const page = read('src/pages/jugadoras/[slug].astro');
+  for (const tab of ['info', 'estadisticas', 'rendimiento', 'partidos', 'trayectoria']) {
+    assert.match(page, new RegExp(`data-panel="${tab}"`));
+  }
+  assert.match(page, /const SHOW_PLAYER_GALLERY = false;/);
+  assert.match(page, /SHOW_PLAYER_GALLERY && galeriaFotos\.length > 0/);
+  assert.match(page, /profilePhotos\[season\] \|\| seasonPhotos\[season\]/);
+  assert.match(page, /fetchPlayerMatchLineups\(player\.id_jugadora\)/);
+  assert.match(page, /searchParams\.get\("seccion"\)/);
+});
