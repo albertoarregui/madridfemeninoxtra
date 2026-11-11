@@ -54,9 +54,24 @@ test('key interactive collections defer hydration until visible', () => {
 test('deferred match cards keep Astro scoped styles after filtering', () => {
   const list = read('src/components/MatchList.astro');
   assert.match(list, /const createScopedElement/);
-  assert.match(list, /name\\.startsWith\\(\"data-astro-cid-\"\\)/);
-  assert.match(list, /if \\(scopeAttribute\\) node\\.setAttribute\\(scopeAttribute, \"\"\\)/);
-  assert.match(list, /const item = createScopedElement\\(\"div\"\\)/);
+  assert.match(list, /name\.startsWith\("data-astro-cid-"\)/);
+  assert.match(list, /if \(scopeAttribute\) node\.setAttribute\(scopeAttribute, ""\)/);
+  assert.match(list, /const item = createScopedElement\("div"\)/);
+});
+
+test('news pages avoid oversized SSR work and fetch only the referenced match', () => {
+  const archive = read('src/pages/noticias/index.astro');
+  const article = read('src/pages/noticias/[slug].astro');
+  const matches = read('src/utils/partidos.ts');
+
+  assert.match(archive, /<NewsArchive noticias=\{noticias\} client:only="react"/);
+  assert.match(article, /fetchGameById/);
+  assert.match(article, /fetchGameBySlug/);
+  assert.doesNotMatch(article, /fetchGamesDirectly\(\)/);
+  assert.match(article, /include:\s*1/);
+  assert.match(article, /fields\.featuredImage/);
+  assert.match(matches, /export async function fetchGameById/);
+  assert.match(matches, /p\.id_partido = \?/);
 });
 
 test('stadium map uses a dedicated minimal query without expensive match subqueries', () => {
