@@ -43,7 +43,6 @@ test('key interactive collections defer hydration until visible', () => {
   for (const path of [
     'src/pages/index.astro',
     'src/pages/rankings.astro',
-    'src/pages/fotogalerias/index.astro',
     'src/pages/comparador.astro',
   ]) {
     assert.match(read(path), /client:visible/, path);
@@ -201,7 +200,7 @@ test('reader ratings pages have competition crests and one-row MVP UI', () => {
   const board = read('src/components/RatingScoreboard.astro');
   const header = read('src/components/Header.astro');
   const css = read('src/styles/valoraciones.css');
-  assert.match(header, /href=\{href\("\/fotogalerias"\)\}[\s\S]*?href=\{href\("\/valoraciones"\)\}/);
+  assert.match(header, /href=\{href\("\/plantilla"\)\}[\s\S]*?href=\{href\("\/valoraciones"\)\}/);
   assert.match(archive, /RatingScoreboard/);
   assert.match(detail, /getAssetUrl\('competiciones'/);
   assert.match(board, /getAssetUrl\('escudos'/);

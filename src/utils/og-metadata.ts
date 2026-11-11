@@ -88,10 +88,6 @@ export const OG_ESTATICOS: Record<string, { title: string; description: string }
     "title": "La Fábrica y las selecciones inferiores de España | Madrid Femenino Xtra",
     "description": "Analiza la presencia de las canteranas del Real Madrid Femenino en las selecciones inferiores de España: Europeos, Mundiales, convocatorias, estadísticas, títulos y premios individuales."
   },
-  "/fotogalerias": {
-    "title": "Fotogalerías e imágenes del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Revive los mejores momentos del Real Madrid Femenino a través de nuestras fotogalerías: partidos, entrenamientos, celebraciones, desplazamientos y acontecimientos especiales."
-  },
   "/premios": {
     "title": "Premios Madrid Femenino Xtra: las mejores jugadoras de cada temporada",
     "description": "Los premios de Madrid Femenino Xtra reconocen a las futbolistas más destacadas del Real Madrid Femenino. Descubre las categorías, nominadas, votaciones y ganadoras de cada edición."

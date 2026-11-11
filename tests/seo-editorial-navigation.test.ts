@@ -28,20 +28,14 @@ test("Valoraciones es un acceso principal situado después de Hub", () => {
     const fabrica = header.indexOf('href={href("/la-fabrica")}');
     assert.ok(hubEnd >= 0 && ratings > hubEnd && fabrica > ratings);
     assert.doesNotMatch(header.match(/id="submenu-actualidad"[\s\S]*?<\/ul>/)?.[0] || "", /valoraciones/);
-    assert.match(header, /<li><a href=\{href\("\/premios"\)\}><span>\{t\.awards\}<\/span><\/a><\/li>/);
+    assert.doesNotMatch(header, /href=\{href\("\/premios"\)\}/);
+    assert.doesNotMatch(header, /submenu-fabrica/);
 });
 
-test("las fotogalerías muestran descripciones y reservan las dimensiones de portada", () => {
-    const index = read("src/pages/fotogalerias/index.astro");
-    const detail = read("src/pages/fotogalerias/[slug].astro");
-    const archive = read("src/components/GalleryArchive.tsx");
-    assert.match(index, /getV\("description"\)/);
-    assert.match(detail, /gal-description-card/);
-    assert.match(detail, /<p>\{albumData\.description\}<\/p>/);
-    assert.match(detail, /description=\{`Explora las fotos de \$\{albumData\.title\} del Real Madrid Femenino\.`\}/);
-    assert.match(archive, /className="gallery-description"/);
-    assert.match(archive, /width=\{album\.coverWidth\}/);
-    assert.match(archive, /height=\{album\.coverHeight\}/);
+test("las fotogalerías se retiraron y redirigen a la portada", () => {
+    const header = read("src/components/Header.astro");
+    assert.doesNotMatch(header, /fotogalerias/);
+    assert.match(read("src/pages/fotogalerias/[...slug].astro"), /Astro\.redirect\("\/", 301\)/);
 });
 
 test("los metatítulos conservan la redacción editorial anterior", () => {

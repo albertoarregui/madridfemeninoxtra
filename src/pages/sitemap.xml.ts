@@ -29,7 +29,6 @@ const staticPages = [
     { url: 'partidos', priority: 0.7, changefreq: 'weekly' },
     { url: 'estadios', priority: 0.7, changefreq: 'monthly' },
     { url: 'arbitras', priority: 0.7, changefreq: 'monthly' },
-    { url: 'fotogalerias', priority: 0.7, changefreq: 'weekly' },
     { url: 'plantilla', priority: 0.7, changefreq: 'monthly' },
     { url: 'rankings', priority: 0.8, changefreq: 'weekly' },
     { url: 'rankings/maximas-goleadoras', priority: 0.8, changefreq: 'weekly' },
@@ -230,27 +229,6 @@ async function buildSitemap(): Promise<string> {
             console.error('Error fetching referees:', error);
         }
 
-        try {
-            const galleries = await contentfulClient.getEntries({
-                content_type: 'gallery',
-                limit: 1000,
-            });
-            galleries.items.forEach((item: any) => {
-                const f = item.fields as any;
-                const key = Object.keys(f).find(k => k.toLowerCase() === 'slug');
-                const slug = key ? f[key] : null;
-                if (!slug) return;
-                const lastmod = new Date(item.sys.updatedAt).toISOString().split('T')[0];
-                urls.push({
-                    loc: `${SITE_URL}/fotogalerias/${slug}`,
-                    lastmod,
-                    changefreq: 'monthly',
-                    priority: 0.6,
-                });
-            });
-        } catch (error) {
-            console.error('Error fetching galleries for sitemap:', error);
-        }
 
         return generateSitemapXML(urls);
     } catch (error) {
