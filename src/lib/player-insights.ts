@@ -550,14 +550,17 @@ function setupPlayerPicker(data: Data) {
     const modeLabel = root.querySelector<HTMLElement>("[data-picker-mode]");
     if (!trigger || !panel || !search || !list) return;
     const { current, players } = data.picker;
-    // "Ir a ficha" o "comparar con": el mismo buscador sirve para ambas cosas.
-    let comparing = false;
+    // Elegir otra jugadora abre el comparador con ambas, tanto desde el
+    // desplegable como desde el botón "Comparar".
+    const comparing = true;
 
     const item = (p: PickerPlayer) => {
         const link = el("a", `pc-item${!comparing && p.slug === current ? " is-current" : ""}`);
         link.href = comparing
             ? `/comparador?a=${encodeURIComponent(current)}&b=${encodeURIComponent(p.slug)}`
             : `/jugadoras/${p.slug}`;
+        // Carga completa: el comparador lee ambas jugadoras de la URL al iniciarse.
+        if (comparing) link.setAttribute("data-astro-reload", "");
         link.setAttribute("role", "option");
         link.setAttribute("aria-selected", String(p.slug === current));
         const photo = el("span", "pc-photo");
@@ -591,18 +594,16 @@ function setupPlayerPicker(data: Data) {
         if (!results.length) { list.append(el("p", "pc-empty", "Sin resultados")); return; }
         list.append(el("p", "pc-group", "Resultados"), ...results.map(({ p }) => item(p)));
     };
-    const open = (show: boolean, compareMode = comparing) => {
-        comparing = compareMode;
+    const open = (show: boolean) => {
         panel.hidden = !show;
-        trigger.setAttribute("aria-expanded", String(show && !comparing));
-        compare?.setAttribute("aria-expanded", String(show && comparing));
-        if (modeLabel) modeLabel.hidden = !comparing;
-        search.placeholder = comparing ? "Buscar jugadora para comparar..." : "Buscar jugadoras...";
-        if (show) { search.value = ""; render(); search.focus(); list.querySelector(".is-current")?.scrollIntoView({ block: "nearest" }); }
+        trigger.setAttribute("aria-expanded", String(show));
+        compare?.setAttribute("aria-expanded", String(show));
+        if (modeLabel) modeLabel.hidden = false;
+        search.placeholder = "Buscar jugadora para comparar...";
+        if (show) { search.value = ""; render(); search.focus(); }
     };
-    const toggle = (compareMode: boolean) => open(panel.hidden || comparing !== compareMode, compareMode);
-    trigger.addEventListener("click", (event) => { event.stopPropagation(); toggle(false); });
-    compare?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); toggle(true); });
+    trigger.addEventListener("click", (event) => { event.stopPropagation(); open(panel.hidden); });
+    compare?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); open(panel.hidden); });
     search.addEventListener("input", render);
     const items = () => [...list.querySelectorAll<HTMLAnchorElement>(".pc-item")];
     root.addEventListener("keydown", (event) => {
