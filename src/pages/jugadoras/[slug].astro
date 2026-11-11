@@ -19,6 +19,7 @@ import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 import { fetchAllGoals, fetchGamesDirectly, slugify as matchSlugify } from "../../utils/partidos";
 import { fetchAllClubShields } from "../../utils/rivales";
+import { createClubShieldResolver } from "../../lib/club-shields";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { getCurrentSeason } from "../../utils/season";
 import { getNewsForPlayer } from "../../utils/noticias";
@@ -205,6 +206,7 @@ const insightCompetitions = [...new Map(insightMatches.map((m: any) => [m.comp, 
 const insightsData = { isGoalkeeper, seasons: insightSeasons, competitions: insightCompetitions, matches: insightMatches };
 // Línea de temporadas (Estadísticas): temporadas con partidos, de la más antigua a la más reciente.
 const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
+const careerShield = createClubShieldResolver(await fetchAllClubShields());
 const statsSeasons = (playerStats?.estadisticas ?? [])
     .filter((s: any) => s.total?.partidos > 0)
     .map((s: any) => String(s.temporada))
@@ -822,7 +824,10 @@ const seoDescription = (tco && tco.partidos)
                                 <li class:list={["pt-career-step", index % 2 === 0 ? "is-up" : "is-down", { "is-current": !item.anio_fin }]}>
                                     <span class="pt-career-dot" aria-hidden="true"></span>
                                     <div class="pt-career-card">
-                                        {clubShields[item.club] && <img src={clubShields[item.club]} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+                                        {careerShield(item.club) && (
+                                            <img src={careerShield(item.club)!.url} alt="" width="40" height="40" loading="lazy" decoding="async"
+                                                onerror="this.remove()" />
+                                        )}
                                         <strong>{item.club}</strong>
                                         <span>{item.anio_inicio} – {item.anio_fin || "Act."}</span>
                                     </div>
