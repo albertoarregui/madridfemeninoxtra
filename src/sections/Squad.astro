@@ -141,10 +141,6 @@ const rows = [
 
 if (otros.length > 0) rows.push({ title: "OTRAS", players: otros });
 
-// Posición en singular para las tarjetas del PNG.
-const exportPosition: Record<string, string> = {
-    PORTERAS: "Portera", DEFENSAS: "Defensa", CENTROCAMPISTAS: "Centrocampista", DELANTERAS: "Delantera", OTRAS: "Jugadora",
-};
 
 // Resumen de la plantilla. En temporadas pasadas la edad se calcula al inicio
 // de la temporada (1 de septiembre); en la actual, a día de hoy.
@@ -249,8 +245,8 @@ function calculateAge(birthDateString: string): number {
     <div class="squad-actions">
     {listofPlayers.length > 0 && (
         <button type="button" class="squad-download" data-squad-download data-season={season}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
-            <span data-squad-download-label>Descargar PNG</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
+            <span data-squad-download-label>Compartir plantilla</span>
         </button>
     )}
     {seasons.length > 1 && (
@@ -307,10 +303,7 @@ function calculateAge(birthDateString: string): number {
 {listofPlayers.length > 0 && (
     <div class="squad-export" id="squad-export" aria-hidden="true">
         <header class="sx-head">
-            <div>
-                <p class="sx-brand"><img data-src="/icon.webp" alt="" width="54" height="54" />MADRID FEMENINO <span>XTRA</span></p>
-                <p class="sx-sub">Plantilla del Real Madrid Femenino</p>
-            </div>
+            <p class="sx-title">Plantilla del <span>Real Madrid Femenino</span></p>
             <div class="sx-meta">
                 <span class="sx-season">{season}</span>
                 <span class="sx-pill">{listofPlayers.length} jugadoras</span>
@@ -330,17 +323,18 @@ function calculateAge(birthDateString: string): number {
                 <div class="sx-group-head"><h3>{row.title}</h3><span>{row.players.length}</span></div>
                 <div class="sx-grid">
                     {row.players.map((player) => (
-                        <div class="sx-card">
-                            <span class="sx-number">{player.number && `#${player.number}`}{player.flagUrl && <img class="sx-flag" data-src={player.flagUrl} alt="" />}</span>
-                            <span class="sx-photo" data-bg={player.imageUrl}></span>
-                            <p class="sx-name">{player.name}</p>
-                            <p class="sx-pos">{exportPosition[row.title]}</p>
+                        <div class="sx-thumb" data-bg={player.thumbnailUrl}>
+                            <span class="sx-thumb-number">{player.flagUrl && <img class="sx-flag" data-src={player.flagUrl} alt="" />}{player.number}</span>
+                            <span class="sx-thumb-stats">
+                                {player.thumbStats.map((stat) => (
+                                    <span class="sx-thumb-stat"><b>{stat.value}</b><small>{stat.label}</small></span>
+                                ))}
+                            </span>
                         </div>
                     ))}
                 </div>
             </section>
         ))}
-        <footer class="sx-foot">madridfemeninoxtra.com</footer>
     </div>
 )}
 
@@ -600,7 +594,8 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <script>
-    // Descarga la plantilla como PNG. Las imágenes de la versión de exportación
+    // Comparte la plantilla como PNG (menú de compartir del sistema cuando el
+    // dispositivo admite archivos; si no, se descarga). Las imágenes de la versión de exportación
     // solo se piden al pulsar. R2 solo permite CORS desde producción, así que
     // fuera de ella sus fotos pasan por el proxy (las banderas permiten CORS).
     async function downloadSquad(button: HTMLButtonElement) {
@@ -650,9 +645,20 @@ function calculateAge(birthDateString: string): number {
             });
             const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/png"));
             if (!blob) throw new Error("No se pudo generar la imagen");
+            const season = button.dataset.season || "";
+            const fileName = `plantilla-real-madrid-femenino-${season.replace("/", "-")}.png`;
+            const file = new File([blob], fileName, { type: "image/png" });
+            if (navigator.canShare?.({ files: [file] })) {
+                try {
+                    await navigator.share({ files: [file], title: `Plantilla del Real Madrid Femenino ${season}` });
+                    return;
+                } catch (error) {
+                    if ((error as DOMException)?.name === "AbortError") return;
+                }
+            }
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `plantilla-real-madrid-femenino-${(button.dataset.season || "").replace("/", "-")}.png`;
+            link.download = fileName;
             link.click();
             setTimeout(() => URL.revokeObjectURL(link.href), 1000);
         } catch (error) {
@@ -781,11 +787,30 @@ function calculateAge(birthDateString: string): number {
         background: radial-gradient(120% 60% at 0% 0%, rgba(212, 168, 67, 0.1), transparent 60%), #070d1c;
     }
     .squad-export p, .squad-export h3 { margin: 0; }
+    .sx-title { font-family: 'Cinzel', serif; font-size: 34px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.15; }
+    .sx-title span { color: #d4a843; }
+    /* Tarjetas iguales que las miniaturas del selector de la plantilla. */
+    .sx-thumb {
+        position: relative; width: 150px; height: 188px; overflow: hidden;
+        background-color: rgba(212, 168, 67, 0.07); background-repeat: no-repeat; background-size: cover; background-position: top center;
+    }
+    .sx-thumb::before, .sx-thumb::after { content: ""; position: absolute; z-index: 3; width: 8px; height: 8px; border: 0 solid #d4a843; }
+    .sx-thumb::before { top: 3px; left: 3px; border-width: 1.5px 0 0 1.5px; }
+    .sx-thumb::after { bottom: 3px; right: 3px; border-width: 0 1.5px 1.5px 0; }
+    .sx-thumb-number {
+        position: absolute; top: 6px; right: 7px; z-index: 4; display: flex; align-items: center; gap: 6px;
+        font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; line-height: 1; color: #d4a843;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    }
+    .sx-thumb-number .sx-flag { width: 18px; height: 12px; }
+    .sx-thumb-stats {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; justify-content: center; gap: 14px;
+        padding: 28px 6px 8px; background: linear-gradient(to top, rgba(4, 8, 18, 0.95) 35%, rgba(4, 8, 18, 0));
+    }
+    .sx-thumb-stat { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .sx-thumb-stat b { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: #f0f0f0; }
+    .sx-thumb-stat small { margin-top: 4px; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #d4a843; white-space: nowrap; }
     .sx-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
-    .sx-brand { display: flex; align-items: center; gap: 14px; font-family: 'Cinzel', serif; font-size: 44px; font-weight: 700; letter-spacing: 0.04em; line-height: 1; }
-    .sx-brand img { width: 54px; height: 54px; object-fit: contain; }
-    .sx-brand span { color: #d4a843; }
-    .sx-sub { margin-top: 12px !important; font-size: 13px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(212, 168, 67, 0.75); }
     .sx-meta { display: grid; justify-items: end; gap: 12px; }
     .sx-season { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; letter-spacing: 0.18em; color: rgba(200, 210, 220, 0.75); }
     .sx-pill { padding: 10px 20px; border: 1px solid rgba(212, 168, 67, 0.55); border-radius: 999px; font-size: 14px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #d4a843; }
@@ -793,10 +818,10 @@ function calculateAge(birthDateString: string): number {
         display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding: 18px 24px;
         border: 1px solid rgba(212, 168, 67, 0.35); border-radius: 22px 0 22px 0; background: rgba(8, 16, 34, 0.9);
     }
-    .sx-coach-photo, .sx-photo { display: block; overflow: hidden; border-radius: 50%; background: rgba(212, 168, 67, 0.12); border: 1px solid rgba(212, 168, 67, 0.45); }
+    .sx-coach-photo { display: block; overflow: hidden; border-radius: 50%; background-color: rgba(212, 168, 67, 0.12); border: 1px solid rgba(212, 168, 67, 0.45); }
     .sx-coach-photo { width: 60px; height: 60px; }
     /* Recorte a cabeza y hombros de los recortes de cuerpo entero. */
-    .sx-coach-photo, .sx-photo { background-repeat: no-repeat; background-size: 200% auto; background-position: 50% 6%; }
+    .sx-coach-photo { background-repeat: no-repeat; background-size: 200% auto; background-position: 50% 6%; }
     .sx-label { font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(212, 168, 67, 0.75); }
     .sx-coach-name { display: flex; align-items: center; gap: 10px; margin-top: 6px !important; font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; }
     .sx-flag { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; }
@@ -805,16 +830,7 @@ function calculateAge(birthDateString: string): number {
     .sx-group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 4px; }
     .sx-group-head h3 { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.22em; color: #d4a843; }
     .sx-group-head span { min-width: 34px; padding: 6px 10px; border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 8px; text-align: center; font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: #d4a843; }
-    .sx-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
-    .sx-card {
-        position: relative; display: grid; justify-items: center; width: 228px; padding: 16px 12px 14px; box-sizing: border-box;
-        border: 1px solid rgba(212, 168, 67, 0.2); border-radius: 14px; background: rgba(12, 20, 38, 0.95);
-    }
-    .sx-number { position: absolute; top: 12px; left: 14px; display: flex; align-items: center; gap: 7px; font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: #d4a843; }
-    .sx-photo { width: 76px; height: 76px; }
-    .sx-name { margin-top: 12px !important; font-size: 17px; font-weight: 600; text-align: center; color: #f0f0f0; }
-    .sx-pos { margin-top: 5px !important; font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(200, 210, 220, 0.6); }
-    .sx-foot { margin-top: 18px; text-align: right; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(212, 168, 67, 0.7); }
+    .sx-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 
     .squad-season { position: relative; }
     .squad-season summary { display: grid; gap: 0.45rem; list-style: none; cursor: pointer; }
