@@ -5,12 +5,6 @@ import {
     type NoticiaCard,
 } from "../utils/noticias";
 import { fetchPlayersDirectly } from "../utils/players";
-import { fetchCoachesDirectly } from "../utils/entrenadores";
-
-interface Props {
-    games?: any[];
-}
-const { games = [] } = Astro.props;
 
 const POSITION_ORDER: Record<string, number> = {
     Portera: 1,
@@ -25,15 +19,12 @@ const POSITION_ORDER: Record<string, number> = {
     Delantera: 7,
 };
 
-const [players, coaches, playerNews, coachNews] = await Promise.all([
+const [players, playerNews] = await Promise.all([
     fetchPlayersDirectly(),
-    fetchCoachesDirectly(),
     getRecentNewsByFocus("player", 200),
-    getRecentNewsByFocus("coach", 100),
 ]);
 
 const playerNewsByRef = groupNewsByReference(playerNews, 3);
-const coachNewsByRef = groupNewsByReference(coachNews, 3);
 
 const allSeasonKeys = players.flatMap((p: any) => Object.keys(p.dorsales || {}));
 const latestSeason = [...new Set(allSeasonKeys)].sort().reverse()[0] as
@@ -41,7 +32,7 @@ const latestSeason = [...new Set(allSeasonKeys)].sort().reverse()[0] as
     | undefined;
 
 interface Card {
-    kind: "player" | "coach";
+    kind: "player";
     id: string;
     nombre: string;
     href: string;
@@ -55,45 +46,25 @@ interface Card {
 const PLACEHOLDER = "/assets/jugadoras-perfil/placeholder.png";
 
 const squad: Card[] = players
-    .filter((p: any) => latestSeason && p.dorsales?.[latestSeason] != null)
+    .filter((p: any) =>
+        latestSeason &&
+        p.season_info?.[latestSeason]?.id_categoria === 4 &&
+        p.season_info?.[latestSeason]?.dorsal != null
+    )
     .map((p: any) => ({
         kind: "player" as const,
         id: String(p.id_jugadora),
         nombre: p.nombre,
         href: `/jugadoras/${p.slug}`,
         photo: p.imageUrl || PLACEHOLDER,
-        dorsal: p.dorsales[latestSeason!],
+        dorsal: p.season_info[latestSeason!].dorsal,
         posicion: p.posicion || "",
         news: playerNewsByRef.get(String(p.id_jugadora)) || [],
         order: POSITION_ORDER[p.posicion] || 99,
     }))
     .sort((a, b) => a.order - b.order || (a.dorsal ?? 99) - (b.dorsal ?? 99));
 
-const recentGame = [...games]
-    .filter((g: any) => g.entrenador_nombre)
-    .sort(
-        (a: any, b: any) =>
-            new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
-    )[0];
-const currentCoach = recentGame
-    ? coaches.find((c: any) => c.nombre === recentGame.entrenador_nombre)
-    : null;
-
-const coachCard: Card | null = currentCoach
-    ? {
-          kind: "coach",
-          id: String(currentCoach.id_entrenador),
-          nombre: currentCoach.nombre,
-          href: `/entrenadores/${currentCoach.slug}`,
-          photo: currentCoach.imageUrl || PLACEHOLDER,
-          dorsal: null,
-          posicion: "Entrenador",
-          news: coachNewsByRef.get(String(currentCoach.id_entrenador)) || [],
-          order: 0,
-      }
-    : null;
-
-const cards: Card[] = coachCard ? [...squad, coachCard] : squad;
+const cards: Card[] = squad;
 
 const formatDate = (d: string) =>
     new Date(d)
@@ -112,8 +83,8 @@ const formatDate = (d: string) =>
             <div class="title-block">
                 <h2 class="landing-title">JUGADORAS</h2>
                 <p class="landing-subtitle">
-                    Las noticias más relevantes de la plantilla del Real Madrid
-                    Femenino
+                    Las noticias más relevantes de la primera plantilla del Real
+                    Madrid Femenino
                 </p>
             </div>
 
@@ -184,55 +155,6 @@ const formatDate = (d: string) =>
         </section>
     )
 }
-
-<script>
-    let jugScrollInterval: any;
-    let jugResumeTimeout: any;
-
-    function initJugadorasCarousel() {
-        clearInterval(jugScrollInterval);
-        clearTimeout(jugResumeTimeout);
-
-        const grid = document.getElementById("jugadorasGrid");
-        if (!grid) return;
-
-        let isPaused = false;
-
-        jugScrollInterval = setInterval(() => {
-            if (!isPaused) {
-                if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 1) {
-                    grid.scrollLeft = 0;
-                } else {
-                    grid.scrollLeft += 2;
-                }
-            }
-        }, 30);
-
-        grid.addEventListener("mouseenter", () => {
-            clearTimeout(jugResumeTimeout);
-            isPaused = true;
-        });
-        grid.addEventListener("mouseleave", () => {
-            isPaused = false;
-        });
-        grid.addEventListener(
-            "touchstart",
-            () => {
-                clearTimeout(jugResumeTimeout);
-                isPaused = true;
-            },
-            { passive: true },
-        );
-        grid.addEventListener("touchend", () => {
-            clearTimeout(jugResumeTimeout);
-            jugResumeTimeout = setTimeout(() => {
-                isPaused = false;
-            }, 3000);
-        });
-    }
-
-    document.addEventListener("astro:page-load", initJugadorasCarousel);
-</script>
 
 <style>
     .jugadoras-section {

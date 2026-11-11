@@ -119,11 +119,11 @@ test('Astro uses no-op image transformations instead of the legacy image endpoin
 });
 
 
-test('upper footer has six navigational columns, social icons and working newsletter wiring', () => {
+test('upper footer keeps navigation and social links without the newsletter form', () => {
   const footer = read('src/components/FooterUpper.astro');
   const layout = read('src/layouts/Layout.astro');
   assert.match(layout, /<FooterUpper locale=\{locale\}\s*\/>\s*<Footer locale=\{locale\}\s*\/>/);
-  for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL', 'NEWSLETTER']) {
+  for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL']) {
     assert.ok(footer.includes(label), label);
   }
   for (const href of ['/', '/noticias', '/plantilla', '/calendario', '/rankings', '/la-fabrica', '/sobre-nosotros', '/contacto', '/politica-privacidad', '/politica-cookies', '/sitemap.xml', '/rss.xml']) {
@@ -132,9 +132,7 @@ test('upper footer has six navigational columns, social icons and working newsle
   for (const brand of ['<X ', '<Instagram ', '<TikTok ', '<Youtube ']) {
     assert.ok(footer.includes(brand), brand);
   }
-  assert.match(footer, /id="mfx-newsletter-form"/);
-  assert.match(footer, /\/api\/newsletter\/subscribe/);
-  assert.match(footer, /name="consent" type="checkbox" required/);
+  assert.doesNotMatch(footer, /NEWSLETTER|mfx-newsletter-form|\/api\/newsletter\/subscribe/);
   assert.match(footer, /@media\(max-width:1230px\)/);
   assert.match(footer, /@media\(max-width:750px\)/);
   assert.match(footer, /@media\(max-width:400px\)/);
@@ -402,4 +400,14 @@ test('homepage recent results reuse the existing match read and stay responsive'
   assert.match(recent, /game\.opponentLogo/);
   assert.match(recent, /href=\{`\/partidos\/\$\{game\.slug\}`\}/);
   assert.match(recent, /@media \(max-width: 420px\)/);
+});
+
+test('homepage keeps only first-team players and removes the requested secondary blocks', () => {
+  const home = read('src/pages/index.astro');
+  const players = read('src/components/ProtagonistasSection.astro');
+
+  assert.doesNotMatch(home, /MAPA DE JUGADORAS|MAPA DE ESTADIOS|Ver plantilla|<GaleriasSection/);
+  assert.match(players, /id_categoria === 4/);
+  assert.match(players, /primera plantilla/);
+  assert.doesNotMatch(players, /setInterval|jugScrollInterval|fetchCoachesDirectly/);
 });
