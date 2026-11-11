@@ -84,25 +84,25 @@ function CustomSelect({ label, options, value, onChange, allOption = 'Todas' }: 
     return (
         <div className="adv-filter-group" ref={ref}>
             <span className="adv-filter-label">{label}</span>
-            <div className={`adv-custom-select ${open ? 'open' : ''}`}>
-                <button type="button" className="adv-custom-trigger" onClick={() => setOpen(o => !o)} aria-expanded={open}>
-                    <span className="adv-custom-text">{value || (allOption ?? 'Selecciona')}</span>
-                    <svg className="adv-custom-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-                        <path d="M1 1l5 5 5-5" stroke="rgba(212,168,67,0.8)" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+            <div className={`custom-select-container ${open ? 'open' : ''}`}>
+                <button type="button" className="custom-select-trigger" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open} aria-label={label}>
+                    <span className="selected-text">{value || (allOption ?? 'Selecciona')}</span>
+                    <div className="custom-select-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </div>
                 </button>
-                {open && (
-                    <ul className="adv-custom-options">
-                        {allOption !== null && (
-                            <li className={`adv-custom-option ${value === '' ? 'selected' : ''}`}
-                                onMouseDown={() => { onChange(''); setOpen(false); }}>{allOption}</li>
-                        )}
-                        {options.map(o => (
-                            <li key={o} className={`adv-custom-option ${value === o ? 'selected' : ''}`}
-                                onMouseDown={() => { onChange(o); setOpen(false); }}>{o}</li>
-                        ))}
-                    </ul>
-                )}
+                <div className="custom-select-options" role="listbox">
+                    {allOption !== null && (
+                        <div role="option" aria-selected={value === ''} className={`custom-select-option ${value === '' ? 'selected' : ''}`}
+                            onMouseDown={() => { onChange(''); setOpen(false); }}>{allOption}</div>
+                    )}
+                    {options.map(o => (
+                        <div key={o} role="option" aria-selected={value === o} className={`custom-select-option ${value === o ? 'selected' : ''}`}
+                            onMouseDown={() => { onChange(o); setOpen(false); }}>{o}</div>
+                    ))}
+                </div>
             </div>
         </div>
     );

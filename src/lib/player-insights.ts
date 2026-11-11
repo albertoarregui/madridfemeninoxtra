@@ -51,29 +51,35 @@ const numericDate = (fecha: string) => {
 const monthOf = (fecha: string) => Number(fecha.slice(5, 7));
 const resultLabel = { V: "Victoria", E: "Empate", D: "Derrota" } as const;
 
-/** Desplegable con el estilo de la web (botón + lista). */
+/** Desplegable idéntico a los del resto de la web (clases globales custom-select-*). */
+const ARROW_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
 function dropdown(label: string, options: Array<[string, string]>, value: string, onChange: (value: string) => void) {
     const wrap = el("div", "pt-select");
-    const caption = el("span", "pt-filter-label", label);
-    const button = el("button", "pt-select-trigger");
+    const container = el("div", "custom-select-container");
+    const button = el("button", "custom-select-trigger");
     button.type = "button";
     button.setAttribute("aria-haspopup", "listbox");
     button.setAttribute("aria-expanded", "false");
-    const text = el("span", "", options.find(([v]) => v === value)?.[1] ?? options[0]?.[1] ?? "");
-    button.append(text);
-    button.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>');
-    const list = el("ul", "pt-select-list");
+    button.setAttribute("aria-label", label);
+    const text = el("span", "selected-text", options.find(([v]) => v === value)?.[1] ?? options[0]?.[1] ?? "");
+    const arrow = el("div", "custom-select-arrow");
+    arrow.innerHTML = ARROW_SVG;
+    button.append(text, arrow);
+    const list = el("div", "custom-select-options");
     list.setAttribute("role", "listbox");
-    list.hidden = true;
-    const close = () => { list.hidden = true; button.setAttribute("aria-expanded", "false"); };
+    const setOpen = (open: boolean) => {
+        container.classList.toggle("open", open);
+        button.setAttribute("aria-expanded", String(open));
+    };
     options.forEach(([optionValue, optionLabel]) => {
-        const item = el("li", optionValue === value ? "is-active" : "", optionLabel);
+        const item = el("div", `custom-select-option${optionValue === value ? " selected" : ""}`, optionLabel);
         item.setAttribute("role", "option");
         item.tabIndex = -1;
-        item.addEventListener("click", () => {
-            list.querySelectorAll("li").forEach((li) => li.classList.toggle("is-active", li === item));
+        item.addEventListener("click", (event) => {
+            event.stopPropagation();
+            list.querySelectorAll(".custom-select-option").forEach((o) => o.classList.toggle("selected", o === item));
             text.textContent = optionLabel;
-            close();
+            setOpen(false);
             onChange(optionValue);
         });
         item.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); item.click(); } });
@@ -81,14 +87,15 @@ function dropdown(label: string, options: Array<[string, string]>, value: string
     });
     button.addEventListener("click", (event) => {
         event.stopPropagation();
-        document.querySelectorAll<HTMLElement>(".pt-select-list").forEach((other) => { if (other !== list) other.hidden = true; });
-        list.hidden = !list.hidden;
-        button.setAttribute("aria-expanded", String(!list.hidden));
-        if (!list.hidden) (list.querySelector<HTMLElement>("li.is-active") ?? list.querySelector("li"))?.focus();
+        const willOpen = !container.classList.contains("open");
+        document.querySelectorAll(".custom-select-container.open").forEach((other) => { if (other !== container) other.classList.remove("open"); });
+        setOpen(willOpen);
+        if (willOpen) (list.querySelector<HTMLElement>(".custom-select-option.selected") ?? list.querySelector<HTMLElement>(".custom-select-option"))?.focus();
     });
-    document.addEventListener("click", (event) => { if (!wrap.contains(event.target as Node)) close(); });
-    wrap.addEventListener("keydown", (event) => { if (event.key === "Escape") { close(); button.focus(); } });
-    wrap.append(caption, button, list);
+    document.addEventListener("click", (event) => { if (!container.contains(event.target as Node)) setOpen(false); });
+    container.addEventListener("keydown", (event) => { if (event.key === "Escape") { setOpen(false); button.focus(); } });
+    container.append(button, list);
+    wrap.append(el("span", "pt-filter-label", label), container);
     return wrap;
 }
 

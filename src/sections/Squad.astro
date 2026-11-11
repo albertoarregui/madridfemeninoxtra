@@ -250,25 +250,22 @@ function calculateAge(birthDateString: string): number {
         </button>
     )}
     {seasons.length > 1 && (
-        <details class="squad-season" data-squad-season>
-            <summary>
-                <span class="squad-season-label">Temporada</span>
-                <span class="squad-season-value">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></svg>
-                    {season}
-                    <svg class="squad-season-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                </span>
-            </summary>
-            <ul>
-                {seasons.map((value) => (
-                    <li>
-                        <a href={seasonHref(value)} class:list={{ "is-active": value === season }} aria-current={value === season ? "page" : undefined}>
-                            {value}{value === currentSeason && <small>actual</small>}
+        <div class="squad-season">
+            <span class="squad-season-label" id="squad-season-label">Temporada</span>
+            <div class="custom-select-container" data-squad-season>
+                <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="squad-season-label">
+                    <span class="selected-text">{season}</span>
+                    <div class="custom-select-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></div>
+                </button>
+                <div class="custom-select-options" role="listbox" aria-labelledby="squad-season-label">
+                    {seasons.map((value) => (
+                        <a href={seasonHref(value)} class:list={["custom-select-option", { selected: value === season }]} aria-current={value === season ? "page" : undefined}>
+                            {value}{value === currentSeason && " (actual)"}
                         </a>
-                    </li>
-                ))}
-            </ul>
-        </details>
+                    ))}
+                </div>
+            </div>
+        </div>
     )}
     </div>
 </section>
@@ -687,20 +684,16 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <script is:inline data-astro-rerun>
-    // Cierra el selector de temporada al pulsar fuera o con Escape.
+    // Abre y cierra el selector de temporada (pulsar fuera o Escape lo cierran).
     (() => {
         const picker = document.querySelector("[data-squad-season]");
         if (!picker || picker.dataset.ready === "true") return;
         picker.dataset.ready = "true";
-        document.addEventListener("click", (event) => {
-            if (picker.open && !picker.contains(event.target)) picker.open = false;
-        });
-        picker.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && picker.open) {
-                picker.open = false;
-                picker.querySelector("summary").focus();
-            }
-        });
+        const trigger = picker.querySelector(".custom-select-trigger");
+        const setOpen = (open) => { picker.classList.toggle("open", open); trigger.setAttribute("aria-expanded", String(open)); };
+        trigger.addEventListener("click", (event) => { event.stopPropagation(); setOpen(!picker.classList.contains("open")); });
+        document.addEventListener("click", (event) => { if (!picker.contains(event.target)) setOpen(false); });
+        picker.addEventListener("keydown", (event) => { if (event.key === "Escape") { setOpen(false); trigger.focus(); } });
     })();
 </script>
 
@@ -838,37 +831,12 @@ function calculateAge(birthDateString: string): number {
     .sx-group-head span { min-width: 34px; padding: 6px 10px; border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 8px; text-align: center; font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: #d4a843; }
     .sx-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 
-    .squad-season { position: relative; }
-    .squad-season summary { display: grid; gap: 0.45rem; list-style: none; cursor: pointer; }
-    .squad-season summary::-webkit-details-marker { display: none; }
+    .squad-season { position: relative; display: grid; gap: 0.45rem; }
     .squad-season-label {
         font-family: 'DM Sans', sans-serif; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase;
         color: rgba(212, 168, 67, 0.6);
     }
-    .squad-season-value {
-        display: inline-flex; align-items: center; gap: 0.6rem; min-width: 11rem; padding: 0.65rem 1rem;
-        border: 1px solid rgba(212, 168, 67, 0.45); border-radius: 3px; background: rgba(5, 9, 19, 0.6);
-        font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 700; color: #f0f0f0; transition: border-color 0.2s;
-    }
-    .squad-season summary:hover .squad-season-value, .squad-season[open] .squad-season-value { border-color: #d4a843; }
-    .squad-season svg { width: 1rem; height: 1rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .squad-season-arrow { margin-left: auto; transition: transform 0.2s; }
-    .squad-season[open] .squad-season-arrow { transform: rotate(180deg); }
-    .squad-season summary:focus-visible { outline: 2px solid #e6c77c; outline-offset: 3px; }
-    .squad-season ul {
-        position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 40; min-width: 100%; max-height: 20rem; overflow-y: auto;
-        margin: 0; padding: 0.35rem; list-style: none;
-        background: rgba(8, 16, 34, 0.98); border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 3px;
-        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-    }
-    .squad-season li a {
-        display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0.8rem;
-        border-radius: 2px; font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 700; color: rgba(220, 225, 230, 0.85);
-        text-decoration: none; transition: background 0.2s, color 0.2s;
-    }
-    .squad-season li a:hover { background: rgba(212, 168, 67, 0.1); color: #f0f0f0; }
-    .squad-season li a.is-active { background: rgba(212, 168, 67, 0.18); color: #d4a843; }
-    .squad-season li small { font-family: 'DM Sans', sans-serif; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(212, 168, 67, 0.7); }
+    .squad-season .custom-select-option { display: block; text-decoration: none; }
 
     @media (max-width: 900px) {
         .squad-summary { padding: 1rem 1.1rem; }
@@ -880,7 +848,7 @@ function calculateAge(birthDateString: string): number {
         .squad-summary-item { padding: 0; border-left: 0; }
         .squad-actions { width: 100%; flex-direction: column; align-items: stretch; }
         .squad-download { justify-content: center; }
-        .squad-season, .squad-season-value { width: 100%; }
+        .squad-season, .squad-season .custom-select-container { width: 100%; max-width: none; margin: 0; }
         .squad-coaches { margin-top: -1rem; }
         .coach-card { width: 100%; }
         .coach-card-inner { padding: 0.9rem 1rem; }

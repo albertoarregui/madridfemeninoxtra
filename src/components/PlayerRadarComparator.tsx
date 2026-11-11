@@ -184,33 +184,33 @@ function CustomSelect({ label, options, value, onChange }: {
     return (
         <div className="cmp-filter-group" ref={ref}>
             <span className="cmp-filter-label">{label}</span>
-            <div className={`cmp-custom-select ${open ? 'open' : ''}`}>
+            <div className={`custom-select-container ${open ? 'open' : ''}`}>
                 <button
                     type="button"
-                    className="cmp-custom-trigger"
+                    className="custom-select-trigger"
                     onClick={() => setOpen(o => !o)}
+                    aria-haspopup="listbox"
                     aria-expanded={open}
+                    aria-label={label}
                 >
-                    <span className="cmp-custom-text">{displayValue}</span>
-                    <svg className="cmp-custom-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-                        <path d="M1 1l5 5 5-5" stroke="#2b2b2b" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                    <span className="selected-text">{displayValue}</span>
+                    <div className="custom-select-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </div>
                 </button>
-                {open && (
-                    <ul className="cmp-custom-options">
-                        <li
-                            className={`cmp-custom-option ${value === '' ? 'selected' : ''}`}
-                            onMouseDown={() => { onChange(''); setOpen(false); }}
-                        >Todas</li>
-                        {options.map(o => (
-                            <li
-                                key={o}
-                                className={`cmp-custom-option ${value === o ? 'selected' : ''}`}
-                                onMouseDown={() => { onChange(o); setOpen(false); }}
-                            >{o}</li>
-                        ))}
-                    </ul>
-                )}
+                <div className="custom-select-options" role="listbox">
+                    {['', ...options].map(o => (
+                        <div
+                            key={o || '__all'}
+                            role="option"
+                            aria-selected={value === o}
+                            className={`custom-select-option ${value === o ? 'selected' : ''}`}
+                            onMouseDown={() => { onChange(o); setOpen(false); }}
+                        >{o || 'Todas'}</div>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -487,9 +487,9 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                     <CustomSelect label="COMPETICIÓN" options={availableComps}   value={comp}   onChange={v => setComp(v)} />
                     <div className="cmp-filter-group cmp-filter-mode">
                         <span className="cmp-filter-label">DATOS</span>
-                        <div className="cmp-toggle">
-                            <button className={`cmp-toggle-btn ${mode === 'total' ? 'active' : ''}`} onClick={() => setMode('total')}>Totales</button>
-                            <button className={`cmp-toggle-btn ${mode === 'p90'   ? 'active' : ''}`} onClick={() => setMode('p90')}>Por 90</button>
+                        <div className="mfx-option-group">
+                            <button type="button" className={`mfx-option-btn ${mode === 'total' ? 'is-active' : ''}`} aria-pressed={mode === 'total'} onClick={() => setMode('total')}>Totales</button>
+                            <button type="button" className={`mfx-option-btn ${mode === 'p90'   ? 'is-active' : ''}`} aria-pressed={mode === 'p90'} onClick={() => setMode('p90')}>Por 90</button>
                         </div>
                     </div>
                 </div>
