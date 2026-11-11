@@ -136,7 +136,7 @@ El secreto de invalidación debe mantenerse fuera del repositorio y de la docume
 
 ## 🛡️ Privacidad y publicación responsable
 
-La plataforma dispone de un panel propio de preferencias de cookies. La carga publicitaria opcional se condiciona a la decisión del visitante; la gestión del consentimiento exigida por Google para determinados territorios requiere, además, una **CMP certificada compatible con TCF**.
+La web no muestra publicidad ni carga cookies opcionales propias, por lo que no necesita panel de consentimiento.
 
 Los contenidos editoriales, las fotografías, los escudos y otros recursos visuales pueden estar sujetos a derechos distintos de los del código. No deben asumirse licencias de reutilización por el mero hecho de que el repositorio sea público.
 

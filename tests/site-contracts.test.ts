@@ -36,7 +36,6 @@ test('sitemap, SEO and consent rules stay in place', () => {
   assert.match(read('src/pages/sitemap.xml.ts'), /escapeXml/);
   assert.match(read('src/pages/sitemap.xml.ts'), /'players', 'coaches', 'stadiums'/);
   assert.match(read('src/layouts/Layout.astro'), /isNewsArticle \? "article" : "website"/);
-  assert.match(read('src/components/CookieConsent.astro'), /background: #0c1222/);
   assert.match(read('src/utils/og-metadata.ts'), /OG_ESTATICOS/);
 });
 
@@ -138,16 +137,17 @@ test('upper footer keeps navigation and social links without the newsletter form
   assert.match(footer, /@media\(max-width:400px\)/);
 });
 
-test('original footer style stays with exact requested legal and cookie controls', () => {
+test('original footer style stays with exact requested legal links and no ad consent controls', () => {
   const footer = read('src/components/Footer.astro');
   assert.match(footer, /footer-container/);
   assert.match(footer, /footer-social-row/);
   for (const href of ['/aviso-legal', '/politica-privacidad', '/politica-cookies', '/terminos-condiciones']) {
     assert.ok(footer.includes(`href={href("${href}")}`) || footer.includes(`href="${href}"`), href);
   }
-  assert.match(footer, /id="mfx-footer-manage-cookies"/);
-  assert.match(footer, /getElementById\('mfx-manage-consent'\)/);
-  assert.match(footer, /getElementById\('mfx-consent'\)/);
+  assert.doesNotMatch(footer, /mfx-footer-manage-cookies|mfx-consent/);
+  assert.equal(exists('src/components/CookieConsent.astro'), false);
+  assert.equal(exists('public/ads.txt'), false);
+  assert.doesNotMatch(read('src/layouts/Layout.astro'), /showAds|adsbygoogle/);
 });
 
 
