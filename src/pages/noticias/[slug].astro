@@ -13,7 +13,7 @@ import {
 } from "../../utils/entrenadores";
 import { fetchRefereesDirectly } from "../../utils/arbitras";
 import { fetchRivalsDirectly, getRivalShieldUrl } from "../../utils/rivales";
-import { fetchGamesDirectly } from "../../utils/partidos";
+import { fetchGameById, fetchGameBySlug } from "../../utils/partidos";
 import { getFlagSrc } from "../../utils/flags";
 import { generateSlug } from "../../utils/url-helper";
 import { cached } from "../../utils/cache";
@@ -34,8 +34,15 @@ try {
     const entries = await cached(`contentful:news:item:${slug}:${getRequestLocale()}`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
         content_type: "noticia",
         "fields.slug": slug,
-        include: 3,
+        include: 1,
         limit: 1,
+        select: [
+            "sys.id", "sys.createdAt", "sys.updatedAt",
+            "fields.title", "fields.subtitle", "fields.slug", "fields.body",
+            "fields.featuredImage", "fields.publishDate", "fields.author",
+            "fields.player", "fields.category", "fields.focusType",
+            "fields.referenceId", "fields.id",
+        ] as any,
     }), { tags: ["news", `news-${slug}`] });
 
     if (entries && entries.items.length > 0) {
@@ -52,6 +59,11 @@ try {
                     "sys.id[ne]": noticiaId,
                     order: ["-sys.createdAt"],
                     limit: 3,
+                    include: 1,
+                    select: [
+                        "sys.id", "sys.createdAt",
+                        "fields.title", "fields.slug", "fields.featuredImage",
+                    ] as any,
                 }), { tags: ["news"] });
                 relatedNoticias = relatedEntries.items.map((item: any) => ({
                     ...item.fields,
@@ -469,10 +481,9 @@ for (const ref of refsDe("match")) {
     const buscado = ref || String(contentReferenceId ?? "").trim();
     if (!buscado) continue;
     try {
-        const allMatches = await fetchGamesDirectly();
-        const datos =
-            allMatches.find((m: any) => String(m.id_partido) === buscado) ||
-            allMatches.find((m: any) => String(m.slug) === buscado);
+        const datos = /^\d+$/.test(buscado)
+            ? await fetchGameById(buscado)
+            : await fetchGameBySlug(buscado);
         if (!datos) continue;
 
         const { fetchMatchLineups } = await import("../../utils/partidos");
