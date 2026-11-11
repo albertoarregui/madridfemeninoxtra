@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 
 import react from '@astrojs/react';
-import cloudflare from '@astrojs/cloudflare';
+import vercel from '@astrojs/vercel';
 import clerk from '@clerk/astro';
 
 export default defineConfig({
@@ -20,13 +20,10 @@ export default defineConfig({
     prefetchAll: false,
     defaultStrategy: 'hover',
   },
-  adapter: cloudflare({
+  adapter: vercel({
     // Las imágenes ya se suben optimizadas en WebP. Evitamos generar variantes
-    // en el runtime: R2 sigue sirviendo los archivos originales ya preparados.
-    imageService: 'passthrough',
-    workerEntryPoint: {
-      path: 'src/worker.ts',
-    },
+    // mediante la API de Image Optimization de Vercel (y consumir su cuota).
+    imageService: false,
   }),
   image: {
     // Conserva el archivo original: no redimensiona ni recomprime las imágenes.

@@ -24,8 +24,7 @@ export function jsonResponse(data: unknown, opts: CacheOptions = {}): Response {
         headers: {
             ...BASE_HEADERS,
             'Cache-Control': cacheControl,
-            'Cloudflare-CDN-Cache-Control': cacheControl,
-            ...(tags.length > 0 ? { 'Cache-Tag': [...new Set(tags)].join(',') } : {}),
+            ...(tags.length > 0 ? { 'Vercel-Cache-Tag': [...new Set(tags)].join(',') } : {}),
             ...headers,
         },
     });

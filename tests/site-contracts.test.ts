@@ -114,7 +114,7 @@ test('rival records never query the obsolete goles_asistencias table', () => {
 
 test('Astro uses no-op image transformations instead of the legacy image endpoint', () => {
   const config = read('astro.config.mjs');
-  assert.match(config, /imageService:\s*'passthrough'/);
+  assert.match(config, /imageService:\s*false/);
   assert.match(config, /astro\/assets\/services\/noop/);
 });
 
@@ -165,9 +165,9 @@ test('newsletter double opt-in and unsubscribe use existing safe endpoints', () 
 });
 
 
-test('Cloudflare CPU controls reuse HTML at the edge and never serialize full article bodies', () => {
+test('Vercel CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
   const middleware = read('src/middleware.ts');
-  const worker = read('src/worker.ts');
+  const cache = read('src/utils/cache.ts');
   const header = read('src/components/Header.astro');
   const translations = read('src/i18n/translate-html.ts');
   const news = read('src/pages/noticias/index.astro');
@@ -175,9 +175,10 @@ test('Cloudflare CPU controls reuse HTML at the edge and never serialize full ar
   assert.match(middleware, /const CACHE_HOME_S = 15 \* 60;/);
   assert.match(middleware, /const SWR_HOME_S = 60 \* 60;/);
   assert.match(middleware, /fastRefresh \? SWR_HOME_S/);
-  assert.match(middleware, /Cloudflare-CDN-Cache-Control/);
-  assert.match(worker, /edgeCache\(\)\.match/);
-  assert.match(worker, /edgeCache\(\)\.put/);
+  assert.match(middleware, /Vercel-CDN-Cache-Control/);
+  assert.match(middleware, /Vercel-Cache-Tag/);
+  assert.match(cache, /getCache\(\{ namespace: RUNTIME_CACHE_NAMESPACE \}\)/);
+  assert.match(cache, /dangerouslyDeleteByTag/);
   assert.match(middleware, /const REQUIERE_CLERK = \/\^\\\/api/);
   assert.match(middleware, /clerkApiMiddleware\(context, next\)/);
   assert.match(header, /isStatic=\{true\}/);
@@ -188,7 +189,7 @@ test('Cloudflare CPU controls reuse HTML at the edge and never serialize full ar
   assert.match(news, /"fields.featuredImage"/);
   assert.doesNotMatch(news, /\.\.\.item\.fields/);
   assert.match(news, /featuredImage: imageUrl \?/);
-  assert.match(proxy, /Cloudflare-CDN-Cache-Control/);
+  assert.match(proxy, /Vercel-CDN-Cache-Control/);
   assert.match(proxy, /permittedImageSource\(src\)/);
   assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
   assert.match(proxy, /redirect: 'error'/);
@@ -197,11 +198,10 @@ test('Cloudflare CPU controls reuse HTML at the edge and never serialize full ar
 
 test('weekly cron is authenticated, idempotent and avoids unsolicited article mailings', () => {
   const weekly = read('src/pages/api/newsletter/weekly.ts');
-  const config = read('wrangler.jsonc');
-  const worker = read('src/worker.ts');
+  const config = JSON.parse(read('vercel.json'));
   const immediate = read('src/pages/api/newsletter/send.ts');
-  assert.match(config, /"crons": \["0 6 \* \* 1"\]/);
-  assert.match(worker, /api\/newsletter\/weekly/);
+  assert.deepEqual(config.crons, [{ path: '/api/newsletter/weekly', schedule: '0 6 * * 1' }]);
+  assert.match(weekly, /export const GET: APIRoute/);
   assert.match(weekly, /runtimeEnv\('APP_ENV'\) !== 'production'/);
   assert.match(weekly, /authorization!==`Bearer \$\{expected\}`/);
   assert.match(weekly, /mondayAt10Madrid\(monday\)/);

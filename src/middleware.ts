@@ -80,7 +80,7 @@ async function handleRequest(
         if (freshMatch && request.method === "GET") {
             response.headers.set("Cache-Control", "private, no-store, max-age=0");
             response.headers.set("CDN-Cache-Control", "no-store");
-            response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+            response.headers.set("Vercel-CDN-Cache-Control", "no-store");
         } else if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
             const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
@@ -90,15 +90,15 @@ async function handleRequest(
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             const tags = tagsForPath(routePath);
+            // Astro establece Cache-Control: public, max-age=0. La cabecera
+            // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(
-                "Cache-Control",
-                `public, max-age=0, s-maxage=${sMaxage}, stale-while-revalidate=${swr}`,
-            );
-            response.headers.set(
-                "Cloudflare-CDN-Cache-Control",
+                "Vercel-CDN-Cache-Control",
                 `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
             );
-            response.headers.set("Cache-Tag", [cacheTags.database, ...tags].join(","));
+            // Solo las respuestas que se guardan en la CDN llevan etiquetas,
+            // para que `invalidarTags` purgue únicamente lo afectado.
+            response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tags].join(","));
             response.headers.set("Vary", "Accept-Encoding");
         }
     } catch {
