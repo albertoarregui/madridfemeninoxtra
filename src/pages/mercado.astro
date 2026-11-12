@@ -89,9 +89,9 @@ const groups = [
                             </a>
                             <span class:list={["mk-type", `is-${m.modalidad === "retirada" ? "retirada" : m.tipo}`]}>{typeLabel(m)}</span>
                             <span class="mk-route">
-                                <span class="mk-club">{crest(m.origen) && <img src={crest(m.origen)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}<span>{m.origen || "Por confirmar"}</span></span>
+                                <span class="mk-club"><span class="mk-crest" aria-hidden="true">{crest(m.origen) && <img src={crest(m.origen)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}</span><span>{m.origen || "Por confirmar"}</span></span>
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
-                                <span class="mk-club">{crest(m.destino) && <img src={crest(m.destino)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}<span>{m.destino || (m.modalidad === "retirada" ? "Retirada" : "Por confirmar")}</span></span>
+                                <span class="mk-club"><span class="mk-crest" aria-hidden="true">{crest(m.destino) && <img src={crest(m.destino)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}</span><span>{m.destino || (m.modalidad === "retirada" ? "Retirada" : "Por confirmar")}</span></span>
                             </span>
                             <span class="mk-fee">
                                 <strong class:list={[{ "is-known": (m.precio ?? 0) > 0 }]}>{feeLabel(m)}</strong>
@@ -114,7 +114,7 @@ const groups = [
                                 <span class="mk-name"><strong>{m.nombre}</strong><small>{m.posicion || "Jugadora"}</small></span>
                             </a>
                             <span class="mk-type is-renovacion">Renovación</span>
-                            <span class="mk-route"><span class="mk-club"><span>{m.contratoHasta ? `Contrato hasta ${m.contratoHasta.split("-").reverse().join("/")}` : "Contrato ampliado"}</span></span></span>
+                            <span class="mk-route"><span class="mk-club"><span class="mk-crest" aria-hidden="true"></span><span>{m.contratoHasta ? `Contrato hasta ${m.contratoHasta.split("-").reverse().join("/")}` : "Contrato ampliado"}</span></span></span>
                             <span class="mk-fee"><strong class:list={[{ "is-known": (m.precio ?? 0) > 0 }]}>{feeLabel(m)}</strong><small>{dateEs(m.fecha)}</small></span>
                         </li>
                     ))}
@@ -162,14 +162,15 @@ const groups = [
     .mk-toggle { margin-left: auto; }
     .mk-toggle > span:last-child { letter-spacing: 0.08em; }
     .mk-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
-    .mk-kpis > div { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mk-kpis > div { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; }
     .mk-kpis dt { order: 2; font: 700 0.66rem/1 'Cinzel', serif; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.8); }
     .mk-kpis dd { order: 1; margin: 0; font: 800 clamp(1.15rem, 2.1vw, 1.9rem)/1 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); white-space: nowrap; }
     .mk-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; border-radius: 999px; }
     .mk-count { margin-left: 0.4rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
     [data-mk-group][hidden] { display: none; }
     .mk-list { margin: 0; padding: 0; list-style: none; }
-    .mk-row { display: grid; grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1.6fr) minmax(0, 0.8fr); align-items: center; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid rgba(212, 168, 67, 0.08); }
+    /* Columna de tipo de ancho fijo: los escudos quedan alineados sea cual sea la etiqueta. */
+    .mk-row { display: grid; grid-template-columns: minmax(0, 1.3fr) 8.5rem minmax(0, 1.6fr) minmax(0, 0.8fr); align-items: center; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid rgba(212, 168, 67, 0.08); }
     .mk-row:first-child { border-top: 0; }
     .mk-player { display: flex; align-items: center; gap: 0.75rem; min-width: 0; color: inherit; text-decoration: none; }
     .mk-player:hover strong { color: rgb(var(--l-gold, 230, 199, 124)); }
@@ -178,7 +179,7 @@ const groups = [
     .mk-name { display: grid; gap: 0.15rem; min-width: 0; }
     .mk-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgb(var(--l-ink, 240, 240, 240)); }
     .mk-name small { font-size: 0.75rem; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
-    .mk-type { justify-self: start; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; background: rgba(212, 168, 67, 0.14); color: rgb(var(--l-gold, 230, 199, 124)); }
+    .mk-type { justify-self: center; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; background: rgba(212, 168, 67, 0.14); color: rgb(var(--l-gold, 230, 199, 124)); }
     .mk-type.is-baja, .mk-type.is-cesion_salida { background: rgba(208, 69, 59, 0.16); color: #f87171; }
     .mk-type.is-alta, .mk-type.is-cesion_entrada { background: rgba(47, 166, 106, 0.16); color: #4ade80; }
     .mk-type.is-renovacion { background: rgba(47, 143, 184, 0.18); color: #7dd3fc; }
@@ -186,7 +187,9 @@ const groups = [
     .mk-route { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
     .mk-route > svg { width: 1rem; height: 1rem; flex-shrink: 0; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mk-club { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; flex: 1 1 0; font-size: 0.85rem; color: rgba(var(--l-ink, 220, 225, 230), 0.85); }
-    .mk-club img { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+    /* Hueco fijo para el escudo: los nombres empiezan siempre en el mismo punto. */
+    .mk-crest { display: inline-grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; }
+    .mk-club img { width: 24px; height: 24px; object-fit: contain; }
     .mk-club span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mk-fee { display: grid; justify-items: end; gap: 0.15rem; text-align: right; }
     .mk-fee strong { font: 800 1rem/1 'DM Sans', sans-serif; color: rgba(var(--l-ink, 220, 225, 230), 0.75); white-space: nowrap; }
@@ -194,8 +197,12 @@ const groups = [
     .mk-fee small { font-size: 0.7rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
     @media (max-width: 900px) {
         .mk-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .mk-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "player fee" "route type"; row-gap: 0.5rem; }
-        .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; }
+        /* Importe y tipo a la derecha de la jugadora; la ruta (origen → destino), a todo el ancho y alineada. */
+        .mk-row { grid-template-columns: minmax(0, 1fr) 7.5rem; grid-template-areas: "player fee" "player type" "route route"; row-gap: 0.4rem; }
+        .mk-fee strong { font-size: 0.85rem; white-space: normal; line-height: 1.15; }
+        .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; align-self: start; }
+        .mk-fee { align-self: end; }
+        .mk-route { margin-top: 0.25rem; }
     }
     @media (max-width: 560px) {
         .mk-season { width: 100%; margin-right: 0; }
