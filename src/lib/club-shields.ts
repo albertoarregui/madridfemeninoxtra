@@ -48,6 +48,10 @@ const CLUB_ALIASES: Record<string, string> = {
     'as saint-étienne (categorías inferiores)': 'AS Saint-Étienne',
     'hammarby youth': 'Hammarby',
     'sky blue fc': 'Gotham FC',
+    'tottenham': 'Tottenham Hotspur',
+    // Archivos subidos con nombre propio (escudos/guangzhou.webp, escudos/rsc_internacional_fc.webp).
+    'guangzhou fc reserves': 'Guangzhou', 'guangzhou fc': 'Guangzhou',
+    'rsc': 'RSC Internacional FC',
     'cd tacón b': 'CD Tacón',
     'pozuelo de alarcón': 'CF Pozuelo de Alarcón',
     'são josé': 'Sao José', 'sao josé': 'Sao José',

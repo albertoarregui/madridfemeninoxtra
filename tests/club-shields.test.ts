@@ -45,3 +45,9 @@ test('las variantes de un club comparten un único archivo de escudo', () => {
     assert.equal(r('Categorías inferiores Montpellier')?.url, r('Montpellier')?.url);
     assert.equal(r('Olympique Lyonnais')?.url, r('OL Lyonnes')?.url);
 });
+
+test('los escudos subidos con nombre propio se encuentran', () => {
+    const r = createClubShieldResolver({});
+    assert.equal(r('Guangzhou FC Reserves')?.url, 'https://media.madridfemeninoxtra.com/escudos/guangzhou.webp');
+    assert.equal(r('RSC')?.url, 'https://media.madridfemeninoxtra.com/escudos/rsc_internacional_fc.webp');
+});
