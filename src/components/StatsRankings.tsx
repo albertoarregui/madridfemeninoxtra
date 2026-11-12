@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Target, Zap, Clock, Shield, Award, Crown, TrendingUp, Activity, Star as LucideStar, ChevronLeft, ChevronRight } from "lucide-react";
 import CustomSelect from "./CustomSelect";
 import MatchRecordsRanking from "./MatchRecordsRanking";
+import ScrollPills from "./ScrollPills";
 import {
     expandRankingRows,
     type CompactRankingRow,
@@ -160,6 +161,20 @@ const TYPE_OPTIONS = [
 
 const ratingTone = (v: number) => (v >= 8 ? "is-top" : v >= 7 ? "is-good" : v >= 6 ? "is-ok" : "is-low");
 
+// Estadísticas que tienen sentido por 90 minutos.
+const PER90_TYPES = new Set([
+    "goles", "asistencias", "goles_generados", "tarjetas_amarillas", "tarjetas_rojas", "goles_victoria", "goles_empate", "goles_abrelatas",
+    "tiros_totales", "tiros_puerta", "toques", "toques_area_rival", "pases_completados", "pases_clave", "pases_ultimo_tercio",
+    "pases_largo_completados", "regates_completados", "centros_completados", "duelos_suelo_ganados", "duelos_aereos_ganados",
+    "entradas", "intercepciones", "despejes", "bloqueos", "recuperaciones", "faltas_recibidas", "faltas_cometidas", "perdidas",
+]);
+const PER90_MIN_MINUTES = 450;
+// Etiquetas cortas para la fila de estadísticas.
+const shortLabel = (label: string) => {
+    const s = label.replace(/^(Más veces|Más|Mayor|Mejor|Máximas)\s+/i, "");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
 const MainStarIcon = ({ className, color }: { className?: string, color: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -209,6 +224,8 @@ export default function StatsRankings({
         window.history.replaceState(window.history.state, "", url);
     }, [selectedType, mode]);
     const [selectedSeason, setSelectedSeason] = useState("todos");
+    // Total o por 90 minutos (solo estadísticas acumulables).
+    const [per90, setPer90] = useState(false);
     const [selectedCompetition, setSelectedCompetition] = useState("oficiales");
     const [currentPage, setCurrentPage] = useState(1);
     const playersPerPage = 25;
@@ -369,6 +386,7 @@ export default function StatsRankings({
                 p.valoracion_sum += item.valoracion || 0;
                 p.valoracion_count += (item as any).valoracion_count || 0;
                 p.games = (p.games || 0) + (Number(item.partidos) || 0);
+                p.mins = (p.mins || 0) + (Number((item as any).minutos) || 0);
 
                 config.dataKeys.forEach((key: string) => {
                     if (key !== 'display_ratio' && !key.startsWith('porcentaje_') && !explicitlyAccumulated.has(key)) {
@@ -419,10 +437,16 @@ export default function StatsRankings({
             });
         }
 
-        return players
-            .filter(p => Number(p[config.primaryKey]) > 0)
-            .sort((a, b) => Number(b[config.primaryKey]) - Number(a[config.primaryKey]));
-    }, [expandedRankingsData, streaksData, awardsData, selectedType, selectedSeason, selectedCompetition, currentConfig]);
+        const ranked = players.filter(p => Number(p[config.primaryKey]) > 0);
+        if (per90 && PER90_TYPES.has(selectedType)) {
+            // Por 90': mínimo 450 minutos (cinco partidos completos) para evitar extremos.
+            return ranked
+                .filter(p => Number(p.mins) >= PER90_MIN_MINUTES)
+                .map(p => ({ ...p, per90: Number(p[config.primaryKey]) * 90 / Number(p.mins) }))
+                .sort((a, b) => b.per90 - a.per90);
+        }
+        return ranked.sort((a, b) => Number(b[config.primaryKey]) - Number(a[config.primaryKey]));
+    }, [expandedRankingsData, streaksData, awardsData, selectedType, selectedSeason, selectedCompetition, currentConfig, per90]);
 
     // ── Presentación: tabla al estilo de los rankings históricos ─────────────
     const [visible, setVisible] = useState(25);
@@ -434,7 +458,9 @@ export default function StatsRankings({
     const isCountStat = !currentConfig.isStreak && !currentConfig.isAward
         && !String(currentConfig.primaryKey).startsWith("porcentaje_") && currentConfig.primaryKey !== "valoracion";
     const primaryLabel = currentConfig.headers[currentConfig.headers.length - 1];
+    const showPer90 = per90 && PER90_TYPES.has(selectedType);
     const formatValue = (player: any) => {
+        if (showPer90 && player.per90 != null) return Number(player.per90).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const value = player[currentConfig.primaryKey];
         if (String(currentConfig.primaryKey).startsWith("porcentaje_")) return `${Number(value).toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`;
         if (currentConfig.primaryKey === "valoracion") return Number(value).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -462,7 +488,6 @@ export default function StatsRankings({
         { value: "tarjetas_amarillas", label: "Amarillas" },
         { value: "tarjetas_rojas", label: "Rojas" },
     ];
-    const isMainStat = MAIN_STATS.some((s) => s.value === selectedType);
     const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
     const compPills = [
         { value: "todos", label: "Todas" },
@@ -544,15 +569,25 @@ export default function StatsRankings({
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
                     {sharing ? "Generando…" : "Compartir estadística"}
                 </button>
+                <div className="rk-actions-right">
+                    {PER90_TYPES.has(selectedType) && (
+                        <label className="pt-toggle">
+                            <span className={per90 ? "" : "is-on"}>Total</span>
+                            <input type="checkbox" checked={per90} onChange={(e) => setPer90(e.target.checked)} aria-label="Ver por 90 minutos" />
+                            <span className="pt-toggle-track" />
+                            <span className={per90 ? "is-on" : ""}>x90'</span>
+                        </label>
+                    )}
                 <div className="rk-season">
-                    <span className="rk-label">Temporada</span>
-                    <CustomSelect
-                        id="rk-season"
-                        options={[{ value: "todos", label: "Todas las temporadas" }, ...seasons.map((s) => ({ value: s, label: s }))]}
-                        value={selectedSeason}
-                        onChange={setSelectedSeason}
-                    />
+                        <span className="rk-label">Temporada</span>
+                        <CustomSelect
+                            id="rk-season"
+                            options={[{ value: "todos", label: "Todas las temporadas" }, ...seasons.map((s) => ({ value: s, label: s }))]}
+                            value={selectedSeason}
+                            onChange={setSelectedSeason}
+                        />
                 </div>
+            </div>
             </div>
 
             <div className="rk-filter">
@@ -570,24 +605,13 @@ export default function StatsRankings({
 
             <div className="rk-filter">
                 <span className="rk-label">Estadística</span>
-                <div className="rk-stat-row">
-                    <div className="pt-pills" role="group" aria-label="Estadística">
-                        {MAIN_STATS.map((option) => (
-                            <button key={option.value} type="button" className={`pt-pill${selectedType === option.value ? " is-active" : ""}`}
-                                aria-pressed={selectedType === option.value} onClick={() => setSelectedType(option.value)}>
-                                {option.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className={`rk-more${isMainStat ? "" : " is-active"}`}>
-                        <CustomSelect
-                            id="rk-more"
-                            options={[{ value: "", label: "Más estadísticas" }, ...TYPE_OPTIONS.filter((o) => !MAIN_STATS.some((m) => m.value === o.value))]}
-                            value={isMainStat ? "" : selectedType}
-                            onChange={(value) => { if (value) setSelectedType(value); }}
-                        />
-                    </div>
-                </div>
+                {/* Todas las estadísticas en una fila que se desliza. */}
+                <ScrollPills
+                    label="Estadística"
+                    value={selectedType}
+                    onChange={setSelectedType}
+                    options={[...MAIN_STATS, ...TYPE_OPTIONS.filter((o) => !MAIN_STATS.some((m) => m.value === o.value)).map((o) => ({ value: o.value, label: shortLabel(o.label) }))]}
+                />
             </div>
 
             {/* Podio de las tres primeras; la tabla sigue empezando en la primera posición. */}
@@ -715,8 +739,9 @@ export default function StatsRankings({
             <div className="rk-card mfx-corners" id="ranking-table-top">
                 <div className="rk-head">
                     <h2>{currentConfig.title}</h2>
-                    <p>{seasonLabel} · {compLabel}</p>
+                    <p>{seasonLabel} · {compLabel}{showPer90 ? " · por 90 minutos" : ""}</p>
                 </div>
+                {showPer90 && <p className="rk-note">Mínimo {PER90_MIN_MINUTES} minutos jugados.</p>}
                 {sortedPlayers.length === 0 ? (
                     <p className="rk-empty">No hay datos para estos filtros.</p>
                 ) : (
@@ -727,7 +752,7 @@ export default function StatsRankings({
                                 <th className="rk-player">Jugadora</th>
                                 {isCountStat && <th className="rk-num">Partidos</th>}
                                 {isCountStat && currentConfig.primaryKey !== "partidos" && <th className="rk-num rk-hide-sm">{perGameLabel}</th>}
-                                <th className="rk-value">{primaryLabel} ↓</th>
+                                <th className="rk-value">{showPer90 ? `${primaryLabel} x90'` : primaryLabel} ↓</th>
                             </tr>
                         </thead>
                         <tbody>

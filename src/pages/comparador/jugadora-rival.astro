@@ -1,0 +1,244 @@
+---
+// Jugadora vs rival: rendimiento de una jugadora contra un rival frente al
+// resto de rivales, sus rivales favoritos y los partidos uno a uno.
+// Todo sale de un conjunto en caché (src/utils/player-match-data.ts).
+import Layout from "../../layouts/Layout.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import LinkSelect from "../../components/profile/LinkSelect.astro";
+import "../../styles/profile-shared.css";
+import "../../styles/comparadores.css";
+import { fetchPlayerMatchData, matchPasses, OFICIALES } from "../../utils/player-match-data";
+import { fetchPlayerPhotoMap } from "../../utils/player-photos";
+import { fetchAllClubShields } from "../../utils/rivales";
+import { createClubShieldResolver } from "../../lib/club-shields";
+import { getAssetUrl } from "../../utils/assets";
+
+const data = await fetchPlayerMatchData();
+const photos = await fetchPlayerPhotoMap();
+const shield = createClubShieldResolver(await fetchAllClubShields());
+
+const q = Astro.url.searchParams;
+const temporada = q.get("temporada") || "todas";
+const competicion = q.get("competicion") || "todas";
+const filter = { temporada, competicion };
+
+const seasons = [...new Set(Object.values(data.matches).map((m) => m.temporada))].sort().reverse();
+const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
+const comps = COMP_ORDER.filter((c) => Object.values(data.matches).some((m) => m.competicion === c));
+
+// Apariciones con minutos dentro del filtro.
+const apps = data.apps.filter((a) => a.min > 0 && matchPasses(data.matches[a.m], filter));
+const byPlayer = new Map<string, { pj: number; ga: number }>();
+for (const a of apps) {
+    const s = byPlayer.get(a.p) ?? { pj: 0, ga: 0 };
+    s.pj++; s.ga += a.goles + a.asist;
+    byPlayer.set(a.p, s);
+}
+const playerOptions = [...byPlayer.entries()]
+    .map(([id, s]) => ({ id, ...data.players[id], ...s }))
+    .sort((a, b) => b.ga - a.ga || b.pj - a.pj || a.nombre.localeCompare(b.nombre, "es"));
+
+const pickedPlayer = playerOptions.find((p) => p.slug === q.get("jugadora")) ?? playerOptions[0];
+
+type Agg = { pj: number; min: number; tit: number; g: number; a: number; notaSum: number; notaN: number; v: number; e: number; d: number };
+const empty = (): Agg => ({ pj: 0, min: 0, tit: 0, g: 0, a: 0, notaSum: 0, notaN: 0, v: 0, e: 0, d: 0 });
+const add = (s: Agg, a: (typeof apps)[number]) => {
+    const m = data.matches[a.m];
+    s.pj++; s.min += a.min; s.tit += a.titular ? 1 : 0; s.g += a.goles; s.a += a.asist;
+    if (a.nota != null) { s.notaSum += a.nota; s.notaN++; }
+    if (m.resultado === "V") s.v++; else if (m.resultado === "E") s.e++; else s.d++;
+};
+
+const mine = pickedPlayer ? apps.filter((a) => a.p === pickedPlayer.id) : [];
+const rivals = new Map<string, { slug: string; name: string; agg: Agg }>();
+for (const a of mine) {
+    const m = data.matches[a.m];
+    const r = rivals.get(m.rivalSlug) ?? { slug: m.rivalSlug, name: m.rival, agg: empty() };
+    add(r.agg, a);
+    rivals.set(m.rivalSlug, r);
+}
+const rivalList = [...rivals.values()].sort((x, y) => (y.agg.g + y.agg.a) - (x.agg.g + x.agg.a) || y.agg.pj - x.agg.pj || x.name.localeCompare(y.name, "es"));
+const pickedRival = rivals.get(q.get("rival") || "") ?? rivalList[0];
+
+const vsAgg = pickedRival?.agg ?? empty();
+const restAgg = empty();
+for (const a of mine) if (data.matches[a.m].rivalSlug !== pickedRival?.slug) add(restAgg, a);
+
+const per90 = (n: number, min: number) => (min > 0 ? (n * 90) / min : 0);
+const avg = (s: Agg) => (s.notaN ? s.notaSum / s.notaN : 0);
+const pct = (n: number, d: number) => (d ? (n / d) * 100 : 0);
+const metrics = [
+    { label: "Partidos", a: vsAgg.pj, b: restAgg.pj, fmt: "int", better: "none" },
+    { label: "Minutos por partido", a: vsAgg.pj ? vsAgg.min / vsAgg.pj : 0, b: restAgg.pj ? restAgg.min / restAgg.pj : 0, fmt: "int", better: "high" },
+    { label: "Goles", a: vsAgg.g, b: restAgg.g, fmt: "int", better: "none" },
+    { label: "Asistencias", a: vsAgg.a, b: restAgg.a, fmt: "int", better: "none" },
+    { label: "Goles x90'", a: per90(vsAgg.g, vsAgg.min), b: per90(restAgg.g, restAgg.min), fmt: "dec", better: "high" },
+    { label: "Asistencias x90'", a: per90(vsAgg.a, vsAgg.min), b: per90(restAgg.a, restAgg.min), fmt: "dec", better: "high" },
+    { label: "Goles + asist. x90'", a: per90(vsAgg.g + vsAgg.a, vsAgg.min), b: per90(restAgg.g + restAgg.a, restAgg.min), fmt: "dec", better: "high" },
+    { label: "Valoración media", a: avg(vsAgg), b: avg(restAgg), fmt: "nota", better: "high" },
+    { label: "% de victorias", a: pct(vsAgg.v, vsAgg.pj), b: pct(restAgg.v, restAgg.pj), fmt: "pct", better: "high" },
+].map((m) => {
+    const max = Math.max(m.a, m.b) || 1;
+    const winner = m.better === "none" || m.a === m.b ? "" : m.a > m.b ? "a" : "b";
+    return { ...m, wa: (m.a / max) * 100, wb: (m.b / max) * 100, winner };
+});
+const fmt = (kind: string, v: number) =>
+    kind === "int" ? Math.round(v).toLocaleString("es-ES")
+    : kind === "pct" ? `${v.toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`
+    : kind === "nota" ? (v ? v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—")
+    : v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const matchesVs = mine
+    .filter((a) => data.matches[a.m].rivalSlug === pickedRival?.slug)
+    .map((a) => ({ app: a, match: data.matches[a.m] }))
+    .sort((x, y) => y.match.fecha.localeCompare(x.match.fecha));
+
+const tone = (v: number) => (v >= 8 ? "is-top" : v >= 7 ? "is-good" : v >= 6 ? "is-ok" : "is-low");
+const shieldUrl = (name: string) => shield(name)?.url || "";
+const dateEs = (iso: string) => iso.split("-").reverse().join("/");
+
+const href = (o: Partial<{ jugadora: string; rival: string; temporada: string; competicion: string }>) => {
+    const p = new URLSearchParams();
+    const v = { jugadora: pickedPlayer?.slug, rival: pickedRival?.slug, temporada, competicion, ...o };
+    if (v.jugadora) p.set("jugadora", v.jugadora);
+    if (v.rival) p.set("rival", v.rival);
+    if (v.temporada && v.temporada !== "todas") p.set("temporada", v.temporada);
+    if (v.competicion && v.competicion !== "todas") p.set("competicion", v.competicion);
+    return `/comparador/jugadora-rival?${p}`;
+};
+const compPills = [
+    { value: "todas", label: "Todas" }, { value: "oficiales", label: "Oficiales" },
+    ...comps.map((c) => ({ value: c, label: c === "Amistosos" ? "Amistoso" : c, logo: getAssetUrl("competiciones", c === "Amistosos" ? "amistoso" : c) })),
+];
+const title = pickedPlayer && pickedRival
+    ? `${pickedPlayer.nombre} contra ${pickedRival.name} | Jugadora vs rival | Madrid Femenino Xtra`
+    : "Jugadora vs rival | Madrid Femenino Xtra";
+---
+
+<Layout title={title} description="Compara lo que hace cada jugadora del Real Madrid Femenino contra un rival concreto frente al resto de rivales: goles, asistencias, valoración y todos los partidos." noindex={q.has("jugadora") || q.has("rival")}>
+    <main class="cx">
+        <header class="page-header-container">
+            <h1 class="landing-title">JUGADORA VS RIVAL</h1>
+            <p class="landing-subtitle">Lo que hace cada jugadora contra un rival concreto, comparado con el resto de rivales</p>
+        </header>
+        <nav class="cx-links" aria-label="Otros comparadores">
+            <a href="/comparador/con-sin">Con o sin una jugadora →</a>
+            <a href="/rankings?modo=partido">Mejores actuaciones en un partido →</a>
+        </nav>
+
+        <section class="cx-card cx-controls mfx-corners" aria-label="Filtros">
+            <div class="cx-pickers">
+                <div>
+                    <span class="cx-label">Jugadora</span>
+                    {pickedPlayer && (
+                        <EntityPicker noun="jugadoras" includeCurrent heading="Elegir jugadora"
+                            current={{ slug: pickedPlayer.slug, name: pickedPlayer.nombre, img: photos[pickedPlayer.slug] || "" }}
+                            options={playerOptions.map((p) => ({ slug: p.slug, name: p.nombre, img: photos[p.slug] || "", sub: `${p.posicion || "Jugadora"} · ${p.ga} G+A`, pj: p.pj }))}
+                            buildHref={(slug) => href({ jugadora: slug, rival: "" })} mode="a" />
+                    )}
+                </div>
+                <div>
+                    <span class="cx-label">Rival</span>
+                    {pickedRival && (
+                        <EntityPicker noun="rivales" includeCurrent heading="Elegir rival"
+                            current={{ slug: pickedRival.slug, name: pickedRival.name, img: shieldUrl(pickedRival.name), contain: true }}
+                            options={rivalList.map((r) => ({ slug: r.slug, name: r.name, img: shieldUrl(r.name), contain: true, sub: `${r.agg.g + r.agg.a} G+A`, pj: r.agg.pj }))}
+                            buildHref={(slug) => href({ rival: slug })} mode="b" />
+                    )}
+                </div>
+                <div>
+                    <span class="cx-label">Temporada</span>
+                    <LinkSelect id="cx-season" options={[{ label: "Todas las temporadas", href: href({ temporada: "todas", rival: "" }), selected: temporada === "todas" },
+                        ...seasons.map((s) => ({ label: s, href: href({ temporada: s, rival: "" }), selected: temporada === s }))]} />
+                </div>
+            </div>
+            <div>
+                <span class="cx-label">Competición</span>
+                <div class="pt-pills cx-pills" role="group" aria-label="Competición">
+                    {compPills.map((c) => (
+                        <a class:list={["pt-pill", { "is-active": competicion === c.value }]} href={href({ competicion: c.value, rival: "" })} data-astro-reload aria-current={competicion === c.value ? "true" : undefined}>
+                            {"logo" in c && c.logo && <img src={c.logo} alt="" width="16" height="16" loading="lazy" />}
+                            {c.label}
+                        </a>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {!pickedPlayer || !pickedRival ? (
+            <section class="cx-card mfx-corners"><p class="cx-empty">No hay partidos para estos filtros.</p></section>
+        ) : (
+            <>
+                <section class="cx-card mfx-corners" aria-label="Comparación">
+                    <div class="cx-versus">
+                        <div class="cx-side">
+                            {shieldUrl(pickedRival.name) ? <img class="is-contain" src={shieldUrl(pickedRival.name)} alt="" width="52" height="52" onerror="this.remove()" /> : <span class="cx-dot" />}
+                            <span><strong>Contra {pickedRival.name}</strong><small>{vsAgg.pj} partidos · {vsAgg.v}V {vsAgg.e}E {vsAgg.d}D</small></span>
+                        </div>
+                        <div class="cx-side is-b">
+                            {photos[pickedPlayer.slug] ? <img src={photos[pickedPlayer.slug]} alt="" width="52" height="52" /> : <span class="cx-dot" />}
+                            <span><strong>Resto de rivales</strong><small>{restAgg.pj} partidos · {restAgg.v}V {restAgg.e}E {restAgg.d}D</small></span>
+                        </div>
+                    </div>
+                    <ul class="cx-rows">
+                        {metrics.map((m) => (
+                            <li class="cx-row">
+                                <span class="cx-head">
+                                    <span class:list={["cx-val", { "is-best": m.winner === "a" }]}>{fmt(m.fmt, m.a)}</span>
+                                    <span class="cx-metric">{m.label}</span>
+                                    <span class:list={["cx-val", { "is-best": m.winner === "b" }]}>{fmt(m.fmt, m.b)}</span>
+                                </span>
+                                <span class="cx-bar is-a" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "a" }]} style={`width:${m.wa}%`}></i></span>
+                                <span class="cx-bar is-b" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "b" }]} style={`width:${m.wb}%`}></i></span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+
+                <section class="cx-card mfx-corners">
+                    <h2 class="cx-title">Partidos contra {pickedRival.name}</h2>
+                    <div class="cx-table-wrap">
+                        <table class="cx-table">
+                            <thead><tr><th class="is-left">Fecha</th><th class="cx-hide-sm">Competición</th><th>Resultado</th><th>Min</th><th>G</th><th>A</th><th>Nota</th></tr></thead>
+                            <tbody>
+                                {matchesVs.map(({ app, match }) => (
+                                    <tr>
+                                        <td class="is-left"><a href={`/partidos/${match.slug}`}>{dateEs(match.fecha)} <small>{match.local ? "(C)" : "(F)"}</small></a></td>
+                                        <td class="cx-hide-sm">{match.competicion === "Amistosos" ? "Amistoso" : match.competicion}</td>
+                                        <td><a href={`/partidos/${match.slug}`} class:list={["cx-res", `is-${match.resultado}`]}>{match.gf}-{match.gc}</a></td>
+                                        <td>{app.min}'</td>
+                                        <td>{app.goles || "—"}</td>
+                                        <td>{app.asist || "—"}</td>
+                                        <td>{app.nota != null ? <span class:list={["cx-rate", tone(app.nota)]}>{app.nota.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span> : "—"}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="cx-card mfx-corners">
+                    <h2 class="cx-title">Rivales favoritos de {pickedPlayer.nombre}</h2>
+                    <p class="cx-sub">Ordenados por goles más asistencias. Pulsa un rival para compararlo.</p>
+                    <div class="cx-table-wrap">
+                        <table class="cx-table">
+                            <thead><tr><th class="is-left">Rival</th><th>PJ</th><th>G</th><th>A</th><th>G+A</th><th class="cx-hide-sm">G+A x90'</th><th class="cx-hide-sm">Nota</th></tr></thead>
+                            <tbody>
+                                {rivalList.slice(0, 20).map((r) => (
+                                    <tr class:list={[{ "is-active": r.slug === pickedRival.slug }]}>
+                                        <td class="is-left"><a class="cx-team" href={href({ rival: r.slug })} data-astro-reload>
+                                            {shieldUrl(r.name) && <img src={shieldUrl(r.name)} alt="" width="22" height="22" loading="lazy" onerror="this.remove()" />}{r.name}</a></td>
+                                        <td>{r.agg.pj}</td><td>{r.agg.g}</td><td>{r.agg.a}</td><td><strong>{r.agg.g + r.agg.a}</strong></td>
+                                        <td class="cx-hide-sm">{fmt("dec", per90(r.agg.g + r.agg.a, r.agg.min))}</td>
+                                        <td class="cx-hide-sm">{r.agg.notaN ? <span class:list={["cx-rate", tone(avg(r.agg))]}>{avg(r.agg).toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span> : "—"}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </>
+        )}
+        <p class="cx-note">Partidos ya disputados con minutos de la jugadora. Datos {OFICIALES.has(competicion) ? competicion : competicion === "oficiales" ? "de partidos oficiales" : "de todas las competiciones"}{temporada !== "todas" ? ` · ${temporada}` : ""}.</p>
+    </main>
+</Layout>

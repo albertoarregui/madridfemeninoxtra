@@ -1,0 +1,179 @@
+---
+// Mercado del Real Madrid Femenino por temporada: fichajes, salidas,
+// cesiones, renovaciones y ascensos, con precios cuando se conocen.
+import Layout from "../layouts/Layout.astro";
+import LinkSelect from "../components/profile/LinkSelect.astro";
+import "../styles/comparadores.css";
+import { fetchMercado, feeLabel, TYPE_LABEL, type Move } from "../utils/mercado";
+import { fetchPlayerPhotoMap } from "../utils/player-photos";
+import { fetchAllClubShields } from "../utils/rivales";
+import { createClubShieldResolver } from "../lib/club-shields";
+
+const moves = await fetchMercado();
+const photos = await fetchPlayerPhotoMap();
+const shield = createClubShieldResolver(await fetchAllClubShields());
+
+const seasons = [...new Set(moves.map((m) => m.temporada))].sort().reverse();
+const temporada = seasons.includes(Astro.url.searchParams.get("temporada") || "") ? Astro.url.searchParams.get("temporada")! : seasons[0];
+const list = moves.filter((m) => m.temporada === temporada);
+
+const IN: Move["tipo"][] = ["alta", "cesion_entrada", "ascenso"];
+const OUT: Move["tipo"][] = ["baja", "cesion_salida"];
+const llegadas = list.filter((m) => IN.includes(m.tipo));
+const salidas = list.filter((m) => OUT.includes(m.tipo));
+const renovaciones = list.filter((m) => m.tipo === "renovacion");
+const sum = (arr: Move[]) => arr.reduce((t, m) => t + (m.precio ?? 0), 0);
+const gasto = sum(llegadas), ingresos = sum(salidas), balance = ingresos - gasto;
+const money = (v: number) => (v === 0 ? "0 €" : Math.abs(v) >= 1_000_000
+    ? `${(v / 1_000_000).toLocaleString("es-ES", { maximumFractionDigits: 2 })} M€`
+    : `${Math.round(v).toLocaleString("es-ES")} €`);
+
+// Fichajes y ventas más caros de la historia (si hay precios cargados).
+const topFees = moves.filter((m) => (m.precio ?? 0) > 0).sort((a, b) => (b.precio ?? 0) - (a.precio ?? 0)).slice(0, 8);
+
+const crest = (club: string | null) => (club ? shield(club)?.url || "" : "");
+const dateEs = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "");
+const groups = [
+    { key: "llegadas", title: "Llegadas", items: llegadas },
+    { key: "salidas", title: "Salidas", items: salidas },
+    { key: "renovaciones", title: "Renovaciones", items: renovaciones },
+].filter((g) => g.items.length > 0);
+---
+
+<Layout title={`Mercado del Real Madrid Femenino ${temporada ?? ""}: fichajes, salidas y renovaciones | Madrid Femenino Xtra`}
+    description="Fichajes, salidas, cesiones, renovaciones y ascensos del Real Madrid Femenino por temporada, con clubes de origen y destino y precios cuando se conocen.">
+    <main class="cx mk">
+        <header class="page-header-container">
+            <h1 class="landing-title">MERCADO</h1>
+            <p class="landing-subtitle">Fichajes, salidas, cesiones y renovaciones del Real Madrid Femenino</p>
+        </header>
+
+        <section class="cx-card mk-top mfx-corners" aria-label="Temporada y resumen">
+            <div class="mk-season">
+                <span class="cx-label">Temporada</span>
+                <LinkSelect id="mk-season" options={seasons.map((s) => ({ label: s, href: `/mercado?temporada=${encodeURIComponent(s)}`, selected: s === temporada }))} />
+            </div>
+            <dl class="mk-kpis">
+                <div><dt>Llegadas</dt><dd>{llegadas.length}</dd></div>
+                <div><dt>Salidas</dt><dd>{salidas.length}</dd></div>
+                <div><dt>Renovaciones</dt><dd>{renovaciones.length}</dd></div>
+                <div><dt>Gasto</dt><dd>{money(gasto)}</dd></div>
+                <div><dt>Ingresos</dt><dd>{money(ingresos)}</dd></div>
+                <div><dt>Balance</dt><dd class:list={[{ "is-pos": balance > 0, "is-neg": balance < 0 }]}>{balance > 0 ? "+" : ""}{money(balance)}</dd></div>
+            </dl>
+            <div class="pt-pills mk-filter" role="group" aria-label="Tipo de movimiento" data-mk-filter>
+                <button type="button" class="pt-pill is-active" data-value="todos" aria-pressed="true">Todos</button>
+                {groups.map((g) => <button type="button" class="pt-pill" data-value={g.key} aria-pressed="false">{g.title}</button>)}
+            </div>
+        </section>
+
+        {list.length === 0 && <section class="cx-card mfx-corners"><p class="cx-empty">Sin movimientos registrados en esta temporada.</p></section>}
+
+        {groups.map((g) => (
+            <section class="cx-card mfx-corners" data-mk-group={g.key}>
+                <h2 class="cx-title">{g.title} <span class="mk-count">{g.items.length}</span></h2>
+                <ul class="mk-list">
+                    {g.items.map((m) => (
+                        <li class="mk-row">
+                            <a class="mk-player" href={`/jugadoras/${m.slug}`}>
+                                <span class="mk-photo">{photos[m.slug] && <img src={photos[m.slug]} alt="" width="52" height="52" loading="lazy" />}</span>
+                                <span class="mk-name"><strong>{m.nombre}</strong><small>{m.posicion || "Jugadora"}</small></span>
+                            </a>
+                            <span class:list={["mk-type", `is-${m.tipo}`]}>{TYPE_LABEL[m.tipo]}</span>
+                            <span class="mk-route">
+                                <span class="mk-club">{crest(m.origen) && <img src={crest(m.origen)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}<span>{m.origen || "—"}</span></span>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
+                                <span class="mk-club">{crest(m.destino) && <img src={crest(m.destino)} alt="" width="24" height="24" loading="lazy" onerror="this.remove()" />}<span>{m.destino || "Sin equipo"}</span></span>
+                            </span>
+                            <span class="mk-fee">
+                                <strong class:list={[{ "is-known": (m.precio ?? 0) > 0 }]}>{feeLabel(m)}</strong>
+                                <small>{[dateEs(m.fecha), m.contratoHasta && m.tipo !== "renovacion" ? `Contrato hasta ${m.contratoHasta.slice(0, 4)}` : ""].filter(Boolean).join(" · ")}</small>
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        ))}
+
+        {topFees.length > 0 && (
+            <section class="cx-card mfx-corners">
+                <h2 class="cx-title">Operaciones más caras</h2>
+                <div class="cx-table-wrap">
+                    <table class="cx-table">
+                        <thead><tr><th class="is-left">Jugadora</th><th>Temporada</th><th class="cx-hide-sm">Tipo</th><th>Precio</th></tr></thead>
+                        <tbody>
+                            {topFees.map((m) => (
+                                <tr><td class="is-left"><a href={`/jugadoras/${m.slug}`}>{m.nombre}</a></td><td>{m.temporada}</td><td class="cx-hide-sm">{TYPE_LABEL[m.tipo]}</td><td><strong>{feeLabel(m)}</strong></td></tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        )}
+        <p class="cx-note">Precios según informaciones publicadas; «No revelado» cuando el club no lo ha hecho público.</p>
+    </main>
+</Layout>
+
+<script>
+    function init() {
+        const filter = document.querySelector<HTMLElement>("[data-mk-filter]");
+        if (!filter || filter.dataset.ready === "true") return;
+        filter.dataset.ready = "true";
+        const pills = [...filter.querySelectorAll<HTMLButtonElement>(".pt-pill")];
+        pills.forEach((pill) => pill.addEventListener("click", () => {
+            pills.forEach((p) => { const on = p === pill; p.classList.toggle("is-active", on); p.setAttribute("aria-pressed", String(on)); });
+            const value = pill.dataset.value;
+            document.querySelectorAll<HTMLElement>("[data-mk-group]").forEach((g) => { g.hidden = value !== "todos" && g.dataset.mkGroup !== value; });
+        }));
+    }
+    init();
+    document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+    .mk-top { position: relative; z-index: 30; display: grid; gap: 1.1rem; }
+    .mk-season { max-width: 280px; }
+    .mk-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
+    .mk-kpis > div { padding: 0.8rem 0.6rem; border: 1px solid rgba(212, 168, 67, 0.15); border-radius: 12px; background: rgba(var(--l-bg, 5, 9, 19), 0.45); text-align: center; }
+    .mk-kpis dt { font: 700 0.6rem/1 'Cinzel', serif; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.8); }
+    .mk-kpis dd { margin: 0.45rem 0 0; font: 800 1.35rem/1 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+    .mk-kpis dd.is-pos { color: #4ade80; } .mk-kpis dd.is-neg { color: #f87171; }
+    .mk-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-self: start; max-width: 100%; }
+    .mk-count { margin-left: 0.4rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
+    [data-mk-group][hidden] { display: none; }
+    .mk-list { margin: 0; padding: 0; list-style: none; }
+    .mk-row { display: grid; grid-template-columns: minmax(0, 1.3fr) auto minmax(0, 1.6fr) minmax(0, 0.8fr); align-items: center; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid rgba(212, 168, 67, 0.08); }
+    .mk-row:first-child { border-top: 0; }
+    .mk-player { display: flex; align-items: center; gap: 0.75rem; min-width: 0; color: inherit; text-decoration: none; }
+    .mk-player:hover strong { color: rgb(var(--l-gold, 230, 199, 124)); }
+    .mk-photo { width: 52px; height: 52px; flex-shrink: 0; overflow: hidden; border-radius: 50%; border: 1px solid rgba(212, 168, 67, 0.4); background: rgba(212, 168, 67, 0.08); }
+    .mk-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .mk-name { display: grid; gap: 0.15rem; min-width: 0; }
+    .mk-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgb(var(--l-ink, 240, 240, 240)); }
+    .mk-name small { font-size: 0.75rem; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+    .mk-type { justify-self: start; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; background: rgba(212, 168, 67, 0.14); color: rgb(var(--l-gold, 230, 199, 124)); }
+    .mk-type.is-baja, .mk-type.is-cesion_salida { background: rgba(208, 69, 59, 0.16); color: #f87171; }
+    .mk-type.is-alta, .mk-type.is-cesion_entrada { background: rgba(47, 166, 106, 0.16); color: #4ade80; }
+    .mk-type.is-renovacion { background: rgba(47, 143, 184, 0.18); color: #7dd3fc; }
+    .mk-route { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+    .mk-route > svg { width: 1rem; height: 1rem; flex-shrink: 0; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .mk-club { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; flex: 1 1 0; font-size: 0.85rem; color: rgba(var(--l-ink, 220, 225, 230), 0.85); }
+    .mk-club img { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+    .mk-club span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mk-fee { display: grid; justify-items: end; gap: 0.15rem; text-align: right; }
+    .mk-fee strong { font: 800 1rem/1 'DM Sans', sans-serif; color: rgba(var(--l-ink, 220, 225, 230), 0.75); white-space: nowrap; }
+    .mk-fee strong.is-known { color: rgb(var(--l-gold, 230, 199, 124)); }
+    .mk-fee small { font-size: 0.7rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
+    @media (max-width: 900px) {
+        .mk-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .mk-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "player fee" "route type"; row-gap: 0.5rem; }
+        .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; }
+    }
+    @media (max-width: 560px) {
+        .mk-season { max-width: none; }
+        .mk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .mk-kpis dd { font-size: 1.1rem; }
+        .mk-photo { width: 42px; height: 42px; }
+        .mk-club { font-size: 0.78rem; }
+    }
+</style>

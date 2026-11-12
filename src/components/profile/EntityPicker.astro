@@ -6,7 +6,7 @@ import type { CompareTipo } from "../../utils/entity-compare";
 
 interface Option { slug: string; name: string; img: string; sub: string; contain?: boolean; pj?: number }
 interface Props {
-    tipo: CompareTipo;
+    tipo?: CompareTipo;
     options: Option[];
     /** Entidad que muestra el botón. */
     current: { slug: string; name: string; img: string; contain?: boolean };
@@ -16,18 +16,25 @@ interface Props {
     mode?: "ficha" | "a" | "b";
     /** Slug del otro lado del comparador (modos "a" y "b"). */
     other?: string;
+    /** Enlace propio para cada opción (otros comparadores). */
+    buildHref?: (slug: string) => string;
+    /** Texto sobre el buscador. */
+    heading?: string;
+    /** Incluir la entidad actual en la lista. */
+    includeCurrent?: boolean;
 }
 
-const { tipo, options, current, noun, mode = "ficha", other = "" } = Astro.props;
+const { tipo, options, current, noun, mode = "ficha", other = "", buildHref, heading, includeCurrent = false } = Astro.props;
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const hrefFor = (slug: string) => {
+    if (buildHref) return buildHref(slug);
     if (mode === "ficha") return `/comparador/${tipo}?a=${encodeURIComponent(current.slug)}&b=${encodeURIComponent(slug)}`;
     const a = mode === "a" ? slug : other;
     const b = mode === "b" ? slug : other;
     return `/comparador/${tipo}?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`;
 };
 // En la ficha no se ofrece la propia entidad; en el comparador, tampoco la del otro lado.
-const pool = options.filter((o) => o.slug !== (mode === "ficha" ? current.slug : other));
+const pool = includeCurrent ? options : options.filter((o) => o.slug !== (mode === "ficha" ? current.slug : other));
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
 ---
 
@@ -36,19 +43,19 @@ const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0]
         <button type="button" class="pc-trigger" aria-haspopup="listbox" aria-expanded="false" data-picker-trigger>
             {current.img
                 ? <img src={current.img} alt="" width="34" height="34" decoding="async" class:list={[{ "is-contain": current.contain }]} />
-                : <span class="ep-initials" aria-hidden="true">{initials(current.name)}</span>}
+                : <span class="ep-initials" aria-hidden="true">{current.slug ? initials(current.name) : "+"}</span>}
             <span>{current.name}</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
         </button>
         <div class="pc-panel" data-picker-panel hidden>
-            <p class="pc-mode">{mode === "ficha" ? `Comparar ${current.name} con…` : `Cambiar ${current.name} por…`}</p>
+            <p class="pc-mode">{heading ?? (mode === "ficha" ? `Comparar ${current.name} con…` : `Cambiar ${current.name} por…`)}</p>
             <label class="pc-search">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
                 <input type="search" placeholder={`Buscar ${noun}...`} aria-label={`Buscar ${noun}`} autocomplete="off" data-picker-search />
             </label>
             <div class="pc-list" role="listbox" aria-label={noun}>
                 {pool.map((o) => (
-                    <a class="pc-item" role="option" aria-selected="false" href={hrefFor(o.slug)} data-astro-reload data-name={norm(o.name)}>
+                    <a class:list={["pc-item", { "is-current": o.slug === current.slug }]} role="option" aria-selected={o.slug === current.slug ? "true" : "false"} href={hrefFor(o.slug)} data-astro-reload data-name={norm(o.name)}>
                         <span class:list={["pc-photo", { "is-contain": o.contain }]}>
                             {o.img
                                 ? <img src={o.img} alt="" width="40" height="40" loading="lazy" decoding="async" onerror="this.remove()" />

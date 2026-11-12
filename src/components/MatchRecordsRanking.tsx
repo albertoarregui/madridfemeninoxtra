@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CustomSelect from "./CustomSelect";
+import ScrollPills from "./ScrollPills";
 
 // «Más X en un solo partido» dentro de /rankings. Los datos llegan de
 // /api/rankings-partido, que el CDN guarda un día por combinación de filtros.
@@ -21,7 +22,6 @@ const STATS = [
     { value: "despejes", label: "Despejes" },
     { value: "valoracion", label: "Valoración" },
 ];
-const MAIN = STATS.slice(0, 8);
 const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
 
 interface MatchInfo { slug: string; fecha: string; rival: string; local: boolean; gf: number; gc: number; competicion: string; temporada: string }
@@ -80,7 +80,6 @@ export default function MatchRecordsRanking({ initialStat = "goles", playerImage
         ...COMP_ORDER.filter((c) => competitions.includes(c)).map((c) => ({ value: c, label: c === "Amistosos" ? "Amistoso" : c })),
     ];
     const statLabel = STATS.find((s) => s.value === stat)?.label || "";
-    const isMain = MAIN.some((s) => s.value === stat);
     const shown = (records || []).slice(0, visible);
     const fmt = (v: number) => (stat === "valoracion" ? v.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : v.toLocaleString("es-ES"));
     const seasonLabel = season === "todos" ? "Todas las temporadas" : season;
@@ -116,24 +115,7 @@ export default function MatchRecordsRanking({ initialStat = "goles", playerImage
 
             <div className="rk-filter">
                 <span className="rk-label">Estadística en un partido</span>
-                <div className="rk-stat-row">
-                    <div className="pt-pills" role="group" aria-label="Estadística en un partido">
-                        {MAIN.map((option) => (
-                            <button key={option.value} type="button" className={`pt-pill${stat === option.value ? " is-active" : ""}`}
-                                aria-pressed={stat === option.value} onClick={() => setStat(option.value)}>
-                                {option.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className={`rk-more${isMain ? "" : " is-active"}`}>
-                        <CustomSelect
-                            id="rk-match-more"
-                            options={[{ value: "", label: "Más estadísticas" }, ...STATS.slice(MAIN.length)]}
-                            value={isMain ? "" : stat}
-                            onChange={(value) => { if (value) setStat(value); }}
-                        />
-                    </div>
-                </div>
+                <ScrollPills label="Estadística en un partido" value={stat} onChange={setStat} options={STATS} />
             </div>
 
             <div className="rk-card mfx-corners">

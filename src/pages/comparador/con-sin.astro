@@ -1,0 +1,279 @@
+---
+// Con o sin: cómo rinde el Real Madrid Femenino con una jugadora en el campo
+// y sin ella (goles a favor y en contra por 90 minutos), resultados de los
+// partidos que jugó y no jugó, combinaciones con una compañera y mejores
+// compañeras. Datos en caché diaria (src/utils/player-match-data.ts).
+import Layout from "../../layouts/Layout.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import LinkSelect from "../../components/profile/LinkSelect.astro";
+import "../../styles/profile-shared.css";
+import "../../styles/comparadores.css";
+import { fetchPlayerMatchData, matchPasses, onPitch, type PMatch } from "../../utils/player-match-data";
+import { fetchPlayerPhotoMap } from "../../utils/player-photos";
+import { getAssetUrl } from "../../utils/assets";
+
+const data = await fetchPlayerMatchData();
+const photos = await fetchPlayerPhotoMap();
+const q = Astro.url.searchParams;
+
+const seasons = [...new Set(Object.values(data.matches).map((m) => m.temporada))].sort().reverse();
+const temporada = q.get("temporada") || seasons[0] || "todas";
+const competicion = q.get("competicion") || "todas";
+const filter = { temporada, competicion };
+const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
+const comps = COMP_ORDER.filter((c) => Object.values(data.matches).some((m) => m.competicion === c && (temporada === "todas" || m.temporada === temporada)));
+
+const matches = Object.values(data.matches).filter((m) => matchPasses(m, filter)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+const ids = new Set(matches.map((m) => m.id));
+const apps = data.apps.filter((a) => ids.has(a.m) && a.min > 0);
+
+// Minutos por jugadora en el filtro, para ordenar el selector.
+const minutes = new Map<string, number>();
+for (const a of apps) minutes.set(a.p, (minutes.get(a.p) ?? 0) + a.min);
+const players = [...minutes.entries()].map(([id, min]) => ({ id, min, ...data.players[id] })).sort((a, b) => b.min - a.min);
+const focus = players.find((p) => p.slug === q.get("jugadora")) ?? players[0];
+const mate = players.find((p) => p.slug === q.get("con") && p.slug !== focus?.slug);
+
+// Minuto a minuto: quién estaba en el campo.
+const appIndex = new Map(apps.map((a) => [`${a.m}:${a.p}`, a]));
+const presence = (m: PMatch, pid: string | undefined) => {
+    const flags = new Array(m.duracion).fill(false);
+    const app = pid ? appIndex.get(`${m.id}:${pid}`) : undefined;
+    const span = app ? onPitch(app, m) : null;
+    if (span) for (let i = span[0]; i < Math.min(span[1], m.duracion); i++) flags[i] = true;
+    return flags;
+};
+const at = (n: number, m: PMatch) => Math.min(Math.max(n, 1), m.duracion) - 1;
+
+type Bucket = { min: number; gf: number; gc: number };
+const bucket = (): Bucket => ({ min: 0, gf: 0, gc: 0 });
+const on = bucket(), off = bucket();
+const combos: Record<"both" | "a" | "b" | "none", Bucket> = { both: bucket(), a: bucket(), b: bucket(), none: bucket() };
+type Res = { pj: number; v: number; e: number; d: number; gf: number; gc: number };
+const res = (): Res => ({ pj: 0, v: 0, e: 0, d: 0, gf: 0, gc: 0 });
+const played = res(), missed = res();
+const sample: { m: PMatch; min: number; gf: number; gc: number }[] = [];
+
+if (focus) {
+    for (const m of matches) {
+        const fa = presence(m, focus.id);
+        const fb = mate ? presence(m, mate.id) : null;
+        const key = (i: number) => (fb ? (fa[i] && fb[i] ? "both" : fa[i] ? "a" : fb[i] ? "b" : "none") : null);
+        let minsOn = 0;
+        for (let i = 0; i < m.duracion; i++) {
+            (fa[i] ? on : off).min++;
+            if (fa[i]) minsOn++;
+            const k = key(i); if (k) combos[k].min++;
+        }
+        let gfOn = 0, gcOn = 0;
+        for (const g of m.gfMin) { const i = at(g, m); (fa[i] ? on : off).gf++; if (fa[i]) gfOn++; const k = key(i); if (k) combos[k].gf++; }
+        for (const g of m.gcMin) { const i = at(g, m); (fa[i] ? on : off).gc++; if (fa[i]) gcOn++; const k = key(i); if (k) combos[k].gc++; }
+        const r = minsOn > 0 ? played : missed;
+        r.pj++; r.gf += m.gf; r.gc += m.gc;
+        if (m.resultado === "V") r.v++; else if (m.resultado === "E") r.e++; else r.d++;
+        if (minsOn > 0) sample.push({ m, min: minsOn, gf: gfOn, gc: gcOn });
+    }
+}
+
+// Compañeras: minutos compartidos y goles con ambas en el campo.
+const mates = focus ? players.filter((p) => p.id !== focus.id).map((p) => {
+    const b = bucket();
+    for (const m of matches) {
+        const fa = presence(m, focus.id), fb = presence(m, p.id);
+        for (let i = 0; i < m.duracion; i++) if (fa[i] && fb[i]) b.min++;
+        for (const g of m.gfMin) { const i = at(g, m); if (fa[i] && fb[i]) b.gf++; }
+        for (const g of m.gcMin) { const i = at(g, m); if (fa[i] && fb[i]) b.gc++; }
+    }
+    return { ...p, b };
+}).filter((x) => x.b.min >= 90).sort((x, y) => y.b.min - x.b.min).slice(0, 15) : [];
+
+const p90 = (n: number, min: number) => (min > 0 ? (n * 90) / min : 0);
+const dec = (v: number) => v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const signed = (v: number) => `${v > 0 ? "+" : ""}${dec(v)}`;
+const pct = (n: number, d: number) => (d ? (n / d) * 100 : 0);
+const ppg = (r: Res) => (r.pj ? (r.v * 3 + r.e) / r.pj : 0);
+
+const bars = [
+    { label: "Goles a favor x90'", a: p90(on.gf, on.min), b: p90(off.gf, off.min), better: "high", f: dec },
+    { label: "Goles en contra x90'", a: p90(on.gc, on.min), b: p90(off.gc, off.min), better: "low", f: dec },
+    { label: "Diferencia x90'", a: p90(on.gf - on.gc, on.min), b: p90(off.gf - off.gc, off.min), better: "high", f: signed },
+    { label: "% de victorias (partidos)", a: pct(played.v, played.pj), b: pct(missed.v, missed.pj), better: "high", f: (v: number) => `${v.toLocaleString("es-ES", { maximumFractionDigits: 1 })}%` },
+    { label: "Puntos por partido", a: ppg(played), b: ppg(missed), better: "high", f: dec },
+].map((m) => {
+    const max = Math.max(Math.abs(m.a), Math.abs(m.b)) || 1;
+    const winner = m.a === m.b ? "" : (m.better === "high" ? m.a > m.b : m.a < m.b) ? "a" : "b";
+    return { ...m, wa: (Math.abs(m.a) / max) * 100, wb: (Math.abs(m.b) / max) * 100, winner };
+});
+
+const href = (o: Partial<{ jugadora: string; con: string; temporada: string; competicion: string }>) => {
+    const p = new URLSearchParams();
+    const v = { jugadora: focus?.slug, con: mate?.slug, temporada, competicion, ...o };
+    if (v.jugadora) p.set("jugadora", v.jugadora);
+    if (v.con) p.set("con", v.con);
+    if (v.temporada && v.temporada !== seasons[0]) p.set("temporada", v.temporada);
+    if (v.competicion && v.competicion !== "todas") p.set("competicion", v.competicion);
+    return `/comparador/con-sin?${p}`;
+};
+const options = players.map((p) => ({ slug: p.slug, name: p.nombre, img: photos[p.slug] || "", sub: `${p.posicion || "Jugadora"} · ${p.min.toLocaleString("es-ES")}'` }));
+const compPills = [
+    { value: "todas", label: "Todas", logo: "" }, { value: "oficiales", label: "Oficiales", logo: "" },
+    ...comps.map((c) => ({ value: c, label: c === "Amistosos" ? "Amistoso" : c, logo: getAssetUrl("competiciones", c === "Amistosos" ? "amistoso" : c) })),
+];
+const dateEs = (iso: string) => iso.split("-").reverse().join("/");
+const comboRows = focus && mate ? [
+    { label: `${focus.nombre} y ${mate.nombre}`, b: combos.both },
+    { label: `Solo ${focus.nombre}`, b: combos.a },
+    { label: `Solo ${mate.nombre}`, b: combos.b },
+    { label: "Ninguna de las dos", b: combos.none },
+] : [];
+---
+
+<Layout title={focus ? `Con o sin ${focus.nombre} | Madrid Femenino Xtra` : "Con o sin | Madrid Femenino Xtra"}
+    description="Cómo rinde el Real Madrid Femenino con cada jugadora en el campo y sin ella: goles a favor y en contra por 90 minutos, resultados, combinaciones y compañeras."
+    noindex={q.has("jugadora") || q.has("con")}>
+    <main class="cx">
+        <header class="page-header-container">
+            <h1 class="landing-title">CON O SIN</h1>
+            <p class="landing-subtitle">Cómo juega el Real Madrid Femenino con cada jugadora en el campo y sin ella</p>
+        </header>
+        <nav class="cx-links" aria-label="Otros comparadores">
+            <a href="/comparador/jugadora-rival">Jugadora vs rival →</a>
+            <a href="/comparador">Comparador de jugadoras →</a>
+        </nav>
+
+        <section class="cx-card cx-controls mfx-corners" aria-label="Filtros">
+            <div class="cx-pickers">
+                <div>
+                    <span class="cx-label">Jugadora</span>
+                    {focus && <EntityPicker noun="jugadoras" includeCurrent heading="Elegir jugadora" mode="a"
+                        current={{ slug: focus.slug, name: focus.nombre, img: photos[focus.slug] || "" }}
+                        options={options} buildHref={(slug) => href({ jugadora: slug, con: slug === mate?.slug ? "" : mate?.slug })} />}
+                </div>
+                <div>
+                    <span class="cx-label">Compañera (opcional)</span>
+                    {focus && <EntityPicker noun="jugadoras" heading="Añadir compañera" mode="b" other={focus.slug}
+                        current={mate ? { slug: mate.slug, name: mate.nombre, img: photos[mate.slug] || "" } : { slug: "", name: "Añadir compañera", img: "" }}
+                        options={options} buildHref={(slug) => href({ con: slug })} />}
+                    {mate && <a class="cx-clear" href={href({ con: "" })} data-astro-reload>Quitar compañera ×</a>}
+                </div>
+                <div>
+                    <span class="cx-label">Temporada</span>
+                    <LinkSelect id="cs-season" options={[...seasons.map((s) => ({ label: s, href: href({ temporada: s }), selected: temporada === s })),
+                        { label: "Todas las temporadas", href: href({ temporada: "todas" }), selected: temporada === "todas" }]} />
+                </div>
+            </div>
+            <div>
+                <span class="cx-label">Competición</span>
+                <div class="pt-pills cx-pills" role="group" aria-label="Competición">
+                    {compPills.map((c) => (
+                        <a class:list={["pt-pill", { "is-active": competicion === c.value }]} href={href({ competicion: c.value })} data-astro-reload>
+                            {c.logo && <img src={c.logo} alt="" width="16" height="16" loading="lazy" />}{c.label}
+                        </a>
+                    ))}
+                </div>
+            </div>
+        </section>
+
+        {!focus ? (
+            <section class="cx-card mfx-corners"><p class="cx-empty">No hay partidos para estos filtros.</p></section>
+        ) : (
+            <>
+                <section class="cx-card mfx-corners">
+                    <div class="cx-versus">
+                        <div class="cx-side">
+                            {photos[focus.slug] ? <img src={photos[focus.slug]} alt="" width="52" height="52" /> : <span class="cx-dot" />}
+                            <span><strong>Con {focus.nombre}</strong><small>{on.min.toLocaleString("es-ES")}' en el campo · {played.pj} partidos</small></span>
+                        </div>
+                        <div class="cx-side is-b">
+                            {photos[focus.slug] ? <img src={photos[focus.slug]} alt="" width="52" height="52" style="filter: grayscale(1); opacity: 0.6;" /> : <span class="cx-dot" />}
+                            <span><strong>Sin {focus.nombre}</strong><small>{off.min.toLocaleString("es-ES")}' fuera · {missed.pj} partidos sin jugar</small></span>
+                        </div>
+                    </div>
+                    <ul class="cx-rows">
+                        {bars.map((m) => (
+                            <li class="cx-row">
+                                <span class="cx-head">
+                                    <span class:list={["cx-val", { "is-best": m.winner === "a" }]}>{m.f(m.a)}</span>
+                                    <span class="cx-metric">{m.label}</span>
+                                    <span class:list={["cx-val", { "is-best": m.winner === "b" }]}>{m.f(m.b)}</span>
+                                </span>
+                                <span class="cx-bar is-a" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "a" }]} style={`width:${m.wa}%`}></i></span>
+                                <span class="cx-bar is-b" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "b" }]} style={`width:${m.wb}%`}></i></span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+
+                {comboRows.length > 0 && (
+                    <section class="cx-card mfx-corners">
+                        <h2 class="cx-title">Combinaciones</h2>
+                        <div class="cx-table-wrap">
+                            <table class="cx-table">
+                                <thead><tr><th class="is-left">En el campo</th><th>Minutos</th><th>GF x90'</th><th>GC x90'</th><th>Dif x90'</th></tr></thead>
+                                <tbody>
+                                    {comboRows.map((r) => (
+                                        <tr>
+                                            <td class="is-left">{r.label}</td>
+                                            <td>{r.b.min.toLocaleString("es-ES")}'</td>
+                                            <td>{r.b.min ? dec(p90(r.b.gf, r.b.min)) : "—"}</td>
+                                            <td>{r.b.min ? dec(p90(r.b.gc, r.b.min)) : "—"}</td>
+                                            <td><strong>{r.b.min ? signed(p90(r.b.gf - r.b.gc, r.b.min)) : "—"}</strong></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                )}
+
+                <section class="cx-card mfx-corners">
+                    <h2 class="cx-title">Mejores compañeras</h2>
+                    <p class="cx-sub">Minutos jugados juntas y goles con ambas en el campo (mínimo 90 minutos).</p>
+                    <div class="cx-table-wrap">
+                        <table class="cx-table">
+                            <thead><tr><th class="is-left">Compañera</th><th>Minutos</th><th class="cx-hide-sm">GF x90'</th><th class="cx-hide-sm">GC x90'</th><th>Dif x90'</th></tr></thead>
+                            <tbody>
+                                {mates.map((x) => (
+                                    <tr>
+                                        <td class="is-left"><a class="cx-team" href={href({ con: x.slug })} data-astro-reload>
+                                            {photos[x.slug] && <img src={photos[x.slug]} alt="" width="22" height="22" loading="lazy" style="border-radius:50%;object-fit:cover;object-position:top;" />}{x.nombre}</a></td>
+                                        <td>{x.b.min.toLocaleString("es-ES")}'</td>
+                                        <td class="cx-hide-sm">{dec(p90(x.b.gf, x.b.min))}</td>
+                                        <td class="cx-hide-sm">{dec(p90(x.b.gc, x.b.min))}</td>
+                                        <td><strong>{signed(p90(x.b.gf - x.b.gc, x.b.min))}</strong></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="cx-card mfx-corners">
+                    <h2 class="cx-title">Partidos de {focus.nombre}</h2>
+                    <p class="cx-sub">Goles del equipo mientras estaba en el campo.</p>
+                    <div class="cx-table-wrap">
+                        <table class="cx-table">
+                            <thead><tr><th class="is-left">Partido</th><th>Final</th><th>Min</th><th>En el campo</th></tr></thead>
+                            <tbody>
+                                {[...sample].reverse().map((s) => (
+                                    <tr>
+                                        <td class="is-left"><a href={`/partidos/${s.m.slug}`}>{s.m.local ? "vs" : "en"} {s.m.rival} <small>{dateEs(s.m.fecha)}</small></a></td>
+                                        <td><span class:list={["cx-res", `is-${s.m.resultado}`]}>{s.m.gf}-{s.m.gc}</span></td>
+                                        <td>{s.min}'</td>
+                                        <td>{s.gf}-{s.gc}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </>
+        )}
+        <p class="cx-note">Minutos según las alineaciones y los cambios; los goles se asignan por su minuto (el añadido cuenta como el último minuto de cada parte).</p>
+    </main>
+</Layout>
+
+<style>
+    .cx-clear { display: inline-block; margin-top: 0.4rem; font-size: 0.75rem; color: rgba(var(--l-gold, 212, 168, 67), 0.85); text-decoration: none; }
+    .cx-clear:hover { text-decoration: underline; }
+</style>

@@ -23,6 +23,7 @@ export const TABLE_EFFECT_TAGS = {
     categorias: [cacheTags.players],
     lesiones: [cacheTags.players],
     contratos: [cacheTags.players],
+    mercado: [cacheTags.players],
     trayectoria_jugadoras: [cacheTags.players],
     redes_sociales: [cacheTags.players],
     estadios: [cacheTags.stadiums, cacheTags.matches, cacheTags.calendar, cacheTags.statistics],

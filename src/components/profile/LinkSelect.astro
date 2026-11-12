@@ -1,0 +1,46 @@
+---
+// Desplegable con el estilo de la web cuyas opciones son enlaces: sirve para
+// filtros de páginas que se pintan en el servidor (la URL guarda el estado).
+interface Props { id: string; options: { label: string; href: string; selected?: boolean }[] }
+const { id, options } = Astro.props;
+const current = options.find((o) => o.selected) ?? options[0];
+---
+
+<div class="custom-select-container link-select" id={id} data-link-select>
+    <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+        <span class="selected-text">{current?.label}</span>
+        <span class="custom-select-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+        </span>
+    </button>
+    <div class="custom-select-options" role="listbox">
+        {options.map((o) => (
+            <a class:list={["custom-select-option", { selected: o.selected }]} href={o.href} role="option" aria-selected={o.selected ? "true" : "false"} data-astro-reload>{o.label}</a>
+        ))}
+    </div>
+</div>
+
+<script>
+    function init() {
+        document.querySelectorAll<HTMLElement>("[data-link-select]").forEach((box) => {
+            if (box.dataset.ready === "true") return;
+            box.dataset.ready = "true";
+            const trigger = box.querySelector<HTMLButtonElement>(".custom-select-trigger")!;
+            trigger.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const open = !box.classList.contains("open");
+                document.querySelectorAll(".link-select.open").forEach((o) => o.classList.remove("open"));
+                box.classList.toggle("open", open);
+                trigger.setAttribute("aria-expanded", String(open));
+            });
+            document.addEventListener("click", () => { box.classList.remove("open"); trigger.setAttribute("aria-expanded", "false"); });
+        });
+    }
+    init();
+    document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+    .link-select .custom-select-trigger { width: 100%; font: inherit; }
+    .link-select a.custom-select-option { display: block; text-decoration: none; color: inherit; }
+</style>

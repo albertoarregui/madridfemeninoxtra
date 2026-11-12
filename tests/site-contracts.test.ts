@@ -337,7 +337,7 @@ test('rankings live on a single page; old ranking URLs redirect to it', () => {
   // Filtros en píldoras, temporada en desplegable y botón para compartir.
   assert.match(component, /Compartir estadística/);
   assert.match(component, /className="pt-pills" role="group" aria-label="Competición"/);
-  assert.match(component, /className="pt-pills" role="group" aria-label="Estadística"/);
+  assert.match(component, /<ScrollPills\n\s*label="Estadística"/);
   assert.match(component, /id="rk-season"/);
 });
 

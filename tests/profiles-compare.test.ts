@@ -38,3 +38,22 @@ test("las árbitras se listan en tarjetas y noticias filtra por categoría y tem
     assert.match(news, /className="pt-pills" role="group" aria-label="Categoría"/);
     assert.match(news, /id="news-season"/);
 });
+
+test("mercado, jugadora vs rival y con o sin leen datos en caché diaria", () => {
+    assert.match(read("src/utils/mercado.ts"), /cached\("mercado:v1"/);
+    assert.match(read("src/utils/player-match-data.ts"), /cached\("comparadores:player-match:v2"/);
+    // Sin subconsultas correlacionadas por fila de alineación.
+    assert.doesNotMatch(read("src/utils/player-match-data.ts"), /\(SELECT COUNT\(\*\) FROM goles_y_asistencias g WHERE g\.id_partido = a\.id_partido/);
+    assert.match(read("src/pages/comparador/jugadora-rival.astro"), /fetchPlayerMatchData/);
+    assert.match(read("src/pages/comparador/con-sin.astro"), /onPitch/);
+    const header = read("src/components/Header.astro");
+    assert.match(header, /href="\/mercado"/);
+    assert.match(header, /href="\/comparador\/con-sin"/);
+});
+
+test("rankings: estadísticas en fila deslizable y total/x90", () => {
+    const rankings = read("src/components/StatsRankings.tsx");
+    assert.match(rankings, /<ScrollPills/);
+    assert.doesNotMatch(rankings, /id="rk-more"/);
+    assert.match(rankings, /PER90_MIN_MINUTES = 450/);
+});
