@@ -9,6 +9,8 @@ export interface Move {
     id: number; slug: string; nombre: string; posicion: string; tipo: MoveType; temporada: string; fecha: string | null;
     origen: string | null; destino: string | null; precio: number | null; precioTipo: string; contratoHasta: string | null;
     fuente: string | null; notas: string | null;
+    /** libre, traspaso, cesion, promocion, retirada… */
+    modalidad: string | null; variable: string | null; aproximado: boolean; estado: string;
 }
 
 async function load(): Promise<Move[]> {
@@ -16,7 +18,10 @@ async function load(): Promise<Move[]> {
     const client = await getPlayersDbClient();
     if (!client) return [];
     const result = await client.execute(`
-        SELECT m.*, j.nombre AS nombre_jugadora, j.posicion
+        SELECT m.id_movimiento, m.id_jugadora, m.nombre, m.tipo, m.temporada, m.fecha, m.club_origen, m.club_destino,
+               m.precio, m.precio_tipo, m.precio_variable, m.precio_aproximado, m.modalidad, m.estado,
+               m.contrato_hasta, m.fuente_url, m.fuente, m.notas,
+               j.nombre AS nombre_jugadora, j.posicion
         FROM mercado m LEFT JOIN jugadoras j ON j.id_jugadora = m.id_jugadora
         ORDER BY m.temporada DESC, COALESCE(m.fecha, '') DESC, m.id_movimiento DESC`);
     return (result.rows as any[]).map((r) => {
@@ -27,28 +32,36 @@ async function load(): Promise<Move[]> {
             origen: r.club_origen || null, destino: r.club_destino || null,
             precio: r.precio != null ? Number(r.precio) : null, precioTipo: String(r.precio_tipo || "no_revelado"),
             contratoHasta: r.contrato_hasta ? String(r.contrato_hasta).slice(0, 10) : null,
-            fuente: r.fuente_url || null, notas: r.notas || null,
+            fuente: r.fuente_url || r.fuente || null, notas: r.notas || null,
+            modalidad: r.modalidad || null, variable: r.precio_variable || null,
+            aproximado: Number(r.precio_aproximado) === 1, estado: String(r.estado || "publicado"),
         };
     });
 }
 
 export const fetchMercado = () =>
-    cached("mercado:v1", 24 * 60 * 60 * 1000, load, { tags: [cacheTags.players] }).catch(() => [] as Move[]);
+    cached("mercado:v2", 24 * 60 * 60 * 1000, load, { tags: [cacheTags.players] }).catch(() => [] as Move[]);
 
 export const TYPE_LABEL: Record<MoveType, string> = {
     alta: "Fichaje", baja: "Salida", cesion_entrada: "Cesión (llega)", cesion_salida: "Cesión (sale)", renovacion: "Renovación", ascenso: "Ascenso",
 };
 
-/** «1,2 M€», «350.000 €», «Libre», «Cesión»… */
+/** «1,5 M€», «≈150.000 €», «600.000 € + variables», «Libre», «Cesión»… Un importe desconocido nunca es 0 €. */
 export function feeLabel(m: Move): string {
     if (m.precio != null && m.precio > 0) {
-        return m.precio >= 1_000_000
+        const base = m.precio >= 1_000_000
             ? `${(m.precio / 1_000_000).toLocaleString("es-ES", { maximumFractionDigits: 2 })} M€`
             : `${Math.round(m.precio).toLocaleString("es-ES")} €`;
+        return `${m.aproximado ? "≈" : ""}${base}${m.variable ? ` ${m.variable}` : ""}`;
     }
-    if (m.precioTipo === "libre") return "Libre";
-    if (m.precioTipo === "cesion" || m.tipo.startsWith("cesion")) return "Cesión";
+    if (m.modalidad === "retirada") return "Retirada";
+    if (m.modalidad === "libre" || m.precioTipo === "libre") return "Libre";
+    if (m.modalidad === "cesion" || m.tipo.startsWith("cesion")) return "Cesión";
     if (m.tipo === "ascenso") return "Cantera";
     if (m.tipo === "renovacion") return m.contratoHasta ? `Hasta ${m.contratoHasta.slice(0, 4)}` : "Renovado";
+    if (m.modalidad === "traspaso") return "Cifra no publicada";
     return "No revelado";
 }
+
+/** Etiqueta del tipo, con la retirada como caso propio de las salidas. */
+export const typeLabel = (m: Move) => (m.modalidad === "retirada" ? "Retirada" : TYPE_LABEL[m.tipo]);

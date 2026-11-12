@@ -40,7 +40,7 @@ test("las árbitras se listan en tarjetas y noticias filtra por categoría y tem
 });
 
 test("mercado, jugadora vs rival y con o sin leen datos en caché diaria", () => {
-    assert.match(read("src/utils/mercado.ts"), /cached\("mercado:v1"/);
+    assert.match(read("src/utils/mercado.ts"), /cached\("mercado:v2"/);
     assert.match(read("src/utils/player-match-data.ts"), /cached\("comparadores:player-match:v2"/);
     // Sin subconsultas correlacionadas por fila de alineación.
     assert.doesNotMatch(read("src/utils/player-match-data.ts"), /\(SELECT COUNT\(\*\) FROM goles_y_asistencias g WHERE g\.id_partido = a\.id_partido/);
