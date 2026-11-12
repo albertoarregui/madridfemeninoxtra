@@ -200,7 +200,7 @@ export const EN_EXACT: Record<string, string> = {
   "puedes probar la selección de notas y MVP, pero no se guardarán votos ni se enviarán correos.": "you can try out the ratings and the player-of-the-match vote, but no votes will be saved and no emails will be sent.",
 
   // ── Contacto, sobre nosotros, dónde ver ───────────────────────────────
-  "Tu nombre": "Your name", "Tu correo": "Your email", "Correo electrónico": "Email", "Nombre": "Name", "Mensaje": "Message",
+  "Tu nombre": "Your name", "Seguidores": "Followers", "Suscriptores": "Subscribers", "Impresiones": "Impressions", "Interacciones": "Engagements", "Visualizaciones": "Views", "Visualizaciones mensuales": "Monthly views", "Tu correo": "Your email", "Correo electrónico": "Email", "Nombre": "Name", "Mensaje": "Message",
   "Motivo del mensaje": "Reason for your message", "Escribe tu mensaje aquí...": "Write your message here...", "Enviar": "Send",
   "Enviar mensaje": "Send message", "* Todos los campos son obligatorios": "* All fields are required",
   "Canal directo con la redacción de Madrid Femenino Xtra": "A direct line to the Madrid Femenino Xtra newsroom",
