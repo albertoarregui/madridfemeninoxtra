@@ -37,7 +37,7 @@ function partir(html: string): FichaTexto {
 }
 
 async function listar(contentType: string, focusType: string): Promise<any[]> {
-    return cached(`contentful:${contentType}:${focusType}:es`, TTL.medio, async () => {
+    return cached(`contentful:${contentType}:${focusType}:es`, 24 * 60 * 60 * 1000, async () => {
         try {
             const entries = await contentfulClient.getEntries({
                 content_type: contentType,
@@ -48,7 +48,7 @@ async function listar(contentType: string, focusType: string): Promise<any[]> {
         } catch {
             return [];
         }
-    });
+    }, { tags: ["contentful"] });
 }
 
 function buscar(items: any[], claves: (string | number | null | undefined)[]) {

@@ -39,7 +39,7 @@ try {
         "fields.player", "fields.category", "fields.focusType",
         "fields.referenceId",
     ] as any;
-    const entries = await cached(`contentful:news:item:${slug}:es`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
+    const entries = await cached(`contentful:news:item:${slug}:es`, 24 * 60 * 60 * 1000, async () => contentfulClient.getEntries({
         content_type: "noticia",
         "fields.slug": slug,
         include: 1,
@@ -49,7 +49,7 @@ try {
 
     let entry = entries?.items?.[0];
     if (!entry) {
-        const recentEntries = await cached(`contentful:news:recent-fallback:es`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
+        const recentEntries = await cached(`contentful:news:recent-fallback:es`, 24 * 60 * 60 * 1000, async () => contentfulClient.getEntries({
             content_type: "noticia",
             order: ["-sys.createdAt"],
             include: 1,
@@ -67,7 +67,7 @@ try {
 
         if (noticia?.category && noticiaId) {
             try {
-                const relatedEntries = await cached(`contentful:news:related:${noticiaId}:${noticia.category}:es`, 10 * 60 * 1000, async () => contentfulClient.getEntries({
+                const relatedEntries = await cached(`contentful:news:related:${noticiaId}:${noticia.category}:es`, 24 * 60 * 60 * 1000, async () => contentfulClient.getEntries({
                     content_type: "noticia",
                     "fields.category": noticia.category,
                     "sys.id[ne]": noticiaId,

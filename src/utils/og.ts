@@ -23,7 +23,7 @@ function urlDeAsset(imagen: any): string | null {
 }
 
 async function cargarMiniaturas(): Promise<Miniaturas> {
-    return cached('contentful:ogImage', TTL.medio, async () => {
+    return cached('contentful:ogImage', 24 * 60 * 60 * 1000, async () => {
         const vacio: Miniaturas = { exactas: {}, comodines: [] };
         try {
             const entries = await contentfulClient.getEntries({
@@ -53,7 +53,7 @@ async function cargarMiniaturas(): Promise<Miniaturas> {
         } catch {
             return vacio;
         }
-    });
+    }, { tags: ["contentful"] });
 }
 
 export async function resolverOgImage(

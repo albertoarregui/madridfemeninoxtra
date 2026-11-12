@@ -22,6 +22,7 @@ const STATIC_TAGS: Set<string> = new Set([
     cacheTags.homepage,
     cacheTags.news,
     cacheTags.awards,
+    'contentful',
 ]);
 
 const DYNAMIC_TAG = /^(match|player|stadium|referee|coach|news)-[a-zA-Z0-9_-]+$/;
