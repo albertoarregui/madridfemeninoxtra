@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trophy, Calendar, Target, Activity, Monitor, ArrowUpRight, ArrowDownRight, Minus, Clock, Shield, TrendingUp, Swords } from 'lucide-react';
 import { getAssetUrl } from '../utils/assets';
 import CustomSelect from './CustomSelect';
@@ -67,6 +67,18 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
     );
     const [selectedSeason, setSelectedSeason] = useState<string>(currentSeasonHasPlayed ? seasons[0] : 'all');
     const [selectedCompetition, setSelectedCompetition] = useState<string>('Partidos Oficiales');
+
+    // Competiciones con algún partido jugado en la temporada elegida: solo se
+    // ofrecen esas, para no dejar el panel sin datos.
+    const availableCompetitions = useMemo(() => new Set(matches
+        .filter(m => (selectedSeason === 'all' || m.temporada_nombre === selectedSeason) && hasScore(m.goles_rm) && hasScore(m.goles_rival))
+        .map(m => m.competicion_nombre)), [matches, selectedSeason]);
+    const hasOfficial = OFFICIAL_COMPETITIONS.some(c => availableCompetitions.has(c));
+    useEffect(() => {
+        if (selectedCompetition === 'all' || (selectedCompetition === 'Partidos Oficiales' && hasOfficial)) return;
+        if (selectedCompetition !== 'Partidos Oficiales' && availableCompetitions.has(selectedCompetition)) return;
+        setSelectedCompetition(hasOfficial ? 'Partidos Oficiales' : 'all');
+    }, [availableCompetitions, hasOfficial, selectedCompetition]);
 
     const filteredMatches = useMemo(() => {
         return matches.filter(m => {
@@ -253,7 +265,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
         }
     };
 
-    if (!stats.played) return null;
+    const empty = !stats.played;
 
     return (
         <div className="w-full max-w-7xl mx-auto mb-0">
@@ -273,9 +285,9 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                     <div className="pt-pills" role="group" aria-label="Competición">
                         {[
                             { value: 'all', label: 'Todas' },
-                            { value: 'Partidos Oficiales', label: 'Oficiales' },
+                            ...(hasOfficial ? [{ value: 'Partidos Oficiales', label: 'Oficiales' }] : []),
                             ...['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
-                                .filter(c => competitions.includes(c))
+                                .filter(c => competitions.includes(c) && availableCompetitions.has(c))
                                 .map(c => ({ value: c, label: c === 'Amistosos' ? 'Amistoso' : c })),
                         ].map(option => (
                             <button
@@ -293,6 +305,9 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                 </div>
             </div>
 
+            {empty ? (
+                <p className="csd-empty">No hay partidos jugados con estos filtros.</p>
+            ) : (<>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className={`${card} p-4 flex items-center justify-between overflow-hidden`}>
                     <div className="min-w-0 flex-1">
@@ -593,6 +608,7 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                     </div>
                 ))}
             </div>
+            </>)}
         </div>
     );
 };

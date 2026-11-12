@@ -119,7 +119,7 @@ export const EN_EXACT: Record<string, string> = {
   "Distribución de goles (minutos)": "Goal distribution (minutes)", "Balance de resultados": "Results breakdown",
   "% Imbatibilidad": "% Clean-sheet rate", "Máximas goleadoras": "Top scorers", "Máximas asistentes": "Top assist providers",
   "Máxima goleadora": "Top scorer", "Co-máxima goleadora": "Joint top scorer",
-  "Noticias de": "News about", "Sin noticias recientes": "No recent news", "Jugadoras anteriores": "Previous players", "Equipo": "Team", "Datos:": "Data:", "Clasificación no disponible en este momento.": "Standings are not available right now.", "Siguientes jugadoras": "Next players", "Mes anterior": "Previous month", "Siguiente mes": "Next month", "Ver todas las noticias": "See all news",
+  "Noticias de": "News about", "Sin noticias recientes": "No recent news", "Jugadoras anteriores": "Previous players", "Equipo": "Team", "No hay partidos jugados con estos filtros.": "No matches played for these filters.", "Datos:": "Data:", "Clasificación no disponible en este momento.": "Standings are not available right now.", "Siguientes jugadoras": "Next players", "Mes anterior": "Previous month", "Siguiente mes": "Next month", "Ver todas las noticias": "See all news",
   "Hoy no hay partido programado. El próximo encuentro es:": "There is no match today. The next fixture is:",
   "Cumpleaños": "Birthdays", "Hoy cumple": "Birthday today",
 

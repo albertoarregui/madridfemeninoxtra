@@ -48,7 +48,6 @@ export default function CustomSelect({ options, value, onChange, id }: CustomSel
             className={`custom-select-container ${isOpen ? 'open' : ''}`}
             id={id}
             ref={containerRef}
-            data-custom-select="true"
         >
             <div
                 className="custom-select-trigger"
