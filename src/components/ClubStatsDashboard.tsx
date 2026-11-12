@@ -258,7 +258,8 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
     return (
         <div className="w-full max-w-7xl mx-auto mb-0">
             <div className="flex flex-col items-center mb-6 gap-4 relative z-[1001]">
-                <div className="flex gap-4 w-full flex-wrap justify-center items-center">
+                {/* Temporada y competiciones en una sola fila (se reparte en dos solo si no cabe). */}
+                <div className="csd-filter-row">
                     <CustomSelect
                         id="container-temporada"
                         options={[
@@ -271,11 +272,11 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                     {/* Mismo filtro de competición que la ficha de jugadora. */}
                     <div className="pt-pills" role="group" aria-label="Competición">
                         {[
+                            { value: 'all', label: 'Todas' },
                             { value: 'Partidos Oficiales', label: 'Oficiales' },
                             ...['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
                                 .filter(c => competitions.includes(c))
                                 .map(c => ({ value: c, label: c === 'Amistosos' ? 'Amistoso' : c })),
-                            { value: 'all', label: 'Todas' },
                         ].map(option => (
                             <button
                                 key={option.value}

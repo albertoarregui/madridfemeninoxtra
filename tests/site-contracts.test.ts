@@ -97,21 +97,17 @@ test('stadium map uses a dedicated minimal query without expensive match subquer
   assert.doesNotMatch(stadiumQuery, /SELECT COUNT\(\*\)/);
 });
 
-test('homepage embeds original Liga F and UWCL Sofascore widgets in this order', () => {
+test('homepage renders Liga F then UWCL standings from cached live data', () => {
   const homepage = read('src/pages/index.astro');
   const widget = read('src/components/LigaFStandings.astro');
   assert.match(homepage, /CLASIFICACIONES<\/h2>/);
   assert.match(homepage, /<LigaFStandings\s*\/>/);
-  const liga = 'sofa-standings-embed-3739-97379';
-  const uwcl = 'sofa-standings-embed-198786-96633';
-  assert.ok(widget.indexOf(liga) >= 0);
-  assert.ok(widget.indexOf(uwcl) > widget.indexOf(liga));
-  assert.match(widget, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/3739\/season\/97379\/standings\/Primera%20Division%2C%20Women%2026%2F27/);
-  assert.match(widget, /widgets\.sofascore\.com\/es-ES\/embed\/tournament\/198786\/season\/96633\/standings\/UEFA%20Champions%20League%2C%20Women%2026%2F27/);
-  assert.match(widget, /height: 963/);
-  assert.match(widget, /height: 991/);
-  assert.match(widget, /Clasificación ofrecida por/);
-  assert.match(widget, /scrolling="no"/);
+  // Los iframes de Sofascore dejaron de cargar (403): datos de la API pública de ESPN, cacheados una hora.
+  assert.ok(widget.indexOf('"esp.w.1"') >= 0);
+  assert.ok(widget.indexOf('"uefa.wchampions"') > widget.indexOf('"esp.w.1"'));
+  assert.match(widget, /cached\(`standings:espn:/);
+  assert.match(widget, /60 \* 60 \* 1000/);
+  assert.doesNotMatch(widget, /<iframe/);
   assert.doesNotMatch(widget, /const liga: Team\[\]/);
 });
 

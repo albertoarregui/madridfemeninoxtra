@@ -119,7 +119,7 @@ export const EN_EXACT: Record<string, string> = {
   "Distribución de goles (minutos)": "Goal distribution (minutes)", "Balance de resultados": "Results breakdown",
   "% Imbatibilidad": "% Clean-sheet rate", "Máximas goleadoras": "Top scorers", "Máximas asistentes": "Top assist providers",
   "Máxima goleadora": "Top scorer", "Co-máxima goleadora": "Joint top scorer",
-  "Noticias de": "News about", "Sin noticias recientes": "No recent news", "Jugadoras anteriores": "Previous players", "Siguientes jugadoras": "Next players", "Mes anterior": "Previous month", "Siguiente mes": "Next month", "Ver todas las noticias": "See all news",
+  "Noticias de": "News about", "Sin noticias recientes": "No recent news", "Jugadoras anteriores": "Previous players", "Equipo": "Team", "Datos:": "Data:", "Clasificación no disponible en este momento.": "Standings are not available right now.", "Siguientes jugadoras": "Next players", "Mes anterior": "Previous month", "Siguiente mes": "Next month", "Ver todas las noticias": "See all news",
   "Hoy no hay partido programado. El próximo encuentro es:": "There is no match today. The next fixture is:",
   "Cumpleaños": "Birthdays", "Hoy cumple": "Birthday today",
 
@@ -403,7 +403,7 @@ export const EN_PATTERNS: Array<[string, string]> = [
   ["^Cambiar entre datos totales y por (\\d+) minutos$", "Switch between totals and per-$1 data"],
   ["^Tiempo de respuesta habitual: (\\d+)–(\\d+) horas\\.$", "Usual response time: $1–$2 hours."],
   ["^Última actualización: (.+)$", "Last updated: {t:1}"],
-  ["^Ver ficha de (.+)$", "View $1's profile"], ["^En contra \\((\\d+)\\)$", "Against ($1)"], ["^A favor \\((\\d+)\\)$", "For ($1)"],
+  ["^Ver ficha de (.+)$", "View $1's profile"], ["^TEMPORADA (\\d+/\\d+)$", "SEASON $1"], ["^Temporada (\\d+/\\d+)$", "Season $1"], ["^Clasificación (.+)$", "{t:1} standings"], ["^En contra \\((\\d+)\\)$", "Against ($1)"], ["^A favor \\((\\d+)\\)$", "For ($1)"],
   ["^Jugadoras, dorsales y posiciones del Real Madrid Femenino de la temporada (\\d+/\\d+)$", "Real Madrid Women players, shirt numbers and positions for the $1 season"],
   ["^(.+) · (UWCL|Liga F|Copa de la Reina|Supercopa de España|Amistoso) · (.+)$", "$1 · $2 · {t:3}"],
   ["^(UWCL|Liga F|Copa de la Reina|Supercopa de España|Amistoso) · (.+)$", "$1 · {t:2}"],

@@ -1,131 +1,140 @@
 ---
 /**
- * Widgets oficiales facilitados por el editor. El contenido de cada iframe
- * conserva el formato nativo de Sofascore y se actualiza en su plataforma.
- * No se almacena ni se replica ninguna clasificación en Turso.
+ * Clasificaciones de Liga F y UWCL con el estilo de la web.
  *
- * Nota: el contenido de terceros puede no estar disponible si Sofascore
- * bloquea su acceso en el navegador del visitante.
+ * Los widgets de Sofascore dejaron de cargar: su servidor rechaza (403) las
+ * peticiones de sus propios iframes. Los datos salen ahora de la API pública
+ * de clasificaciones de ESPN, se consultan en el servidor y se guardan una
+ * hora en caché. No se lee ni se escribe nada en Turso.
  */
-const clasificaciones = [
-  {
-    id: "sofa-standings-embed-3739-97379",
-    title: "LIGA F MOEVE",
-    description: "Clasificación Liga F 2026/27",
-    src: "https://widgets.sofascore.com/es-ES/embed/tournament/3739/season/97379/standings/Primera%20Division%2C%20Women%2026%2F27?widgetTitle=Primera%20Division%2C%20Women%2026%2F27&showCompetitionLogo=true",
-    url: "https://www.sofascore.com/es/football/tournament/spain/liga-f/1127#id:97379",
-    height: 963,
-  },
-  {
-    id: "sofa-standings-embed-198786-96633",
-    title: "UEFA WOMEN'S CHAMPIONS LEAGUE",
-    description: "Clasificación UEFA Women's Champions League 2026/27",
-    src: "https://widgets.sofascore.com/es-ES/embed/tournament/198786/season/96633/standings/UEFA%20Champions%20League%2C%20Women%2026%2F27?widgetTitle=UEFA%20Champions%20League%2C%20Women%2026%2F27&showCompetitionLogo=true",
-    url: "https://www.sofascore.com/es/football/tournament/europe/uefa-champions-league-women/696#id:96633",
-    height: 991,
-  },
+import { cached } from "../utils/cache";
+import { getAssetUrl } from "../utils/assets";
+
+type Row = { rank: number; name: string; crest: string; fallback: string; played: number; won: number; draw: number; lost: number; gd: string; points: number; madrid: boolean };
+type Table = { key: string; title: string; season: string; rows: Row[]; url: string };
+
+const COMPETITIONS = [
+  { key: "esp.w.1", title: "LIGA F MOEVE", url: "https://www.espn.com/soccer/standings/_/league/esp.w.1" },
+  { key: "uefa.wchampions", title: "UEFA WOMEN'S CHAMPIONS LEAGUE", url: "https://www.espn.com/soccer/standings/_/league/uefa.wchampions" },
 ];
+
+// Nombres en español y con la forma que usa el resto de la web.
+const NAMES: Record<string, string> = {
+  "Barcelona": "FC Barcelona", "Atlético Madrid": "Atlético de Madrid", "Bayern Munich": "Bayern Múnich",
+  "Real Madrid": "Real Madrid", "Espanyol": "RCD Espanyol", "Sevilla": "Sevilla FC", "Granada": "Granada CF",
+  "Valencia": "Valencia CF", "Deportivo La Coruña": "Dépor ABANCA", "Deportivo": "Dépor ABANCA", "Alavés": "Deportivo Alavés",
+  "Eibar": "SD Eibar", "Tenerife": "Costa Adeje Tenerife", "Badalona": "FC Badalona Women", "Manchester City": "Manchester City",
+  "Paris Saint-Germain": "Paris Saint-Germain", "Internazionale": "Inter de Milán", "Inter Milan": "Inter de Milán", "AS Roma": "AS Roma",
+};
+
+async function loadTable(competition: (typeof COMPETITIONS)[number]): Promise<Table | null> {
+  const response = await fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${competition.key}/standings`);
+  if (!response.ok) return null;
+  const data = await response.json();
+  const group = data?.children?.[0];
+  const entries: any[] = group?.standings?.entries ?? [];
+  if (!entries.length) return null;
+  const rows = entries.map((entry) => {
+    const stat = (name: string) => entry.stats?.find((s: any) => s.name === name);
+    const value = (name: string) => Number(stat(name)?.value ?? 0);
+    const espnName: string = entry.team?.displayName ?? "";
+    const name = NAMES[espnName] ?? espnName;
+    return {
+      rank: value("rank"),
+      name,
+      crest: getAssetUrl("escudos", name) || getAssetUrl("escudos", espnName) || entry.team?.logos?.[0]?.href || "",
+      fallback: entry.team?.logos?.[0]?.href || "",
+      played: value("gamesPlayed"), won: value("wins"), draw: value("ties"), lost: value("losses"),
+      gd: stat("pointDifferential")?.displayValue ?? "0",
+      points: value("points"),
+      madrid: entry.team?.abbreviation === "RMA" || /^Real Madrid/.test(espnName),
+    };
+  }).sort((a, b) => a.rank - b.rank);
+  const season = String(group?.standings?.seasonDisplayName ?? "").match(/\d{4}-\d{2}/)?.[0]?.replace("-", "/") ?? "";
+  return { key: competition.key, title: competition.title, season, rows, url: competition.url };
+}
+
+const tables = (await Promise.all(COMPETITIONS.map((competition) =>
+  cached(`standings:espn:${competition.key}`, 60 * 60 * 1000, () => loadTable(competition)).catch(() => null),
+))).filter((table): table is Table => Boolean(table));
 ---
+
 <div class="mfx-standings-stack">
-  {clasificaciones.map((competicion) => (
-    <section class="mfx-standings-card mfx-framed" aria-label={competicion.description}><span class="mfx-frame" aria-hidden="true"></span>
+  {tables.map((table) => (
+    <section class="mfx-standings-card mfx-framed" aria-label={`Clasificación ${table.title}`}>
+      <span class="mfx-frame" aria-hidden="true"></span>
       <header class="mfx-standings-head">
         <span class="mfx-standings-mark" aria-hidden="true">✦</span>
         <div class="mfx-standings-head-copy">
-          <h3>{competicion.title}</h3>
-          <span>TEMPORADA 2026/27</span>
+          <h3>{table.title}</h3>
+          {table.season && <span>TEMPORADA {table.season}</span>}
         </div>
       </header>
-      <div class="mfx-sofascore-frame">
-        <iframe
-          id={competicion.id}
-          title={competicion.description}
-          src={competicion.src}
-          height={competicion.height}
-          width="100%"
-          loading="lazy"
-          scrolling="no"
-          frameborder="0"
-          style={`height:${competicion.height}px!important;max-width:768px!important;width:100%!important;`}
-        ></iframe>
-      </div>
-      <div class="mfx-sofascore-source">
-        Clasificación ofrecida por <a href={competicion.url} target="_blank" rel="noopener noreferrer">Sofascore</a>
+      <table class="mfx-standings-table">
+        <thead>
+          <tr>
+            <th scope="col" class="is-rank">#</th>
+            <th scope="col" class="is-team">Equipo</th>
+            <th scope="col" title="Partidos jugados">PJ</th>
+            <th scope="col" title="Diferencia de goles">DG</th>
+            <th scope="col" title="Puntos" class="is-points">PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row) => (
+            <tr class:list={{ "is-madrid": row.madrid }}>
+              <td class="is-rank">{row.rank}</td>
+              <td class="is-team">
+                <span class="mfx-standings-team">
+                  {row.crest && <img src={row.crest} data-fallback={row.fallback} referrerpolicy="no-referrer" onerror="if(this.dataset.fallback&&this.src!==this.dataset.fallback){this.src=this.dataset.fallback}else{this.remove()}" alt="" width="20" height="20" loading="lazy" decoding="async" />}
+                  <span>{row.name}</span>
+                </span>
+              </td>
+              <td>{row.played}</td>
+              <td>{row.gd}</td>
+              <td class="is-points">{row.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div class="mfx-standings-source">
+        Datos: <a href={table.url} target="_blank" rel="noopener noreferrer">ESPN</a>
       </div>
     </section>
   ))}
+  {tables.length === 0 && <p class="mfx-standings-empty">Clasificación no disponible en este momento.</p>}
 </div>
 
 <style>
-  .mfx-standings-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    width: 100%;
-    min-width: 0;
-  }
+  .mfx-standings-stack { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
   .mfx-standings-card {
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid rgba(212,168,67,.27);
-    border-radius: 10px;
-    background: rgb(var(--l-field, 11, 20, 36));
-    box-shadow: 0 12px 28px rgba(0,0,0,.23);
+    min-width: 0; overflow: hidden; border: 1px solid transparent; border-radius: 10px;
+    background: rgb(var(--l-field, 11, 20, 36)); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.23);
   }
   .mfx-standings-head {
-    display: flex;
-    gap: 9px;
-    align-items: center;
-    padding: 13px 12px;
-    background: linear-gradient(100deg, rgba(212,168,67,.13), rgba(212,168,67,.025));
-    border-bottom: 1px solid rgba(212,168,67,.22);
+    display: flex; gap: 9px; align-items: center; padding: 13px 12px;
+    background: linear-gradient(100deg, rgba(212, 168, 67, 0.13), rgba(212, 168, 67, 0.025));
+    border-bottom: 1px solid rgba(212, 168, 67, 0.16);
   }
-  .mfx-standings-mark {
-    color: rgb(var(--l-gold, 212, 168, 67));
-    font-size: 1.15rem;
+  .mfx-standings-mark { color: #d4a843; font-size: 0.8rem; }
+  .mfx-standings-head-copy h3 { margin: 0; font: 700 0.8rem/1.2 'Cinzel', serif; letter-spacing: 0.08em; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .mfx-standings-head-copy span { display: block; margin-top: 3px; font: 700 0.58rem/1 'DM Sans', sans-serif; letter-spacing: 0.14em; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mfx-standings-table { width: 100%; border-collapse: collapse; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; }
+  .mfx-standings-table th {
+    padding: 8px 6px; font: 700 0.58rem/1 'Cinzel', serif; letter-spacing: 0.12em; color: rgb(var(--l-gold, 212, 168, 67));
+    text-align: center; border-bottom: 1px solid rgba(212, 168, 67, 0.14);
   }
-  .mfx-standings-head-copy {
-    min-width: 0;
-  }
-  .mfx-standings-head-copy h3 {
-    margin: 0;
-    font: 700 .74rem/1.55 'Cinzel',serif;
-    letter-spacing: .05em;
-    color: rgb(var(--l-gold, 231, 199, 125));
-  }
-  .mfx-standings-head-copy span {
-    color: rgb(var(--l-ink, 167, 180, 197));
-    font: 600 .61rem/1.5 'DM Sans',sans-serif;
-    letter-spacing: .07em;
-  }
-  .mfx-sofascore-frame {
-    width: 100%;
-    max-width: 768px;
-    margin: 0 auto;
-    min-width: 0;
-    overflow: hidden;
-  }
-  .mfx-sofascore-frame iframe {
-    display: block;
-    width: 100%;
-    border: 0;
-    background: #fff;
-  }
-  .mfx-sofascore-source {
-    border-top: 1px solid rgba(212,168,67,.13);
-    padding: 12px;
-    color: rgb(var(--l-ink, 174, 187, 207));
-    font: 400 .72rem/1.5 'DM Sans',sans-serif;
-  }
-  .mfx-sofascore-source a {
-    color: rgb(var(--l-gold, 229, 194, 121));
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .mfx-sofascore-source a:hover { color: rgb(var(--l-gold, 255, 226, 163)); }
-  @media(max-width:480px) {
-    .mfx-standings-head { padding: 11px 10px; }
-    .mfx-standings-head-copy h3 { font-size: .68rem; }
-    .mfx-sofascore-source { padding: 10px; }
-  }
+  .mfx-standings-table td { padding: 7px 6px; text-align: center; color: rgba(var(--l-ink, 200, 210, 220), 0.85); border-bottom: 1px solid rgba(var(--l-hi, 255, 255, 255), 0.05); }
+  .mfx-standings-table .is-rank { width: 28px; color: rgba(var(--l-ink, 200, 210, 220), 0.55); font-weight: 700; }
+  .mfx-standings-table .is-team { text-align: left; }
+  .mfx-standings-table .is-points { font-weight: 800; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .mfx-standings-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .mfx-standings-team img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
+  .mfx-standings-team span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+  .mfx-standings-table tr.is-madrid td { background: rgba(212, 168, 67, 0.1); color: rgb(var(--l-ink, 240, 240, 240)); font-weight: 700; }
+  .mfx-standings-table tr.is-madrid .is-rank { color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mfx-standings-table tbody tr:last-child td { border-bottom: 0; }
+  .mfx-standings-source { padding: 9px 12px; font: 400 0.66rem/1.2 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.55); border-top: 1px solid rgba(212, 168, 67, 0.12); }
+  .mfx-standings-source a { color: rgb(var(--l-gold, 212, 168, 67)); text-decoration: none; }
+  .mfx-standings-empty { margin: 0; padding: 1rem; color: rgba(var(--l-ink, 200, 210, 220), 0.6); font-size: 0.8rem; text-align: center; }
 </style>
