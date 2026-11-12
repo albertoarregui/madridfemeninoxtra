@@ -188,6 +188,19 @@ const siteSchema = {
 		/>
 		<slot name="head" />
 		<ClientRouter />
+		<!-- Comprueba en segundo plano si hay datos nuevos en Turso (ver /api/cache/check).
+		     Una vez por visitante y minuto como mucho; la CDN agrupa el resto. -->
+		<script is:inline>
+			(function () {
+				try {
+					var k = "mfx-cache-check", now = Date.now();
+					if (now - (+sessionStorage.getItem(k) || 0) < 60000) return;
+					sessionStorage.setItem(k, String(now));
+				} catch (e) {}
+				var go = function () { fetch("/api/cache/check", { keepalive: true }).catch(function () {}); };
+				if ("requestIdleCallback" in window) requestIdleCallback(go, { timeout: 5000 }); else setTimeout(go, 3000);
+			})();
+		</script>
 	</head>
 	<body>
 		{bgUrl && <div class="global-bg" style={`background-image:url(${bgUrl})`}></div>}

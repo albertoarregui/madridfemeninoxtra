@@ -60,3 +60,11 @@ test("rankings: estadísticas en fila deslizable y total/x90", () => {
     assert.doesNotMatch(rankings, /id="rk-more"/);
     assert.match(rankings, /PER90_MIN_MINUTES = 450/);
 });
+
+test("la comprobación de cambios solo se ejecuta cada 30 s en la CDN y no escribe sin cambios", () => {
+    const check = read("src/pages/api/cache/check.ts");
+    assert.match(check, /Vercel-CDN-Cache-Control": `max-age=\$\{CDN_SECONDS\}`/);
+    assert.match(check, /getPlayersDbClient\(\{ forceRefresh: true \}\)/);
+    assert.match(check, /if \(!previous \|\| changed\.length > 0\)/);
+    assert.match(read("src/layouts/Layout.astro"), /\/api\/cache\/check/);
+});
