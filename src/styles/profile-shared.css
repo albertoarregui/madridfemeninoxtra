@@ -21,20 +21,23 @@
 
 /* Trayectoria horizontal, alternando arriba y abajo */
 .pt-career {
-    position: relative; display: grid; grid-template-columns: repeat(var(--steps), minmax(9rem, 1fr));
-    margin: 0; padding: 0 3rem; list-style: none; overflow-x: auto; min-height: 15rem;
-    /* Margen lateral para que la primera y la última etapa no se corten. */
+    /* Todas las etapas caben en el ancho: sin desplazamiento horizontal. */
+    position: relative; display: grid; grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
+    margin: 0; padding: 0; list-style: none; min-height: 17rem;
 }
 .pt-career::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, rgba(212, 168, 67, 0.25), #d4a843); border-radius: 999px; }
-.pt-career-step { position: relative; display: flex; justify-content: center; }
+.pt-career-step { position: relative; display: flex; justify-content: center; min-width: 0; }
 .pt-career-dot { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; background: rgb(var(--l-field, 11, 19, 36)); border: 3px solid #d4a843; z-index: 1; }
 .pt-career-step.is-current .pt-career-dot { background: #d4a843; box-shadow: 0 0 0 5px rgba(212, 168, 67, 0.25); }
-.pt-career-card { position: absolute; left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 0.3rem; width: max-content; max-width: 11rem; padding: 0 0.25rem; text-align: center; }
+/* Las etapas alternan arriba y abajo: cada tarjeta puede ocupar casi dos columnas. */
+.pt-career-card { position: absolute; left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 0.3rem; width: max-content; max-width: min(13rem, calc(200% - 0.75rem)); padding: 0 0.25rem; text-align: center; box-sizing: border-box; }
+.pt-career-step:first-child .pt-career-card { left: 0; transform: none; justify-items: start; text-align: left; max-width: min(13rem, calc(150% - 0.5rem)); }
+.pt-career-step:last-child .pt-career-card { left: auto; right: 0; transform: none; justify-items: end; text-align: right; max-width: min(13rem, calc(150% - 0.5rem)); }
 .pt-career-step.is-up .pt-career-card { bottom: calc(50% + 1.1rem); }
 .pt-career-step.is-down .pt-career-card { top: calc(50% + 1.1rem); }
 .pt-career-card img { width: 40px; height: 40px; object-fit: contain; }
-.pt-career-card strong { font-family: 'Cinzel', serif; font-size: 0.85rem; color: rgb(var(--l-ink, 240, 240, 240)); line-height: 1.2; }
-.pt-career-card span { font-size: 0.72rem; color: rgba(var(--l-gold, 212, 168, 67), 0.8); }
+.pt-career-card strong { font-family: 'Cinzel', serif; font-size: 0.8rem; color: rgb(var(--l-ink, 240, 240, 240)); line-height: 1.2; overflow-wrap: break-word; }
+.pt-career-card span { font-size: 0.72rem; color: rgba(var(--l-gold, 212, 168, 67), 0.8); white-space: nowrap; }
 
 /* ── Selector de jugadoras y comparador (encabezado) ───────────────────────── */
 .pc-bar { position: relative; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1.1rem; }
@@ -97,6 +100,9 @@
     .pt-career::before { left: 0.45rem; right: auto; top: 0; bottom: 0; width: 3px; height: auto; transform: none; background: linear-gradient(180deg, rgba(212, 168, 67, 0.25), #d4a843); }
     .pt-career-step { justify-content: flex-start; }
     .pt-career-dot { left: -1.05rem; top: 1.2rem; }
-    .pt-career-card, .pt-career-step.is-up .pt-career-card, .pt-career-step.is-down .pt-career-card { position: static; transform: none; grid-template-columns: 40px 1fr; justify-items: start; text-align: left; max-width: none; column-gap: 0.75rem; }
+    .pt-career-card, .pt-career-step.is-up .pt-career-card, .pt-career-step.is-down .pt-career-card,
+    .pt-career-step:first-child .pt-career-card, .pt-career-step:last-child .pt-career-card { position: static; transform: none; grid-template-columns: 40px 1fr; justify-items: start; text-align: left; max-width: none; column-gap: 0.75rem; }
     .pt-career-card img { grid-row: span 2; }
+    /* Sin escudo, el nombre y los años ocupan todo el ancho. */
+    .pt-career .pt-career-step .pt-career-card:not(:has(img)) { grid-template-columns: minmax(0, 1fr); }
 }

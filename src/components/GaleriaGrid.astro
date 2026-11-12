@@ -82,7 +82,6 @@ const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.len
                 <div class="mfx-gal-filtros filters-container">
                     {[
                         { key: "temporada", label: "Todas las Temporadas", valores: temporadas },
-                        { key: "competicion", label: "Todas las Competiciones", valores: competiciones },
                     ]
                         .filter((f) => f.valores.length > 0)
                         .map((f) => (
@@ -117,6 +116,16 @@ const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.len
                                 </div>
                             </div>
                         ))}
+                    {/* Competición en píldoras, como el resto de filtros de competición. */}
+                    {competiciones.length > 1 && (
+                        <div class="pt-pills mfx-gal-pills" role="group" aria-label="Competición" data-key="competicion" data-value="">
+                            {["", ...competiciones].map((v, i) => (
+                                <button type="button" class:list={["pt-pill", { "is-active": i === 0 }]} aria-pressed={i === 0 ? "true" : "false"} data-value={v}>
+                                    {v ? (/^amistoso/i.test(v) ? "Amistoso" : v) : "Todas"}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <span class="mfx-gal-resultado" aria-live="polite" />
                 </div>
             )}
@@ -215,6 +224,8 @@ const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.len
         color: rgb(var(--l-gold, 232, 200, 116));
     }
 
+    .mfx-gal-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+    .mfx-gal-pills::-webkit-scrollbar { display: none; }
     .mfx-gal-filtros {
         display: flex;
         flex-wrap: wrap;
@@ -453,7 +464,7 @@ const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.len
             const more = el.querySelector(".mfx-gal-more") as HTMLButtonElement | null;
             const resultado = el.querySelector(".mfx-gal-resultado") as HTMLElement | null;
             const filtros = Array.from(
-                el.querySelectorAll<HTMLElement>(".mfx-gal-filtros .custom-select-container"),
+                el.querySelectorAll<HTMLElement>(".mfx-gal-filtros [data-key]"),
             );
 
             const tanda = Number(el.dataset.tanda || 0) || items.length;
@@ -500,8 +511,19 @@ const mostrarFiltros = conFiltros && (temporadas.length > 0 || competiciones.len
                 });
             });
 
+            el.querySelectorAll<HTMLElement>(".mfx-gal-pills").forEach((group) => {
+                const pills = Array.from(group.querySelectorAll<HTMLButtonElement>(".pt-pill"));
+                pills.forEach((pill) => pill.addEventListener("click", () => {
+                    pills.forEach((p) => { const on = p === pill; p.classList.toggle("is-active", on); p.setAttribute("aria-pressed", String(on)); });
+                    group.dataset.value = pill.dataset.value || "";
+                    mostradas = Math.min(tanda, items.length);
+                    aplicar();
+                }));
+            });
+
             filtros.forEach((cont) => {
                 const trigger = cont.querySelector(".custom-select-trigger");
+                if (!trigger) return;
                 const texto = cont.querySelector(".selected-text") as HTMLElement;
                 const opciones = Array.from(cont.querySelectorAll<HTMLElement>(".custom-select-option"));
 

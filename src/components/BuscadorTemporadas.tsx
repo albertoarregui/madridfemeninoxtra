@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Search, ChevronUp, ChevronDown, X } from "lucide-react";
+import CompetitionPills from './CompetitionPills';
 import CustomSelect from "./CustomSelect";
 
 interface SeasonRow {
@@ -35,6 +36,7 @@ interface SeasonRow {
 }
 
 interface BuscadorProps {
+    competitionLogos?: Record<string, string>;
     competitions: string[];
 }
 
@@ -132,7 +134,7 @@ function metricValue(row: SeasonRow, col: ColumnDef, mode: Mode): number | null 
     return Number(raw);
 }
 
-export default function BuscadorTemporadas({ competitions }: BuscadorProps) {
+export default function BuscadorTemporadas({ competitions, competitionLogos = {} }: BuscadorProps) {
     const [data,    setData]    = useState<SeasonRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(false);
@@ -235,9 +237,6 @@ export default function BuscadorTemporadas({ competitions }: BuscadorProps) {
                         )}
                     </div>
 
-                    <div className="bus-filter-group" style={{ flex: "1 1 200px", minWidth: 160 }}>
-                        <CustomSelect id="bust-competicion" value={selectedComp} onChange={setSelectedComp} options={compOptions} />
-                    </div>
 
                     <div className="bus-per90-toggle">
                         <button className={`bus-per90-btn${mode === 'totales' ? ' active' : ''}`} onClick={() => setMode('totales')}>Totales</button>
@@ -250,6 +249,12 @@ export default function BuscadorTemporadas({ competitions }: BuscadorProps) {
                         </button>
                     )}
                 </div>
+                {/* Competición en píldoras, siempre visible. */}
+                <div className="bus-comp-row">
+                    <span className="bus-filter-label">Competición</span>
+                    <CompetitionPills competitions={competitions} value={selectedComp} onChange={setSelectedComp} logos={competitionLogos} />
+                </div>
+
             </div>
 
             <div className="bus-groups-row">

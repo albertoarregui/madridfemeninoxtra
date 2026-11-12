@@ -1,0 +1,58 @@
+---
+// Píldoras de competición para las gráficas de las fichas. Mantiene el <select>
+// oculto que leen los scripts de cada página: al pulsar una píldora se cambia
+// su valor y se lanza `change`, así que la lógica de filtrado no cambia.
+import { getAssetUrl } from "../../utils/assets";
+
+interface Props { competitions: string[]; friendlies?: boolean; selectId?: string }
+const { competitions, friendlies = false, selectId = "competition-filter" } = Astro.props;
+const ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España"];
+const sorted = [...competitions].sort((a, b) => {
+    const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, "es");
+});
+const options = [
+    { value: "all", label: "Todas", logo: "" },
+    ...sorted.map((c) => ({ value: c, label: c, logo: getAssetUrl("competiciones", c) })),
+    ...(friendlies ? [{ value: "amistosos", label: "Amistoso", logo: getAssetUrl("competiciones", "amistoso") }] : []),
+];
+---
+
+<div class="pf-comp-pills" data-comp-pills={selectId}>
+    <div class="pt-pills" role="group" aria-label="Competición">
+        {options.map((o, i) => (
+            <button type="button" class:list={["pt-pill", { "is-active": i === 0 }]} aria-pressed={i === 0 ? "true" : "false"} data-value={o.value}>
+                {o.logo && <img src={o.logo} alt="" width="16" height="16" loading="lazy" />}
+                {o.label}
+            </button>
+        ))}
+    </div>
+    <select id={selectId} hidden>
+        {options.map((o) => <option value={o.value}>{o.label}</option>)}
+    </select>
+</div>
+
+<script>
+    function init() {
+        document.querySelectorAll<HTMLElement>("[data-comp-pills]").forEach((root) => {
+            if (root.dataset.ready === "true") return;
+            root.dataset.ready = "true";
+            const select = root.querySelector("select")!;
+            const pills = [...root.querySelectorAll<HTMLButtonElement>(".pt-pill")];
+            pills.forEach((pill) => pill.addEventListener("click", () => {
+                pills.forEach((p) => { const on = p === pill; p.classList.toggle("is-active", on); p.setAttribute("aria-pressed", String(on)); });
+                select.value = pill.dataset.value || "all";
+                select.dispatchEvent(new Event("change"));
+            }));
+        });
+    }
+    init();
+    document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+    .pf-comp-pills { min-width: 0; max-width: 100%; }
+    .pf-comp-pills .pt-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .pf-comp-pills .pt-pills::-webkit-scrollbar { display: none; }
+    @media (max-width: 760px) { .pf-comp-pills .pt-pills { border-radius: 999px; } }
+</style>

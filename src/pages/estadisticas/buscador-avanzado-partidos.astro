@@ -7,6 +7,12 @@ import BuscadorPartidos from "../../components/BuscadorPartidos";
 import BreadcrumbTrail from "../../components/BreadcrumbTrail.astro";
 
 const { seasons, competitions, rivals } = await getMatchFilterOptions();
+import { getAssetUrl } from "../../utils/assets";
+// Logos de las píldoras de competición.
+const competitionLogos = Object.fromEntries(
+    ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"]
+        .map((name) => [name, getAssetUrl("competiciones", name === "Amistosos" ? "amistoso" : name) || ""]),
+);
 ---
 
 <Layout
@@ -29,6 +35,7 @@ const { seasons, competitions, rivals } = await getMatchFilterOptions();
 
         <BuscadorPartidos
             client:load
+            competitionLogos={competitionLogos}
             seasons={seasons}
             competitions={competitions}
             rivals={rivals}

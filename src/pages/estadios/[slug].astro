@@ -16,6 +16,7 @@ import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
 import ProfileTabs from "../../components/profile/ProfileTabs.astro";
 import EntityPicker from "../../components/profile/EntityPicker.astro";
+import CompetitionPills from "../../components/profile/CompetitionPills.astro";
 import { fetchCompareOptions } from "../../utils/entity-compare";
 import "../../styles/profile-shared.css";
 
@@ -495,32 +496,7 @@ const seoDescription = totalStats.pj
                                 ))}
                             </select>
                         </div>
-                        <div class="custom-select-container" id="container-competicion">
-                            <div class="custom-select-trigger" id="trigger-competicion">
-                                <span class="selected-text">Todas las Competiciones</span>
-                                <div class="custom-select-arrow">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="m6 9 6 6 6-6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="custom-select-options">
-                                <div class="custom-select-option selected" data-value="all">Todas las Competiciones</div>
-                                {hayAmistosos && (
-                                    <div class="custom-select-option" data-value="amistosos">Amistosos</div>
-                                )}
-                                {uniqueCompetitions.map((comp) => (
-                                    <div class="custom-select-option" data-value={comp}>{comp}</div>
-                                ))}
-                            </div>
-                            <select id="competition-filter" style="display: none;">
-                                <option value="all">Todas las Competiciones</option>
-                                {hayAmistosos && <option value="amistosos">Amistosos</option>}
-                                {uniqueCompetitions.map((comp) => (
-                                    <option value={comp}>{comp}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <CompetitionPills competitions={uniqueCompetitions} friendlies={hayAmistosos} />
                     </div>
                     <div class="charts-row">
                         <div class="chart-item">
@@ -882,8 +858,8 @@ const seoDescription = totalStats.pj
 <style>
 /* Paneles de las pestañas: una columna, dos (Info) o tres (protagonistas). */
 .pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.pf-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+.pf-three { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
 .pf-stack { display: grid; gap: 1.25rem; align-content: start; min-width: 0; }
 .pf-grid > .profile-card, .pf-stack > .profile-card { margin: 0 !important; min-width: 0; }
 .pf-full { grid-column: 1 / -1; }

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Search, ChevronUp, ChevronDown, X, SlidersHorizontal } from "lucide-react";
+import CompetitionPills from './CompetitionPills';
 import CustomSelect from "./CustomSelect";
 
 interface PlayerStat {
@@ -70,6 +71,7 @@ interface Partido {
 }
 
 interface BuscadorProps {
+    competitionLogos?: Record<string, string>;
     seasons: string[];
     competitions: string[];
     playerImageMap: Record<string, string>;
@@ -197,7 +199,7 @@ function useDebounce<T>(val: T, ms: number): T {
     return d;
 }
 
-export default function BuscadorAvanzado({ seasons, competitions, playerImageMap }: BuscadorProps) {
+export default function BuscadorAvanzado({ seasons, competitions, playerImageMap, competitionLogos = {} }: BuscadorProps) {
     const [data,    setData]    = useState<PlayerStat[]>([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(false);
@@ -418,16 +420,19 @@ export default function BuscadorAvanzado({ seasons, competitions, playerImageMap
                     )}
                 </div>
 
+                {/* Competición en píldoras, siempre visible. */}
+                <div className="bus-comp-row">
+                    <span className="bus-filter-label">Competición</span>
+                    <CompetitionPills competitions={competitions} value={selectedComp} onChange={setSelectedComp} logos={competitionLogos} />
+                </div>
+
                 {filtersOpen && (
-                    <div className="bus-filters-grid">
+                    <div className="bus-filters-grid bus-filters-grid--pills">
                         <div className="bus-filter-group">
                             <span className="bus-filter-label">Temporada</span>
                             <CustomSelect id="bus-temporada" value={selectedSeason} onChange={setSelectedSeason} options={seasonOptions} />
                         </div>
-                        <div className="bus-filter-group">
-                            <span className="bus-filter-label">Competición</span>
-                            <CustomSelect id="bus-competicion" value={selectedComp} onChange={setSelectedComp} options={compOptions} />
-                        </div>
+                        <div className="bus-filter-group" style={{ display: "none" }} aria-hidden="true" />
                         <div className="bus-filter-group">
                             <span className="bus-filter-label">Posición</span>
                             <CustomSelect id="bus-posicion" value={selectedPos} onChange={setSelectedPos} options={posOptions} />

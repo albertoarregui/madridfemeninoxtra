@@ -13,6 +13,12 @@ const { seasons: uniqueSeasons, competitions: uniqueCompetitions } = await getMa
 const playerImageMap = Object.fromEntries(
     playersData.map((p: any) => [p.slug, p.imageUrl]),
 );
+import { getAssetUrl } from "../../utils/assets";
+// Logos de las píldoras de competición.
+const competitionLogos = Object.fromEntries(
+    ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"]
+        .map((name) => [name, getAssetUrl("competiciones", name === "Amistosos" ? "amistoso" : name) || ""]),
+);
 ---
 
 <Layout
@@ -35,6 +41,7 @@ const playerImageMap = Object.fromEntries(
 
         <BuscadorAvanzado
             client:load
+            competitionLogos={competitionLogos}
             seasons={uniqueSeasons}
             competitions={uniqueCompetitions}
             playerImageMap={playerImageMap}

@@ -6,8 +6,10 @@ const SHIELD_STOPWORDS = new Set(['fc', 'cf', 'cd', 'ud', 'sd', 'club', 'de', 'd
     'women', 'ladies', 'sad', 'sc', 'afc', 'cfc', 'the', 'rcd', 'ffc', 'bk', 'if', 'ik', 'fk', 'ff', 'sv', 'vfl', 'real']);
 const cleanClubName = (name: string) => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/categorias inferiores( del| de)?/g, ' ')
-    .replace(/\b(cadete|juvenil|infantil|youth|academy|cantera|sub ?\d+|u ?\d+)\b/g, ' ')
-    .replace(/[^a-z0-9ø]+/g, ' ').replace(/\b(b|c|ii)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    // Filiales, categorías y cargos («Castilla», «Ilicitano», «(entrenador asistente)»…)
+    // usan el escudo del club principal.
+    .replace(/\b(cadete|juvenil|infantil|youth|academy|cantera|castilla|ilicitano|reserves?|asistente|entrenador|sub ?\d+|u ?\d+)\b/g, ' ')
+    .replace(/[^a-z0-9ø]+/g, ' ').replace(/\b(a|b|c|ii)\b/g, ' ').replace(/\s+/g, ' ').trim();
 const clubTokens = (name: string) => [...new Set(cleanClubName(name).split(' ').filter((t) => t && !SHIELD_STOPWORDS.has(t)))];
 const shieldFileSlug = (name: string) => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
