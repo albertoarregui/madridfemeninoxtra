@@ -13,6 +13,12 @@ import { fetchCoachStreaks } from "../../utils/coach-streaks";
 import { getAssetUrl } from "../../utils/assets";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
+import ProfileTabs from "../../components/profile/ProfileTabs.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import { fetchCompareOptions } from "../../utils/entity-compare";
+import { fetchAllClubShields } from "../../utils/rivales";
+import { createClubShieldResolver } from "../../lib/club-shields";
+import "../../styles/profile-shared.css";
 
 const { slug } = Astro.params;
 
@@ -29,6 +35,11 @@ const coachStats = await fetchCoachStats(coach.id_entrenador);
 const coachRecords = await fetchCoachRecords(coach.id_entrenador);
 const coachStreaks = await fetchCoachStreaks(coach.id_entrenador);
 const trajectory = await fetchCoachTrajectory(coach.id_entrenador);
+// Selector para comparar (lista en caché, compartida con /comparador/entrenadores).
+const compareOptions = await fetchCompareOptions("entrenadores");
+// Trayectoria horizontal, de la etapa más antigua a la actual.
+const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
+const careerShield = createClubShieldResolver(await fetchAllClubShields());
 
 const flagUrl = coach.flagUrl || "";
 const nombre = coach.nombre || coach.name || "";
@@ -151,6 +162,8 @@ const seoDescription = (tc && tc.partidos)
             </div>
 
             <div class="hero-info-col">
+                <EntityPicker tipo="entrenadores" options={compareOptions} noun="entrenadores"
+                    current={{ slug: coach.slug || slug!, name: nombre, img: coach.imageUrl || "" }} />
                 <div class="hero-chips">
                     <span class="hero-chip hero-chip-gold">♦ ENTRENADOR ♦</span>
                     {(coach.pais || coach.country) && (
@@ -178,9 +191,15 @@ const seoDescription = (tc && tc.partidos)
     </section>
 
     <main class="coach-content">
-        <div class="content-grid">
+        <ProfileTabs tabs={[
+            { key: "info", label: "Info" },
+            ...(coachStats && coachStats.estadisticas && coachStats.estadisticas.length > 0 ? [{ key: "estadisticas", label: "Estadísticas" }] : []),
+            { key: "trayectoria", label: "Trayectoria" },
+            { key: "records", label: "Récords" },
+        ]} />
 
-            <section class="profile-card full-col mfx-framed" style="margin-bottom:0;"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid pf-two pt-panel" id="panel-info" role="tabpanel" data-panel="info">
+            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">SOBRE {nombre.toUpperCase()}</h2>
                 <div class="card-body">
                     {ficha ? (
@@ -190,8 +209,7 @@ const seoDescription = (tc && tc.partidos)
                 )}
                 </div>
             </section>
-
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">FICHA PERSONAL</h2>
                 <div class="card-body">
                     <div class="info-row">
@@ -221,106 +239,11 @@ const seoDescription = (tc && tc.partidos)
                     )}
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="card-title">TRAYECTORIA</h2>
-                <div class="card-body" style="padding:1.25rem 1.5rem;">
-                    {trajectory && trajectory.length > 0 ? (
-                        <div class="trajectory-timeline">
-                            {trajectory.map((item: any) => (
-                                <div class="timeline-item">
-                                    <div class="timeline-dot"></div>
-                                    <div class="timeline-body">
-                                        <span class="timeline-years">{item.anio_inicio} – {item.anio_fin || 'Act.'}</span>
-                                        <span class="timeline-club">{item.club}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p class="no-data">Sin datos disponibles</p>
-                    )}
-                </div>
-            </section>
-
-            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="card-title">RÉCORDS</h2>
-                <div class="card-body" style="padding:1.25rem 1.5rem;">
-                    {coachRecords ? (
-                        <div class="records-list">
-                            {coachRecords.mas_partido && (
-                                <div class="record-row">
-                                    <span class="record-label">Más partidos</span>
-                                    <span class="record-value">{coachRecords.mas_partido.rival} · {coachRecords.mas_partido.partidos}</span>
-                                </div>
-                            )}
-                            {coachRecords.mas_victorias && (
-                                <div class="record-row">
-                                    <span class="record-label">Más victorias</span>
-                                    <span class="record-value">{coachRecords.mas_victorias.rival} · {coachRecords.mas_victorias.victorias}</span>
-                                </div>
-                            )}
-                            {coachRecords.mas_empates && (
-                                <div class="record-row">
-                                    <span class="record-label">Más empates</span>
-                                    <span class="record-value">{coachRecords.mas_empates.rival} · {coachRecords.mas_empates.empates}</span>
-                                </div>
-                            )}
-                            {coachRecords.mayor_victoria && (
-                                <div class="record-row">
-                                    <span class="record-label">Mayor victoria</span>
-                                    <span class="record-value">{coachRecords.mayor_victoria.goles_rm}-{coachRecords.mayor_victoria.goles_rival} vs {coachRecords.mayor_victoria.rival}</span>
-                                </div>
-                            )}
-                            {coachRecords.mayor_derrota && (
-                                <div class="record-row">
-                                    <span class="record-label">Mayor derrota</span>
-                                    <span class="record-value">{coachRecords.mayor_derrota.goles_rm}-{coachRecords.mayor_derrota.goles_rival} vs {coachRecords.mayor_derrota.rival}</span>
-                                </div>
-                            )}
-                            {coachRecords.mas_repetido && (
-                                <div class="record-row">
-                                    <span class="record-label">Resultado más repetido</span>
-                                    <span class="record-value">{coachRecords.mas_repetido.resultado} · {coachRecords.mas_repetido.veces} veces</span>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <p class="no-data">Sin datos disponibles</p>
-                    )}
-                </div>
-            </section>
-
-            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="card-title">RACHAS</h2>
-                <div class="card-body" style="padding:1.25rem 1.5rem;">
-                    {coachStreaks ? (
-                        <div class="records-list">
-                            {[
-                                ['Ganando', coachStreaks.best.ganando],
-                                ['Sin perder', coachStreaks.best.sin_perder],
-                                ['Empatando', coachStreaks.best.empatando],
-                                ['Sin ganar', coachStreaks.best.sin_ganar],
-                                ['Perdiendo', coachStreaks.best.perdiendo],
-                                ['Marcando', coachStreaks.best.marcando],
-                                ['Sin marcar', coachStreaks.best.sin_marcar],
-                                ['Sin encajar', coachStreaks.best.sin_encajar],
-                                ['Encajando', coachStreaks.best.encajando],
-                            ].map(([label, value]) => (
-                                <div class="record-row">
-                                    <span class="record-label">{label}</span>
-                                    <span class="record-value">{value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p class="no-data">Sin datos disponibles</p>
-                    )}
-                </div>
-            </section>
-
+        <div class="pf-grid pt-panel" id="panel-estadisticas" role="tabpanel" data-panel="estadisticas" hidden>
             {coachStats && coachStats.estadisticas && coachStats.estadisticas.length > 0 && (
-                <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">ESTADÍSTICAS</h2>
                     <div class="card-body" style="padding:0;">
                         <div class="stats-table-wrapper">
@@ -403,7 +326,109 @@ const seoDescription = (tc && tc.partidos)
                     </div>
                 </section>
             )}
+        </div>
 
+        <div class="pf-grid pt-panel" id="panel-trayectoria" role="tabpanel" data-panel="trayectoria" hidden>
+            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">TRAYECTORIA</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {careerSteps.length > 0 ? (
+                        <ol class="pt-career" style={`--steps:${careerSteps.length}`}>
+                            {careerSteps.map((item: any, index: number) => (
+                                <li class:list={["pt-career-step", index % 2 === 0 ? "is-up" : "is-down", { "is-current": !item.anio_fin }]}>
+                                    <span class="pt-career-dot" aria-hidden="true"></span>
+                                    <div class="pt-career-card">
+                                        {careerShield(item.club) && (
+                                            <img src={careerShield(item.club)!.url} alt="" width="40" height="40" loading="lazy" decoding="async" onerror="this.remove()" />
+                                        )}
+                                        <strong>{item.club}</strong>
+                                        <span>{item.anio_inicio} – {item.anio_fin || "Act."}</span>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
+                </div>
+            </section>
+        </div>
+
+        <div class="pf-grid pf-two pt-panel" id="panel-records" role="tabpanel" data-panel="records" hidden>
+            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">RÉCORDS</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {coachRecords ? (
+                        <div class="records-list">
+                            {coachRecords.mas_partido && (
+                                <div class="record-row">
+                                    <span class="record-label">Más partidos</span>
+                                    <span class="record-value">{coachRecords.mas_partido.rival} · {coachRecords.mas_partido.partidos}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_victorias && (
+                                <div class="record-row">
+                                    <span class="record-label">Más victorias</span>
+                                    <span class="record-value">{coachRecords.mas_victorias.rival} · {coachRecords.mas_victorias.victorias}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_empates && (
+                                <div class="record-row">
+                                    <span class="record-label">Más empates</span>
+                                    <span class="record-value">{coachRecords.mas_empates.rival} · {coachRecords.mas_empates.empates}</span>
+                                </div>
+                            )}
+                            {coachRecords.mayor_victoria && (
+                                <div class="record-row">
+                                    <span class="record-label">Mayor victoria</span>
+                                    <span class="record-value">{coachRecords.mayor_victoria.goles_rm}-{coachRecords.mayor_victoria.goles_rival} vs {coachRecords.mayor_victoria.rival}</span>
+                                </div>
+                            )}
+                            {coachRecords.mayor_derrota && (
+                                <div class="record-row">
+                                    <span class="record-label">Mayor derrota</span>
+                                    <span class="record-value">{coachRecords.mayor_derrota.goles_rm}-{coachRecords.mayor_derrota.goles_rival} vs {coachRecords.mayor_derrota.rival}</span>
+                                </div>
+                            )}
+                            {coachRecords.mas_repetido && (
+                                <div class="record-row">
+                                    <span class="record-label">Resultado más repetido</span>
+                                    <span class="record-value">{coachRecords.mas_repetido.resultado} · {coachRecords.mas_repetido.veces} veces</span>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
+                </div>
+            </section>
+            <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="card-title">RACHAS</h2>
+                <div class="card-body" style="padding:1.25rem 1.5rem;">
+                    {coachStreaks ? (
+                        <div class="records-list">
+                            {[
+                                ['Ganando', coachStreaks.best.ganando],
+                                ['Sin perder', coachStreaks.best.sin_perder],
+                                ['Empatando', coachStreaks.best.empatando],
+                                ['Sin ganar', coachStreaks.best.sin_ganar],
+                                ['Perdiendo', coachStreaks.best.perdiendo],
+                                ['Marcando', coachStreaks.best.marcando],
+                                ['Sin marcar', coachStreaks.best.sin_marcar],
+                                ['Sin encajar', coachStreaks.best.sin_encajar],
+                                ['Encajando', coachStreaks.best.encajando],
+                            ].map(([label, value]) => (
+                                <div class="record-row">
+                                    <span class="record-label">{label}</span>
+                                    <span class="record-value">{value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p class="no-data">Sin datos disponibles</p>
+                    )}
+                </div>
+            </section>
         </div>
     </main>
 
@@ -607,6 +632,12 @@ const seoDescription = (tc && tc.partidos)
 }
 
 .full-col { grid-column: 1 / -1; }
+
+/* Paneles de las pestañas: una columna o dos (Info y Récords). */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pf-grid > .profile-card { margin: 0; min-width: 0; }
+@media (max-width: 900px) { .pf-two { grid-template-columns: minmax(0, 1fr); } }
 
 .profile-card {
     background: rgba(var(--l-card, 8, 16, 34), 0.85);

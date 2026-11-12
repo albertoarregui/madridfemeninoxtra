@@ -1,0 +1,57 @@
+---
+// Pestañas de las fichas (entrenador, árbitra, rival y estadio), con el mismo
+// estilo y comportamiento que las de la ficha de jugadora: los paneles son
+// elementos de la página con `data-panel` y la pestaña activa va en `?seccion=`.
+interface Props { tabs: { key: string; label: string }[] }
+const { tabs } = Astro.props;
+const first = tabs[0]?.key ?? "info";
+---
+
+<div class="pt-tabs" role="tablist" aria-label="Secciones de la ficha" data-profile-tabs data-default={first}>
+    {tabs.map((tab, index) => (
+        <button type="button" role="tab" id={`tab-${tab.key}`} class:list={["pt-tab", { "is-active": index === 0 }]}
+            aria-selected={index === 0 ? "true" : "false"} aria-controls={`panel-${tab.key}`} data-tab={tab.key}>
+            {tab.label}
+        </button>
+    ))}
+</div>
+
+<script>
+    function init() {
+        const nav = document.querySelector<HTMLElement>("[data-profile-tabs]");
+        if (!nav || nav.dataset.ready === "true") return;
+        nav.dataset.ready = "true";
+        const first = nav.dataset.default || "info";
+        const tabs = [...nav.querySelectorAll<HTMLElement>("[data-tab]")];
+        const panels = [...document.querySelectorAll<HTMLElement>("[data-panel]")];
+        const show = (key: string, updateUrl: boolean) => {
+            if (!panels.some((p) => p.dataset.panel === key)) key = first;
+            tabs.forEach((tab) => {
+                const active = tab.dataset.tab === key;
+                tab.classList.toggle("is-active", active);
+                tab.setAttribute("aria-selected", String(active));
+                tab.tabIndex = active ? 0 : -1;
+            });
+            panels.forEach((panel) => { panel.hidden = panel.dataset.panel !== key; });
+            // Las gráficas que se dibujan al cargar necesitan recalcular su tamaño.
+            window.dispatchEvent(new Event("resize"));
+            if (updateUrl) {
+                const url = new URL(location.href);
+                if (key === first) url.searchParams.delete("seccion"); else url.searchParams.set("seccion", key);
+                history.replaceState(history.state, "", url);
+            }
+        };
+        tabs.forEach((tab, index) => {
+            tab.addEventListener("click", () => show(tab.dataset.tab || first, true));
+            tab.addEventListener("keydown", (event) => {
+                if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+                const next = tabs[(index + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+                next.focus();
+                show(next.dataset.tab || first, true);
+            });
+        });
+        show(new URLSearchParams(location.search).get("seccion") || first, false);
+    }
+    init();
+    document.addEventListener("astro:page-load", init);
+</script>

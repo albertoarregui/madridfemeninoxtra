@@ -1,0 +1,141 @@
+---
+// Selector con buscador, igual que el de la ficha de jugadora. Cada opción es un
+// enlace al comparador: no hace falta JavaScript para construir la lista, solo
+// para abrir el panel y filtrar por nombre.
+import type { CompareTipo } from "../../utils/entity-compare";
+
+interface Option { slug: string; name: string; img: string; sub: string; contain?: boolean; pj?: number }
+interface Props {
+    tipo: CompareTipo;
+    options: Option[];
+    /** Entidad que muestra el botón. */
+    current: { slug: string; name: string; img: string; contain?: boolean };
+    /** Texto del buscador, en plural: "entrenadores", "árbitras"… */
+    noun: string;
+    /** "ficha": botón + «Comparar»; "a"/"b": cambia ese lado del comparador. */
+    mode?: "ficha" | "a" | "b";
+    /** Slug del otro lado del comparador (modos "a" y "b"). */
+    other?: string;
+}
+
+const { tipo, options, current, noun, mode = "ficha", other = "" } = Astro.props;
+const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const hrefFor = (slug: string) => {
+    if (mode === "ficha") return `/comparador/${tipo}?a=${encodeURIComponent(current.slug)}&b=${encodeURIComponent(slug)}`;
+    const a = mode === "a" ? slug : other;
+    const b = mode === "b" ? slug : other;
+    return `/comparador/${tipo}?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`;
+};
+// En la ficha no se ofrece la propia entidad; en el comparador, tampoco la del otro lado.
+const pool = options.filter((o) => o.slug !== (mode === "ficha" ? current.slug : other));
+const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
+---
+
+<div class:list={["pc-bar", "ep-bar", `ep-mode-${mode}`]} data-entity-picker>
+    <div class="pc-picker">
+        <button type="button" class="pc-trigger" aria-haspopup="listbox" aria-expanded="false" data-picker-trigger>
+            {current.img
+                ? <img src={current.img} alt="" width="34" height="34" decoding="async" class:list={[{ "is-contain": current.contain }]} />
+                : <span class="ep-initials" aria-hidden="true">{initials(current.name)}</span>}
+            <span>{current.name}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        </button>
+        <div class="pc-panel" data-picker-panel hidden>
+            <p class="pc-mode">{mode === "ficha" ? `Comparar ${current.name} con…` : `Cambiar ${current.name} por…`}</p>
+            <label class="pc-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input type="search" placeholder={`Buscar ${noun}...`} aria-label={`Buscar ${noun}`} autocomplete="off" data-picker-search />
+            </label>
+            <div class="pc-list" role="listbox" aria-label={noun}>
+                {pool.map((o) => (
+                    <a class="pc-item" role="option" aria-selected="false" href={hrefFor(o.slug)} data-astro-reload data-name={norm(o.name)}>
+                        <span class:list={["pc-photo", { "is-contain": o.contain }]}>
+                            {o.img
+                                ? <img src={o.img} alt="" width="40" height="40" loading="lazy" decoding="async" onerror="this.remove()" />
+                                : <span class="ep-initials">{initials(o.name)}</span>}
+                        </span>
+                        <span class="pc-text">
+                            <strong>{o.name}</strong>
+                            <small>{[o.sub, o.pj != null ? `${o.pj} PJ` : ""].filter(Boolean).join(" · ")}</small>
+                        </span>
+                    </a>
+                ))}
+                <p class="pc-empty" data-picker-empty hidden>Sin resultados</p>
+            </div>
+        </div>
+    </div>
+    {mode === "ficha" && (
+        <button type="button" class="pc-compare" aria-haspopup="listbox" aria-expanded="false" data-picker-compare>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+            Comparar
+        </button>
+    )}
+</div>
+
+<script>
+    const normalize = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+    function init() {
+        document.querySelectorAll<HTMLElement>("[data-entity-picker]").forEach((root) => {
+            if (root.dataset.ready === "true") return;
+            root.dataset.ready = "true";
+            const trigger = root.querySelector<HTMLButtonElement>("[data-picker-trigger]")!;
+            const compare = root.querySelector<HTMLButtonElement>("[data-picker-compare]");
+            const panel = root.querySelector<HTMLElement>("[data-picker-panel]")!;
+            const search = root.querySelector<HTMLInputElement>("[data-picker-search]")!;
+            const empty = root.querySelector<HTMLElement>("[data-picker-empty]")!;
+            const items = [...root.querySelectorAll<HTMLAnchorElement>(".pc-item")];
+
+            const filter = () => {
+                const q = normalize(search.value);
+                let shown = 0;
+                items.forEach((item) => {
+                    const match = !q || (item.dataset.name || "").includes(q);
+                    item.hidden = !match;
+                    if (match) shown++;
+                });
+                empty.hidden = shown > 0;
+            };
+            const open = (show: boolean) => {
+                panel.hidden = !show;
+                trigger.setAttribute("aria-expanded", String(show));
+                compare?.setAttribute("aria-expanded", String(show));
+                if (show) { search.value = ""; filter(); search.focus(); }
+            };
+            trigger.addEventListener("click", (e) => { e.stopPropagation(); open(panel.hidden); });
+            compare?.addEventListener("click", (e) => { e.stopPropagation(); open(panel.hidden); });
+            search.addEventListener("input", filter);
+            root.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && !panel.hidden) { open(false); trigger.focus(); return; }
+                if (panel.hidden) return;
+                const visible = items.filter((i) => !i.hidden);
+                const index = visible.indexOf(document.activeElement as HTMLAnchorElement);
+                if (e.key === "Enter" && document.activeElement === search && visible[0]) { e.preventDefault(); visible[0].click(); }
+                if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    const next = e.key === "ArrowDown" ? Math.min(visible.length - 1, index + 1) : index - 1;
+                    if (next < 0) search.focus(); else visible[next]?.focus();
+                }
+            });
+            document.addEventListener("click", (e) => { if (!root.contains(e.target as Node)) open(false); });
+        });
+    }
+    init();
+    document.addEventListener("astro:page-load", init);
+</script>
+
+<style is:global>
+    .ep-bar { margin-bottom: 1.1rem; }
+    .ep-bar .pc-trigger img.is-contain, .ep-bar .pc-photo.is-contain img { object-fit: contain; padding: 3px; box-sizing: border-box; background: rgba(255, 255, 255, 0.04); }
+    .ep-bar .pc-item[hidden] { display: none; }
+    .ep-bar .pc-empty[hidden] { display: none; }
+    .ep-initials {
+        display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%;
+        background: rgba(212, 168, 67, 0.14); border: 1px solid rgba(212, 168, 67, 0.45);
+        color: rgb(var(--l-gold, 212, 168, 67)); font: 700 0.72rem/1 'Cinzel', serif;
+    }
+    .pc-photo .ep-initials { width: 100%; height: 100%; border: 0; }
+    .ep-bar .pc-trigger > span:not(.ep-initials) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ep-bar .pc-trigger { max-width: 100%; }
+    .ep-bar .pc-picker { min-width: 0; max-width: 100%; }
+</style>

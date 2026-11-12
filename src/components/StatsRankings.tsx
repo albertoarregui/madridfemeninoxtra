@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Target, Zap, Clock, Shield, Award, Crown, TrendingUp, Activity, Star as LucideStar, ChevronLeft, ChevronRight } from "lucide-react";
 import CustomSelect from "./CustomSelect";
+import MatchRecordsRanking from "./MatchRecordsRanking";
 import {
     expandRankingRows,
     type CompactRankingRow,
@@ -89,6 +90,7 @@ interface AwardData {
 }
 
 interface StatsRankingsProps {
+    initialMode?: string;
     rankingsData: CompactRankingRow[];
     rankingPlayers: RankingPlayerMeta;
     streaksData: StreakData[];
@@ -183,16 +185,27 @@ export default function StatsRankings({
     playerFlagMap = {},
     competitionLogos = {},
     initialType = "goles",
+    initialMode = "total",
 }: StatsRankingsProps) {
+    // «Total acumulado» o «En un partido» (?modo=partido).
+    const [mode, setMode] = useState<"total" | "partido">(initialMode === "partido" ? "partido" : "total");
+    const changeMode = (next: "total" | "partido") => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("estadistica");
+        if (next === "partido") url.searchParams.set("modo", "partido"); else url.searchParams.delete("modo");
+        window.history.replaceState(window.history.state, "", url);
+        setMode(next);
+    };
     const [selectedType, setSelectedType] = useState(
         TYPE_OPTIONS.some((o) => o.value === initialType) ? initialType : "goles",
     );
     // La estadística elegida queda en la URL (?estadistica=) para poder compartirla.
     useEffect(() => {
+        if (mode === "partido") return;
         const url = new URL(window.location.href);
         if (selectedType === "goles") url.searchParams.delete("estadistica"); else url.searchParams.set("estadistica", selectedType);
         window.history.replaceState(window.history.state, "", url);
-    }, [selectedType]);
+    }, [selectedType, mode]);
     const [selectedSeason, setSelectedSeason] = useState("todos");
     const [selectedCompetition, setSelectedCompetition] = useState("oficiales");
     const [currentPage, setCurrentPage] = useState(1);
@@ -517,6 +530,13 @@ export default function StatsRankings({
 
     return (
         <div className="rk">
+            <div className="pt-pills rk-mode" role="tablist" aria-label="Tipo de ranking">
+                <button type="button" role="tab" className={`pt-pill${mode === "total" ? " is-active" : ""}`} aria-selected={mode === "total"} onClick={() => changeMode("total")}>Total acumulado</button>
+                <button type="button" role="tab" className={`pt-pill${mode === "partido" ? " is-active" : ""}`} aria-selected={mode === "partido"} onClick={() => changeMode("partido")}>En un partido</button>
+            </div>
+            {mode === "partido" ? (
+                <MatchRecordsRanking initialStat={initialType} playerImageMap={playerImageMap} playerFlagMap={playerFlagMap} competitionLogos={competitionLogos} />
+            ) : (<>
             <div className="rk-actions">
                 <button type="button" className="squad-download rk-share" onClick={shareStat} disabled={sharing || sortedPlayers.length === 0}>
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
@@ -752,6 +772,7 @@ export default function StatsRankings({
                     </div>
                 ))}
             </div>
+            </>)}
         </div>
     );
 }

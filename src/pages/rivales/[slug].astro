@@ -15,10 +15,16 @@ import type { ImageMetadata } from "astro";
 import { getAssetUrl, getAssetMetadata } from "../../utils/assets";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
+import ProfileTabs from "../../components/profile/ProfileTabs.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import { fetchCompareOptions } from "../../utils/entity-compare";
+import "../../styles/profile-shared.css";
 
 const { slug } = Astro.params;
 
 const allRivals = await fetchRivalsDirectly();
+// Selector para comparar (lista en caché, compartida con /comparador/rivales).
+const compareOptions = await fetchCompareOptions("rivales");
 let rival = allRivals.find((r) => r.slug === slug);
 
 if (!rival) {
@@ -254,6 +260,7 @@ const seoDescription = (rt && rt.pj)
             </div>
 
             <div class="hero-info-col">
+                <EntityPicker tipo="rivales" options={compareOptions} noun="rivales" current={{ slug: slug!, name: rival.nombre, img: rival.shieldUrl || "", contain: true }} />
                 <div class="hero-chips">
                     {flagImage && (
                         <span class="hero-chip hero-chip-gold">
@@ -305,7 +312,17 @@ const seoDescription = (rt && rt.pj)
     </section>
 
     <main class="rival-content">
-        <section class="profile-card mfx-framed" style="margin:0 0 1.25rem;"><span class="mfx-frame" aria-hidden="true"></span>
+        <ProfileTabs tabs={[
+            { key: "info", label: "Info" },
+            { key: "estadisticas", label: "Estadísticas" },
+            { key: "graficas", label: "Gráficas" },
+            { key: "records", label: "Récords" },
+            { key: "historial", label: "Historial" },
+        ]} />
+
+        <div class="pf-grid pf-two pt-panel" id="panel-info" role="tabpanel" data-panel="info">
+<div class="pf-stack">
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
             <h2 class="card-title">{isRealMadrid ? "EL REAL MADRID FEMENINO" : `HISTORIAL CONTRA ${rival.nombre.toUpperCase()}`}</h2>
             <div class="card-body">
                 {ficha ? (
@@ -315,11 +332,7 @@ const seoDescription = (rt && rt.pj)
                 )}
             </div>
         </section>
-        <div class="rival-grid">
-
-            <div class="left-column">
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">
                         {isRealMadrid ? "FICHA DEL REAL MADRID" : `FICHA DE RIVAL`}
                     </h2>
@@ -354,8 +367,35 @@ const seoDescription = (rt && rt.pj)
                         </div>
                     </div>
                 </section>
+</div>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                    <h2 class="card-title">ESTADIO</h2>
+                    <div class="card-body" style="padding:0;">
+                        <div class="stadium-photo">
+                            {stadiumImageSrc ? (
+                                <img
+                                    src={stadiumImageSrc}
+                                    alt={`Estadio ${rival.estadio}`}
+                                    class="stadium-img"
+                                />
+                            ) : (
+                                <div class="photo-placeholder">
+                                    <span>Foto no disponible</span>
+                                </div>
+                            )}
+                        </div>
+                        {rival.estadio && (
+                            <div class="info-row" style="padding:0.6rem 1.25rem;">
+                                <span class="info-label">Estadio</span>
+                                <span class="info-value">{rival.estadio}</span>
+                            </div>
+                        )}
+                    </div>
+                </section>
+        </div>
 
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-estadisticas" role="tabpanel" data-panel="estadisticas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">
                         {isRealMadrid
                             ? "ESTADÍSTICAS DEL REAL MADRID"
@@ -428,8 +468,10 @@ const seoDescription = (rt && rt.pj)
                         </div>
                     </div>
                 </section>
+        </div>
 
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-graficas" role="tabpanel" data-panel="graficas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">GRÁFICAS</h2>
                     <div class="card-body" style="padding:1.25rem;">
                         <div class="filters-container">
@@ -544,102 +586,10 @@ const seoDescription = (rt && rt.pj)
                         </div>
                     </div>
                 </section>
+        </div>
 
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="card-title">
-                        {isRealMadrid
-                            ? "TODOS LOS PARTIDOS DISPUTADOS POR EL REAL MADRID"
-                            : `TODOS LOS PARTIDOS CONTRA ${rival.nombre}`}
-                    </h2>
-                    <div class="card-body" style="padding:0;">
-                        <div class="table-wrapper">
-                            <table class="matches-table">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Competición</th>
-                                        <th>En</th>
-                                        <th>Res.</th>
-                                        <th>Árbitra</th>
-                                        <th>Estadio</th>
-                                        <th>Asist.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rivalMatches.length > 0 ? (
-                                        rivalMatches.map((match: any, index: number) => {
-                                            const golesRM = parseInt(match.golesRM) || 0;
-                                            const golesRival = parseInt(match.golesRival) || 0;
-                                            let resultClass = "";
-                                            if (golesRM > golesRival) {
-                                                resultClass = "resultado-victoria";
-                                            } else if (golesRM === golesRival) {
-                                                resultClass = "resultado-empate";
-                                            } else {
-                                                resultClass = "resultado-derrota";
-                                            }
-                                            return (
-                                                <tr class={`match-row ${index >= 5 ? "hidden-match" : ""}`}>
-                                                    <td>{new Date(match.fecha).toLocaleDateString("es-ES")}</td>
-                                                    <td>{competitionDisplayName(match.competicion, { idTemporada: match.id_temporada })}</td>
-                                                    <td>{match.ubicacion}</td>
-                                                    <td class={resultClass}>{match.resultado}</td>
-                                                    <td>{match.arbitra}</td>
-                                                    <td>{match.estadio}</td>
-                                                    <td>{match.asistencia || "-"}</td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td colspan="7" style="text-align:center;padding:2rem;color:rgba(var(--l-muted, 150, 160, 175), 0.5);font-style:italic;">
-                                                No hay partidos registrados
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                        {rivalMatches.length > 5 && (
-                            <div class="matches-footer">
-                                <button id="show-more-matches" class="btn-more">
-                                    Ver todos los partidos ({rivalMatches.length})
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-            </div>
-
-            <div class="right-column">
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="card-title">ESTADIO</h2>
-                    <div class="card-body" style="padding:0;">
-                        <div class="stadium-photo">
-                            {stadiumImageSrc ? (
-                                <img
-                                    src={stadiumImageSrc}
-                                    alt={`Estadio ${rival.estadio}`}
-                                    class="stadium-img"
-                                />
-                            ) : (
-                                <div class="photo-placeholder">
-                                    <span>Foto no disponible</span>
-                                </div>
-                            )}
-                        </div>
-                        {rival.estadio && (
-                            <div class="info-row" style="padding:0.6rem 1.25rem;">
-                                <span class="info-label">Estadio</span>
-                                <span class="info-value">{rival.estadio}</span>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid pf-three pt-panel" id="panel-records" role="tabpanel" data-panel="records" hidden>
+<section class="profile-card pf-full mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">RÉCORDS</h2>
                     <div class="card-body" style="padding:0;">
                         <div class="records-grid-header">
@@ -724,8 +674,7 @@ const seoDescription = (rt && rt.pj)
                         </div>
                     </div>
                 </section>
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">MÁXIMAS GOLEADORAS</h2>
                     <div class="card-body" style="padding:0;">
                         {topPlayersData.topScorers.length > 0 ? (
@@ -741,8 +690,7 @@ const seoDescription = (rt && rt.pj)
                         )}
                     </div>
                 </section>
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">MÁS ASISTENTES</h2>
                     <div class="card-body" style="padding:0;">
                         {topPlayersData.topAssisters.length > 0 ? (
@@ -758,8 +706,7 @@ const seoDescription = (rt && rt.pj)
                         )}
                     </div>
                 </section>
-
-                <section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">MÁS GOLES GENERADOS (G+A)</h2>
                     <div class="card-body" style="padding:0;">
                         {topPlayersData.topContributors.length > 0 ? (
@@ -775,9 +722,75 @@ const seoDescription = (rt && rt.pj)
                         )}
                     </div>
                 </section>
-
-            </div>
         </div>
+
+        <div class="pf-grid  pt-panel" id="panel-historial" role="tabpanel" data-panel="historial" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                    <h2 class="card-title">
+                        {isRealMadrid
+                            ? "TODOS LOS PARTIDOS DISPUTADOS POR EL REAL MADRID"
+                            : `TODOS LOS PARTIDOS CONTRA ${rival.nombre}`}
+                    </h2>
+                    <div class="card-body" style="padding:0;">
+                        <div class="table-wrapper">
+                            <table class="matches-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Competición</th>
+                                        <th>En</th>
+                                        <th>Res.</th>
+                                        <th>Árbitra</th>
+                                        <th>Estadio</th>
+                                        <th>Asist.</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rivalMatches.length > 0 ? (
+                                        rivalMatches.map((match: any, index: number) => {
+                                            const golesRM = parseInt(match.golesRM) || 0;
+                                            const golesRival = parseInt(match.golesRival) || 0;
+                                            let resultClass = "";
+                                            if (golesRM > golesRival) {
+                                                resultClass = "resultado-victoria";
+                                            } else if (golesRM === golesRival) {
+                                                resultClass = "resultado-empate";
+                                            } else {
+                                                resultClass = "resultado-derrota";
+                                            }
+                                            return (
+                                                <tr class={`match-row ${index >= 5 ? "hidden-match" : ""}`}>
+                                                    <td>{new Date(match.fecha).toLocaleDateString("es-ES")}</td>
+                                                    <td>{competitionDisplayName(match.competicion, { idTemporada: match.id_temporada })}</td>
+                                                    <td>{match.ubicacion}</td>
+                                                    <td class={resultClass}>{match.resultado}</td>
+                                                    <td>{match.arbitra}</td>
+                                                    <td>{match.estadio}</td>
+                                                    <td>{match.asistencia || "-"}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colspan="7" style="text-align:center;padding:2rem;color:rgba(var(--l-muted, 150, 160, 175), 0.5);font-style:italic;">
+                                                No hay partidos registrados
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        {rivalMatches.length > 5 && (
+                            <div class="matches-footer">
+                                <button id="show-more-matches" class="btn-more">
+                                    Ver todos los partidos ({rivalMatches.length})
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </section>
+        </div>
+
     </main>
 </Layout>
 
@@ -1086,6 +1099,15 @@ const seoDescription = (rt && rt.pj)
 </script>
 
 <style>
+/* Paneles de las pestañas: una columna, dos (Info) o tres (protagonistas). */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pf-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pf-stack { display: grid; gap: 1.25rem; align-content: start; min-width: 0; }
+.pf-grid > .profile-card, .pf-stack > .profile-card { margin: 0 !important; min-width: 0; }
+.pf-full { grid-column: 1 / -1; }
+@media (max-width: 900px) { .pf-two, .pf-three { grid-template-columns: minmax(0, 1fr); } }
+
 .rival-hero {
     width: 100%;
     min-height: 52vh;

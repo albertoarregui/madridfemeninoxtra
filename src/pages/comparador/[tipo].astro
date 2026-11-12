@@ -1,0 +1,137 @@
+---
+// Comparador de entrenadores, árbitras, rivales y estadios: dos selectores y
+// barras enfrentadas por métrica. Los datos salen de una sola consulta por tipo
+// guardada en caché (src/utils/entity-compare.ts).
+import Layout from "../../layouts/Layout.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import "../../styles/profile-shared.css";
+import {
+    COMPARE_CONFIG,
+    fetchCompareEntities,
+    isCompareTipo,
+    type CompareMetric,
+} from "../../utils/entity-compare";
+
+const { tipo } = Astro.params;
+if (!isCompareTipo(tipo)) return Astro.redirect("/comparador", 302);
+
+const config = COMPARE_CONFIG[tipo];
+const entities = await fetchCompareEntities(tipo);
+if (entities.length < 2) return Astro.redirect("/comparador", 302);
+
+const find = (slug: string | null) => (slug ? entities.find((e) => e.slug === slug) : undefined);
+// Sin parámetros se comparan los dos con más partidos.
+let a = find(Astro.url.searchParams.get("a")) ?? entities[0];
+let b = find(Astro.url.searchParams.get("b")) ?? entities.find((e) => e.slug !== a.slug)!;
+if (a.slug === b.slug) b = entities.find((e) => e.slug !== a.slug)!;
+
+const options = entities.map(({ slug, name, img, sub, contain, values }) => ({ slug, name, img, sub, contain, pj: values.pj }));
+const noun = config.plural;
+
+const fmt = (m: CompareMetric, v: number) =>
+    m.format === "pct" ? `${v.toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`
+    : m.format === "dec" ? v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : v.toLocaleString("es-ES");
+
+const rows = config.groups.map((group) => ({
+    title: group.title,
+    metrics: group.metrics.map((m) => {
+        const va = a.values[m.key] ?? 0;
+        const vb = b.values[m.key] ?? 0;
+        const max = Math.max(Math.abs(va), Math.abs(vb)) || 1;
+        const winner = m.better === "none" || va === vb ? "" : (m.better === "high" ? (va > vb ? "a" : "b") : (va < vb ? "a" : "b"));
+        return { ...m, va, vb, wa: (Math.abs(va) / max) * 100, wb: (Math.abs(vb) / max) * 100, winner };
+    }),
+}));
+
+const profileHref = (slug: string) => `/${tipo}/${slug}`;
+const title = `${config.title}: ${a.name} vs ${b.name} | Madrid Femenino Xtra`;
+const description = `Compara a ${a.name} y ${b.name} en sus partidos con el Real Madrid Femenino: resultados, goles y más estadísticas, una al lado de la otra.`;
+---
+
+<Layout title={title} description={description} noindex={Astro.url.searchParams.has("a") || Astro.url.searchParams.has("b")}>
+    <main class="ec">
+        <header class="page-header-container">
+            <h1 class="landing-title">{config.title.toUpperCase()}</h1>
+            <p class="landing-subtitle">Elige dos {noun} y compara sus números con el Real Madrid Femenino</p>
+        </header>
+
+        <section class="ec-pickers" aria-label="Selección">
+            <div class="ec-side">
+                <EntityPicker tipo={tipo} options={options} current={a} noun={noun} mode="a" other={b.slug} />
+                <a class="ec-profile" href={profileHref(a.slug)}>Ver ficha →</a>
+            </div>
+            <a class="ec-swap" href={`/comparador/${tipo}?a=${encodeURIComponent(b.slug)}&b=${encodeURIComponent(a.slug)}`} data-astro-reload aria-label="Intercambiar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>
+            </a>
+            <div class="ec-side is-b">
+                <EntityPicker tipo={tipo} options={options} current={b} noun={noun} mode="b" other={a.slug} />
+                <a class="ec-profile" href={profileHref(b.slug)}>Ver ficha →</a>
+            </div>
+        </section>
+
+        {rows.map((group) => (
+            <section class="ec-card mfx-corners">
+                <h2 class="ec-title">{group.title}</h2>
+                <ul class="ec-rows">
+                    {group.metrics.map((m) => (
+                        <li class="ec-row">
+                            <span class="ec-head">
+                                <span class:list={["ec-val", { "is-best": m.winner === "a" }]}>{fmt(m, m.va)}</span>
+                                <span class="ec-label">{m.label}</span>
+                                <span class:list={["ec-val", "is-b", { "is-best": m.winner === "b" }]}>{fmt(m, m.vb)}</span>
+                            </span>
+                            <span class="ec-bar is-a" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "a" }]} style={`width:${m.wa}%`}></i></span>
+                            <span class="ec-bar is-b" aria-hidden="true"><i class:list={[{ "is-best": m.winner === "b" }]} style={`width:${m.wb}%`}></i></span>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        ))}
+
+        <p class="ec-note">Datos de los partidos oficiales y amistosos ya disputados con el Real Madrid Femenino.</p>
+    </main>
+</Layout>
+
+<style>
+    .ec { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; box-sizing: border-box; }
+    .ec-pickers { position: relative; z-index: 30; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 1rem; margin-bottom: 1.5rem; }
+    .ec-side { display: grid; justify-items: start; gap: 0.35rem; min-width: 0; }
+    .ec-side.is-b { justify-items: end; }
+    .ec-side :global(.pc-bar) { margin: 0; max-width: 100%; }
+    .ec-side.is-b :global(.pc-panel) { left: auto; right: 0; }
+    .ec-profile { padding-inline: 0.6rem; font-size: 0.75rem; color: rgba(var(--l-gold, 212, 168, 67), 0.85); text-decoration: none; }
+    .ec-profile:hover { color: rgb(var(--l-gold, 230, 199, 124)); }
+    .ec-swap { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin-top: 0.3rem; border: 1px solid rgba(212, 168, 67, 0.4); border-radius: 50%; background: rgba(var(--l-bg, 5, 9, 19), 0.7); }
+    .ec-swap svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ec-swap:hover { border-color: #e3bf65; background: rgba(212, 168, 67, 0.08); }
+
+    .ec-card { margin-bottom: 1.25rem; padding: 1.25rem 1.5rem; border: 1px solid transparent; border-radius: 16px; background: rgba(var(--l-card, 8, 16, 34), 0.88); box-shadow: 0 18px 46px rgba(0, 0, 0, 0.3); }
+    .ec-title { margin: 0 0 0.9rem; text-align: center; font: 700 0.85rem/1 'Cinzel', serif; letter-spacing: 0.18em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+    .ec-rows { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.85rem; }
+    /* Cabecera (valor · métrica · valor) y debajo dos barras de igual ancho. */
+    .ec-row { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "head head" "ba bb"; column-gap: 0.75rem; row-gap: 0.35rem; }
+    .ec-head { grid-area: head; display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+    .ec-val { flex: 0 0 auto; font: 800 1.05rem/1 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+    .ec-val.is-best { color: rgb(var(--l-gold, 230, 199, 124)); }
+    .ec-label { flex: 1 1 auto; min-width: 0; text-align: center; font-size: 0.78rem; color: rgba(var(--l-ink, 200, 210, 220), 0.7); }
+    .ec-bar { height: 6px; border-radius: 999px; background: rgba(var(--l-hi, 255, 255, 255), 0.06); overflow: hidden; display: flex; }
+    .ec-bar.is-a { grid-area: ba; justify-content: flex-end; }
+    .ec-bar.is-b { grid-area: bb; }
+    .ec-bar i { display: block; height: 100%; border-radius: inherit; background: rgba(var(--l-ink, 200, 210, 220), 0.35); }
+    .ec-bar i.is-best { background: linear-gradient(90deg, #c99a35, #e3bf65); }
+    .ec-note { margin: 1.5rem 0 0; text-align: center; font-size: 0.75rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
+
+    @media (max-width: 640px) {
+        .ec { padding-inline: 1rem; }
+        .ec-pickers { grid-template-columns: minmax(0, 1fr); justify-items: stretch; }
+        .ec-side, .ec-side.is-b { justify-items: stretch; }
+        .ec-side :global(.pc-bar), .ec-side :global(.pc-picker), .ec-side :global(.pc-trigger) { width: 100%; }
+        .ec-side.is-b .ec-profile { justify-self: end; }
+        .ec-side :global(.pc-trigger > span:not(.ep-initials)) { flex: 1; text-align: left; }
+        .ec-swap { justify-self: center; margin: 0; transform: rotate(90deg); }
+        .ec-card { padding: 1rem; }
+        .ec-val { font-size: 0.95rem; }
+        .ec-label { font-size: 0.72rem; }
+    }
+</style>

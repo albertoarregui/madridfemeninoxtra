@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Activity, Search, X } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 
 interface Noticia {
@@ -20,8 +21,17 @@ interface NewsArchiveProps {
 
 const PAGE_SIZE = 10;
 
+// La temporada va de julio a junio: una noticia de octubre de 2025 es de la 2025/26.
+const seasonOf = (n: Noticia) => {
+    const d = new Date(n.publishDate || n.createdAt || n.updatedAt || '');
+    if (Number.isNaN(d.getTime())) return '';
+    const start = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+    return `${start}/${String((start + 1) % 100).padStart(2, '0')}`;
+};
+
 const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     const [selectedCategory, setSelectedCategory] = useState<string>('TODAS');
+    const [selectedSeason, setSelectedSeason] = useState<string>('todas');
     const [searchQuery, setSearchQuery] = useState('');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement>(null);
@@ -35,10 +45,18 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
         return cats;
     }, [noticias]);
 
+    const seasons = useMemo(
+        () => Array.from(new Set(noticias.map(seasonOf).filter(Boolean))).sort().reverse(),
+        [noticias],
+    );
+
     const filteredNoticias = useMemo(() => {
         let result = noticias;
         if (selectedCategory && selectedCategory !== 'TODAS') {
             result = result.filter(n => (n.category || 'ACTUALIDAD').toUpperCase() === selectedCategory);
+        }
+        if (selectedSeason !== 'todas') {
+            result = result.filter(n => seasonOf(n) === selectedSeason);
         }
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
@@ -48,14 +66,14 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
             );
         }
         return result;
-    }, [noticias, selectedCategory, searchQuery]);
+    }, [noticias, selectedCategory, selectedSeason, searchQuery]);
 
     const visibleNoticias = filteredNoticias.slice(0, visibleCount);
     const hasMore = visibleCount < filteredNoticias.length;
 
     useEffect(() => {
         setVisibleCount(PAGE_SIZE);
-    }, [selectedCategory, searchQuery]);
+    }, [selectedCategory, selectedSeason, searchQuery]);
 
     useEffect(() => {
         const el = sentinelRef.current;
@@ -73,7 +91,7 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
     }, [visibleCount, hasMore]);
 
     const handleCategoryChange = (cat: string) => {
-        setSelectedCategory(prev => prev === cat ? 'TODAS' : cat);
+        setSelectedCategory(cat);
     };
 
     const handleSearch = (q: string) => {
@@ -101,18 +119,22 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-3 mb-12 px-2">
-                {categories.map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => handleCategoryChange(cat)}
-                        style={selectedCategory === cat
-                            ? { background: '#d4a843', borderColor: '#d4a843', color: '#060d1c', border: '1px solid #d4a843', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }
-                            : { background: 'transparent', borderColor: 'rgba(212,168,67,0.25)', color: 'rgba(var(--l-gold, 212, 168, 67), 0.65)', border: '1px solid rgba(212,168,67,0.25)', borderRadius: '50px', padding: '0.4rem 1.2rem', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', letterSpacing: '0.2em', textTransform: 'uppercase' as const, cursor: 'pointer', transition: 'all 0.2s ease' }}
-                    >
-                        {cat}
-                    </button>
-                ))}
+            {/* Categorías con las mismas píldoras que el filtro de competiciones; temporada en desplegable. */}
+            <div className="news-filters">
+                <div className="pt-pills" role="group" aria-label="Categoría">
+                    {['TODAS', ...categories].map(cat => (
+                        <button key={cat} type="button" className={`pt-pill${selectedCategory === cat ? ' is-active' : ''}`}
+                            aria-pressed={selectedCategory === cat} onClick={() => handleCategoryChange(cat)}>
+                            {cat === 'TODAS' ? 'Todas' : cat.charAt(0) + cat.slice(1).toLowerCase()}
+                        </button>
+                    ))}
+                </div>
+                <CustomSelect
+                    id="news-season"
+                    options={[{ value: 'todas', label: 'Todas las temporadas' }, ...seasons.map(s => ({ value: s, label: s }))]}
+                    value={selectedSeason}
+                    onChange={setSelectedSeason}
+                />
             </div>
 
             <div className="news-list-container flex flex-col gap-8 mb-16">
@@ -160,6 +182,15 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
+                .news-filters { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin: 0 auto 3rem; max-width: 100%; }
+                .news-filters > .pt-pills { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+                .news-filters > .pt-pills::-webkit-scrollbar { display: none; }
+                .news-filters > .custom-select-container { flex: 0 0 auto; min-width: 210px; width: auto; margin: 0; }
+                @media (max-width: 760px) {
+                    .news-filters { flex-direction: column; align-items: stretch; margin-bottom: 2rem; }
+                    .news-filters > .pt-pills { border-radius: 999px; }
+                    .news-filters > .custom-select-container { width: 100%; }
+                }
                 .archive-card {
                     display: block;
                     background: rgba(212,168,67,0.14);

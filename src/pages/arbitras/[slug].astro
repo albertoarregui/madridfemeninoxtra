@@ -14,6 +14,10 @@ import { getAssetUrl } from "../../utils/assets";
 import { getFlagSrc } from "../../utils/flags";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
+import ProfileTabs from "../../components/profile/ProfileTabs.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import { fetchCompareOptions } from "../../utils/entity-compare";
+import "../../styles/profile-shared.css";
 
 const competitionLogos: Record<string, string> = {
     "Liga F": getAssetUrl("competiciones", "liga_f.png"),
@@ -29,6 +33,8 @@ const competitionLogos: Record<string, string> = {
 const { slug } = Astro.params;
 const referees = await fetchRefereesDirectly();
 const referee = referees.find((r) => generateSlug(r.nombre) === slug);
+// Selector para comparar (lista en caché, compartida con /comparador/arbitras).
+const compareOptions = await fetchCompareOptions("arbitras");
 
 if (!referee) {
     return Astro.redirect("/404");
@@ -273,6 +279,7 @@ const seoDescription = totalStats.pj
             </div>
 
             <div class="hero-info-col">
+                <EntityPicker tipo="arbitras" options={compareOptions} noun="árbitras" current={{ slug: slug!, name: referee.nombre, img: referee.foto_url ? (referee.foto_url.startsWith("http") ? referee.foto_url : `https://media.madridfemeninoxtra.com${referee.foto_url}`) : "" }} />
                 <div class="hero-chips">
                     <span class="hero-chip hero-chip-gold">♦ Árbitra ♦</span>
                     {referee.iso && (
@@ -319,9 +326,15 @@ const seoDescription = totalStats.pj
     </section>
 
     <main class="referee-content">
-        <div class="content-grid">
+        <ProfileTabs tabs={[
+            { key: "info", label: "Info" },
+            { key: "estadisticas", label: "Estadísticas" },
+            { key: "graficas", label: "Gráficas" },
+            { key: "historial", label: "Historial" },
+        ]} />
 
-            <section class="profile-card full-col mfx-framed" style="margin-bottom:0;"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid pf-two pt-panel" id="panel-info" role="tabpanel" data-panel="info">
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">SOBRE {referee.nombre.toUpperCase()}</h2>
                 <div class="card-body">
                     {ficha ? (
@@ -331,8 +344,7 @@ const seoDescription = totalStats.pj
                 )}
                 </div>
             </section>
-
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">FICHA DE {referee.nombre.toUpperCase()}</h2>
                 <div class="card-body">
                     <div class="info-row">
@@ -394,8 +406,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-estadisticas" role="tabpanel" data-panel="estadisticas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">ESTADÍSTICAS POR TEMPORADA</h2>
                 <div class="card-body" style="padding:0;">
                     <div class="stats-table-wrapper">
@@ -501,8 +515,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-graficas" role="tabpanel" data-panel="graficas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">GRÁFICAS</h2>
                 <div class="card-body">
                     <div class="filters-container">
@@ -592,8 +608,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-historial" role="tabpanel" data-panel="historial" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">PARTIDOS DIRIGIDOS</h2>
                 <div class="card-body" style="padding:0;">
                     <div class="stats-table-wrapper">
@@ -645,8 +663,8 @@ const seoDescription = totalStats.pj
                     )}
                 </div>
             </section>
-
         </div>
+
     </main>
 </Layout>
 
@@ -852,6 +870,15 @@ const seoDescription = totalStats.pj
 </script>
 
 <style>
+/* Paneles de las pestañas: una columna, dos (Info) o tres (protagonistas). */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pf-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pf-stack { display: grid; gap: 1.25rem; align-content: start; min-width: 0; }
+.pf-grid > .profile-card, .pf-stack > .profile-card { margin: 0 !important; min-width: 0; }
+.pf-full { grid-column: 1 / -1; }
+@media (max-width: 900px) { .pf-two, .pf-three { grid-template-columns: minmax(0, 1fr); } }
+
 .referee-hero {
     width: 100%;
     background: linear-gradient(to bottom, rgba(var(--l-bg, 3, 7, 18), 0.98) 0%, rgba(var(--l-bg, 6, 13, 28), 0.95) 100%);

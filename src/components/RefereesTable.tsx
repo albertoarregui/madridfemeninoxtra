@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 import { getFlagSrc } from '../utils/flags';
 
@@ -7,9 +6,9 @@ function generateSlug(text: string | null | undefined): string {
     if (!text) return 'desconocido';
     return text.toString().toLowerCase()
         .trim()
-        .replace(/\u00f8/g, 'o').replace(/\u00d8/g, 'O')
-        .replace(/\u00f6/g, 'o').replace(/\u00d6/g, 'O')
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/ø/g, 'o').replace(/Ø/g, 'O')
+        .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+        .normalize("NFD").replace(/[̀-ͯ]/g, "")
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9\-]+/g, '')
         .replace(/\-\-+/g, '-')
@@ -21,24 +20,17 @@ interface Referee {
     nombre: string;
     foto_url: string | null;
     iso: string | null;
+    colegio?: string | null;
+    pais_origen?: string | null;
     stats: {
         played: number;
         wins: number;
         draws: number;
         losses: number;
-        winPct: string;
-        drawPct: string;
-        lossPct: string;
-        penaltiesFor: number;
-        penaltiesAgainst: number;
         yellowCards: number;
         redCards: number;
         yellowCardsAgainst: number;
         redCardsAgainst: number;
-        foulsCommitted: number;
-        foulsReceived: number;
-        foulsCommittedAvg: string;
-        foulsReceivedAvg: string;
     };
 }
 
@@ -46,244 +38,112 @@ interface RefereesTableProps {
     referees: Referee[];
 }
 
+const photoSrc = (url: string | null) =>
+    url ? (url.startsWith('http') ? url : `https://media.madridfemeninoxtra.com${url}`) : '';
+
+const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+
+// Tarjetas con el mismo diseño que las de rivales y estadios.
 const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
-    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'stats.played', direction: 'desc' });
-
-    const sortedReferees = useMemo(() => {
-        let sortableItems = [...referees];
-        if (sortConfig !== null) {
-            sortableItems.sort((a, b) => {
-                const getValue = (item: any, path: string) => {
-                    return path.split('.').reduce((o, i) => (o ? o[i] : undefined), item);
-                };
-
-                let aValue = getValue(a, sortConfig.key);
-                let bValue = getValue(b, sortConfig.key);
-
-                if (typeof aValue === 'string' && sortConfig.key.includes('Pct')) {
-                    aValue = parseFloat(aValue);
-                    bValue = parseFloat(bValue);
-                }
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    }, [referees, sortConfig]);
-
-    const requestSort = (key: string) => {
-        let direction: 'asc' | 'desc' = 'desc';
-        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
-            direction = 'asc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIcon = (key: string) => {
-        if (!sortConfig || sortConfig.key !== key) {
-            return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" style={{ color: 'rgba(var(--l-gold, 212, 168, 67), 0.6)' }} />;
-        }
-        return sortConfig.direction === 'asc'
-            ? <ArrowUp className="w-3 h-3 ml-1 text-yellow-400" />
-            : <ArrowDown className="w-3 h-3 ml-1 text-yellow-400" />;
-    };
-
-    const SortableHeader = ({ label, sortKey, align = 'center', className = '' }: { label: string, sortKey: string, align?: 'left' | 'center' | 'right', className?: string }) => (
-        <th
-            className={`py-4 px-4 font-bold cursor-pointer transition-colors select-none ${className}`}
-            style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-            onMouseLeave={e => (e.currentTarget.style.background = '')}
-            onClick={() => requestSort(sortKey)}
-        >
-            <div className={`flex items-center ${align === 'center' ? 'justify-center' : align === 'right' ? 'justify-end' : 'justify-start'}`}>
-                {label}
-                {getSortIcon(sortKey)}
-            </div>
-        </th>
+    const sorted = useMemo(
+        () => [...referees].sort((a, b) => b.stats.played - a.stats.played || a.nombre.localeCompare(b.nombre, 'es')),
+        [referees],
     );
 
     return (
-        <div className="w-full max-w-7xl mx-auto overflow-hidden mb-10" style={{ borderRadius: '8px', border: '1px solid rgba(212,168,67,0.2)', background: 'rgba(var(--l-bg, 6, 13, 28), 0.95)' }}>
-            <div className="overflow-x-auto referees-scrollbar">
-                <table className="referees-table w-full border-collapse text-left min-w-[800px]">
-                    <thead>
-                        <tr className="text-xs font-bold whitespace-nowrap" style={{ background: 'rgba(212,168,67,0.08)', borderBottom: '1px solid rgba(212,168,67,0.15)' }}>
-                            <th className="ref-rank-col sticky left-0 z-30 py-3 px-2 text-center w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)', background: 'rgba(212,168,67,0.08)', borderRight: '1px solid rgba(212,168,67,0.1)' }}>
-                                #
-                            </th>
-                            <SortableHeader
-                                sortKey="nombre"
-                                label="Árbitra"
-                                className="ref-name-col sticky left-[50px] z-30 shadow-[5px_0_10px_rgba(0,0,0,0.3)] min-w-[200px]"
-                                align="left"
-                            />
+        <div className="referees-card-grid">
+            {sorted.map((referee) => {
+                const photo = photoSrc(referee.foto_url);
+                const yellows = referee.stats.yellowCards + referee.stats.yellowCardsAgainst;
+                const reds = referee.stats.redCards + referee.stats.redCardsAgainst;
+                return (
+                    <a className="referee-card mfx-link-card" href={`/arbitras/${generateSlug(referee.nombre)}`} key={referee.id_arbitra}><span className="mfx-spin" aria-hidden="true" />
+                        <div className="referee-card__photo">
+                            {photo ? (
+                                <img src={photo} alt={`Foto de ${referee.nombre}`} loading="lazy"
+                                    onError={(event) => { event.currentTarget.style.display = 'none'; (event.currentTarget.nextElementSibling as HTMLElement | null)?.removeAttribute('hidden'); }} />
+                            ) : null}
+                            <span className="referee-card__initials" hidden={Boolean(photo)}>{initials(referee.nombre)}</span>
+                            <span className="referee-card__played"><strong>{referee.stats.played}</strong> PJ</span>
+                        </div>
 
-                            <th className="py-3 px-2 text-center min-w-[60px]"
-                                style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em', color: 'rgba(var(--l-gold, 212, 168, 67), 0.75)' }}>
-                                País
-                            </th>
+                        <div className="referee-card__body">
+                            <h3>{referee.nombre}</h3>
+                            <p>
+                                {referee.iso && <img src={getFlagSrc(referee.iso)} alt="" loading="lazy" />}
+                                <span>{referee.colegio || referee.pais_origen || 'Árbitra'}</span>
+                            </p>
 
-                            <SortableHeader sortKey="stats.played" label="PJ" />
-
-                            <SortableHeader sortKey="stats.wins" label="V" className="" />
-                            <SortableHeader sortKey="stats.winPct" label="% V" className="" />
-
-                            <SortableHeader sortKey="stats.draws" label="E" className="" />
-                            <SortableHeader sortKey="stats.drawPct" label="% E" className="" />
-
-                            <SortableHeader sortKey="stats.losses" label="D" className="" />
-                            <SortableHeader sortKey="stats.lossPct" label="% D" className="" />
-
-                            <SortableHeader sortKey="stats.penaltiesFor" label="P. Fav" className="text-blue-400" />
-                            <SortableHeader sortKey="stats.penaltiesAgainst" label="P. Con" className="text-orange-400" />
-
-                            <SortableHeader sortKey="stats.yellowCards" label="TA F" className="text-yellow-400" />
-                            <SortableHeader sortKey="stats.yellowCardsAgainst" label="TA C" className="text-orange-400" />
-
-                            <SortableHeader sortKey="stats.redCards" label="TR F" className="" />
-                            <SortableHeader sortKey="stats.redCardsAgainst" label="TR C" className="" />
-
-                            <SortableHeader sortKey="stats.foulsCommittedAvg" label="FC/PJ" />
-                            <SortableHeader sortKey="stats.foulsReceivedAvg" label="FR/PJ" />
-                        </tr>
-                    </thead>
-                    <tbody className="text-sm" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                        {sortedReferees.map((referee, index) => (
-                            <tr
-                                key={referee.id_arbitra}
-                                className="transition-colors group"
-                                style={{ borderBottom: '1px solid rgba(212,168,67,0.08)' }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,67,0.06)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = '')}
-                            >
-                                <td className="ref-rank-col sticky left-0 z-20 py-3 px-2 text-center font-mono w-[50px] min-w-[50px] shadow-[2px_0_5px_rgba(0,0,0,0.3)]"
-                                    style={{ color: 'rgba(var(--l-gold, 212, 168, 67), 0.55)', background: 'rgba(var(--l-bg, 6, 13, 28), 0.98)', borderRight: '1px solid rgba(212,168,67,0.08)' }}>
-                                    {index + 1}
-                                </td>
-                                <td className="ref-name-col sticky left-[50px] z-20 py-3 px-3 font-bold shadow-[5px_0_10px_rgba(0,0,0,0.3)] truncate min-w-[200px]"
-                                    style={{ background: 'rgba(var(--l-bg, 6, 13, 28), 0.98)', borderRight: '1px solid rgba(212,168,67,0.08)', color: 'rgb(var(--l-ink, 240, 240, 240))' }}
-                                    title={referee.nombre}>
-                                    <a href={`/arbitras/${generateSlug(referee.nombre)}`}
-                                        className="transition-colors whitespace-normal break-words leading-tight block"
-                                        style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}
-                                        onMouseEnter={e => (e.currentTarget.style.color = '#d4a843')}
-                                        onMouseLeave={e => (e.currentTarget.style.color = '#f0f0f0')}>
-                                        {referee.nombre}
-                                    </a>
-                                </td>
-
-                                <td className="py-3 px-2 text-center">
-                                    {referee.iso ? (
-                                        <img
-                                            src={getFlagSrc(referee.iso)}
-                                            alt={referee.iso}
-                                            className="w-6 h-auto mx-auto shadow-sm rounded-sm"
-                                            title={referee.iso}
-                                        />
-                                    ) : '-'}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.played}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-green, 74, 222, 128), 0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {referee.stats.wins}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-green, 74, 222, 128), 0.9)', background: 'rgba(74,222,128,0.06)' }}>
-                                    {referee.stats.winPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-muted, 148, 163, 184), 0.8)', background: 'rgba(var(--l-muted, 148, 163, 184), 0.06)' }}>
-                                    {referee.stats.draws}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-muted, 148, 163, 184), 0.8)', background: 'rgba(var(--l-muted, 148, 163, 184), 0.06)' }}>
-                                    {referee.stats.drawPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgba(var(--l-red, 248, 113, 113), 0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {referee.stats.losses}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgba(var(--l-red, 248, 113, 113), 0.85)', background: 'rgba(248,113,113,0.06)' }}>
-                                    {referee.stats.lossPct}%
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold text-blue-400" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.penaltiesFor}
-                                </td>
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.penaltiesAgainst}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold text-yellow-400">
-                                    {referee.stats.yellowCards}
-                                </td>
-                                <td className="py-3 px-2 text-center font-bold text-orange-400">
-                                    {referee.stats.yellowCardsAgainst}
-                                </td>
-
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.redCards}
-                                </td>
-                                <td className="py-3 px-2 text-center font-bold" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.redCardsAgainst}
-                                </td>
-
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.foulsCommittedAvg}
-                                </td>
-                                <td className="py-3 px-2 text-center text-xs font-mono" style={{ color: 'rgb(var(--l-ink, 240, 240, 240))' }}>
-                                    {referee.stats.foulsReceivedAvg}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                            <div className="referee-card__stats">
+                                <span className="is-win"><strong>{referee.stats.wins}</strong><span>V</span></span>
+                                <span className="is-draw"><strong>{referee.stats.draws}</strong><span>E</span></span>
+                                <span className="is-loss"><strong>{referee.stats.losses}</strong><span>D</span></span>
+                                <span className="is-yellow"><strong>{yellows}</strong><span>TA</span></span>
+                                <span className="is-red"><strong>{reds}</strong><span>TR</span></span>
+                            </div>
+                        </div>
+                    </a>
+                );
+            })}
 
             <style>{`
-                .referees-scrollbar::-webkit-scrollbar {
-                    height: 8px;
-                    background: rgba(6,13,28,0.95);
+                .referees-card-grid {
+                    width: min(100%, 1600px);
+                    margin: 0 auto 2.5rem;
+                    display: grid;
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                    gap: 1rem;
                 }
-                .referees-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(212,168,67,0.3);
-                    border-radius: 4px;
+                .referee-card {
+                    min-width: 0;
+                    overflow: hidden;
+                    border: 1px solid rgba(212,168,67,0.2);
+                    border-radius: 10px;
+                    background: rgba(var(--l-card, 6, 13, 28), 0.94);
+                    color: rgb(var(--l-ink, 240, 240, 240));
+                    text-decoration: none;
+                    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
                 }
-                .referees-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(212,168,67,0.55);
+                .referee-card:hover { transform: translateY(-4px); border-color: rgba(212,168,67,0.5); box-shadow: 0 16px 32px rgba(0,0,0,0.3); }
+                .referee-card__photo {
+                    position: relative;
+                    height: 200px;
+                    display: grid;
+                    place-items: center;
+                    overflow: hidden;
+                    background: radial-gradient(circle at center, rgba(212,168,67,0.09), transparent 58%), linear-gradient(135deg, #111b2d, #071022);
                 }
-                @media (max-width: 640px) {
-                    .referees-table { min-width: 720px; }
-                    .ref-rank-col { display: none; }
-                    .ref-name-col {
-                        left: 0 !important;
-                        width: 128px !important;
-                        min-width: 128px !important;
-                        max-width: 128px !important;
-                        padding-left: 0.55rem !important;
-                        padding-right: 0.45rem !important;
-                    }
-                    thead .ref-name-col {
-                        background: #11182b !important;
-                    }
-                    .ref-name-col a {
-                        font-size: 0.7rem;
-                        line-height: 1.2;
-                    }
-                    .referees-table th,
-                    .referees-table td {
-                        padding-left: 0.45rem !important;
-                        padding-right: 0.45rem !important;
-                    }
+                .referee-card__photo::after { content: ''; position: absolute; inset: auto 0 0; height: 30%; background: linear-gradient(to bottom, transparent, rgba(6,13,28,0.68)); pointer-events: none; }
+                .referee-card__photo > img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center top; transition: transform 0.35s ease; }
+                .referee-card:hover .referee-card__photo > img { transform: scale(1.05); }
+                .referee-card__initials[hidden] { display: none; }
+                .referee-card__initials { display: grid; place-items: center; width: 92px; height: 92px; border-radius: 50%; border: 1px solid rgba(212,168,67,0.45); background: rgba(212,168,67,0.1); color: #d4a843; font: 700 1.6rem/1 'Cinzel', serif; }
+                .referee-card__played {
+                    position: absolute; right: 0.7rem; bottom: 0.65rem; z-index: 1;
+                    display: flex; align-items: baseline; gap: 0.28rem; padding: 0.3rem 0.5rem;
+                    border: 1px solid rgba(212,168,67,0.3); border-radius: 999px; background: rgba(6,13,28,0.8);
+                    color: rgba(200,210,220,0.58); font-family: 'Cinzel', serif; font-size: 0.46rem; letter-spacing: 0.08em; backdrop-filter: blur(5px);
+                }
+                .referee-card__played strong { color: #d4a843; font-size: 0.88rem; }
+                .referee-card__body { padding: 0.9rem; }
+                .referee-card__body h3 { margin: 0; overflow: hidden; color: rgb(var(--l-ink, 240, 240, 240)); font-family: 'Cinzel', serif; font-size: 0.9rem; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+                .referee-card__body > p { display: flex; align-items: center; gap: 0.4rem; min-width: 0; margin: 0.3rem 0 0.75rem; color: rgba(var(--l-ink, 200, 210, 220), 0.52); font-size: 0.7rem; }
+                .referee-card__body > p img { width: 17px; height: 12px; object-fit: cover; flex-shrink: 0; }
+                .referee-card__body > p span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .referee-card__stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); margin: 0 -0.9rem -0.9rem; border-top: 1px solid rgba(212,168,67,0.08); }
+                .referee-card__stats > span { min-width: 0; padding: 0.65rem 0.1rem; border-right: 1px solid rgba(212,168,67,0.07); color: rgba(var(--l-ink, 200, 210, 220), 0.42); font-size: 0.5rem; text-align: center; }
+                .referee-card__stats > span:last-child { border-right: 0; }
+                .referee-card__stats strong { display: block; margin-bottom: 0.15rem; color: rgb(var(--l-ink, 240, 240, 240)); font-size: 0.86rem; }
+                .referee-card__stats .is-win strong { color: rgba(74,222,128,0.9); }
+                .referee-card__stats .is-draw strong { color: rgba(180,190,205,0.85); }
+                .referee-card__stats .is-loss strong { color: rgba(248,113,113,0.88); }
+                .referee-card__stats .is-yellow strong { color: #facc15; }
+                .referee-card__stats .is-red strong { color: #ef4444; }
+                @media (max-width: 1200px) { .referees-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+                @media (max-width: 850px) { .referees-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+                @media (max-width: 560px) {
+                    .referees-card-grid { grid-template-columns: 1fr; gap: 0.85rem; }
+                    .referee-card__photo { height: 170px; }
                 }
             `}</style>
         </div>
@@ -291,4 +151,3 @@ const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
 };
 
 export default RefereesTable;
-

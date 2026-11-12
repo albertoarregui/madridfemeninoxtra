@@ -14,6 +14,10 @@ import { generateSlug } from "../../utils/url-helper";
 
 import { getAssetMetadata, getAssetUrl } from "../../utils/assets";
 import { hasSubstantiveHtml } from "../../lib/content-quality";
+import ProfileTabs from "../../components/profile/ProfileTabs.astro";
+import EntityPicker from "../../components/profile/EntityPicker.astro";
+import { fetchCompareOptions } from "../../utils/entity-compare";
+import "../../styles/profile-shared.css";
 
 const competitionLogos: Record<string, any> = {
     "Liga F": getAssetMetadata("competiciones", "liga_f"),
@@ -30,6 +34,8 @@ const { slug } = Astro.params;
 
 const allStadiums = await fetchAllStadiumsWithStats();
 const stadium = allStadiums.find((s) => s.slug === slug);
+// Selector para comparar (lista en caché, compartida con /comparador/estadios).
+const compareOptions = await fetchCompareOptions("estadios");
 
 if (!stadium) {
     return Astro.redirect("/404");
@@ -297,6 +303,7 @@ const seoDescription = totalStats.pj
             </div>
 
             <div class="hero-info-col">
+                <EntityPicker tipo="estadios" options={compareOptions} noun="estadios" current={{ slug: slug!, name: stadium.name, img: stadium.imageUrl || "" }} />
                 <div class="hero-chips">
                     {stadium.city && (
                         <span class="hero-chip hero-chip-gold">♦ {stadium.city} ♦</span>
@@ -333,9 +340,15 @@ const seoDescription = totalStats.pj
     </section>
 
     <main class="stadium-content">
-        <div class="content-grid">
+        <ProfileTabs tabs={[
+            { key: "info", label: "Info" },
+            { key: "estadisticas", label: "Estadísticas" },
+            { key: "graficas", label: "Gráficas" },
+            { key: "historial", label: "Historial" },
+        ]} />
 
-            <section class="profile-card full-col mfx-framed" style="margin-bottom:0;"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid pf-two pt-panel" id="panel-info" role="tabpanel" data-panel="info">
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">SOBRE EL {stadium.name.toUpperCase()}</h2>
                 <div class="card-body">
                     {ficha ? (
@@ -345,8 +358,7 @@ const seoDescription = totalStats.pj
                 )}
                 </div>
             </section>
-
-            {stadium.coordinates && (
+{stadium.coordinates && (
                 <section class="profile-card map-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                     <h2 class="card-title">UBICACIÓN</h2>
                     <div class="card-body" style="padding:0;overflow:hidden;border-radius:0 0 4px 4px;">
@@ -363,8 +375,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </section>
             )}
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-estadisticas" role="tabpanel" data-panel="estadisticas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">ESTADÍSTICAS EN {stadium.name.toUpperCase()}</h2>
                 <div class="card-body">
                     <div class="stats-table-wrapper">
@@ -452,8 +466,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-graficas" role="tabpanel" data-panel="graficas" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">GRÁFICAS</h2>
                 <div class="card-body" style="padding:1.25rem;">
                     <div class="filters-container">
@@ -563,8 +579,10 @@ const seoDescription = totalStats.pj
                     </div>
                 </div>
             </section>
+        </div>
 
-            <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <div class="pf-grid  pt-panel" id="panel-historial" role="tabpanel" data-panel="historial" hidden>
+<section class="profile-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="card-title">PARTIDOS EN {stadium.name.toUpperCase()}</h2>
                 <div class="card-body">
                     <div class="stats-table-wrapper">
@@ -630,8 +648,8 @@ const seoDescription = totalStats.pj
                     )}
                 </div>
             </section>
-
         </div>
+
     </main>
 </Layout>
 
@@ -862,6 +880,19 @@ const seoDescription = totalStats.pj
 </script>
 
 <style>
+/* Paneles de las pestañas: una columna, dos (Info) o tres (protagonistas). */
+.pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pf-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pf-stack { display: grid; gap: 1.25rem; align-content: start; min-width: 0; }
+.pf-grid > .profile-card, .pf-stack > .profile-card { margin: 0 !important; min-width: 0; }
+.pf-full { grid-column: 1 / -1; }
+/* Biografía y ubicación, una al lado de la otra; el mapa ocupa el alto de la fila. */
+.pf-two > .map-card { grid-column: auto !important; align-self: stretch; display: flex; flex-direction: column; }
+.pf-two > .map-card .card-body { flex: 1; }
+.pf-two > .map-card iframe { height: 100%; min-height: 320px; }
+@media (max-width: 900px) { .pf-two, .pf-three { grid-template-columns: minmax(0, 1fr); } }
+
 .stadium-hero {
     width: 100%;
     background: linear-gradient(to bottom, rgba(var(--l-bg, 3, 7, 18), 0.98) 0%, rgba(var(--l-bg, 6, 13, 28), 0.95) 100%);
