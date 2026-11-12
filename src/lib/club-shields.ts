@@ -19,11 +19,26 @@ const shieldFileSlug = (name: string) => name.normalize('NFD').replace(/[̀-ͯ]/
  * en `clubes`, propone `escudos/<nombre>.webp` en R2 (misma convención que los
  * escudos actuales): la imagen debe ocultarse si ese archivo aún no existe.
  */
+// Mismo club con otro nombre en las trayectorias o el mercado → nombre en `clubes`.
+const CLUB_ALIASES: Record<string, string> = {
+    'paris saint-germain': 'PSG', 'paris saint germain': 'PSG',
+    'vfl wolfsburg': 'Wolfsburgo', 'wolfsburg': 'Wolfsburgo',
+    'b. k. häcken': 'Häcken', 'bk häcken': 'Häcken', 'b.k. häcken': 'Häcken',
+    'roma': 'AS Roma',
+    'sporting cp': 'Sporting de Portugal',
+    'osasuna': 'Fundación Osasuna', 'ca osasuna': 'Fundación Osasuna',
+    'deportivo alavés': 'Alavés',
+    'deportivo la coruña': 'Deportivo Abanca', 'deportivo de la coruña': 'Deportivo Abanca',
+    'udg tenerife': 'Costa Adeje Tenerife', 'udg tenerife b': 'Costa Adeje Tenerife',
+    '1. ffc frankfurt': 'Eintracht de Frankfurt',
+};
+
 export function createClubShieldResolver(shields: Record<string, string>) {
     const index = Object.entries(shields).filter(([, url]) => Boolean(url))
         .map(([name, url]) => ({ url, key: cleanClubName(name), tokens: clubTokens(name) }));
     return (club: string | null | undefined): { url: string; known: boolean } | null => {
         if (!club) return null;
+        club = CLUB_ALIASES[club.trim().toLowerCase()] ?? club;
         const key = cleanClubName(club);
         const tokens = clubTokens(club);
         const hit = index.find((entry) => entry.key === key)

@@ -9,7 +9,9 @@ import { fetchPlayerPhotoMap } from "../utils/player-photos";
 import { fetchAllClubShields } from "../utils/rivales";
 import { createClubShieldResolver } from "../lib/club-shields";
 
-const moves = await fetchMercado();
+// La sección nació en la 2020/21: los movimientos anteriores (CD Tacón) no se muestran.
+const FIRST_SEASON = "2020/21";
+const moves = (await fetchMercado()).filter((m) => m.temporada >= FIRST_SEASON);
 const photos = await fetchPlayerPhotoMap();
 const shield = createClubShieldResolver(await fetchAllClubShields());
 
@@ -171,8 +173,8 @@ const groups = [
 
 <style>
     .mk-kpis-card { padding: 1.5rem; }
-    .mk-controls { position: relative; z-index: 30; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-    .mk-season { width: 200px; }
+    .mk-controls { position: relative; z-index: 30; display: flex; align-items: center; gap: 1rem 1.5rem; flex-wrap: wrap; }
+    .mk-season { width: 200px; margin-right: 0.5rem; }
     .mk-season .custom-select-container { margin: 0; }
     .mk-toggle { margin-left: auto; }
     .mk-toggle > span:last-child { letter-spacing: 0.08em; }
@@ -212,7 +214,7 @@ const groups = [
         .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; }
     }
     @media (max-width: 560px) {
-        .mk-season { width: 100%; }
+        .mk-season { width: 100%; margin-right: 0; }
         .mk-toggle { margin-left: 0; width: 100%; justify-content: center; }
         .mk-filter { width: 100%; }
         .mk-filter .pt-pill { flex: 1; justify-content: center; }
