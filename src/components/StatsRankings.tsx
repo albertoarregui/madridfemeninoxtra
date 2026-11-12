@@ -158,6 +158,8 @@ const TYPE_OPTIONS = [
     { value: "regateada", label: "Más veces regateada" },
 ];
 
+const ratingTone = (v: number) => (v >= 8 ? "is-top" : v >= 7 ? "is-good" : v >= 6 ? "is-ok" : "is-low");
+
 const MainStarIcon = ({ className, color }: { className?: string, color: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -743,7 +745,7 @@ export default function StatsRankings({
                                     </td>
                                     {isCountStat && <td className="rk-num">{player.games || "—"}</td>}
                                     {isCountStat && currentConfig.primaryKey !== "partidos" && <td className="rk-num rk-hide-sm">{perGame(player)}</td>}
-                                    <td className="rk-value"><b>{formatValue(player)}</b>{currentConfig.primaryKey !== "display_ratio" && player.display_ratio && <small>{player.display_ratio}</small>}</td>
+                                    <td className="rk-value"><b className={currentConfig.primaryKey === "valoracion" ? `rk-rating ${ratingTone(Number(player.valoracion) || 0)}` : undefined}>{formatValue(player)}</b>{currentConfig.primaryKey !== "display_ratio" && player.display_ratio && <small>{player.display_ratio}</small>}</td>
                                 </tr>
                             ))}
                         </tbody>

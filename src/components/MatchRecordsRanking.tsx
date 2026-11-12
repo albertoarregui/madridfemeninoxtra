@@ -34,6 +34,8 @@ interface Props {
     competitionLogos?: { [name: string]: string };
 }
 
+const ratingTone = (v: number) => (v >= 8 ? "is-top" : v >= 7 ? "is-good" : v >= 6 ? "is-ok" : "is-low");
+
 const formatDate = (iso: string) => {
     const [y, m, d] = iso.split("-");
     return d && m && y ? `${d}/${m}/${y}` : iso;
@@ -180,7 +182,7 @@ export default function MatchRecordsRanking({ initialStat = "goles", playerImage
                                                 </span>
                                             </a>
                                         </td>
-                                        <td className="rk-value"><b>{fmt(r.value)}</b></td>
+                                        <td className="rk-value"><b className={stat === "valoracion" ? `rk-rating ${ratingTone(r.value)}` : undefined}>{fmt(r.value)}</b></td>
                                     </tr>
                                 );
                             })}
