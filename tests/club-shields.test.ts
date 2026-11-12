@@ -36,3 +36,12 @@ test('los nombres alternativos usan el escudo del club en `clubes`', () => {
     assert.deepEqual(withRivals('Paris Saint-Germain'), { url: 'https://media.madridfemeninoxtra.com/escudos/psg.webp', known: true });
     assert.deepEqual(withRivals('VfL Wolfsburg'), { url: 'https://media.madridfemeninoxtra.com/escudos/wolfsburgo.webp', known: true });
 });
+
+test('las variantes de un club comparten un único archivo de escudo', () => {
+    const r = createClubShieldResolver({});
+    assert.equal(r('Elche Ilicitano')?.url, r('Elche CF')?.url);
+    assert.equal(r('Toluca Femenil')?.url, r('Toluca')?.url);
+    assert.equal(r('Bordeaux')?.url, r('Girondins de Bordeaux')?.url);
+    assert.equal(r('Categorías inferiores Montpellier')?.url, r('Montpellier')?.url);
+    assert.equal(r('Olympique Lyonnais')?.url, r('OL Lyonnes')?.url);
+});

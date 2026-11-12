@@ -31,6 +31,26 @@ const CLUB_ALIASES: Record<string, string> = {
     'deportivo la coruña': 'Deportivo Abanca', 'deportivo de la coruña': 'Deportivo Abanca',
     'udg tenerife': 'Costa Adeje Tenerife', 'udg tenerife b': 'Costa Adeje Tenerife',
     '1. ffc frankfurt': 'Eintracht de Frankfurt',
+    // Un único escudo por club: filiales, categorías y grafías alternativas
+    // usan el archivo del club principal (escudos/<club>.webp).
+    'bordeaux': 'Girondins de Bordeaux',
+    'categorías inferiores montpellier': 'Montpellier', 'san pascual montpellier': 'San Pascual Montpellier',
+    'elche ilicitano': 'Elche CF',
+    'toluca femenil': 'Toluca',
+    'olympique lyon': 'OL Lyonnes', 'olympique lyonnais': 'OL Lyonnes',
+    'brøndby': 'Brøndby IF',
+    'fortuna hjøorring': 'Fortuna Hjørring',
+    'rosengard': 'FC Rosengård',
+    'linköpings': 'Linköpings FC',
+    'fermaguín': 'CD Femarguín',
+    'olympia las rozas': 'CFF Olympia Las Rozas',
+    'ciudad del fútbol las rozas': 'Ciudad del Fútbol',
+    'albacete juvenil a': 'Albacete Balompié (cantera)',
+    'as saint-étienne (categorías inferiores)': 'AS Saint-Étienne',
+    'hammarby youth': 'Hammarby',
+    'cd tacón b': 'CD Tacón',
+    'pozuelo de alarcón': 'CF Pozuelo de Alarcón',
+    'são josé': 'Sao José', 'sao josé': 'Sao José',
 };
 
 export function createClubShieldResolver(shields: Record<string, string>) {
