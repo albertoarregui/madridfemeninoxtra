@@ -644,7 +644,7 @@ function FinishingFunnel({ data, conversion }: { data: FunnelStage[]; conversion
     );
 }
 
-function AdvancedStatsInner() {
+function AdvancedStatsInner({ competitionLogos }: { competitionLogos: Record<string, string> }) {
     const [season,      setSeason]      = useState('');
     const [competition, setCompetition] = useState('Partidos oficiales');
     const [xgData,  setXgData]  = useState<XGPayload  | null>(null);
@@ -672,7 +672,12 @@ function AdvancedStatsInner() {
     }, [xgData, netData, teamData, pfData]);
 
     const availableComps = useMemo(
-        () => competitions.length ? ['Partidos oficiales', ...competitions] : [],
+        () => {
+            const order = ['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos', 'Amistoso'];
+            const rank = (c: string) => (order.indexOf(c) === -1 ? order.length : order.indexOf(c));
+            const sorted = [...competitions].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'es'));
+            return sorted.length ? ['Partidos oficiales', ...sorted] : [];
+        },
         [competitions]
     );
 
@@ -798,7 +803,24 @@ function AdvancedStatsInner() {
         <div className="adv-root">
             <div className="adv-filters">
                 <CustomSelect label="TEMPORADA"   options={seasons}        value={season}      onChange={setSeason} />
-                <CustomSelect label="COMPETICIÓN" options={availableComps} value={competition} onChange={setCompetition} />
+                {/* Mismas píldoras de competición que la ficha de jugadora. */}
+                <div className="adv-filter-group adv-filter-comps">
+                    <span className="adv-filter-label">COMPETICIÓN</span>
+                    <div className="pt-pills" role="group" aria-label="Competición">
+                        {[{ value: '', label: 'Todas' }, ...availableComps.map(c => ({ value: c, label: c === 'Partidos oficiales' ? 'Oficiales' : /^amistosos?$/i.test(c) ? 'Amistoso' : c }))].map(option => (
+                            <button
+                                key={option.value || 'all'}
+                                type="button"
+                                className={`pt-pill${competition === option.value ? ' is-active' : ''}`}
+                                aria-pressed={competition === option.value}
+                                onClick={() => setCompetition(option.value)}
+                            >
+                                {competitionLogos[option.value] && <img src={competitionLogos[option.value]} alt="" width={16} height={16} loading="lazy" />}
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
             <section className="adv-section">
                 <div className="adv-section-header">
@@ -877,10 +899,10 @@ function AdvancedStatsInner() {
     );
 }
 
-export default function AdvancedStats() {
+export default function AdvancedStats({ competitionLogos = {} }: { competitionLogos?: Record<string, string> }) {
     return (
         <TopErrorBoundary>
-            <AdvancedStatsInner />
+            <AdvancedStatsInner competitionLogos={competitionLogos} />
         </TopErrorBoundary>
     );
 }

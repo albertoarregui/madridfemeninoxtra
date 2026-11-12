@@ -4,7 +4,7 @@ import "../styles/global.css";
 import { fetchPlayersDirectly } from "../utils/players";
 import PlayerRadarComparator from "../components/PlayerRadarComparator";
 import BreadcrumbTrail from "../components/BreadcrumbTrail.astro";
-import EditorialInfoCards from "../components/EditorialInfoCards.astro";
+import { getAssetUrl } from "../utils/assets";
 
 const players = await fetchPlayersDirectly();
 
@@ -20,6 +20,11 @@ const playerOptions = players
 const params = Object.fromEntries(Astro.url.searchParams);
 const slugA  = params.a ?? '';
 const slugB  = params.b ?? '';
+// Logos de las píldoras de competición (mismo filtro que la ficha de jugadora).
+const competitionLogos = Object.fromEntries(
+    ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"]
+        .map((name) => [name, getAssetUrl("competiciones", name === "Amistosos" ? "amistoso" : name) || ""]),
+);
 ---
 
 <Layout
@@ -39,17 +44,12 @@ const slugB  = params.b ?? '';
             </p>
         </header>
 
-        <EditorialInfoCards
-            introduction="Compara el rendimiento de dos jugadoras del Real Madrid Femenino mediante un gráfico común de participación, ataque, creación y defensa."
-            utility="Selecciona dos futbolistas para localizar sus principales fortalezas y observar diferencias de rendimiento dentro de un mismo contexto estadístico."
-            methodology="La comparación utiliza partidos finalizados y estadísticas registradas. Los promedios se calculan solo con datos disponibles; una cifra ausente no equivale a cero."
-        />
-
         <PlayerRadarComparator
             client:visible
             players={playerOptions}
             initialSlugA={slugA}
             initialSlugB={slugB}
+            competitionLogos={competitionLogos}
         />
     </main>
 </Layout>
@@ -230,6 +230,10 @@ const slugB  = params.b ?? '';
     border: 1px solid rgba(212,168,67,0.2);
     box-shadow: 0 2px 16px rgba(0,0,0,0.3);
     backdrop-filter: blur(12px);
+    /* backdrop-filter crea su propio contexto de apilamiento: sin z-index, el
+       radar posterior tapaba la lista de temporadas. */
+    position: relative;
+    z-index: 30;
 }
 
 .cmp-filter-group {
@@ -250,6 +254,11 @@ const slugB  = params.b ?? '';
 }
 
 .cmp-filter-mode { margin-left: auto; }
+/* Temporada e interruptor en la primera línea; las competiciones debajo. */
+.cmp-filters > .cmp-filter-group:first-child { order: 1; }
+.cmp-filter-mode { order: 2; align-self: flex-end; }
+.cmp-filter-comps { order: 3; flex: 1 1 100%; min-width: 0; }
+.cmp-filter-comps .pt-pills { justify-content: flex-start; }
 
 .cmp-capture-wrap {
     background: rgba(var(--l-card, 8, 16, 34), 0.85);
@@ -541,7 +550,8 @@ const slugB  = params.b ?? '';
 
     .cmp-filters { padding: 0.75rem; gap: 0.5rem; }
     .cmp-filter-group { min-width: calc(50% - 0.25rem); flex: 1 1 calc(50% - 0.25rem); }
-    .cmp-filter-mode { margin-left: 0; flex: 1 1 100%; }
+    .cmp-filter-mode { margin-left: 0; flex: 0 0 auto; }
+    .cmp-filter-comps { flex: 1 1 100%; }
 
     .cmp-table-header {
         grid-template-columns: 1fr 108px 1fr;

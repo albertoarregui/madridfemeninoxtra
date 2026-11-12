@@ -294,8 +294,8 @@ function CustomTooltip({ active, payload, nameA, nameB }: any) {
     );
 }
 
-export default function PlayerRadarComparator({ players, initialSlugA = '', initialSlugB = '' }: {
-    players: PlayerOption[]; initialSlugA?: string; initialSlugB?: string;
+export default function PlayerRadarComparator({ players, initialSlugA = '', initialSlugB = '', competitionLogos = {} }: {
+    players: PlayerOption[]; initialSlugA?: string; initialSlugB?: string; competitionLogos?: Record<string, string>;
 }) {
     const [slugA, setSlugA]         = useState(initialSlugA);
     const [slugB, setSlugB]         = useState(initialSlugB);
@@ -484,14 +484,31 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
             {(dataA || dataB) && (
                 <div className="cmp-filters">
                     <CustomSelect label="TEMPORADA"   options={availableSeasons} value={season} onChange={v => setSeason(v)} />
-                    <CustomSelect label="COMPETICIÓN" options={availableComps}   value={comp}   onChange={v => setComp(v)} />
-                    <div className="cmp-filter-group cmp-filter-mode">
-                        <span className="cmp-filter-label">DATOS</span>
-                        <div className="mfx-option-group">
-                            <button type="button" className={`mfx-option-btn ${mode === 'total' ? 'is-active' : ''}`} aria-pressed={mode === 'total'} onClick={() => setMode('total')}>Totales</button>
-                            <button type="button" className={`mfx-option-btn ${mode === 'p90'   ? 'is-active' : ''}`} aria-pressed={mode === 'p90'} onClick={() => setMode('p90')}>Por 90</button>
+                    {/* Mismas píldoras de competición que la ficha de jugadora. */}
+                    <div className="cmp-filter-group cmp-filter-comps">
+                        <span className="cmp-filter-label">COMPETICIÓN</span>
+                        <div className="pt-pills" role="group" aria-label="Competición">
+                            {[{ value: '', label: 'Todas' }, ...availableComps.map(c => ({ value: c, label: c === 'Amistosos' ? 'Amistoso' : c === 'Partidos oficiales' ? 'Oficiales' : c }))].map(option => (
+                                <button
+                                    key={option.value || 'all'}
+                                    type="button"
+                                    className={`pt-pill${comp === option.value ? ' is-active' : ''}`}
+                                    aria-pressed={comp === option.value}
+                                    onClick={() => setComp(option.value)}
+                                >
+                                    {competitionLogos[option.value] && <img src={competitionLogos[option.value]} alt="" width={16} height={16} loading="lazy" />}
+                                    {option.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
+                    {/* Mismo interruptor Totales / Por 90' que la ficha de jugadora. */}
+                    <label className="pt-toggle cmp-filter-mode" title="Cambiar entre datos totales y por 90 minutos">
+                        <span className={mode === 'total' ? 'is-on' : ''}>Totales</span>
+                        <input type="checkbox" checked={mode === 'p90'} onChange={e => setMode(e.target.checked ? 'p90' : 'total')} />
+                        <span className="pt-toggle-track" />
+                        <span className={mode === 'p90' ? 'is-on' : ''}>Por 90'</span>
+                    </label>
                 </div>
             )}
 

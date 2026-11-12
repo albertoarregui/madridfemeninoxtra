@@ -108,53 +108,16 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         <div
             class="filters-container mb-10 flex flex-wrap gap-4 justify-center"
         >
-            <div class="custom-select-container" id="container-competicion">
-                <div class="custom-select-trigger" id="trigger-competicion">
-                    <span class="selected-text">Partidos Oficiales</span>
-                    <div class="custom-select-arrow">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            ><path d="m6 9 6 6 6-6"></path></svg
-                        >
-                    </div>
-                </div>
-                <div class="custom-select-options">
-                    <div
-                        class="custom-select-option selected"
-                        data-value="oficiales"
-                    >
-                        Partidos Oficiales
-                    </div>
-                    {
-                        officialComps.map((c) => (
-                            <div class="custom-select-option" data-value={c.id}>
-                                {c.name}
-                            </div>
-                        ))
-                    }
-                </div>
-                <select
-                    id="filtro-competicion"
-                    aria-label="Filtrar por competición"
-                    style="display: none;"
-                >
-                    <option value="oficiales" selected
-                        >Partidos Oficiales</option
-                    >
-                    {
-                        officialComps.map((c) => (
-                            <option value={c.id}>{c.name}</option>
-                        ))
-                    }
-                </select>
+            <div class="pt-pills" role="group" aria-label="Competición" id="records-comp-pills">
+                <button type="button" class="pt-pill is-active" data-value="oficiales" aria-pressed="true">Oficiales</button>
+                {
+                    officialComps.map((c) => (
+                        <button type="button" class="pt-pill" data-value={c.id} aria-pressed="false">
+                            {getAssetUrl("competiciones", c.name) && <img src={getAssetUrl("competiciones", c.name)} alt="" width="16" height="16" loading="lazy" decoding="async" />}
+                            {c.name}
+                        </button>
+                    ))
+                }
             </div>
         </div>
 
@@ -605,49 +568,27 @@ const formatShortDate = (dateString: string | null | undefined): string => {
         }
         window.closeVideoModal = closeVideoModal;
 
+        // Mismas píldoras de competición que la ficha de jugadora.
         function initRecordsFilter() {
-            const container = document.getElementById("container-competicion");
-            if (!container || container.dataset.filterInit) return;
-            container.dataset.filterInit = "true";
-
-            const trigger = container.querySelector(".custom-select-trigger");
-            const options = container.querySelectorAll(".custom-select-option");
-            const select = container.querySelector("select");
+            const group = document.getElementById("records-comp-pills");
+            if (!group || group.dataset.filterInit) return;
+            group.dataset.filterInit = "true";
+            const pills = group.querySelectorAll(".pt-pill");
             const sections = document.querySelectorAll(".comp-records-section");
-            const selectedText = trigger.querySelector(".selected-text");
-
-            trigger.addEventListener("click", (e) => {
-                e.stopPropagation();
-                container.classList.toggle("open");
-            });
-
-            options.forEach((opt) => {
-                opt.addEventListener("click", () => {
-                    const val = opt.dataset.value;
-                    selectedText.textContent = opt.textContent;
-                    options.forEach((o) => o.classList.remove("selected"));
-                    opt.classList.add("selected");
-
-                    if (select) {
-                        select.value = val;
-                        select.dispatchEvent(new Event("change"));
-                    }
-
-                    container.classList.remove("open");
-
+            pills.forEach((pill) => {
+                pill.addEventListener("click", () => {
+                    const val = pill.dataset.value;
+                    pills.forEach((p) => {
+                        const active = p === pill;
+                        p.classList.toggle("is-active", active);
+                        p.setAttribute("aria-pressed", String(active));
+                    });
                     sections.forEach((sec) => {
-                        const compId = sec.dataset.comp;
-                        sec.style.display = compId === val ? "block" : "none";
+                        sec.style.display = sec.dataset.comp === val ? "block" : "none";
                     });
                 });
             });
         }
-
-        document.addEventListener("click", () => {
-            document
-                .getElementById("container-competicion")
-                ?.classList.remove("open");
-        });
 
         document.addEventListener("astro:page-load", initRecordsFilter);
     </script>

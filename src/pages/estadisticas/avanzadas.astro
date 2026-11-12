@@ -3,7 +3,12 @@ import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 import AdvancedStats from "../../components/AdvancedStats";
 import BreadcrumbTrail from "../../components/BreadcrumbTrail.astro";
-import EditorialInfoCards from "../../components/EditorialInfoCards.astro";
+import { getAssetUrl } from "../../utils/assets";
+// Logos de las píldoras de competición (mismo filtro que la ficha de jugadora).
+const competitionLogos = Object.fromEntries(
+    ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos", "Amistoso"]
+        .map((name) => [name, getAssetUrl("competiciones", /amistoso/i.test(name) ? "amistoso" : name) || ""]),
+);
 ---
 
 <Layout
@@ -23,13 +28,7 @@ import EditorialInfoCards from "../../components/EditorialInfoCards.astro";
             </p>
         </header>
 
-        <EditorialInfoCards
-            introduction="Explora de forma visual la evolución del Real Madrid Femenino y el rendimiento de sus jugadoras mediante el tracker de goles esperados y la red de asistencias."
-            utility="Utiliza los filtros para detectar tendencias, comparar temporadas y conocer qué jugadoras conectan con más frecuencia en las acciones de gol."
-            methodology="Los gráficos se calculan con partidos finalizados registrados en la base de datos. Los valores no disponibles se omiten y nunca se interpretan como cero."
-        />
-
-        <AdvancedStats client:only="react" />
+        <AdvancedStats client:only="react" competitionLogos={competitionLogos} />
     </main>
 </Layout>
 
@@ -68,6 +67,8 @@ import EditorialInfoCards from "../../components/EditorialInfoCards.astro";
 }
 
 .adv-filter-group .custom-select-container { width: 100%; min-width: 0; max-width: none; margin: 0; }
+.adv-filter-group:has(.custom-select-container) { flex: 0 0 200px; }
+.adv-filter-comps { flex: 1 1 auto !important; min-width: 0; }
 
 .adv-section       { margin-bottom: 3rem; }
 .adv-section-header { margin-bottom: 1rem; }
