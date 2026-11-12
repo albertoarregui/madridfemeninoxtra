@@ -30,7 +30,6 @@ const CLUB_ALIASES: Record<string, string> = {
     'deportivo alavés': 'Alavés',
     'deportivo la coruña': 'Deportivo Abanca', 'deportivo de la coruña': 'Deportivo Abanca',
     'udg tenerife': 'Costa Adeje Tenerife', 'udg tenerife b': 'Costa Adeje Tenerife',
-    '1. ffc frankfurt': 'Eintracht de Frankfurt',
     // Un único escudo por club: filiales, categorías y grafías alternativas
     // usan el archivo del club principal (escudos/<club>.webp).
     'bordeaux': 'Girondins de Bordeaux',
