@@ -1,0 +1,161 @@
+---
+// Tarjeta flotante al pasar por encima de los enlaces a jugadoras, clubes,
+// estadios, entrenadores, árbitras y partidos que aparecen dentro de textos.
+// Los datos salen de la propia página enlazada (título, imagen y descripción),
+// que ya está cacheada en la CDN: no hay consultas nuevas a la base de datos.
+---
+
+<div class="mfx-link-preview mfx-framed" data-link-preview hidden>
+  <span class="mfx-frame" aria-hidden="true"></span>
+  <a class="mfx-link-preview__inner" data-preview-link href="/">
+    <span class="mfx-link-preview__media"><img data-preview-img alt="" width="64" height="64" decoding="async" /></span>
+    <span class="mfx-link-preview__text">
+      <small data-preview-kind></small>
+      <strong data-preview-title></strong>
+      <span data-preview-desc></span>
+      <em data-preview-cta>Ver ficha →</em>
+    </span>
+  </a>
+</div>
+
+<script>
+  const ENTITY = /^(?:\/en)?\/(jugadoras|entrenadores|arbitras|rivales|estadios|partidos)\/[^/?#]+\/?$/;
+  const SCOPES = "a.entity-link, .ficha-texto a, .news-article-rich-text a, .mfx-entity-text a";
+  const KIND: Record<string, [string, string]> = {
+    jugadoras: ["Jugadora", "Player"], entrenadores: ["Entrenador/a", "Coach"], arbitras: ["Árbitra", "Referee"],
+    rivales: ["Club", "Club"], estadios: ["Estadio", "Stadium"], partidos: ["Partido", "Match"],
+  };
+  type Preview = { title: string; image: string; description: string };
+  const cache = new Map<string, Promise<Preview | null>>();
+
+  function load(path: string): Promise<Preview | null> {
+    if (!cache.has(path)) {
+      cache.set(path, fetch(path, { credentials: "omit" })
+        .then((response) => (response.ok ? response.text() : Promise.reject(response.status)))
+        .then((html) => {
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const meta = (name: string) => doc.querySelector<HTMLMetaElement>(`meta[property="${name}"], meta[name="${name}"]`)?.content ?? "";
+          const title = (meta("og:title") || doc.title).split(/ \| |: | – | — /)[0].trim();
+          // Foto principal de la ficha (jugadora, escudo, estadio); la imagen
+          // social lleva texto incrustado y solo se usa si no hay otra.
+          const hero = doc.querySelector<HTMLImageElement>('[class*="hero"] img[src]:not([src$="icon.webp"]):not([src*="banderas"]):not([src*="flag"])');
+          const image = hero ? new URL(hero.getAttribute("src")!, location.origin + path).href : meta("og:image");
+          return { title, image, description: meta("description") };
+        })
+        .catch(() => null));
+    }
+    return cache.get(path)!;
+  }
+
+  function setup() {
+    const card = document.querySelector<HTMLElement>("[data-link-preview]");
+    if (!card || card.dataset.ready === "true") return;
+    card.dataset.ready = "true";
+    const link = card.querySelector<HTMLAnchorElement>("[data-preview-link]")!;
+    const img = card.querySelector<HTMLImageElement>("[data-preview-img]")!;
+    const kind = card.querySelector<HTMLElement>("[data-preview-kind]")!;
+    const title = card.querySelector<HTMLElement>("[data-preview-title]")!;
+    const desc = card.querySelector<HTMLElement>("[data-preview-desc]")!;
+    const cta = card.querySelector<HTMLElement>("[data-preview-cta]")!;
+    const en = document.documentElement.lang === "en";
+    let current: HTMLAnchorElement | null = null;
+    let showTimer = 0;
+    let hideTimer = 0;
+
+    const hide = () => { card.hidden = true; current = null; };
+    const scheduleHide = () => { window.clearTimeout(hideTimer); hideTimer = window.setTimeout(hide, 180); };
+
+    const place = (anchor: HTMLElement) => {
+      const rect = anchor.getBoundingClientRect();
+      const width = Math.min(320, window.innerWidth - 24);
+      card.style.width = `${width}px`;
+      const left = Math.min(Math.max(12, rect.left + rect.width / 2 - width / 2), window.innerWidth - width - 12);
+      const below = rect.bottom + 10 + card.offsetHeight < window.innerHeight;
+      card.style.left = `${left + window.scrollX}px`;
+      card.style.top = `${(below ? rect.bottom + 10 : rect.top - card.offsetHeight - 10) + window.scrollY}px`;
+    };
+
+    const show = async (anchor: HTMLAnchorElement) => {
+      const url = new URL(anchor.href, location.href);
+      if (url.origin !== location.origin) return;
+      const match = url.pathname.match(ENTITY);
+      if (!match) return;
+      current = anchor;
+      const preview = await load(url.pathname);
+      if (current !== anchor || !preview || !preview.title) return;
+      const [es, english] = KIND[match[1]];
+      link.href = url.pathname;
+      kind.textContent = en ? english : es;
+      // En personas y estadios el título trae la descripción tras una coma.
+      title.textContent = match[1] === "partidos" || match[1] === "rivales" ? preview.title : preview.title.split(",")[0];
+      desc.textContent = preview.description.length > 120 ? `${preview.description.slice(0, 117).trimEnd()}…` : preview.description;
+      cta.textContent = en ? (match[1] === "partidos" ? "Open match →" : "View profile →") : (match[1] === "partidos" ? "Ver partido →" : "Ver ficha →");
+      img.hidden = !preview.image;
+      if (preview.image) img.src = preview.image;
+      card.hidden = false;
+      place(anchor);
+    };
+
+    // Solo con ratón: en pantallas táctiles el enlace funciona con un toque normal.
+    if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    document.addEventListener("mouseover", (event) => {
+      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>(SCOPES) : null;
+      if (!anchor || !anchor.href) return;
+      window.clearTimeout(hideTimer);
+      if (anchor === current && !card.hidden) return;
+      window.clearTimeout(showTimer);
+      showTimer = window.setTimeout(() => show(anchor), 220);
+    });
+    document.addEventListener("mouseout", (event) => {
+      const anchor = event.target instanceof Element ? event.target.closest(SCOPES) : null;
+      if (anchor) { window.clearTimeout(showTimer); scheduleHide(); }
+    });
+    card.addEventListener("mouseenter", () => window.clearTimeout(hideTimer));
+    card.addEventListener("mouseleave", scheduleHide);
+    window.addEventListener("scroll", () => { if (!card.hidden) hide(); }, { passive: true });
+    document.addEventListener("astro:before-swap", hide);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .mfx-link-preview {
+    position: absolute;
+    z-index: 100000;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: rgb(var(--l-card, 8, 16, 34));
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.5);
+    animation: mfx-preview-in 0.16s ease-out;
+  }
+  .mfx-link-preview[hidden] { display: none; }
+  .mfx-link-preview__inner {
+    display: flex; gap: 0.85rem; align-items: center; padding: 0.85rem 0.95rem;
+    color: inherit; text-decoration: none;
+  }
+  .mfx-link-preview__media {
+    flex-shrink: 0; width: 64px; height: 64px; overflow: hidden; border-radius: 10px;
+    background: rgba(212, 168, 67, 0.08); border: 1px solid rgba(212, 168, 67, 0.25);
+  }
+  .mfx-link-preview__media img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .mfx-link-preview__media:has(img[hidden]) { display: none; }
+  .mfx-link-preview__text { display: grid; gap: 0.2rem; min-width: 0; }
+  .mfx-link-preview__text small {
+    font: 700 0.6rem/1 'Cinzel', serif; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67));
+  }
+  .mfx-link-preview__text strong {
+    font: 700 0.98rem/1.2 'Cinzel', serif; color: rgb(var(--l-ink, 240, 240, 240));
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mfx-link-preview__text span { font: 400 0.74rem/1.4 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.7); }
+  .mfx-link-preview__text span:empty { display: none; }
+  .mfx-link-preview__text em {
+    font: 800 0.62rem/1 'Montserrat', sans-serif; font-style: normal; letter-spacing: 0.07em; text-transform: uppercase;
+    color: rgb(var(--l-gold, 227, 191, 101)); margin-top: 0.25rem;
+  }
+  .mfx-link-preview__inner:hover em { text-decoration: none; }
+  @keyframes mfx-preview-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .mfx-link-preview { animation: none; } }
+</style>

@@ -85,7 +85,7 @@ export const EN_EXACT: Record<string, string> = {
   "Sin perder": "Unbeaten", "Sin ganar": "Without a win", "Sin marcar": "Without scoring", "Sin encajar": "Without conceding",
   "Con gol": "Scoring", "Más empates": "Most draws", "Más porterías a cero": "Most clean sheets",
   "Ficha del partido": "Match centre", "ficha del partido": "match centre", "Ver la ficha del partido": "Open the match centre",
-  "Ver partido →": "View match →", "Ver resultados →": "View results →", "Match y resultado": "Match and result",
+  "Ver partido →": "View match →", "Ver ficha →": "View profile →", "Ver resultados →": "View results →", "Match y resultado": "Match and result",
   "Leer la crónica completa →": "Read the full match report →", "Crónica": "Match report", "Previa": "Preview",
   "Volver al resto de partidos": "Back to all matches", "Árbitra del partido": "Match referee", "Referee del partido": "Match referee",
   "Equipación": "Kit", "Primera equipación": "Home kit", "Segunda equipación": "Away kit", "Tercera equipación": "Third kit",
