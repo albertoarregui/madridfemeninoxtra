@@ -89,6 +89,22 @@ const formatDate = (d: string) =>
             </div>
 
             <div class="jug-carousel-full">
+                <button
+                    type="button"
+                    class="nav-btn jug-nav prev absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full backdrop-blur-sm transition-all z-20 hover:scale-110"
+                    aria-label="Jugadoras anteriores"
+                    data-jug-prev
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                </button>
+                <button
+                    type="button"
+                    class="nav-btn jug-nav next absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1.5 rounded-full backdrop-blur-sm transition-all z-20 hover:scale-110"
+                    aria-label="Siguientes jugadoras"
+                    data-jug-next
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </button>
                 <div class="jug-grid" id="jugadorasGrid">
                     {cards.map((c) => (
                         <article class="jug-card">
@@ -442,3 +458,36 @@ const formatDate = (d: string) =>
         }
     }
 </style>
+
+<script>
+    // Flechas del carrusel de jugadoras (mismo estilo que Jugadora del mes).
+    function setupJugadorasArrows() {
+        const grid = document.getElementById("jugadorasGrid");
+        const wrap = grid?.closest(".jug-carousel-full");
+        if (!grid || !wrap || wrap.hasAttribute("data-arrows-ready")) return;
+        wrap.setAttribute("data-arrows-ready", "true");
+        const prev = wrap.querySelector<HTMLButtonElement>("[data-jug-prev]");
+        const next = wrap.querySelector<HTMLButtonElement>("[data-jug-next]");
+        const step = () => {
+            const card = grid.querySelector<HTMLElement>(".jug-card");
+            return card ? card.offsetWidth + 20 : grid.clientWidth * 0.8;
+        };
+        const update = () => {
+            const atStart = grid.scrollLeft <= 4;
+            const atEnd = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 4;
+            for (const [button, disabled] of [[prev, atStart], [next, atEnd]] as const) {
+                if (!button) continue;
+                button.style.opacity = disabled ? "0.3" : "1";
+                button.style.pointerEvents = disabled ? "none" : "auto";
+                button.setAttribute("aria-disabled", String(disabled));
+            }
+        };
+        prev?.addEventListener("click", () => grid.scrollBy({ left: -step(), behavior: "smooth" }));
+        next?.addEventListener("click", () => grid.scrollBy({ left: step(), behavior: "smooth" }));
+        grid.addEventListener("scroll", update, { passive: true });
+        window.addEventListener("resize", update);
+        update();
+    }
+    setupJugadorasArrows();
+    document.addEventListener("astro:page-load", setupJugadorasArrows);
+</script>
