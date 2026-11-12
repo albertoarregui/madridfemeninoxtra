@@ -31,7 +31,7 @@ test('article views are recorded after engagement, never during SSR', () => {
 });
 
 test('sitemap, SEO and consent rules stay in place', () => {
-  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v5/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v6/);
   assert.doesNotMatch(read('src/pages/sitemap.xml.ts'), /hreflang=/);
   assert.match(read('src/pages/sitemap.xml.ts'), /escapeXml/);
   assert.match(read('src/pages/sitemap.xml.ts'), /'players', 'coaches', 'stadiums'/);
@@ -323,20 +323,22 @@ test('about gallery keeps the approved order, captions and exact replacement', (
   assert.equal(exists('src/assets/galeria/foto-21.webp'), true);
 });
 
-test('ranking pages use concise headings and a compact vertical table', () => {
+test('rankings live on a single page; old ranking URLs redirect to it', () => {
   const index = read('src/pages/rankings.astro');
   const detail = read('src/pages/rankings/[slug].astro');
+  const component = read('src/components/StatsRankings.tsx');
 
   assert.match(index, /<h1 class="landing-title">RANKINGS<\/h1>/);
   assert.match(index, /Clasificaciones históricas de las jugadoras del Real Madrid Femenino a lo largo de su historia, por temporada y competición/);
-  assert.match(index, /\.seo-ranking-links \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(index, /\.seo-ranking-links \{[\s\S]*?width: min\(100%, 1200px\);[\s\S]*?margin: 0 auto 2rem/);
-  assert.match(detail, /h1: "Máximas goleadoras"/);
-  assert.match(detail, /h1: "Más partidos"/);
-  assert.doesNotMatch(detail, /h1: "[^"]*del Real Madrid Femenino/);
-  assert.match(detail, /\{config\.h1\} del Real Madrid Femenino a lo largo de su historia/);
-  assert.match(detail, /\.rank-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);[\s\S]*?width: calc\(\(100% - 0\.8rem\) \/ 2\);[\s\S]*?margin-inline: auto/);
-  assert.match(detail, /@media \(max-width: 760px\)[\s\S]*?\.rank-grid \{ width: 100%; \}/);
+  assert.doesNotMatch(index, /seo-ranking-links/);
+  // Cada antigua página redirige a su estadística en /rankings.
+  assert.match(detail, /"maximas-goleadoras": "goles"/);
+  assert.match(detail, /Astro\.redirect\(stat \? `\/rankings\?estadistica=\$\{stat\}` : "\/rankings", 301\)/);
+  // Filtros en píldoras, temporada en desplegable y botón para compartir.
+  assert.match(component, /Compartir estadística/);
+  assert.match(component, /className="pt-pills" role="group" aria-label="Competición"/);
+  assert.match(component, /className="pt-pills" role="group" aria-label="Estadística"/);
+  assert.match(component, /id="rk-season"/);
 });
 
 test('records page uses the concise heading and centered narrow table', () => {

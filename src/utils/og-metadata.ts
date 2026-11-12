@@ -128,30 +128,6 @@ export const OG_ESTATICOS: Record<string, { title: string; description: string }
     "title": "Términos y condiciones de uso | Madrid Femenino Xtra",
     "description": "Consulta las condiciones de uso de Madrid Femenino Xtra, las normas de acceso a sus contenidos, la propiedad intelectual y las responsabilidades de los usuarios."
   },
-  "/rankings/maximas-goleadoras": {
-    "title": "Máximas goleadoras de la historia del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Ranking histórico de las máximas goleadoras del Real Madrid Femenino: descubre qué futbolistas han marcado más goles oficiales y consulta sus registros y estadísticas."
-  },
-  "/rankings/maximas-asistentes": {
-    "title": "Máximas asistentes de la historia del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Ranking histórico de las futbolistas con más asistencias del Real Madrid Femenino: pases de gol, registros individuales y clasificación de las mejores asistentes del equipo blanco."
-  },
-  "/rankings/mas-partidos": {
-    "title": "Jugadoras con más partidos en la historia del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Descubre las jugadoras que más veces han vestido la camiseta del Real Madrid Femenino en partidos oficiales y consulta la clasificación histórica de apariciones del conjunto blanco."
-  },
-  "/rankings/mas-minutos": {
-    "title": "Jugadoras con más minutos en la historia del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Ranking histórico de minutos disputados por las jugadoras del Real Madrid Femenino: conoce a las futbolistas con mayor participación acumulada en partidos oficiales."
-  },
-  "/rankings/mas-capitanias": {
-    "title": "Jugadoras con más capitanías del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Descubre las futbolistas que más veces han portado el brazalete de capitana del Real Madrid Femenino y consulta sus registros históricos de capitanías."
-  },
-  "/rankings/porterias-a-cero": {
-    "title": "Porteras con más porterías a cero del Real Madrid Femenino | Madrid Femenino Xtra",
-    "description": "Ranking histórico de las porteras del Real Madrid Femenino con más partidos oficiales sin encajar goles. Consulta las estadísticas y registros de las guardametas blancas."
-  },
   "/404": {
     "title": "Página no encontrada | Madrid Femenino Xtra",
     "description": "La página que buscas no está disponible. Regresa a Madrid Femenino Xtra para consultar las últimas noticias, resultados y estadísticas del Real Madrid Femenino."

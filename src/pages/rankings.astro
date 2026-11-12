@@ -7,6 +7,9 @@ import { fetchPlayersDirectly, getPlayerImageUrl } from "../utils/players";
 import { breadcrumbSchema } from "../utils/seo";
 import StatsRankings from "../components/StatsRankings.tsx";
 import { compactRankingRows } from "../lib/ranking-payload";
+import { getAssetUrl } from "../utils/assets";
+import { getFlagSrc } from "../utils/flags";
+import "../styles/rankings.css";
 
 const rankingsData = await fetchRankingsDirectly();
 const compactRankings = compactRankingRows(rankingsData);
@@ -57,14 +60,16 @@ const playerImageMap = Object.fromEntries(
     playersData.map((p: any) => [p.slug, getRankingImage(p)]),
 );
 
-const featuredRankings = [
-    ["/rankings/maximas-goleadoras", "Máximas goleadoras"],
-    ["/rankings/maximas-asistentes", "Máximas asistentes"],
-    ["/rankings/mas-partidos", "Más partidos"],
-    ["/rankings/mas-minutos", "Más minutos"],
-    ["/rankings/mas-capitanias", "Más capitanías"],
-    ["/rankings/porterias-a-cero", "Porterías a cero"],
-];
+// Banderas y logos para la tabla y las píldoras de competición.
+const playerFlagMap = Object.fromEntries(
+    playersData
+        .map((p: any) => [p.slug, p.iso || p.pais_origin ? getFlagSrc(p.pais_origin || p.iso, p.iso) : ""])
+        .filter(([, flag]: any) => Boolean(flag)),
+);
+const competitionLogos = Object.fromEntries(
+    uniqueCompetitions.map((name) => [name, getAssetUrl("competiciones", name === "Amistosos" ? "amistoso" : name) || ""]),
+);
+const initialType = Astro.url.searchParams.get("estadistica") || "goles";
 ---
 
 <Layout
@@ -88,9 +93,6 @@ const featuredRankings = [
             <p class="landing-subtitle">Clasificaciones históricas de las jugadoras del Real Madrid Femenino a lo largo de su historia, por temporada y competición</p>
         </header>
 
-        <nav class="seo-ranking-links" aria-label="Rankings históricos destacados">
-            {featuredRankings.map(([href, label]) => <a href={href}>{label}</a>)}
-        </nav>
 
         {rankingsData.length > 0 ? (
             <StatsRankings
@@ -102,6 +104,9 @@ const featuredRankings = [
                 seasons={uniqueSeasons}
                 competitions={uniqueCompetitions}
                 playerImageMap={playerImageMap}
+                playerFlagMap={playerFlagMap}
+                competitionLogos={competitionLogos}
+                initialType={initialType}
             />
         ) : (
             <p style="text-align: center; color: red; font-size: 1.2em; padding: 2rem;">
@@ -113,57 +118,7 @@ const featuredRankings = [
 
 <style>
     main { color: rgb(var(--l-ink, 240, 240, 240)); }
-    .seo-ranking-links {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        width: min(100%, 1200px);
-        gap: 0.8rem;
-        margin: 0 auto 2rem;
-    }
-    .seo-ranking-links a {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid rgba(212, 168, 67, 0.18);
-        border-radius: 4px;
-        background: rgba(var(--l-card, 8, 16, 34), 0.85);
-        color: rgb(var(--l-gold, 212, 168, 67));
-        padding: 0.9rem 1rem;
-        text-align: center;
-        text-decoration: none;
-        font-family: "Cinzel", serif;
-        font-size: 0.78rem;
-        letter-spacing: 0.04em;
-        transition: 0.2s ease;
-    }
-    .seo-ranking-links a::before,
-    .seo-ranking-links a::after {
-        content: "";
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        pointer-events: none;
-    }
-    .seo-ranking-links a::before {
-        top: 0; left: 0;
-        border-top: 1px solid rgba(212, 168, 67, 0.5);
-        border-left: 1px solid rgba(212, 168, 67, 0.5);
-    }
-    .seo-ranking-links a::after {
-        right: 0; bottom: 0;
-        border-right: 1px solid rgba(212, 168, 67, 0.5);
-        border-bottom: 1px solid rgba(212, 168, 67, 0.5);
-    }
-    .seo-ranking-links a:hover {
-        border-color: rgba(212, 168, 67, 0.5);
-        background: rgba(var(--l-field, 10, 20, 42), 0.92);
-        transform: translateY(-2px);
-    }
-    @media (max-width: 800px) {
-        .seo-ranking-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 520px) {
-        .seo-ranking-links { grid-template-columns: 1fr; }
-    }
+
 </style>
 
 <style is:global>

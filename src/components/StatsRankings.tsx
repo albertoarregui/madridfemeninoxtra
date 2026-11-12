@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Target, Zap, Clock, Shield, Award, Crown, TrendingUp, Activity, Star as LucideStar, ChevronLeft, ChevronRight } from "lucide-react";
 import CustomSelect from "./CustomSelect";
 import {
@@ -96,6 +96,9 @@ interface StatsRankingsProps {
     seasons: string[];
     competitions: string[];
     playerImageMap: Record<string, string>;
+    playerFlagMap?: Record<string, string>;
+    competitionLogos?: Record<string, string>;
+    initialType?: string;
 }
 
 const TYPE_OPTIONS = [
@@ -176,9 +179,20 @@ export default function StatsRankings({
     awardsData,
     seasons,
     competitions,
-    playerImageMap
+    playerImageMap,
+    playerFlagMap = {},
+    competitionLogos = {},
+    initialType = "goles",
 }: StatsRankingsProps) {
-    const [selectedType, setSelectedType] = useState("goles");
+    const [selectedType, setSelectedType] = useState(
+        TYPE_OPTIONS.some((o) => o.value === initialType) ? initialType : "goles",
+    );
+    // La estadística elegida queda en la URL (?estadistica=) para poder compartirla.
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        if (selectedType === "goles") url.searchParams.delete("estadistica"); else url.searchParams.set("estadistica", selectedType);
+        window.history.replaceState(window.history.state, "", url);
+    }, [selectedType]);
     const [selectedSeason, setSelectedSeason] = useState("todos");
     const [selectedCompetition, setSelectedCompetition] = useState("oficiales");
     const [currentPage, setCurrentPage] = useState(1);
@@ -339,6 +353,7 @@ export default function StatsRankings({
                 p.duelos_aereos_totales += item.duelos_aereos_totales || 0;
                 p.valoracion_sum += item.valoracion || 0;
                 p.valoracion_count += (item as any).valoracion_count || 0;
+                p.games = (p.games || 0) + (Number(item.partidos) || 0);
 
                 config.dataKeys.forEach((key: string) => {
                     if (key !== 'display_ratio' && !key.startsWith('porcentaje_') && !explicitlyAccumulated.has(key)) {
@@ -394,232 +409,226 @@ export default function StatsRankings({
             .sort((a, b) => Number(b[config.primaryKey]) - Number(a[config.primaryKey]));
     }, [expandedRankingsData, streaksData, awardsData, selectedType, selectedSeason, selectedCompetition, currentConfig]);
 
-    const itemsForTable = useMemo(() => sortedPlayers.slice(3), [sortedPlayers]);
-    const totalPages = Math.ceil(itemsForTable.length / playersPerPage);
-    const paginatedPlayers = itemsForTable.slice((currentPage - 1) * playersPerPage, currentPage * playersPerPage);
+    // ── Presentación: tabla al estilo de los rankings históricos ─────────────
+    const [visible, setVisible] = useState(25);
+    const [sharing, setSharing] = useState(false);
+    const exportRef = useRef<HTMLDivElement>(null);
 
-    const podium = useMemo(() => sortedPlayers.slice(0, 3), [sortedPlayers]);
+    useEffect(() => { setVisible(25); }, [selectedType, selectedSeason, selectedCompetition]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedType, selectedSeason, selectedCompetition]);
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-        const tableElement = document.getElementById("ranking-table-top");
-        if (tableElement) tableElement.scrollIntoView({ behavior: 'smooth' });
+    const isCountStat = !currentConfig.isStreak && !currentConfig.isAward
+        && !String(currentConfig.primaryKey).startsWith("porcentaje_") && currentConfig.primaryKey !== "valoracion";
+    const primaryLabel = currentConfig.headers[currentConfig.headers.length - 1];
+    const formatValue = (player: any) => {
+        const value = player[currentConfig.primaryKey];
+        if (String(currentConfig.primaryKey).startsWith("porcentaje_")) return `${Number(value).toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`;
+        if (currentConfig.primaryKey === "valoracion") return Number(value).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return Number(value).toLocaleString("es-ES");
     };
+    const perGame = (player: any) => {
+        const games = Number(player.games) || 0;
+        if (!games) return "—";
+        return (Number(player[currentConfig.primaryKey]) / games).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    const perGameLabel = currentConfig.primaryKey === "minutos" ? "Min/partido" : `${primaryLabel}/partido`;
+    const seasonLabel = selectedSeason === "todos" ? "Todas las temporadas" : selectedSeason;
+    const compLabel = selectedCompetition === "todos" ? "Todas las competiciones"
+        : selectedCompetition === "oficiales" ? "Partidos oficiales" : selectedCompetition;
+
+    const MAIN_STATS = [
+        { value: "goles", label: "Goles" },
+        { value: "asistencias", label: "Asistencias" },
+        { value: "goles_generados", label: "Goles + Asist." },
+        { value: "partidos", label: "Partidos" },
+        { value: "minutos", label: "Minutos" },
+        { value: "titularidades", label: "Titularidades" },
+        { value: "porterias_cero", label: "Porterías a cero" },
+        { value: "capitanias", label: "Capitanías" },
+        { value: "tarjetas_amarillas", label: "Amarillas" },
+        { value: "tarjetas_rojas", label: "Rojas" },
+    ];
+    const isMainStat = MAIN_STATS.some((s) => s.value === selectedType);
+    const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
+    const compPills = [
+        { value: "todos", label: "Todas" },
+        { value: "oficiales", label: "Oficiales" },
+        ...COMP_ORDER.filter((c) => competitions.includes(c)).map((c) => ({ value: c, label: c === "Amistosos" ? "Amistoso" : c })),
+    ];
+
+    const photo = (player: any) => playerImageMap[player.slug];
+    const flag = (player: any) => playerFlagMap[player.slug];
+
+    async function shareStat() {
+        const node = exportRef.current;
+        if (!node || sharing) return;
+        setSharing(true);
+        try {
+            const sameOrigin = location.hostname === "www.madridfemeninoxtra.com";
+            // Mismo criterio que «Compartir plantilla»: las fotos de R2 se piden con CORS.
+            const resolve = (src: string) => {
+                if (!src || !src.startsWith("https://media.madridfemeninoxtra.com/")) return src;
+                if (!sameOrigin) return `/api/img-proxy?url=${encodeURIComponent(src)}`;
+                return `${src}${src.includes("?") ? "&" : "?"}export=1`;
+            };
+            await Promise.all([...node.querySelectorAll<HTMLElement>("[data-bg]")].map((el) => new Promise<void>((done) => {
+                const url = resolve(el.dataset.bg || "");
+                if (!url) return done();
+                const probe = new Image();
+                probe.crossOrigin = "anonymous";
+                probe.onload = probe.onerror = () => { el.style.backgroundImage = `url("${url}")`; done(); };
+                probe.src = url;
+            })));
+            await document.fonts.ready;
+            const { default: html2canvas } = await import("html2canvas");
+            // Visible solo durante la captura (queda detrás del contenido, z-index -1).
+            node.style.visibility = "visible";
+            const canvas = await html2canvas(node, {
+                backgroundColor: "#070d1c", scale: 2, useCORS: true, logging: false, imageTimeout: 5000,
+                width: node.offsetWidth, height: node.scrollHeight, windowWidth: node.offsetWidth, windowHeight: node.scrollHeight,
+                // La tarjeta es fija arriba a la izquierda: sin esto se dibuja desplazada con el scroll.
+                scrollX: 0, scrollY: 0,
+                onclone: (doc) => { const clone = doc.querySelector<HTMLElement>("[data-rank-export]"); if (clone) clone.style.visibility = "visible"; },
+            });
+            node.style.visibility = "";
+            const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, "image/png"));
+            if (!blob) throw new Error("No se pudo generar la imagen");
+            const slug = `${primaryLabel}-${seasonLabel}-${compLabel}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+            const file = new File([blob], `ranking-${slug}.png`, { type: "image/png" });
+            if (navigator.canShare?.({ files: [file] })) {
+                try { await navigator.share({ files: [file], title: currentConfig.title }); return; }
+                catch (error) { if ((error as DOMException)?.name === "AbortError") return; }
+            }
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = file.name;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        } catch (error) {
+            console.error("[rankings] Error al generar la imagen:", error);
+            alert("No se pudo generar la imagen. Inténtalo de nuevo.");
+        } finally {
+            node.style.visibility = "";
+            setSharing(false);
+        }
+    }
+
+    const shown = sortedPlayers.slice(0, visible);
 
     return (
-        <div className="stats-rankings-react py-8">
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .stats-rankings-react { width: 100%; max-width: 1280px; margin: 0 auto; }
-                .podium-container { min-height: 520px; gap: 15px; margin-bottom: 2rem; }
-                .podium-spot { flex: 1; max-width: 340px; transition: all 0.4s ease; }
-                .spot-1:hover .podium-img-wrapper {
-                    border-color: #FFD700 !important;
-                    box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
-                }
-                .spot-2:hover .podium-img-wrapper {
-                    border-color: #C0C0C0 !important;
-                    box-shadow: 0 15px 40px rgba(192, 192, 192, 0.4);
-                }
-                .spot-3:hover .podium-img-wrapper {
-                    border-color: #CD7F32 !important;
-                    box-shadow: 0 15px 40px rgba(205, 127, 50, 0.4);
-                }
-                .podium-base { width: 100%; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding-top: 2rem; }
-                .spot-1 { order: 2; height: 100%; }
-                .spot-2 { order: 1; height: 85%; }
-                .spot-3 { order: 3; height: 75%; }
-                .podium-img-wrapper { border-radius: 50%; border: 6px solid rgba(212,168,67,0.4); box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; background: rgba(6,13,28,0.8); }
-                .spot-1 .podium-img-wrapper { width: 190px; height: 190px; border-color: #FFD700; transform: scale(1.1); }
-                .spot-2 .podium-img-wrapper { width: 160px; height: 160px; border-color: #C0C0C0; }
-                .spot-3 .podium-img-wrapper { width: 140px; height: 140px; border-color: #CD7F32; }
-                .ranking-table-row:hover { background-color: rgba(212, 168, 67, 0.08) !important; cursor: pointer; }
-                .ranking-title-header {
-                    padding: 2.5rem 1.5rem;
-                    text-align: left;
-                }
-                .ranking-title-header h2 {
-                    font-size: 1.6rem;
-                    font-family: 'Cinzel', serif;
-                    text-transform: uppercase;
-                    line-height: 1;
-                    color: #d4a843;
-                    margin: 0;
-                    padding-left: 1.5rem;
-                    font-weight: 700;
-                    border-left: 6.5px solid #d4a843;
-                    display: inline-block;
-                    letter-spacing: 0.05em;
-                }
+        <div className="rk">
+            <div className="rk-actions">
+                <button type="button" className="squad-download rk-share" onClick={shareStat} disabled={sharing || sortedPlayers.length === 0}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>
+                    {sharing ? "Generando…" : "Compartir estadística"}
+                </button>
+                <div className="rk-season">
+                    <span className="rk-label">Temporada</span>
+                    <CustomSelect
+                        id="rk-season"
+                        options={[{ value: "todos", label: "Todas las temporadas" }, ...seasons.map((s) => ({ value: s, label: s }))]}
+                        value={selectedSeason}
+                        onChange={setSelectedSeason}
+                    />
+                </div>
+            </div>
 
-                @media (max-width: 768px) {
-                    .stats-rankings-react { padding-top: 0.75rem; }
-                    .stats-rankings-react .filters-container { gap: 0.6rem !important; margin-bottom: 1.75rem !important; }
-                    .podium-container { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; min-height: auto; gap: 0.35rem; margin-bottom: 2rem; padding: 0; }
-                    .podium-spot { width: 100%; max-width: 100%; min-width: 0; }
-                    .spot-1 { order: 2; }
-                    .spot-2 { order: 1; }
-                    .spot-3 { order: 3; }
-                    .podium-spot > div { margin-bottom: 0.35rem !important; }
-                    .podium-base { padding: 0.45rem 0 !important; border-radius: 7px 7px 0 0; }
-                    .spot-1 .podium-base { height: 88px !important; }
-                    .spot-2 .podium-base { height: 68px !important; }
-                    .spot-3 .podium-base { height: 56px !important; }
-                    .podium-base svg { width: 17px; height: 17px; }
-                    .podium-base span { margin-top: 0.2rem !important; font-size: 1.25rem !important; line-height: 1 !important; }
-                    .ranking-title-header h2 { font-size: 1.3rem; }
-                    .spot-1 .podium-img-wrapper { width: 88px; height: 88px; border-width: 3px; transform: none; }
-                    .spot-2 .podium-img-wrapper { width: 72px; height: 72px; border-width: 3px; }
-                    .spot-3 .podium-img-wrapper { width: 64px; height: 64px; border-width: 3px; }
-                    .spot-1 .animate-bounce { width: 18px; height: 18px; }
-                    .spot-1 .mb-2 { margin-bottom: 0.2rem !important; }
-                    .podium-stat-value { width: 100%; margin-top: 0.45rem !important; margin-bottom: 0 !important; }
-                    .podium-stat-value h3 { min-height: 2.35em; margin: 0 0 0.2rem !important; padding: 0 0.15rem !important; overflow: hidden; font-size: 0.62rem !important; line-height: 1.18 !important; white-space: normal !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-                    .podium-stat-value p { font-size: 1.18rem !important; line-height: 1 !important; }
-                    .spot-1 .podium-stat-value p { font-size: 1.45rem !important; }
-                }
-                .podium-stat-value { margin-bottom: 2rem; }
-                ` }} />
+            <div className="rk-filter">
+                <span className="rk-label">Competición</span>
+                <div className="pt-pills" role="group" aria-label="Competición">
+                    {compPills.map((option) => (
+                        <button key={option.value} type="button" className={`pt-pill${selectedCompetition === option.value ? " is-active" : ""}`}
+                            aria-pressed={selectedCompetition === option.value} onClick={() => setSelectedCompetition(option.value)}>
+                            {competitionLogos[option.value] && <img src={competitionLogos[option.value]} alt="" width={16} height={16} loading="lazy" />}
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
-            <div className="flex flex-wrap justify-center gap-4 mb-16 items-center relative z-[1001] filters-container" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
-                <CustomSelect options={TYPE_OPTIONS} value={selectedType} onChange={setSelectedType} id="filtro-tipo" />
-                <CustomSelect options={[{ value: "todos", label: "Todas las Temporadas" }, ...seasons.map(s => ({ value: s, label: s }))]} value={selectedSeason} onChange={setSelectedSeason} id="filtro-temporada" />
-                {!currentConfig.isAward && (
-                    <CustomSelect options={[{ value: "todos", label: "Todas las Competiciones" }, { value: "oficiales", label: "Partidos Oficiales" }, ...competitions.map(c => ({ value: c, label: c }))]} value={selectedCompetition} onChange={setSelectedCompetition} id="filtro-competicion" />
+            <div className="rk-filter">
+                <span className="rk-label">Estadística</span>
+                <div className="rk-stat-row">
+                    <div className="pt-pills" role="group" aria-label="Estadística">
+                        {MAIN_STATS.map((option) => (
+                            <button key={option.value} type="button" className={`pt-pill${selectedType === option.value ? " is-active" : ""}`}
+                                aria-pressed={selectedType === option.value} onClick={() => setSelectedType(option.value)}>
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className={`rk-more${isMainStat ? "" : " is-active"}`}>
+                        <CustomSelect
+                            id="rk-more"
+                            options={[{ value: "", label: "Más estadísticas" }, ...TYPE_OPTIONS.filter((o) => !MAIN_STATS.some((m) => m.value === o.value))]}
+                            value={isMainStat ? "" : selectedType}
+                            onChange={(value) => { if (value) setSelectedType(value); }}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="rk-card mfx-corners" id="ranking-table-top">
+                <div className="rk-head">
+                    <h2>{currentConfig.title}</h2>
+                    <p>{seasonLabel} · {compLabel}</p>
+                </div>
+                {sortedPlayers.length === 0 ? (
+                    <p className="rk-empty">No hay datos para estos filtros.</p>
+                ) : (
+                    <table className="rk-table">
+                        <thead>
+                            <tr>
+                                <th className="rk-pos">#</th>
+                                <th className="rk-player">Jugadora</th>
+                                {isCountStat && <th className="rk-num">Partidos</th>}
+                                {isCountStat && currentConfig.primaryKey !== "partidos" && <th className="rk-num rk-hide-sm">{perGameLabel}</th>}
+                                <th className="rk-value">{primaryLabel} ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {shown.map((player, index) => (
+                                <tr key={player.id_jugadora ?? player.slug} onClick={() => player.slug && (window.location.href = `/jugadoras/${player.slug}`)}>
+                                    <td className="rk-pos"><span className={`rk-rank${index === 0 ? " is-first" : ""}`}>{index + 1}</span></td>
+                                    <td className="rk-player">
+                                        <a className="rk-person" href={player.slug ? `/jugadoras/${player.slug}` : undefined} onClick={(e) => e.stopPropagation()}>
+                                            <span className="rk-photo">{photo(player) && <img src={photo(player)} alt="" width={52} height={52} loading="lazy" />}</span>
+                                            <span className="rk-name">
+                                                <strong>{player.nombre}{flag(player) && <img className="rk-flag" src={flag(player)} alt="" width={20} height={14} loading="lazy" />}</strong>
+                                                {player.posicion && <small>{player.posicion}</small>}
+                                            </span>
+                                        </a>
+                                    </td>
+                                    {isCountStat && <td className="rk-num">{player.games || "—"}</td>}
+                                    {isCountStat && currentConfig.primaryKey !== "partidos" && <td className="rk-num rk-hide-sm">{perGame(player)}</td>}
+                                    <td className="rk-value"><b>{formatValue(player)}</b>{currentConfig.primaryKey !== "display_ratio" && player.display_ratio && <small>{player.display_ratio}</small>}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+                {visible < sortedPlayers.length && (
+                    <button type="button" className="btn-more rk-more-btn" onClick={() => setVisible((v) => v + 25)}>
+                        Cargar más ({sortedPlayers.length - visible} restantes)
+                    </button>
                 )}
             </div>
 
-            {sortedPlayers.length > 0 ? (
-                <>
-                    <div className="podium-container flex items-end justify-center px-4">
-                        {podium[1] && (
-                            <div className="podium-spot spot-2 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-4">
-                                    <div className="podium-img-wrapper">
-                                        <a href={`/jugadoras/${podium[1].slug}`}>
-                                            <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
-                                        </a>
-                                    </div>
-                                    <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
-                                            <a href={`/jugadoras/${podium[1].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-ink,192,192,192))] transition-colors">{podium[1].nombre}</a>
-                                        </h3>
-                                        <p className="text-3xl font-black" style={{color: 'rgb(var(--l-ink, 192, 192, 192))'}}>{podium[1][currentConfig.primaryKey]}</p>
-                                    </div>
-                                </div>
-                                <div className="podium-base h-40" style={{background: 'rgba(var(--l-ink, 192, 192, 192), 0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
-                                    <SpotStarIcon color="#C0C0C0" />
-                                    <span className="font-bold text-4xl mt-3" style={{color: 'rgba(var(--l-ink, 192, 192, 192), 0.5)'}}>2</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {podium[0] && (
-                            <div className="podium-spot spot-1 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-4 z-10">
-                                    <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
-                                    <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4" style={{ringOffsetColor: '#060d1c'}}>
-                                        <a href={`/jugadoras/${podium[0].slug}`}>
-                                            <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
-                                        </a>
-                                    </div>
-                                    <div className="text-center mt-6 podium-stat-value">
-                                        <h3 className="font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
-                                            <a href={`/jugadoras/${podium[0].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-gold,255,215,0))] transition-colors">{podium[0].nombre}</a>
-                                        </h3>
-                                        <p className="text-5xl font-black" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{podium[0][currentConfig.primaryKey]}</p>
-                                    </div>
-                                </div>
-                                <div className="podium-base h-64 shadow-lg" style={{background: 'rgba(212,168,67,0.18)', borderBottom: '4px solid rgba(212,168,67,0.5)'}}>
-                                    <MainStarIcon color="#FFD700" className="drop-shadow-sm" />
-                                    <span className="font-black text-6xl mt-4 drop-shadow-md" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>1</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {podium[2] && (
-                            <div className="podium-spot spot-3 flex flex-col justify-end">
-                                <div className="flex flex-col items-center mb-4">
-                                    <div className="podium-img-wrapper">
-                                        <a href={`/jugadoras/${podium[2].slug}`}>
-                                            <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
-                                        </a>
-                                    </div>
-                                    <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-base leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
-                                            <a href={`/jugadoras/${podium[2].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-red,205,127,50))] transition-colors">{podium[2].nombre}</a>
-                                        </h3>
-                                        <p className="text-2xl font-black" style={{color: 'rgb(var(--l-red, 205, 127, 50))'}}>{podium[2][currentConfig.primaryKey]}</p>
-                                    </div>
-                                </div>
-                                <div className="podium-base h-32" style={{background: 'rgba(205,127,50,0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
-                                    <SpotStarIcon color="#CD7F32" />
-                                    <span className="font-bold text-3xl mt-2" style={{color: 'rgba(var(--l-red, 205, 127, 50), 0.5)'}}>3</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div id="ranking-table-top" className="rounded-2xl shadow-2xl overflow-hidden mb-12" style={{background: 'rgba(var(--l-card, 8, 16, 34), 0.85)', border: '1px solid rgba(212,168,67,0.2)', backdropFilter: 'blur(12px)'}}>
-                        <div className="ranking-title-header"><h2>{currentConfig.title}</h2></div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.9)', borderBottom: '2px solid rgba(212,168,67,0.2)'}}>
-                                        {currentConfig.headers.map((h: string, i: number) => (
-                                            <th key={i} className={`px-6 py-5 ${i === 1 ? 'text-left' : 'text-center'} text-xs font-bold uppercase tracking-widest`} style={{fontFamily: "'Cinzel', serif", color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody style={{borderColor: 'rgba(212,168,67,0.08)'}}>
-                                    {paginatedPlayers.map((player, idx) => {
-                                        const globalIndex = (currentPage - 1) * playersPerPage + idx + 4;
-                                        return (
-                                            <tr key={player.id_jugadora} className="ranking-table-row group transition-colors cursor-pointer" style={{borderBottom: '1px solid rgba(212,168,67,0.07)'}} onClick={() => window.location.href = `/jugadoras/${player.slug}`}>
-                                                <td className="px-6 py-5 text-center border-l-[6px] border-l-transparent transition-all group-hover:border-l-[#d4a843]">
-                                                    <span className="text-sm font-bold" style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}}>{globalIndex}</span>
-                                                </td>
-                                                <td className="px-6 py-5 text-left">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden" style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.8)', border: '1px solid rgba(212,168,67,0.25)'}}>
-                                                            <img src={playerImageMap[player.slug] || "/assets/jugadoras/placeholder.png"} alt={player.nombre} width={80} height={107} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
-                                                        </div>
-                                                        <a href={`/jugadoras/${player.slug}`} className="text-base font-bold transition-colors" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} onMouseEnter={e => (e.currentTarget.style.color='#d4a843')} onMouseLeave={e => (e.currentTarget.style.color='#f0f0f0')}>{player.nombre}</a>
-                                                    </div>
-                                                </td>
-                                                {currentConfig.dataKeys.map((key: string) => {
-                                                    let val = player[key];
-                                                    if (key.startsWith('porcentaje_')) val = `${val}%`;
-                                                    return <td key={key} className="px-6 py-5 text-center"><span className="text-lg font-black" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>{val}</span></td>;
-                                                })}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                        {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-2 p-8 border-t" style={{background: 'rgba(var(--l-bg, 6, 13, 28), 0.6)', borderColor: 'rgba(212,168,67,0.15)'}}>
-                                <button onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', background: 'transparent'}}><ChevronLeft size={20} /></button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                    <button key={page} onClick={() => handlePageChange(page)} className="w-10 h-10 rounded-lg font-bold transition-all" style={currentPage === page ? {background: '#d4a843', color: '#060d1c'} : {background: 'transparent', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', border: '1px solid rgba(212,168,67,0.2)'}}>{page}</button>
-                                ))}
-                                <button onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-2 rounded-lg border-2 disabled:opacity-30 transition-colors" style={{borderColor: 'rgba(212,168,67,0.3)', color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)', background: 'transparent'}}><ChevronRight size={20} /></button>
-                            </div>
-                        )}
-                    </div>
-                </>
-            ) : (
-                <div className="text-center py-40 rounded-3xl border-2 border-dashed" style={{background: 'rgba(var(--l-card, 8, 16, 34), 0.5)', borderColor: 'rgba(212,168,67,0.2)'}}>
-                    <Activity className="mx-auto mb-6" size={80} style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}} />
-                    <h2 className="text-2xl font-bold" style={{color: 'rgba(var(--l-ink, 200, 210, 220), 0.65)'}}>Sin datos registrados</h2>
-                    <p className="mt-2" style={{color: 'rgba(var(--l-muted, 150, 160, 175), 0.6)'}}>No se encontraron estadísticas para los filtros seleccionados.</p>
+            {/* Tarjeta para «Compartir estadística»: top 10 con el estilo de la web. */}
+            <div className="rk-export" data-rank-export ref={exportRef} aria-hidden="true">
+                <div className="rk-export-head">
+                    <small>{seasonLabel} · {compLabel}</small>
+                    <h3>{currentConfig.title}</h3>
                 </div>
-            )}
+                {sortedPlayers.slice(0, 10).map((player, index) => (
+                    <div className="rk-export-row" key={`x-${player.id_jugadora ?? player.slug}`}>
+                        <span className={`rk-rank${index === 0 ? " is-first" : ""}`}>{index + 1}</span>
+                        <span className="rk-export-photo" data-bg={photo(player) || ""} />
+                        <span className="rk-export-name">{player.nombre}<small>{player.posicion}</small></span>
+                        {isCountStat && <span className="rk-export-games">{player.games || "—"} PJ</span>}
+                        <b>{formatValue(player)}</b>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

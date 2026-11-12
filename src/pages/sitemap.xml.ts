@@ -31,12 +31,6 @@ const staticPages = [
     { url: 'arbitras', priority: 0.7, changefreq: 'monthly' },
     { url: 'plantilla', priority: 0.7, changefreq: 'monthly' },
     { url: 'rankings', priority: 0.8, changefreq: 'weekly' },
-    { url: 'rankings/maximas-goleadoras', priority: 0.8, changefreq: 'weekly' },
-    { url: 'rankings/maximas-asistentes', priority: 0.8, changefreq: 'weekly' },
-    { url: 'rankings/mas-partidos', priority: 0.8, changefreq: 'weekly' },
-    { url: 'rankings/mas-minutos', priority: 0.7, changefreq: 'weekly' },
-    { url: 'rankings/mas-capitanias', priority: 0.7, changefreq: 'weekly' },
-    { url: 'rankings/porterias-a-cero', priority: 0.7, changefreq: 'weekly' },
     { url: 'temporadas', priority: 0.8, changefreq: 'weekly' },
     { url: 'estadisticas-real-madrid-femenino', priority: 0.9, changefreq: 'weekly' },
     { url: 'estadisticas/avanzadas', priority: 0.8, changefreq: 'weekly' },
@@ -230,7 +224,7 @@ async function buildSitemap(): Promise<string> {
 
 export const GET: APIRoute = async () => {
     try {
-        const xml = await cached('seo:sitemap-2026-v5', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
+        const xml = await cached('seo:sitemap-2026-v6', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',
