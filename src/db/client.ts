@@ -11,12 +11,12 @@ const globalForDb = globalThis as unknown as {
 };
 
 const STATIC_DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-// Las páginas dinámicas conservan frescura mediante invalidación por tabla
-// (escrituras desde la web y /api/cache/revalidate tras cargar datos a mano)
-// y las fichas de partidos recientes leen Turso sin caché. Con 10 minutos cada
-// consulta distinta se reescribía en Runtime Cache decenas de veces al día y se
-// agotaba el cupo gratuito de escrituras; 6 horas lo reduce unas 36 veces.
-const DYNAMIC_DB_READ_TTL_MS = 6 * 60 * 60 * 1000;
+// Las páginas dinámicas conservan frescura por invalidación: los triggers de
+// Turso anotan cada cambio en `cache_cambios` y /api/cache/check invalida las
+// tablas afectadas en menos de un minuto, se carguen los datos como se carguen.
+// Las fichas de partidos recientes leen Turso sin caché. El TTL largo evita
+// reescribir cada consulta en Runtime Cache (cupo gratuito de escrituras).
+const DYNAMIC_DB_READ_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DB_CACHE_VERSION = 'v9';
 const MVP_DB_CACHE_VERSION = 'v2';
 const MVP_READ_TAG = tableCacheTag('mvp');
