@@ -46,16 +46,17 @@ interface ClubStatsDashboardProps {
     playerImages: Record<string, string>;
     seasons: string[];
     competitions: string[];
+    competitionLogos?: Record<string, string>;
 }
 
-const card = "bg-[rgba(var(--l-field,10,20,40),0.6)] rounded-xl border border-[rgba(212,168,67,0.15)] transition-all cursor-default group hover:border-[rgba(212,168,67,0.38)] hover:shadow-[0_6px_28px_rgba(212,168,67,0.12)]";
+const card = "mfx-corners bg-[rgba(var(--l-field,10,20,40),0.6)] rounded-xl border border-[rgba(212,168,67,0.15)] transition-all cursor-default group hover:border-[rgba(212,168,67,0.38)] hover:shadow-[0_6px_28px_rgba(212,168,67,0.12)]";
 const cardTitle = "text-[10px] font-bold text-[#888] uppercase tracking-widest group-hover:text-[rgb(var(--l-gold,212,168,67))] transition-colors";
 const statNum = "text-3xl font-black text-[rgb(var(--l-ink,240,240,240))] leading-none group-hover:text-[rgb(var(--l-gold,212,168,67))] transition-colors";
 const divider = "w-full h-px bg-[rgba(var(--l-hi,255,255,255),0.07)]";
 
 const OFFICIAL_COMPETITIONS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
 
-const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goalRows, playerImages, seasons, competitions }) => {
+const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goalRows, playerImages, seasons, competitions, competitionLogos = {} }) => {
     const matches = useMemo(() => expandDashboardMatches(matchRows) as Match[], [matchRows]);
     const goals = useMemo(() => expandDashboardGoals(goalRows, playerImages) as Goal[], [goalRows, playerImages]);
     const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
@@ -267,18 +268,27 @@ const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goal
                         value={selectedSeason}
                         onChange={(val) => setSelectedSeason(val)}
                     />
-                    <CustomSelect
-                        id="container-competicion"
-                        options={[
-                            { value: 'all', label: 'Todas las Competiciones' },
-                            { value: 'Partidos Oficiales', label: 'Partidos Oficiales' },
+                    {/* Mismo filtro de competición que la ficha de jugadora. */}
+                    <div className="pt-pills" role="group" aria-label="Competición">
+                        {[
+                            { value: 'Partidos Oficiales', label: 'Oficiales' },
                             ...['Primera Iberdrola', 'Liga F', 'UWCL', 'Copa de la Reina', 'Supercopa de España', 'Amistosos']
                                 .filter(c => competitions.includes(c))
-                                .map(c => ({ value: c, label: c }))
-                        ]}
-                        value={selectedCompetition}
-                        onChange={(val) => setSelectedCompetition(val)}
-                    />
+                                .map(c => ({ value: c, label: c === 'Amistosos' ? 'Amistoso' : c })),
+                            { value: 'all', label: 'Todas' },
+                        ].map(option => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                className={`pt-pill${selectedCompetition === option.value ? ' is-active' : ''}`}
+                                aria-pressed={selectedCompetition === option.value}
+                                onClick={() => setSelectedCompetition(option.value)}
+                            >
+                                {competitionLogos[option.value] && <img src={competitionLogos[option.value]} alt="" width={16} height={16} loading="lazy" />}
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

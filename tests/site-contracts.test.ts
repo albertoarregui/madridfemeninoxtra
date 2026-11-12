@@ -272,11 +272,10 @@ test('reader ratings include substitutes who entered even without recorded minut
   assert.match(detail, /const substitutes=players\.filter\(x=>!x\.titular\)/);
 });
 
-test('homepage builds valid absolute URLs for most-read Contentful images', () => {
+test('homepage no longer shows or fetches the most-read ranking', () => {
   const homepage = read('src/pages/index.astro');
-  assert.ok(homepage.includes('String(assetUrl).startsWith("//") ? `https:${assetUrl}` : String(assetUrl)'));
-  assert.ok(!homepage.includes('String(assetUrl).replace(/^\\/\\//, "https:")'));
-  assert.ok(homepage.includes("news:most-read-articles-v3"));
+  assert.ok(!homepage.includes('news:most-read-articles-v3'));
+  assert.ok(!homepage.includes('mas-leidas'));
 });
 
 test('Laia Lopez has six clean sheets at the 2026 U20 World Cup', () => {

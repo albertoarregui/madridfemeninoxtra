@@ -602,7 +602,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                     </div>
                 </>
             ) : (
-                <div className="cmp-empty">
+                <div className="cmp-empty mfx-corners">
                     <svg viewBox="0 0 64 64" fill="none" className="cmp-empty-icon">
                         <circle cx="32" cy="32" r="30" stroke="#e0e0e0" strokeWidth="2"/>
                         <path d="M20 44c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#e0e0e0" strokeWidth="2" strokeLinecap="round"/>

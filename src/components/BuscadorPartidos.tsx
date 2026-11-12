@@ -275,7 +275,7 @@ export default function BuscadorPartidos({ seasons, competitions, rivals }: Busc
 
     return (
         <div className="bus-root">
-            <div className="bus-filters-panel">
+            <div className="bus-filters-panel mfx-corners">
                 <div className="bus-search-row">
                     <div className="bus-search-wrap">
                         <Search size={15} className="bus-search-icon" />

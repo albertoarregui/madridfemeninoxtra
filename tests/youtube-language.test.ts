@@ -10,7 +10,7 @@ test("la sección de vídeos conserva el diseño original sin una lectura RSS", 
   assert.match(section, /youtube\.com\/@MadridFemXtra\/videos/);
   assert.match(section, /parseInitialData/);
   assert.match(section, /lockupViewModel/);
-  assert.match(section, /class="main-video"/);
+  assert.match(section, /class="main-video[ "]/);
   assert.match(section, /class="video-card-small[^"]*"/);
   assert.match(section, /id="scrollLeft"/);
   assert.match(section, /id="scrollRight"/);

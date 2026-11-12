@@ -17,6 +17,7 @@ import { compactDashboardPayload } from "../lib/dashboard-payload";
 
 import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
+import { getAssetUrl } from "../utils/assets";
 
 // Estas consultas son independientes; ejecutarlas en paralelo reduce el TTFB.
 const [gamesData, allGoals] = await Promise.all([
@@ -132,46 +133,11 @@ const uniqueCompetitions = [
 	return (a as string).localeCompare(b as string);
 });
 
-let masLeidas: { slug: string; title: string; subtitle?: string; category?: string; imageUrl?: string }[] = [];
-try {
-	masLeidas = await cached('news:most-read-articles-v3', 60 * 60 * 1000, async () => {
-		const { getAnalyticsDbClient } = await import("../db/client");
-		const analyticsClient = await getAnalyticsDbClient();
-		if (!analyticsClient) return [];
-		const topResult = await analyticsClient.execute({
-			sql: `SELECT slug FROM article_views WHERE views > 0 ORDER BY views DESC, slug ASC LIMIT 10`,
-			args: [],
-		});
-		const topSlugs = topResult.rows.map((r: any) => String(r.slug));
-		if (!topSlugs.length) return [];
-
-		const { contentfulClient } = await import("../lib/contentful");
-		const related = await contentfulClient.getEntries({
-			content_type: "noticia",
-			"fields.slug[in]": topSlugs.join(","),
-			select: ["sys.id", "fields.slug", "fields.title", "fields.subtitle", "fields.category", "fields.featuredImage"] as any,
-			limit: 10,
-		});
-		const bySlug = new Map(related.items.map((entry: any) => [entry.fields.slug, entry.fields]));
-		return topSlugs
-			.map((slug: string) => bySlug.get(slug) as any)
-			.filter(Boolean)
-			.slice(0, 5)
-			.map((article: any) => {
-				const assetUrl = article.featuredImage?.fields?.file?.url;
-				const photo = assetUrl ? (String(assetUrl).startsWith("//") ? `https:${assetUrl}` : String(assetUrl)) : undefined;
-				return {
-					slug: article.slug,
-					title: article.title,
-					subtitle: article.subtitle ?? "",
-					category: article.category,
-					imageUrl: photo ? `${photo}${photo.includes("?") ? "&" : "?"}fm=webp&w=120&h=80&q=75&fit=fill` : undefined,
-				};
-			});
-	}, { tags: ['news-ranking'], memoryTtlMs: 60 * 1000 });
-} catch (error) {
-	console.error('Error al cargar el ranking de noticias más leídas:', error);
-}
+// Logos de las píldoras de competición del panel de estadísticas.
+const competitionLogos = Object.fromEntries(
+	["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"]
+		.map((name) => [name, getAssetUrl("competiciones", name === "Amistosos" ? "amistoso" : name) || ""]),
+);
 ---
 
 <Layout
@@ -265,6 +231,7 @@ try {
 						playerImages={dashboardPayload.playerImages}
 						seasons={uniqueSeasons}
 						competitions={uniqueCompetitions}
+						competitionLogos={competitionLogos}
 						client:visible
 					/>
 				</div>
@@ -291,39 +258,6 @@ try {
 			<span class="section-label">♦ PLAYER OF THE MONTH ♦</span>
 			<h2 class="section-title">JUGADORA DEL MES</h2>
 			<PlayerOfTheMonthWidget />
-
-			{masLeidas.length > 0 && (
-				<>
-					<span class="section-label">♦ MOST READ ♦</span>
-					<h2 class="section-title">MÁS LEÍDAS</h2>
-					<ol class="mas-leidas-list">
-						{masLeidas.map((n, i) => (
-							<li class="mas-leidas-item">
-								<a href={`/noticias/${n.slug}`} class="mas-leidas-link">
-									<span class="mas-leidas-rank">{i + 1}</span>
-									{n.imageUrl && (
-										<Image
-											src={n.imageUrl}
-											alt={n.title}
-											class="mas-leidas-thumb"
-											width={140}
-											height={140}
-											quality={70}
-											format="webp"
-											loading="lazy"
-											decoding="async"
-										/>
-									)}
-									<div class="mas-leidas-info">
-										{n.category && <span class="mas-leidas-cat">{n.category.toUpperCase()}</span>}
-										<span class="mas-leidas-title">{n.title}</span>
-									</div>
-								</a>
-							</li>
-						))}
-					</ol>
-				</>
-			)}
 
 			<span class="section-label">♦ LIGA F + UWCL ♦</span>
 			<h2 class="section-title">CLASIFICACIONES</h2>
