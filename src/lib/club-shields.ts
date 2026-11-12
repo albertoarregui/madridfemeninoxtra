@@ -47,6 +47,7 @@ const CLUB_ALIASES: Record<string, string> = {
     'albacete juvenil a': 'Albacete Balompié (cantera)',
     'as saint-étienne (categorías inferiores)': 'AS Saint-Étienne',
     'hammarby youth': 'Hammarby',
+    'sky blue fc': 'Gotham FC',
     'cd tacón b': 'CD Tacón',
     'pozuelo de alarcón': 'CF Pozuelo de Alarcón',
     'são josé': 'Sao José', 'sao josé': 'Sao José',
