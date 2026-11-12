@@ -17,12 +17,25 @@ async function load(): Promise<Move[]> {
     const { getPlayersDbClient } = await import("../db/client");
     const client = await getPlayersDbClient();
     if (!client) return [];
+    // Solo movimientos del primer equipo: la jugadora tenía dorsal del primer
+    // equipo (categoría 4) esa temporada o, si sale o renueva, la anterior.
     const result = await client.execute(`
+        WITH d AS (
+            SELECT dr.id_jugadora, t.temporada, MAX(dr.id_categoria) AS cat
+            FROM dorsales dr JOIN temporadas t ON t.id_temporada = dr.id_temporada
+            GROUP BY dr.id_jugadora, t.temporada
+        )
         SELECT m.id_movimiento, m.id_jugadora, m.nombre, m.tipo, m.temporada, m.fecha, m.club_origen, m.club_destino,
                m.precio, m.precio_tipo, m.precio_variable, m.precio_aproximado, m.modalidad, m.estado,
                m.contrato_hasta, m.fuente_url, m.fuente, m.notas,
                j.nombre AS nombre_jugadora, j.posicion
-        FROM mercado m LEFT JOIN jugadoras j ON j.id_jugadora = m.id_jugadora
+        FROM mercado m
+        LEFT JOIN jugadoras j ON j.id_jugadora = m.id_jugadora
+        LEFT JOIN d cur ON cur.id_jugadora = m.id_jugadora AND cur.temporada = m.temporada
+        LEFT JOIN d prev ON prev.id_jugadora = m.id_jugadora
+            AND prev.temporada = (CAST(substr(m.temporada, 1, 4) AS INTEGER) - 1) || '/' || substr(m.temporada, 3, 2)
+        WHERE (m.tipo IN ('alta', 'ascenso', 'cesion_entrada') AND COALESCE(cur.cat, 0) = 4)
+           OR (m.tipo IN ('baja', 'cesion_salida', 'renovacion') AND (COALESCE(prev.cat, 0) = 4 OR COALESCE(cur.cat, 0) = 4))
         ORDER BY m.temporada DESC, COALESCE(m.fecha, '') DESC, m.id_movimiento DESC`);
     return (result.rows as any[]).map((r) => {
         const nombre = String(r.nombre_jugadora || r.nombre);
@@ -40,7 +53,7 @@ async function load(): Promise<Move[]> {
 }
 
 export const fetchMercado = () =>
-    cached("mercado:v2", 24 * 60 * 60 * 1000, load, { tags: [cacheTags.players] }).catch(() => [] as Move[]);
+    cached("mercado:v3", 24 * 60 * 60 * 1000, load, { tags: [cacheTags.players] }).catch(() => [] as Move[]);
 
 export const TYPE_LABEL: Record<MoveType, string> = {
     alta: "Fichaje", baja: "Salida", cesion_entrada: "Cesión (llega)", cesion_salida: "Cesión (sale)", renovacion: "Renovación", ascenso: "Ascenso",

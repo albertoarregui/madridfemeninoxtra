@@ -31,8 +31,6 @@ const money = (v: number) => (v === 0 ? "0 €" : Math.abs(v) >= 1_000_000
     ? `${(v / 1_000_000).toLocaleString("es-ES", { maximumFractionDigits: 2 })} M€`
     : `${Math.round(v).toLocaleString("es-ES")} €`);
 
-// Fichajes y ventas más caros de la historia (si hay precios cargados).
-const topFees = moves.filter((m) => (m.precio ?? 0) > 0).sort((a, b) => (b.precio ?? 0) - (a.precio ?? 0)).slice(0, 8);
 
 const crest = (club: string | null) => (club ? shield(club)?.url || "" : "");
 const dateEs = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "");
@@ -124,21 +122,6 @@ const groups = [
             )}
         </section>
 
-        {topFees.length > 0 && (
-            <section class="cx-card mfx-corners">
-                <h2 class="cx-title">Operaciones más caras</h2>
-                <div class="cx-table-wrap">
-                    <table class="cx-table">
-                        <thead><tr><th class="is-left">Jugadora</th><th>Temporada</th><th class="cx-hide-sm">Tipo</th><th>Precio</th></tr></thead>
-                        <tbody>
-                            {topFees.map((m) => (
-                                <tr><td class="is-left"><a href={`/jugadoras/${m.slug}`}>{m.nombre}</a></td><td>{m.temporada}</td><td class="cx-hide-sm">{typeLabel(m)}</td><td><strong>{feeLabel(m)}</strong></td></tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        )}
         <p class="cx-note">Importes publicados por prensa y registros especializados (Soccerdonna, AS, El Español), no confirmados de forma conjunta por los clubes. Sin variables, comisiones ni primas. Un importe desconocido no equivale a una operación gratuita.</p>
     </main>
 </Layout>
