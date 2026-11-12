@@ -18,10 +18,8 @@ test("la sección de vídeos conserva el diseño original sin una lectura RSS", 
   assert.doesNotMatch(section, /Cargando vídeos/);
 });
 
-test("el selector inglés vuelve al español sin que el traductor reescriba el enlace", () => {
+test("la web solo existe en español: sin selector de idioma ni rutas inglesas", () => {
   const header = read("src/components/Header.astro");
-  assert.match(header, /locale === "en"/);
-  assert.match(header, /new URL\(currentPath, Astro\.url\.origin\)\.toString\(\)/);
-  assert.match(header, /href=\{languageHref\}/);
-  assert.match(header, /data-astro-reload/);
+  assert.doesNotMatch(header, /language-toggle|languageHref/);
+  assert.match(read("src/pages/en/[...path].astro"), /Astro\.redirect\(/);
 });

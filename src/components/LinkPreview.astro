@@ -19,7 +19,7 @@
 </div>
 
 <script>
-  const ENTITY = /^(?:\/en)?\/(jugadoras|entrenadores|arbitras|rivales|estadios|partidos)\/[^/?#]+\/?$/;
+  const ENTITY = /^\/(jugadoras|entrenadores|arbitras|rivales|estadios|partidos)\/[^/?#]+\/?$/;
   const SCOPES = "a.entity-link, .ficha-texto a, .news-article-rich-text a, .mfx-entity-text a";
   const KIND: Record<string, [string, string]> = {
     jugadoras: ["Jugadora", "Player"], entrenadores: ["Entrenador/a", "Coach"], arbitras: ["Árbitra", "Referee"],
@@ -57,7 +57,6 @@
     const title = card.querySelector<HTMLElement>("[data-preview-title]")!;
     const desc = card.querySelector<HTMLElement>("[data-preview-desc]")!;
     const cta = card.querySelector<HTMLElement>("[data-preview-cta]")!;
-    const en = document.documentElement.lang === "en";
     let current: HTMLAnchorElement | null = null;
     let showTimer = 0;
     let hideTimer = 0;
@@ -83,13 +82,13 @@
       current = anchor;
       const preview = await load(url.pathname);
       if (current !== anchor || !preview || !preview.title) return;
-      const [es, english] = KIND[match[1]];
+      const [es] = KIND[match[1]];
       link.href = url.pathname;
-      kind.textContent = en ? english : es;
+      kind.textContent = es;
       // En personas y estadios el título trae la descripción tras una coma.
       title.textContent = match[1] === "partidos" || match[1] === "rivales" ? preview.title : preview.title.split(",")[0];
       desc.textContent = preview.description.length > 120 ? `${preview.description.slice(0, 117).trimEnd()}…` : preview.description;
-      cta.textContent = en ? (match[1] === "partidos" ? "Open match →" : "View profile →") : (match[1] === "partidos" ? "Ver partido →" : "Ver ficha →");
+      cta.textContent = match[1] === "partidos" ? "Ver partido →" : "Ver ficha →";
       img.hidden = !preview.image;
       if (preview.image) img.src = preview.image;
       card.hidden = false;

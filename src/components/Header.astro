@@ -4,18 +4,10 @@ import Instagram from "../assets/redes/instagram.svg";
 import TikTok from "../assets/redes/tiktok.svg";
 import { Show } from "@clerk/astro/components";
 import HeaderSearch from "./HeaderSearch.astro";
-import { getUi, localizePath, stripLocale, type SiteLocale } from "../i18n";
 const LogoIcon = "/icon.webp";
 
-interface Props { locale?: SiteLocale; }
-const { locale = "es" } = Astro.props;
-const t = getUi(locale);
 const pathname = Astro.locals.originPathname ?? new URL(Astro.request.url).pathname;
-const currentPath = stripLocale(pathname);
-const href = (path: string) => localizePath(path, locale);
-const languageHref = locale === "en"
-    ? new URL(currentPath, Astro.url.origin).toString()
-    : localizePath(currentPath, "en");
+const currentPath = pathname;
 
 ---
 
@@ -25,7 +17,7 @@ const languageHref = locale === "en"
         .nested-submenu { visibility: hidden; opacity: 0; transition: none; }
     </style>
     <div class="logo">
-        <a href={href("/")}>
+        <a href="/">
             <img
                 src={LogoIcon}
                 alt="Madrid Femenino Xtra"
@@ -38,7 +30,7 @@ const languageHref = locale === "en"
     </div>
     <nav id="main-nav" class="main-nav">
         <div class="mobile-menu-logo">
-            <a href={href("/")}>
+            <a href="/">
                 <img
                     src={LogoIcon}
                     alt="Madrid Femenino Xtra"
@@ -53,19 +45,19 @@ const languageHref = locale === "en"
             <Show when="signed-in" isStatic={true}>
                 <button class="mobile-login-btn auth-user-btn" data-action="signout">
                     <img class="auth-user-avatar" data-clerk-user-avatar alt="" width="40" height="40" hidden />
-                    <span class="auth-user-name" data-clerk-user-name>{locale === "en" ? "User" : "Usuario"}</span>
+                    <span class="auth-user-name" data-clerk-user-name>Usuario</span>
                 </button>
             </Show>
             <Show when="signed-out" isStatic={true}>
                 <button class="mobile-login-btn" data-action="signin-google">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
-                    {locale === "en" ? "SIGN IN" : "INICIAR SESIÓN"}
+                    INICIAR SESIÓN
                 </button>
             </Show>
         </div>
 
         <div class="nav-island">
-            <a href={href("/")} class="island-logo-link">
+            <a href="/" class="island-logo-link">
                 <img
                     src={LogoIcon}
                     alt="Madrid Femenino Xtra"
@@ -77,7 +69,7 @@ const languageHref = locale === "en"
             </a>
             <ul class="nav-list">
             <li>
-                <a href={href("/")} class={currentPath === "/" ? "active" : ""}>
+                <a href="/" class={currentPath === "/" ? "active" : ""}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -96,7 +88,7 @@ const languageHref = locale === "en"
                             d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"
                         ></path></svg
                     >
-                    <span>{t.home}</span>
+                    <span>Inicio</span>
                 </a>
             </li>
             <li class="has-submenu">
@@ -124,19 +116,19 @@ const languageHref = locale === "en"
                             ></path><path d="M8 8l4 0"></path><path d="M8 12l4 0"
                             ></path><path d="M8 16l4 0"></path></svg
                         >
-                        <span>{t.news}</span>
+                        <span>Actualidad</span>
                     </a>
                     <button
                         class="submenu-toggle"
                         aria-expanded="false"
                         aria-controls="submenu-actualidad"
-                        aria-label={locale === "en" ? "Open news submenu" : "Abrir submenú de actualidad"}>▼</button
+                        aria-label="Abrir submenú de actualidad">▼</button
                     >
                 </div>
 
                 <ul class="submenu" id="submenu-actualidad">
-                    <li><a href={href("/noticias")}><span>{t.articles}</span></a></li>
-                    <li><a href={href("/plantilla")}><span>{t.squad}</span></a></li>
+                    <li><a href="/noticias"><span>Noticias</span></a></li>
+                    <li><a href="/plantilla"><span>Plantilla</span></a></li>
                 </ul>
             </li>
             <li class="has-submenu">
@@ -180,35 +172,35 @@ const languageHref = locale === "en"
                 <ul class="submenu" id="submenu-hub">
                     <li class="has-nested-submenu">
                         <div class="nested-submenu-header">
-                            <span class="nested-submenu-label">{t.statistics}</span>
+                            <span class="nested-submenu-label">Estadísticas</span>
                         </div>
                         <ul class="nested-submenu">
-                            <li><a href={href("/jugadoras")}><span>{t.players}</span></a></li>
-                            <li><a href={href("/entrenadores")}><span>{t.coaches}</span></a></li>
-                            <li><a href={href("/arbitras")}><span>{t.referees}</span></a></li>
-                            <li><a href={href("/partidos")}><span>{t.matches}</span></a></li>
-                            <li><a href={href("/rivales")}><span>{t.rivals}</span></a></li>
-                            <li><a href={href("/estadios")}><span>{t.stadiums}</span></a></li>
+                            <li><a href="/jugadoras"><span>Jugadoras</span></a></li>
+                            <li><a href="/entrenadores"><span>Entrenadores</span></a></li>
+                            <li><a href="/arbitras"><span>Árbitras</span></a></li>
+                            <li><a href="/partidos"><span>Partidos</span></a></li>
+                            <li><a href="/rivales"><span>Rivales</span></a></li>
+                            <li><a href="/estadios"><span>Estadios</span></a></li>
                         </ul>
                     </li>
-                    <li><a href={href("/rankings")}><span>Rankings</span></a></li>
-                    <li><a href={href("/estadisticas/avanzadas")}><span>{t.charts}</span></a></li>
+                    <li><a href="/rankings"><span>Rankings</span></a></li>
+                    <li><a href="/estadisticas/avanzadas"><span>Gráficos</span></a></li>
                     <li class="has-nested-submenu">
                         <div class="nested-submenu-header">
-                            <span class="nested-submenu-label">{t.advancedSearch}</span>
+                            <span class="nested-submenu-label">Buscador avanzado</span>
                         </div>
                         <ul class="nested-submenu">
-                            <li><a href={href("/estadisticas/buscador-avanzado-jugadoras")}><span>{t.players}</span></a></li>
-                            <li><a href={href("/estadisticas/buscador-avanzado-partidos")}><span>{t.matches}</span></a></li>
-                            <li><a href={href("/estadisticas/buscador-avanzado-temporadas")}><span>{t.seasons}</span></a></li>
+                            <li><a href="/estadisticas/buscador-avanzado-jugadoras"><span>Jugadoras</span></a></li>
+                            <li><a href="/estadisticas/buscador-avanzado-partidos"><span>Partidos</span></a></li>
+                            <li><a href="/estadisticas/buscador-avanzado-temporadas"><span>Temporadas</span></a></li>
                         </ul>
                     </li>
-                    <li><a href={href("/records")}><span>{t.records}</span></a></li>
-                    <li><a href={href("/comparador")}><span>{t.comparator}</span></a></li>
+                    <li><a href="/records"><span>Récords</span></a></li>
+                    <li><a href="/comparador"><span>Comparador</span></a></li>
                 </ul>
             </li>
             <li>
-                <a href={href("/valoraciones")} class={currentPath.startsWith("/valoraciones") ? "active" : ""}>
+                <a href="/valoraciones" class={currentPath.startsWith("/valoraciones") ? "active" : ""}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -224,12 +216,12 @@ const languageHref = locale === "en"
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                         <path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"></path>
                     </svg>
-                    <span>{t.ratings}</span>
+                    <span>Valoraciones</span>
                 </a>
             </li>
             <li>
                 <a
-                    href={href("/la-fabrica")}
+                    href="/la-fabrica"
                     class={currentPath.startsWith("/la-fabrica") ? "active" : ""}
                 >
                     <svg
@@ -257,7 +249,7 @@ const languageHref = locale === "en"
 
             <li>
                 <a
-                    href={href("/sobre-nosotros")}
+                    href="/sobre-nosotros"
                     class={currentPath === "/sobre-nosotros" ? "active" : ""}
                 >
                     <svg
@@ -276,12 +268,12 @@ const languageHref = locale === "en"
                         ></path><path d="M12 9h.01"></path><path
                             d="M11 12h1v4h1"></path></svg
                     >
-                    <span>{t.about}</span>
+                    <span>Sobre nosotros</span>
                 </a>
             </li>
             <li>
                 <a
-                    href={href("/contacto")}
+                    href="/contacto"
                     class={currentPath === "/contacto" ? "active" : ""}
                 >
                     <svg
@@ -296,33 +288,32 @@ const languageHref = locale === "en"
                             d="M5.821 4.91c3.899 -2.765 9.468 -2.539 13.073 .535c3.667 3.129 4.168 8.238 1.152 11.898c-2.841 3.447 -7.965 4.583 -12.231 2.805l-.233 -.101l-4.374 .931l-.04 .006l-.035 .007h-.018l-.022 .005h-.038l-.033 .004l-.021 -.001l-.023 .001l-.033 -.003h-.035l-.022 -.004l-.022 -.002l-.035 -.007l-.034 -.005l-.016 -.004l-.024 -.005l-.049 -.016l-.024 -.005l-.011 -.005l-.022 -.007l-.045 -.02l-.03 -.012l-.011 -.006l-.014 -.006l-.031 -.018l-.045 -.024l-.016 -.011l-.037 -.026l-.04 -.027l-.002 -.004l-.013 -.009l-.043 -.04l-.025 -.02l-.006 -.007l-.056 -.062l-.013 -.014l-.011 -.014l-.039 -.056l-.014 -.019l-.005 -.01l-.042 -.073l-.007 -.012l-.004 -.008l-.007 -.012l-.014 -.038l-.02 -.042l-.004 -.016l-.004 -.01l-.017 -.061l-.007 -.018l-.002 -.015l-.005 -.019l-.005 -.033l-.008 -.042l-.002 -.031l-.003 -.01v-.016l-.004 -.054l.001 -.036l.001 -.023l.002 -.053l.004 -.025v-.019l.008 -.035l.005 -.034l.005 -.02l.004 -.02l.018 -.06l.003 -.013l1.15 -3.45l-.022 -.037c-2.21 -3.747 -1.209 -8.391 2.413 -11.119z"
                         ></path></svg
                     >
-                    <span>{t.contact}</span>
+                    <span>Contacto</span>
                 </a>
             </li>
             <li class="hs-nav-li">
-                <HeaderSearch locale={locale} />
+                <HeaderSearch />
             </li>
         </ul>
             <div class="nav-auth-item">
                 <Show when="signed-in" isStatic={true}>
                     <button class="island-auth-btn auth-user-btn" data-action="signout">
                         <img class="auth-user-avatar" data-clerk-user-avatar alt="" width="40" height="40" hidden />
-                        <span class="auth-user-name" data-clerk-user-name>{locale === "en" ? "User" : "Usuario"}</span>
+                        <span class="auth-user-name" data-clerk-user-name>Usuario</span>
                     </button>
                 </Show>
                 <Show when="signed-out" isStatic={true}>
                     <button class="island-auth-btn" data-action="signin-google">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
-                        {locale === "en" ? "SIGN IN" : "ENTRAR"}
+                        ENTRAR
                     </button>
                 </Show>
             </div>
-            <div class="nav-preferences" aria-label={locale === "en" ? "Language" : "Idioma"}>
-                <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label={locale === "en" ? "Switch to light mode" : "Cambiar a modo claro"} data-label-light={locale === "en" ? "Switch to light mode" : "Cambiar a modo claro"} data-label-dark={locale === "en" ? "Switch to dark mode" : "Cambiar a modo oscuro"}>
+            <div class="nav-preferences" aria-label="Preferencias">
+                <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Cambiar a modo claro" data-label-light="Cambiar a modo claro" data-label-dark="Cambiar a modo oscuro">
                     <svg class="theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" /></svg>
                     <svg class="theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
                 </button>
-                <a class="language-toggle" href={languageHref} lang={locale === "en" ? "es" : "en"} data-astro-reload>{locale === "en" ? "ES" : "EN"}</a>
             </div>
         </div>
 
@@ -338,7 +329,7 @@ const languageHref = locale === "en"
         id="menu-toggle"
         aria-controls="main-nav"
         aria-expanded="false"
-        aria-label={locale === "en" ? "Open navigation menu" : "Abrir menú de navegación"}
+        aria-label="Abrir menú de navegación"
     >
         <span class="line"></span>
         <span class="line"></span>
@@ -442,7 +433,7 @@ const languageHref = locale === "en"
     function syncClerkHeaderUser() {
         var user = window.Clerk && window.Clerk.user;
         if (!user) return;
-        var name = user.firstName || user.fullName || (document.documentElement.lang === 'en' ? 'User' : 'Usuario');
+        var name = user.firstName || user.fullName || 'Usuario';
         document.querySelectorAll('[data-clerk-user-name]').forEach(function(el) {
             el.textContent = name;
         });
@@ -521,8 +512,6 @@ const languageHref = locale === "en"
     }
 
     .nav-preferences { display:flex; align-items:center; gap:.35rem; margin-left:.35rem; }
-    .language-toggle { display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px; border:1px solid rgba(212,168,67,.35); border-radius:999px; background:rgba(var(--l-bg, 6, 13, 28), .72); color:rgb(var(--l-gold, 212, 168, 67)); font:700 .67rem 'DM Sans',sans-serif; text-decoration:none; cursor:pointer; transition:color .2s,border-color .2s,transform .2s; }
-    .language-toggle:hover { color:rgb(var(--l-gold, 255, 224, 160)); border-color:#d4a843; transform:translateY(-1px); }
 
     .header--hidden {
         transform: translateY(-160%);

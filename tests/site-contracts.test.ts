@@ -31,8 +31,8 @@ test('article views are recorded after engagement, never during SSR', () => {
 });
 
 test('sitemap, SEO and consent rules stay in place', () => {
-  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v4-i18n/);
-  assert.match(read('src/pages/sitemap.xml.ts'), /hreflang=/);
+  assert.match(read('src/pages/sitemap.xml.ts'), /seo:sitemap-2026-v5/);
+  assert.doesNotMatch(read('src/pages/sitemap.xml.ts'), /hreflang=/);
   assert.match(read('src/pages/sitemap.xml.ts'), /escapeXml/);
   assert.match(read('src/pages/sitemap.xml.ts'), /'players', 'coaches', 'stadiums'/);
   assert.match(read('src/layouts/Layout.astro'), /isNewsArticle \? "article" : "website"/);
@@ -128,7 +128,7 @@ test('Astro uses no-op image transformations instead of the legacy image endpoin
 test('upper footer keeps navigation and social links without the newsletter form', () => {
   const footer = read('src/components/FooterUpper.astro');
   const layout = read('src/layouts/Layout.astro');
-  assert.match(layout, /<FooterUpper locale=\{locale\}\s*\/>\s*<Footer locale=\{locale\}\s*\/>/);
+  assert.match(layout, /<FooterUpper\s*\/>\s*<Footer\s*\/>/);
   for (const label of ['SECCIONES', 'EMPRESA', 'MÁS', 'SOCIAL']) {
     assert.ok(footer.includes(label), label);
   }
@@ -162,7 +162,6 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   const middleware = read('src/middleware.ts');
   const cache = read('src/utils/cache.ts');
   const header = read('src/components/Header.astro');
-  const translations = read('src/i18n/translate-html.ts');
   const news = read('src/pages/noticias/index.astro');
   const proxy = read('src/pages/api/img-proxy.ts');
   assert.match(middleware, /const CACHE_HOME_S = 15 \* 60;/);
@@ -176,9 +175,6 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   assert.match(middleware, /clerkApiMiddleware\(context, next\)/);
   assert.match(header, /isStatic=\{true\}/);
   assert.doesNotMatch(header, /Astro\.locals\.currentUser/);
-  // Traducción por nodo completo: una sola pasada por segmento, sin sustituir fragmentos.
-  assert.match(translations, /translateText\(decode\(text\)\)/);
-  assert.doesNotMatch(translations, /html = html\.split\(source\)\.join\(target\)/);
   assert.match(news, /"fields.title"/);
   assert.match(news, /"fields.featuredImage"/);
   assert.doesNotMatch(news, /\.\.\.item\.fields/);
@@ -197,7 +193,7 @@ test('reader ratings pages have competition crests and one-row MVP UI', () => {
   const board = read('src/components/RatingScoreboard.astro');
   const header = read('src/components/Header.astro');
   const css = read('src/styles/valoraciones.css');
-  assert.match(header, /href=\{href\("\/plantilla"\)\}[\s\S]*?href=\{href\("\/valoraciones"\)\}/);
+  assert.match(header, /href="\/plantilla"[\s\S]*?href="\/valoraciones"/);
   assert.match(archive, /RatingScoreboard/);
   assert.match(detail, /getAssetUrl\('competiciones'/);
   assert.match(board, /getAssetUrl\('escudos'/);

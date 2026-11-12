@@ -7,29 +7,19 @@ interface Props {
 }
 
 const { matches = [], currentSeason } = Astro.props;
-const en = Astro.locals.locale === "en";
-
 // Partidos visibles al entrar y en cada «cargar más». Todo el HTML ya viene en
 // la página (≈30 KB comprimidos) y las imágenes ocultas no se descargan.
 const PAGE_SIZE = 100;
 
 const COMPETITION_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const t = en
-	? {
-		upcoming: "UPCOMING", results: "RESULTS", competition: "Competition", venue: "Venue", season: "Season",
-		all: "All", allSeasons: "All seasons", home: "Home", away: "Away", final: "Full time",
-		tbc: "TBC", empty: "No matches for these filters.", w: "W", d: "D", l: "L", open: "Open match",
-		more: "Load 100 more matches", remaining: "remaining", nextUp: "Upcoming",
-	}
-	: {
+const t = {
 		upcoming: "PRÓXIMOS", results: "RESULTADOS", competition: "Competición", venue: "Sede", season: "Temporada",
 		all: "Todas", allSeasons: "Todas las temporadas", home: "Local", away: "Visitante", final: "Final",
 		tbc: "Por confirmar", empty: "No hay partidos con estos filtros.", w: "V", d: "E", l: "D", open: "Ver partido",
-		more: "Cargar 100 partidos más", remaining: "restantes", nextUp: "Por jugar",
-	};
+	more: "Cargar 100 partidos más", remaining: "restantes", nextUp: "Por jugar",
+};
 
 const isRealMadrid = (name: unknown) =>
 	String(name ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("real madrid");
@@ -43,7 +33,7 @@ const competitionRank = (name: string) => {
 const formatDate = (fecha: unknown) => {
 	const [year, month, day] = String(fecha ?? "").slice(0, 10).split("-").map(Number);
 	if (!year || !month || !day) return "—";
-	return en ? `${MONTHS_EN[month - 1]} ${day}, ${year}` : `${day} ${MONTHS_ES[month - 1]} ${year}`;
+	return `${day} ${MONTHS_ES[month - 1]} ${year}`;
 };
 
 const formatTime = (hora: unknown) => {
@@ -56,7 +46,7 @@ const sortKey = (m: any) => `${String(m.fecha ?? "").slice(0, 10)} ${formatTime(
 const rows = matches
 	.filter((m) => m?.slug && m?.temporada_nombre)
 	.map((m) => {
-		const competition = String(m.competicion_nombre || (en ? "Other" : "Otras"));
+		const competition = String(m.competicion_nombre || "Otras");
 		const played = Boolean(m.isPlayed);
 		const localIsRm = isRealMadrid(m.club_local);
 		return {
@@ -105,11 +95,11 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 ---
 
 <div class="mt" data-match-timeline data-page-size={PAGE_SIZE}>
-	<section class="mt-bar mfx-framed" aria-label={en ? "Summary and filters" : "Resumen y filtros"}><span class="mfx-frame" aria-hidden="true"></span>
+	<section class="mt-bar mfx-framed" aria-label="Resumen y filtros"><span class="mfx-frame" aria-hidden="true"></span>
 		<div class="mt-totals">
 			<p class="mt-total"><strong data-count="upcoming">{count.upcoming}</strong><span>{t.upcoming}</span></p>
 			<p class="mt-total"><strong data-count="results">{count.results}</strong><span>{t.results}</span></p>
-			<p class="mt-record" aria-label={en ? "Wins, draws and losses" : "Victorias, empates y derrotas"}>
+			<p class="mt-record" aria-label="Victorias, empates y derrotas">
 				<span class="is-w"><b data-count="w">{count.w}</b>{t.w}</span>
 				<span class="is-d"><b data-count="d">{count.d}</b>{t.d}</span>
 				<span class="is-l"><b data-count="l">{count.l}</b>{t.l}</span>
@@ -158,7 +148,7 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 	<div class="mt-groups">
 		{groups.map((group) => (
 			<section class="mt-group mfx-framed" data-group hidden={!group.rows.some((r) => firstPage.has(r))}><span class="mfx-frame" aria-hidden="true"></span>
-				<h2 class="mt-group-head">{group.season}{group.season === currentSeason && <span>{en ? "Current season" : "Temporada actual"}</span>}</h2>
+				<h2 class="mt-group-head">{group.season}{group.season === currentSeason && <span>Temporada actual</span>}</h2>
 				<ul class="mt-list">
 					{group.rows.map((row) => (
 						<li data-order={orderOf.get(row)} data-season={row.season} data-competition={row.competition} data-venue={row.venue} data-played={String(row.played)} data-result={row.result} hidden={!firstPage.has(row)}>

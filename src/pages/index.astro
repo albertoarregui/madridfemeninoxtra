@@ -12,7 +12,6 @@ import PlayerOfTheMonthWidget from "../components/PlayerOfTheMonthWidget.astro";
 import HistoryCarousel from "../components/HistoryCarousel.astro";
 import ProtagonistasSection from "../components/ProtagonistasSection.astro";
 import { cached } from "../utils/cache";
-import { getRequestLocale } from "../i18n/request-locale";
 import { compactDashboardPayload } from "../lib/dashboard-payload";
 
 import { fetchGamesDirectly, fetchAllGoals } from "../utils/partidos";
@@ -29,7 +28,7 @@ let spotlightNews: any[] = [];
 try {
 	const { contentfulClient } = await import("../lib/contentful");
 
-	const [cronicaEntry, previaEntry] = await cached(`contentful:home:spotlight-v1:${getRequestLocale()}`, 10 * 60 * 1000, async () => Promise.all([
+	const [cronicaEntry, previaEntry] = await cached(`contentful:home:spotlight-v1:es`, 10 * 60 * 1000, async () => Promise.all([
 		contentfulClient.getEntries({
 			content_type: "noticia", limit: 1, "fields.category": "CRÓNICA", order: ["-sys.createdAt"],
 		}),

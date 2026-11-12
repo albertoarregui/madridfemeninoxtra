@@ -69,24 +69,15 @@ function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: s
             return value.protocol === 'https:' && value.hostname === 'www.madridfemeninoxtra.com' && !value.pathname.includes('/rivales/estadios');
         } catch { return false; }
     }).map(item => [item.loc, item])).values()];
-    const localizedUrls = uniqueUrls.flatMap(url => {
+    const normalizedUrls = uniqueUrls.map(url => {
         const parsed = new URL(url.loc);
-        const spanishPath = parsed.pathname === '/' ? '/' : parsed.pathname.replace(/\/$/, '');
-        const englishPath = spanishPath === '/' ? '/en/' : `/en${spanishPath}`;
-        const spanishLoc = `${SITE_URL}${spanishPath}`;
-        const englishLoc = `${SITE_URL}${englishPath}`;
-        return [
-            { ...url, loc: spanishLoc, alternate: englishLoc, locale: 'es' },
-            { ...url, loc: englishLoc, alternate: spanishLoc, locale: 'en' },
-        ];
+        const path = parsed.pathname === '/' ? '/' : parsed.pathname.replace(/\/$/, '');
+        return { ...url, loc: `${SITE_URL}${path}` };
     });
     return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${localizedUrls.map(url => `  <url>
-    <loc>${escapeXml(url.loc)}</loc>
-    <xhtml:link rel="alternate" hreflang="${url.locale}" href="${escapeXml(url.loc)}" />
-    <xhtml:link rel="alternate" hreflang="${url.locale === 'es' ? 'en' : 'es'}" href="${escapeXml(url.alternate)}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(url.locale === 'es' ? url.loc : url.alternate)}" />${url.lastmod ? `
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${normalizedUrls.map(url => `  <url>
+    <loc>${escapeXml(url.loc)}</loc>${url.lastmod ? `
     <lastmod>${url.lastmod}</lastmod>` : ''}
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
@@ -239,7 +230,7 @@ async function buildSitemap(): Promise<string> {
 
 export const GET: APIRoute = async () => {
     try {
-        const xml = await cached('seo:sitemap-2026-v4-i18n', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
+        const xml = await cached('seo:sitemap-2026-v5', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',

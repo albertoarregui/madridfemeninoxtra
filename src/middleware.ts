@@ -4,9 +4,6 @@ import type { MiddlewareHandler } from "astro";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
 import { isFreshMatchPath } from "./lib/match-freshness";
 import { secondsUntilNextSeason } from "./utils/season";
-import { localeFromPath, stripLocale } from "./i18n";
-import { runWithRequestLocale } from "./i18n/request-locale";
-import { translateInterfaceHtml } from "./i18n/translate-html";
 
 const SIN_CACHE = [/^\/api\//, /^\/premios/, /^\/valoraciones(?:\/|$)/];
 const REQUIERE_CLERK = /^\/api\/(?:season-awards|valoraciones(?:\/|$))/;
@@ -37,34 +34,9 @@ async function handleRequest(
 ) {
     const requestStartedAt = new Date();
     const requestUrl = new URL(context.request.url);
-    const locale = localeFromPath(requestUrl.pathname);
-    const routePath = stripLocale(requestUrl.pathname);
-    context.locals.locale = locale;
+    const routePath = requestUrl.pathname;
     context.locals.originPathname = requestUrl.pathname;
-    let response = await runWithRequestLocale(locale, () => locale === "en"
-        ? next(routePath + requestUrl.search)
-        : next());
-
-    if (locale === "en" && (response.headers.get("content-type") || "").includes("text/html")) {
-        const headers = new Headers(response.headers);
-        headers.delete("content-length");
-        const html = translateInterfaceHtml(await response.text());
-        // Astro resuelve correctamente el componente reescrito desde una ruta
-        // catch-all, pero conserva el 404 con el que entró `/en/*`. Solo se
-        // corrige cuando el contenido devuelto no es la página 404 real.
-        const isNotFoundPage = /<h1\b[^>]*class="[^"]*\berror-title\b[^"]*"[^>]*>\s*404\s*<\/h1>/i.test(html);
-        const successfulRewrite = !isNotFoundPage;
-        if (successfulRewrite) headers.delete("x-robots-tag");
-        // Esta cabecera solo sirve dentro del renderizador de Astro. Si llega
-        // al adaptador, Vercel conserva el estado de la ruta `/en/*` original.
-        headers.delete("x-astro-rewrite");
-        headers.delete("x-astro-reroute");
-        response = new Response(html, {
-            status: successfulRewrite ? 200 : response.status,
-            statusText: successfulRewrite ? "OK" : response.statusText,
-            headers,
-        });
-    }
+    const response = await next();
 
     try {
         const { request } = context;
@@ -121,7 +93,7 @@ const clerkApiMiddleware = clerkMiddleware(async (auth, context, next) =>
 );
 
 export const onRequest = defineMiddleware((context, next) => {
-    const routePath = stripLocale(new URL(context.request.url).pathname);
+    const routePath = new URL(context.request.url).pathname;
     return REQUIERE_CLERK.test(routePath)
         ? clerkApiMiddleware(context, next)
         : handleRequest(context, next);
