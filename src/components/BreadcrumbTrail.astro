@@ -1,4 +1,6 @@
 ---
+// Migas de pan solo como datos estructurados para buscadores: la ruta visible
+// («Inicio / Hub / …») se retiró de las páginas.
 import { breadcrumbSchema } from "../utils/seo";
 
 type BreadcrumbItem = { label: string; href?: string };
@@ -11,39 +13,3 @@ const schema = breadcrumbSchema(items.map((item, index) => ({
 ---
 
 <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
-<nav class="breadcrumb-trail" aria-label="Ruta de navegación">
-    {items.map((item, index) => (
-        <>
-            {index > 0 && <span class="breadcrumb-separator" aria-hidden="true">/</span>}
-            {item.href && index < items.length - 1
-                ? <a href={item.href}>{item.label}</a>
-                : <span aria-current={index === items.length - 1 ? "page" : undefined}>{item.label}</span>}
-        </>
-    ))}
-</nav>
-
-<style>
-    .breadcrumb-trail {
-        width: min(100%, 1100px);
-        margin: 0 auto 1.25rem;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        color: rgba(var(--l-ink, 200, 210, 220), 0.48);
-        font-family: "DM Sans", sans-serif;
-        font-size: 0.72rem;
-        letter-spacing: 0.04em;
-    }
-    a {
-        color: rgba(var(--l-gold, 212, 168, 67), 0.72);
-        text-decoration: none;
-    }
-    a:hover,
-    a:focus-visible {
-        color: rgb(var(--l-gold, 212, 168, 67));
-        text-decoration: underline;
-        text-underline-offset: 0.2em;
-    }
-    .breadcrumb-separator { color: rgba(var(--l-ink, 200, 210, 220), 0.25); }
-</style>
