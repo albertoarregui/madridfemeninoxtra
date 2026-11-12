@@ -513,6 +513,7 @@ export default function StatsRankings({
     }
 
     const shown = sortedPlayers.slice(0, visible);
+    const podium = sortedPlayers.slice(0, 3);
 
     return (
         <div className="rk">
@@ -566,6 +567,128 @@ export default function StatsRankings({
                     </div>
                 </div>
             </div>
+
+            {/* Podio de las tres primeras; la tabla sigue empezando en la primera posición. */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                .podium-container { min-height: 520px; gap: 15px; margin-bottom: 2rem; }
+                .podium-spot { flex: 1; max-width: 340px; transition: all 0.4s ease; }
+                .spot-1:hover .podium-img-wrapper {
+                    border-color: #FFD700 !important;
+                    box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
+                }
+                .spot-2:hover .podium-img-wrapper {
+                    border-color: #C0C0C0 !important;
+                    box-shadow: 0 15px 40px rgba(192, 192, 192, 0.4);
+                }
+                .spot-3:hover .podium-img-wrapper {
+                    border-color: #CD7F32 !important;
+                    box-shadow: 0 15px 40px rgba(205, 127, 50, 0.4);
+                }
+                .podium-base { width: 100%; border-radius: 12px 12px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding-top: 2rem; }
+                .spot-1 { order: 2; height: 100%; }
+                .spot-2 { order: 1; height: 85%; }
+                .spot-3 { order: 3; height: 75%; }
+                .podium-img-wrapper { border-radius: 50%; border: 6px solid rgba(212,168,67,0.4); box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; background: rgba(6,13,28,0.8); }
+                .spot-1 .podium-img-wrapper { width: 190px; height: 190px; border-color: #FFD700; transform: scale(1.1); }
+                .spot-2 .podium-img-wrapper { width: 160px; height: 160px; border-color: #C0C0C0; }
+                .spot-3 .podium-img-wrapper { width: 140px; height: 140px; border-color: #CD7F32; }
+                @media (max-width: 768px) {
+                    .podium-container { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; min-height: auto; gap: 0.35rem; margin-bottom: 2rem; padding: 0; }
+                    .podium-spot { width: 100%; max-width: 100%; min-width: 0; }
+                    .spot-1 { order: 2; }
+                    .spot-2 { order: 1; }
+                    .spot-3 { order: 3; }
+                    .podium-spot > div { margin-bottom: 0.35rem !important; }
+                    .podium-base { padding: 0.45rem 0 !important; border-radius: 7px 7px 0 0; }
+                    .spot-1 .podium-base { height: 88px !important; }
+                    .spot-2 .podium-base { height: 68px !important; }
+                    .spot-3 .podium-base { height: 56px !important; }
+                    .podium-base svg { width: 17px; height: 17px; }
+                    .podium-base span { margin-top: 0.2rem !important; font-size: 1.25rem !important; line-height: 1 !important; }
+                    .ranking-title-header h2 { font-size: 1.3rem; }
+                    .spot-1 .podium-img-wrapper { width: 88px; height: 88px; border-width: 3px; transform: none; }
+                    .spot-2 .podium-img-wrapper { width: 72px; height: 72px; border-width: 3px; }
+                    .spot-3 .podium-img-wrapper { width: 64px; height: 64px; border-width: 3px; }
+                    .spot-1 .animate-bounce { width: 18px; height: 18px; }
+                    .spot-1 .mb-2 { margin-bottom: 0.2rem !important; }
+                    .podium-stat-value { width: 100%; margin-top: 0.45rem !important; margin-bottom: 0 !important; }
+                    .podium-stat-value h3 { min-height: 2.35em; margin: 0 0 0.2rem !important; padding: 0 0.15rem !important; overflow: hidden; font-size: 0.62rem !important; line-height: 1.18 !important; white-space: normal !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+                    .podium-stat-value p { font-size: 1.18rem !important; line-height: 1 !important; }
+                    .spot-1 .podium-stat-value p { font-size: 1.45rem !important; }
+                }
+                .podium-stat-value { margin-bottom: 2rem; }
+            ` }} />
+            {sortedPlayers.length > 0 && (
+                    <div className="podium-container flex items-end justify-center px-4">
+                        {podium[1] && (
+                            <div className="podium-spot spot-2 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-4">
+                                    <div className="podium-img-wrapper">
+                                        <a href={`/jugadoras/${podium[1].slug}`}>
+                                            <img src={playerImageMap[podium[1].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[1].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+                                        </a>
+                                    </div>
+                                    <div className="text-center mt-4 podium-stat-value">
+                                        <h3 className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[1].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-ink,192,192,192))] transition-colors">{podium[1].nombre}</a>
+                                        </h3>
+                                        <p className="text-3xl font-black" style={{color: 'rgb(var(--l-ink, 192, 192, 192))'}}>{formatValue(podium[1])}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base h-40" style={{background: 'rgba(var(--l-ink, 192, 192, 192), 0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
+                                    <SpotStarIcon color="#C0C0C0" />
+                                    <span className="font-bold text-4xl mt-3" style={{color: 'rgba(var(--l-ink, 192, 192, 192), 0.5)'}}>2</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {podium[0] && (
+                            <div className="podium-spot spot-1 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-4 z-10">
+                                    <div className="mb-2"><Crown className="text-yellow-400 animate-bounce" size={32} /></div>
+                                    <div className="podium-img-wrapper ring-4 ring-yellow-400 ring-offset-4">
+                                        <a href={`/jugadoras/${podium[0].slug}`}>
+                                            <img src={playerImageMap[podium[0].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[0].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+                                        </a>
+                                    </div>
+                                    <div className="text-center mt-6 podium-stat-value">
+                                        <h3 className="font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[0].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-gold,255,215,0))] transition-colors">{podium[0].nombre}</a>
+                                        </h3>
+                                        <p className="text-5xl font-black" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{formatValue(podium[0])}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base h-64 shadow-lg" style={{background: 'rgba(212,168,67,0.18)', borderBottom: '4px solid rgba(212,168,67,0.5)'}}>
+                                    <MainStarIcon color="#FFD700" className="drop-shadow-sm" />
+                                    <span className="font-black text-6xl mt-4 drop-shadow-md" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>1</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {podium[2] && (
+                            <div className="podium-spot spot-3 flex flex-col justify-end">
+                                <div className="flex flex-col items-center mb-4">
+                                    <div className="podium-img-wrapper">
+                                        <a href={`/jugadoras/${podium[2].slug}`}>
+                                            <img src={playerImageMap[podium[2].slug] || "/assets/jugadoras/placeholder.png"} alt={podium[2].nombre} width={200} height={267} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+                                        </a>
+                                    </div>
+                                    <div className="text-center mt-4 podium-stat-value">
+                                        <h3 className="font-bold text-base leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                            <a href={`/jugadoras/${podium[2].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-red,205,127,50))] transition-colors">{podium[2].nombre}</a>
+                                        </h3>
+                                        <p className="text-2xl font-black" style={{color: 'rgb(var(--l-red, 205, 127, 50))'}}>{formatValue(podium[2])}</p>
+                                    </div>
+                                </div>
+                                <div className="podium-base h-32" style={{background: 'rgba(205,127,50,0.1)', boxShadow: 'inset 0 2px 12px rgba(0,0,0,0.3)'}}>
+                                    <SpotStarIcon color="#CD7F32" />
+                                    <span className="font-bold text-3xl mt-2" style={{color: 'rgba(var(--l-red, 205, 127, 50), 0.5)'}}>3</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+            )}
 
             <div className="rk-card mfx-corners" id="ranking-table-top">
                 <div className="rk-head">
@@ -621,7 +744,7 @@ export default function StatsRankings({
                 </div>
                 {sortedPlayers.slice(0, 10).map((player, index) => (
                     <div className="rk-export-row" key={`x-${player.id_jugadora ?? player.slug}`}>
-                        <span className={`rk-rank${index === 0 ? " is-first" : ""}`}>{index + 1}</span>
+                        <span className={`rk-rank${index === 0 ? " is-first" : ""}`}><i style={{ position: "absolute", left: 0, right: 0, top: -9, lineHeight: "48px", textAlign: "center", fontStyle: "normal" }}>{index + 1}</i></span>
                         <span className="rk-export-photo" data-bg={photo(player) || ""} />
                         <span className="rk-export-name">{player.nombre}<small>{player.posicion}</small></span>
                         {isCountStat && <span className="rk-export-games">{player.games || "—"} PJ</span>}

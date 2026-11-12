@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-test("las herramientas avanzadas incluyen breadcrumbs; los buscadores mantienen su contexto editorial", () => {
+test("las herramientas avanzadas incluyen breadcrumbs y no muestran tarjetas de introducción", () => {
     for (const path of [
         "src/pages/estadisticas/avanzadas.astro",
         "src/pages/comparador.astro",
@@ -14,20 +14,15 @@ test("las herramientas avanzadas incluyen breadcrumbs; los buscadores mantienen 
     ]) {
         assert.match(read(path), /<BreadcrumbTrail/);
     }
-    // Gráficos y comparador ya no muestran las tarjetas de introducción.
-    for (const path of ["src/pages/estadisticas/avanzadas.astro", "src/pages/comparador.astro"]) {
-        assert.doesNotMatch(read(path), /<EditorialInfoCards/);
-    }
+    // Gráficos, comparador y buscadores ya no muestran las tarjetas de introducción.
     for (const path of [
+        "src/pages/estadisticas/avanzadas.astro",
+        "src/pages/comparador.astro",
         "src/pages/estadisticas/buscador-avanzado-jugadoras.astro",
         "src/pages/estadisticas/buscador-avanzado-partidos.astro",
         "src/pages/estadisticas/buscador-avanzado-temporadas.astro",
     ]) {
-        const page = read(path);
-        assert.match(page, /<EditorialInfoCards/);
-        assert.match(page, /introduction=/);
-        assert.match(page, /utility=/);
-        assert.match(page, /methodology=/);
+        assert.doesNotMatch(read(path), /<EditorialInfoCards/);
     }
 });
 
