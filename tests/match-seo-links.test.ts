@@ -32,11 +32,18 @@ test("el sitemap comparte la lectura de partidos y temporadas", () => {
     assert.equal((sitemap.match(/await gamesPromise/g) || []).length, 2);
 });
 
-test("la previa muestra el historial sin consultas extra y los datos en cuanto existen", () => {
+test("la ficha muestra el historial sin consultas extra y pestañas en cuanto hay datos", () => {
     assert.doesNotMatch(matchPage, /INFORMACIÓN DEL PARTIDO/);
-    assert.match(matchPage, /const h2hMatches = isLiveOrPlayed \? \[\] : allGames/);
+    // El historial sale de los partidos ya cargados; en partidos jugados, solo los anteriores.
+    assert.match(matchPage, /const h2hMatches = allGames/);
+    assert.match(matchPage, /String\(g\.fecha \?\? ""\) < String\(game\.fecha \?\? ""\)/);
     assert.doesNotMatch(matchPage, /isWithinOneHour/);
     assert.match(matchPage, /<h3>Enfrentamientos anteriores<\/h3>/);
     assert.match(matchPage, /fetchMatchLineups\(game\.id_partido, matchReadOptions\),/);
-    assert.match(matchPage, /\(isLiveOrPlayed \|\| lineup\.length > 0\) && \(/);
+    // Con alineación (o partido jugado) la ficha pasa a pestañas.
+    assert.match(matchPage, /const tabbed = lineup\.length > 0 \|\| Boolean\(game\.isPlayed\);/);
+    assert.match(matchPage, /<MatchTabs /);
+    for (const panel of ["info", "timeline", "alineacion", "estadisticas", "h2h", "valoraciones"]) {
+        assert.match(matchPage, new RegExp(`data-mx-panel="${panel}"`));
+    }
 });

@@ -1,0 +1,94 @@
+---
+/**
+ * Pestañas de la ficha de partido. Solo pinta la navegación: los paneles son
+ * bloques de la página con data-mx-panel="<clave>", para que conserven sus
+ * estilos. La sección activa se guarda en ?seccion= como en la ficha de jugadora.
+ */
+interface Props { active: string; available: string[]; }
+const { active, available } = Astro.props;
+const SUB = [
+  { key: "info", label: "Info" },
+  { key: "timeline", label: "Timeline" },
+  { key: "alineacion", label: "Alineación" },
+  { key: "estadisticas", label: "Estadísticas" },
+  { key: "h2h", label: "H2H" },
+].filter((tab) => available.includes(tab.key));
+const isRatings = active === "valoraciones";
+---
+
+<nav class="mx-tabs" data-match-tabs aria-label="Secciones del partido">
+  <div class="mx-top" role="tablist">
+    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": !isRatings }]} aria-selected={!isRatings ? "true" : "false"} data-mx-top="partido">Partido</button>
+    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": isRatings }]} aria-selected={isRatings ? "true" : "false"} data-mx-top="valoraciones">Valoraciones</button>
+  </div>
+  <div class="mx-sub" role="tablist" hidden={isRatings}>
+    {SUB.map((tab) => (
+      <button type="button" role="tab" class:list={["mx-sub-tab", { "is-active": tab.key === active }]} aria-selected={tab.key === active ? "true" : "false"} data-mx-sub={tab.key}>{tab.label}</button>
+    ))}
+  </div>
+</nav>
+
+<script>
+  function setupMatchTabs() {
+    const nav = document.querySelector<HTMLElement>("[data-match-tabs]");
+    if (!nav || nav.dataset.ready === "true") return;
+    nav.dataset.ready = "true";
+    const topTabs = [...nav.querySelectorAll<HTMLButtonElement>("[data-mx-top]")];
+    const subTabs = [...nav.querySelectorAll<HTMLButtonElement>("[data-mx-sub]")];
+    const subBar = nav.querySelector<HTMLElement>(".mx-sub");
+    const panels = () => [...document.querySelectorAll<HTMLElement>("[data-mx-panel]")];
+    let lastSub = subTabs.find((t) => t.classList.contains("is-active"))?.dataset.mxSub || subTabs[0]?.dataset.mxSub || "info";
+
+    const show = (key: string, push: boolean) => {
+      const ratings = key === "valoraciones";
+      if (!ratings) lastSub = key;
+      topTabs.forEach((t) => { const on = (t.dataset.mxTop === "valoraciones") === ratings; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
+      subTabs.forEach((t) => { const on = !ratings && t.dataset.mxSub === key; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
+      if (subBar) subBar.hidden = ratings;
+      panels().forEach((panel) => { panel.hidden = panel.dataset.mxPanel !== key; });
+      if (push) {
+        const url = new URL(location.href);
+        if (key === "info") url.searchParams.delete("seccion"); else url.searchParams.set("seccion", key);
+        history.replaceState(history.state, "", url);
+      }
+    };
+    topTabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.mxTop === "valoraciones" ? "valoraciones" : lastSub, true)));
+    subTabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.mxSub!, true)));
+    // Teclado: flechas entre pestañas del mismo grupo.
+    for (const group of [topTabs, subTabs]) {
+      group.forEach((tab, index) => tab.addEventListener("keydown", (event) => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+        const next = group[(index + (event.key === "ArrowRight" ? 1 : group.length - 1)) % group.length];
+        next.focus(); next.click();
+      }));
+    }
+  }
+  setupMatchTabs();
+  document.addEventListener("astro:page-load", setupMatchTabs);
+</script>
+
+<style>
+  .mx-tabs { display: grid; gap: 0.85rem; margin: 0 0 1.4rem; }
+  .mx-top, .mx-sub {
+    display: flex; gap: 0.35rem; padding: 0.35rem; border: 1px solid rgba(212, 168, 67, 0.28); border-radius: 999px;
+    background: rgba(var(--l-card, 8, 16, 34), 0.85); overflow-x: auto; scrollbar-width: none;
+  }
+  .mx-top::-webkit-scrollbar, .mx-sub::-webkit-scrollbar { display: none; }
+  .mx-top { justify-self: center; }
+  .mx-sub[hidden] { display: none; }
+  .mx-top-tab, .mx-sub-tab {
+    flex: 1 0 auto; padding: 0.7rem 1.4rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; white-space: nowrap;
+    font: 700 0.82rem/1 'Cinzel', serif; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(var(--l-ink, 220, 225, 230));
+    transition: background 0.2s, color 0.2s;
+  }
+  .mx-top-tab { font-size: 0.9rem; padding-inline: 2rem; }
+  .mx-top-tab:hover, .mx-sub-tab:hover { color: rgb(var(--l-gold, 242, 223, 176)); }
+  .mx-top-tab.is-active, .mx-sub-tab.is-active { background: linear-gradient(180deg, #e3bf65, #c99a35); color: #16120a; box-shadow: 0 6px 18px rgba(212, 168, 67, 0.25); }
+  .mx-top-tab:focus-visible, .mx-sub-tab:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
+  @media (max-width: 640px) {
+    .mx-top { justify-self: stretch; }
+    .mx-top-tab { padding-inline: 1rem; font-size: 0.8rem; }
+    .mx-sub { border-radius: 16px; }
+    .mx-sub-tab { padding: 0.6rem 0.9rem; font-size: 0.72rem; }
+  }
+</style>

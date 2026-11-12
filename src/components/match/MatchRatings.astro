@@ -1,0 +1,122 @@
+---
+/**
+ * Pestaña «Valoraciones» de la ficha de partido: nota de cada jugadora en el
+ * partido y media de los lectores, con acceso a la votación.
+ */
+interface Props {
+  starters: any[];
+  subs: any[];
+  fan: Array<{ id: number; average: number | null; count: number; mvpVotes: number }>;
+  ratingsUrl: string;
+  playerHref: (player: any) => string | null;
+}
+const { starters, subs, fan, ratingsUrl, playerHref } = Astro.props;
+
+const rating = (player: any): number | null => {
+  const raw = player?.stats?.valoracion;
+  const value = typeof raw === "string" ? Number(raw.replace(",", ".")) : Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+};
+const tone = (value: number | null) =>
+  value === null ? "" : value >= 8 ? "is-top" : value >= 7 ? "is-good" : value >= 6 ? "is-ok" : "is-low";
+const fanFor = (player: any) => fan.find((f) => f.id === Number(player?.playerId));
+
+const people = [
+  ...starters.map((p) => ({ ...p, starter: true })),
+  ...subs.map((s) => s.playerIn).filter(Boolean).map((p) => ({ ...p, starter: false })),
+].filter((p, index, list) => list.findIndex((q) => q.name === p.name) === index)
+ .sort((a, b) => (rating(b) ?? -1) - (rating(a) ?? -1));
+
+const totalVotes = fan.reduce((sum, f) => sum + (f.count || 0), 0);
+const fanMvp = [...fan].filter((f) => f.mvpVotes > 0).sort((a, b) => b.mvpVotes - a.mvpVotes)[0];
+const fanMvpPlayer = fanMvp ? people.find((p) => Number(p.playerId) === fanMvp.id) : null;
+const best = people.find((p) => rating(p) !== null);
+const hasPhoto = (url: string | undefined) => Boolean(url) && !String(url).includes("placeholder");
+---
+
+<div class="mr">
+  <div class="mr-summary">
+    {best && (
+      <div class="mr-highlight mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+        <small>Mejor nota del partido</small>
+        <strong>{best.name}</strong>
+        <span class={`mr-rate is-big ${tone(rating(best))}`}>{rating(best)!.toFixed(1)}</span>
+      </div>
+    )}
+    <div class="mr-highlight mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+      <small>MVP de la afición</small>
+      <strong>{fanMvpPlayer ? fanMvpPlayer.name : "Sin votos todavía"}</strong>
+      {fanMvp && <span class="mr-votes">{fanMvp.mvpVotes} {fanMvp.mvpVotes === 1 ? "voto" : "votos"}</span>}
+    </div>
+    <div class="mr-highlight mr-cta-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+      <small>Valoraciones de los lectores</small>
+      <strong>{totalVotes} {totalVotes === 1 ? "valoración" : "valoraciones"}</strong>
+      <a class="mr-cta" href={ratingsUrl}>Valorar a las jugadoras →</a>
+    </div>
+  </div>
+
+  <div class="mr-list mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+    <div class="mr-row mr-row-head" aria-hidden="true">
+      <span></span><span>Jugadora</span><span>Partido</span><span>Afición</span>
+    </div>
+    {people.map((player) => (
+      <div class="mr-row">
+        <span class="mr-photo">{hasPhoto(player.imageUrl) && <img src={player.imageUrl} alt="" width="40" height="40" loading="lazy" decoding="async" data-proxy-fallback />}</span>
+        <span class="mr-name">
+          {playerHref(player) ? <a class="entity-link" href={playerHref(player)!}>{player.name}</a> : player.name}
+          <small>{player.number ? `#${player.number} · ` : ""}{player.starter ? "Titular" : "Suplente"}{player.pos && player.pos !== "-" ? ` · ${player.pos}` : ""}</small>
+        </span>
+        <span>{rating(player) !== null ? <span class={`mr-rate ${tone(rating(player))}`}>{rating(player)!.toFixed(1)}</span> : <span class="mr-dash">—</span>}</span>
+        <span>
+          {fanFor(player)?.average != null
+            ? <span class="mr-fan"><b>{fanFor(player)!.average!.toFixed(1)}</b><small>{fanFor(player)!.count} {fanFor(player)!.count === 1 ? "voto" : "votos"}</small></span>
+            : <span class="mr-dash">—</span>}
+        </span>
+      </div>
+    ))}
+    {people.length === 0 && <p class="mr-empty">Todavía no hay valoraciones de este partido.</p>}
+  </div>
+</div>
+
+<style>
+  .mr { display: grid; gap: 1.1rem; }
+  .mr-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .mr-highlight {
+    position: relative; display: grid; gap: 0.35rem; align-content: start; padding: 1.1rem 1.2rem; border: 1px solid transparent; border-radius: 14px;
+    background: rgba(var(--l-card, 8, 16, 34), 0.85);
+  }
+  .mr-highlight small { font: 700 0.62rem/1 'Cinzel', serif; letter-spacing: 0.16em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mr-highlight strong { font: 700 1.05rem/1.25 'Cinzel', serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .mr-highlight .mr-rate.is-big { position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); min-width: 46px; height: 32px; font-size: 1rem; }
+  .mr-votes { font-size: 0.8rem; color: rgba(var(--l-ink, 200, 210, 220), 0.65); }
+  .mr-cta { margin-top: 0.35rem; justify-self: start; }
+
+  .mr-list { position: relative; border: 1px solid transparent; border-radius: 14px; background: rgba(var(--l-card, 8, 16, 34), 0.85); overflow: hidden; }
+  .mr-row {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 80px 90px; align-items: center; gap: 0.85rem;
+    padding: 0.65rem 1.1rem; border-bottom: 1px solid rgba(var(--l-hi, 255, 255, 255), 0.06);
+  }
+  .mr-row:last-child { border-bottom: 0; }
+  .mr-row > span:nth-child(3), .mr-row > span:nth-child(4) { justify-self: center; }
+  .mr-row-head { padding-block: 0.6rem; font: 700 0.6rem/1 'Cinzel', serif; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mr-photo { width: 40px; height: 40px; overflow: hidden; border-radius: 50%; border: 1px solid rgba(212, 168, 67, 0.4); background: rgba(212, 168, 67, 0.08); }
+  .mr-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .mr-name { display: grid; gap: 0.15rem; min-width: 0; font-weight: 600; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .mr-name a { color: inherit; text-decoration: none; }
+  .mr-name small { font-size: 0.72rem; font-weight: 400; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+  .mr-rate { display: inline-grid; place-items: center; min-width: 38px; height: 26px; padding: 0 0.4rem; border-radius: 6px; font: 800 0.82rem/1 'DM Sans', sans-serif; color: #fff; background: #6b7280; }
+  .mr-rate.is-top { background: #2f8fb8; }
+  .mr-rate.is-good { background: #2fa66a; }
+  .mr-rate.is-ok { background: #d98b2b; }
+  .mr-rate.is-low { background: #d0453b; }
+  .mr-fan { display: grid; justify-items: center; gap: 0.1rem; }
+  .mr-fan b { font: 800 0.95rem/1 'DM Sans', sans-serif; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mr-fan small { font-size: 0.66rem; color: rgba(var(--l-ink, 200, 210, 220), 0.55); }
+  .mr-dash { color: rgba(var(--l-ink, 200, 210, 220), 0.4); }
+  .mr-empty { margin: 0; padding: 1.25rem; text-align: center; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+  @media (max-width: 760px) {
+    .mr-summary { grid-template-columns: 1fr; }
+    .mr-row { grid-template-columns: 36px minmax(0, 1fr) 54px 60px; gap: 0.55rem; padding-inline: 0.75rem; }
+    .mr-photo { width: 36px; height: 36px; }
+  }
+</style>

@@ -483,6 +483,7 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
 
             return {
                 id: row.id_alineacion,
+                playerId: Number(row.id_jugadora),
                 name: displayName,
                 pos: displayPos,
                 flagUrl: getFlagSrc(row.iso),
@@ -554,6 +555,7 @@ export async function fetchMatchSubstitutions(matchId: string | number, options:
                 j.posicion,
                 j.iso,
                 d.foto_url,
+                d.dorsal,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
                 (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
                 (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
@@ -623,6 +625,8 @@ export async function fetchMatchSubstitutions(matchId: string | number, options:
                 return {
                     name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
                     pos: row.posicion || '-',
+                    playerId: Number(row.id_jugadora),
+                    number: row.dorsal || '',
                     flagUrl: getFlagSrc(row.iso),
                     imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                         ? row.foto_url

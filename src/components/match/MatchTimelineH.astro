@@ -1,0 +1,204 @@
+---
+/**
+ * Timeline horizontal del partido (pestaña «Timeline»), con el mismo lenguaje
+ * que la trayectoria de las jugadoras: eje dorado, eventos del Real Madrid
+ * arriba y del rival abajo. En móvil pasa a una lista vertical.
+ */
+interface Props { events: any[]; rmName?: string; rivalName: string; rmShield?: string; rivalShield?: string; }
+const { events, rmName = "Real Madrid", rivalName, rmShield, rivalShield } = Astro.props;
+
+const inPlay = events.filter((e) => Number(e.minute) < 200);
+const shootout = events.filter((e) => Number(e.minute) >= 200);
+const maxMinute = Math.max(90, ...inPlay.map((e) => Number(e.minute) || 0));
+const pos = (minute: number) => Math.min(100, Math.max(0, (minute / maxMinute) * 100));
+
+// Niveles para que los eventos cercanos no se pisen.
+const levels: Record<"top" | "bottom", number[]> = { top: [], bottom: [] };
+const placed = inPlay.map((event) => {
+  const side = event.team === "rival" ? "bottom" : "top";
+  const x = pos(Number(event.minute) || 0);
+  const used = levels[side];
+  let level = 0;
+  while (used[level] !== undefined && x - used[level] < 17) level++;
+  used[level] = x;
+  return { event, side, x, level: Math.min(level, 4), edge: x < 12 ? "start" : x > 86 ? "end" : "" };
+});
+const maxLevel = (side: "top" | "bottom") => Math.max(0, ...placed.filter((p) => p.side === side).map((p) => p.level));
+
+const minuteLabel = (event: any) => `${event.displayMinute ?? event.minute}${event.displayMinute === "P" ? "" : "'"}`;
+const kind = (event: any) =>
+  event.type === "goal" ? (event.isOwnGoal ? "own" : event.isPenalty ? "pen" : "goal")
+  : event.type === "card" ? (event.cardType === "Red" ? "red" : event.cardType === "DoubleYellow" ? "red2" : "yellow")
+  : event.type;
+const title = (event: any) => {
+  switch (event.type) {
+    case "goal": return event.isOwnGoal ? "Gol en propia puerta" : event.isPenalty ? "Gol de penalti" : "Gol";
+    case "card": return event.cardType === "Red" ? "Roja" : event.cardType === "DoubleYellow" ? "Doble amarilla" : "Amarilla";
+    case "sub": return "Cambio";
+    case "penalty": return event.outcome === "saved" ? "Penalti parado" : "Penalti fallado";
+    case "shootout": return "Tanda de penaltis";
+    default: return "Evento";
+  }
+};
+const main = (event: any) => event.type === "goal" ? event.scorer : event.type === "sub" ? event.playerIn : event.player || event.text;
+const detail = (event: any) =>
+  event.type === "goal" && event.assistant ? `Asist.: ${event.assistant}`
+  : event.type === "sub" && event.playerOut ? `Sale: ${event.playerOut}` : "";
+const videoCall = (event: any) => event.videoUrl
+  ? `openVideoModal('${String(event.videoUrl).replace(/'/g, "\\'")}', '${String(main(event) || "Gol").replace(/'/g, "\\'")}')` : null;
+---
+
+<div class="tlh mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+  {inPlay.length === 0 && shootout.length === 0 ? (
+    <p class="tlh-empty">Todavía no hay eventos registrados.</p>
+  ) : (
+    <>
+      <div class="tlh-teams">
+        <span>{rmShield && <img src={rmShield} alt="" width="22" height="22" />}{rmName}</span>
+        <span>{rivalShield && <img src={rivalShield} alt="" width="22" height="22" />}{rivalName}</span>
+      </div>
+      <div class="tlh-track" style={`--top-levels:${maxLevel("top") + 1};--bottom-levels:${maxLevel("bottom") + 1}`}>
+        <div class="tlh-axis" aria-hidden="true">
+          <span class="tlh-mark" style="left:0%">0'</span>
+          <span class="tlh-mark tlh-mark-ht" style={`left:${pos(45)}%`}>Descanso</span>
+          <span class="tlh-mark" style={`left:${pos(90)}%`}>90'</span>
+        </div>
+        {placed.map(({ event, side, x, level, edge }) => (
+          <div class={`tlh-event is-${side} k-${kind(event)}${edge ? ` at-${edge}` : ""}`} style={`--x:${x};--level:${level}`}>
+            <span class="tlh-dot" aria-hidden="true" />
+            <div class="tlh-card">
+              <span class="tlh-min">{minuteLabel(event)}</span>
+              <span class="tlh-ico" aria-hidden="true" />
+              <span class="tlh-text">
+                <small>{title(event)}</small>
+                <strong>{main(event)}</strong>
+                {detail(event) && <em>{detail(event)}</em>}
+              </span>
+              {videoCall(event) && <button type="button" class="tlh-play" onclick={videoCall(event)} aria-label="Ver vídeo">▶</button>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <ol class="tlh-list">
+        {[...inPlay, ...shootout].map((event) => (
+          <li class={`tlh-row is-${event.team === "rival" ? "bottom" : "top"} k-${kind(event)}`}>
+            <span class="tlh-min">{event.minute >= 200 ? "TP" : minuteLabel(event)}</span>
+            <span class="tlh-ico" aria-hidden="true" />
+            <span class="tlh-text">
+              <small>{title(event)} · {event.team === "rival" ? rivalName : rmName}</small>
+              <strong>{main(event)}</strong>
+              {detail(event) && <em>{detail(event)}</em>}
+            </span>
+            {videoCall(event) && <button type="button" class="tlh-play" onclick={videoCall(event)} aria-label="Ver vídeo">▶</button>}
+          </li>
+        ))}
+      </ol>
+
+      {shootout.length > 0 && (
+        <div class="tlh-shootout">
+          <h3>Tanda de penaltis</h3>
+          <ol>
+            {shootout.map((event) => (
+              <li class={event.outcome === "scored" ? "is-scored" : "is-missed"}>
+                <span>{event.team === "rival" ? rivalName : rmName}</span>
+                <strong>{event.player || event.text}</strong>
+                <em>{event.outcome === "scored" ? "Gol" : "Fallo"}</em>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </>
+  )}
+</div>
+
+<style>
+  .tlh { position: relative; padding: 1.25rem 1.4rem 1.4rem; border: 1px solid transparent; border-radius: 14px; background: rgba(var(--l-card, 8, 16, 34), 0.85); }
+  .tlh-empty { margin: 0; padding: 1.5rem; text-align: center; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+  .tlh-teams { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; font: 700 0.72rem/1 'Cinzel', serif; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .tlh-teams span { display: inline-flex; align-items: center; gap: 0.45rem; }
+  .tlh-teams img { width: 22px; height: 22px; object-fit: contain; }
+
+  .tlh-track {
+    --row: 78px;
+    position: relative; margin: 0 2.5rem;
+    height: calc((var(--top-levels) + var(--bottom-levels)) * var(--row) + 44px);
+  }
+  .tlh-axis {
+    position: absolute; left: 0; right: 0; top: calc(var(--top-levels) * var(--row) + 20px); height: 3px; border-radius: 3px;
+    background: linear-gradient(90deg, rgba(212, 168, 67, 0.25), #d4a843);
+  }
+  .tlh-mark {
+    position: absolute; top: 10px; transform: translateX(-50%); white-space: nowrap;
+    font: 700 0.62rem/1 'DM Sans', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(var(--l-ink, 200, 210, 220), 0.55);
+  }
+  .tlh-mark::before { content: ""; position: absolute; left: 50%; top: -14px; width: 1px; height: 12px; background: rgba(212, 168, 67, 0.55); }
+  .tlh-mark-ht { color: rgb(var(--l-gold, 212, 168, 67)); }
+
+  .tlh-event { position: absolute; left: calc(var(--x) * 1%); width: 0; }
+  .tlh-event.is-top { bottom: calc(var(--bottom-levels) * var(--row) + 24px + var(--level) * var(--row)); }
+  .tlh-event.is-bottom { top: calc(var(--top-levels) * var(--row) + 24px + var(--level) * var(--row)); }
+  .tlh-dot {
+    position: absolute; left: -6px; width: 12px; height: 12px; border-radius: 50%; background: #d4a843;
+    box-shadow: 0 0 0 3px rgba(var(--l-card, 8, 16, 34), 1), 0 0 0 4px rgba(212, 168, 67, 0.5);
+  }
+  .tlh-event.is-top .tlh-dot { bottom: calc(-1 * var(--level) * var(--row) - 9px); }
+  .tlh-event.is-bottom .tlh-dot { top: calc(-1 * var(--level) * var(--row) - 9px); }
+  .tlh-event.is-bottom .tlh-dot { background: rgba(var(--l-ink, 200, 210, 220), 0.7); }
+
+  .tlh-card {
+    position: absolute; left: 0; transform: translateX(-50%); display: flex; align-items: center; gap: 0.45rem;
+    width: max-content; max-width: 210px; padding: 0.45rem 0.6rem; border: 1px solid rgba(212, 168, 67, 0.28); border-radius: 10px;
+    background: rgb(var(--l-field, 12, 22, 42)); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  }
+  /* Cerca de los extremos la tarjeta se abre hacia dentro. */
+  .tlh-event.at-start .tlh-card { transform: translateX(-14px); }
+  .tlh-event.at-end .tlh-card { transform: translateX(calc(-100% + 14px)); }
+  .tlh-event.is-top .tlh-card { bottom: 0; }
+  .tlh-event.is-bottom .tlh-card { top: 0; }
+  .tlh-min { font: 800 0.74rem/1 'DM Sans', sans-serif; color: rgb(var(--l-gold, 212, 168, 67)); min-width: 28px; }
+  .tlh-text { display: grid; gap: 0.1rem; min-width: 0; }
+  .tlh-text small { font: 700 0.56rem/1.1 'DM Sans', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(var(--l-ink, 200, 210, 220), 0.55); }
+  .tlh-text strong { font: 700 0.8rem/1.2 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tlh-text em { font: italic 0.68rem/1.2 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.65); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Iconos */
+  .tlh-ico { flex-shrink: 0; width: 18px; height: 18px; display: grid; place-items: center; font-size: 0.85rem; line-height: 1; }
+  .k-goal .tlh-ico::before, .k-pen .tlh-ico::before, .k-own .tlh-ico::before { content: "⚽"; }
+  .k-own .tlh-ico { filter: hue-rotate(320deg) saturate(3); }
+  .k-yellow .tlh-ico::before, .k-red .tlh-ico::before, .k-red2 .tlh-ico::before { content: ""; width: 11px; height: 15px; border-radius: 2px; background: #f4c430; }
+  .k-red .tlh-ico::before { background: #d0453b; }
+  .k-red2 .tlh-ico::before { background: linear-gradient(135deg, #f4c430 50%, #d0453b 50%); }
+  .k-sub .tlh-ico::before { content: "⇄"; color: #2fa66a; font-weight: 800; }
+  .k-penalty .tlh-ico::before { content: "✕"; color: #d0453b; font-weight: 800; }
+  .k-goal .tlh-card, .k-pen .tlh-card { border-color: rgba(212, 168, 67, 0.7); }
+  .tlh-play {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(212, 168, 67, 0.5);
+    background: rgba(212, 168, 67, 0.12); color: rgb(var(--l-gold, 212, 168, 67)); font-size: 0.6rem; cursor: pointer;
+  }
+  .tlh-play:hover { background: rgba(212, 168, 67, 0.25); }
+
+  .tlh-list { display: none; margin: 0; padding: 0; list-style: none; }
+  .tlh-shootout { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(212, 168, 67, 0.16); }
+  .tlh-shootout h3 { margin: 0 0 0.6rem; font: 700 0.72rem/1 'Cinzel', serif; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .tlh-shootout ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; }
+  .tlh-shootout li { display: flex; gap: 0.6rem; align-items: center; font-size: 0.82rem; color: rgba(var(--l-ink, 200, 210, 220), 0.85); }
+  .tlh-shootout li span { min-width: 110px; color: rgba(var(--l-ink, 200, 210, 220), 0.55); }
+  .tlh-shootout em { font-style: normal; font-weight: 700; margin-left: auto; }
+  .tlh-shootout .is-scored em { color: rgb(var(--l-green, 74, 222, 128)); }
+  .tlh-shootout .is-missed em { color: rgb(var(--l-red, 248, 113, 113)); }
+
+  /* Móvil y tablet: lista vertical. */
+  @media (max-width: 860px) {
+    .tlh-track, .tlh-teams { display: none; }
+    .tlh-list { display: grid; gap: 0.55rem; }
+    .tlh-row {
+      display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.7rem; border-radius: 10px;
+      border-left: 3px solid #d4a843; background: rgb(var(--l-field, 12, 22, 42));
+    }
+    .tlh-row.is-bottom { border-left-color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
+    .tlh-row .tlh-text strong, .tlh-row .tlh-text em { white-space: normal; }
+    .tlh-row .tlh-play { margin-left: auto; }
+  }
+</style>

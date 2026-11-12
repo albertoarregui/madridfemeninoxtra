@@ -22,6 +22,15 @@ import GaleriaGrid from "../../components/GaleriaGrid.astro";
 import { fetchGalleryForMatch, photoUrl, fetchPlayerNames, photoAlt } from "../../utils/galerias";
 import { isFreshMatchSlug } from "../../lib/match-freshness";
 import { hasMatchMetrics, isIndexableMatchDetail } from "../../lib/content-quality";
+import MatchTabs from "../../components/match/MatchTabs.astro";
+import MatchPitch from "../../components/match/MatchPitch.astro";
+import MatchTimelineH from "../../components/match/MatchTimelineH.astro";
+import MatchTeamStats from "../../components/match/MatchTeamStats.astro";
+import MatchRatings from "../../components/match/MatchRatings.astro";
+import { fetchCoachesDirectly, getCoachImageUrl } from "../../utils/entrenadores";
+import { getFlagSrc } from "../../utils/flags";
+import { ratingSummary } from "../../lib/ratings";
+import { cached } from "../../utils/cache";
 
 const { slug } = Astro.params;
 const matchSlug = slug ?? "";
@@ -206,8 +215,10 @@ const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 const normalizeClub = (name: unknown) =>
     String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const h2hRival = normalizeClub(isLocalRM ? game.club_visitante : game.club_local);
-const h2hMatches = isLiveOrPlayed ? [] : allGames
+// En partidos ya jugados cuenta solo los enfrentamientos anteriores a este.
+const h2hMatches = allGames
     .filter((g) => g.isPlayed && g.slug !== game.slug
+        && String(g.fecha ?? "") < String(game.fecha ?? "")
         && [g.club_local, g.club_visitante].map(normalizeClub).includes(h2hRival))
     .sort((a, b) => String(b.fecha ?? "").localeCompare(String(a.fecha ?? "")));
 const h2hStats = h2hMatches.length === 0 ? null : h2hMatches.reduce((acc, g) => {
@@ -314,8 +325,14 @@ if (isLiveOrPlayed) {
 const matchKeys = [game.id_partido, slug];
 const fichaCronica = await fetchCronicaPartido(matchKeys, game.isPlayed ? 'CRÓNICA' : 'PREVIA')
     ?? await fetchCronicaPartido(matchKeys);
-const cronicaVisible = fichaCronica?.visible ?? "";
-const cronicaResto = fichaCronica?.resto ?? "";
+// En la ficha de partido la crónica va sin fotos.
+const sinFotos = (html: string) => html
+    .replace(/<figure\b[\s\S]*?<\/figure>/gi, "")
+    .replace(/<picture\b[\s\S]*?<\/picture>/gi, "")
+    .replace(/<img\b[^>]*>/gi, "")
+    .replace(/<p>\s*<\/p>/gi, "");
+const cronicaVisible = sinFotos(fichaCronica?.visible ?? "");
+const cronicaResto = sinFotos(fichaCronica?.resto ?? "");
 const matchArticleCategory = fichaCronica?.articleCategory?.toUpperCase();
 const matchArticleLabel = matchArticleCategory === 'CRÓNICA'
     ? 'Leer la crónica completa'
@@ -364,6 +381,31 @@ const matchSchema = matchStartISO ? {
     awayTeam: { "@type": "SportsTeam", name: game.club_visitante },
 } : null;
 
+
+// ── Pestañas (Partido / Valoraciones) ────────────────────────────────────
+// Se activan en cuanto hay alineación o el partido se ha jugado.
+const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
+const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(h2hStats ? ["h2h"] : [])];
+const requestedTab = Astro.url.searchParams.get("seccion") ?? "info";
+const activeTab = [...availableTabs, "valoraciones"].includes(requestedTab) ? requestedTab : "info";
+
+const coachRows = tabbed && game.entrenador_nombre
+    ? await cached("coaches:directory-v1", 24 * 60 * 60 * 1000, () => fetchCoachesDirectly()).catch(() => [])
+    : [];
+const coachRow: any = coachRows.find((c: any) => c.nombre === game.entrenador_nombre);
+const matchCoach = game.entrenador_nombre ? {
+    name: game.entrenador_nombre,
+    image: coachRow ? getCoachImageUrl(coachRow) : undefined,
+    flag: coachRow?.iso ? getFlagSrc(coachRow.iso) : undefined,
+    country: coachRow?.pais ?? undefined,
+    href: `/entrenadores/${slugify(game.entrenador_nombre)}`,
+} : null;
+
+const fanRatings = tabbed
+    ? await cached(`ratings:summary:${game.id_partido}`, 10 * 60 * 1000, () => ratingSummary(Number(game.id_partido))).catch(() => [])
+    : [];
+const ratingSlug = `${game.club_local}-vs-${game.club_visitante}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game.fecha ?? "").slice(0, 10)}`;
 ---
 
 <Layout title={seoTitle} description={seoDescription} ogTitle={isLiveOrPlayed ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante} | ${compLabel || 'Partido'} | Madrid Femenino Xtra` : `${game.club_local} vs ${game.club_visitante} | ${compLabel || 'Partido'} | Madrid Femenino Xtra`} ogDescription={isLiveOrPlayed ? `Resultado y ficha completa del ${game.club_local} contra ${game.club_visitante} (${fechaCorta}): goles, asistencias, alineaciones, estadísticas avanzadas y protagonistas del encuentro.` : `Previa del ${game.club_local} contra ${game.club_visitante} del ${fechaCorta} en ${compLabel || 'competición oficial'}: horario, estadio, información del partido y alineaciones cuando estén disponibles.`} noindex={!indexableMatch}>
@@ -386,7 +428,7 @@ const matchSchema = matchStartISO ? {
             </svg>
             Volver al resto de partidos
         </a>
-        <div class="match-header-grid">
+        <div class:list={["match-header-grid", { "is-single": tabbed }]}>
             <section class="match-card-new mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h1 class="section-header">
                     <span aria-hidden="true">FICHA DEL PARTIDO</span>
@@ -541,6 +583,7 @@ const matchSchema = matchStartISO ? {
                     </div>
                 </div>
             </section>
+            {!tabbed && (
             <section class="stadium-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="section-header">Estadio</h2>
                 {stadiumImageSrc && (
@@ -631,6 +674,7 @@ const matchSchema = matchStartISO ? {
                     }
                 </div>
             </section>
+            )}
         </div>
         {galeriaFotos.length > 0 && (
             <section class="match-card-new mfx-framed" style="margin-bottom:1.25rem;"><span class="mfx-frame" aria-hidden="true"></span>
@@ -673,7 +717,8 @@ const matchSchema = matchStartISO ? {
                 <p style="margin:0;padding:clamp(1rem,3.5vw,1.5rem);line-height:1.8;color:rgba(var(--l-ink, 220, 225, 230), 0.9);font-size:clamp(0.92rem,2.6vw,1.05rem);overflow-wrap:break-word;text-wrap:pretty;text-align:justify;">{cronica}</p>
             )}
         </section>}
-        {h2hStats && (
+        {tabbed && <MatchTabs active={activeTab} available={availableTabs} />}
+        {h2hStats && (<div class="mx-panel" data-mx-panel="h2h" hidden={tabbed && activeTab !== "h2h"}>
             <section class="match-card-new h2h-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
                 <h2 class="section-header">HISTORIAL</h2>
                 <div class="h2h-body">
@@ -744,9 +789,8 @@ const matchSchema = matchStartISO ? {
                     )}
                 </div>
             </section>
-        )}
-        <div class="match-grid">
-            <div class="left-column">
+        </div>)}
+        {/* Modal de la árbitra: lo abre el encabezado en cualquier modo. */}
                 <div
                     id="referee-modal"
                     class="modal-overlay"
@@ -815,489 +859,101 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </div>
                 </div>
-                {(isLiveOrPlayed || lineup.length > 0) && (
-                    <section class="lineup-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                        <h2 class="section-header">XI TITULAR</h2>
-                        <div class="lineup-list">
-                            {
-                                lineup.map((player: any) => (
-                                    <div
-                                        class="lineup-row clickable-player-row"
-                                        data-player={encodeURIComponent(
-                                            JSON.stringify(player),
-                                        )}
-                                        role="button"
-                                        tabindex="0"
-                                    >
-                                        <div class="player-photo-rect">
-                                            {player.imageUrl &&
-                                                !player.imageUrl.includes(
-                                                    "placeholder.png",
-                                                ) && (
-                                                    <img
-                                                        src={player.imageUrl}
-                                                        alt={player.name}
-                                                        width="75"
-                                                        height="95"
-                                                        class="player-img-rect"
-                                                        data-proxy-fallback
-                                                    />
-                                                )}
-                                        </div>
-                                        <span class="player-number-bold">
-                                            {player.number}
-                                        </span>
-                                        <div class="player-info-col">
-                                            <div class="player-name-row">
-                                                {playerHref(player) ? (
-                                                    <a
-                                                        class="player-name-bold entity-link"
-                                                        href={playerHref(player)!}
-                                                        onclick="event.stopPropagation()"
-                                                    >
-                                                        {player.name}
-                                                    </a>
-                                                ) : (
-                                                    <span class="player-name-bold">{player.name}</span>
-                                                )}
-                                                {playerRating(player) !== null && (
-                                                    <span
-                                                        class={`match-rating-badge ${playerRatingClass(player)}`}
-                                                        title="Valoración del partido"
-                                                    >
-                                                        {playerRating(player)!.toFixed(1)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div class="player-meta-row">
-                                                <span class="player-pos-label">
-                                                    {player.pos}
-                                                </span>
-                                                <span class="separator">•</span>
-                                                <span
-                                                    class="player-minutes"
-                                                    title="Minutos jugados"
-                                                >
-                                                    {player.minutes}'
-                                                </span>
-                                                {player.goals > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${player.goals} Goles`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            stroke-width="2"
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                            <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
-                                                            <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                        </svg>
-                                                        {player.goals > 1 && (
-                                                            <span class="count-sub">
-                                                                {player.goals}
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                )}
-                                                {player.assists > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${player.assists} Asistencias`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                        </svg>
-                                                        {player.assists > 1 && (
-                                                            <span class="count-sub">
-                                                                {player.assists}
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                )}
-                                                {player.doubleYellows > 0 && (
-                                                    <span
-                                                        style="position: relative; width: 14px; height: 12px; display: inline-flex; margin-right: 4px;"
-                                                        title="Doble Amarilla"
-                                                    >
-                                                        <span
-                                                            class="card-icon-small yellow"
-                                                            style="position: absolute; left: 0; transform: rotate(-10deg);"
-                                                        />
-                                                        <span
-                                                            class="card-icon-small red"
-                                                            style="position: absolute; left: 4px; transform: rotate(10deg);"
-                                                        />
-                                                    </span>
-                                                )}
-                                                {player.yellowCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small yellow"
-                                                        title="Tarjeta Amarilla"
-                                                    />
-                                                )}
-                                                {player.redCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small red"
-                                                        title="Tarjeta Roja"
-                                                    />
-                                                )}
-                                                {player.substituted && (
-                                                    <span
-                                                        class="sub-indicator"
-                                                        title="Sustituida"
-                                                        style="color: rgb(var(--l-red, 255, 107, 107));"
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="20"
-                                                            height="20"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                                        </svg>
-                                                    </span>
-                                                )}
-                                            </div>
+
+        {tabbed && (
+            <>
+                <div class="mx-panel mx-info" data-mx-panel="info" hidden={activeTab !== "info"}>
+            <section class="stadium-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                <h2 class="section-header">Estadio</h2>
+                {stadiumImageSrc && (
+                    <div class="stadium-photo">
+                        <img
+                            src={stadiumImageSrc}
+                            alt={game.estadio}
+                            width="1600"
+                            height="900"
+                            class="stadium-img-rect"
+                            data-proxy-fallback
+                        />
+                    </div>
+                )}
+                <div class="stadium-content">
+                    <div class="stadium-info">
+                        <p class="stadium-name-large">
+                            <a
+                                href={`/estadios/${estadioSlug}`}
+                                class="entity-link"
+                            >
+                                {game.estadio || "Estadio"}
+                            </a>
+                        </p>
+                        <div class="stadium-meta">
+                            <p>
+                                <strong>Aforo:</strong>
+                                {
+                                    game.capacidad
+                                        ? `${game.capacidad} espectadores`
+                                        : "Info no disponible"
+                                }
+                            </p>
+                            <p>
+                                <strong>Ubicación:</strong>
+                                {
+                                    game.ciudad && game.pais
+                                        ? `${game.ciudad} (${game.pais})`
+                                        : "Ubicación desconocida"
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {
+                        stadiumStats.total > 0 && (
+                            <div class="stadium-stats">
+                                <div class="stat-bar">
+                                    <div class="bar-label">Ganados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill won"
+                                            style={`width: ${(stadiumStats.wins / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.wins}
+                                            </span>
                                         </div>
                                     </div>
-                                ))
-                            }
-                        </div>
-                    </section>
-                )}
-                {(isLiveOrPlayed || subs.length > 0) && (
-                    <section class="subs-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                        <h2 class="section-header">Sustituciones</h2>
-                        <div class="lineup-list">
-                            {
-                                subs.map((sub: any) => (
-                                    <div class="sub-row">
-                                        <div class="sub-time">{sub.minute}'</div>
-                                        <div class="sub-movement in">
-                                            <span
-                                                class="sub-arrow"
-                                                style="color: rgb(var(--l-green, 119, 221, 119));"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    width="24"
-                                                    height="24"
-                                                    viewBox="0 0 24 24"
-                                                    fill="currentColor"
-                                                    class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
-                                                >
-                                                    <path
-                                                        stroke="none"
-                                                        d="M0 0h24v24H0z"
-                                                        fill="none"
-                                                    />
-                                                    <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
-                                                </svg>
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Empatados</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill drawn"
+                                            style={`width: ${(stadiumStats.draws / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.draws}
                                             </span>
-                                            <div
-                                                class="sub-player-link clickable-player-row"
-                                                data-player={JSON.stringify(
-                                                    sub.playerIn,
-                                                )}
-                                                role="button"
-                                                tabindex="0"
-                                            >
-                                                {sub.playerIn.imageUrl &&
-                                                    !sub.playerIn.imageUrl.includes(
-                                                        "placeholder.png",
-                                                    ) && (
-                                                        <img
-                                                            src={
-                                                                sub.playerIn
-                                                                    .imageUrl
-                                                            }
-                                                            width="60"
-                                                            height="75"
-                                                            class="sub-img"
-                                                            data-proxy-fallback
-                                                        />
-                                                    )}
-                                                {playerHref(sub.playerIn) ? (
-                                                    <a class="sub-name entity-link" href={playerHref(sub.playerIn)!} onclick="event.stopPropagation()">
-                                                        {sub.playerIn.name}
-                                                    </a>
-                                                ) : (
-                                                    <span class="sub-name">{sub.playerIn.name}</span>
-                                                )}
-                                                {playerRating(sub.playerIn) !== null && (
-                                                    <span
-                                                        class={`match-rating-badge ${playerRatingClass(sub.playerIn)}`}
-                                                        title="Valoración del partido"
-                                                    >
-                                                        {playerRating(sub.playerIn)!.toFixed(1)}
-                                                    </span>
-                                                )}
-                                                {sub.playerIn.goals > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${sub.playerIn.goals} Goles`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            stroke-width="2"
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                            <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
-                                                            <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                        </svg>
-                                                    </span>
-                                                )}
-                                                {sub.playerIn.assists > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${sub.playerIn.assists} Asistencias`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                        </svg>
-                                                    </span>
-                                                )}
-                                                {sub.playerIn.doubleYellows > 0 && (
-                                                    <span
-                                                        style="position: relative; width: 14px; height: 12px; display: inline-flex; margin-right: 4px;"
-                                                        title="Doble Amarilla"
-                                                    >
-                                                        <span
-                                                            class="card-icon-small yellow"
-                                                            style="position: absolute; left: 0; transform: rotate(-10deg);"
-                                                        />
-                                                        <span
-                                                            class="card-icon-small red"
-                                                            style="position: absolute; left: 4px; transform: rotate(10deg);"
-                                                        />
-                                                    </span>
-                                                )}
-                                                {sub.playerIn.yellowCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small yellow"
-                                                        title="Tarjeta Amarilla"
-                                                    />
-                                                )}
-                                                {sub.playerIn.redCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small red"
-                                                        title="Tarjeta Roja"
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div class="sub-movement out">
-                                            <span
-                                                class="sub-arrow"
-                                                style="color: rgb(var(--l-red, 255, 107, 107));"
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    width="24"
-                                                    height="24"
-                                                    viewBox="0 0 24 24"
-                                                    fill="currentColor"
-                                                    class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                                >
-                                                    <path
-                                                        stroke="none"
-                                                        d="M0 0h24v24H0z"
-                                                        fill="none"
-                                                    />
-                                                    <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                                </svg>
-                                            </span>
-                                            <div
-                                                class="sub-player-link clickable-player-row"
-                                                data-player={JSON.stringify(
-                                                    sub.playerOut,
-                                                )}
-                                                role="button"
-                                                tabindex="0"
-                                            >
-                                                {sub.playerOut.imageUrl &&
-                                                    !sub.playerOut.imageUrl.includes(
-                                                        "placeholder.png",
-                                                    ) && (
-                                                        <img
-                                                            src={
-                                                                sub.playerOut
-                                                                    .imageUrl
-                                                            }
-                                                            width="60"
-                                                            height="75"
-                                                            class="sub-img"
-                                                        />
-                                                    )}
-                                                {playerHref(sub.playerOut) ? (
-                                                    <a class="sub-name entity-link" href={playerHref(sub.playerOut)!} onclick="event.stopPropagation()">
-                                                        {sub.playerOut.name}
-                                                    </a>
-                                                ) : (
-                                                    <span class="sub-name">{sub.playerOut.name}</span>
-                                                )}
-                                                {playerRating(sub.playerOut) !== null && (
-                                                    <span
-                                                        class={`match-rating-badge ${playerRatingClass(sub.playerOut)}`}
-                                                        title="Valoración del partido"
-                                                    >
-                                                        {playerRating(sub.playerOut)!.toFixed(1)}
-                                                    </span>
-                                                )}
-                                                {sub.playerOut.goals > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${sub.playerOut.goals} Goles`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            stroke-width="2"
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                            <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55z" />
-                                                            <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                        </svg>
-                                                    </span>
-                                                )}
-                                                {sub.playerOut.assists > 0 && (
-                                                    <span
-                                                        class="event-icon-small"
-                                                        title={`${sub.playerOut.assists} Asistencias`}
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="currentColor"
-                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                        >
-                                                            <path
-                                                                stroke="none"
-                                                                d="M0 0h24v24H0z"
-                                                                fill="none"
-                                                            />
-                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                        </svg>
-                                                    </span>
-                                                )}
-                                                {sub.playerOut.doubleYellows >
-                                                    0 && (
-                                                    <span
-                                                        style="position: relative; width: 14px; height: 12px; display: inline-flex; margin-right: 4px;"
-                                                        title="Doble Amarilla"
-                                                    >
-                                                        <span
-                                                            class="card-icon-small yellow"
-                                                            style="position: absolute; left: 0; transform: rotate(-10deg);"
-                                                        />
-                                                        <span
-                                                            class="card-icon-small red"
-                                                            style="position: absolute; left: 4px; transform: rotate(10deg);"
-                                                        />
-                                                    </span>
-                                                )}
-                                                {sub.playerOut.yellowCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small yellow"
-                                                        title="Tarjeta Amarilla"
-                                                    />
-                                                )}
-                                                {sub.playerOut.redCards > 0 && (
-                                                    <span
-                                                        class="card-icon-small red"
-                                                        title="Tarjeta Roja"
-                                                    />
-                                                )}
-                                            </div>
                                         </div>
                                     </div>
-                                ))
-                            }
-                            {
-                                subs.length === 0 && (
-                                    <p class="no-data-msg">
-                                        No hay registros de sustituciones
-                                    </p>
-                                )
-                            }
-                        </div>
-                    </section>
-                )}
-                {}
-            </div>
-            <div class="right-column">
+                                </div>
+                                <div class="stat-bar">
+                                    <div class="bar-label">Perdidos</div>
+                                    <div class="progress-track">
+                                        <div
+                                            class="bar-fill lost"
+                                            style={`width: ${(stadiumStats.losses / stadiumStats.total) * 100}%`}
+                                        >
+                                            <span class="bar-text">
+                                                {stadiumStats.losses}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+                </div>
+            </section>
+                    <div class="mx-info-side">
                 {game.isPlayed && mvpPlayer && (
                     <section class="mvp-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
                         <h2 class="section-header">MVP DEL PARTIDO</h2>
@@ -1372,6 +1028,13 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
+                    </div>
+                </div>
+                <div class="mx-panel" data-mx-panel="timeline" hidden={activeTab !== "timeline"}>
+                    <MatchTimelineH events={timelineEvents} rivalName={rivalName} rmShield={rmShieldSrc} rivalShield={rivalShieldSrc} />
+                </div>
+                <div class="mx-panel mx-lineup" data-mx-panel="alineacion" hidden={activeTab !== "alineacion"}>
+                    <MatchPitch lineup={lineup} subs={subs} coach={matchCoach} playerHref={playerHref} />
                 {(game.isPlayed || game.once_inicial_url) && (
                     <section class="xi-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
                         <h2 class="section-header">XI INICIAL</h2>
@@ -1396,1236 +1059,37 @@ const matchSchema = matchStartISO ? {
                         </div>
                     </section>
                 )}
-                {(isLiveOrPlayed || timelineEvents.length > 0) && (
-                    <section class="timeline-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="section-header">Timeline</h2>
-                    <div class="timeline-container">
-                        <div class="timeline-track">
-                            {
-                                timelineEvents.map((event, index) => (
-                                    <div
-                                        class={`timeline-event ${event.team === "rival" ? "rival-event" : "local-event"}`}
-                                    >
-                                        <div class="event-time">
-                                            <span class="minute-badge">
-                                                {event.displayMinute}
-                                                {event.displayMinute !== "P"
-                                                    ? "'"
-                                                    : ""}
-                                            </span>
-                                        </div>
-                                        <div class="event-content">
-                                            <div
-                                                class={`event-icon ${event.type}`}
-                                            >
-                                                {event.type === "own_goal" ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="#ff6b6b"
-                                                        stroke-width="2"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                        <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55l4.76 -3.45" />
-                                                        <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                    </svg>
-                                                ) : event.type === "goal" &&
-                                                  !event.isPenalty ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke={event.isOwnGoal ? "#ff6b6b" : "currentColor"}
-                                                        stroke-width="2"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        class="icon icon-tabler icons-tabler-outline icon-tabler-ball-football"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-                                                        <path d="M12 7l4.76 3.45l-1.76 5.55h-6l-1.76 -5.55l4.76 -3.45" />
-                                                        <path d="M12 7v-4m3 13l2.5 3m-.74 -8.55l3.74 -1.45m-11.44 7.05l-2.56 2.95m.74 -8.55l-3.74 -1.45" />
-                                                    </svg>
-                                                ) : event.type === "penalty" ||
-                                                  event.type === "shootout" ||
-                                                  (event.type === "goal" &&
-                                                      event.isPenalty) ? (
-                                                    <div style="position: relative; width: 24px; height: 24px;">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="24"
-                                                            height="24"
-                                                            viewBox="0 0 64 64"
-                                                            fill="currentColor"
-                                                            stroke="currentColor"
-                                                            stroke-width="0"
-                                                            style={`color: ${event.outcome === "scored" || (event.type === "goal" && event.isPenalty) ? "#77dd77" : "#ff6b6b"}`}
-                                                        >
-                                                            <g fill="currentColor">
-                                                                <rect
-                                                                    x="10"
-                                                                    y="27"
-                                                                    width="2"
-                                                                    height="28"
-                                                                />
-                                                                <rect
-                                                                    x="52"
-                                                                    y="27"
-                                                                    width="2"
-                                                                    height="28"
-                                                                />
-                                                                <path d="M52,29V27H12v2h3.016l-3.328,11.094l1.914,0.574l2.586-8.621l3.594,11.979l1.916-0.574L18.104,31.47 l3.594,11.979l1.916-0.574L20.02,29h4.379l3.594,11.979l1.916-0.574L26.315,29h4.379l3.594,11.979l1.916-0.574L32.61,29h4.38 l3.594,11.979l1.916-0.574L38.906,29h4.379l3.594,11.979l1.916-0.574L45.201,29h3.783V29z" />
-                                                            </g>
-                                                        </svg>
-                                                        {((event.type ===
-                                                            "penalty" ||
-                                                            event.type ===
-                                                                "shootout") &&
-                                                            event.outcome !==
-                                                                "scored") && (
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="24"
-                                                                height="24"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="#ff3333"
-                                                                stroke-width="3"
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
-                                                                style="position: absolute; top: 0; left: 0; filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.3));"
-                                                            >
-                                                                <line
-                                                                    x1="18"
-                                                                    y1="6"
-                                                                    x2="6"
-                                                                    y2="18"
-                                                                />
-                                                                <line
-                                                                    x1="6"
-                                                                    y1="6"
-                                                                    x2="18"
-                                                                    y2="18"
-                                                                />
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                ) : event.type === "sub" ? (
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="24"
-                                                        height="24"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        stroke-width="2"
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        class="icon icon-tabler icons-tabler-outline icon-tabler-refresh"
-                                                    >
-                                                        <path
-                                                            stroke="none"
-                                                            d="M0 0h24v24H0z"
-                                                            fill="none"
-                                                        />
-                                                        <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-                                                        <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-                                                    </svg>
-                                                ) : event.type === "card" ? (
-                                                    event.cardType ===
-                                                    "DoubleYellow" ? (
-                                                        <div style="position: relative; width: 14px; height: 16px; display: flex; align-items: center; justify-content: center;">
-                                                            <div
-                                                                class="card-icon yellow"
-                                                                style="position: absolute; transform: rotate(-15deg) translateX(-2px);"
-                                                            />
-                                                            <div
-                                                                class="card-icon red"
-                                                                style="position: absolute; transform: rotate(5deg) translateX(2px);"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div
-                                                            class={`card-icon ${event.cardType === "Red" ? "red" : "yellow"}`}
-                                                        />
-                                                    )
-                                                ) : (
-                                                    event.text
-                                                )}
-                                            </div>
-                                            <div class="event-text">
-                                                {event.type === "sub" ? (
-                                                    <div
-                                                        class="timeline-sub-info"
-                                                        style="display: flex; align-items: center; gap: 8px;"
-                                                    >
-                                                        <span style="display: inline-flex; align-items: center; color: rgb(var(--l-green, 119, 221, 119)); font-weight: 600;">
-                                                            <svg
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="20"
-                                                                height="20"
-                                                                viewBox="0 0 24 24"
-                                                                fill="currentColor"
-                                                                class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-right"
-                                                            >
-                                                                <path
-                                                                    stroke="none"
-                                                                    d="M0 0h24v24H0z"
-                                                                    fill="none"
-                                                                />
-                                                                <path d="M12.089 3.634a2 2 0 0 0 -1.089 1.78l-.001 2.586h-6.999a2 2 0 0 0 -2 2v4l.005 .15a2 2 0 0 0 1.995 1.85l6.999 -.001l.001 2.587a2 2 0 0 0 3.414 1.414l6.586 -6.586a2 2 0 0 0 0 -2.828l-6.586 -6.586a2 2 0 0 0 -2.18 -.434l-.145 .068z" />
-                                                            </svg>
-                                                            {event.playerIn}
-                                                        </span>
-                                                        <span style="color: rgb(var(--l-ink, 204, 204, 204));">
-                                                            |
-                                                        </span>
-                                                        <div style="display: flex; align-items: center; margin-left: 6px;">
-                                                            <span style="display: flex; color: rgb(var(--l-red, 255, 107, 107));">
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                    class="icon icon-tabler icons-tabler-filled icon-tabler-arrow-big-left"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M9.586 4l-6.586 6.586a2 2 0 0 0 0 2.828l6.586 6.586a2 2 0 0 0 2.18 .434l.145 -.068a2 2 0 0 0 1.089 -1.78v-2.586h7a2 2 0 0 0 2 -2v-4l-.005 -.15a2 2 0 0 0 -1.995 -1.85l-7 -.001v-2.585a2 2 0 0 0 -3.414 -1.414z" />
-                                                                </svg>
-                                                            </span>
-                                                            <span style="color: rgb(var(--l-red, 255, 107, 107)); font-weight: 600; margin-left: 4px;">
-                                                                {
-                                                                    event.playerOut
-                                                                }
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : event.type === "goal" ? (
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <div style="display: flex; flex-direction: column;">
-                                                            <span style={`font-weight: 600; ${event.isOwnGoal ? "color: rgb(var(--l-ink, 240, 240, 240));" : ""}`}>
-                                                                 {event.scorer}
-                                                                 {event.team ===
-                                                                     "rival" && (
-                                                                     <span style="color: rgba(var(--l-ink, 200, 210, 220), 0.6); font-size: 0.8em; font-weight: normal; margin-left: 4px;">
-                                                                         (
-                                                                         {isLocalRM
-                                                                             ? game.club_visitante
-                                                                             : game.club_local}
-                                                                         )
-                                                                     </span>
-                                                                 )}
-                                                             </span>
-                                                             <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                                                                 {event.isPenalty && (
-                                                                     <span style="font-size: 0.8em; color: rgba(var(--l-ink, 200, 210, 220), 0.6);">
-                                                                         (penalti)
-                                                                     </span>
-                                                                 )}
-                                                                 {event.assistant && (
-                                                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; color: rgba(var(--l-gold, 212, 168, 67), 0.75);">
-                                                                        <svg
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            width="16"
-                                                                            height="16"
-                                                                            viewBox="0 0 24 24"
-                                                                            fill="currentColor"
-                                                                            class="icon icon-tabler icons-tabler-filled icon-tabler-gift"
-                                                                        >
-                                                                            <path
-                                                                                stroke="none"
-                                                                                d="M0 0h24v24H0z"
-                                                                                fill="none"
-                                                                            />
-                                                                            <path d="M11 14v8h-4a3 3 0 0 1 -3 -3v-4a1 1 0 0 1 1 -1h6zm8 0a1 1 0 0 1 1 1v4a3 3 0 0 1 -3 3h-4v-8h6zm-2.5 -12a3.5 3.5 0 0 1 3.163 5h.337a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-7v-5h-2v5h-7a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2h.337a3.486 3.486 0 0 1 -.337 -1.5c0 -1.933 1.567 -3.5 3.483 -3.5c1.755 -.03 3.312 1.092 4.381 2.934l.136 .243c1.033 -1.914 2.56 -3.114 4.291 -3.175l.209 -.002zm-9 2a1.5 1.5 0 0 0 0 3h3.143c-.741 -1.905 -1.949 -3.02 -3.143 -3zm8.983 0c-1.18 -.02 -2.385 1.096 -3.126 3h3.143a1.5 1.5 0 1 0 -.017 -3z" />
-                                                                        </svg>
-                                                                        <span style="font-weight: 600; color: rgb(var(--l-ink, 240, 240, 240));">
-                                                                            {
-                                                                                event.assistant
-                                                                            }
-                                                                        </span>
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', 'Gol de ${event.scorer.replace(/'/g, "\\'")}')`}
-                                                                title="Ver gol"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type ===
-                                                  "shootout" ? (
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span
-                                                            style={`font-weight: 700; color: ${event.outcome === "scored" ? "#77dd77" : "#ff6b6b"}`}
-                                                        >
-                                                            {event.player}
-                                                        </span>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
-                                                                title="Ver video"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type === "penalty" ? (
-                                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                                        <span
-                                                            style={`font-weight: 600; color: ${event.outcome === "scored" ? "#000" : "#ff6b6b"}`}
-                                                        >
-                                                            {event.text}
-                                                        </span>
-                                                        {event.videoUrl && (
-                                                            <button
-                                                                class="play-video-btn"
-                                                                onclick={`openVideoModal('${event.videoUrl}', '${event.text.replace(/'/g, "\\'")}')`}
-                                                                title="Ver video"
-                                                            >
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    width="20"
-                                                                    height="20"
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="currentColor"
-                                                                >
-                                                                    <path
-                                                                        stroke="none"
-                                                                        d="M0 0h24v24H0z"
-                                                                        fill="none"
-                                                                    />
-                                                                    <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : event.type === "card" ? (
-                                                    <strong>
-                                                        {event.player ||
-                                                            "Jugadora"}
-                                                        {event.team ===
-                                                            "rival" && (
-                                                            <span style="color: rgba(var(--l-ink, 200, 210, 220), 0.6); font-size: 0.8em; font-weight: normal; margin-left: 4px;">
-                                                                (
-                                                                {isLocalRM
-                                                                    ? game.club_visitante
-                                                                    : game.club_local}
-                                                                )
-                                                            </span>
-                                                        )}
-                                                    </strong>
-                                                ) : event.type ===
-                                                  "own_goal" ? (
-                                                    <span style="font-weight: 600; color: rgb(var(--l-red, 255, 107, 107));">
-                                                        {event.text}
-                                                    </span>
-                                                ) : (
-                                                    event.text
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            }
-                            {
-                                timelineEvents.length === 0 && (
-                                    <p class="no-data-msg">
-                                        Sin eventos registrados
-                                    </p>
-                                )
-                            }
+                </div>
+                <div class="mx-panel" data-mx-panel="estadisticas" hidden={activeTab !== "estadisticas"}>
+                    <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} />
+                </div>
+                <div class="mx-panel" data-mx-panel="valoraciones" hidden={activeTab !== "valoraciones"}>
+                    <MatchRatings starters={lineup} subs={subs} fan={fanRatings} ratingsUrl={ratingsUrl} playerHref={playerHref} />
+                </div>
+            </>
+        )}
+        {!tabbed && matchKit && (
+            <div class="mx-prematch-kit">
+                {matchKit && (
+                    <section class="kit-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
+                        <h2 class="section-header">EQUIPACIÓN</h2>
+                        <div class="kit-content">
+                            <div class="kit-content-inner">
+                                <img
+                                    src={matchKit.url}
+                                    alt={matchKit.nombre || "Equipación del partido"}
+                                    width="800"
+                                    height="1000"
+                                    class="kit-image"
+                                    loading="eager"
+                                    data-proxy-fallback
+                                />
+                            </div>
                         </div>
-                    </div>
-                </section>
-            )}
-            {game.isPlayed && hasMatchMetricsData && (
-                <section class="metrics-card mfx-framed" style="margin-top: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
-                    <h2 class="section-header">Métricas</h2>
-                    <div
-                        class="metrics-content"
-                        style="padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem;"
-                    >
-                        <>
-                            {}
-                            <div class="metrics-category">
-                                <h3 class="stat-category-title">
-                                    Distribución
-                                </h3>
-                                <div class="stats-grid">
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.posesion_rm
-                                                        ? `${game.posesion_rm}%`
-                                                        : "50%"
-                                                    : game.posesion_rival
-                                                      ? `${game.posesion_rival}%`
-                                                      : "50%"}
-                                            </span>
-                                            <span class="stat-name">
-                                                Posesión
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.posesion_rival
-                                                        ? `${game.posesion_rival}%`
-                                                        : "50%"
-                                                    : game.posesion_rm
-                                                      ? `${game.posesion_rm}%`
-                                                      : "50%"}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${isLocalRM ? game.posesion_rm || 50 : game.posesion_rival || 50}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${isLocalRM ? game.posesion_rival || 50 : game.posesion_rm || 50}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)
-                                                    : formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Pases
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_pases_completados, game.rival_pases_totales)
-                                                    : formatStatRatio(game.rm_pases_completados, game.rm_pases_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_pases_totales || 0) : (game.rival_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_pases_totales || 0) : (game.rm_pases_totales || 0)) / ((game.rm_pases_totales || 0) + (game.rival_pases_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_pases_largo_completados, game.rm_pases_largo_totales)
-                                                    : formatStatRatio(game.rival_pases_largo_completados, game.rival_pases_largo_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Pases en largo
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_pases_largo_completados, game.rival_pases_largo_totales)
-                                                    : formatStatRatio(game.rm_pases_largo_completados, game.rm_pases_largo_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_pases_largo_totales || 0) : (game.rival_pases_largo_totales || 0)) / ((game.rm_pases_largo_totales || 0) + (game.rival_pases_largo_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_pases_largo_totales || 0) : (game.rm_pases_largo_totales || 0)) / ((game.rm_pases_largo_totales || 0) + (game.rival_pases_largo_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_pases_tercio_completados, game.rm_pases_tercio_totales)
-                                                    : formatStatRatio(game.rival_pases_tercio_completados, game.rival_pases_tercio_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Pases último tercio
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_pases_tercio_completados, game.rival_pases_tercio_totales)
-                                                    : formatStatRatio(game.rm_pases_tercio_completados, game.rm_pases_tercio_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_pases_tercio_totales || 0) : (game.rival_pases_tercio_totales || 0)) / ((game.rm_pases_tercio_totales || 0) + (game.rival_pases_tercio_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_pases_tercio_totales || 0) : (game.rm_pases_tercio_totales || 0)) / ((game.rm_pases_tercio_totales || 0) + (game.rival_pases_tercio_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_centros_completados, game.rm_centros_totales)
-                                                    : formatStatRatio(game.rival_centros_completados, game.rival_centros_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Centros
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_centros_completados, game.rival_centros_totales)
-                                                    : formatStatRatio(game.rm_centros_completados, game.rm_centros_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_centros_totales || 0) : (game.rival_centros_totales || 0)) / ((game.rm_centros_totales || 0) + (game.rival_centros_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_centros_totales || 0) : (game.rm_centros_totales || 0)) / ((game.rm_centros_totales || 0) + (game.rival_centros_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_toques_area_rival ||
-                                                      0
-                                                    : game.rival_toques_area_rival ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Toques en área rival
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_toques_area_rival ||
-                                                      0
-                                                    : game.rm_toques_area_rival ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_toques_area_rival || 0) : (game.rival_toques_area_rival || 0)) / ((game.rm_toques_area_rival || 0) + (game.rival_toques_area_rival || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_toques_area_rival || 0) : (game.rm_toques_area_rival || 0)) / ((game.rm_toques_area_rival || 0) + (game.rival_toques_area_rival || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {}
-                            <div class="metrics-category">
-                                <h3 class="stat-category-title">
-                                    Ataque
-                                </h3>
-                                <div class="stats-grid">
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.xg_a_favor ||
-                                                      "0.0"
-                                                    : game.xg_en_contra ||
-                                                      "0.0"}
-                                            </span>
-                                            <span class="stat-name">
-                                                Goles esperados (xG)
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.xg_en_contra ||
-                                                      "0.0"
-                                                    : game.xg_a_favor ||
-                                                      "0.0"}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (parseFloat(game.xg_a_favor) || 0) : (parseFloat(game.xg_en_contra) || 0)) / ((parseFloat(game.xg_a_favor) || 0) + (parseFloat(game.xg_en_contra) || 0) || 1)) * 100 || 50}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (parseFloat(game.xg_en_contra) || 0) : (parseFloat(game.xg_a_favor) || 0)) / ((parseFloat(game.xg_a_favor) || 0) + (parseFloat(game.xg_en_contra) || 0) || 1)) * 100 || 50}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_asistencias_esperadas ||
-                                                      "0.0"
-                                                    : game.rival_asistencias_esperadas ||
-                                                      "0.0"}
-                                            </span>
-                                            <span class="stat-name">
-                                                Asistencias esp. (xA)
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_asistencias_esperadas ||
-                                                      "0.0"
-                                                    : game.rm_asistencias_esperadas ||
-                                                      "0.0"}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (parseFloat(game.rm_asistencias_esperadas) || 0) : (parseFloat(game.rival_asistencias_esperadas) || 0)) / ((parseFloat(game.rm_asistencias_esperadas) || 0) + (parseFloat(game.rival_asistencias_esperadas) || 0) || 1)) * 100 || 50}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (parseFloat(game.rival_asistencias_esperadas) || 0) : (parseFloat(game.rm_asistencias_esperadas) || 0)) / ((parseFloat(game.rm_asistencias_esperadas) || 0) + (parseFloat(game.rival_asistencias_esperadas) || 0) || 1)) * 100 || 50}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_tiros || 0
-                                                    : game.rival_tiros ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tiros
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_tiros ||
-                                                      0
-                                                    : game.rm_tiros ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_tiros || 0) : (game.rival_tiros || 0)) / ((game.rm_tiros || 0) + (game.rival_tiros || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_tiros || 0) : (game.rm_tiros || 0)) / ((game.rm_tiros || 0) + (game.rival_tiros || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_tiros_puerta ||
-                                                      0
-                                                    : game.rival_tiros_puerta ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tiros a puerta
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_tiros_puerta ||
-                                                      0
-                                                    : game.rm_tiros_puerta ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_tiros_puerta || 0) : (game.rival_tiros_puerta || 0)) / ((game.rm_tiros_puerta || 0) + (game.rival_tiros_puerta || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_tiros_puerta || 0) : (game.rm_tiros_puerta || 0)) / ((game.rm_tiros_puerta || 0) + (game.rival_tiros_puerta || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_grandes_ocasiones ||
-                                                      0
-                                                    : game.rival_grandes_ocasiones ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Grandes ocasiones
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_grandes_ocasiones ||
-                                                      0
-                                                    : game.rm_grandes_ocasiones ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_grandes_ocasiones || 0) : (game.rival_grandes_ocasiones || 0)) / ((game.rm_grandes_ocasiones || 0) + (game.rival_grandes_ocasiones || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_grandes_ocasiones || 0) : (game.rm_grandes_ocasiones || 0)) / ((game.rm_grandes_ocasiones || 0) + (game.rival_grandes_ocasiones || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_tiros_palo ||
-                                                      0
-                                                    : game.rival_tiros_palo ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tiros al palo
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_tiros_palo ||
-                                                      0
-                                                    : game.rm_tiros_palo ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_tiros_palo || 0) : (game.rival_tiros_palo || 0)) / ((game.rm_tiros_palo || 0) + (game.rival_tiros_palo || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_tiros_palo || 0) : (game.rm_tiros_palo || 0)) / ((game.rm_tiros_palo || 0) + (game.rival_tiros_palo || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_corners ||
-                                                      0
-                                                    : game.rival_corners ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Córners
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_corners ||
-                                                      0
-                                                    : game.rm_corners ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_corners || 0) : (game.rival_corners || 0)) / ((game.rm_corners || 0) + (game.rival_corners || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_corners || 0) : (game.rm_corners || 0)) / ((game.rm_corners || 0) + (game.rival_corners || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_regates ||
-                                                      0
-                                                    : game.rival_regates ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Regates
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_regates ||
-                                                      0
-                                                    : game.rm_regates ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_regates || 0) : (game.rival_regates || 0)) / ((game.rm_regates || 0) + (game.rival_regates || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_regates || 0) : (game.rm_regates || 0)) / ((game.rm_regates || 0) + (game.rival_regates || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_fueras_juego ||
-                                                      0
-                                                    : game.rival_fueras_juego ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Fueras de juego
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_fueras_juego ||
-                                                      0
-                                                    : game.rm_fueras_juego ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_fueras_juego || 0) : (game.rival_fueras_juego || 0)) / ((game.rm_fueras_juego || 0) + (game.rival_fueras_juego || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_fueras_juego || 0) : (game.rm_fueras_juego || 0)) / ((game.rm_fueras_juego || 0) + (game.rival_fueras_juego || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {}
-                            <div class="metrics-category">
-                                <h3 class="stat-category-title">
-                                    Defensa y Disciplina
-                                </h3>
-                                <div class="stats-grid">
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_paradas ||
-                                                      0
-                                                    : game.rival_paradas ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Paradas
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_paradas ||
-                                                      0
-                                                    : game.rm_paradas ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_paradas || 0) : (game.rival_paradas || 0)) / ((game.rm_paradas || 0) + (game.rival_paradas || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_paradas || 0) : (game.rm_paradas || 0)) / ((game.rm_paradas || 0) + (game.rival_paradas || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_entradas_ganadas, game.rm_entradas_totales)
-                                                    : formatStatRatio(game.rival_entradas_ganadas, game.rival_entradas_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Entradas
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_entradas_ganadas, game.rival_entradas_totales)
-                                                    : formatStatRatio(game.rm_entradas_ganadas, game.rm_entradas_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_entradas_totales || 0) : (game.rival_entradas_totales || 0)) / ((game.rm_entradas_totales || 0) + (game.rival_entradas_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_entradas_totales || 0) : (game.rm_entradas_totales || 0)) / ((game.rm_entradas_totales || 0) + (game.rival_entradas_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_intercepciones ||
-                                                      0
-                                                    : game.rival_intercepciones ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Intercepciones
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_intercepciones ||
-                                                      0
-                                                    : game.rm_intercepciones ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_intercepciones || 0) : (game.rival_intercepciones || 0)) / ((game.rm_intercepciones || 0) + (game.rival_intercepciones || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_intercepciones || 0) : (game.rm_intercepciones || 0)) / ((game.rm_intercepciones || 0) + (game.rival_intercepciones || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_recuperaciones ||
-                                                      0
-                                                    : game.rival_recuperaciones ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Recuperaciones
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_recuperaciones ||
-                                                      0
-                                                    : game.rm_recuperaciones ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_recuperaciones || 0) : (game.rival_recuperaciones || 0)) / ((game.rm_recuperaciones || 0) + (game.rival_recuperaciones || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_recuperaciones || 0) : (game.rm_recuperaciones || 0)) / ((game.rm_recuperaciones || 0) + (game.rival_recuperaciones || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_despejes ||
-                                                      0
-                                                    : game.rival_despejes ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Despejes
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_despejes ||
-                                                      0
-                                                    : game.rm_despejes ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_despejes || 0) : (game.rival_despejes || 0)) / ((game.rm_despejes || 0) + (game.rival_despejes || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_despejes || 0) : (game.rm_despejes || 0)) / ((game.rm_despejes || 0) + (game.rival_despejes || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_duelos_suelo_ganados, game.rm_duelos_suelo_totales)
-                                                    : formatStatRatio(game.rival_duelos_suelo_ganados, game.rival_duelos_suelo_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Duelos en el suelo
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_duelos_suelo_ganados, game.rival_duelos_suelo_totales)
-                                                    : formatStatRatio(game.rm_duelos_suelo_ganados, game.rm_duelos_suelo_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_duelos_suelo_totales || 0) : (game.rival_duelos_suelo_totales || 0)) / ((game.rm_duelos_suelo_totales || 0) + (game.rival_duelos_suelo_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_duelos_suelo_totales || 0) : (game.rm_duelos_suelo_totales || 0)) / ((game.rm_duelos_suelo_totales || 0) + (game.rival_duelos_suelo_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rm_duelos_aereos_ganados, game.rm_duelos_aereos_totales)
-                                                    : formatStatRatio(game.rival_duelos_aereos_ganados, game.rival_duelos_aereos_totales)}
-                                            </span>
-                                            <span class="stat-name">
-                                                Duelos aéreos
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? formatStatRatio(game.rival_duelos_aereos_ganados, game.rival_duelos_aereos_totales)
-                                                    : formatStatRatio(game.rm_duelos_aereos_ganados, game.rm_duelos_aereos_totales)}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_duelos_aereos_totales || 0) : (game.rival_duelos_aereos_totales || 0)) / ((game.rm_duelos_aereos_totales || 0) + (game.rival_duelos_aereos_totales || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_duelos_aereos_totales || 0) : (game.rm_duelos_aereos_totales || 0)) / ((game.rm_duelos_aereos_totales || 0) + (game.rival_duelos_aereos_totales || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.faltas_cometidas ||
-                                                      0
-                                                    : game.faltas_recibidas ||
-                                                      0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Faltas cometidas
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.faltas_recibidas ||
-                                                      0
-                                                    : game.faltas_cometidas ||
-                                                      0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.faltas_cometidas || 0) : (game.faltas_recibidas || 0)) / ((game.faltas_cometidas || 0) + (game.faltas_recibidas || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.faltas_recibidas || 0) : (game.faltas_cometidas || 0)) / ((game.faltas_cometidas || 0) + (game.faltas_recibidas || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rm_tiros_libres || 0
-                                                    : game.rival_tiros_libres || 0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tiros libres
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rival_tiros_libres || 0
-                                                    : game.rm_tiros_libres || 0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rm_tiros_libres || 0) : (game.rival_tiros_libres || 0)) / ((game.rm_tiros_libres || 0) + (game.rival_tiros_libres || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rival_tiros_libres || 0) : (game.rm_tiros_libres || 0)) / ((game.rm_tiros_libres || 0) + (game.rival_tiros_libres || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.amarillas_rm || 0
-                                                    : game.amarillas_rival || 0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tarjetas Amarillas
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.amarillas_rival || 0
-                                                    : game.amarillas_rm || 0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.amarillas_rm || 0) : (game.amarillas_rival || 0)) / ((game.amarillas_rm || 0) + (game.amarillas_rival || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.amarillas_rival || 0) : (game.amarillas_rm || 0)) / ((game.amarillas_rm || 0) + (game.amarillas_rival || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                    {}
-                                    <div class="stat-row">
-                                        <div class="stat-labels">
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rojas_rm || 0
-                                                    : game.rojas_rival || 0}
-                                            </span>
-                                            <span class="stat-name">
-                                                Tarjetas Rojas
-                                            </span>
-                                            <span>
-                                                {isLocalRM
-                                                    ? game.rojas_rival || 0
-                                                    : game.rojas_rm || 0}
-                                            </span>
-                                        </div>
-                                        <div class="stat-bar-container">
-                                            <div
-                                                class="stat-bar rm"
-                                                style={`width: ${((isLocalRM ? (game.rojas_rm || 0) : (game.rojas_rival || 0)) / ((game.rojas_rm || 0) + (game.rojas_rival || 0) || 1)) * 100}%`}
-                                            />
-                                            <div
-                                                class="stat-bar rival"
-                                                style={`width: ${((isLocalRM ? (game.rojas_rival || 0) : (game.rojas_rm || 0)) / ((game.rojas_rm || 0) + (game.rojas_rival || 0) || 1)) * 100}%`}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    </div>
-                </section>
-            )}
+                    </section>
+                )}
             </div>
-        </div>
+        )}
 
         <div id="video-modal" class="video-modal-overlay">
             <div class="video-modal-container">
@@ -4429,6 +2893,20 @@ const matchSchema = matchStartISO ? {
         .countdown-num { font-size: 1.6rem; }
         .countdown-sep { font-size: 1.4rem; padding-bottom: 0.7rem; }
         .countdown-label { font-size: 0.55rem; }
+    }
+
+    /* ── Pestañas de la ficha (con alineación) ── */
+    .match-header-grid.is-single { grid-template-columns: 1fr; }
+    .mx-panel[hidden] { display: none !important; }
+    .mx-info { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+    .mx-info > .stadium-card { height: auto; align-self: start; }
+    .mx-info-side { display: grid; gap: 1.5rem; }
+    .mx-info-side > section { margin-bottom: 0 !important; }
+    .mx-lineup { display: grid; gap: 1.5rem; }
+    .mx-lineup > .xi-card { margin-bottom: 0 !important; }
+    .mx-prematch-kit { max-width: 420px; margin: 0 auto 1.5rem; }
+    @media (max-width: 900px) {
+        .mx-info { grid-template-columns: 1fr; }
     }
 </style>
 
