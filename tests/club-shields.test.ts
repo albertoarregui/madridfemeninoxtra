@@ -24,5 +24,15 @@ test('no asigna el escudo de otro club con un nombre parecido', () => {
         assert.equal(shield?.known, false, name);
         assert.match(shield!.url, /^https:\/\/media\.madridfemeninoxtra\.com\/escudos\/[a-z0-9_]+\.webp$/);
     }
-    assert.equal(resolve('Paris Saint-Germain')?.url, 'https://media.madridfemeninoxtra.com/escudos/paris_saint_germain.webp');
+    // «Paris Saint-Germain» es el PSG de `clubes`, nunca el Paris FC.
+    assert.equal(resolve('Paris Saint-Germain')?.url, 'https://media.madridfemeninoxtra.com/escudos/psg.webp');
+});
+
+test('los nombres alternativos usan el escudo del club en `clubes`', () => {
+    const withRivals = createClubShieldResolver({
+        PSG: 'https://media.madridfemeninoxtra.com/escudos/psg.webp',
+        Wolfsburgo: 'https://media.madridfemeninoxtra.com/escudos/wolfsburgo.webp',
+    });
+    assert.deepEqual(withRivals('Paris Saint-Germain'), { url: 'https://media.madridfemeninoxtra.com/escudos/psg.webp', known: true });
+    assert.deepEqual(withRivals('VfL Wolfsburg'), { url: 'https://media.madridfemeninoxtra.com/escudos/wolfsburgo.webp', known: true });
 });
