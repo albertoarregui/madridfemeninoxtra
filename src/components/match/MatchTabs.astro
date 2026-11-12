@@ -6,6 +6,14 @@
  */
 interface Props { active: string; available: string[]; }
 const { active, available } = Astro.props;
+// Iconos de trazo (24×24) para la fila de secciones.
+const ICONS: Record<string, string> = {
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  timeline: '<path d="M3 12h18"/><circle cx="7" cy="12" r="2"/><circle cx="14" cy="12" r="2"/><path d="M7 5v5M14 14v5"/>',
+  alineacion: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  estadisticas: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  h2h: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+};
 const SUB = [
   { key: "info", label: "Info" },
   { key: "timeline", label: "Timeline" },
@@ -18,12 +26,16 @@ const isRatings = active === "valoraciones";
 
 <nav class="mx-tabs" data-match-tabs aria-label="Secciones del partido">
   <div class="mx-top" role="tablist">
-    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": !isRatings }]} aria-selected={!isRatings ? "true" : "false"} data-mx-top="partido">Partido</button>
-    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": isRatings }]} aria-selected={isRatings ? "true" : "false"} data-mx-top="valoraciones">Valoraciones</button>
+    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": !isRatings }]} aria-selected={!isRatings ? "true" : "false"} data-mx-top="partido">
+      <strong>Partido</strong><span>Alineación, datos de jugadoras y de equipo</span>
+    </button>
+    <button type="button" role="tab" class:list={["mx-top-tab", { "is-active": isRatings }]} aria-selected={isRatings ? "true" : "false"} data-mx-top="valoraciones">
+      <strong>Valoraciones</strong><span>Notas del partido, de la afición y MVP</span>
+    </button>
   </div>
   <div class="mx-sub" role="tablist" hidden={isRatings}>
     {SUB.map((tab) => (
-      <button type="button" role="tab" class:list={["mx-sub-tab", { "is-active": tab.key === active }]} aria-selected={tab.key === active ? "true" : "false"} data-mx-sub={tab.key}>{tab.label}</button>
+      <button type="button" role="tab" class:list={["mx-sub-tab", { "is-active": tab.key === active }]} aria-selected={tab.key === active ? "true" : "false"} data-mx-sub={tab.key}><svg viewBox="0 0 24 24" aria-hidden="true" set:html={ICONS[tab.key]} />{tab.label}</button>
     ))}
   </div>
 </nav>
@@ -69,26 +81,37 @@ const isRatings = active === "valoraciones";
 
 <style>
   .mx-tabs { display: grid; gap: 0.85rem; margin: 0 0 1.4rem; }
+  /* Las dos filas ocupan el mismo ancho. */
   .mx-top, .mx-sub {
-    display: flex; gap: 0.35rem; padding: 0.35rem; border: 1px solid rgba(212, 168, 67, 0.28); border-radius: 999px;
-    background: rgba(var(--l-card, 8, 16, 34), 0.85); overflow-x: auto; scrollbar-width: none;
+    display: grid; gap: 0.4rem; padding: 0.4rem; width: 100%; box-sizing: border-box;
+    border: 1px solid rgba(212, 168, 67, 0.28); background: rgba(var(--l-card, 8, 16, 34), 0.85);
   }
-  .mx-top::-webkit-scrollbar, .mx-sub::-webkit-scrollbar { display: none; }
-  .mx-top { justify-self: center; }
+  .mx-top { grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 22px; }
+  .mx-sub { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-radius: 999px; }
   .mx-sub[hidden] { display: none; }
-  .mx-top-tab, .mx-sub-tab {
-    flex: 1 0 auto; padding: 0.7rem 1.4rem; border: 0; border-radius: 999px; background: transparent; cursor: pointer; white-space: nowrap;
-    font: 700 0.82rem/1 'Cinzel', serif; letter-spacing: 0.1em; text-transform: uppercase; color: rgb(var(--l-ink, 220, 225, 230));
-    transition: background 0.2s, color 0.2s;
+  .mx-top-tab, .mx-sub-tab { border: 0; background: transparent; cursor: pointer; color: rgb(var(--l-ink, 220, 225, 230)); transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+  .mx-top-tab { display: grid; gap: 0.35rem; justify-items: start; text-align: left; padding: 0.95rem 1.4rem; border-radius: 18px; }
+  .mx-top-tab strong { font: 700 1.05rem/1.1 'Cinzel', serif; letter-spacing: 0.06em; }
+  .mx-top-tab span { font: 400 0.82rem/1.3 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+  .mx-sub-tab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; padding: 0.75rem 0.9rem; border-radius: 999px; white-space: nowrap;
+    font: 700 0.82rem/1 'Cinzel', serif; letter-spacing: 0.08em; text-transform: uppercase;
   }
-  .mx-top-tab { font-size: 0.9rem; padding-inline: 2rem; }
+  .mx-sub-tab svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .mx-top-tab:hover, .mx-sub-tab:hover { color: rgb(var(--l-gold, 242, 223, 176)); }
-  .mx-top-tab.is-active, .mx-sub-tab.is-active { background: linear-gradient(180deg, #e3bf65, #c99a35); color: #16120a; box-shadow: 0 6px 18px rgba(212, 168, 67, 0.25); }
+  .mx-top-tab.is-active { background: rgba(212, 168, 67, 0.14); box-shadow: inset 0 0 0 1px rgba(212, 168, 67, 0.55); }
+  .mx-top-tab.is-active strong { color: rgb(var(--l-gold, 212, 168, 67)); }
+  .mx-top-tab.is-active span { color: rgba(var(--l-ink, 220, 225, 230), 0.85); }
+  .mx-sub-tab.is-active { background: linear-gradient(180deg, #e3bf65, #c99a35); color: #16120a; box-shadow: 0 6px 18px rgba(212, 168, 67, 0.25); }
   .mx-top-tab:focus-visible, .mx-sub-tab:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
-  @media (max-width: 640px) {
-    .mx-top { justify-self: stretch; }
-    .mx-top-tab { padding-inline: 1rem; font-size: 0.8rem; }
-    .mx-sub { border-radius: 16px; }
-    .mx-sub-tab { padding: 0.6rem 0.9rem; font-size: 0.72rem; }
+  @media (max-width: 760px) {
+    .mx-top-tab { padding: 0.75rem 0.9rem; }
+    .mx-top-tab strong { font-size: 0.9rem; }
+    .mx-top-tab span { font-size: 0.7rem; }
+    /* Cinco secciones: desplazamiento lateral en pantallas estrechas. */
+    .mx-sub { display: flex; overflow-x: auto; scrollbar-width: none; border-radius: 18px; }
+    .mx-sub::-webkit-scrollbar { display: none; }
+    .mx-sub-tab { flex: 1 0 auto; padding: 0.65rem 0.85rem; font-size: 0.7rem; gap: 0.4rem; }
+    .mx-sub-tab svg { width: 15px; height: 15px; }
   }
 </style>

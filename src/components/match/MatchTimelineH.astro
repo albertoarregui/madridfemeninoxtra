@@ -1,8 +1,8 @@
 ---
 /**
  * Timeline horizontal del partido (pestaña «Timeline»), con el mismo lenguaje
- * que la trayectoria de las jugadoras: eje dorado, eventos del Real Madrid
- * arriba y del rival abajo. En móvil pasa a una lista vertical.
+ * que la trayectoria de las jugadoras: eje dorado, goles y asistencias arriba,
+ * tarjetas y cambios abajo; el escudo indica el equipo. En móvil, lista vertical.
  */
 interface Props { events: any[]; rmName?: string; rivalName: string; rmShield?: string; rivalShield?: string; }
 const { events, rmName = "Real Madrid", rivalName, rmShield, rivalShield } = Astro.props;
@@ -15,7 +15,7 @@ const pos = (minute: number) => Math.min(100, Math.max(0, (minute / maxMinute) *
 // Niveles para que los eventos cercanos no se pisen.
 const levels: Record<"top" | "bottom", number[]> = { top: [], bottom: [] };
 const placed = inPlay.map((event) => {
-  const side = event.team === "rival" ? "bottom" : "top";
+  const side = event.type === "card" || event.type === "sub" ? "bottom" : "top";
   const x = pos(Number(event.minute) || 0);
   const used = levels[side];
   let level = 0;
@@ -44,6 +44,7 @@ const main = (event: any) => event.type === "goal" ? event.scorer : event.type =
 const detail = (event: any) =>
   event.type === "goal" && event.assistant ? `Asist.: ${event.assistant}`
   : event.type === "sub" && event.playerOut ? `Sale: ${event.playerOut}` : "";
+const shieldOf = (event: any) => (event.team === "rival" ? rivalShield : rmShield);
 const videoCall = (event: any) => event.videoUrl
   ? `openVideoModal('${String(event.videoUrl).replace(/'/g, "\\'")}', '${String(main(event) || "Gol").replace(/'/g, "\\'")}')` : null;
 ---
@@ -53,9 +54,9 @@ const videoCall = (event: any) => event.videoUrl
     <p class="tlh-empty">Todavía no hay eventos registrados.</p>
   ) : (
     <>
-      <div class="tlh-teams">
-        <span>{rmShield && <img src={rmShield} alt="" width="22" height="22" />}{rmName}</span>
-        <span>{rivalShield && <img src={rivalShield} alt="" width="22" height="22" />}{rivalName}</span>
+      <div class="tlh-legend" aria-hidden="true">
+        <span>Goles y asistencias</span>
+        <span>Tarjetas y cambios</span>
       </div>
       <div class="tlh-track" style={`--top-levels:${maxLevel("top") + 1};--bottom-levels:${maxLevel("bottom") + 1}`}>
         <div class="tlh-axis" aria-hidden="true">
@@ -66,7 +67,8 @@ const videoCall = (event: any) => event.videoUrl
         {placed.map(({ event, side, x, level, edge }) => (
           <div class={`tlh-event is-${side} k-${kind(event)}${edge ? ` at-${edge}` : ""}`} style={`--x:${x};--level:${level}`}>
             <span class="tlh-dot" aria-hidden="true" />
-            <div class="tlh-card">
+            <div class={`tlh-card ${event.team === "rival" ? "is-rival" : ""}`}>
+              {shieldOf(event) && <img class="tlh-shield" src={shieldOf(event)} alt="" width="18" height="18" />}
               <span class="tlh-min">{minuteLabel(event)}</span>
               <span class="tlh-ico" aria-hidden="true" />
               <span class="tlh-text">
@@ -116,9 +118,10 @@ const videoCall = (event: any) => event.videoUrl
 <style>
   .tlh { position: relative; padding: 1.25rem 1.4rem 1.4rem; border: 1px solid transparent; border-radius: 14px; background: rgba(var(--l-card, 8, 16, 34), 0.85); }
   .tlh-empty { margin: 0; padding: 1.5rem; text-align: center; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
-  .tlh-teams { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; font: 700 0.72rem/1 'Cinzel', serif; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
-  .tlh-teams span { display: inline-flex; align-items: center; gap: 0.45rem; }
-  .tlh-teams img { width: 22px; height: 22px; object-fit: contain; }
+  .tlh-legend { position: absolute; left: 1.4rem; top: 1.1rem; bottom: 1.1rem; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none;
+    font: 700 0.6rem/1 'Cinzel', serif; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.75); }
+  .tlh-shield { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+  .tlh-card.is-rival { border-color: rgba(var(--l-ink, 200, 210, 220), 0.25); }
 
   .tlh-track {
     --row: 78px;
@@ -146,6 +149,7 @@ const videoCall = (event: any) => event.videoUrl
   .tlh-event.is-top .tlh-dot { bottom: calc(-1 * var(--level) * var(--row) - 9px); }
   .tlh-event.is-bottom .tlh-dot { top: calc(-1 * var(--level) * var(--row) - 9px); }
   .tlh-event.is-bottom .tlh-dot { background: rgba(var(--l-ink, 200, 210, 220), 0.7); }
+  .tlh-track { margin-top: 1.6rem; margin-bottom: 1.2rem; }
 
   .tlh-card {
     position: absolute; left: 0; transform: translateX(-50%); display: flex; align-items: center; gap: 0.45rem;
@@ -191,7 +195,7 @@ const videoCall = (event: any) => event.videoUrl
 
   /* Móvil y tablet: lista vertical. */
   @media (max-width: 860px) {
-    .tlh-track, .tlh-teams { display: none; }
+    .tlh-track, .tlh-legend { display: none; }
     .tlh-list { display: grid; gap: 0.55rem; }
     .tlh-row {
       display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.7rem; border-radius: 10px;

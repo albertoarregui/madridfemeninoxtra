@@ -953,7 +953,6 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                     }
                 </div>
             </section>
-                    <div class="mx-info-side">
                 {game.isPlayed && mvpPlayer && (
                     <section class="mvp-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
                         <h2 class="section-header">MVP DEL PARTIDO</h2>
@@ -1010,31 +1009,13 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                         </div>
                     </section>
                 )}
-                {matchKit && (
-                    <section class="kit-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
-                        <h2 class="section-header">EQUIPACIÓN</h2>
-                        <div class="kit-content">
-                            <div class="kit-content-inner">
-                                <img
-                                    src={matchKit.url}
-                                    alt={matchKit.nombre || "Equipación del partido"}
-                                    width="800"
-                                    height="1000"
-                                    class="kit-image"
-                                    loading="eager"
-                                    data-proxy-fallback
-                                />
-                            </div>
-                        </div>
-                    </section>
-                )}
-                    </div>
                 </div>
                 <div class="mx-panel" data-mx-panel="timeline" hidden={activeTab !== "timeline"}>
                     <MatchTimelineH events={timelineEvents} rivalName={rivalName} rmShield={rmShieldSrc} rivalShield={rivalShieldSrc} />
                 </div>
                 <div class="mx-panel mx-lineup" data-mx-panel="alineacion" hidden={activeTab !== "alineacion"}>
                     <MatchPitch lineup={lineup} subs={subs} coach={matchCoach} playerHref={playerHref} />
+                    <div class="mx-lineup-media">
                 {(game.isPlayed || game.once_inicial_url) && (
                     <section class="xi-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
                         <h2 class="section-header">XI INICIAL</h2>
@@ -1059,6 +1040,25 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                         </div>
                     </section>
                 )}
+                {matchKit && (
+                    <section class="kit-card mfx-framed" style="margin-bottom: 2rem;"><span class="mfx-frame" aria-hidden="true"></span>
+                        <h2 class="section-header">EQUIPACIÓN</h2>
+                        <div class="kit-content">
+                            <div class="kit-content-inner">
+                                <img
+                                    src={matchKit.url}
+                                    alt={matchKit.nombre || "Equipación del partido"}
+                                    width="800"
+                                    height="1000"
+                                    class="kit-image"
+                                    loading="eager"
+                                    data-proxy-fallback
+                                />
+                            </div>
+                        </div>
+                    </section>
+                )}
+                    </div>
                 </div>
                 <div class="mx-panel" data-mx-panel="estadisticas" hidden={activeTab !== "estadisticas"}>
                     <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} />
@@ -2898,15 +2898,21 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
     /* ── Pestañas de la ficha (con alineación) ── */
     .match-header-grid.is-single { grid-template-columns: 1fr; }
     .mx-panel[hidden] { display: none !important; }
-    .mx-info { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
-    .mx-info > .stadium-card { height: auto; align-self: start; }
-    .mx-info-side { display: grid; gap: 1.5rem; }
-    .mx-info-side > section { margin-bottom: 0 !important; }
+    /* Info: estadio y MVP con la misma altura (la foto del MVP rellena su tarjeta). */
+    .mx-info { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; align-items: stretch; }
+    .mx-info > section { height: auto; margin: 0 !important; }
+    .mx-info > .mvp-card { display: flex; flex-direction: column; }
+    .mx-info > .mvp-card > div:not(.mfx-frame) { position: relative; flex: 1; min-height: 320px; }
+    .mx-info .mvp-player-side-full, .mx-info .mvp-img-wrap-full { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .mx-info .mvp-photo-full { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .mx-lineup-media { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; align-items: stretch; }
+    .mx-lineup-media > section { margin: 0 !important; }
+    .mx-lineup-media:has(> section:only-child) { grid-template-columns: 1fr; }
     .mx-lineup { display: grid; gap: 1.5rem; }
-    .mx-lineup > .xi-card { margin-bottom: 0 !important; }
     .mx-prematch-kit { max-width: 420px; margin: 0 auto 1.5rem; }
     @media (max-width: 900px) {
-        .mx-info { grid-template-columns: 1fr; }
+        .mx-info, .mx-lineup-media { grid-template-columns: 1fr; }
+        .mx-info > .mvp-card > div:not(.mfx-frame) { min-height: 420px; }
     }
 </style>
 
