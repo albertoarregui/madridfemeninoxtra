@@ -23,7 +23,8 @@ const llegadas = list.filter((m) => IN.includes(m.tipo));
 const salidas = list.filter((m) => OUT.includes(m.tipo));
 const renovaciones = list.filter((m) => m.tipo === "renovacion");
 const sum = (arr: Move[]) => arr.reduce((t, m) => t + (m.precio ?? 0), 0);
-const gasto = sum(llegadas), ingresos = sum(salidas), balance = ingresos - gasto;
+const gasto = sum(llegadas), ingresos = sum(salidas);
+const topFee = Math.max(0, ...list.map((m) => m.precio ?? 0));
 const money = (v: number) => (v === 0 ? "0 €" : Math.abs(v) >= 1_000_000
     ? `${(v / 1_000_000).toLocaleString("es-ES", { maximumFractionDigits: 2 })} M€`
     : `${Math.round(v).toLocaleString("es-ES")} €`);
@@ -36,7 +37,6 @@ const dateEs = (iso: string | null) => (iso ? iso.split("-").reverse().join("/")
 const groups = [
     { key: "llegadas", title: "Llegadas", items: llegadas },
     { key: "salidas", title: "Salidas", items: salidas },
-    { key: "renovaciones", title: "Renovaciones", items: renovaciones },
 ].filter((g) => g.items.length > 0);
 ---
 
@@ -48,24 +48,32 @@ const groups = [
             <p class="landing-subtitle">Fichajes, salidas, cesiones y renovaciones del Real Madrid Femenino</p>
         </header>
 
-        <section class="cx-card mk-top mfx-corners" aria-label="Temporada y resumen">
+        <section class="cx-card mk-kpis-card mfx-corners" aria-label="Resumen de la temporada">
+            <dl class="mk-kpis">
+                <div><dd>{llegadas.length}</dd><dt>Llegadas</dt></div>
+                <div><dd>{salidas.length}</dd><dt>Salidas</dt></div>
+                <div><dd>{renovaciones.length}</dd><dt>Renovaciones</dt></div>
+                <div><dd>{money(gasto)}</dd><dt>Gasto</dt></div>
+                <div><dd>{money(ingresos)}</dd><dt>Ingresos</dt></div>
+                <div><dd>{topFee > 0 ? money(topFee) : "—"}</dd><dt>Mayor traspaso</dt></div>
+            </dl>
+        </section>
+
+        <div class="mk-controls" data-mk-controls>
             <div class="mk-season">
-                <span class="cx-label">Temporada</span>
                 <LinkSelect id="mk-season" options={seasons.map((s) => ({ label: s, href: `/mercado?temporada=${encodeURIComponent(s)}`, selected: s === temporada }))} />
             </div>
-            <dl class="mk-kpis">
-                <div><dt>Llegadas</dt><dd>{llegadas.length}</dd></div>
-                <div><dt>Salidas</dt><dd>{salidas.length}</dd></div>
-                <div><dt>Renovaciones</dt><dd>{renovaciones.length}</dd></div>
-                <div><dt>Gasto</dt><dd>{money(gasto)}</dd></div>
-                <div><dt>Ingresos</dt><dd>{money(ingresos)}</dd></div>
-                <div><dt>Balance</dt><dd class:list={[{ "is-pos": balance > 0, "is-neg": balance < 0 }]}>{balance > 0 ? "+" : ""}{money(balance)}</dd></div>
-            </dl>
-            <div class="pt-pills mk-filter" role="group" aria-label="Tipo de movimiento" data-mk-filter>
+            <div class="pt-pills mk-filter" role="group" aria-label="Tipo de movimiento">
                 <button type="button" class="pt-pill is-active" data-value="todos" aria-pressed="true">Todos</button>
-                {groups.map((g) => <button type="button" class="pt-pill" data-value={g.key} aria-pressed="false">{g.title}</button>)}
+                <button type="button" class="pt-pill" data-value="llegadas" aria-pressed="false">Llegadas</button>
+                <button type="button" class="pt-pill" data-value="salidas" aria-pressed="false">Salidas</button>
             </div>
-        </section>
+            <label class="pt-toggle mk-toggle">
+                <input type="checkbox" checked data-mk-renewals aria-label="Incluir renovaciones" />
+                <span class="pt-toggle-track"></span>
+                <span class="is-on">Incluir renovaciones</span>
+            </label>
+        </div>
 
         {list.length === 0 && <section class="cx-card mfx-corners"><p class="cx-empty">Sin movimientos registrados en esta temporada.</p></section>}
 
@@ -95,6 +103,25 @@ const groups = [
             </section>
         ))}
 
+        <section class="cx-card mfx-corners" data-mk-group="renovaciones">
+            <h2 class="cx-title">Renovaciones <span class="mk-count">{renovaciones.length}</span></h2>
+            {renovaciones.length === 0 ? <p class="cx-empty">Sin renovaciones registradas en esta temporada.</p> : (
+                <ul class="mk-list">
+                    {renovaciones.map((m) => (
+                        <li class="mk-row">
+                            <a class="mk-player" href={`/jugadoras/${m.slug}`}>
+                                <span class="mk-photo">{photos[m.slug] && <img src={photos[m.slug]} alt="" width="52" height="52" loading="lazy" />}</span>
+                                <span class="mk-name"><strong>{m.nombre}</strong><small>{m.posicion || "Jugadora"}</small></span>
+                            </a>
+                            <span class="mk-type is-renovacion">Renovación</span>
+                            <span class="mk-route"><span class="mk-club"><span>{m.contratoHasta ? `Contrato hasta ${m.contratoHasta.split("-").reverse().join("/")}` : "Contrato ampliado"}</span></span></span>
+                            <span class="mk-fee"><strong class:list={[{ "is-known": (m.precio ?? 0) > 0 }]}>{feeLabel(m)}</strong><small>{dateEs(m.fecha)}</small></span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+
         {topFees.length > 0 && (
             <section class="cx-card mfx-corners">
                 <h2 class="cx-title">Operaciones más caras</h2>
@@ -116,29 +143,44 @@ const groups = [
 
 <script>
     function init() {
-        const filter = document.querySelector<HTMLElement>("[data-mk-filter]");
-        if (!filter || filter.dataset.ready === "true") return;
-        filter.dataset.ready = "true";
-        const pills = [...filter.querySelectorAll<HTMLButtonElement>(".pt-pill")];
+        const controls = document.querySelector<HTMLElement>("[data-mk-controls]");
+        if (!controls || controls.dataset.ready === "true") return;
+        controls.dataset.ready = "true";
+        const pills = [...controls.querySelectorAll<HTMLButtonElement>(".pt-pill")];
+        const renewals = controls.querySelector<HTMLInputElement>("[data-mk-renewals]")!;
+        const label = renewals.parentElement!.querySelector<HTMLElement>("span:last-child")!;
+        let type = "todos";
+        const apply = () => {
+            document.querySelectorAll<HTMLElement>("[data-mk-group]").forEach((g) => {
+                const key = g.dataset.mkGroup;
+                g.hidden = key === "renovaciones" ? !(renewals.checked && type === "todos") : type !== "todos" && key !== type;
+            });
+            label.classList.toggle("is-on", renewals.checked);
+        };
         pills.forEach((pill) => pill.addEventListener("click", () => {
             pills.forEach((p) => { const on = p === pill; p.classList.toggle("is-active", on); p.setAttribute("aria-pressed", String(on)); });
-            const value = pill.dataset.value;
-            document.querySelectorAll<HTMLElement>("[data-mk-group]").forEach((g) => { g.hidden = value !== "todos" && g.dataset.mkGroup !== value; });
+            type = pill.dataset.value || "todos";
+            apply();
         }));
+        renewals.addEventListener("change", apply);
+        apply();
     }
     init();
     document.addEventListener("astro:page-load", init);
 </script>
 
 <style>
-    .mk-top { position: relative; z-index: 30; display: grid; gap: 1.1rem; }
-    .mk-season { max-width: 280px; }
+    .mk-kpis-card { padding: 1.5rem; }
+    .mk-controls { position: relative; z-index: 30; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .mk-season { width: 200px; }
+    .mk-season .custom-select-container { margin: 0; }
+    .mk-toggle { margin-left: auto; }
+    .mk-toggle > span:last-child { letter-spacing: 0.08em; }
     .mk-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.75rem; margin: 0; }
-    .mk-kpis > div { padding: 0.8rem 0.6rem; border: 1px solid rgba(212, 168, 67, 0.15); border-radius: 12px; background: rgba(var(--l-bg, 5, 9, 19), 0.45); text-align: center; }
-    .mk-kpis dt { font: 700 0.6rem/1 'Cinzel', serif; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.8); }
-    .mk-kpis dd { margin: 0.45rem 0 0; font: 800 1.35rem/1 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); }
-    .mk-kpis dd.is-pos { color: #4ade80; } .mk-kpis dd.is-neg { color: #f87171; }
-    .mk-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-self: start; max-width: 100%; }
+    .mk-kpis > div { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mk-kpis dt { order: 2; font: 700 0.66rem/1 'Cinzel', serif; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.8); }
+    .mk-kpis dd { order: 1; margin: 0; font: 800 clamp(1.4rem, 2.6vw, 2.1rem)/1 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+    .mk-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; border-radius: 999px; }
     .mk-count { margin-left: 0.4rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
     [data-mk-group][hidden] { display: none; }
     .mk-list { margin: 0; padding: 0; list-style: none; }
@@ -170,7 +212,10 @@ const groups = [
         .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; }
     }
     @media (max-width: 560px) {
-        .mk-season { max-width: none; }
+        .mk-season { width: 100%; }
+        .mk-toggle { margin-left: 0; width: 100%; justify-content: center; }
+        .mk-filter { width: 100%; }
+        .mk-filter .pt-pill { flex: 1; justify-content: center; }
         .mk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .mk-kpis dd { font-size: 1.1rem; }
         .mk-photo { width: 42px; height: 42px; }

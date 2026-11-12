@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import SiteSelect from './CustomSelect';
 import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis,
     PolarRadiusAxis, Legend, ResponsiveContainer, Tooltip,
@@ -168,115 +169,55 @@ function buildRadarData(a: PlayerData, b: PlayerData, mode: 'total' | 'p90', axe
     });
 }
 
-function CustomSelect({ label, options, value, onChange }: {
-    label: string; options: string[]; value: string; onChange: (v: string) => void;
-}) {
-    const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-    const displayValue = value || 'Todas';
-
-    useEffect(() => {
-        const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-        document.addEventListener('mousedown', h);
-        return () => document.removeEventListener('mousedown', h);
-    }, []);
-
-    return (
-        <div className="cmp-filter-group" ref={ref}>
-            <span className="cmp-filter-label">{label}</span>
-            <div className={`custom-select-container ${open ? 'open' : ''}`}>
-                <button
-                    type="button"
-                    className="custom-select-trigger"
-                    onClick={() => setOpen(o => !o)}
-                    aria-haspopup="listbox"
-                    aria-expanded={open}
-                    aria-label={label}
-                >
-                    <span className="selected-text">{displayValue}</span>
-                    <div className="custom-select-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
-                    </div>
-                </button>
-                <div className="custom-select-options" role="listbox">
-                    {['', ...options].map(o => (
-                        <div
-                            key={o || '__all'}
-                            role="option"
-                            aria-selected={value === o}
-                            className={`custom-select-option ${value === o ? 'selected' : ''}`}
-                            onMouseDown={() => { onChange(o); setOpen(false); }}
-                        >{o || 'Todas'}</div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PlayerSelector({ players, selected, onSelect, color }: {
-    players: PlayerOption[]; selected: PlayerData | null;
-    onSelect: (slug: string) => void; color: string;
+function PlayerSelector({ players, selected, onSelect, label, align = 'left' }: {
+    players: PlayerOption[]; selected: PlayerData | null; onSelect: (slug: string) => void; label: string; align?: 'left' | 'right';
 }) {
     const [query, setQuery] = useState('');
     const [open, setOpen]   = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-
-    const filtered = query.length >= 1
-        ? players.filter(p => p.nombre.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
-        : [];
-
+    const inputRef = useRef<HTMLInputElement>(null);
+    const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const filtered = useMemo(() => {
+        const q = norm(query.trim());
+        return players.filter(p => !q || norm(p.nombre).includes(q)).slice(0, 60);
+    }, [players, query]);
     useEffect(() => {
         const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
         document.addEventListener('mousedown', h);
         return () => document.removeEventListener('mousedown', h);
     }, []);
-
+    useEffect(() => { if (open) { setQuery(''); setTimeout(() => inputRef.current?.focus(), 0); } }, [open]);
     return (
-        <div className="cmp-side" ref={ref}>
-            <div className="cmp-selector">
-                {selected ? (
-                    <div className="cmp-chosen" style={{ borderColor: color }}>
-                        <img src={selected.imageUrl} alt={selected.nombre} className="cmp-avatar" />
-                        <div className="cmp-chosen-info">
-                            <span className="cmp-chosen-name">{selected.nombre}</span>
-                            <span className="cmp-chosen-pos">{selected.posicion}</span>
+        <div className={`cx-pick${align === 'right' ? ' is-right' : ''}`} ref={ref}>
+            <span className="cx-label">{label}</span>
+            <div className="pc-bar ep-bar"><div className="pc-picker">
+                <button type="button" className="pc-trigger" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+                    {selected ? <img src={selected.imageUrl} alt="" width={34} height={34} /> : <span className="ep-initials" aria-hidden="true">+</span>}
+                    <span>{selected ? selected.nombre : 'Elegir jugadora'}</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                {open && (
+                    <div className="pc-panel">
+                        <label className="pc-search">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                            <input ref={inputRef} type="search" placeholder="Buscar jugadoras..." aria-label="Buscar jugadoras" autoComplete="off"
+                                value={query} onChange={e => setQuery(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Escape') setOpen(false); if (e.key === 'Enter' && filtered[0]) { onSelect(filtered[0].slug); setOpen(false); } }} />
+                        </label>
+                        <div className="pc-list" role="listbox" aria-label="Jugadoras">
+                            {filtered.length === 0 && <p className="pc-empty">Sin resultados</p>}
+                            {filtered.map(p => (
+                                <button type="button" key={p.slug} role="option" aria-selected={selected?.slug === p.slug}
+                                    className={`pc-item${selected?.slug === p.slug ? ' is-current' : ''}`}
+                                    onClick={() => { onSelect(p.slug); setOpen(false); }}>
+                                    <span className="pc-photo"><img src={p.imageUrl} alt="" width={40} height={40} loading="lazy" /></span>
+                                    <span className="pc-text"><strong>{p.nombre}</strong><small>{p.posicion || 'Jugadora'}</small></span>
+                                </button>
+                            ))}
                         </div>
-                        <button
-                            className="cmp-clear"
-                            onClick={() => { onSelect(''); setQuery(''); }}
-                            aria-label="Quitar jugadora"
-                        >✕</button>
-                    </div>
-                ) : (
-                    <div className="cmp-input-wrap" style={{ borderColor: color }}>
-                        <svg className="cmp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/>
-                        </svg>
-                        <input
-                            className="cmp-input" type="text" placeholder="Buscar jugadora..."
-                            value={query}
-                            onChange={e => { setQuery(e.target.value); setOpen(true); }}
-                            onFocus={() => setOpen(true)}
-                        />
                     </div>
                 )}
-                {open && filtered.length > 0 && !selected && (
-                    <ul className="cmp-dropdown">
-                        {filtered.map(p => (
-                            <li key={p.slug} className="cmp-option" onMouseDown={() => { onSelect(p.slug); setQuery(''); setOpen(false); }}>
-                                <img src={p.imageUrl} alt={p.nombre} className="cmp-option-img" />
-                                <div className="cmp-option-text">
-                                    <span className="cmp-option-name">{p.nombre}</span>
-                                    <span className="cmp-option-pos">{p.posicion}</span>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+            </div></div>
         </div>
     );
 }
@@ -419,7 +360,7 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
 
             const canvas = await html2canvas(captureRef.current, {
                 useCORS: true,
-                backgroundColor: '#ffffff',
+                backgroundColor: '#070d1c',
                 scale: 2,
             });
 
@@ -473,160 +414,121 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
     const bothLoading = loadingA || loadingB;
     const hasData = dataA && dataB;
 
-    return (
-        <div className="cmp-root">
-            <div className="cmp-selectors">
-                <PlayerSelector players={players} selected={dataA} onSelect={s => setSlugA(s)} color="#ffde59" />
-                <div className="cmp-vs">{bothLoading ? <span className="cmp-spinner" /> : 'VS'}</div>
-                <PlayerSelector players={players} selected={dataB} onSelect={s => setSlugB(s)} color="#ffde59" />
-            </div>
+    const seasonOptions = [{ value: '', label: 'Todas las temporadas' }, ...availableSeasons.map(s => ({ value: s, label: s }))];
 
-            {(dataA || dataB) && (
-                <div className="cmp-filters">
-                    <CustomSelect label="TEMPORADA"   options={availableSeasons} value={season} onChange={v => setSeason(v)} />
-                    {/* Mismas píldoras de competición que la ficha de jugadora. */}
-                    <div className="cmp-filter-group cmp-filter-comps">
-                        <span className="cmp-filter-label">COMPETICIÓN</span>
-                        <div className="pt-pills" role="group" aria-label="Competición">
+    return (
+        <div className="cx cmp-root">
+            <section className="cx-card cx-controls mfx-corners" aria-label="Jugadoras y filtros">
+                <div className="cx-pickers cmp-pickers">
+                    <PlayerSelector players={players} selected={dataA} onSelect={s => setSlugA(s)} label="Jugadora" />
+                    <button type="button" className="cmp-swap" aria-label="Intercambiar" onClick={() => { setSlugA(slugB); setSlugB(slugA); }} disabled={!slugA || !slugB}>
+                        {bothLoading ? <span className="cmp-spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3" /></svg>}
+                    </button>
+                    <PlayerSelector players={players} selected={dataB} onSelect={s => setSlugB(s)} label="Comparar con" align="right" />
+                </div>
+                {(dataA || dataB) && (
+                    <div className="cmp-filter-row">
+                        <div className="cmp-season">
+                            <span className="cx-label">Temporada</span>
+                            <SiteSelect id="cmp-season" options={seasonOptions} value={season} onChange={v => setSeason(v)} />
+                        </div>
+                        {/* Mismo interruptor Totales / Por 90' que la ficha de jugadora. */}
+                        <label className="pt-toggle" title="Cambiar entre datos totales y por 90 minutos">
+                            <span className={mode === 'total' ? 'is-on' : ''}>Totales</span>
+                            <input type="checkbox" checked={mode === 'p90'} onChange={e => setMode(e.target.checked ? 'p90' : 'total')} />
+                            <span className="pt-toggle-track" />
+                            <span className={mode === 'p90' ? 'is-on' : ''}>Por 90'</span>
+                        </label>
+                    </div>
+                )}
+                {(dataA || dataB) && (
+                    <div>
+                        <span className="cx-label">Competición</span>
+                        <div className="pt-pills cx-pills" role="group" aria-label="Competición">
                             {[{ value: '', label: 'Todas' }, ...availableComps.map(c => ({ value: c, label: c === 'Amistosos' ? 'Amistoso' : c === 'Partidos oficiales' ? 'Oficiales' : c }))].map(option => (
-                                <button
-                                    key={option.value || 'all'}
-                                    type="button"
-                                    className={`pt-pill${comp === option.value ? ' is-active' : ''}`}
-                                    aria-pressed={comp === option.value}
-                                    onClick={() => setComp(option.value)}
-                                >
+                                <button key={option.value || 'all'} type="button" className={`pt-pill${comp === option.value ? ' is-active' : ''}`}
+                                    aria-pressed={comp === option.value} onClick={() => setComp(option.value)}>
                                     {competitionLogos[option.value] && <img src={competitionLogos[option.value]} alt="" width={16} height={16} loading="lazy" />}
                                     {option.label}
                                 </button>
                             ))}
                         </div>
                     </div>
-                    {/* Mismo interruptor Totales / Por 90' que la ficha de jugadora. */}
-                    <label className="pt-toggle cmp-filter-mode" title="Cambiar entre datos totales y por 90 minutos">
-                        <span className={mode === 'total' ? 'is-on' : ''}>Totales</span>
-                        <input type="checkbox" checked={mode === 'p90'} onChange={e => setMode(e.target.checked ? 'p90' : 'total')} />
-                        <span className="pt-toggle-track" />
-                        <span className={mode === 'p90' ? 'is-on' : ''}>Por 90'</span>
-                    </label>
-                </div>
-            )}
+                )}
+            </section>
 
             {hasData ? (
                 <>
                     <div ref={captureRef} className="cmp-capture-wrap">
                         <div className="cmp-cap-header">
                             <img src="/icon.webp" alt="Madrid Femenino Xtra" className="cmp-cap-logo" />
-                            <div className="cmp-cap-players">
-                                <div className="cmp-cap-player">
-                                    <div className="cmp-cap-img-wrap">
-                                        <img src={dataA!.imageUrl} alt={dataA!.nombre} className="cmp-cap-avatar" />
-                                    </div>
-                                    <span className="cmp-cap-pname">{dataA!.nombre}</span>
-                                </div>
-                                <span className="cmp-cap-vs">VS</span>
-                                <div className="cmp-cap-player">
-                                    <div className="cmp-cap-img-wrap">
-                                        <img src={dataB!.imageUrl} alt={dataB!.nombre} className="cmp-cap-avatar" />
-                                    </div>
-                                    <span className="cmp-cap-pname">{dataB!.nombre}</span>
-                                </div>
-                            </div>
                         </div>
 
-                        <div className="cmp-chart-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
-                            <ResponsiveContainer width="100%" height={380}>
-                                <RadarChart data={radarData!} margin={{ top: 16, right: 48, bottom: 16, left: 48 }}>
-                                    <PolarGrid stroke="#e8e8e8" />
-                                    <PolarAngleAxis
-                                        dataKey="subject"
-                                        tick={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 13, fill: '#2b2b2b' }}
-                                    />
-                                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                                    <Radar name={dataA!.nombre} dataKey="A" stroke="#c9a800" fill="#ffde59" fillOpacity={0.45} strokeWidth={2} dot={{ r: 3, fill: '#c9a800' }} />
-                                    <Radar name={dataB!.nombre} dataKey="B" stroke="#2b2b2b" fill="#2b2b2b" fillOpacity={0.22} strokeWidth={2} dot={{ r: 3, fill: '#2b2b2b' }} />
-                                    <Tooltip content={<CustomTooltip nameA={dataA!.nombre} nameB={dataB!.nombre} />} />
-                                    <Legend
-                                        wrapperStyle={{ paddingTop: '12px' }}
-                                        formatter={v => <span style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '0.9rem', color: '#2b2b2b' }}>{v}</span>}
-                                    />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="cmp-table-card mfx-framed"><span className="mfx-frame" aria-hidden="true" />
-                            <div className="cmp-table-header">
-                                <div className="cmp-table-player cmp-table-player-a">
-                                    <img src={dataA!.imageUrl} alt={dataA!.nombre} className="cmp-table-avatar" />
-                                    <span className="cmp-table-pname">{dataA!.nombre}</span>
+                        <section className="cx-card mfx-corners">
+                            <div className="cx-versus">
+                                <div className="cx-side">
+                                    <img src={dataA!.imageUrl} alt="" width={52} height={52} />
+                                    <span><strong>{dataA!.nombre}</strong><small>{dataA!.posicion} · {dataA!.stats.partidos} PJ · {dataA!.stats.minutos.toLocaleString('es-ES')}'</small></span>
                                 </div>
-                                <div className="cmp-table-stat-col">
-                                    {mode === 'p90' ? 'POR 90 MIN' : 'ESTADÍSTICA'}
-                                </div>
-                                <div className="cmp-table-player cmp-table-player-b">
-                                    <span className="cmp-table-pname">{dataB!.nombre}</span>
-                                    <img src={dataB!.imageUrl} alt={dataB!.nombre} className="cmp-table-avatar" />
+                                <div className="cx-side is-b">
+                                    <img src={dataB!.imageUrl} alt="" width={52} height={52} />
+                                    <span><strong>{dataB!.nombre}</strong><small>{dataB!.posicion} · {dataB!.stats.partidos} PJ · {dataB!.stats.minutos.toLocaleString('es-ES')}'</small></span>
                                 </div>
                             </div>
+                            <div className="cmp-radar">
+                                <ResponsiveContainer width="100%" height={360}>
+                                    <RadarChart data={radarData!} margin={{ top: 16, right: 48, bottom: 16, left: 48 }}>
+                                        <PolarGrid stroke="rgba(212,168,67,0.22)" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fontFamily: '"DM Sans", sans-serif', fontSize: 12, fill: 'rgba(220,225,232,0.8)' }} />
+                                        <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+                                        <Radar name={dataA!.nombre} dataKey="A" stroke="#e3bf65" fill="#d4a843" fillOpacity={0.4} strokeWidth={2} dot={{ r: 3, fill: '#e3bf65' }} />
+                                        <Radar name={dataB!.nombre} dataKey="B" stroke="#9fb3c8" fill="#9fb3c8" fillOpacity={0.22} strokeWidth={2} dot={{ r: 3, fill: '#9fb3c8' }} />
+                                        <Tooltip content={<CustomTooltip nameA={dataA!.nombre} nameB={dataB!.nombre} />} />
+                                        <Legend wrapperStyle={{ paddingTop: '12px' }} formatter={v => <span style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '0.85rem', color: 'rgba(220,225,232,0.85)' }}>{v}</span>} />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </section>
 
-                            {TABLE_SECTIONS.map(section => (
-                                <div key={section.label}>
-                                    <div className="cmp-section-header">{section.label}</div>
+                        {TABLE_SECTIONS.map(section => (
+                            <section key={section.label} className="cx-card mfx-corners">
+                                <h2 className="cx-title">{section.label}{mode === 'p90' ? ' · por 90 minutos' : ''}</h2>
+                                <ul className="cx-rows">
                                     {section.rows.map(({ key, label, lowerIsBetter, isDecimal, percentOf }) => {
                                         const rawA = dataA!.stats[key] as number;
                                         const rawB = dataB!.stats[key] as number;
-                                        const mA   = dataA!.stats.minutos;
-                                        const mB   = dataB!.stats.minutos;
-
+                                        const mA = dataA!.stats.minutos, mB = dataB!.stats.minutos;
                                         const va = mode === 'p90' && !NO_PER90.has(key) ? per90(rawA, mA) : rawA;
                                         const vb = mode === 'p90' && !NO_PER90.has(key) ? per90(rawB, mB) : rawB;
-
-                                        const aWins = lowerIsBetter ? va < vb : va > vb;
-                                        const bWins = lowerIsBetter ? vb < va : vb > va;
-                                        const tie   = va === vb;
-
-                                        const fA = display(rawA, key, mA, isDecimal, percentOf, dataA!.stats);
-                                        const fB = display(rawB, key, mB, isDecimal, percentOf, dataB!.stats);
-
+                                        const tie = va === vb;
+                                        const aWins = !tie && (lowerIsBetter ? va < vb : va > vb);
+                                        const bWins = !tie && !aWins;
+                                        const max = Math.max(Math.abs(Number(va) || 0), Math.abs(Number(vb) || 0)) || 1;
                                         return (
-                                            <div key={key} className="cmp-row">
-                                                <div className={`cmp-cell cmp-cell-a ${!tie && aWins ? 'cmp-winner' : ''}`}>{fA}</div>
-                                                <div className="cmp-cell cmp-cell-stat">{label}</div>
-                                                <div className={`cmp-cell cmp-cell-b ${!tie && bWins ? 'cmp-winner' : ''}`}>{fB}</div>
-                                            </div>
+                                            <li key={key} className="cx-row">
+                                                <span className="cx-head">
+                                                    <span className={`cx-val${aWins ? ' is-best' : ''}`}>{display(rawA, key, mA, isDecimal, percentOf, dataA!.stats)}</span>
+                                                    <span className="cx-metric">{label}</span>
+                                                    <span className={`cx-val${bWins ? ' is-best' : ''}`}>{display(rawB, key, mB, isDecimal, percentOf, dataB!.stats)}</span>
+                                                </span>
+                                                <span className="cx-bar is-a" aria-hidden="true"><i className={aWins ? 'is-best' : ''} style={{ width: `${(Math.abs(Number(va) || 0) / max) * 100}%` }} /></span>
+                                                <span className="cx-bar is-b" aria-hidden="true"><i className={bWins ? 'is-best' : ''} style={{ width: `${(Math.abs(Number(vb) || 0) / max) * 100}%` }} /></span>
+                                            </li>
                                         );
                                     })}
-                                </div>
-                            ))}
-                        </div>
+                                </ul>
+                            </section>
+                        ))}
                     </div>
 
                     <div className="cmp-capture-row">
-                        <button className="cmp-capture-btn" onClick={handleCapture} disabled={capturing}>
-                            {capturing ? (
-                                <><span className="cmp-spinner" style={{ width: 16, height: 16, borderWidth: 2 } as React.CSSProperties} /> Generando...</>
-                            ) : (
-                                <>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                        <polyline points="7 10 12 15 17 10"/>
-                                        <line x1="12" y1="15" x2="12" y2="3"/>
-                                    </svg>
-                                    {/iPad|iPhone|iPod/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '') ? 'Ver imagen' : 'Descargar imagen'}
-                                </>
-                            )}
+                        <button type="button" className="squad-download cmp-capture-btn" onClick={handleCapture} disabled={capturing}>
+                            {capturing ? 'Generando…' : (/iPad|iPhone|iPod/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '') ? 'Ver imagen' : 'Descargar imagen')}
                         </button>
                     </div>
                 </>
             ) : (
-                <div className="cmp-empty mfx-corners">
-                    <svg viewBox="0 0 64 64" fill="none" className="cmp-empty-icon">
-                        <circle cx="32" cy="32" r="30" stroke="#e0e0e0" strokeWidth="2"/>
-                        <path d="M20 44c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#e0e0e0" strokeWidth="2" strokeLinecap="round"/>
-                        <circle cx="32" cy="24" r="6" stroke="#e0e0e0" strokeWidth="2"/>
-                    </svg>
-                    <p>Selecciona dos jugadoras para ver la comparativa</p>
-                </div>
+                <section className="cx-card mfx-corners"><p className="cx-empty">Elige dos jugadoras para ver la comparativa.</p></section>
             )}
         </div>
     );

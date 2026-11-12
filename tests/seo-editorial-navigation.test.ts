@@ -32,10 +32,9 @@ test("Valoraciones es un acceso principal situado después de Hub", () => {
     const ratings = header.indexOf('href="/valoraciones"');
     const fabrica = header.indexOf('href="/la-fabrica"');
     assert.ok(hubEnd >= 0 && ratings > hubEnd && fabrica > ratings);
-    // Noticias y Plantilla son entradas propias del menú, sin desplegable.
-    assert.doesNotMatch(header, /submenu-actualidad/);
-    assert.match(header, /<a href="\/noticias"/);
-    assert.match(header, /<a href="\/plantilla"/);
+    // Noticias, Plantilla y Mercado van juntas en el desplegable de actualidad.
+    const actualidad = header.match(/id="submenu-actualidad"[\s\S]*?<\/ul>/)?.[0] || "";
+    for (const path of ["/noticias", "/plantilla", "/mercado"]) assert.match(actualidad, new RegExp(`href="${path}"`));
     assert.doesNotMatch(header, /href=\{href\("\/premios"\)\}/);
     assert.doesNotMatch(header, /submenu-fabrica/);
 });
