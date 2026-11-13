@@ -65,7 +65,7 @@ const RADAR_BY_POS: Record<string, RadarAxis[]> = {
         { key: 'tiros_puerta',          label: 'Tiros a puerta' },
         { key: 'regates_completados',   label: 'Regates' },
         { key: 'pases_clave',           label: 'Pases clave' },
-        { key: 'toques_area_rival',     label: 'Toques área' },
+        { key: 'tiros_totales',         label: 'Tiros' },
     ],
 };
 

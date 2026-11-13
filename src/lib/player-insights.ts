@@ -7,6 +7,7 @@ type PickerPlayer = { slug: string; name: string; position: string; group: strin
 type Data = {
     picker?: { current: string; players: PickerPlayer[] };
     isGoalkeeper: boolean;
+    positionGroup?: string;
     seasons: string[];
     competitions: Array<{ key: string; label: string; logo: string; official: boolean }>;
     matches: Match[];
@@ -155,7 +156,13 @@ function radarSvg(axes: Array<{ label: string; display: string; ratio: number }>
 
 function radarAxes(data: Data, matches: Match[]) {
     const minutes = sum(matches, "minutos");
-    const per90 = (field: string) => (minutes > 0 ? (sum(matches, field) / minutes) * 90 : 0);
+    // Goles y asistencias existen en todos los partidos; el resto solo donde hay estadísticas detalladas
+    const detailed = matches.filter((m) => m.pases_totales != null || m.toques != null);
+    const detailedMinutes = sum(detailed, "minutos");
+    const per90 = (field: string) => {
+        const base = field === "goles" || field === "asistencias" ? minutes : detailedMinutes;
+        return base > 0 ? (sum(matches, field) / base) * 90 : 0;
+    };
     if (data.isGoalkeeper) {
         const keeper = matches.filter((m) => m.mainKeeper);
         const saves = sum(keeper, "paradas"), conceded = sum(keeper, "encajados");
@@ -175,15 +182,41 @@ function radarAxes(data: Data, matches: Match[]) {
             { label: "VALORACIÓN", display: rating ? fmt(rating, 2) : "–", ratio: rating / 10 },
         ];
     }
-    const passPct = sum(matches, "pases_totales") ? sum(matches, "pases_completados") / sum(matches, "pases_totales") : 0;
+    const ratio = (a: string, b: string) => (sum(matches, b) > 0 ? sum(matches, a) / sum(matches, b) : 0);
+    const rate = (label: string, field: string, top: number) => ({ label, display: fmt(per90(field), 2), ratio: per90(field) / top });
+    const share = (label: string, value: number) => ({ label, display: `${fmt(value * 100)}%`, ratio: value });
+    const passPct = ratio("pases_completados", "pases_totales");
+    if (data.positionGroup === "Defensas") {
+        return [
+            rate("ENTRADAS/90", "entradas", 3),
+            rate("INTERCEP./90", "intercepciones", 3),
+            rate("DESPEJES/90", "despejes", 6),
+            rate("RECUP./90", "recuperaciones", 8),
+            share("% DUELOS AÉREOS", ratio("duelos_aereos_ganados", "duelos_aereos_totales")),
+            share("% DUELOS SUELO", ratio("duelos_suelo_ganados", "duelos_suelo_totales")),
+            share("% PASE", passPct),
+        ];
+    }
+    if (data.positionGroup === "Delanteras") {
+        return [
+            rate("GOLES/90", "goles", 1),
+            rate("TIROS/90", "tiros_totales", 4),
+            share("% A PUERTA", ratio("tiros_puerta", "tiros_totales")),
+            share("% REGATE", ratio("regates_completados", "regates_totales")),
+            rate("REGATES/90", "regates_completados", 3),
+            rate("ASIST./90", "asistencias", 0.6),
+            rate("P. CLAVE/90", "pases_clave", 3),
+        ];
+    }
+    // Centrocampistas (y posiciones sin clasificar)
     return [
-        { label: "GOLES/90", display: fmt(per90("goles"), 2), ratio: per90("goles") / 1 },
-        { label: "ASIST./90", display: fmt(per90("asistencias"), 2), ratio: per90("asistencias") / 0.6 },
-        { label: "TIROS/90", display: fmt(per90("tiros_totales"), 2), ratio: per90("tiros_totales") / 4 },
-        { label: "P. CLAVE/90", display: fmt(per90("pases_clave"), 2), ratio: per90("pases_clave") / 3 },
-        { label: "% PASE", display: `${fmt(passPct * 100)}%`, ratio: passPct },
-        { label: "REGATES/90", display: fmt(per90("regates_completados"), 2), ratio: per90("regates_completados") / 3 },
-        { label: "RECUP./90", display: fmt(per90("recuperaciones"), 2), ratio: per90("recuperaciones") / 8 },
+        share("% PASE", passPct),
+        rate("P. CLAVE/90", "pases_clave", 3),
+        rate("PASES ÚLT. TERCIO/90", "pases_ultimo_tercio_completados", 15),
+        rate("ASIST./90", "asistencias", 0.6),
+        rate("REGATES/90", "regates_completados", 3),
+        rate("RECUP./90", "recuperaciones", 8),
+        rate("ENTRADAS/90", "entradas", 3),
     ];
 }
 

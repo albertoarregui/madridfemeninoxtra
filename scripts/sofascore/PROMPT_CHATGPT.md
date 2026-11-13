@@ -16,10 +16,10 @@ node scripts/sofascore/importar-partido.mjs partido-[ID].json         # escribe 
 
 ## Histórico (todas las temporadas)
 
-`scripts/sofascore/partidos-sofascore.csv` tiene todos los partidos de la base de datos con su id de
-Sofascore (282 de 297; los que no lo tienen son amistosos que no están en Sofascore).
+El id de Sofascore de cada partido está en la columna `partidos.sofascore_id` de la base de datos
+(los amistosos que no están en Sofascore lo tienen vacío).
 
-1. Pasa a tu automatización de ChatGPT la columna `sofascore_id` y guarda cada respuesta como
+1. Pasa esos ids a tu automatización de ChatGPT y guarda cada respuesta como
    `paquetes/<sofascore_id>.json`.
 2. Carga la carpeta entera (cada partido se valida por separado; los que fallen no se escriben):
 
