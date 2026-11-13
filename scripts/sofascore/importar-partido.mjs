@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Importa en Turso un partido de Sofascore a partir del paquete JSON que devuelve ChatGPT
-// (respuestas en bruto de la API de Sofascore; ver scripts/sofascore/PROMPT_CHATGPT.md).
+// (respuestas en bruto de la API de Sofascore: event, statistics, lineups, incidents, shotmap,
+// average_positions, graph y heatmaps).
 //
 // Uso:  node scripts/sofascore/importar-partido.mjs partido.json [--dry] [--forzar-eventos]
 //   --dry              no escribe nada; solo muestra el informe
