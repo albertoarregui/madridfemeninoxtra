@@ -13,10 +13,12 @@
 // marcados con "rss": true en canales.json (los 15 últimos vídeos de cada uno).
 import fs from 'node:fs';
 import { createClient } from '@libsql/client/web';
+import { rivalTokens, puntuar } from './reglas.mjs';
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
 const HIST = args.includes('--historico');
+const WEB = args.includes('--historico-web');   // histórico sin clave: búsqueda en la página de cada canal (scraping, uso puntual)
 const DIAS = Number(args[args.indexOf('--dias') + 1]) || 14;
 
 const env = { ...process.env };
@@ -30,43 +32,35 @@ for (const f of ['.env.vercel', '.env.local', '.env']) {
 const KEY = env.YOUTUBE_API_KEY;
 if (HIST && !KEY) { console.error('El modo --historico necesita YOUTUBE_API_KEY.'); process.exit(1); }
 const cfg = JSON.parse(fs.readFileSync(new URL('./canales.json', import.meta.url), 'utf8'));
+const prio = Object.fromEntries(cfg.canales.map(c => [c.nombre, c.prioridad ?? 0]));
 const db = createClient({ url: env.TURSO_DATABASE_URL, authToken: env.TURSO_AUTH_TOKEN });
 
-const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/&amp;/g, '&').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-const VACIAS = new Set(['club', 'futbol', 'femenino', 'fc', 'cf', 'cd', 'sd', 'ud', 'rcd', 'de', 'del', 'la', 'el', 'women', 'feminas', 'sad', 'real', 'deportivo', 'atletico']);
-const ALIAS = { 'atletico de madrid': ['atletico', 'atleti'], 'fc barcelona': ['barcelona', 'barca'], 'deportivo abanca': ['deportivo', 'depor'], 'costa adeje tenerife': ['tenerife'], 'athletic club': ['athletic'], 'real sociedad': ['real sociedad'], 'real betis': ['betis'], 'paris saint germain': ['psg'], 'psg': ['psg', 'paris'], 'manchester city': ['city'] };
-const rivalTokens = rival => {
-    const n = norm(rival);
-    const toks = n.split(' ').filter(t => t.length >= 4 && !VACIAS.has(t));
-    return [...new Set([...(ALIAS[n] || []), ...toks])];
-};
-// Puntuación de un vídeo para un partido; null si no encaja
-function puntuar(titulo, rival, canal = '') {
-    const t = norm(titulo);
-    const femenino = /femenin|women|womens|liga f\b|ligaf|uwcl|frauen|feminin|\bfem\b/.test(t);
-    const canalFemenino = /women|femen|liga f|frauen/i.test(canal);
-    if (!femenino && !canalFemenino) return null;           // evita los resúmenes del equipo masculino
-    if (/\blaliga\b|la liga ea|hypermotion/.test(t) && !femenino) return null;
-    if (!/real madrid|madrid cf|r madrid/.test(t)) return null;
-    const toks = rivalTokens(rival);
-    if (!toks.some(k => t.includes(k))) return null;
-    if (/\b(previa|rueda de prensa|entrevista|en vivo|en directo|live|shorts?)\b/.test(t)) return null;
-    let p = 1;
-    if (/resumen|highlights|resumo|goles|gols|melhores momentos|zusammenfassung/.test(t)) p += 3;
-    if (femenino) p += 2;
-    return p;
-}
 
-const desde = HIST ? '2000-01-01' : new Date(Date.now() - DIAS * 864e5).toISOString().slice(0, 10);
+const desde = HIST || WEB ? '2000-01-01' : new Date(Date.now() - DIAS * 864e5).toISOString().slice(0, 10);
 const partidos = (await db.execute({
-    sql: `SELECT p.id_partido, p.fecha, CASE WHEN p.id_club_local = 1 THEN v.nombre ELSE l.nombre END AS rival
+    sql: `SELECT p.id_partido, p.fecha, p.goles_rm, p.goles_rival, CASE WHEN p.id_club_local = 1 THEN v.nombre ELSE l.nombre END AS rival
           FROM partidos p JOIN clubes l ON l.id_club = p.id_club_local JOIN clubes v ON v.id_club = p.id_club_visitante
           WHERE p.goles_rm IS NOT NULL AND date(p.fecha) <= date('now') AND date(p.fecha) >= date(?)
             AND (p.video_resumen_url IS NULL OR p.video_resumen_url = '')
           ORDER BY p.fecha DESC`,
     args: [desde],
 })).rows;
-console.log(`${partidos.length} partidos sin vídeo desde ${desde} · modo ${KEY ? 'API de YouTube' : 'RSS'}`);
+console.log(`${partidos.length} partidos sin vídeo desde ${desde} · modo ${WEB ? 'búsqueda web en los canales' : KEY ? 'API de YouTube' : 'RSS'}`);
+
+// Histórico sin clave: busca en la página de cada canal y lee título y fecha de cada vídeo
+const webCache = new Map();
+async function videoInfo(id) {
+    if (webCache.has(id)) return webCache.get(id);
+    const h = await (await fetch(`https://www.youtube.com/watch?v=${id}`, { headers: { 'Accept-Language': 'es-ES' } })).text();
+    const titulo = (h.match(/<meta name="title" content="([^"]*)"/) || [])[1] || '';
+    const fecha = ((h.match(/"publishDate":"([^"]+)"/) || [])[1] || '').slice(0, 10);
+    const info = { id, titulo: titulo.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), fecha };
+    webCache.set(id, info); return info;
+}
+async function buscarWeb(canalHandle, q) {
+    const h = await (await fetch(`https://www.youtube.com/${canalHandle}/search?query=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': 'es-ES' } })).text();
+    return [...new Set([...h.matchAll(/"videoId":"([A-Za-z0-9_-]{11})"/g)].map(m => m[1]))];
+}
 
 // Candidatos por RSS (sin clave)
 const rss = [];
@@ -91,18 +85,29 @@ const stmts = [];
 for (const p of partidos) {
     const hasta = new Date(Date.parse(p.fecha) + 7 * 864e5).toISOString().slice(0, 10);
     let cands = rss.filter(v => v.fecha >= p.fecha && v.fecha <= hasta);
+    if (WEB) {
+        for (const c of cfg.canales.filter(c => c.handle && (c.prioridad ?? 0) >= 3)) {
+            const q = `real madrid femenino ${rivalTokens(p.rival)[0] || p.rival}`;
+            const key = `${c.handle}|${q}`;
+            if (!webCache.has(key)) webCache.set(key, await buscarWeb(c.handle, q));
+            for (const id of webCache.get(key)) {
+                const info = await videoInfo(id);
+                if (info.fecha >= p.fecha && info.fecha <= hasta) cands.push({ ...info, canal: c.nombre });
+            }
+        }
+    }
     if (KEY) {
         const q = `Real Madrid ${p.rival} femenino resumen`;
         try {
             for (const c of cfg.canales) { cands.push(...await buscarApi(q, p.fecha, hasta, c.id)); unidades += 100; }
-            const ok = cands.some(v => puntuar(v.titulo, p.rival, v.canal) != null);
+            const ok = cands.some(v => puntuar(v.titulo, p.rival, v.canal, [Number(p.goles_rm), Number(p.goles_rival)]) != null);
             if (!ok && cfg.busqueda_abierta) {
                 const abiertos = await buscarApi(q, p.fecha, hasta); unidades += 100;
                 cands.push(...abiertos.filter(v => (cfg.canales_de_confianza || []).some(n => v.canal.includes(n))));
             }
         } catch (e) { console.error(`${p.fecha} ${p.rival}: ${e.message}`); if (/quota/i.test(e.message)) break; continue; }
     }
-    const mejor = cands.map(v => ({ ...v, p: puntuar(v.titulo, p.rival, v.canal) })).filter(v => v.p != null).sort((a, b) => b.p - a.p || a.fecha.localeCompare(b.fecha))[0];
+    const mejor = cands.map(v => ({ ...v, p: (() => { const sc = puntuar(v.titulo, p.rival, v.canal, [Number(p.goles_rm), Number(p.goles_rival)]); return sc == null ? null : sc + (prio[v.canal] ?? 0); })() })).filter(v => v.p != null && v.p >= 3).sort((a, b) => b.p - a.p || a.fecha.localeCompare(b.fecha))[0];
     if (!mejor) continue;
     encontrados++;
     console.log(`${p.fecha} vs ${p.rival} → ${mejor.canal}: ${mejor.titulo} (https://youtu.be/${mejor.id})`);
