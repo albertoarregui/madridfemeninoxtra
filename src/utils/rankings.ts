@@ -76,6 +76,46 @@ export interface StreakData {
     streak_clean_sheet: number;
 }
 
+// Minutos guardados como texto ("9", "45+2", "90+4") → número ordenable (45+2 → 45.02).
+const minuteSql = (col: string) => {
+    const t = `CAST(${col} AS TEXT)`;
+    return `(CASE WHEN instr(${t}, '+') > 0
+        THEN CAST(substr(${t}, 1, instr(${t}, '+') - 1) AS REAL) + CAST(substr(${t}, instr(${t}, '+') + 1) AS REAL) / 100.0
+        ELSE CAST(${col} AS REAL) END)`;
+};
+
+// Goles encajados por el Madrid con su minuto. En goles_rival, tipo 'en_propia' mezcla
+// autogoles de jugadoras del Madrid (encajados) con autogoles de rivales (a favor del Madrid):
+// solo cuentan los primeros, que se reconocen porque la goleadora es jugadora del Madrid.
+// Requiere un CTE previo completed_matches.
+const RIVAL_GOALS_CTE = `
+            rival_goal_events AS (
+                SELECT g.id_partido, ${minuteSql('g.minuto')} AS m
+                FROM goles_rival g
+                WHERE COALESCE(g.tipo, '') != 'en_propia'
+                   OR EXISTS (SELECT 1 FROM jugadoras jx WHERE jx.nombre = g.goleadora)
+            ),
+            rival_goal_totals AS (
+                SELECT p.id_partido,
+                       p.goles_rival = (SELECT COUNT(*) FROM rival_goal_events r WHERE r.id_partido = p.id_partido) AS rival_ok
+                FROM completed_matches p
+            )`;
+
+// Portería a cero de una alineación (alias a = alineaciones, p = partido, rgt = rival_goal_totals):
+// no se encaja ningún gol mientras la jugadora está en el campo. Si los goles encajados del
+// partido no están bien registrados (no cuadran con el resultado), solo cuenta si el rival no marcó.
+// Si falta el minuto de entrada de una suplente se estima como 90 - minutos jugados.
+const playerStartSql = `COALESCE(${minuteSql('a.minuto_entrada')}, CASE WHEN a.titular = 1 THEN 0 ELSE MAX(0, 90 - a.minutos_jugados) END)`;
+const playerEndSql = `COALESCE(${minuteSql('a.minuto_salida')}, CASE WHEN a.titular = 1 AND a.minutos_jugados < 90 THEN a.minutos_jugados ELSE 999 END)`;
+const CLEAN_SHEET_SQL = `(a.minutos_jugados > 0 AND (
+                    p.goles_rival = 0
+                    OR (rgt.rival_ok AND NOT EXISTS (
+                        SELECT 1 FROM rival_goal_events r
+                        WHERE r.id_partido = p.id_partido
+                          AND r.m >= ${playerStartSql} AND r.m <= ${playerEndSql}
+                    ))
+                ))`;
+
 export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -93,21 +133,23 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                   AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
                   AND date(fecha) <= date('now')
             ),
+            ${RIVAL_GOALS_CTE},
             lineup_data AS (
                 SELECT
                     a.id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
-                    SUM(CASE WHEN a.convocada = 1 THEN 1 ELSE 0 END) as convocatorias,
+                    SUM(CASE WHEN a.convocada = 1 OR a.titular = 1 OR a.minutos_jugados > 0 THEN 1 ELSE 0 END) as convocatorias,
                     SUM(CASE WHEN a.minutos_jugados > 0 THEN 1 ELSE 0 END) as partidos,
                     SUM(CASE WHEN a.titular = 1 THEN 1 ELSE 0 END) as titularidades,
                     SUM(a.minutos_jugados) as minutos,
                     SUM(CASE WHEN a.minuto_entrada IS NOT NULL THEN 1 ELSE 0 END) as cambio_entrada,
                     SUM(CASE WHEN a.minuto_salida IS NOT NULL THEN 1 ELSE 0 END) as cambio_salida,
                     SUM(CASE WHEN a.minutos_jugados > 0 AND p.goles_rm > p.goles_rival THEN 1 ELSE 0 END) as victorias,
-                    SUM(CASE WHEN a.minutos_jugados > 0 AND p.goles_rival = 0 THEN 1 ELSE 0 END) as porterias_cero
+                    SUM(CASE WHEN ${CLEAN_SHEET_SQL} THEN 1 ELSE 0 END) as porterias_cero
                 FROM alineaciones a
                 JOIN completed_matches p ON a.id_partido = p.id_partido
+                JOIN rival_goal_totals rgt ON rgt.id_partido = p.id_partido
                 GROUP BY a.id_jugadora, p.id_temporada, p.id_competicion
             ),
             goal_data AS (
@@ -130,25 +172,40 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                         p.id_competicion,
                         p.goles_rm,
                         p.goles_rival,
-                        ROW_NUMBER() OVER (PARTITION BY ga.id_partido ORDER BY ga.minuto ASC) as goal_rank
+                        rgt.rival_ok,
+                        -- goal_rank: nº de gol del Madrid en el partido (los autogoles del rival,
+                        -- con goleadora NULL, cuentan para el orden aunque no se atribuyan)
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ga.id_partido
+                            ORDER BY ${minuteSql('ga.minuto')} ASC, ga.id_gol ASC
+                        ) as goal_rank,
+                        -- goles encajados antes de este gol
+                        (SELECT COUNT(*) FROM rival_goal_events r
+                         WHERE r.id_partido = ga.id_partido AND r.m < ${minuteSql('ga.minuto')}) as rival_before
                     FROM goles_y_asistencias ga
                     JOIN completed_matches p ON ga.id_partido = p.id_partido
-                    WHERE ga.goleadora IS NOT NULL
+                    JOIN rival_goal_totals rgt ON rgt.id_partido = p.id_partido
                 )
                 SELECT
                     goleadora as id_jugadora,
                     id_temporada,
                     id_competicion,
-                    SUM(CASE WHEN goal_rank = 1 THEN 1 ELSE 0 END) as goles_abrelatas,
+                    -- primer gol del partido entre los dos equipos
+                    SUM(CASE
+                        WHEN goal_rank = 1 AND (goles_rival = 0 OR (rival_ok AND rival_before = 0)) THEN 1
+                        ELSE 0
+                    END) as goles_abrelatas,
                     SUM(CASE
                         WHEN goles_rm > goles_rival AND goal_rank = (goles_rival + 1) THEN 1
                         ELSE 0
                     END) as goles_victoria,
+                    -- el Madrid perdía por uno y este gol iguala el marcador
                     SUM(CASE
-                        WHEN goles_rm = goles_rival AND goal_rank = goles_rm THEN 1
+                        WHEN rival_ok AND rival_before = goal_rank THEN 1
                         ELSE 0
                     END) as goles_empate
                 FROM goal_details
+                WHERE goleadora IS NOT NULL
                 GROUP BY goleadora, id_temporada, id_competicion
             ),
             assist_data AS (
@@ -386,7 +443,8 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 WHERE goles_rm IS NOT NULL AND TRIM(CAST(goles_rm AS TEXT)) != ''
                   AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
                   AND date(fecha) <= date('now')
-            )
+            ),
+            ${RIVAL_GOALS_CTE}
             SELECT
                 j.id_jugadora,
                 j.nombre,
@@ -396,11 +454,13 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 c.competicion,
                 a.minutos_jugados,
                 p.goles_rival,
+                CASE WHEN ${CLEAN_SHEET_SQL} THEN 1 ELSE 0 END as clean_sheet,
                 (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND ga.goleadora = j.id_jugadora) as goals,
                 (SELECT COUNT(*) FROM goles_y_asistencias ga WHERE ga.id_partido = p.id_partido AND ga.asistente = j.id_jugadora) as assists
             FROM alineaciones a
             JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
             JOIN completed_matches p ON a.id_partido = p.id_partido
+            JOIN rival_goal_totals rgt ON rgt.id_partido = p.id_partido
             JOIN temporadas t ON p.id_temporada = t.id_temporada
             JOIN competiciones c ON p.id_competicion = c.id_competicion
             WHERE
@@ -466,7 +526,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                     basePlayer.posicion.includes('Central') ||
                     basePlayer.posicion.includes('Lateral')
                 );
-                const isCleanSheet = isDefensive && Number(m.goles_rival) === 0;
+                const isCleanSheet = isDefensive && Number(m.clean_sheet) === 1;
 
                 contexts.forEach(ctx => {
                     if (!currentStreaks[ctx]) currentStreaks[ctx] = { scoring: 0, assisting: 0, ga: 0, clean_sheet: 0 };

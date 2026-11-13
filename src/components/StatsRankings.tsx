@@ -483,11 +483,11 @@ export default function StatsRankings({
         { value: "tarjetas_amarillas", label: "Amarillas" },
         { value: "tarjetas_rojas", label: "Rojas" },
     ];
-    const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
+    const COMP_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistoso"];
     const compPills = [
         { value: "todos", label: "Todas" },
         { value: "oficiales", label: "Oficiales" },
-        ...COMP_ORDER.filter((c) => competitions.includes(c)).map((c) => ({ value: c, label: c === "Amistosos" ? "Amistoso" : c })),
+        ...COMP_ORDER.filter((c) => competitions.includes(c)).map((c) => ({ value: c, label: c === "Amistoso" ? "Amistosos" : c })),
     ];
 
     const photo = (player: any) => playerImageMap[player.slug];
