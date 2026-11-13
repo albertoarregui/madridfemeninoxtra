@@ -34,6 +34,8 @@ export function tagsForPath(pathname: string): string[] {
         tags.push(cacheTags.goals, cacheTags.lineups, cacheTags.statistics, cacheTags.stadiums, cacheTags.coaches, 'referees');
     }
     if (/^\/(jugadoras|plantilla)/.test(pathname)) tags.push(cacheTags.players, cacheTags.statistics);
+    if (/^\/mercado(?:\/|$)/.test(pathname)) tags.push(cacheTags.players);
+    if (/^\/temporadas(?:\/|$)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.statistics, cacheTags.rankings, cacheTags.players);
     if (/^\/la-fabrica(?:\/|$)/.test(pathname)) tags.push(cacheTags.fabrica);
     if (/^\/(estadisticas|rankings|records|comparador)/.test(pathname)) tags.push(cacheTags.statistics, cacheTags.rankings);
     if (/^\/estadios/.test(pathname)) tags.push(cacheTags.stadiums, cacheTags.matches, cacheTags.statistics, cacheTags.goals);
