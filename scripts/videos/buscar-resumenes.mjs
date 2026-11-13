@@ -51,14 +51,15 @@ console.log(`${partidos.length} partidos sin vídeo desde ${desde} · modo ${WEB
 const webCache = new Map();
 async function videoInfo(id) {
     if (webCache.has(id)) return webCache.get(id);
-    const h = await (await fetch(`https://www.youtube.com/watch?v=${id}`, { headers: { 'Accept-Language': 'es-ES' } })).text();
+    const h = await (await fetch(`https://www.youtube.com/watch?v=${id}`, { headers: YT_HEADERS })).text();
     const titulo = (h.match(/<meta name="title" content="([^"]*)"/) || [])[1] || '';
     const fecha = ((h.match(/"publishDate":"([^"]+)"/) || [])[1] || '').slice(0, 10);
     const info = { id, titulo: titulo.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'"), fecha };
     webCache.set(id, info); return info;
 }
+const YT_HEADERS = { 'Accept-Language': 'es-ES', Cookie: 'SOCS=CAI; CONSENT=YES+cb' };   // evita la página de consentimiento
 async function buscarWeb(canalHandle, q) {
-    const h = await (await fetch(`https://www.youtube.com/${canalHandle}/search?query=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': 'es-ES' } })).text();
+    const h = await (await fetch(`https://www.youtube.com/${canalHandle}/search?query=${encodeURIComponent(q)}`, { headers: YT_HEADERS })).text();
     return [...new Set([...h.matchAll(/"videoId":"([A-Za-z0-9_-]{11})"/g)].map(m => m[1]))];
 }
 
@@ -85,8 +86,11 @@ const stmts = [];
 for (const p of partidos) {
     const hasta = new Date(Date.parse(p.fecha) + 7 * 864e5).toISOString().slice(0, 10);
     let cands = rss.filter(v => v.fecha >= p.fecha && v.fecha <= hasta);
-    if (WEB) {
-        for (const c of cfg.canales.filter(c => c.handle && (c.prioridad ?? 0) >= 3)) {
+    // Búsqueda en el buscador del canal: en el histórico, los canales principales; a diario, los marcados con busqueda_web
+    const canalesWeb = WEB ? cfg.canales.filter(c => c.handle && ((c.prioridad ?? 0) >= 3 || c.busqueda_web))
+        : KEY ? [] : cfg.canales.filter(c => c.handle && c.busqueda_web);
+    if (canalesWeb.length) {
+        for (const c of canalesWeb) {
             const q = `real madrid femenino ${rivalTokens(p.rival)[0] || p.rival}`;
             const key = `${c.handle}|${q}`;
             if (!webCache.has(key)) webCache.set(key, await buscarWeb(c.handle, q));
