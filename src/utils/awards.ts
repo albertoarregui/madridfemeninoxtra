@@ -55,7 +55,9 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
             const mes = date.toLocaleDateString('es-ES', { month: 'long' });
 
             const mesNumero = date.getMonth() + 1;
-            const temporada = mesNumero >= 8 ? `${año}/${año + 1}` : `${año - 1}/${año}`;
+            // Mismo formato que la tabla temporadas ("2024/25") para que case con el selector
+            const inicio = mesNumero >= 8 ? año : año - 1;
+            const temporada = `${inicio}/${String(inicio + 1).slice(-2)}`;
 
             return {
                 id_premio: row.id_premio,
