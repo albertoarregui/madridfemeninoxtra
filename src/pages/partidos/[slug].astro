@@ -225,14 +225,16 @@ const h2hMatches = allGames
         && String(g.fecha ?? "") < String(game.fecha ?? "")
         && [g.club_local, g.club_visitante].map(normalizeClub).includes(h2hRival))
     .sort((a, b) => String(b.fecha ?? "").localeCompare(String(a.fecha ?? "")));
-const h2hStats = h2hMatches.length === 0 ? null : h2hMatches.reduce((acc, g) => {
+// El balance incluye el propio partido si ya se ha jugado; la lista muestra solo los anteriores.
+const h2hBalanceMatches = game.isPlayed ? [game, ...h2hMatches] : h2hMatches;
+const h2hStats = h2hMatches.length === 0 ? null : h2hBalanceMatches.reduce((acc, g) => {
     acc.rmGoals += Number(g.goles_rm) || 0;
     acc.rivalGoals += Number(g.goles_rival) || 0;
     if (g.resultado === "V") acc.wins++;
     else if (g.resultado === "D") acc.losses++;
     else acc.draws++;
     return acc;
-}, { totalMatches: h2hMatches.length, wins: 0, draws: 0, losses: 0, rmGoals: 0, rivalGoals: 0 });
+}, { totalMatches: h2hBalanceMatches.length, wins: 0, draws: 0, losses: 0, rmGoals: 0, rivalGoals: 0 });
 const H2H_LIMIT = 10;
 const h2hMonths = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const h2hDate = (fecha: unknown) => {
@@ -752,7 +754,7 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
 
                     <div class="h2h-list-head">
                         <h3>Enfrentamientos anteriores</h3>
-                        <span>{h2hStats.totalMatches} {h2hStats.totalMatches === 1 ? "partido" : "partidos"}</span>
+                        <span>{h2hMatches.length} {h2hMatches.length === 1 ? "partido" : "partidos"}</span>
                     </div>
                     <ul class="h2h-list">
                         {h2hMatches.slice(0, H2H_LIMIT).map((m) => {
@@ -1288,7 +1290,7 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
     .h2h-all { display: inline-block; margin-top: 1rem; color: rgb(var(--l-gold, 212, 168, 67)); font-size: 0.85rem; text-decoration: none; }
     .h2h-all:hover { text-decoration: underline; }
     @media (max-width: 640px) {
-        .h2h-summary { gap: 0.5rem; }
+        .h2h-summary { gap: 0.5rem; align-items: end; }
         .h2h-side { flex-direction: column; gap: 0.4rem; }
         .h2h-summary-shield { width: 40px; height: 40px; }
         .h2h-side:last-child { flex-direction: column-reverse; }
