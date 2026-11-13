@@ -407,9 +407,8 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 a.minutos_jugados > 0
             ORDER BY
                 j.id_jugadora,
-                substr(p.fecha, 7, 4) ASC,
-                substr(p.fecha, 4, 2) ASC,
-                substr(p.fecha, 1, 2) ASC
+                p.fecha ASC,
+                p.id_partido ASC
         `;
 
         const result = await client.execute(query);
@@ -444,11 +443,18 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                 const season = m.temporada;
                 const competition = m.competicion;
 
-                const contexts = [`season:${season}`, `comp:${competition}`];
-
-                if (competition !== 'Amistoso') {
-                    contexts.push('global');
+                // competicion 'all' = solo oficiales; 'todos' = incluye amistosos
+                const isOfficial = competition !== 'Amistoso';
+                const contextDefs: Record<string, { temporada: string; competicion: string }> = {
+                    [`comp:${competition}`]: { temporada: 'all', competicion: competition },
+                    [`season-any:${season}`]: { temporada: season, competicion: 'todos' },
+                    'global-any': { temporada: 'all', competicion: 'todos' },
+                };
+                if (isOfficial) {
+                    contextDefs[`season:${season}`] = { temporada: season, competicion: 'all' };
+                    contextDefs['global'] = { temporada: 'all', competicion: 'all' };
                 }
+                const contexts = Object.keys(contextDefs);
 
                 const hasGoal = Number(m.goals) > 0;
                 const hasAssist = Number(m.assists) > 0;
@@ -480,23 +486,12 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                     if (!maxStreaksMap[ctx]) {
                         maxStreaksMap[ctx] = {
                             ...basePlayer,
-                            temporada: ctx.startsWith('season:') ? season : (ctx === 'global' ? 'all' : 'all'),
-                            competicion: ctx.startsWith('comp:') ? competition : (ctx === 'global' ? 'all' : 'all'),
+                            ...contextDefs[ctx],
                             streak_scoring: 0,
                             streak_assisting: 0,
                             streak_ga: 0,
                             streak_clean_sheet: 0
                         };
-                        if (ctx.startsWith('season:')) {
-                            maxStreaksMap[ctx].competicion = 'all';
-                        }
-                        if (ctx.startsWith('comp:')) {
-                            maxStreaksMap[ctx].temporada = 'all';
-                        }
-                        if (ctx === 'global') {
-                            maxStreaksMap[ctx].temporada = 'all';
-                            maxStreaksMap[ctx].competicion = 'all';
-                        }
                     }
 
                     if (currentStreaks[ctx].scoring > maxStreaksMap[ctx].streak_scoring) maxStreaksMap[ctx].streak_scoring = currentStreaks[ctx].scoring;

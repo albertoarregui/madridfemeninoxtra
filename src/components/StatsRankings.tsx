@@ -299,8 +299,10 @@ export default function StatsRankings({
             players = streaksData.filter(item => {
                 const matchSeason = selectedSeason === "todos" ? (item.temporada === "all" || item.temporada === "todos") : item.temporada === selectedSeason;
                 let matchComp = false;
-                if (selectedCompetition === "todos" || selectedCompetition === "oficiales") {
-                    matchComp = item.competicion === "all" || item.competicion === "todos";
+                if (selectedCompetition === "oficiales") {
+                    matchComp = item.competicion === "all";
+                } else if (selectedCompetition === "todos") {
+                    matchComp = item.competicion === "todos";
                 } else {
                     matchComp = item.competicion === selectedCompetition;
                 }
