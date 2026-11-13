@@ -85,15 +85,22 @@ const minuteSql = (col: string) => {
 };
 
 // Goles encajados por el Madrid con su minuto. En goles_rival, tipo 'en_propia' mezcla
-// autogoles de jugadoras del Madrid (encajados) con autogoles de rivales (a favor del Madrid):
-// solo cuentan los primeros, que se reconocen porque la goleadora es jugadora del Madrid.
+// autogoles de jugadoras del Madrid (encajados) con autogoles de rivales (a favor del Madrid).
+// Un autogol es del rival si coincide (mismo partido, ±2 minutos) con un gol del Madrid de tipo
+// 'Propia puerta' o con una fila de goles_propia sin jugadora del Madrid; esos no cuentan.
 // Requiere un CTE previo completed_matches.
 const RIVAL_GOALS_CTE = `
             rival_goal_events AS (
                 SELECT g.id_partido, ${minuteSql('g.minuto')} AS m
                 FROM goles_rival g
-                WHERE COALESCE(g.tipo, '') != 'en_propia'
-                   OR EXISTS (SELECT 1 FROM jugadoras jx WHERE jx.nombre = g.goleadora)
+                WHERE NOT (COALESCE(g.tipo, '') = 'en_propia' AND (
+                    EXISTS (SELECT 1 FROM goles_y_asistencias gx
+                            WHERE gx.id_partido = g.id_partido AND LOWER(gx.tipo) = 'propia puerta'
+                              AND ABS(${minuteSql('gx.minuto')} - ${minuteSql('g.minuto')}) <= 2)
+                    OR EXISTS (SELECT 1 FROM goles_propia gp
+                               WHERE gp.id_partido = g.id_partido AND gp.id_jugadora IS NULL
+                                 AND ABS(${minuteSql('gp.minuto')} - ${minuteSql('g.minuto')}) <= 2)
+                ))
             ),
             rival_goal_totals AS (
                 SELECT p.id_partido,
