@@ -65,7 +65,7 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
 
         const query = `
             SELECT
-                p.id_partido AS partido_id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion,
+                p.id_partido AS partido_id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion, p.video_resumen_url,
                 t.temporada AS temporada_nombre,
                 c.competicion AS competicion_nombre,
                 c.foto_url AS competicion_foto_url,
@@ -154,6 +154,7 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
                 visitante_foto_url: cleanApiValue(game.visitante_foto_url),
                 mvp_foto_url: cleanApiValue(game.mvp_foto_url),
                 once_inicial_url: cleanApiValue(game.once_inicial_url),
+                video_resumen_url: cleanApiValue(game.video_resumen_url),
                 local_shield_url: getRivalShieldUrl({ nombre: game.club_local, foto_url: game.local_foto_url }),
                 visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
                 slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
