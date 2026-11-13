@@ -30,6 +30,9 @@ async function handleRequest(
     const requestStartedAt = new Date();
     const requestUrl = new URL(context.request.url);
     const routePath = requestUrl.pathname;
+    if (routePath === "/en" || routePath.startsWith("/en/")) {
+        return context.redirect(`${routePath.slice(3) || "/"}${requestUrl.search}`, 301);
+    }
     if (routePath.length > 1 && routePath.endsWith("/") && !routePath.startsWith("/api/")) {
         return context.redirect(`${routePath.replace(/\/+$/, "")}${requestUrl.search}`, 301);
     }

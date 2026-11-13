@@ -22,8 +22,6 @@ export default defineConfig({
     '/rankings/mas-capitanias': { status: 301, destination: '/rankings?estadistica=capitanias' },
     '/rankings/porterias-a-cero': { status: 301, destination: '/rankings?estadistica=porterias_cero' },
     '/rankings/[slug]': { status: 301, destination: '/rankings' },
-    '/en': { status: 301, destination: '/' },
-    '/en/[...path]': { status: 301, destination: '/[...path]' },
   },
   output: 'server',
   prefetch: {

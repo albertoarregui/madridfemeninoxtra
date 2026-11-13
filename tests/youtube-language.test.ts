@@ -21,5 +21,5 @@ test("la sección de vídeos conserva el diseño original sin una lectura RSS", 
 test("la web solo existe en español: sin selector de idioma ni rutas inglesas", () => {
   const header = read("src/components/Header.astro");
   assert.doesNotMatch(header, /language-toggle|languageHref/);
-  assert.match(read("astro.config.mjs"), /'\/en\/\[\.\.\.path\]': \{ status: 301, destination: '\/\[\.\.\.path\]' \}/);
+  assert.match(read("src/middleware.ts"), /routePath\.startsWith\("\/en\/"\)/);
 });
