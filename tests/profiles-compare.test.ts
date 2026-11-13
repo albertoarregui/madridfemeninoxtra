@@ -48,7 +48,7 @@ test("mercado, jugadora vs rival y con o sin leen datos en caché diaria", () =>
     assert.doesNotMatch(read("src/utils/player-match-data.ts"), /\(SELECT COUNT\(\*\) FROM goles_y_asistencias g WHERE g\.id_partido = a\.id_partido/);
     assert.match(read("src/pages/comparador/jugadora-rival.astro"), /fetchPlayerMatchData/);
     assert.match(read("src/pages/comparador/sinergias.astro"), /onPitch/);
-    assert.match(read("src/pages/comparador/con-sin.astro"), /\/comparador\/sinergias/);
+    assert.match(read("astro.config.mjs"), /'\/comparador\/con-sin': \{ status: 301, destination: '\/comparador\/sinergias' \}/);
     const header = read("src/components/Header.astro");
     assert.match(header, /href="\/mercado"/);
     assert.match(header, /href="\/comparador\/sinergias"/);

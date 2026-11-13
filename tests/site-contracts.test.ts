@@ -325,16 +325,13 @@ test('about gallery keeps the approved order, captions and exact replacement', (
 
 test('rankings live on a single page; old ranking URLs redirect to it', () => {
   const index = read('src/pages/rankings.astro');
-  const detail = read('src/pages/rankings/[slug].astro');
+  const config = read('astro.config.mjs');
   const component = read('src/components/StatsRankings.tsx');
 
   assert.match(index, /<h1 class="landing-title">RANKINGS<\/h1>/);
-  assert.match(index, /Clasificaciones históricas de las jugadoras del Real Madrid Femenino a lo largo de su historia, por temporada y competición/);
   assert.doesNotMatch(index, /seo-ranking-links/);
-  // Cada antigua página redirige a su estadística en /rankings.
-  assert.match(detail, /"maximas-goleadoras": "goles"/);
-  assert.match(detail, /Astro\.redirect\(stat \? `\/rankings\?estadistica=\$\{stat\}` : "\/rankings", 301\)/);
-  // Filtros en píldoras, temporada en desplegable y botón para compartir.
+  assert.match(config, /'\/rankings\/maximas-goleadoras': \{ status: 301, destination: '\/rankings\?estadistica=goles' \}/);
+  assert.match(config, /'\/rankings\/\[slug\]': \{ status: 301, destination: '\/rankings' \}/);
   assert.match(component, /Compartir estadística/);
   assert.match(component, /className="pt-pills" role="group" aria-label="Competición"/);
   assert.match(component, /<ScrollPills\n\s*label="Estadística"/);

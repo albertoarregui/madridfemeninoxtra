@@ -22,7 +22,7 @@ export const GET: APIRoute = async (context) => {
                 title,
                 pubDate,
                 description,
-                link: `/noticias/${slug}/`,
+                link: `/noticias/${slug}`,
             };
         });
     } catch (error) {

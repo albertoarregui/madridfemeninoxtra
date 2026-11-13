@@ -35,6 +35,9 @@ async function handleRequest(
     const requestStartedAt = new Date();
     const requestUrl = new URL(context.request.url);
     const routePath = requestUrl.pathname;
+    if (routePath.length > 1 && routePath.endsWith("/") && !routePath.startsWith("/api/")) {
+        return context.redirect(`${routePath.replace(/\/+$/, "")}${requestUrl.search}`, 301);
+    }
     context.locals.originPathname = requestUrl.pathname;
     const response = await next();
 

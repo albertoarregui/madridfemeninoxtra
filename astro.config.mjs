@@ -12,8 +12,19 @@ export default defineConfig({
   // Ruta histórica consolidada: el listado único es /estadios.
   redirects: {
     '/rivales/estadios': { status: 301, destination: '/estadios' },
-    // El calendario se integró en /partidos (próximos partidos y resultados).
     '/calendario': { status: 301, destination: '/partidos' },
+    '/home': { status: 301, destination: '/' },
+    '/estadisticas/graficos': { status: 301, destination: '/estadisticas/avanzadas' },
+    '/comparador/con-sin': { status: 301, destination: '/comparador/sinergias' },
+    '/rankings/maximas-goleadoras': { status: 301, destination: '/rankings?estadistica=goles' },
+    '/rankings/maximas-asistentes': { status: 301, destination: '/rankings?estadistica=asistencias' },
+    '/rankings/mas-partidos': { status: 301, destination: '/rankings?estadistica=partidos' },
+    '/rankings/mas-minutos': { status: 301, destination: '/rankings?estadistica=minutos' },
+    '/rankings/mas-capitanias': { status: 301, destination: '/rankings?estadistica=capitanias' },
+    '/rankings/porterias-a-cero': { status: 301, destination: '/rankings?estadistica=porterias_cero' },
+    '/rankings/[slug]': { status: 301, destination: '/rankings' },
+    '/en': { status: 301, destination: '/' },
+    '/en/[...path]': { status: 301, destination: '/[...path]' },
   },
   output: 'server',
   prefetch: {
