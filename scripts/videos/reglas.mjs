@@ -29,6 +29,7 @@ export function puntuar(titulo, rival, canal = '', goles = null) {
     let p = 1;
     if (/resumen|highlights|resumo|melhores momentos|zusammenfassung/.test(t)) p += 4;
     else if (/golazo|jugadon|casi cae|pone el|el gol de|asistencia/.test(t)) p -= 1;   // clips sueltos
+    else if (!/goles|gols|golea|goleo|vencio|gano|empate|remontada/.test(t)) return null;  // no parece un resumen
     if (/goles|gols/.test(t)) p += 1;
     if (femenino) p += 1;
     return p;
