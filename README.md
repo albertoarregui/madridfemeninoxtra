@@ -1,153 +1,119 @@
 <div align="center">
 
-# ⚽ MADRID FEMENINO XTRA
+# ⚽ Madrid Femenino Xtra
 
-### Periodismo, estadísticas y memoria del Real Madrid Femenino
+**Noticias, estadísticas e historia del Real Madrid Femenino.**
 
-**Una plataforma independiente para seguir la actualidad del equipo y explorar su historia partido a partido.**
-
-[🌐 **Visitar la web**](https://www.madridfemeninoxtra.com) · [📰 **Noticias**](https://www.madridfemeninoxtra.com/noticias) · [📅 **Partidos**](https://www.madridfemeninoxtra.com/partidos) · [📊 **Estadísticas**](https://www.madridfemeninoxtra.com/estadisticas-real-madrid-femenino)
+[🌐 Web](https://www.madridfemeninoxtra.com) · [📰 Noticias](https://www.madridfemeninoxtra.com/noticias) · [📅 Partidos](https://www.madridfemeninoxtra.com/partidos) · [📊 Estadísticas](https://www.madridfemeninoxtra.com/estadisticas-real-madrid-femenino) · [🔁 Mercado](https://www.madridfemeninoxtra.com/mercado)
 
 ![Astro](https://img.shields.io/badge/Astro-5-BC52EE?logo=astro&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
-![Turso](https://img.shields.io/badge/Database-Turso-4FF8D2)
-![Contentful](https://img.shields.io/badge/CMS-Contentful-2478CC)
-![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel)
+![React](https://img.shields.io/badge/React-19-20232A?logo=react&logoColor=61DAFB)
+![Turso](https://img.shields.io/badge/Turso-libSQL-4FF8D2)
+![Contentful](https://img.shields.io/badge/Contentful-CMS-2478CC)
+![Vercel](https://img.shields.io/badge/Vercel-SSR-black?logo=vercel)
+[![Tests](https://github.com/albertoarregui/madridfemeninoxtra/actions/workflows/tests.yml/badge.svg)](https://github.com/albertoarregui/madridfemeninoxtra/actions/workflows/tests.yml)
 
 </div>
 
 ---
 
-## 📌 ¿Qué es Madrid Femenino Xtra?
+## 📌 Qué es
 
-**Madrid Femenino Xtra** es un medio digital y una plataforma de datos especializada en el Real Madrid Femenino. El objetivo es que la información no desaparezca cuando termina un partido: cada crónica, estadística y ficha contribuye a construir un archivo consultable de la trayectoria del equipo.
+Madrid Femenino Xtra es un medio independiente sobre el Real Madrid Femenino. Publica la actualidad del equipo y mantiene una base de datos con todos sus partidos desde la temporada 2020/21: alineaciones, goles, tarjetas, estadísticas por jugadora, rivales, estadios, árbitras y entrenadores.
 
-La web combina dos vertientes que se complementan:
+Las noticias y las biografías se escriben en Contentful; los datos deportivos están en Turso. La web junta las dos fuentes y enlaza unas fichas con otras: de un partido se pasa a sus jugadoras, de una jugadora a sus rivales, y así con todo.
 
-- 📰 **Cobertura periodística:** noticias, previas, crónicas, declaraciones y contenido multimedia.
-- 📊 **Datos deportivos:** encuentros, alineaciones, rendimiento individual, competiciones e información histórica.
+## ✨ Secciones
 
-El proyecto está desarrollado y mantenido de manera independiente, y evoluciona conforme se incorporan nuevas temporadas y funcionalidades.
-
-## ✨ Funcionalidades
-
-| | Módulo | Qué ofrece |
+| | Sección | Contenido |
 |:--:|---|---|
-| 📰 | **Actualidad** | Noticias, análisis, previas y crónicas de los partidos |
-| 🗓️ | **Partidos** | Resultados, calendario, fichas y estadísticas de cada encuentro |
-| 👥 | **Jugadoras** | Perfiles individuales, temporadas, goles, asistencias y minutos |
-| 🧠 | **Entrenadores** | Trayectorias, partidos dirigidos y rendimiento |
-| 🏟️ | **Estadios** | Datos del recinto, ubicación y archivo de encuentros |
-| 🛡️ | **Rivales** | Historial de enfrentamientos y resultados |
-| 🟨 | **Árbitras** | Fichas biográficas y partidos dirigidos |
-| 📈 | **Estadísticas** | Clasificaciones, rankings, evolución y comparaciones |
-| 🌱 | **La Fábrica** | Seguimiento de las categorías inferiores |
-| 📷 | **Galerías** | Fotografías relacionadas con partidos y protagonistas |
+| 📰 | **Noticias** | Crónicas, previas, declaraciones y actualidad, con filtro por categoría y temporada |
+| 👥 | **Plantilla y jugadoras** | Ficha de cada jugadora con estadísticas por temporada, partidos, trayectoria y comparador |
+| 🗓️ | **Partidos** | Calendario, resultados y ficha de cada encuentro: alineación sobre el campo, timeline, estadísticas y H2H |
+| 🔁 | **Mercado** | Fichajes, salidas, cesiones y renovaciones por temporada, con importes cuando son públicos |
+| 🧠 | **Entrenadores, árbitras, rivales y estadios** | Fichas con estadísticas, gráficas, récords e historial, y comparador entre ellos |
+| 🏆 | **Rankings y récords** | Clasificaciones históricas en total o por 90 minutos, mejores actuaciones en un partido y récords goleadores |
+| ⚖️ | **Comparadores** | Jugadora contra jugadora, jugadora contra un rival y sinergias (cómo rinde el equipo con o sin una jugadora) |
+| 📈 | **Estadística avanzada** | xG, red de asistencias y buscadores de jugadoras, partidos y temporadas |
+| ⭐ | **Valoraciones** | Notas y MVP de la afición en cada partido de la temporada (requiere iniciar sesión) |
+| 🌱 | **La Fábrica** | Historia de la cantera y su peso en las selecciones inferiores de España |
 
-### 🔍 Más allá del marcador
+## 🧰 Tecnología
 
-Los datos están conectados entre sí: desde un partido se puede profundizar en sus protagonistas; desde la ficha de una jugadora, recorrer su rendimiento por temporadas; y desde las estadísticas generales, comparar futbolistas y detectar tendencias.
+| | Herramienta | Uso |
+|:--:|---|---|
+| 🚀 | **Astro 5** | Renderizado en servidor y rutas |
+| ⚛️ | **React 19** | Rankings, comparadores, buscadores y gráficos |
+| 🗄️ | **Turso (libSQL)** | Base de datos deportiva |
+| ✍️ | **Contentful** | Noticias, fichas editoriales e imágenes para redes |
+| 🖼️ | **Cloudflare R2** | Fotos, escudos y recursos gráficos en `media.madridfemeninoxtra.com` |
+| 🔐 | **Clerk** | Inicio de sesión para las valoraciones |
+| ☁️ | **Vercel** | Funciones, CDN y Runtime Cache |
 
-Entre las herramientas disponibles figuran los gráficos de rendimiento, los **goles esperados (xG)**, las redes de asistencias y el comparador de jugadoras. El objetivo no es acumular cifras, sino hacerlas fáciles de interpretar.
-
-### 📚 Un archivo que sigue creciendo
-
-Además de los partidos y las estadísticas, la plataforma mantiene **297 fichas editoriales** de jugadoras, entrenadores, árbitras, rivales y estadios. Las biografías y el contenido periodístico se gestionan por separado de los datos deportivos para facilitar su actualización.
-
-## ⭐ Valoraciones de las jugadoras
-
-- `/valoraciones` muestra el último partido finalizado y los demás encuentros **exclusivamente de la temporada vigente**, con **escudos**, **logo de la competición**, fecha y resultado.
-- Cada partido tiene una ficha `/valoraciones/[id]-[partido]-[fecha]` con entrenador, once y suplentes, fotos, diez notas seleccionables en una única fila, elección de **MVP** a la izquierda y medias de los lectores.
-- Las páginas se generan a partir de **partidos y alineaciones de Turso**; no requiere crear una noticia para abrir cada votación. Los minutos ausentes se identifican como no disponibles.
-- Solo se permite votar cuando el resultado está registrado y han transcurrido dos horas desde el inicio programado; el plazo termina 72 horas después de la apertura. Las temporadas anteriores no aparecen en VALORACIONES; el resto de archivos históricos de MFX no se modifica.
-- Los visitantes pueden leer las medias. Para votar hay que iniciar sesión con Clerk. Cada cuenta tiene **un único juego de valoraciones por partido**, editable durante el plazo, y solo puede elegir una futbolista MVP. Se limitan los envíos repetidos a intervalos de 20 segundos.
-- Las valoraciones de los lectores se almacenan en `match_reader_ratings`, de forma independiente de las puntuaciones estadísticas deportivas; no se comparten tokens ni identificadores de votantes en el HTML.
-- Las páginas de valoraciones se excluyen de la caché CDN de HTML para no mostrar promedios desactualizados. La tabla de votos dispone de un índice por partido.
-
-## 🧰 Stack tecnológico
-
-| Tecnología | Uso en el proyecto |
-|---|---|
-| 🚀 **Astro 5** | Renderizado en servidor, rutas y composición de páginas |
-| ⚛️ **React** | Herramientas y componentes interactivos |
-| 🔷 **TypeScript** | Tipado y mantenimiento del código |
-| 🎨 **Tailwind CSS 4 + CSS** | Interfaz responsive y sistema visual propio |
-| 🗄️ **Turso / libSQL** | Partidos, resultados, estadísticas y referencias |
-| ✍️ **Contentful** | Noticias, contenidos editoriales y biografías |
-| 🖼️ **Cloudflare R2 / Images** | Almacenamiento y distribución de recursos gráficos |
-| 🔐 **Clerk** | Autenticación y gestión de sesiones |
-| ☁️ **Vercel** | Hosting, despliegue y ejecución SSR |
-
-### 🏗️ Cómo está organizado
+## 🏗️ Arquitectura
 
 ```text
-madridfemeninoxtra/
-├── src/
-│   ├── components/      # Componentes de interfaz
-│   ├── db/              # Acceso a los datos deportivos
-│   ├── layouts/         # Estructura compartida de las páginas
-│   ├── pages/           # Rutas y endpoints
-│   ├── styles/          # Estilos globales y específicos
-│   └── utils/           # Estadísticas, transformaciones y caché
-├── scripts/
-│   ├── contentful/      # Herramientas editoriales
-│   ├── galerias/        # Preparación e indexación de fotografías
-│   └── migrations/      # Evolución del modelo de datos
-├── tests/               # Pruebas automatizadas
-└── public/              # Recursos públicos
+ Turso (datos) ─┐                          ┌─► CDN de Vercel (HTML y API)
+                ├─► Astro + React (SSR) ───┤
+ Contentful ────┘                          └─► Runtime Cache (consultas)
 ```
 
-## 🔄 Flujo de datos y publicación
+### ⚡ Caché y actualización de datos
 
-```text
-              ┌─────────────────┐        ┌─────────────────┐
-              │  Turso / libSQL │        │    Contentful   │
-              │ Datos deportivos│        │ Texto editorial │
-              └────────┬────────┘        └────────┬────────┘
-                       │                          │
-                       └──────────┬───────────────┘
-                                  ▼
-                        ┌─────────────────┐
-                        │  Astro + React  │
-                        │   Web y APIs    │
-                        └────────┬────────┘
-                                 ▼
-                      ┌───────────────────┐
-                      │   Vercel + CDN    │
-                      │  Web de producción│
-                      └───────────────────┘
-```
+- **Páginas:** la CDN guarda el HTML hasta 24 horas y lo regenera cuando se invalidan sus etiquetas.
+- **Consultas:** cada lectura de Turso se guarda en Runtime Cache, etiquetada con las tablas que lee.
+- **Cambios en Turso:** cada tabla de datos tiene triggers que suben su versión en `cache_cambios`. Las páginas llaman en segundo plano a `/api/cache/check`, que la CDN agrupa en una ejecución cada 30 segundos como máximo. Si una tabla ha cambiado, se invalidan sus consultas y las páginas que dependen de ella. Lo que se carga en Turso, venga de donde venga, se ve en menos de un minuto.
+- **Contentful:** el webhook de publicación invalida noticias, portada y fichas.
+- **Partidos recientes:** sus fichas leen Turso sin caché de datos y la CDN las agrupa por minuto.
 
-Los registros deportivos se consultan desde Turso, mientras que noticias y biografías se administran en Contentful. Esto permite actualizar un texto editorial sin alterar las estadísticas de una jugadora o de un encuentro.
+Así Turso solo se consulta cuando algo cambia, y Runtime Cache solo escribe en esos casos.
 
-### ⚡ Caché y actualizaciones
+## 🛠️ Desarrollo local
 
-Se utilizan mecanismos de caché de ejecución y de CDN para reducir lecturas innecesarias. Cuando se modifican datos fuera del flujo normal de la aplicación, la caché puede invalidarse mediante un endpoint protegido:
+Requisitos: Node 24 y npm.
 
 ```bash
-curl -X POST https://www.madridfemeninoxtra.com/api/cache/revalidate \
-  -H "Content-Type: application/json" \
-  -H "x-cache-revalidation-secret: $CACHE_REVALIDATION_SECRET" \
-  --data '{"tables":["partidos","alineaciones","goles_y_asistencias"]}'
+npm ci
+cp .env.example .env    # rellena las credenciales
+npm run dev
 ```
 
-El secreto de invalidación debe mantenerse fuera del repositorio y de la documentación pública.
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compilación para producción |
+| `npm test` | Pruebas automáticas |
+| `npm run check` | Comprobación de tipos de Astro |
+| `npm run cache:revalidar` | Invalida a mano la caché de las tablas indicadas |
+| `npm run smoke:production` | Comprueba las páginas principales en producción |
+| `npm run galeria` | Sube fotografías de galería a R2 |
+| `npm run og` | Genera las imágenes para redes en Contentful |
 
-## 🛡️ Privacidad y publicación responsable
+## 📁 Estructura
 
-La web no muestra publicidad ni carga cookies opcionales propias, por lo que no necesita panel de consentimiento.
+```text
+src/
+├── components/   Componentes de interfaz (Astro y React)
+├── db/           Cliente de Turso con caché e invalidación por tabla
+├── layouts/      Plantilla común: SEO, datos estructurados y tema
+├── lib/          Caché, etiquetas, escudos y utilidades
+├── pages/        Rutas, API y sitemaps
+├── sections/     Bloques de página reutilizables
+├── styles/       Estilos globales y por sección
+└── utils/        Consultas y cálculos deportivos
+scripts/          Galerías, Contentful, migraciones y mantenimiento
+tests/            Pruebas con node:test
+public/           Iconos, manifiesto y robots.txt
+```
 
-Los contenidos editoriales, las fotografías, los escudos y otros recursos visuales pueden estar sujetos a derechos distintos de los del código. No deben asumirse licencias de reutilización por el mero hecho de que el repositorio sea público.
+## 🔎 SEO
 
----
+- Sitemap dinámico (`/sitemap.xml`), sitemap de noticias (`/news-sitemap.xml`) y RSS (`/rss.xml`).
+- Una sola URL por página, sin barra final, con canonical y redirecciones 301 desde las rutas antiguas.
+- Datos estructurados de organización, web, artículos, personas, partidos y migas de pan.
+- Las combinaciones de filtros de los comparadores no se indexan.
 
-<div align="center">
+## 📄 Licencia
 
-### 🤍 Un proyecto independiente dedicado al fútbol femenino
-
-**[madridfemeninoxtra.com](https://www.madridfemeninoxtra.com)**
-
-[🌐 Web](https://www.madridfemeninoxtra.com) · [📰 Noticias](https://www.madridfemeninoxtra.com/noticias) · [📩 Contacto](https://www.madridfemeninoxtra.com/contacto)
-
-</div>
+Código bajo licencia [MIT](LICENSE). Textos, fotografías y datos editoriales © Madrid Femenino Xtra.
