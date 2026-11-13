@@ -23,7 +23,7 @@ export interface PosicionMedia {
     acciones: number;
 }
 
-export interface ValorPeriodo { clave: string; rm: number | null; rival: number | null; }
+export interface ValorPeriodo { clave: string; rm: number | null; rival: number | null; rm_total?: number | null; rival_total?: number | null; }
 
 export interface AnalisisPartido {
     periodos: Record<string, ValorPeriodo[]>;   // '1ST', '2ND', 'ALL'...
@@ -46,10 +46,10 @@ export async function fetchMatchAnalysis(matchId: string | number, options: { fr
                                    FROM posiciones_medias pm LEFT JOIN jugadoras j ON j.id_jugadora = pm.id_jugadora
                                    WHERE pm.id_partido = ? AND pm.es_rm = 1`, args: [matchId] }),
             client.execute({ sql: 'SELECT minuto, valor FROM dominio_partido WHERE id_partido = ? ORDER BY minuto', args: [matchId] }),
-            client.execute({ sql: 'SELECT periodo, clave, rm, rival FROM estadisticas_periodos WHERE id_partido = ?', args: [matchId] }),
+            client.execute({ sql: 'SELECT periodo, clave, rm, rival, rm_total, rival_total FROM estadisticas_periodos WHERE id_partido = ?', args: [matchId] }),
         ]);
         const porPeriodo: Record<string, ValorPeriodo[]> = {};
-        for (const r of periodos.rows as any[]) (porPeriodo[String(r.periodo)] ||= []).push({ clave: String(r.clave), rm: n(r.rm), rival: n(r.rival) });
+        for (const r of periodos.rows as any[]) (porPeriodo[String(r.periodo)] ||= []).push({ clave: String(r.clave), rm: n(r.rm), rival: n(r.rival), rm_total: n(r.rm_total), rival_total: n(r.rival_total) });
         const data: AnalisisPartido = {
             periodos: porPeriodo,
             tiros: tiros.rows.map((r: any) => ({

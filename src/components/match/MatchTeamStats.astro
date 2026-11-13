@@ -1,6 +1,7 @@
 ---
-interface Props { game: any; isLocalRM: boolean; localShield?: string; visitorShield?: string; }
-const { game, isLocalRM, localShield, visitorShield } = Astro.props;
+import type { ValorPeriodo } from "../../utils/analisis";
+interface Props { game: any; isLocalRM: boolean; localShield?: string; visitorShield?: string; periodos?: Record<string, ValorPeriodo[]>; }
+const { game, isLocalRM, localShield, visitorShield, periodos = {} } = Astro.props;
 
 const num = (v: unknown): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -8,80 +9,110 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 type Pair = { rm: number | null; rival: number | null };
-const side = (pair: Pair) => (isLocalRM ? [pair.rm, pair.rival] : [pair.rival, pair.rm]) as [number | null, number | null];
-const pair = (rmKey: string, rivalKey: string): Pair => ({ rm: num(game[rmKey]), rival: num(game[rivalKey]) });
-const ratio = (doneKey: string, totalKey: string, team: "rm" | "rival") => {
-  const done = num(game[`${team}_${doneKey}`]); const total = num(game[`${team}_${totalKey}`]);
-  return done === null || total === null ? null : { done, total };
-};
-
 type Row = { label: string; local: string; visitor: string; localValue: number; visitorValue: number; lowerIsBetter?: boolean };
-const plain = (label: string, p: Pair, decimals = 0, lowerIsBetter = false): Row | null => {
-  const [l, v] = side(p);
-  if (l === null || v === null) return null;
-  const fmt = (n: number) => n.toLocaleString("es-ES", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-  return { label, local: fmt(l), visitor: fmt(v), localValue: l, visitorValue: v, lowerIsBetter };
-};
-const fraction = (label: string, doneKey: string, totalKey: string): Row | null => {
-  const rm = ratio(doneKey, totalKey, "rm"); const rival = ratio(doneKey, totalKey, "rival");
-  if (!rm || !rival) return null;
-  const fmt = (r: { done: number; total: number }) => `${r.done}/${r.total} (${r.total ? Math.round((r.done / r.total) * 100) : 0}%)`;
-  const [l, v] = isLocalRM ? [rm, rival] : [rival, rm];
-  return { label, local: fmt(l), visitor: fmt(v), localValue: l.done, visitorValue: v.done };
+
+// Convierte las estadísticas de una parte (claves de Sofascore) al mismo formato que estadisticas_partidos
+const desdePeriodo = (vals: ValorPeriodo[] = []) => {
+  const g = (k: string) => vals.find((v) => v.clave === k);
+  const o: Record<string, number | null | undefined> = {};
+  const set = (campo: string, k: string, total = false) => { const v = g(k); if (!v) return; o[`rm_${campo}`] = total ? v.rm_total ?? null : v.rm; o[`rival_${campo}`] = total ? v.rival_total ?? null : v.rival; };
+  const bp = g("ballPossession"); if (bp) { o.posesion_rm = bp.rm; o.posesion_rival = bp.rival; }
+  const xgv = g("expectedGoals"); if (xgv) { o.xg_a_favor = xgv.rm; o.xg_en_contra = xgv.rival; }
+  const fo = g("fouls"); if (fo) { o.faltas_cometidas = fo.rm; o.faltas_recibidas = fo.rival; }
+  const ye = g("yellowCards"); if (ye) { o.amarillas_rm = ye.rm; o.amarillas_rival = ye.rival; }
+  const re = g("redCards"); if (re) { o.rojas_rm = re.rm; o.rojas_rival = re.rival; }
+  set("tiros", "totalShotsOnGoal"); set("tiros_puerta", "shotsOnGoal"); set("tiros_palo", "hitWoodwork");
+  set("grandes_ocasiones", "bigChanceCreated"); set("pases_totales", "passes"); set("pases_completados", "accuratePasses");
+  set("corners", "cornerKicks"); set("toques_area_rival", "touchesInOppBox"); set("tiros_libres", "freeKicks");
+  set("pases_largo_completados", "accurateLongBalls"); set("pases_largo_totales", "accurateLongBalls", true);
+  set("pases_tercio_completados", "finalThirdPhaseStatistic"); set("pases_tercio_totales", "finalThirdPhaseStatistic", true);
+  set("centros_completados", "accurateCross"); set("centros_totales", "accurateCross", true);
+  set("duelos_suelo_ganados", "groundDuelsPercentage"); set("duelos_suelo_totales", "groundDuelsPercentage", true);
+  set("duelos_aereos_ganados", "aerialDuelsPercentage"); set("duelos_aereos_totales", "aerialDuelsPercentage", true);
+  set("regates", "dribblesPercentage", true); set("entradas_ganadas", "wonTacklePercent"); set("entradas_totales", "totalTackle");
+  set("intercepciones", "interceptionWon"); set("recuperaciones", "ballRecovery"); set("despejes", "totalClearance");
+  set("paradas", "goalkeeperSaves"); set("fueras_juego", "offsides");
+  return o;
 };
 
-const possession = side({ rm: num(game.posesion_rm), rival: num(game.posesion_rival) });
-const xg = plain("Goles esperados (xG)", { rm: num(game.xg_a_favor), rival: num(game.xg_en_contra) }, 2);
-const yellows = plain("Tarjetas amarillas", { rm: num(game.amarillas_rm), rival: num(game.amarillas_rival) }, 0, true);
-const reds = plain("Tarjetas rojas", { rm: num(game.rojas_rm), rival: num(game.rojas_rival) }, 0, true);
-const fouls = plain("Faltas", { rm: num(game.faltas_cometidas), rival: num(game.faltas_recibidas) }, 0, true);
+const build = (src: any) => {
+  const side = (pair: Pair) => (isLocalRM ? [pair.rm, pair.rival] : [pair.rival, pair.rm]) as [number | null, number | null];
+  const pair = (rmKey: string, rivalKey: string): Pair => ({ rm: num(src[rmKey]), rival: num(src[rivalKey]) });
+  const ratio = (doneKey: string, totalKey: string, team: "rm" | "rival") => {
+    const done = num(src[`${team}_${doneKey}`]); const total = num(src[`${team}_${totalKey}`]);
+    return done === null || total === null ? null : { done, total };
+  };
+  const plain = (label: string, p: Pair, decimals = 0, lowerIsBetter = false): Row | null => {
+    const [l, v] = side(p);
+    if (l === null || v === null) return null;
+    const fmt = (n: number) => n.toLocaleString("es-ES", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    return { label, local: fmt(l), visitor: fmt(v), localValue: l, visitorValue: v, lowerIsBetter };
+  };
+  const fraction = (label: string, doneKey: string, totalKey: string): Row | null => {
+    const rm = ratio(doneKey, totalKey, "rm"); const rival = ratio(doneKey, totalKey, "rival");
+    if (!rm || !rival) return null;
+    const fmt = (r: { done: number; total: number }) => `${r.done}/${r.total} (${r.total ? Math.round((r.done / r.total) * 100) : 0}%)`;
+    const [l, v] = isLocalRM ? [rm, rival] : [rival, rm];
+    return { label, local: fmt(l), visitor: fmt(v), localValue: l.done, visitorValue: v.done };
+  };
+  const possession = side({ rm: num(src.posesion_rm), rival: num(src.posesion_rival) });
+  const xg = plain("Goles esperados (xG)", { rm: num(src.xg_a_favor), rival: num(src.xg_en_contra) }, 2);
+  const yellows = plain("Tarjetas amarillas", { rm: num(src.amarillas_rm), rival: num(src.amarillas_rival) }, 0, true);
+  const reds = plain("Tarjetas rojas", { rm: num(src.rojas_rm), rival: num(src.rojas_rival) }, 0, true);
+  const fouls = plain("Faltas", { rm: num(src.faltas_cometidas), rival: num(src.faltas_recibidas) }, 0, true);
+  const groups = [
+    { key: "top", label: "Destacadas", rows: [
+      xg, plain("Tiros", pair("rm_tiros", "rival_tiros")), plain("Tiros a puerta", pair("rm_tiros_puerta", "rival_tiros_puerta")),
+      plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
+      fraction("Pases completados", "pases_completados", "pases_totales"),
+      plain("Córners", pair("rm_corners", "rival_corners")),
+      plain("Toques en el área rival", pair("rm_toques_area_rival", "rival_toques_area_rival")), yellows,
+    ] },
+    { key: "shots", label: "Tiros", rows: [
+      plain("Tiros", pair("rm_tiros", "rival_tiros")), plain("Tiros a puerta", pair("rm_tiros_puerta", "rival_tiros_puerta")),
+      plain("Tiros al palo", pair("rm_tiros_palo", "rival_tiros_palo")), plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
+      plain("Tiros libres", pair("rm_tiros_libres", "rival_tiros_libres")), plain("Toques en el área rival", pair("rm_toques_area_rival", "rival_toques_area_rival")),
+    ] },
+    { key: "passes", label: "Pases", rows: [
+      fraction("Pases completados", "pases_completados", "pases_totales"),
+      fraction("Pases en largo", "pases_largo_completados", "pases_largo_totales"),
+      fraction("Pases al último tercio", "pases_tercio_completados", "pases_tercio_totales"),
+      fraction("Centros", "centros_completados", "centros_totales"),
+      plain("Córners", pair("rm_corners", "rival_corners")),
+    ] },
+    { key: "duels", label: "Duelos", rows: [
+      fraction("Duelos en el suelo", "duelos_suelo_ganados", "duelos_suelo_totales"),
+      fraction("Duelos aéreos", "duelos_aereos_ganados", "duelos_aereos_totales"),
+      plain("Regates", pair("rm_regates", "rival_regates")),
+    ] },
+    { key: "defense", label: "Defensa", rows: [
+      fraction("Entradas ganadas", "entradas_ganadas", "entradas_totales"),
+      plain("Intercepciones", pair("rm_intercepciones", "rival_intercepciones")),
+      plain("Recuperaciones", pair("rm_recuperaciones", "rival_recuperaciones")),
+      plain("Despejes", pair("rm_despejes", "rival_despejes")),
+      plain("Paradas", pair("rm_paradas", "rival_paradas")),
+    ] },
+    { key: "discipline", label: "Disciplina", rows: [fouls, yellows, reds, plain("Fueras de juego", pair("rm_fueras_juego", "rival_fueras_juego"), 0, true)] },
+    { key: "xg", label: "Goles esperados (xG)", rows: [
+      xg, plain("Asistencias esperadas (xA)", pair("rm_asistencias_esperadas", "rival_asistencias_esperadas"), 2),
+      plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
+    ] },
+  ].map((group) => ({ ...group, rows: group.rows.filter((row): row is Row => row !== null) }))
+   .filter((group) => group.rows.length > 0);
+  return { possession, groups, hasPossession: possession[0] !== null && possession[1] !== null };
+};
 
-const groups = [
-  { key: "top", label: "Destacadas", rows: [
-    xg, plain("Tiros", pair("rm_tiros", "rival_tiros")), plain("Tiros a puerta", pair("rm_tiros_puerta", "rival_tiros_puerta")),
-    plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
-    fraction("Pases completados", "pases_completados", "pases_totales"),
-    plain("Córners", pair("rm_corners", "rival_corners")),
-    plain("Toques en el área rival", pair("rm_toques_area_rival", "rival_toques_area_rival")), yellows,
-  ] },
-  { key: "shots", label: "Tiros", rows: [
-    plain("Tiros", pair("rm_tiros", "rival_tiros")), plain("Tiros a puerta", pair("rm_tiros_puerta", "rival_tiros_puerta")),
-    plain("Tiros al palo", pair("rm_tiros_palo", "rival_tiros_palo")), plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
-    plain("Tiros libres", pair("rm_tiros_libres", "rival_tiros_libres")), plain("Toques en el área rival", pair("rm_toques_area_rival", "rival_toques_area_rival")),
-  ] },
-  { key: "passes", label: "Pases", rows: [
-    fraction("Pases completados", "pases_completados", "pases_totales"),
-    fraction("Pases en largo", "pases_largo_completados", "pases_largo_totales"),
-    fraction("Pases al último tercio", "pases_tercio_completados", "pases_tercio_totales"),
-    fraction("Centros", "centros_completados", "centros_totales"),
-    plain("Córners", pair("rm_corners", "rival_corners")),
-  ] },
-  { key: "duels", label: "Duelos", rows: [
-    fraction("Duelos en el suelo", "duelos_suelo_ganados", "duelos_suelo_totales"),
-    fraction("Duelos aéreos", "duelos_aereos_ganados", "duelos_aereos_totales"),
-    plain("Regates", pair("rm_regates", "rival_regates")),
-  ] },
-  { key: "defense", label: "Defensa", rows: [
-    fraction("Entradas ganadas", "entradas_ganadas", "entradas_totales"),
-    plain("Intercepciones", pair("rm_intercepciones", "rival_intercepciones")),
-    plain("Recuperaciones", pair("rm_recuperaciones", "rival_recuperaciones")),
-    plain("Despejes", pair("rm_despejes", "rival_despejes")),
-    plain("Paradas", pair("rm_paradas", "rival_paradas")),
-  ] },
-  { key: "discipline", label: "Disciplina", rows: [fouls, yellows, reds, plain("Fueras de juego", pair("rm_fueras_juego", "rival_fueras_juego"), 0, true)] },
-  { key: "xg", label: "Goles esperados (xG)", rows: [
-    xg, plain("Asistencias esperadas (xA)", pair("rm_asistencias_esperadas", "rival_asistencias_esperadas"), 2),
-    plain("Grandes ocasiones", pair("rm_grandes_ocasiones", "rival_grandes_ocasiones")),
-  ] },
-].map((group) => ({ ...group, rows: group.rows.filter((row): row is Row => row !== null) }))
- .filter((group) => group.rows.length > 0);
+const vistas = [
+  { key: "ALL", label: "Partido", ...build(game) },
+  ...(periodos["1ST"]?.length ? [{ key: "1ST", label: "1.ª parte", ...build(desdePeriodo(periodos["1ST"])) }] : []),
+  ...(periodos["2ND"]?.length ? [{ key: "2ND", label: "2.ª parte", ...build(desdePeriodo(periodos["2ND"])) }] : []),
+].filter((v, i) => i === 0 || v.groups.length > 0 || v.hasPossession);
 
 const winner = (row: Row) => {
   if (row.localValue === row.visitorValue) return "none";
   const localBetter = row.lowerIsBetter ? row.localValue < row.visitorValue : row.localValue > row.visitorValue;
   return localBetter ? "local" : "visitor";
 };
-const hasPossession = possession[0] !== null && possession[1] !== null;
 ---
 
 <div class="mts mfx-framed" data-team-stats><span class="mfx-frame" aria-hidden="true"></span>
@@ -91,41 +122,53 @@ const hasPossession = possession[0] !== null && possession[1] !== null;
     <span class="mts-team is-visitor">{game.club_visitante}{visitorShield && <img src={visitorShield} alt="" width="26" height="26" />}</span>
   </header>
 
-  {groups.length === 0 && !hasPossession ? (
-    <p class="mts-empty">Las estadísticas del partido todavía no están disponibles.</p>
-  ) : (
-    <>
-      <div class="pt-pills mts-pills" role="tablist" aria-label="Categorías de estadísticas">
-        {groups.map((group, index) => (
-          <button type="button" role="tab" class:list={["pt-pill", { "is-active": index === 0 }]} aria-selected={index === 0 ? "true" : "false"} data-stats-tab={group.key}>
-            {group.label} <span class="mts-count">{group.rows.length}</span>
-          </button>
-        ))}
-      </div>
-
-      {hasPossession && (
-        <div class="mts-possession">
-          <span class="mts-possession-label">Posesión</span>
-          <div class="mts-bar" role="img" aria-label={`Posesión ${possession[0]}% - ${possession[1]}%`}>
-            <span class={`mts-bar-side ${isLocalRM ? "is-rm" : "is-rival"}`} style={`width:${possession[0]}%`}>{possession[0]}%</span>
-            <span class={`mts-bar-side ${isLocalRM ? "is-rival" : "is-rm"}`} style={`width:${possession[1]}%`}>{possession[1]}%</span>
+  {vistas.length > 1 && (
+    <div class="mts-periods" role="tablist" aria-label="Periodo del partido">
+      {vistas.map((v, i) => (
+        <button type="button" role="tab" class:list={["mts-period", { "is-active": i === 0 }]} aria-selected={i === 0 ? "true" : "false"} data-periodo-tab={v.key}>{v.label}</button>
+      ))}
+    </div>
+  )}
+  {vistas.map((vista, vi) => (
+    <div class="mts-vista" data-periodo-panel={vista.key} hidden={vi !== 0}>
+      {vista.groups.length === 0 && !vista.hasPossession ? (
+        <p class="mts-empty">Las estadísticas del partido todavía no están disponibles.</p>
+      ) : (
+        <>
+          <div class="pt-pills mts-pills" role="tablist" aria-label="Categorías de estadísticas">
+            {vista.groups.map((group, index) => (
+              <button type="button" role="tab" class:list={["pt-pill", { "is-active": index === 0 }]} aria-selected={index === 0 ? "true" : "false"} data-stats-tab={group.key}>
+                {group.label} <span class="mts-count">{group.rows.length}</span>
+              </button>
+            ))}
           </div>
-        </div>
-      )}
 
-      {groups.map((group, index) => (
-        <div class="mts-group" role="tabpanel" data-stats-panel={group.key} hidden={index !== 0}>
-          {group.rows.map((row) => (
-            <div class="mts-row">
-              <span class:list={["mts-value", { "is-best": winner(row) === "local" }]}>{row.local}</span>
-              <span class="mts-label">{row.label}</span>
-              <span class:list={["mts-value is-right", { "is-best": winner(row) === "visitor" }]}>{row.visitor}</span>
+          {vista.hasPossession && (
+            <div class="mts-possession">
+              <span class="mts-possession-label">Posesión</span>
+              <div class="mts-bar" role="img" aria-label={`Posesión ${vista.possession[0]}% - ${vista.possession[1]}%`}>
+                <span class={`mts-bar-side ${isLocalRM ? "is-rm" : "is-rival"}`} style={`width:${vista.possession[0]}%`}>{vista.possession[0]}%</span>
+                <span class={`mts-bar-side ${isLocalRM ? "is-rival" : "is-rm"}`} style={`width:${vista.possession[1]}%`}>{vista.possession[1]}%</span>
+              </div>
+            </div>
+          )}
+
+          {vista.groups.map((group, index) => (
+            <div class="mts-group" role="tabpanel" data-stats-panel={group.key} hidden={index !== 0}>
+              {group.rows.map((row) => (
+                <div class="mts-row">
+                  <span class:list={["mts-value", { "is-best": winner(row) === "local" }]}>{row.local}</span>
+                  <span class="mts-label">{row.label}</span>
+                  <span class:list={["mts-value is-right", { "is-best": winner(row) === "visitor" }]}>{row.visitor}</span>
+                </div>
+              ))}
             </div>
           ))}
-        </div>
-      ))}
-    </>
-  )}
+        </>
+      )}
+
+    </div>
+  ))}
 </div>
 
 <script>
@@ -133,11 +176,19 @@ const hasPossession = possession[0] !== null && possession[1] !== null;
     document.querySelectorAll<HTMLElement>("[data-team-stats]").forEach((root) => {
       if (root.dataset.ready === "true") return;
       root.dataset.ready = "true";
-      const tabs = [...root.querySelectorAll<HTMLButtonElement>("[data-stats-tab]")];
-      const panels = [...root.querySelectorAll<HTMLElement>("[data-stats-panel]")];
-      tabs.forEach((tab) => tab.addEventListener("click", () => {
-        tabs.forEach((t) => { const on = t === tab; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
-        panels.forEach((panel) => { panel.hidden = panel.dataset.statsPanel !== tab.dataset.statsTab; });
+      root.querySelectorAll<HTMLElement>("[data-periodo-panel]").forEach((vista) => {
+        const tabs = [...vista.querySelectorAll<HTMLButtonElement>("[data-stats-tab]")];
+        const panels = [...vista.querySelectorAll<HTMLElement>("[data-stats-panel]")];
+        tabs.forEach((tab) => tab.addEventListener("click", () => {
+          tabs.forEach((t) => { const on = t === tab; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
+          panels.forEach((panel) => { panel.hidden = panel.dataset.statsPanel !== tab.dataset.statsTab; });
+        }));
+      });
+      const ptabs = [...root.querySelectorAll<HTMLButtonElement>("[data-periodo-tab]")];
+      const vistas = [...root.querySelectorAll<HTMLElement>("[data-periodo-panel]")];
+      ptabs.forEach((tab) => tab.addEventListener("click", () => {
+        ptabs.forEach((t) => { const on = t === tab; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
+        vistas.forEach((v) => { v.hidden = v.dataset.periodoPanel !== tab.dataset.periodoTab; });
       }));
     });
   }
@@ -146,6 +197,11 @@ const hasPossession = possession[0] !== null && possession[1] !== null;
 </script>
 
 <style>
+  .mts-periods { display: flex; justify-content: center; gap: 0.25rem; width: fit-content; margin: 0 auto 1.1rem; padding: 0.25rem; border-radius: 999px; background: rgb(var(--l-field, 12, 22, 42)); }
+  .mts-period { border: 0; cursor: pointer; padding: 0.5rem 1.1rem; border-radius: 999px; background: transparent; font: 700 0.78rem/1 'DM Sans', sans-serif; letter-spacing: 0.04em; color: rgba(var(--l-ink, 200, 210, 220), 0.75); }
+  .mts-period:hover { color: rgb(var(--l-ink, 240, 240, 240)); }
+  .mts-period.is-active { background: rgb(var(--l-gold, 212, 168, 67)); color: #0b1424; }
+  .mts-period:focus-visible { outline: 2px solid rgb(var(--l-gold, 212, 168, 67)); outline-offset: 2px; }
   .mts { position: relative; padding: 1.4rem clamp(1rem, 3vw, 1.75rem) 1.6rem; border: 1px solid transparent; border-radius: 14px; background: rgba(var(--l-card, 8, 16, 34), 0.85); }
   .mts-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin-bottom: 1.1rem; }
   .mts-team { display: inline-flex; align-items: center; gap: 0.6rem; font: 700 1rem/1.2 'Cinzel', serif; color: rgb(var(--l-ink, 240, 240, 240)); }

@@ -142,6 +142,7 @@ const [lineup, subs, stadiumStats, matchKit] = await Promise.all([
 ]);
 const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm, matchReadOptions, subs);
 const matchAnalysis = game.id_partido ? await fetchMatchAnalysis(game.id_partido, matchReadOptions) : null;
+const hasAnalysis = Boolean(matchAnalysis && (matchAnalysis.tiros.length || matchAnalysis.posiciones.length || matchAnalysis.dominio.length));
 
 const MATCH_GALERIA_PREVIEW = 21;
 const matchGallery = await fetchGalleryForMatch(game.id_partido);
@@ -379,7 +380,7 @@ const matchSchema = matchStartISO ? {
 } : null;
 
 const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
-const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(matchAnalysis ? ["analisis"] : []), ...(h2hStats ? ["h2h"] : [])];
+const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(hasAnalysis ? ["analisis"] : []), ...(h2hStats ? ["h2h"] : [])];
 const requestedTab = Astro.url.searchParams.get("seccion") ?? "info";
 const activeTab = [...availableTabs, "valoraciones"].includes(requestedTab) ? requestedTab : "info";
 
@@ -1054,9 +1055,9 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                     </div>
                 </div>
                 <div class="mx-panel" data-mx-panel="estadisticas" hidden={activeTab !== "estadisticas"}>
-                    <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} />
+                    <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} periodos={matchAnalysis?.periodos} />
                 </div>
-                {matchAnalysis && (
+                {hasAnalysis && matchAnalysis && (
                     <div class="mx-panel" data-mx-panel="analisis" hidden={activeTab !== "analisis"}>
                         <MatchAnalysis data={matchAnalysis} rivalName={rivalName} playerHref={(nombre) => playerHref(nombre)} />
                     </div>
