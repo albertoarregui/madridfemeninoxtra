@@ -7,7 +7,12 @@ ChatGPT solo **descarga** las respuestas de Sofascore en bruto. Toda la transfor
 
 1. Busca el id del partido en Sofascore (número final de la URL, p. ej. `#id:16425762`).
 2. Pega el prompt de abajo en ChatGPT cambiando `[ID]` y guarda la respuesta como `partido-[ID].json`.
-3. Revisa y carga:
+3. Súbelo a la carpeta `datos/sofascore/` del repositorio (desde GitHub: *Add file → Upload files*).
+   La Action "Importar partido de Sofascore" lo valida, lo carga, recarga la caché de la web y borra
+   el fichero. Si algo no cuadra, el fichero se queda y la Action sale en rojo con el motivo.
+   Para comprobar sin escribir: *Actions → Importar partido de Sofascore → Run workflow → Solo comprobar*.
+
+También puedes cargarlo a mano desde tu ordenador:
 
 ```
 node scripts/sofascore/importar-partido.mjs partido-[ID].json --dry   # informe, no escribe
