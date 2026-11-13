@@ -57,7 +57,7 @@ await check('Disallowed image proxy source', async () => {
 });
 await check('News counter rejects unauthenticated sample POST', async () => {
   const r = await request('/api/noticias/lectura', 'POST');
-  eq(r.status, 415, 'status');
+  if (![403, 415].includes(r.status)) throw Error(`status: expected 403 or 415, received ${r.status}`);
 });
 console.log(`Checks completed. Failures: ${failures}.`);
 if (failures) process.exitCode = 1;

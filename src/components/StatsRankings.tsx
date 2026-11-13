@@ -663,9 +663,9 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                        <p className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
                                             <a href={`/jugadoras/${podium[1].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-ink,192,192,192))] transition-colors">{podium[1].nombre}</a>
-                                        </h3>
+                                        </p>
                                         <p className="text-3xl font-black" style={{color: 'rgb(var(--l-ink, 192, 192, 192))'}}>{formatValue(podium[1])}</p>
                                     </div>
                                 </div>
