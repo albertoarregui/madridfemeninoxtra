@@ -27,6 +27,8 @@ import MatchPitch from "../../components/match/MatchPitch.astro";
 import MatchTimelineH from "../../components/match/MatchTimelineH.astro";
 import MatchTeamStats from "../../components/match/MatchTeamStats.astro";
 import MatchRatings from "../../components/match/MatchRatings.astro";
+import MatchAnalysis from "../../components/analisis/MatchAnalysis.astro";
+import { fetchMatchAnalysis } from "../../utils/analisis";
 import { fetchCoachesDirectly, getCoachImageUrl } from "../../utils/entrenadores";
 import { getFlagSrc } from "../../utils/flags";
 import { ratingSummary } from "../../lib/ratings";
@@ -139,6 +141,7 @@ const [lineup, subs, stadiumStats, matchKit] = await Promise.all([
     fetchMatchKit(game.id_partido, matchReadOptions),
 ]);
 const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm, matchReadOptions, subs);
+const matchAnalysis = game.id_partido ? await fetchMatchAnalysis(game.id_partido, matchReadOptions) : null;
 
 const MATCH_GALERIA_PREVIEW = 21;
 const matchGallery = await fetchGalleryForMatch(game.id_partido);
@@ -376,7 +379,7 @@ const matchSchema = matchStartISO ? {
 } : null;
 
 const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
-const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(h2hStats ? ["h2h"] : [])];
+const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(matchAnalysis ? ["analisis"] : []), ...(h2hStats ? ["h2h"] : [])];
 const requestedTab = Astro.url.searchParams.get("seccion") ?? "info";
 const activeTab = [...availableTabs, "valoraciones"].includes(requestedTab) ? requestedTab : "info";
 
@@ -1053,6 +1056,11 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                 <div class="mx-panel" data-mx-panel="estadisticas" hidden={activeTab !== "estadisticas"}>
                     <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} />
                 </div>
+                {matchAnalysis && (
+                    <div class="mx-panel" data-mx-panel="analisis" hidden={activeTab !== "analisis"}>
+                        <MatchAnalysis data={matchAnalysis} rivalName={rivalName} playerHref={(nombre) => playerHref(nombre)} />
+                    </div>
+                )}
                 <div class="mx-panel" data-mx-panel="valoraciones" hidden={activeTab !== "valoraciones"}>
                     <MatchRatings starters={lineup} subs={subs} fan={fanRatings} ratingsUrl={ratingsUrl} playerHref={playerHref} />
                 </div>

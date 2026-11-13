@@ -1,0 +1,99 @@
+---
+// Mapa de tiros sobre un campo en SVG.
+// mode "partido": campo completo; el Madrid ataca hacia la derecha y el rival hacia la izquierda.
+// mode "jugadora": medio campo vertical con los tiros de una jugadora.
+import type { Tiro } from "../../utils/analisis";
+interface Props { tiros: Tiro[]; mode?: "partido" | "jugadora"; rivalName?: string; }
+const { tiros, mode = "partido", rivalName = "Rival" } = Astro.props;
+
+const RESULT: Record<string, string> = { goal: "Gol", save: "Parada", miss: "Fuera", block: "Bloqueado", post: "Al palo", "blocked-off-line": "Despejado bajo palos" };
+const BODY: Record<string, string> = { "right-foot": "pie derecho", "left-foot": "pie izquierdo", head: "cabeza", other: "otra parte" };
+const r = (t: Tiro) => 0.9 + Math.sqrt(Math.max(t.xg ?? 0.05, 0.02)) * 3.2;
+const label = (t: Tiro) => `${t.jugadora} · ${t.minuto ?? ""}${t.minuto_anadido ? `+${t.minuto_anadido}` : ""}' · ${RESULT[t.resultado] ?? t.resultado}${t.parte_cuerpo ? ` · ${BODY[t.parte_cuerpo] ?? t.parte_cuerpo}` : ""}${t.xg != null ? ` · xG ${t.xg.toLocaleString("es-ES", { maximumFractionDigits: 2 })}` : ""}`;
+const cls = (t: Tiro) => ["sm-shot", t.es_rm ? "is-rm" : "is-rival", `is-${t.resultado === "goal" ? "goal" : t.resultado === "save" ? "target" : "off"}`].join(" ");
+
+// Partido: viewBox 105 x 68
+const posPartido = (t: Tiro) => t.es_rm ? { cx: 105 - t.x * 1.05, cy: t.y * 0.68 } : { cx: t.x * 1.05, cy: 68 - t.y * 0.68 };
+// Jugadora: medio campo vertical, viewBox 68 x 52.5 (portería arriba)
+const posJugadora = (t: Tiro) => ({ cx: t.y * 0.68, cy: t.x * 1.05 });
+
+const sum = (arr: Tiro[]) => arr.reduce((a, t) => a + (t.xg ?? 0), 0);
+const rm = tiros.filter((t) => t.es_rm); const rival = tiros.filter((t) => !t.es_rm);
+const hasXg = tiros.some((t) => t.xg != null);
+const resumen = (arr: Tiro[]) => ({ tiros: arr.length, puerta: arr.filter((t) => t.resultado === "goal" || t.resultado === "save").length, goles: arr.filter((t) => t.resultado === "goal").length, xg: sum(arr) });
+const sRm = resumen(rm); const sRival = resumen(rival);
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+const f2 = (v: number) => v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+---
+
+<figure class:list={["sm", `sm-${mode}`]}>
+  {mode === "partido" && (
+    <div class="sm-summary">
+      <div><strong>Real Madrid</strong><span>{plural(sRm.goles, "gol", "goles")} · {plural(sRm.tiros, "tiro", "tiros")} ({sRm.puerta} a puerta){hasXg && ` · xG ${f2(sRm.xg)}`}</span></div>
+      <div class="is-right"><strong>{rivalName}</strong><span>{plural(sRival.goles, "gol", "goles")} · {plural(sRival.tiros, "tiro", "tiros")} ({sRival.puerta} a puerta){hasXg && ` · xG ${f2(sRival.xg)}`}</span></div>
+    </div>
+  )}
+  {mode === "partido" ? (
+    <svg viewBox="-2 -2 109 72" role="img" aria-label={`Mapa de tiros: Real Madrid ${sRm.tiros} tiros, ${rivalName} ${sRival.tiros} tiros`}>
+      <g class="sm-pitch">
+        <rect x="0" y="0" width="105" height="68" rx="0.6" />
+        <line x1="52.5" y1="0" x2="52.5" y2="68" />
+        <circle cx="52.5" cy="34" r="9.15" />
+        <rect x="0" y="13.84" width="16.5" height="40.32" /><rect x="88.5" y="13.84" width="16.5" height="40.32" />
+        <rect x="0" y="24.84" width="5.5" height="18.32" /><rect x="99.5" y="24.84" width="5.5" height="18.32" />
+        <line class="sm-goal" x1="0" y1="30.34" x2="0" y2="37.66" /><line class="sm-goal" x1="105" y1="30.34" x2="105" y2="37.66" />
+      </g>
+      <text class="sm-dir" x="103" y="66.3" text-anchor="end">Ataque Real Madrid →</text>
+      <text class="sm-dir" x="2" y="66.3">← Ataque {rivalName}</text>
+      {tiros.filter((t) => t.resultado !== "goal").concat(tiros.filter((t) => t.resultado === "goal")).map((t) => {
+        const p = posPartido(t);
+        return <circle class={cls(t)} cx={p.cx.toFixed(2)} cy={p.cy.toFixed(2)} r={r(t).toFixed(2)}><title>{label(t)}</title></circle>;
+      })}
+    </svg>
+  ) : (
+    <svg viewBox="-2 -2 72 56.5" role="img" aria-label={`Mapa de tiros: ${tiros.length} tiros`}>
+      <g class="sm-pitch">
+        <rect x="0" y="0" width="68" height="52.5" />
+        <rect x="13.84" y="0" width="40.32" height="16.5" /><rect x="24.84" y="0" width="18.32" height="5.5" />
+        <path d="M 26.7 16.5 A 9.15 9.15 0 0 0 41.3 16.5" />
+        <line class="sm-goal" x1="30.34" y1="0" x2="37.66" y2="0" />
+      </g>
+      {tiros.filter((t) => t.resultado !== "goal").concat(tiros.filter((t) => t.resultado === "goal")).map((t) => {
+        const p = posJugadora(t);
+        return <circle class={cls(t)} cx={p.cx.toFixed(2)} cy={p.cy.toFixed(2)} r={r(t).toFixed(2)}><title>{label(t)}</title></circle>;
+      })}
+    </svg>
+  )}
+  <figcaption class="sm-legend">
+    <span><i class="sm-key is-goal"></i>Gol</span><span><i class="sm-key is-target"></i>A puerta</span><span><i class="sm-key is-off"></i>Fuera o bloqueado</span>
+    {hasXg && <span class="sm-note">Tamaño según xG</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .sm { margin: 0; display: grid; gap: 0.75rem; }
+  .sm svg { width: 100%; height: auto; display: block; }
+  .sm-jugadora svg { max-width: 460px; margin: 0 auto; }
+  .sm-summary { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .sm-summary div { display: grid; gap: 0.15rem; }
+  .sm-summary .is-right { text-align: right; }
+  .sm-summary strong { font: 700 0.95rem/1.2 'Cinzel', serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .sm-summary span { font: 500 0.82rem/1.3 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.75); }
+  .sm-pitch rect, .sm-pitch circle, .sm-pitch line, .sm-pitch path { fill: none; stroke: rgba(var(--l-ink, 220, 225, 235), 0.28); stroke-width: 0.3; }
+  .sm-pitch > rect:first-child { fill: rgb(var(--l-field, 12, 22, 42)); }
+  .sm-goal { stroke: rgba(var(--l-ink, 220, 225, 235), 0.7) !important; stroke-width: 0.9 !important; }
+  .sm-dir { font: 600 1.5px 'DM Sans', sans-serif; fill: rgba(var(--l-ink, 200, 210, 220), 0.45); }
+  .sm-shot { stroke-width: 0.35; }
+  .sm-shot.is-rm { --c: var(--l-gold, 212, 168, 67); }
+  .sm-shot.is-rival { --c: var(--l-rival, 120, 170, 230); }
+  .sm-shot.is-goal { fill: rgb(var(--c)); stroke: rgb(var(--l-ink, 255, 255, 255)); stroke-width: 0.45; }
+  .sm-shot.is-target { fill: rgba(var(--c), 0.55); stroke: rgb(var(--c)); }
+  .sm-shot.is-off { fill: rgba(var(--c), 0.08); stroke: rgba(var(--c), 0.8); }
+  .sm-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font: 500 0.78rem/1.2 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.75); }
+  .sm-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .sm-key { --c: var(--l-gold, 212, 168, 67); width: 0.75rem; height: 0.75rem; border-radius: 50%; display: inline-block; border: 1.5px solid rgb(var(--c)); }
+  .sm-key.is-goal { background: rgb(var(--c)); }
+  .sm-key.is-target { background: rgba(var(--c), 0.55); }
+  .sm-key.is-off { background: transparent; }
+  .sm-note { opacity: 0.8; }
+</style>

@@ -30,6 +30,9 @@ import PlayerNewsSection from "../../components/PlayerNewsSection.astro";
 import GaleriaGrid from "../../components/GaleriaGrid.astro";
 import { fetchPlayerPhotos, photoUrl, faceThumbStyle } from "../../utils/galerias";
 import "../../styles/player-profile.css";
+import ShotMap from "../../components/analisis/ShotMap.astro";
+import Heatmap from "../../components/analisis/Heatmap.astro";
+import { fetchPlayerShots, fetchPlayerHeatmap } from "../../utils/analisis";
 
 const { slug } = Astro.params;
 if (slug === "elisa-sen") {
@@ -119,6 +122,17 @@ const trajectory = await fetchPlayerTrajectory(player.id_jugadora);
 const contract = await fetchPlayerContract(player.id_jugadora);
 const socials = await fetchPlayerSocials(player.id_jugadora);
 const { injuries, isInjured } = await fetchPlayerInjuries(player.id_jugadora);
+const analisisSeason = getCurrentSeason();
+const [seasonShots, seasonHeatmap] = await Promise.all([
+    fetchPlayerShots(player.id_jugadora, analisisSeason),
+    fetchPlayerHeatmap(player.id_jugadora, analisisSeason),
+]);
+const shotGoals = seasonShots.filter((t) => t.resultado === "goal").length;
+const xgShots = seasonShots.filter((t) => t.xg != null);
+const shotXg = xgShots.reduce((a, t) => a + (t.xg ?? 0), 0);
+const xgGoals = xgShots.filter((t) => t.resultado === "goal").length;
+const shotsWithXg = xgShots.length > 0;
+const fmt2 = (v: number) => v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const playerNews = await getNewsForPlayer(player.id_jugadora, player.nombre, 6);
 
 const finContratoDisplay = contract?.fecha_fin ? formatShortDate(contract.fecha_fin) : null;
@@ -796,6 +810,26 @@ const seoDescription = (tco && tco.partidos)
             )}
         </div>
         <div class="content-grid pt-panel" id="panel-rendimiento" role="tabpanel" aria-labelledby="tab-rendimiento" data-panel="rendimiento" hidden>
+            {(seasonShots.length > 0 || seasonHeatmap.length > 0) && (
+                <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+                    <h2 class="card-title">ANÁLISIS {analisisSeason}</h2>
+                    <div class="card-body player-analysis">
+                        {seasonShots.length > 0 && (
+                            <div>
+                                <h3 class="pa-title">Mapa de tiros</h3>
+                                <p class="pa-sub">{seasonShots.length} tiros · {shotGoals} {shotGoals === 1 ? "gol" : "goles"}{shotsWithXg && ` · En los partidos con xG: ${xgGoals} ${xgGoals === 1 ? "gol" : "goles"} con ${fmt2(shotXg)} xG (${xgGoals - shotXg >= 0 ? "+" : ""}${fmt2(xgGoals - shotXg)})`}</p>
+                                <ShotMap tiros={seasonShots} mode="jugadora" />
+                            </div>
+                        )}
+                        {seasonHeatmap.length > 0 && (
+                            <div>
+                                <h3 class="pa-title">Mapa de calor</h3>
+                                <Heatmap puntos={seasonHeatmap} />
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
             <div class="full-col pt-bar mfx-framed" data-filters="perf"><span class="mfx-frame" aria-hidden="true"></span></div>
             <div class="full-col pt-bar pt-bar-secondary mfx-framed" data-filters="perf-extra"><span class="mfx-frame" aria-hidden="true"></span></div>
             <section class="profile-card full-col mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>

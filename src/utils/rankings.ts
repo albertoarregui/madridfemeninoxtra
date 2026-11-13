@@ -61,6 +61,12 @@ export interface RankingStat {
     regateada?: number;
     faltas_recibidas?: number;
     faltas_cometidas?: number;
+    xg?: number;
+    xa?: number;
+    grandes_ocasiones_creadas?: number;
+    paradas?: number;
+    goles_evitados?: number;
+    conducciones_progresivas?: number;
 }
 
 export interface StreakData {
@@ -294,7 +300,13 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(COALESCE(ej.regateada, 0)) as regateada,
                     SUM(COALESCE(ej.faltas_recibidas, 0)) as faltas_recibidas,
                     SUM(COALESCE(ej.faltas_cometidas, 0)) as faltas_cometidas,
-                    SUM(COALESCE(ej.pases_ultimo_tercio_totales, 0)) as pases_ultimo_tercio_totales
+                    SUM(COALESCE(ej.pases_ultimo_tercio_totales, 0)) as pases_ultimo_tercio_totales,
+                    SUM(COALESCE(ej.xg, 0)) as xg,
+                    SUM(COALESCE(ej.xa, 0)) as xa,
+                    SUM(COALESCE(ej.grandes_ocasiones_creadas, 0)) as grandes_ocasiones_creadas,
+                    SUM(COALESCE(ej.paradas, 0)) as paradas,
+                    SUM(COALESCE(ej.goles_evitados, 0)) as goles_evitados,
+                    SUM(COALESCE(ej.conducciones_progresivas, 0)) as conducciones_progresivas
                 FROM estadisticas_jugadoras ej
                 JOIN completed_matches p ON ej.id_partido = p.id_partido
                 GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
@@ -354,7 +366,13 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(s.fueras_juego, 0) as fueras_juego,
                 COALESCE(s.regateada, 0) as regateada,
                 COALESCE(s.faltas_recibidas, 0) as faltas_recibidas,
-                COALESCE(s.faltas_cometidas, 0) as faltas_cometidas
+                COALESCE(s.faltas_cometidas, 0) as faltas_cometidas,
+                COALESCE(s.xg, 0) as xg,
+                COALESCE(s.xa, 0) as xa,
+                COALESCE(s.grandes_ocasiones_creadas, 0) as grandes_ocasiones_creadas,
+                COALESCE(s.paradas, 0) as paradas,
+                COALESCE(s.goles_evitados, 0) as goles_evitados,
+                COALESCE(s.conducciones_progresivas, 0) as conducciones_progresivas
             FROM jugadoras j
             CROSS JOIN temporadas t
             CROSS JOIN competiciones c
@@ -429,6 +447,12 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             regateada: Number(row.regateada),
             faltas_recibidas: Number(row.faltas_recibidas),
             faltas_cometidas: Number(row.faltas_cometidas),
+            xg: Number(row.xg),
+            xa: Number(row.xa),
+            grandes_ocasiones_creadas: Number(row.grandes_ocasiones_creadas),
+            paradas: Number(row.paradas),
+            goles_evitados: Number(row.goles_evitados),
+            conducciones_progresivas: Number(row.conducciones_progresivas),
         }));
 
     } catch (error) {

@@ -11,6 +11,7 @@ export const RANKING_VALUE_KEYS = [
     "duelos_aereos_totales", "intercepciones", "despejes", "bloqueos", "entradas",
     "recuperaciones", "valoracion", "valoracion_count", "perdidas", "fueras_juego",
     "regateada", "faltas_recibidas", "faltas_cometidas",
+    "xg", "xa", "grandes_ocasiones_creadas", "paradas", "goles_evitados", "conducciones_progresivas",
 ] as const;
 
 export type RankingValueKey = typeof RANKING_VALUE_KEYS[number];

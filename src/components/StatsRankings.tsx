@@ -129,6 +129,12 @@ const TYPE_OPTIONS = [
     { value: "award_monthly", label: "Más veces jugadora del mes" },
     { value: "award_season", label: "Más veces jugadora de la temporada" },
     { value: "valoracion", label: "Mejor valoración media" },
+    { value: "xg", label: "Más goles esperados (xG)" },
+    { value: "xa", label: "Más asistencias esperadas (xA)" },
+    { value: "grandes_ocasiones_creadas", label: "Más grandes ocasiones creadas" },
+    { value: "conducciones_progresivas", label: "Más conducciones progresivas" },
+    { value: "paradas", label: "Más paradas" },
+    { value: "goles_evitados", label: "Más goles evitados (porteras)" },
     { value: "tiros_totales", label: "Más tiros totales" },
     { value: "tiros_puerta", label: "Más tiros a puerta" },
     { value: "toques", label: "Más toques de balón" },
@@ -166,6 +172,7 @@ const PER90_TYPES = new Set([
     "tiros_totales", "tiros_puerta", "toques", "toques_area_rival", "pases_completados", "pases_clave", "pases_ultimo_tercio",
     "pases_largo_completados", "regates_completados", "centros_completados", "duelos_suelo_ganados", "duelos_aereos_ganados",
     "entradas", "intercepciones", "despejes", "bloqueos", "recuperaciones", "faltas_recibidas", "faltas_cometidas", "perdidas",
+    "xg", "xa", "grandes_ocasiones_creadas", "conducciones_progresivas", "paradas",
 ]);
 const PER90_MIN_MINUTES = 450;
 const shortLabel = (label: string) => {
@@ -232,6 +239,12 @@ export default function StatsRankings({
     const currentConfig = useMemo(() => {
         const configs: Record<string, any> = {
             valoracion: { title: "Mejor valoración media", headers: ["Pos", "Jugadora", "Nota Media"], dataKeys: ["valoracion"], primaryKey: "valoracion", icon: <LucideStar className="text-yellow-500" /> },
+            xg: { title: "Goles esperados (xG)", headers: ["Pos", "Jugadora", "xG"], dataKeys: ["xg"], primaryKey: "xg", decimals: 2, icon: <Target className="text-red-400" /> },
+            xa: { title: "Asistencias esperadas (xA)", headers: ["Pos", "Jugadora", "xA"], dataKeys: ["xa"], primaryKey: "xa", decimals: 2, icon: <Zap className="text-yellow-400" /> },
+            grandes_ocasiones_creadas: { title: "Grandes ocasiones creadas", headers: ["Pos", "Jugadora", "Ocasiones"], dataKeys: ["grandes_ocasiones_creadas"], primaryKey: "grandes_ocasiones_creadas", icon: <Zap className="text-green-400" /> },
+            conducciones_progresivas: { title: "Conducciones progresivas", headers: ["Pos", "Jugadora", "Conducciones"], dataKeys: ["conducciones_progresivas"], primaryKey: "conducciones_progresivas", icon: <TrendingUp className="text-emerald-400" /> },
+            paradas: { title: "Más paradas", headers: ["Pos", "Jugadora", "Paradas"], dataKeys: ["paradas"], primaryKey: "paradas", icon: <Shield className="text-blue-500" /> },
+            goles_evitados: { title: "Goles evitados", headers: ["Pos", "Jugadora", "Goles evitados"], dataKeys: ["goles_evitados"], primaryKey: "goles_evitados", decimals: 2, icon: <Shield className="text-green-500" /> },
             goles: { title: "Máximas goleadoras", headers: ["Pos", "Jugadora", "Goles"], dataKeys: ["goles"], primaryKey: "goles", icon: <Target className="text-red-500" /> },
             asistencias: { title: "Máximas asistentes", headers: ["Pos", "Jugadora", "Asistencias"], dataKeys: ["asistencias"], primaryKey: "asistencias", icon: <Zap className="text-yellow-500" /> },
             goles_generados: { title: "Participación en Goles", headers: ["Pos", "Jugadora", "Goles", "Asist.", "G+A"], dataKeys: ["goles", "asistencias", "goles_generados"], primaryKey: "goles_generados", icon: <TrendingUp className="text-green-500" /> },
@@ -458,7 +471,7 @@ export default function StatsRankings({
         if (showPer90 && player.per90 != null) return Number(player.per90).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const value = player[currentConfig.primaryKey];
         if (String(currentConfig.primaryKey).startsWith("porcentaje_")) return `${Number(value).toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`;
-        if (currentConfig.primaryKey === "valoracion") return Number(value).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (currentConfig.primaryKey === "valoracion" || currentConfig.decimals) return Number(value).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return Number(value).toLocaleString("es-ES");
     };
     const perGame = (player: any) => {
