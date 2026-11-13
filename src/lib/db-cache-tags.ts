@@ -14,6 +14,7 @@ export const TABLE_EFFECT_TAGS = {
     estadisticas_jugadoras: [cacheTags.statistics, cacheTags.players, cacheTags.rankings],
     estadisticas_partidos: [cacheTags.statistics, cacheTags.matches, cacheTags.rankings],
     tiros: [cacheTags.statistics, cacheTags.matches, cacheTags.players],
+    estadisticas_periodos: [cacheTags.statistics, cacheTags.matches],
     posiciones_medias: [cacheTags.statistics, cacheTags.matches],
     dominio_partido: [cacheTags.statistics, cacheTags.matches],
     mapas_calor: [cacheTags.statistics, cacheTags.players],

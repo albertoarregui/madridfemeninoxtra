@@ -67,6 +67,7 @@ export interface RankingStat {
     paradas?: number;
     goles_evitados?: number;
     conducciones_progresivas?: number;
+    partidos_xg?: number;
 }
 
 export interface StreakData {
@@ -306,7 +307,8 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     SUM(COALESCE(ej.grandes_ocasiones_creadas, 0)) as grandes_ocasiones_creadas,
                     SUM(COALESCE(ej.paradas, 0)) as paradas,
                     SUM(COALESCE(ej.goles_evitados, 0)) as goles_evitados,
-                    SUM(COALESCE(ej.conducciones_progresivas, 0)) as conducciones_progresivas
+                    SUM(COALESCE(ej.conducciones_progresivas, 0)) as conducciones_progresivas,
+                    SUM(CASE WHEN ej.xg IS NOT NULL OR ej.xa IS NOT NULL THEN 1 ELSE 0 END) as partidos_xg
                 FROM estadisticas_jugadoras ej
                 JOIN completed_matches p ON ej.id_partido = p.id_partido
                 GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
@@ -372,7 +374,8 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 COALESCE(s.grandes_ocasiones_creadas, 0) as grandes_ocasiones_creadas,
                 COALESCE(s.paradas, 0) as paradas,
                 COALESCE(s.goles_evitados, 0) as goles_evitados,
-                COALESCE(s.conducciones_progresivas, 0) as conducciones_progresivas
+                COALESCE(s.conducciones_progresivas, 0) as conducciones_progresivas,
+                COALESCE(s.partidos_xg, 0) as partidos_xg
             FROM jugadoras j
             CROSS JOIN temporadas t
             CROSS JOIN competiciones c
@@ -453,6 +456,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             paradas: Number(row.paradas),
             goles_evitados: Number(row.goles_evitados),
             conducciones_progresivas: Number(row.conducciones_progresivas),
+            partidos_xg: Number(row.partidos_xg),
         }));
 
     } catch (error) {

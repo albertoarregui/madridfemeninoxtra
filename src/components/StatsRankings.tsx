@@ -172,7 +172,7 @@ const PER90_TYPES = new Set([
     "tiros_totales", "tiros_puerta", "toques", "toques_area_rival", "pases_completados", "pases_clave", "pases_ultimo_tercio",
     "pases_largo_completados", "regates_completados", "centros_completados", "duelos_suelo_ganados", "duelos_aereos_ganados",
     "entradas", "intercepciones", "despejes", "bloqueos", "recuperaciones", "faltas_recibidas", "faltas_cometidas", "perdidas",
-    "xg", "xa", "grandes_ocasiones_creadas", "conducciones_progresivas", "paradas",
+    "grandes_ocasiones_creadas", "conducciones_progresivas", "paradas",
 ]);
 const PER90_MIN_MINUTES = 450;
 const shortLabel = (label: string) => {
@@ -396,6 +396,7 @@ export default function StatsRankings({
                 p.valoracion_sum += item.valoracion || 0;
                 p.valoracion_count += (item as any).valoracion_count || 0;
                 p.games = (p.games || 0) + (Number(item.partidos) || 0);
+                p.partidos_xg = (p.partidos_xg || 0) + (Number((item as any).partidos_xg) || 0);
                 p.mins = (p.mins || 0) + (Number((item as any).minutos) || 0);
 
                 config.dataKeys.forEach((key: string) => {
@@ -475,7 +476,8 @@ export default function StatsRankings({
         return Number(value).toLocaleString("es-ES");
     };
     const perGame = (player: any) => {
-        const games = Number(player.games) || 0;
+        // xG y xA solo existen en partidos con datos de Sofascore: se dividen entre esos partidos
+        const games = ["xg", "xa"].includes(currentConfig.primaryKey) ? Number(player.partidos_xg) || 0 : Number(player.games) || 0;
         if (!games) return "—";
         return (Number(player[currentConfig.primaryKey]) / games).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
@@ -771,7 +773,7 @@ export default function StatsRankings({
                                             </span>
                                         </a>
                                     </td>
-                                    {isCountStat && <td className="rk-num">{player.games || "—"}</td>}
+                                    {isCountStat && <td className="rk-num">{(["xg", "xa"].includes(currentConfig.primaryKey) ? player.partidos_xg : player.games) || "—"}</td>}
                                     {isCountStat && currentConfig.primaryKey !== "partidos" && <td className="rk-num rk-hide-sm">{perGame(player)}</td>}
                                     <td className="rk-value"><b className={currentConfig.primaryKey === "valoracion" ? `rk-rating ${ratingTone(Number(player.valoracion) || 0)}` : undefined}>{formatValue(player)}</b>{currentConfig.primaryKey !== "display_ratio" && player.display_ratio && <small>{player.display_ratio}</small>}</td>
                                 </tr>

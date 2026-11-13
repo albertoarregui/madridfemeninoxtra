@@ -22,9 +22,44 @@ const shortName = (nombre: string) => {
   return t.some((x) => ["del", "de", "da"].includes(x.toLowerCase())) ? t[0] : t[t.length - 1];
 };
 const maxAcc = Math.max(1, ...data.posiciones.map((p) => p.acciones));
+
+// Estadísticas por partes
+const METRICAS: [string, string, boolean?][] = [
+  ["ballPossession", "Posesión (%)"], ["expectedGoals", "Goles esperados (xG)", true], ["totalShotsOnGoal", "Tiros"], ["shotsOnGoal", "Tiros a puerta"],
+  ["bigChanceCreated", "Grandes ocasiones"], ["touchesInOppBox", "Toques en el área rival"], ["finalThirdEntries", "Entradas al último tercio"],
+  ["passes", "Pases"], ["accuratePasses", "Pases completados"], ["cornerKicks", "Córners"], ["duelWonPercent", "Duelos ganados (%)"],
+  ["fouls", "Faltas"], ["goalkeeperSaves", "Paradas"],
+];
+const p1 = data.periodos["1ST"] || []; const p2 = data.periodos["2ND"] || [];
+const val = (arr: typeof p1, k: string) => arr.find((x) => x.clave === k);
+const fmtV = (v: number | null | undefined, dec?: boolean) => v == null ? "—" : dec ? v.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : v.toLocaleString("es-ES");
+const MENOS_ES_MEJOR = new Set(["fouls"]);
+const mejor = (k: string, x?: { rm: number | null; rival: number | null }) => x?.rm != null && x?.rival != null && (MENOS_ES_MEJOR.has(k) ? x.rm < x.rival : x.rm > x.rival);
+const filasPartes = METRICAS.map(([k, label, dec]) => ({ k, label, dec, a: val(p1, k), b: val(p2, k) })).filter((f) => f.a || f.b);
 ---
 
 <div class="ma">
+  {filasPartes.length > 0 && (
+    <section class="ma-card">
+      <h3 class="ma-title">Primera y segunda parte</h3>
+      <p class="ma-sub">Real Madrid – {rivalName} en cada mitad.</p>
+      <div class="ma-table-wrap">
+        <table class="ma-table">
+          <thead><tr><th scope="col"></th><th scope="col" colspan="2">1.ª parte</th><th scope="col" colspan="2">2.ª parte</th></tr>
+            <tr class="ma-sides"><th></th><th>RM</th><th>Rival</th><th>RM</th><th>Rival</th></tr></thead>
+          <tbody>
+            {filasPartes.map((f) => (
+              <tr>
+                <th scope="row">{f.label}</th>
+                <td class:list={{ "is-best": mejor(f.k, f.a) }}>{fmtV(f.a?.rm, f.dec)}</td><td>{fmtV(f.a?.rival, f.dec)}</td>
+                <td class:list={{ "is-best": mejor(f.k, f.b) }}>{fmtV(f.b?.rm, f.dec)}</td><td>{fmtV(f.b?.rival, f.dec)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )}
   {data.tiros.length > 0 && (
     <section class="ma-card">
       <h3 class="ma-title">Mapa de tiros</h3>
@@ -93,5 +128,13 @@ const maxAcc = Math.max(1, ...data.posiciones.map((p) => p.acciones));
   .ma-dot circle { fill: rgb(var(--l-gold, 212, 168, 67)); stroke: rgb(var(--l-ink, 255, 255, 255)); stroke-width: 0.35; }
   .ma-dot text { font: 700 1.7px 'DM Sans', sans-serif; fill: rgb(var(--l-ink, 240, 240, 240)); paint-order: stroke; stroke: rgb(var(--l-field, 12, 22, 42)); stroke-width: 0.5px; }
   .ma-pos a:hover circle { fill: rgb(var(--l-ink, 255, 255, 255)); }
+  .ma-table-wrap { overflow-x: auto; }
+  .ma-table { width: 100%; border-collapse: collapse; font: 500 0.88rem/1.3 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); }
+  .ma-table th, .ma-table td { padding: 0.5rem 0.6rem; text-align: center; border-bottom: 1px solid rgba(var(--l-hi, 255, 255, 255), 0.06); }
+  .ma-table tbody th { text-align: left; font-weight: 500; color: rgba(var(--l-ink, 200, 210, 220), 0.85); }
+  .ma-table thead th { font: 700 0.7rem/1 'Cinzel', serif; letter-spacing: 0.12em; text-transform: uppercase; color: rgb(var(--l-gold, 212, 168, 67)); }
+  .ma-table .ma-sides th { font: 600 0.72rem/1 'DM Sans', sans-serif; letter-spacing: 0; text-transform: none; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
+  .ma-table td:nth-child(4) { border-left: 1px solid rgba(var(--l-hi, 255, 255, 255), 0.08); }
+  .ma-table td.is-best { color: rgb(var(--l-gold, 212, 168, 67)); font-weight: 800; }
   .ma-source { margin: 0; text-align: right; font: 500 0.75rem/1 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
 </style>

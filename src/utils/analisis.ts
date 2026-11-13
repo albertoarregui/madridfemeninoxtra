@@ -23,7 +23,10 @@ export interface PosicionMedia {
     acciones: number;
 }
 
+export interface ValorPeriodo { clave: string; rm: number | null; rival: number | null; }
+
 export interface AnalisisPartido {
+    periodos: Record<string, ValorPeriodo[]>;   // '1ST', '2ND', 'ALL'...
     tiros: Tiro[];
     posiciones: PosicionMedia[];
     dominio: { minuto: number; valor: number }[];
@@ -36,15 +39,19 @@ export async function fetchMatchAnalysis(matchId: string | number, options: { fr
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient({ forceRefresh: options.fresh });
         if (!client) return null;
-        const [tiros, posiciones, dominio] = await Promise.all([
+        const [tiros, posiciones, dominio, periodos] = await Promise.all([
             client.execute({ sql: `SELECT es_rm, id_jugadora, jugadora_nombre, minuto, minuto_anadido, resultado, situacion, parte_cuerpo, xg, x, y
                                    FROM tiros WHERE id_partido = ? ORDER BY segundo_partido`, args: [matchId] }),
             client.execute({ sql: `SELECT pm.id_jugadora, COALESCE(j.nombre, pm.jugadora_nombre) AS nombre, pm.x, pm.y, pm.acciones
                                    FROM posiciones_medias pm LEFT JOIN jugadoras j ON j.id_jugadora = pm.id_jugadora
                                    WHERE pm.id_partido = ? AND pm.es_rm = 1`, args: [matchId] }),
             client.execute({ sql: 'SELECT minuto, valor FROM dominio_partido WHERE id_partido = ? ORDER BY minuto', args: [matchId] }),
+            client.execute({ sql: 'SELECT periodo, clave, rm, rival FROM estadisticas_periodos WHERE id_partido = ?', args: [matchId] }),
         ]);
+        const porPeriodo: Record<string, ValorPeriodo[]> = {};
+        for (const r of periodos.rows as any[]) (porPeriodo[String(r.periodo)] ||= []).push({ clave: String(r.clave), rm: n(r.rm), rival: n(r.rival) });
         const data: AnalisisPartido = {
+            periodos: porPeriodo,
             tiros: tiros.rows.map((r: any) => ({
                 es_rm: Number(r.es_rm) === 1, id_jugadora: n(r.id_jugadora), jugadora: String(r.jugadora_nombre ?? ''),
                 minuto: n(r.minuto), minuto_anadido: n(r.minuto_anadido), resultado: String(r.resultado ?? ''),
@@ -55,7 +62,7 @@ export async function fetchMatchAnalysis(matchId: string | number, options: { fr
             })),
             dominio: dominio.rows.map((r: any) => ({ minuto: Number(r.minuto), valor: Number(r.valor) })),
         };
-        return data.tiros.length || data.posiciones.length || data.dominio.length ? data : null;
+        return data.tiros.length || data.posiciones.length || data.dominio.length || data.periodos['1ST']?.length ? data : null;
     } catch (error) {
         console.error('Error fetching match analysis:', error);
         return null;

@@ -21,6 +21,7 @@ const args = process.argv.slice(2);
 const file = args.find(a => !a.startsWith('--'));
 const DRY = args.includes('--dry');
 const FORZAR = args.includes('--forzar-eventos');
+const SIN_CACHE = args.includes('--sin-cache');
 if (!file) { console.error('Uso: node scripts/sofascore/importar-partido.mjs partido.json [--dry] [--forzar-eventos]'); process.exit(1); }
 
 const env = { ...process.env };
@@ -162,6 +163,22 @@ if (all.length) {
     informe.push(`Estadísticas del partido: ${cols.length - 1} valores`);
 } else avisos.push('Sin estadísticas de partido en el paquete.');
 
+// ── Estadísticas por periodos (total, 1ª parte, 2ª parte, prórroga) ──────────
+let nPer = 0;
+if (statistics.length) {
+    stmts.push({ sql: 'DELETE FROM estadisticas_periodos WHERE id_partido = ?', args: [P] });
+    for (const per of statistics) {
+        const seen = new Set();
+        for (const it of (per.groups || []).flatMap(g => g.statisticsItems || [])) {
+            if (!it.key || seen.has(it.key)) continue; seen.add(it.key);
+            stmts.push({ sql: 'INSERT OR REPLACE INTO estadisticas_periodos (id_partido, periodo, clave, rm, rival, rm_total, rival_total) VALUES (?,?,?,?,?,?,?)',
+                args: [P, per.period, it.key, num(it[`${RM}Value`]), num(it[`${RIV}Value`]), num(it[`${RM}Total`]), num(it[`${RIV}Total`])] });
+            nPer++;
+        }
+    }
+    informe.push(`Estadísticas por periodos: ${statistics.map(x => x.period).join(', ')} (${nPer} valores)`);
+}
+
 // ── Estadísticas de cada jugadora ────────────────────────────────────────────
 const PLAYER_MAP = {
     valoracion: 'rating', tiros_totales: 'totalShots', tiros_puerta: 'onTargetScoringAttempt', toques: 'touches',
@@ -179,8 +196,11 @@ const PLAYER_MAP = {
     despejes_punos: 'punches', blocajes_aereos: 'goodHighClaim', salidas: 'totalKeeperSweeper', salidas_acertadas: 'accurateKeeperSweeper',
     penaltis_parados: 'penaltySave', penaltis_recibidos: 'penaltyFaced', goles_evitados: 'goalsPrevented',
     conducciones: 'ballCarriesCount', conducciones_progresivas: 'progressiveBallCarriesCount', distancia_conducciones: 'totalBallCarriesDistance', progresion: 'totalProgression',
+    valor_pase: 'passValueNormalized', valor_regate: 'dribbleValueNormalized', valor_defensivo: 'defensiveValueNormalized', valor_portera: 'goalkeeperValueNormalized',
+    toques_fallidos: 'unsuccessfulTouch', pases_campo_propio_totales: 'totalOwnHalfPasses', pases_campo_propio_completados: 'accurateOwnHalfPasses',
+    centros_no_atrapados: 'crossNotClaimed', goles_en_propia: 'ownGoals',
 };
-const SIN_CERO = new Set(['valoracion', 'goles_evitados']);
+const SIN_CERO = new Set(['valoracion', 'goles_evitados', 'valor_pase', 'valor_regate', 'valor_defensivo', 'valor_portera']);
 let nStats = 0;
 for (const p of rmPlayers) {
     const s = p.statistics || {};
@@ -317,11 +337,11 @@ const r = await db.batch(stmts, 'write');
 console.log(`\nEscrito: ${stmts.length} sentencias, ${r.reduce((a, x) => a + x.rowsAffected, 0)} filas.`);
 
 const secret = env.CACHE_REVALIDATION_SECRET;
-if (secret) {
+if (secret && !SIN_CACHE) {
     const site = env.SITE_URL || 'https://www.madridfemeninoxtra.com';
     const res = await fetch(`${site}/api/cache/revalidate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': secret },
-        body: JSON.stringify({ tables: ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'tarjetas', 'tarjetas_rival', 'penaltis_fallados', 'tanda_penaltis', 'estadisticas_partidos', 'estadisticas_jugadoras', 'jugadoras'], tags: ['rankings', 'matches', 'players', 'statistics'] }),
+        body: JSON.stringify({ tables: ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'tarjetas', 'tarjetas_rival', 'penaltis_fallados', 'tanda_penaltis', 'estadisticas_partidos', 'estadisticas_jugadoras', 'jugadoras', 'estadisticas_periodos', 'tiros', 'posiciones_medias', 'dominio_partido', 'mapas_calor'], tags: ['rankings', 'matches', 'players', 'statistics'] }),
     });
     console.log(`Caché de la web: ${res.status}`);
 }
