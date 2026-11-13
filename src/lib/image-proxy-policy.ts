@@ -1,4 +1,3 @@
-/** Only public, explicitly approved image origins can be fetched server-side. */
 export const ALLOWED_IMAGE_HOSTS = new Set([
   'media.madridfemeninoxtra.com',
   'images.ctfassets.net',

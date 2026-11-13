@@ -24,7 +24,6 @@ test('no asigna el escudo de otro club con un nombre parecido', () => {
         assert.equal(shield?.known, false, name);
         assert.match(shield!.url, /^https:\/\/media\.madridfemeninoxtra\.com\/escudos\/[a-z0-9_]+\.webp$/);
     }
-    // «Paris Saint-Germain» es el PSG de `clubes`, nunca el Paris FC.
     assert.equal(resolve('Paris Saint-Germain')?.url, 'https://media.madridfemeninoxtra.com/escudos/psg.webp');
 });
 

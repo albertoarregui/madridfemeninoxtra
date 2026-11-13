@@ -1,8 +1,5 @@
 ---
-// Tarjeta flotante al pasar por encima de los enlaces a jugadoras, clubes,
-// estadios, entrenadores, árbitras y partidos que aparecen dentro de textos.
-// Los datos salen de la propia página enlazada (título, imagen y descripción),
-// que ya está cacheada en la CDN: no hay consultas nuevas a la base de datos.
+
 ---
 
 <div class="mfx-link-preview mfx-framed" data-link-preview hidden>
@@ -36,8 +33,6 @@
           const doc = new DOMParser().parseFromString(html, "text/html");
           const meta = (name: string) => doc.querySelector<HTMLMetaElement>(`meta[property="${name}"], meta[name="${name}"]`)?.content ?? "";
           const title = (meta("og:title") || doc.title).split(/ \| |: | – | — /)[0].trim();
-          // Foto principal de la ficha (jugadora, escudo, estadio); la imagen
-          // social lleva texto incrustado y solo se usa si no hay otra.
           const hero = doc.querySelector<HTMLImageElement>('[class*="hero"] img[src]:not([src$="icon.webp"]):not([src*="banderas"]):not([src*="flag"])');
           const image = hero ? new URL(hero.getAttribute("src")!, location.origin + path).href : meta("og:image");
           return { title, image, description: meta("description") };
@@ -85,7 +80,6 @@
       const [es] = KIND[match[1]];
       link.href = url.pathname;
       kind.textContent = es;
-      // En personas y estadios el título trae la descripción tras una coma.
       title.textContent = match[1] === "partidos" || match[1] === "rivales" ? preview.title : preview.title.split(",")[0];
       desc.textContent = preview.description.length > 120 ? `${preview.description.slice(0, 117).trimEnd()}…` : preview.description;
       cta.textContent = match[1] === "partidos" ? "Ver partido →" : "Ver ficha →";
@@ -95,7 +89,6 @@
       place(anchor);
     };
 
-    // Solo con ratón: en pantallas táctiles el enlace funciona con un toque normal.
     if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     document.addEventListener("mouseover", (event) => {
       const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>(SCOPES) : null;

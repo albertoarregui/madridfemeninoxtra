@@ -55,7 +55,6 @@ test('matches page replaces the calendar with a filterable chronological list', 
   assert.match(config, /'\/calendario': \{ status: 301, destination: '\/partidos' \}/);
   assert.equal(exists('src/pages/calendario.astro'), false);
   for (const filter of ['competition', 'venue']) assert.match(timeline, new RegExp(`data-filter="${filter}"`));
-  // La temporada usa un desplegable propio, no la lista nativa del navegador.
   assert.match(timeline, /data-season-select/);
   assert.match(timeline, /role="listbox"/);
   assert.doesNotMatch(timeline, /<select/);
@@ -102,7 +101,6 @@ test('homepage renders Liga F then UWCL standings from cached live data', () => 
   const widget = read('src/components/LigaFStandings.astro');
   assert.match(homepage, /CLASIFICACIONES<\/h2>/);
   assert.match(homepage, /<LigaFStandings\s*\/>/);
-  // Los iframes de Sofascore dejaron de cargar (403): datos de la API pública de ESPN, cacheados una hora.
   assert.ok(widget.indexOf('"esp.w.1"') >= 0);
   assert.ok(widget.indexOf('"uefa.wchampions"') > widget.indexOf('"esp.w.1"'));
   assert.match(widget, /cached\(`standings:espn:/);
@@ -123,7 +121,6 @@ test('Astro uses no-op image transformations instead of the legacy image endpoin
   assert.match(config, /passthrough-image-service/);
   assert.match(read('src/lib/passthrough-image-service.ts'), /options\.src\.src/);
 });
-
 
 test('upper footer keeps navigation and social links without the newsletter form', () => {
   const footer = read('src/components/FooterUpper.astro');
@@ -157,7 +154,6 @@ test('original footer style stays with exact requested legal links and no ad con
   assert.doesNotMatch(read('src/layouts/Layout.astro'), /showAds|adsbygoogle/);
 });
 
-
 test('Vercel CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
   const middleware = read('src/middleware.ts');
   const cache = read('src/utils/cache.ts');
@@ -184,8 +180,6 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   assert.match(proxy, /MAX_PROXY_IMAGE_BYTES/);
   assert.match(proxy, /redirect: 'error'/);
 });
-
-
 
 test('reader ratings pages have competition crests and one-row MVP UI', () => {
   const archive = read('src/pages/valoraciones/index.astro');
@@ -300,7 +294,6 @@ test('2026 U20 awards use dedicated framed photos with captions', () => {
   assert.match(css, /@media \(max-width: 640px\)[\s\S]*?\.award-card--featured \.award-details \{[\s\S]*?minmax\(105px, 0\.42fr\)/);
   assert.match(assets, /type === 'premios' \? 'awards'/);
 });
-
 
 test('about gallery keeps the approved order, captions and exact replacement', () => {
   const page = read('src/pages/sobre-nosotros.astro');

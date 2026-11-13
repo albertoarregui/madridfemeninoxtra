@@ -9,7 +9,6 @@ const NOMBRE = 'Primera Iberdrola';
 const FOTO = 'https://media.madridfemeninoxtra.com/competiciones/primera_iberdrola.webp';
 
 async function main() {
-    // 1. Crear la competición si no existe (idempotente)
     let row = (await c.execute({ sql: 'SELECT id_competicion FROM competiciones WHERE competicion = ?', args: [NOMBRE] })).rows[0];
     let newId: number;
     if (row) {
@@ -22,13 +21,11 @@ async function main() {
         console.log(`Creada '${NOMBRE}' con id ${newId}.`);
     }
 
-    // 2. Reasignar la liga (id_competicion = 1) de las temporadas 1 y 2 (2020/21 y 2021/22)
     const before = Number((await one('SELECT COUNT(*) v FROM partidos WHERE id_temporada IN (1,2) AND id_competicion = 1')).v);
     console.log(`Partidos de liga en temporadas 1 y 2 con id_competicion=1: ${before}`);
     const res = await c.execute({ sql: 'UPDATE partidos SET id_competicion = ? WHERE id_temporada IN (1,2) AND id_competicion = 1', args: [newId] });
     console.log(`Filas actualizadas: ${res.rowsAffected}`);
 
-    // 3. Verificación
     const restantes = Number((await one('SELECT COUNT(*) v FROM partidos WHERE id_temporada IN (1,2) AND id_competicion = 1')).v);
     const nuevos = Number((await one(`SELECT COUNT(*) v FROM partidos WHERE id_temporada IN (1,2) AND id_competicion = ${newId}`)).v);
     const fkc = await c.execute('PRAGMA foreign_key_check(partidos)');

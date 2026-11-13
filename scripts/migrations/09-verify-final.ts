@@ -20,7 +20,6 @@ async function main() {
   console.log('partidos tiene id_equipacion:', pcols.includes('id_equipacion') ? '✅' : '❌');
 
   console.log('\n=== SMOKE TEST: consultas reales del sitio ===');
-  // 1) Directorio de jugadoras (fetchPlayersDirectly)
   const players = await c.execute(`
     SELECT j.id_jugadora, j.nombre, t.temporada, d.dorsal
     FROM jugadoras j
@@ -29,7 +28,6 @@ async function main() {
     ORDER BY j.nombre ASC LIMIT 5`);
   console.log('Directorio jugadoras: OK, filas muestra =', players.rows.length, '✅');
 
-  // 2) Goles y asistencias (consulta editada en goles_y_asistencias.ts)
   const goals = await c.execute(`
     SELECT g.id_gol, COALESCE(jg.nombre, g.goleadora) AS goleadora,
            COALESCE(ja.nombre, g.asistente) AS asistente,
@@ -48,7 +46,6 @@ async function main() {
   console.log('Goles/asistencias (query editada): OK, filas muestra =', goals.rows.length, '✅');
   console.log('  ejemplo:', JSON.stringify(goals.rows[0]));
 
-  // 3) Estadisticas de una jugadora (alineaciones + partidos)
   const stats = await c.execute(`SELECT COUNT(*) n FROM alineaciones al JOIN partidos p ON al.id_partido=p.id_partido WHERE al.id_jugadora=1`);
   console.log('Stats jugadora 1 (alineaciones JOIN partidos): OK, partidos =', (stats.rows[0] as any).n, '✅');
 

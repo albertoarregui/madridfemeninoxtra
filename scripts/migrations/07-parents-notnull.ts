@@ -81,7 +81,6 @@ async function main() {
   };
   const fkc = await c.execute('PRAGMA foreign_key_check');
 
-  // joins reales para confirmar integridad de uso
   const j1 = await count('partidos p JOIN temporadas t ON p.id_temporada=t.id_temporada');
   const j2 = await count('partidos p JOIN competiciones co ON p.id_competicion=co.id_competicion');
   const j3 = await count('dorsales d JOIN jugadoras j ON d.id_jugadora=j.id_jugadora');

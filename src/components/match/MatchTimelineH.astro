@@ -1,9 +1,4 @@
 ---
-/**
- * Timeline horizontal del partido (pestaña «Timeline»), con el mismo lenguaje
- * que la trayectoria de las jugadoras: eje dorado, goles y asistencias arriba,
- * tarjetas y cambios abajo; el escudo indica el equipo. En móvil, lista vertical.
- */
 interface Props { events: any[]; rmName?: string; rivalName: string; rmShield?: string; rivalShield?: string; }
 const { events, rmName = "Real Madrid", rivalName, rmShield, rivalShield } = Astro.props;
 
@@ -12,7 +7,6 @@ const shootout = events.filter((e) => Number(e.minute) >= 200);
 const maxMinute = Math.max(90, ...inPlay.map((e) => Number(e.minute) || 0));
 const pos = (minute: number) => Math.min(100, Math.max(0, (minute / maxMinute) * 100));
 
-// Niveles para que los eventos cercanos no se pisen.
 const levels: Record<"top" | "bottom", number[]> = { top: [], bottom: [] };
 const placed = inPlay.map((event) => {
   const side = event.type === "card" || event.type === "sub" ? "bottom" : "top";
@@ -156,10 +150,8 @@ const videoCall = (event: any) => event.videoUrl
     width: max-content; max-width: 240px; padding: 0.45rem 0.6rem; border: 1px solid rgba(212, 168, 67, 0.28); border-radius: 10px;
     background: rgb(var(--l-field, 12, 22, 42)); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
   }
-  /* Cerca de los extremos la tarjeta se abre hacia dentro. */
   .tlh-event.at-start .tlh-card { transform: translateX(-14px); }
   .tlh-event.at-end .tlh-card { transform: translateX(calc(-100% + 14px)); }
-  /* Separación entre cada hito y la línea temporal, con un conector. */
   .tlh-event.is-top .tlh-card { bottom: 18px; }
   .tlh-event.is-bottom .tlh-card { top: 18px; }
   .tlh-event::after { content: ""; position: absolute; left: -0.5px; width: 1px; height: calc(18px + var(--level) * var(--row)); background: rgba(212, 168, 67, 0.45); }
@@ -171,7 +163,6 @@ const videoCall = (event: any) => event.videoUrl
   .tlh-text strong { font: 700 0.8rem/1.2 'DM Sans', sans-serif; color: rgb(var(--l-ink, 240, 240, 240)); white-space: normal; overflow-wrap: anywhere; }
   .tlh-text em { font: italic 0.68rem/1.2 'DM Sans', sans-serif; color: rgba(var(--l-ink, 200, 210, 220), 0.65); white-space: normal; }
 
-  /* Iconos */
   .tlh-ico { flex-shrink: 0; width: 18px; height: 18px; display: grid; place-items: center; font-size: 0.85rem; line-height: 1; }
   .k-goal .tlh-ico::before, .k-pen .tlh-ico::before, .k-own .tlh-ico::before { content: "⚽"; }
   .k-own .tlh-ico { filter: hue-rotate(320deg) saturate(3); }
@@ -197,7 +188,6 @@ const videoCall = (event: any) => event.videoUrl
   .tlh-shootout .is-scored em { color: rgb(var(--l-green, 74, 222, 128)); }
   .tlh-shootout .is-missed em { color: rgb(var(--l-red, 248, 113, 113)); }
 
-  /* Móvil y tablet: lista vertical. */
   @media (max-width: 860px) {
     .tlh-track, .tlh-legend { display: none; }
     .tlh-list { display: grid; gap: 0.55rem; }

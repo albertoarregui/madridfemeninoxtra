@@ -123,5 +123,4 @@ async function fetchCalendarFromDbUncached(): Promise<CalendarMatch[]> {
     }
 }
 
-
 export const fetchCalendarFromDb = cachear('calendar:all', TTL.corto, fetchCalendarFromDbUncached, { tags: ['calendar', 'matches'] });

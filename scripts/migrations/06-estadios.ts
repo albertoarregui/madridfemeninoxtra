@@ -33,7 +33,6 @@ async function main() {
   const after = Number((await c.execute('SELECT COUNT(*) n FROM estadios')).rows[0].n);
   const fkc = await c.execute('PRAGMA foreign_key_check');
   const typ = await c.execute("SELECT typeof(capacidad) t, COUNT(*) n FROM estadios WHERE capacidad IS NOT NULL GROUP BY 1");
-  // partidos sigue viendo sus estadios?
   const join = Number((await c.execute('SELECT COUNT(*) n FROM partidos p JOIN estadios e ON p.id_estadio=e.id_estadio')).rows[0].n);
   console.log(`estadios: ${before} -> ${after} filas | foreign_key_check global: ${fkc.rows.length} violaciones`);
   console.log('capacidad typeof:', JSON.stringify(typ.rows));

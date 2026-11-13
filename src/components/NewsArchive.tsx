@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Activity, Search, X } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 
-
 interface Noticia {
     id: string;
     title: string;
@@ -21,7 +20,6 @@ interface NewsArchiveProps {
 
 const PAGE_SIZE = 10;
 
-// La temporada va de julio a junio: una noticia de octubre de 2025 es de la 2025/26.
 const seasonOf = (n: Noticia) => {
     const d = new Date(n.publishDate || n.createdAt || n.updatedAt || '');
     if (Number.isNaN(d.getTime())) return '';
@@ -119,7 +117,6 @@ const NewsArchive: React.FC<NewsArchiveProps> = ({ noticias }) => {
                 </div>
             </div>
 
-            {/* Categorías con las mismas píldoras que el filtro de competiciones; temporada en desplegable. */}
             <div className="news-filters">
                 <div className="pt-pills" role="group" aria-label="Categoría">
                     {['TODAS', ...categories].map(cat => (

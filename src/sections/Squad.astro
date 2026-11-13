@@ -7,7 +7,6 @@ import { fetchCoachesDirectly } from "../utils/entrenadores";
 interface Props { season: string; currentSeason: string; seasons: string[]; }
 const { season, currentSeason, seasons = [] } = Astro.props;
 
-// Todo sale de lecturas ya cacheadas y compartidas con otras páginas.
 const [allPlayersDb, lesionadas, rankingRows, allGames, coaches, goalkeeperMinutes] = await Promise.all([
     fetchPlayersDirectly(),
     fetchInjuredPlayerIds(),
@@ -36,7 +35,6 @@ for (const [matchId, keeper] of mainGoalkeeper) {
 
 const squadPlayers = allPlayersDb.filter((player) => isFirstTeamInSeason(player, season));
 
-// Partidos, goles y asistencias de la temporada (oficiales: sin amistosos).
 const seasonStats = new Map<string, { partidos: number; goles: number; asistencias: number; porterias_cero: number }>();
 for (const row of rankingRows) {
     if (row.temporada !== season || row.competicion === "Amistoso") continue;
@@ -58,8 +56,6 @@ const listofPlayers = squadPlayers.map((player) => {
         player.season_photos && player.season_photos[season];
 
     const stats = seasonStats.get(String(player.id_jugadora)) ?? { partidos: 0, goles: 0, asistencias: 0, porterias_cero: 0 };
-    // Bajo cada miniatura: partidos, goles y asistencias oficiales de la
-    // temporada; en las porteras, solo las porterías a cero.
     const isGoalkeeper = (player.posicion || "").toLowerCase().includes("portera");
     const thumbStats = isGoalkeeper
         ? [
@@ -141,9 +137,6 @@ const rows = [
 
 if (otros.length > 0) rows.push({ title: "OTRAS", players: otros });
 
-
-// Resumen de la plantilla. En temporadas pasadas la edad se calcula al inicio
-// de la temporada (1 de septiembre); en la actual, a día de hoy.
 const parseNumber = (value: unknown) => {
     const n = Number.parseFloat(String(value ?? "").replace(",", "."));
     return Number.isFinite(n) && n > 0 ? n : null;
@@ -170,9 +163,6 @@ const avgHeight = average(listofPlayers.map((p) => {
 }));
 const avgWeight = average(listofPlayers.map((p) => parseNumber(p.weight)));
 
-// Entrenador(es) de la temporada en orden cronológico, con su primer y último
-// partido dirigido y cuántos lleva. Solo los que la web reconoce como
-// entrenadores (excluye interinos puntuales).
 const coachSpans = new Map<string, { first: string; last: string; games: number }>();
 for (const game of allGames) {
     if (game.temporada_nombre !== season || !game.entrenador_nombre || !game.isPlayed) continue;
@@ -591,10 +581,6 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <script>
-    // Comparte la plantilla como PNG (menú de compartir del sistema cuando el
-    // dispositivo admite archivos; si no, se descarga). Las imágenes de la versión de exportación
-    // solo se piden al pulsar. R2 solo permite CORS desde producción, así que
-    // fuera de ella sus fotos pasan por el proxy (las banderas permiten CORS).
     async function downloadSquad(button: HTMLButtonElement) {
         const node = document.getElementById("squad-export");
         const label = button.querySelector("[data-squad-download-label]");
@@ -604,9 +590,6 @@ function calculateAge(birthDateString: string): number {
         if (label) label.textContent = "Generando…";
         try {
             const sameOrigin = location.hostname === "www.madridfemeninoxtra.com";
-            // Las fotos de R2 que la página ya cargó sin CORS (miniaturas) quedan en
-            // caché sin cabeceras CORS y mancharían el lienzo: se piden con un
-            // parámetro propio para forzar una petición nueva con CORS.
             const resolve = (src: string) => {
                 if (!src.startsWith("https://media.madridfemeninoxtra.com/")) return src;
                 if (!sameOrigin) return `/api/img-proxy?url=${encodeURIComponent(src)}`;
@@ -618,8 +601,6 @@ function calculateAge(birthDateString: string): number {
                     img.crossOrigin = "anonymous";
                     img.src = resolve(img.dataset.src || "");
                 })));
-            // Las fotos van como fondo recortado a cabeza y hombros: se precargan y
-            // se asignan al pulsar.
             await Promise.all([...node.querySelectorAll<HTMLElement>("[data-bg]")].map((el) => new Promise<void>((done) => {
                 const url = resolve(el.dataset.bg || "");
                 const probe = new Image();
@@ -684,7 +665,6 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <script is:inline data-astro-rerun>
-    // Abre y cierra el selector de temporada (pulsar fuera o Escape lo cierran).
     (() => {
         const picker = document.querySelector("[data-squad-season]");
         if (!picker || picker.dataset.ready === "true") return;
@@ -698,10 +678,8 @@ function calculateAge(birthDateString: string): number {
 </script>
 
 <style>
-    /* Resumen de la plantilla y filtro de temporada */
     .squad-summary {
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem 2rem;
-        /* Mismo ancho máximo que el selector, centrada. */
         max-width: 1280px; margin: 0 auto 2rem; padding: 1.25rem 1.75rem; box-sizing: border-box;
         background: rgba(var(--l-card, 8, 16, 34), 0.85); border: 1px solid rgba(212, 168, 67, 0.25); border-radius: 4px;
         position: relative;
@@ -716,8 +694,6 @@ function calculateAge(birthDateString: string): number {
     .squad-summary-item dd { margin: 0; font-family: 'Cinzel', serif; font-size: 1.6rem; font-weight: 700; line-height: 1; color: rgb(var(--l-ink, 240, 240, 240)); }
     .squad-summary-item dd small { margin-left: 0.3rem; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: rgba(var(--l-ink, 200, 210, 220), 0.6); }
 
-    /* Tarjeta del entrenador, alineada a la izquierda. Al pasar por encima se
-       eleva y una línea dorada recorre el borde, como en las tarjetas de noticias. */
     .squad-coaches {
         display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 1rem;
         max-width: 1280px; margin: -0.75rem auto 2rem;
@@ -779,7 +755,6 @@ function calculateAge(birthDateString: string): number {
     .squad-download:disabled { opacity: 0.6; cursor: progress; }
     .squad-download:focus-visible { outline: 2px solid #e6c77c; outline-offset: 3px; }
 
-    /* Versión de exportación a PNG: fuera de la vista, sin afectar al scroll. */
     .squad-export {
         position: fixed; top: 0; left: 0; z-index: -1; width: 1300px; visibility: hidden; pointer-events: none;
         padding: 44px 40px 36px; box-sizing: border-box; color: rgb(var(--l-ink, 240, 240, 240)); font-family: 'DM Sans', sans-serif;
@@ -788,7 +763,6 @@ function calculateAge(birthDateString: string): number {
     .squad-export p, .squad-export h3 { margin: 0; }
     .sx-title { font-family: 'Cinzel', serif; font-size: 34px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.15; }
     .sx-title span { color: rgb(var(--l-gold, 212, 168, 67)); }
-    /* Tarjetas iguales que las miniaturas del selector de la plantilla. */
     .sx-thumb {
         position: relative; width: 150px; height: 188px; overflow: hidden;
         background-color: rgba(212, 168, 67, 0.07); background-repeat: no-repeat; background-size: cover; background-position: top center;
@@ -819,7 +793,6 @@ function calculateAge(birthDateString: string): number {
     }
     .sx-coach-photo { display: block; overflow: hidden; border-radius: 50%; background-color: rgba(212, 168, 67, 0.12); border: 1px solid rgba(212, 168, 67, 0.45); }
     .sx-coach-photo { width: 60px; height: 60px; }
-    /* Recorte a cabeza y hombros de los recortes de cuerpo entero. */
     .sx-coach-photo { background-repeat: no-repeat; background-size: 200% auto; background-position: 50% 6%; }
     .sx-label { font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(var(--l-gold, 212, 168, 67), 0.75); }
     .sx-coach-name { display: flex; align-items: center; gap: 10px; margin-top: 6px !important; font-family: 'Cinzel', serif; font-size: 26px; font-weight: 700; }

@@ -6,7 +6,6 @@ const c = createClient({ url: (process.env.TURSO_STATS_DATABASE_URL || process.e
 const one = async (s: string) => Number((await c.execute(s)).rows[0].v);
 
 async function main() {
-  // Pre-check: huerfanos en columnas a las que añadimos FK
   const orphCap = await one("SELECT COUNT(*) v FROM partidos p LEFT JOIN jugadoras j ON p.capitana=j.id_jugadora WHERE p.capitana IS NOT NULL AND j.id_jugadora IS NULL");
   const orphEnt = await one("SELECT COUNT(*) v FROM partidos p LEFT JOIN entrenadores e ON p.id_entrenador=e.id_entrenador WHERE p.id_entrenador IS NOT NULL AND e.id_entrenador IS NULL");
   const orphMvp = await one("SELECT COUNT(*) v FROM partidos p LEFT JOIN jugadoras j ON p.mvp=j.id_jugadora WHERE p.mvp IS NOT NULL AND j.id_jugadora IS NULL");
@@ -75,7 +74,6 @@ async function main() {
   const eqMoved = await one('SELECT COUNT(*) v FROM partidos WHERE id_equipacion IS NOT NULL');
   const asistTyp = await c.execute("SELECT typeof(asistencia) t, COUNT(*) n FROM partidos WHERE asistencia IS NOT NULL GROUP BY 1");
   const epGone = (await c.execute("SELECT COUNT(*) v FROM sqlite_master WHERE type='table' AND name='equipacion_partido'")).rows[0].v;
-  // joins de uso real
   const childJoins = await one('SELECT COUNT(*) v FROM alineaciones a JOIN partidos p ON a.id_partido=p.id_partido');
 
   console.log(`partidos: ${before} -> ${after} ${before===after?'✅':'❌'}`);

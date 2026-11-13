@@ -91,4 +91,3 @@ export function getFlagSrc(codeOrName: string | undefined, iso?: string): string
     return `https://flagcdn.com/w40/${cdnCode}.png`;
 }
 
-

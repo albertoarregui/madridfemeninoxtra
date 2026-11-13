@@ -237,7 +237,6 @@ export default function BuscadorTemporadas({ competitions, competitionLogos = {}
                         )}
                     </div>
 
-
                     <div className="bus-per90-toggle">
                         <button className={`bus-per90-btn${mode === 'totales' ? ' active' : ''}`} onClick={() => setMode('totales')}>Totales</button>
                         <button className={`bus-per90-btn${mode === 'promedios' ? ' active' : ''}`} onClick={() => setMode('promedios')}>Por partido</button>
@@ -249,7 +248,6 @@ export default function BuscadorTemporadas({ competitions, competitionLogos = {}
                         </button>
                     )}
                 </div>
-                {/* Competición en píldoras, siempre visible. */}
                 <div className="bus-comp-row">
                     <span className="bus-filter-label">Competición</span>
                     <CompetitionPills competitions={competitions} value={selectedComp} onChange={setSelectedComp} logos={competitionLogos} />

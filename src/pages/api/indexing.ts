@@ -9,7 +9,6 @@ export const POST: APIRoute = async ({ request }) => {
         const body = await request.json();
         const { url, secret } = body;
 
-
         const ASSIGNED_SECRET = runtimeEnv('INDEXING_SECRET');
         if (!ASSIGNED_SECRET || secret !== ASSIGNED_SECRET) {
             return new Response(JSON.stringify({ error: "No autorizado. Secreto inválido." }), {
@@ -24,7 +23,6 @@ export const POST: APIRoute = async ({ request }) => {
                 headers: { "Content-Type": "application/json" }
             });
         }
-
 
         const clientEmail = runtimeEnv('GOOGLE_CLIENT_EMAIL');
         const privateKey = runtimeEnv('GOOGLE_PRIVATE_KEY');

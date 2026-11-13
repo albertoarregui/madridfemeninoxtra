@@ -42,8 +42,6 @@ if (!player) {
 }
 
 const resolvedImage = getAssetUrl("jugadoras", player.imageUrl);
-// En el encabezado, la foto de perfil de cada temporada si existe; si no, la
-// foto de temporada.
 const profilePhotos: Record<string, string> = player.profile_photos || {};
 const seasonPhotos: Record<string, string> = player.season_photos || {};
 const seasonPhotosData = [...new Set([...Object.keys(profilePhotos), ...Object.keys(seasonPhotos)])]
@@ -62,8 +60,6 @@ const currentSeasonName =
         ? seasonPhotosData[initialSeasonIndex].season
         : player.temporada || "Actualidad";
 
-// Galería oculta de momento (pendiente de decidir qué hacer con ella). Se
-// conserva el código; mientras esté desactivada no se piden sus fotos.
 const SHOW_PLAYER_GALLERY = false;
 const playerPhotos = SHOW_PLAYER_GALLERY ? await fetchPlayerPhotos(slug!) : [];
 const totalGaleria = playerPhotos.length;
@@ -143,10 +139,6 @@ const socialLinks = socials
 
 const allGoals = await fetchAllGoals();
 
-// ── Pestañas de la ficha ──────────────────────────────────────────────────
-// Todos los partidos de la jugadora con sus estadísticas van a la página como
-// JSON; los filtros, totales, medias por 90', meses y radar se calculan en el
-// navegador sin más peticiones.
 const OFFICIAL_COMPETITIONS = ["Liga F", "Primera Iberdrola", "UWCL", "Copa de la Reina", "Supercopa de España"];
 const isRealMadridClub = (name: unknown) =>
     String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("real madrid");
@@ -158,8 +150,6 @@ const [allGamesList, playerMatchRows, goalkeeperMinutes] = await Promise.all([
     isGoalkeeper ? fetchGoalkeeperMinutes() : Promise.resolve([]),
 ]);
 const gamesById = new Map(allGamesList.map((g: any) => [Number(g.id_partido), g]));
-// Porteras: paradas y goles encajados del equipo en los partidos en que fue la
-// portera con más minutos (no hay paradas por portera en los datos).
 const mainKeeperByMatch = new Map<number, { id: number; minutos: number }>();
 for (const row of goalkeeperMinutes) {
     const current = mainKeeperByMatch.get(row.id_partido);
@@ -205,8 +195,6 @@ const insightMatches = playerMatchRows
     .sort((a: any, b: any) => b.fecha.localeCompare(a.fecha));
 const insightSeasons = [...new Set(insightMatches.map((m: any) => m.season))];
 const insightCompetitions = [...new Map(insightMatches.map((m: any) => [m.comp, { key: m.comp, label: m.compLabel, logo: m.compLogo, official: m.official }])).values()];
-// Selector de jugadoras del encabezado: plantilla actual agrupada por posición
-// (con goles y asistencias oficiales de la temporada) y, al buscar, todas.
 const pickerSeason = getCurrentSeason();
 const pickerGroupOf = (pos: unknown) => {
     const p = String(pos ?? "").toLowerCase();
@@ -243,7 +231,6 @@ const pickerPlayers = allPlayers
     });
 const insightsData = { isGoalkeeper, seasons: insightSeasons, competitions: insightCompetitions, matches: insightMatches,
     picker: { current: slug, players: pickerPlayers } };
-// Línea de temporadas (Estadísticas): temporadas con partidos, de la más antigua a la más reciente.
 const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
 const careerShield = createClubShieldResolver(await fetchAllClubShields());
 const statsSeasons = (playerStats?.estadisticas ?? [])
@@ -974,5 +961,4 @@ const seoDescription = (tco && tco.partidos)
         document.addEventListener("astro:page-load", initPlayerInsights);
     </script>
 </Layout>
-
 

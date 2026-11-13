@@ -94,7 +94,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                   AND date(fecha) <= date('now')
             ),
             lineup_data AS (
-                SELECT 
+                SELECT
                     a.id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
@@ -111,7 +111,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 GROUP BY a.id_jugadora, p.id_temporada, p.id_competicion
             ),
             goal_data AS (
-                SELECT 
+                SELECT
                     goleadora as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
@@ -123,7 +123,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             ),
             advanced_goal_data AS (
                 WITH goal_details AS (
-                    SELECT 
+                    SELECT
                         ga.goleadora,
                         ga.id_partido,
                         p.id_temporada,
@@ -140,19 +140,19 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                     id_temporada,
                     id_competicion,
                     SUM(CASE WHEN goal_rank = 1 THEN 1 ELSE 0 END) as goles_abrelatas,
-                    SUM(CASE 
-                        WHEN goles_rm > goles_rival AND goal_rank = (goles_rival + 1) THEN 1 
-                        ELSE 0 
+                    SUM(CASE
+                        WHEN goles_rm > goles_rival AND goal_rank = (goles_rival + 1) THEN 1
+                        ELSE 0
                     END) as goles_victoria,
-                    SUM(CASE 
-                        WHEN goles_rm = goles_rival AND goal_rank = goles_rm THEN 1 
-                        ELSE 0 
+                    SUM(CASE
+                        WHEN goles_rm = goles_rival AND goal_rank = goles_rm THEN 1
+                        ELSE 0
                     END) as goles_empate
                 FROM goal_details
                 GROUP BY goleadora, id_temporada, id_competicion
             ),
             assist_data AS (
-                SELECT 
+                SELECT
                     asistente as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
@@ -163,19 +163,19 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 GROUP BY asistente, p.id_temporada, p.id_competicion
             ),
             penalty_data AS (
-                SELECT 
+                SELECT
                     goleadora as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
                     COUNT(*) as penaltis
                 FROM goles_y_asistencias ga
                 JOIN completed_matches p ON ga.id_partido = p.id_partido
-                WHERE ga.goleadora IS NOT NULL 
+                WHERE ga.goleadora IS NOT NULL
                 AND (LOWER(ga.tipo) = 'penalti' OR LOWER(ga.tipo) = 'p')
                 GROUP BY goleadora, p.id_temporada, p.id_competicion
             ),
             card_data AS (
-                SELECT 
+                SELECT
                     t.id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
@@ -186,7 +186,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 GROUP BY t.id_jugadora, p.id_temporada, p.id_competicion
             ),
             u_captain_data AS (
-                SELECT 
+                SELECT
                     p.capitana as id_jugadora,
                     p.id_temporada,
                     p.id_competicion,
@@ -236,7 +236,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
                 GROUP BY ej.id_jugadora, p.id_temporada, p.id_competicion
             )
 
-            SELECT 
+            SELECT
                 j.id_jugadora,
                 j.nombre,
                 j.posicion,
@@ -302,7 +302,7 @@ export async function fetchRankingsDirectly(): Promise<RankingStat[]> {
             LEFT JOIN card_data cd ON j.id_jugadora = cd.id_jugadora AND t.id_temporada = cd.id_temporada AND c.id_competicion = cd.id_competicion
             LEFT JOIN u_captain_data cp ON j.id_jugadora = cp.id_jugadora AND t.id_temporada = cp.id_temporada AND c.id_competicion = cp.id_competicion
             LEFT JOIN individual_stats s ON j.id_jugadora = s.id_jugadora AND t.id_temporada = s.id_temporada AND c.id_competicion = s.id_competicion
-            WHERE 
+            WHERE
                 l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR cd.tarjetas_amarillas > 0 OR cd.tarjetas_rojas > 0 OR pd.penaltis > 0 OR s.pases_clave > 0 OR s.tiros_totales > 0 OR s.toques > 0 OR l.porterias_cero > 0 OR s.recuperaciones > 0 OR s.intercepciones > 0 OR s.despejes > 0 OR s.bloqueos > 0 OR s.entradas > 0
             ORDER BY j.nombre
         `;
@@ -387,7 +387,7 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
                   AND goles_rival IS NOT NULL AND TRIM(CAST(goles_rival AS TEXT)) != ''
                   AND date(fecha) <= date('now')
             )
-            SELECT 
+            SELECT
                 j.id_jugadora,
                 j.nombre,
                 j.posicion,
@@ -403,12 +403,12 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
             JOIN completed_matches p ON a.id_partido = p.id_partido
             JOIN temporadas t ON p.id_temporada = t.id_temporada
             JOIN competiciones c ON p.id_competicion = c.id_competicion
-            WHERE 
+            WHERE
                 a.minutos_jugados > 0
-            ORDER BY 
-                j.id_jugadora, 
-                substr(p.fecha, 7, 4) ASC, 
-                substr(p.fecha, 4, 2) ASC, 
+            ORDER BY
+                j.id_jugadora,
+                substr(p.fecha, 7, 4) ASC,
+                substr(p.fecha, 4, 2) ASC,
                 substr(p.fecha, 1, 2) ASC
         `;
 
@@ -516,5 +516,4 @@ export async function fetchPlayerStreaks(): Promise<StreakData[]> {
         return [];
     }
 }
-
 

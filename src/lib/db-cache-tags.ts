@@ -1,10 +1,5 @@
 import { cacheTags } from './cache-tags';
 
-/**
- * Etiqueta de seguridad para consultas sobre tablas que todavía no estén
- * registradas. Las lecturas conocidas también la incluyen, pero solo se
- * invalida cuando una escritura no puede clasificarse con precisión.
- */
 export const DATABASE_CACHE_TAG = 'database';
 
 export const TABLE_EFFECT_TAGS = {
@@ -84,18 +79,10 @@ function tablesForSql(sql: string): CachedTable[] {
     return tables;
 }
 
-/**
- * Cada consulta se liga únicamente a las tablas que lee. Así, escribir una
- * alineación no expulsa de Runtime Cache consultas que solo leen partidos.
- */
 export function tagsForReadSql(sql: string): string[] {
     return [...tablesForSql(sql).map(tableCacheTag), DATABASE_CACHE_TAG];
 }
 
-/**
- * Una escritura invalida las consultas de sus tablas y las páginas de los
- * dominios afectados. Las tablas desconocidas activan la purga de seguridad.
- */
 export function tagsForWriteSql(sql: string): string[] {
     const tables = tablesForSql(sql);
     return tables.length > 0 ? tagsForTables(tables) : [DATABASE_CACHE_TAG];

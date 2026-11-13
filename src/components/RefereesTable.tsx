@@ -43,7 +43,6 @@ const photoSrc = (url: string | null) =>
 
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
 
-// Tarjetas con el mismo diseño que las de rivales y estadios.
 const RefereesTable: React.FC<RefereesTableProps> = ({ referees }) => {
     const sorted = useMemo(
         () => [...referees].sort((a, b) => b.stats.played - a.stats.played || a.nombre.localeCompare(b.nombre, 'es')),

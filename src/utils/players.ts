@@ -46,12 +46,12 @@ async function fetchPlayersDirectlyUncached(): Promise<any[]> {
         }
 
         const query = `
-            SELECT 
-                j.id_jugadora, 
-                j.nombre, 
+            SELECT
+                j.id_jugadora,
+                j.nombre,
                 j.fecha_nacimiento,
-                j.lugar_nacimiento, 
-                j.pais_origen, 
+                j.lugar_nacimiento,
+                j.pais_origen,
                 j.iso,
                 j.lat,
                 j.lng,
@@ -70,7 +70,7 @@ async function fetchPlayersDirectlyUncached(): Promise<any[]> {
                 dorsales d ON j.id_jugadora = d.id_jugadora
             LEFT JOIN
                 temporadas t ON d.id_temporada = t.id_temporada
-            ORDER BY 
+            ORDER BY
                 j.nombre ASC, t.temporada DESC
         `;
 
@@ -172,7 +172,6 @@ export async function fetchAndCleanPlayers(): Promise<any[]> {
 
         if (!Array.isArray(players)) return [];
 
-
         return players.map(player => {
             const cleanPaisOrigin = cleanApiValue(player.pais_origen) || cleanApiValue(player.pais_origin);
 
@@ -181,7 +180,6 @@ export async function fetchAndCleanPlayers(): Promise<any[]> {
                 slug: slugify(player.nombre),
                 imageUrl: getPlayerImageUrl(player),
                 cleanCountryName: getCleanCountryName(cleanPaisOrigin),
-
 
                 pais_origin: cleanPaisOrigin || '',
                 altura: cleanApiValue(player.altura) || null,
@@ -212,8 +210,8 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
           AND date(fecha) <= date('now')
     ),
     base_matches AS (
-        SELECT 
-            p.id_temporada, 
+        SELECT
+            p.id_temporada,
             p.id_competicion,
             t.temporada,
             c.competicion
@@ -222,9 +220,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         JOIN competiciones c ON p.id_competicion = c.id_competicion
         GROUP BY p.id_temporada, p.id_competicion
     ),
-    
+
     lineup_stats AS (
-        SELECT 
+        SELECT
             p.id_temporada,
             p.id_competicion,
             SUM(CASE WHEN al.convocada = 1 THEN 1 ELSE 0 END) as convocatorias,
@@ -241,9 +239,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         WHERE al.id_jugadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
-    
+
     goal_stats AS (
-        SELECT 
+        SELECT
             p.id_temporada,
             p.id_competicion,
             COUNT(g.id_gol) as goles
@@ -252,9 +250,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         WHERE g.goleadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
-    
+
     assist_stats AS (
-        SELECT 
+        SELECT
             p.id_temporada,
             p.id_competicion,
             COUNT(a.id_gol) as asistencias
@@ -263,9 +261,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         WHERE a.asistente = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
-    
+
     card_stats AS (
-        SELECT 
+        SELECT
             p.id_temporada,
             p.id_competicion,
             SUM(CASE WHEN UPPER(t.tipo_tarjeta) = 'AMARILLA' THEN 1 ELSE 0 END) as tarjetas_amarillas,
@@ -275,9 +273,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         WHERE t.id_jugadora = ?
         GROUP BY p.id_temporada, p.id_competicion
     ),
-    
+
     captain_stats AS (
-        SELECT 
+        SELECT
             p.id_temporada,
             p.id_competicion,
             COUNT(*) as capitanias
@@ -286,7 +284,7 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
         GROUP BY p.id_temporada, p.id_competicion
     )
 
-    SELECT 
+    SELECT
         b.temporada,
         b.competicion,
         COALESCE(l.convocatorias, 0) as convocatorias,
@@ -309,9 +307,9 @@ export async function fetchPlayerStats(playerId: string | number, isGoalkeeper: 
     LEFT JOIN assist_stats a ON b.id_temporada = a.id_temporada AND b.id_competicion = a.id_competicion
     LEFT JOIN card_stats c ON b.id_temporada = c.id_temporada AND b.id_competicion = c.id_competicion
     LEFT JOIN captain_stats cp ON b.id_temporada = cp.id_temporada AND b.id_competicion = cp.id_competicion
-    WHERE 
+    WHERE
         l.convocatorias > 0 OR g.goles > 0 OR a.asistencias > 0 OR c.tarjetas_amarillas > 0 OR c.tarjetas_rojas > 0 OR cp.capitanias > 0
-    ORDER BY b.temporada DESC, 
+    ORDER BY b.temporada DESC,
         CASE b.competicion
             WHEN 'Primera Iberdrola' THEN 0
             WHEN 'Liga F' THEN 1
@@ -492,17 +490,17 @@ export async function fetchPlayerDebut(playerId: string | number): Promise<{ fec
         }
 
         const debutQuery = `
-    SELECT 
+    SELECT
         d.fecha_debut,
         c.nombre as rival
-    FROM 
+    FROM
         dorsales d
-    LEFT JOIN 
+    LEFT JOIN
         clubes c ON d.id_club = c.id_club
-    WHERE 
+    WHERE
         d.id_jugadora = ?
         AND d.fecha_debut IS NOT NULL
-    ORDER BY 
+    ORDER BY
         d.fecha_debut ASC
     LIMIT 1
 `;
@@ -703,15 +701,15 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
         }
 
         const query = `
-    SELECT 
+    SELECT
         club,
         año_inicio,
         año_fin
-    FROM 
+    FROM
         trayectoria_jugadoras
-    WHERE 
+    WHERE
         id_jugadora = ?
-    ORDER BY 
+    ORDER BY
         año_inicio DESC
 `;
 
@@ -736,11 +734,8 @@ export async function fetchPlayerTrajectory(playerId: string | number): Promise<
     }
 }
 
-
-
 export const fetchPlayersDirectly = cachear('players:all', TTL.medio, fetchPlayersDirectlyUncached, { tags: ['players', 'statistics'] });
 
-/** Jugadora de la primera plantilla en esa temporada (dorsal 1-24 o categoría 4). */
 export function isFirstTeamInSeason(player: any, season: string): boolean {
     const info = player?.season_info?.[season];
     if (!info) return false;
@@ -748,7 +743,6 @@ export function isFirstTeamInSeason(player: any, season: string): boolean {
     return Number(info.dorsal) >= 1 && Number(info.dorsal) <= 24;
 }
 
-/** Temporadas con primera plantilla registrada, de la más reciente a la más antigua. */
 export function firstTeamSeasons(players: any[]): string[] {
     const seasons = new Set<string>();
     for (const player of players) {
@@ -759,10 +753,6 @@ export function firstTeamSeasons(players: any[]): string[] {
     return [...seasons].sort().reverse();
 }
 
-/**
- * Minutos de cada portera en cada partido. Las paradas solo se registran por
- * equipo, así que se atribuyen a la portera con más minutos en ese partido.
- */
 export async function fetchGoalkeeperMinutes(): Promise<Array<{ id_partido: number; id_jugadora: number; minutos: number }>> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -785,10 +775,6 @@ export async function fetchGoalkeeperMinutes(): Promise<Array<{ id_partido: numb
     }
 }
 
-/**
- * Partidos de la jugadora (titular o con minutos) con sus estadísticas
- * individuales y tarjetas, para las pestañas de su ficha. Una sola lectura.
- */
 export async function fetchPlayerMatchStats(playerId: string | number): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');

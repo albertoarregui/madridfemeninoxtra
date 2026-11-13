@@ -1,5 +1,3 @@
-// Mercado: altas, bajas, cesiones, renovaciones y ascensos (tabla `mercado`).
-// Una lectura al día como mucho; la tabla se edita directamente en Turso.
 import { cached } from "./cache";
 import { cacheTags } from "../lib/cache-tags";
 import { slugify } from "./players";
@@ -9,7 +7,6 @@ export interface Move {
     id: number; slug: string; nombre: string; posicion: string; tipo: MoveType; temporada: string; fecha: string | null;
     origen: string | null; destino: string | null; precio: number | null; precioTipo: string; contratoHasta: string | null;
     fuente: string | null; notas: string | null;
-    /** libre, traspaso, cesion, promocion, retirada… */
     modalidad: string | null; variable: string | null; aproximado: boolean; estado: string;
 }
 
@@ -17,8 +14,6 @@ async function load(): Promise<Move[]> {
     const { getPlayersDbClient } = await import("../db/client");
     const client = await getPlayersDbClient();
     if (!client) return [];
-    // Solo movimientos del primer equipo: la jugadora tenía dorsal del primer
-    // equipo (categoría 4) esa temporada o, si sale o renueva, la anterior.
     const result = await client.execute(`
         WITH d AS (
             SELECT dr.id_jugadora, t.temporada, MAX(dr.id_categoria) AS cat
@@ -59,7 +54,6 @@ export const TYPE_LABEL: Record<MoveType, string> = {
     alta: "Fichaje", baja: "Salida", cesion_entrada: "Cesión (llega)", cesion_salida: "Cesión (sale)", renovacion: "Renovación", ascenso: "Ascenso",
 };
 
-/** «1,5 M€», «≈150.000 €», «600.000 € + variables», «Libre», «Cesión»… Un importe desconocido nunca es 0 €. */
 export function feeLabel(m: Move): string {
     if (m.precio != null && m.precio > 0) {
         const base = m.precio >= 1_000_000
@@ -76,5 +70,4 @@ export function feeLabel(m: Move): string {
     return "No revelado";
 }
 
-/** Etiqueta del tipo, con la retirada como caso propio de las salidas. */
 export const typeLabel = (m: Move) => (m.modalidad === "retirada" ? "Retirada" : TYPE_LABEL[m.tipo]);

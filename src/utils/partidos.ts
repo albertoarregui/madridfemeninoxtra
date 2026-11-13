@@ -100,7 +100,7 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
                     SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND (pf.id_jugadora IS NULL OR pf.id_jugadora = 0 OR pf.id_jugadora = '')
                 )) as penaltis_rival,
                 ep.*,
-                CASE 
+                CASE
                    WHEN p.goles_rm IS NULL OR p.goles_rival IS NULL THEN 'P'
                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 'V'
                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 'D'
@@ -394,8 +394,6 @@ export function calculateRivalStats(matches: any[], rivalName: string = '') {
     return stats;
 }
 
-
-
 export async function fetchMatchLineups(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -406,7 +404,7 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
         }
 
         const query = `
-            SELECT 
+            SELECT
                 a.id_alineacion,
                 a.id_jugadora,
                 a.minutos_jugados,
@@ -434,8 +432,8 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
             LEFT JOIN partidos p ON a.id_partido = p.id_partido
             LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
             WHERE a.id_partido = ? AND a.titular = 1
-            ORDER BY 
-                CASE 
+            ORDER BY
+                CASE
                     WHEN UPPER(j.posicion) LIKE '%PORTER%' OR UPPER(j.posicion) LIKE '%GK%' THEN 1
                     WHEN UPPER(j.posicion) LIKE '%CENTRAL%' THEN 2
                     WHEN UPPER(j.posicion) LIKE '%DEFENSA%' AND UPPER(j.posicion) NOT LIKE '%LATERAL%' THEN 2
@@ -546,7 +544,7 @@ export async function fetchMatchSubstitutions(matchId: string | number, options:
         if (!client) return [];
 
         const query = `
-            SELECT 
+            SELECT
                 a.id_alineacion,
                 a.id_jugadora,
                 a.minuto_entrada,
@@ -750,23 +748,21 @@ export async function fetchStadiumStats(stadiumName: string | null, options: Mat
 
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0 };
 
-
-
         const safeQuery = `
-             SELECT 
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+             SELECT
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1
                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
-                    ELSE 0 
+                    ELSE 0
                 END) as wins,
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
-                    ELSE 0 
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1
+                    ELSE 0
                 END) as draws,
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1
                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
-                    ELSE 0 
+                    ELSE 0
                 END) as losses,
                 COUNT(*) as total
             FROM partidos p
@@ -808,20 +804,20 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
         if (!client) return { wins: 0, draws: 0, losses: 0, total: 0, yellowCards: 0, redCards: 0 };
 
         const matchQuery = `
-             SELECT 
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1 
+             SELECT
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 1
                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 1 THEN 1
-                    ELSE 0 
+                    ELSE 0
                 END) as wins,
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1 
-                    ELSE 0 
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND (p.penaltis IS NULL OR p.penaltis = '') THEN 1
+                    ELSE 0
                 END) as draws,
-                SUM(CASE 
-                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1 
+                SUM(CASE
+                    WHEN CAST(p.goles_rm AS INTEGER) < CAST(p.goles_rival AS INTEGER) THEN 1
                     WHEN CAST(p.goles_rm AS INTEGER) = CAST(p.goles_rival AS INTEGER) AND CAST(p.penaltis AS INTEGER) = 0 THEN 1
-                    ELSE 0 
+                    ELSE 0
                 END) as losses,
                 COUNT(*) as total
             FROM partidos p
@@ -832,16 +828,16 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
         `;
 
         const cardQuery = `
-            SELECT 
-                SUM(CASE 
-                    WHEN (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%') 
-                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%' 
-                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%' 
+            SELECT
+                SUM(CASE
+                    WHEN (UPPER(t.tipo_tarjeta) LIKE '%AMARILLA%' OR UPPER(t.tipo_tarjeta) LIKE '%YELLOW%')
+                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOBLE%'
+                         AND UPPER(t.tipo_tarjeta) NOT LIKE '%DOUBLE%'
                     THEN 1 ELSE 0 END) as yellowCards,
-                SUM(CASE 
-                    WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%' 
-                         OR UPPER(t.tipo_tarjeta) LIKE '%RED%' 
-                         OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' 
+                SUM(CASE
+                    WHEN UPPER(t.tipo_tarjeta) LIKE '%ROJA%'
+                         OR UPPER(t.tipo_tarjeta) LIKE '%RED%'
+                         OR UPPER(t.tipo_tarjeta) LIKE '%DOBLE%'
                          OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%'
                     THEN 1 ELSE 0 END) as redCards
             FROM tarjetas t
@@ -904,8 +900,6 @@ export async function fetchMatchEvents(
             LEFT JOIN jugadoras j ON t.id_jugadora = j.id_jugadora
             WHERE t.id_partido = ?
         `;
-
-
 
         const penaltyShootoutQuery = `
             SELECT pt.*, j.nombre as nombre_jugadora
@@ -1151,7 +1145,7 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
         if (!client) return [];
 
         const query = `
-            SELECT 
+            SELECT
                 g.id_gol,
                 g.id_partido,
                 g.minuto,
@@ -1179,7 +1173,7 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
             LEFT JOIN competiciones c ON p.id_competicion = c.id_competicion
             LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
             LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
-            
+
             -- Goleadora: Relación por ID
             LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
             -- Foto de la temporada actual del partido
@@ -1209,14 +1203,6 @@ async function fetchAllGoalsUncached(): Promise<any[]> {
     }
 }
 
-
-
-
-/**
- * Lectura especializada para /estadios: evita las subconsultas de tarjetas,
- * estadísticas por partido y relaciones no utilizadas por el mapa.
- * El proxy de Turso aplica la misma caché por tabla e invalidación por tags.
- */
 export async function fetchStadiumMapGames(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -1277,9 +1263,7 @@ export async function fetchStadiumMapGames(): Promise<any[]> {
     }
 }
 
-
 export const fetchGamesDirectly = (options: MatchReadOptions = {}) =>
     fetchGamesDirectlyUncached(options);
-
 
 export const fetchAllGoals = cachear('goals:all', TTL.corto, fetchAllGoalsUncached, { tags: ['goals', 'matches', 'statistics', 'rankings'] });

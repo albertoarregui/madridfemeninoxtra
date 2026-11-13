@@ -4,8 +4,6 @@ import { getAnalyticsDbClient } from '../../../db/client';
 
 export const prerender = false;
 
-// Bounded, per-instance throttle. It prevents repeated client retries from
-// becoming a burst of writes. No Turso SELECT and no persistent user tracking.
 const recent = new Map<string, number>();
 const ephemeralSalt = randomBytes(16).toString('hex');
 const MIN_INTERVAL_MS = 10 * 60 * 1000;
@@ -27,10 +25,6 @@ const response = (status: number) => new Response(null, {
   headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
 });
 
-/**
- * Client-confirmed article views: no SELECTs, no cookies and no identifiers sent
- * to the database. The browser deduplicates each article for 24 hours.
- */
 export const POST: APIRoute = async ({ request, url }) => {
   if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') return response(415);
   const origin = request.headers.get('origin');
@@ -49,7 +43,6 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
   if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 160) return response(400);
 
-  // Same visitor/article requests within ten minutes are coalesced.
   const address = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
   const key = createHash('sha256').update(ephemeralSalt).update(address).update(':').update(slug).digest('hex');
   if (!throttle(key, Date.now())) return response(204);

@@ -64,7 +64,6 @@ function escapeXml(value: string): string {
 }
 
 function generateSitemapXML(urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[]): string {
-    // Avoid duplicate canonical URLs and invalid XML when slugs contain '&'.
     const uniqueUrls = [...new Map(urls.filter(item => {
         try {
             const value = new URL(item.loc);
@@ -90,8 +89,6 @@ ${normalizedUrls.map(url => `  <url>
 async function buildSitemap(): Promise<string> {
     try {
         const urls: { loc: string; lastmod?: string; changefreq: string; priority: number }[] = [];
-        // Temporadas y fichas de partido parten de la misma lectura. Compartirla
-        // evita consultar dos veces Turso durante la generación del sitemap.
         const gamesPromise = fetchGamesDirectly();
         staticPages.forEach(page => {
             urls.push({
@@ -221,7 +218,6 @@ async function buildSitemap(): Promise<string> {
         } catch (error) {
             console.error('Error fetching referees:', error);
         }
-
 
         return generateSitemapXML(urls);
     } catch (error) {

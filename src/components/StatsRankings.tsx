@@ -161,7 +161,6 @@ const TYPE_OPTIONS = [
 
 const ratingTone = (v: number) => (v >= 8 ? "is-top" : v >= 7 ? "is-good" : v >= 6 ? "is-ok" : "is-low");
 
-// Estadísticas que tienen sentido por 90 minutos.
 const PER90_TYPES = new Set([
     "goles", "asistencias", "goles_generados", "tarjetas_amarillas", "tarjetas_rojas", "goles_victoria", "goles_empate", "goles_abrelatas",
     "tiros_totales", "tiros_puerta", "toques", "toques_area_rival", "pases_completados", "pases_clave", "pases_ultimo_tercio",
@@ -169,7 +168,6 @@ const PER90_TYPES = new Set([
     "entradas", "intercepciones", "despejes", "bloqueos", "recuperaciones", "faltas_recibidas", "faltas_cometidas", "perdidas",
 ]);
 const PER90_MIN_MINUTES = 450;
-// Etiquetas cortas para la fila de estadísticas.
 const shortLabel = (label: string) => {
     const s = label.replace(/^(Más veces|Más|Mayor|Mejor|Máximas)\s+/i, "");
     return s.charAt(0).toUpperCase() + s.slice(1);
@@ -204,7 +202,6 @@ export default function StatsRankings({
     initialType = "goles",
     initialMode = "total",
 }: StatsRankingsProps) {
-    // «Total acumulado» o «En un partido» (?modo=partido).
     const [mode, setMode] = useState<"total" | "partido">(initialMode === "partido" ? "partido" : "total");
     const changeMode = (next: "total" | "partido") => {
         const url = new URL(window.location.href);
@@ -216,7 +213,6 @@ export default function StatsRankings({
     const [selectedType, setSelectedType] = useState(
         TYPE_OPTIONS.some((o) => o.value === initialType) ? initialType : "goles",
     );
-    // La estadística elegida queda en la URL (?estadistica=) para poder compartirla.
     useEffect(() => {
         if (mode === "partido") return;
         const url = new URL(window.location.href);
@@ -224,7 +220,6 @@ export default function StatsRankings({
         window.history.replaceState(window.history.state, "", url);
     }, [selectedType, mode]);
     const [selectedSeason, setSelectedSeason] = useState("todos");
-    // Total o por 90 minutos (solo estadísticas acumulables).
     const [per90, setPer90] = useState(false);
     const [selectedCompetition, setSelectedCompetition] = useState("oficiales");
     const [currentPage, setCurrentPage] = useState(1);
@@ -439,7 +434,6 @@ export default function StatsRankings({
 
         const ranked = players.filter(p => Number(p[config.primaryKey]) > 0);
         if (per90 && PER90_TYPES.has(selectedType)) {
-            // Por 90': mínimo 450 minutos (cinco partidos completos) para evitar extremos.
             return ranked
                 .filter(p => Number(p.mins) >= PER90_MIN_MINUTES)
                 .map(p => ({ ...p, per90: Number(p[config.primaryKey]) * 90 / Number(p.mins) }))
@@ -448,7 +442,6 @@ export default function StatsRankings({
         return ranked.sort((a, b) => Number(b[config.primaryKey]) - Number(a[config.primaryKey]));
     }, [expandedRankingsData, streaksData, awardsData, selectedType, selectedSeason, selectedCompetition, currentConfig, per90]);
 
-    // ── Presentación: tabla al estilo de los rankings históricos ─────────────
     const [visible, setVisible] = useState(25);
     const [sharing, setSharing] = useState(false);
     const exportRef = useRef<HTMLDivElement>(null);
@@ -504,7 +497,6 @@ export default function StatsRankings({
         setSharing(true);
         try {
             const sameOrigin = location.hostname === "www.madridfemeninoxtra.com";
-            // Mismo criterio que «Compartir plantilla»: las fotos de R2 se piden con CORS.
             const resolve = (src: string) => {
                 if (!src || !src.startsWith("https://media.madridfemeninoxtra.com/")) return src;
                 if (!sameOrigin) return `/api/img-proxy?url=${encodeURIComponent(src)}`;
@@ -520,12 +512,10 @@ export default function StatsRankings({
             })));
             await document.fonts.ready;
             const { default: html2canvas } = await import("html2canvas");
-            // Visible solo durante la captura (queda detrás del contenido, z-index -1).
             node.style.visibility = "visible";
             const canvas = await html2canvas(node, {
                 backgroundColor: "#070d1c", scale: 2, useCORS: true, logging: false, imageTimeout: 5000,
                 width: node.offsetWidth, height: node.scrollHeight, windowWidth: node.offsetWidth, windowHeight: node.scrollHeight,
-                // La tarjeta es fija arriba a la izquierda: sin esto se dibuja desplazada con el scroll.
                 scrollX: 0, scrollY: 0,
                 onclone: (doc) => { const clone = doc.querySelector<HTMLElement>("[data-rank-export]"); if (clone) clone.style.visibility = "visible"; },
             });
@@ -605,7 +595,6 @@ export default function StatsRankings({
 
             <div className="rk-filter">
                 <span className="rk-label">Estadística</span>
-                {/* Todas las estadísticas en una fila que se desliza. */}
                 <ScrollPills
                     label="Estadística"
                     value={selectedType}
@@ -614,7 +603,6 @@ export default function StatsRankings({
                 />
             </div>
 
-            {/* Podio de las tres primeras; la tabla sigue empezando en la primera posición. */}
             <style dangerouslySetInnerHTML={{ __html: `
                 .podium-container { min-height: 520px; gap: 15px; margin-bottom: 2rem; }
                 .podium-spot { flex: 1; max-width: 340px; transition: all 0.4s ease; }
@@ -783,7 +771,6 @@ export default function StatsRankings({
                 )}
             </div>
 
-            {/* Tarjeta para «Compartir estadística»: top 10 con el estilo de la web. */}
             <div className="rk-export" data-rank-export ref={exportRef} aria-hidden="true">
                 <div className="rk-export-head">
                     <small>{seasonLabel} · {compLabel}</small>

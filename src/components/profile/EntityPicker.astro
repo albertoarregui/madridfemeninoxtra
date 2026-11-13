@@ -1,26 +1,16 @@
 ---
-// Selector con buscador, igual que el de la ficha de jugadora. Cada opción es un
-// enlace al comparador: no hace falta JavaScript para construir la lista, solo
-// para abrir el panel y filtrar por nombre.
 import type { CompareTipo } from "../../utils/entity-compare";
 
 interface Option { slug: string; name: string; img: string; sub: string; contain?: boolean; pj?: number }
 interface Props {
     tipo?: CompareTipo;
     options: Option[];
-    /** Entidad que muestra el botón. */
     current: { slug: string; name: string; img: string; contain?: boolean };
-    /** Texto del buscador, en plural: "entrenadores", "árbitras"… */
     noun: string;
-    /** "ficha": botón + «Comparar»; "a"/"b": cambia ese lado del comparador. */
     mode?: "ficha" | "a" | "b";
-    /** Slug del otro lado del comparador (modos "a" y "b"). */
     other?: string;
-    /** Enlace propio para cada opción (otros comparadores). */
     buildHref?: (slug: string) => string;
-    /** Texto sobre el buscador. */
     heading?: string;
-    /** Incluir la entidad actual en la lista. */
     includeCurrent?: boolean;
 }
 
@@ -33,7 +23,6 @@ const hrefFor = (slug: string) => {
     const b = mode === "b" ? slug : other;
     return `/comparador/${tipo}?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`;
 };
-// En la ficha no se ofrece la propia entidad; en el comparador, tampoco la del otro lado.
 const pool = includeCurrent ? options : options.filter((o) => o.slug !== (mode === "ficha" ? current.slug : other));
 const initials = (name: string) => name.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
 ---

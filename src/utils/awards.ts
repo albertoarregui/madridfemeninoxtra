@@ -23,7 +23,7 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
         }
 
         const query = `
-            SELECT 
+            SELECT
                 p.id_premio,
                 p.id_jugadora,
                 j.nombre,
@@ -33,9 +33,9 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
                 p.foto_url
             FROM mvp p
             JOIN jugadoras j ON p.id_jugadora = j.id_jugadora
-            ORDER BY 
-                substr(p.fecha, 7, 4) DESC, 
-                substr(p.fecha, 4, 2) DESC, 
+            ORDER BY
+                substr(p.fecha, 7, 4) DESC,
+                substr(p.fecha, 4, 2) DESC,
                 substr(p.fecha, 1, 2) DESC
         `;
 
@@ -79,5 +79,4 @@ export async function fetchPlayerAwards(): Promise<AwardData[]> {
         return [];
     }
 }
-
 

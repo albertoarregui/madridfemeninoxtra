@@ -16,7 +16,6 @@ async function rebuild(table: string, before: number, stmts: string[]) {
 }
 
 async function main() {
-  // ---------- dorsales: +id_categoria(NOT NULL), id_temporada NOT NULL, +FK categoria, UNIQUE ----------
   const dBefore = await count('dorsales');
   await rebuild('dorsales', dBefore, [
     `CREATE TABLE dorsales_new (
@@ -42,7 +41,6 @@ async function main() {
     `CREATE INDEX idx_dorsales_historial ON dorsales (id_jugadora, id_temporada, dorsal)`,
   ]);
 
-  // ---------- alineaciones: +FK(partido CASCADE, jugadora), UNIQUE(partido,jugadora) ----------
   const aBefore = await count('alineaciones');
   await rebuild('alineaciones', aBefore, [
     `CREATE TABLE alineaciones_new (
@@ -65,7 +63,6 @@ async function main() {
     `CREATE INDEX idx_alineaciones_eficiente ON alineaciones (id_jugadora, id_partido, titular)`,
   ]);
 
-  // ---------- goles_y_asistencias: +FK(partido CASCADE, goleadora/asistente SET NULL) ----------
   const gBefore = await count('goles_y_asistencias');
   await rebuild('goles_y_asistencias', gBefore, [
     `CREATE TABLE goles_y_asistencias_new (
@@ -91,7 +88,6 @@ async function main() {
     `CREATE INDEX idx_goles_asistente ON goles_y_asistencias (asistente)`,
   ]);
 
-  // ---------- estadisticas_partidos: +FK(partido CASCADE) — DDL ancha, se inyecta la FK ----------
   const oldSql = String((await c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='estadisticas_partidos'")).rows[0].sql);
   const lastParen = oldSql.lastIndexOf(')');
   const newSql = oldSql.slice(0, lastParen)

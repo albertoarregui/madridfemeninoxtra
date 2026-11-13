@@ -35,9 +35,7 @@ const coachStats = await fetchCoachStats(coach.id_entrenador);
 const coachRecords = await fetchCoachRecords(coach.id_entrenador);
 const coachStreaks = await fetchCoachStreaks(coach.id_entrenador);
 const trajectory = await fetchCoachTrajectory(coach.id_entrenador);
-// Selector para comparar (lista en caché, compartida con /comparador/entrenadores).
 const compareOptions = await fetchCompareOptions("entrenadores");
-// Trayectoria horizontal, de la etapa más antigua a la actual.
 const careerSteps = [...(trajectory ?? [])].sort((a: any, b: any) => (Number(a.anio_inicio) || 0) - (Number(b.anio_inicio) || 0));
 const careerShield = createClubShieldResolver(await fetchAllClubShields());
 
@@ -154,6 +152,7 @@ const seoDescription = (tc && tc.partidos)
                     alt={`Foto de ${nombre}`}
                     class="hero-coach-photo"
                     loading="eager"
+                    fetchpriority="high"
                     decoding="async"
                     width={460}
                     height={560}
@@ -633,7 +632,6 @@ const seoDescription = (tc && tc.partidos)
 
 .full-col { grid-column: 1 / -1; }
 
-/* Paneles de las pestañas: una columna o dos (Info y Récords). */
 .pf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .pf-two { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
 .pf-grid > .profile-card { margin: 0; min-width: 0; }

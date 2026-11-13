@@ -1,10 +1,4 @@
 ---
-/**
- * Alineación sobre el campo (pestaña «Alineación» de la ficha de partido).
- * Las posiciones salen de la demarcación de cada jugadora: portera, defensa,
- * centro del campo, mediapunta y ataque. En escritorio el campo es horizontal
- * (ataque hacia la derecha); en móvil gira a vertical.
- */
 interface Props {
   lineup: any[];
   subs: any[];
@@ -22,7 +16,6 @@ const roleOf = (pos: string): Role => {
   if (/extremo|delanter|punta|atacante/.test(p)) return "fw";
   return "dm";
 };
-// Orden de arriba abajo dentro de cada línea (la banda izquierda queda arriba).
 const sideRank = (pos: string): number => {
   const p = (pos || "").toLowerCase();
   if (/izquierd/.test(p)) return 0;
@@ -36,7 +29,6 @@ for (const player of starters) lines[roleOf(player.pos)].push(player);
 for (const role of Object.keys(lines) as Role[]) {
   lines[role].sort((a, b) => sideRank(a.pos) - sideRank(b.pos));
 }
-// Extremos en las bandas y delanteras en el centro.
 if (lines.fw.length >= 3) {
   const wings = lines.fw.filter((p) => /extremo/i.test(p.pos));
   const centre = lines.fw.filter((p) => !/extremo/i.test(p.pos));
@@ -63,7 +55,6 @@ const ratingTone = (value: number | null) =>
 const surname = (name: string) => {
   const parts = String(name || "").trim().split(/\s+/);
   if (parts.length <= 1) return parts[0] || "";
-  // Apellidos compuestos con partícula: «del Castillo», «de la Cuerda».
   const particle = parts.findIndex((w, i) => i > 0 && /^(de|del|la|van|von|da|dos)$/i.test(w));
   return particle > 0 ? parts.slice(particle).join(" ") : parts[parts.length - 1];
 };
@@ -235,7 +226,6 @@ const count = (value: unknown) => Number(value) || 0;
     .mp-layout { grid-template-columns: 1fr; }
     .mp-pitch { order: -1; }
   }
-  /* Móvil: campo vertical, portería propia abajo. */
   @media (max-width: 640px) {
     .mp-pitch { aspect-ratio: 68 / 105; }
     .mp-lines-h { display: none; }

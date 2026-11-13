@@ -1,6 +1,3 @@
-// Comparador de entrenadores, árbitras, rivales y estadios.
-// Cada tipo sale de UNA sola consulta (el directorio ya trae los totales) y se
-// guarda en caché un día: las fichas y el comparador reutilizan la misma entrada.
 import { cached } from "./cache";
 import { cacheTags } from "../lib/cache-tags";
 import { generateSlug } from "./url-helper";
@@ -11,9 +8,7 @@ export interface CompareEntity {
     slug: string;
     name: string;
     img: string;
-    /** Línea secundaria del selector (país, ciudad…). */
     sub: string;
-    /** Escudos y logos se muestran enteros; las fotos, recortadas. */
     contain?: boolean;
     values: Record<string, number>;
 }
@@ -21,7 +16,6 @@ export interface CompareEntity {
 export interface CompareMetric {
     key: string;
     label: string;
-    /** Qué valor se resalta: el mayor, el menor o ninguno. */
     better: "high" | "low" | "none";
     format?: "pct" | "dec";
 }
@@ -95,7 +89,6 @@ export const COMPARE_CONFIG: Record<CompareTipo, {
 export const isCompareTipo = (tipo: string | undefined): tipo is CompareTipo =>
     Boolean(tipo && tipo in COMPARE_CONFIG);
 
-// Valores derivados comunes a todos los tipos.
 function withDerived(base: Record<string, number>): Record<string, number> {
     const pj = base.pj || 0;
     const ratio = (n: number) => (pj ? Math.round((n / pj) * 100) / 100 : 0);
@@ -115,7 +108,6 @@ async function loadCoaches(): Promise<CompareEntity[]> {
     const { getPlayersDbClient } = await import("../db/client");
     const [coaches, client] = await Promise.all([fetchCoachesDirectly(), getPlayersDbClient()]);
     if (!client) return [];
-    // Una consulta agrupada para todos los entrenadores, en vez de una por ficha.
     const result = await client.execute(`
         SELECT p.id_entrenador AS id,
             COUNT(DISTINCT p.id_partido) AS pj,
@@ -224,13 +216,11 @@ const TAGS: Record<CompareTipo, string[]> = {
     estadios: [cacheTags.stadiums, cacheTags.matches],
 };
 
-/** Todas las entidades del tipo, ordenadas por partidos. Una lectura al día como mucho. */
 export async function fetchCompareEntities(tipo: CompareTipo): Promise<CompareEntity[]> {
     const list = await cached(`compare:${tipo}:v1`, DAY, LOADERS[tipo], { tags: TAGS[tipo] }).catch(() => []);
     return [...list].sort((a, b) => b.values.pj - a.values.pj || a.name.localeCompare(b.name, "es"));
 }
 
-/** Lista ligera para el selector de las fichas (sin las métricas). */
 export async function fetchCompareOptions(tipo: CompareTipo) {
     const list = await fetchCompareEntities(tipo);
     return list.map(({ slug, name, img, sub, contain, values }) => ({ slug, name, img, sub, contain, pj: values.pj }));

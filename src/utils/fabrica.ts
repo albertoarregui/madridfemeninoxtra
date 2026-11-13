@@ -232,8 +232,6 @@ export async function fetchFabricaSpain(): Promise<FabricaSpainData> {
     if (!client) return empty;
 
     try {
-        // Una sola sentencia para toda la página. El cliente de BD la conserva
-        // 30 días en Vercel Runtime Cache porque estas tablas son históricas.
         const result = await client.execute(SPAIN_QUERY);
         const tournaments = new Map<number, FabricaTournament>();
         let summary = empty.summary;
@@ -274,8 +272,6 @@ export async function fetchFabricaSpain(): Promise<FabricaSpainData> {
             }
         }
 
-        // Los UNION no garantizan que los hijos lleguen después de los torneos:
-        // se hace una segunda pasada en memoria, no otra lectura a Turso.
         for (const row of result.rows as any[]) {
             const payload = parsePayload(row.payload);
             const id = Number(payload.id_torneo);
@@ -341,7 +337,6 @@ export async function fetchFabricaHistory(): Promise<FabricaMilestone[]> {
     if (!client) return [];
 
     try {
-        // Una lectura, estática y cacheada durante 30 días.
         const result = await client.execute(`
             SELECT id_hito, fecha, temporada, categoria, titulo, descripcion, orden, fuente_url
             FROM fabrica_hitos

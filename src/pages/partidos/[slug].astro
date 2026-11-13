@@ -132,9 +132,6 @@ const playerRatingClass = (player: any): string => {
 const matchStatus = getMatchStatus(game.fecha, game.hora);
 const isLiveOrPlayed = game.isPlayed || matchStatus.status === 'in-progress';
 
-// Alineación, cambios, eventos y equipación se leen también antes del inicio:
-// si se cargan en Turso una hora antes (p. ej. el once), aparecen en la ficha
-// sin esperar al pitido inicial. Fuera de la ventana de partido van cacheadas.
 const [lineup, subs, stadiumStats, matchKit] = await Promise.all([
     fetchMatchLineups(game.id_partido, matchReadOptions),
     fetchMatchSubstitutions(game.id_partido, matchReadOptions),
@@ -211,11 +208,9 @@ const isLocalRM =
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
-// Historial contra el rival: sale de los partidos ya cargados, sin otra lectura.
 const normalizeClub = (name: unknown) =>
     String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const h2hRival = normalizeClub(isLocalRM ? game.club_visitante : game.club_local);
-// En partidos ya jugados cuenta solo los enfrentamientos anteriores a este.
 const h2hMatches = allGames
     .filter((g) => g.isPlayed && g.slug !== game.slug
         && String(g.fecha ?? "") < String(game.fecha ?? "")
@@ -325,7 +320,6 @@ if (isLiveOrPlayed) {
 const matchKeys = [game.id_partido, slug];
 const fichaCronica = await fetchCronicaPartido(matchKeys, game.isPlayed ? 'CRÓNICA' : 'PREVIA')
     ?? await fetchCronicaPartido(matchKeys);
-// En la ficha de partido la crónica va sin fotos.
 const sinFotos = (html: string) => html
     .replace(/<figure\b[\s\S]*?<\/figure>/gi, "")
     .replace(/<picture\b[\s\S]*?<\/picture>/gi, "")
@@ -381,9 +375,6 @@ const matchSchema = matchStartISO ? {
     awayTeam: { "@type": "SportsTeam", name: game.club_visitante },
 } : null;
 
-
-// ── Pestañas (Partido / Valoraciones) ────────────────────────────────────
-// Se activan en cuanto hay alineación o el partido se ha jugado.
 const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
 const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(h2hStats ? ["h2h"] : [])];
 const requestedTab = Astro.url.searchParams.get("seccion") ?? "info";
@@ -790,7 +781,6 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                 </div>
             </section>
         </div>)}
-        {/* Modal de la árbitra: lo abre el encabezado en cualquier modo. */}
                 <div
                     id="referee-modal"
                     class="modal-overlay"
@@ -1280,7 +1270,6 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
         .h2h-side { flex-direction: column; gap: 0.4rem; }
         .h2h-summary-shield { width: 40px; height: 40px; }
         .h2h-side:last-child { flex-direction: column-reverse; }
-        /* En móvil los equipos van uno encima del otro y el marcador a la derecha. */
         .h2h-match { grid-template-columns: minmax(0, 1fr) auto; gap: 0.45rem 0.75rem; padding: 0.8rem 0.25rem; }
         .h2h-team { grid-column: 1; gap: 0.5rem; }
         .h2h-team-visitor { flex-direction: row-reverse; justify-content: flex-end; text-align: left; }
@@ -2895,16 +2884,12 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
         .countdown-label { font-size: 0.55rem; }
     }
 
-    /* ── Pestañas de la ficha (con alineación) ── */
     .match-header-grid.is-single { grid-template-columns: 1fr; }
     .mx-panel[hidden] { display: none !important; }
-    /* Info: el MVP conserva su altura y el estadio se estira hasta igualarla
-       (la foto del estadio absorbe el espacio extra). */
     .mx-info { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; align-items: stretch; }
     .mx-info > section { margin: 0 !important; }
     .mx-info > .stadium-card { height: auto; }
     .mx-info > .stadium-card .stadium-photo { flex: 1 1 auto; height: auto; min-height: 240px; }
-    /* Equipación a tarjeta completa. */
     .mx-lineup-media .kit-card { display: flex; flex-direction: column; overflow: hidden; }
     .mx-lineup-media .kit-content { flex: 1; padding: 0; }
     .mx-lineup-media .kit-content-inner { height: 100%; padding: 1rem; border-radius: 0; box-sizing: border-box; }

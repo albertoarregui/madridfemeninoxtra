@@ -16,7 +16,6 @@ async function rebuild(table: string, before: number, stmts: string[]) {
 }
 
 async function main() {
-  // ---------- dorsales: dorsal pasa a ser NULLABLE (a principio de temporada puede no saberse) ----------
   const before = await count('dorsales');
   await rebuild('dorsales', before, [
     `CREATE TABLE dorsales_new (

@@ -125,4 +125,3 @@ export const getImageSlug = (playerName: string) => {
         .replace(/\s+/g, '_');
 }
 
-

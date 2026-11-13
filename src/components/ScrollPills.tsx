@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 
-// Fila de píldoras en una sola línea que se desliza a izquierda y derecha
-// (rueda, arrastre táctil o flechas). La activa se centra al cambiar.
 interface Option { value: string; label: string }
 interface Props { options: Option[]; value: string; onChange: (value: string) => void; label: string }
 

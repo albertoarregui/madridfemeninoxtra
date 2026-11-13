@@ -11,11 +11,6 @@ const globalForDb = globalThis as unknown as {
 };
 
 const STATIC_DB_READ_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-// Las páginas dinámicas conservan frescura por invalidación: los triggers de
-// Turso anotan cada cambio en `cache_cambios` y /api/cache/check invalida las
-// tablas afectadas en menos de un minuto, se carguen los datos como se carguen.
-// Las fichas de partidos recientes leen Turso sin caché. El TTL largo evita
-// reescribir cada consulta en Runtime Cache (cupo gratuito de escrituras).
 const DYNAMIC_DB_READ_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DB_CACHE_VERSION = 'v9';
 const MVP_DB_CACHE_VERSION = 'v2';
@@ -194,8 +189,6 @@ function withReadCache(client: Client, database: string, forceRefresh = false): 
                 const args = statementArgs(statement, executeArgs);
                 const normalizedSql = sql.replace(/\s+/g, ' ').trim();
                 const tags = tagsForReadSql(sql);
-                // Versionar solo las lecturas de MVP permite purgar el premio
-                // actual sin invalidar el resto de catálogos de larga duración.
                 const cacheVersion = tags.includes(MVP_READ_TAG)
                     ? `${DB_CACHE_VERSION}:${MVP_DB_CACHE_VERSION}`
                     : DB_CACHE_VERSION;

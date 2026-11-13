@@ -5,8 +5,6 @@ import { cacheTags } from "../../lib/cache-tags";
 
 export const prerender = false;
 
-// «Más X en un solo partido». El CDN guarda cada combinación de filtros un día;
-// los datos de origen salen de una caché diaria (una lectura de Turso).
 export const GET: APIRoute = async ({ url }) => {
     const stat = url.searchParams.get("estadistica") || "goles";
     const competition = url.searchParams.get("competicion") || "todos";

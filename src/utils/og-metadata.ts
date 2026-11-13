@@ -1,4 +1,3 @@
-// Metadatos Open Graph aprobados. No modifican las etiquetas SEO tradicionales.
 export const OG_ESTATICOS: Record<string, { title: string; description: string }> = {
   "/": {
     "title": "Actualidad, última hora y estadísticas del Real Madrid Femenino | Madrid Femenino Xtra",

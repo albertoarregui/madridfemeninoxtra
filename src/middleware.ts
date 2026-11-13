@@ -14,15 +14,10 @@ const CACHE_LARGA = [
     /^\/la-fabrica(?:\/|$)/,
 ];
 
-// La CDN absorbe las visitas; las escrituras revalidan solo las etiquetas
-// afectadas, por lo que no hace falta regenerar todas las páginas cada minuto.
 const CACHE_CORTA_S = 24 * 60 * 60;
 const SWR_S = 7 * 24 * 60 * 60;
 const CACHE_LARGA_S = 7 * 24 * 60 * 60;
 const SWR_LARGA_S = 30 * 24 * 60 * 60;
-// La portada ejecuta agregados deportivos y consultas a Contentful.
-// Una regeneración cada 15 minutos reduce los fallos de caché y CPU;
-// las etiquetas siguen permitiendo invalidar cuando se actualiza el contenido.
 const CACHE_HOME_S = 15 * 60;
 const SWR_HOME_S = 60 * 60;
 const FRESH_MATCH_CACHE_S = 60;
@@ -54,9 +49,6 @@ async function handleRequest(
             !userId;
 
         if (freshMatch && request.method === "GET" && response.status === 200 && !userId) {
-            // Las fichas recientes leen Turso sin caché de datos. La CDN agrupa
-            // las visitas durante un minuto: como mucho una lectura por minuto
-            // y región, en lugar de una por visita en día de partido.
             response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
             response.headers.set("Vercel-CDN-Cache-Control", `max-age=${FRESH_MATCH_CACHE_S}`);
             response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tagsForPath(routePath)].join(","));
@@ -72,14 +64,10 @@ async function handleRequest(
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             const tags = tagsForPath(routePath);
-            // Astro establece Cache-Control: public, max-age=0. La cabecera
-            // específica de Vercel controla su CDN sin cachear en el navegador.
             response.headers.set(
                 "Vercel-CDN-Cache-Control",
                 `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
             );
-            // Solo las respuestas que se guardan en la CDN llevan etiquetas,
-            // para que `invalidarTags` purgue únicamente lo afectado.
             response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tags].join(","));
             response.headers.set("Vary", "Accept-Encoding");
         }
@@ -89,8 +77,6 @@ async function handleRequest(
     return response;
 }
 
-// Las páginas públicas resuelven el estado de sesión en el navegador. Clerk
-// solo se ejecuta en las API que necesitan verificar la identidad del usuario.
 const clerkApiMiddleware = clerkMiddleware(async (auth, context, next) =>
     handleRequest(context, next, auth().userId),
 );

@@ -17,8 +17,6 @@ export function parseMatchDate(dateStr: string, timeStr: string): Date {
     if (isNaN(parseInt(hours))) hours = "00";
     if (isNaN(parseInt(minutes))) minutes = "00";
 
-
-
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(Date.UTC(y, m - 1, d));
     const year = y;
@@ -100,5 +98,4 @@ export function getMatchStatus(
         color: '#FFE5D9',
     };
 }
-
 

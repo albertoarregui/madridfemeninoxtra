@@ -1,7 +1,3 @@
-// Rankings de «más X en un solo partido».
-// Una única consulta trae, por jugadora y partido, goles, asistencias y las
-// estadísticas individuales. El resultado se guarda en caché un día y las
-// peticiones (estadística · competición · temporada) se filtran en memoria.
 import { cached } from "./cache";
 import { cacheTags } from "../lib/cache-tags";
 import { slugify } from "./players";
@@ -33,7 +29,6 @@ interface MatchInfo { slug: string; fecha: string; rival: string; local: boolean
 interface Dataset {
     matches: Record<string, MatchInfo>;
     players: Record<string, { nombre: string; slug: string }>;
-    /** [id_partido, id_jugadora, ...valores en el orden de STAT_KEYS] */
     rows: (string | number)[][];
 }
 
@@ -131,7 +126,6 @@ export async function fetchMatchRecords(stat: string, competition = "todos", sea
             return competition === "todos" || m.competicion === competition;
         })
         .filter((row) => Number(row[col]) > 0)
-        // Mayor valor primero; a igualdad, el partido más reciente.
         .sort((x, y) => Number(y[col]) - Number(x[col]) || data.matches[y[0] as string].fecha.localeCompare(data.matches[x[0] as string].fecha))
         .slice(0, limit)
         .map((row) => ({ ...data.players[row[1] as string], value: Number(row[col]), match: data.matches[row[0] as string] }));

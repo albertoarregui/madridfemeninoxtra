@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-/**
- * Production HTTP smoke test. No browser, no Cloudflare settings changes,
- * no article-view writes and no analytics mutations.
- *
- * Run: pnpm smoke:production
- * Optional: SITE_URL=https://preview.example.com pnpm smoke:production
- */
 const origin = (process.env.SITE_URL || 'https://www.madridfemeninoxtra.com').replace(/\/$/, '');
 let failures = 0;
 

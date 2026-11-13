@@ -4,20 +4,17 @@ import * as fs from 'fs';
 dotenv.config({ path: '.env.local' });
 
 async function main() {
-  // latest backup file
   const dir = 'scripts/migrations/backups';
   const file = fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort().pop();
   if (!file) { console.error('No backup'); process.exit(1); }
   const backupSql = fs.readFileSync(`${dir}/${file}`, 'utf8');
   console.log('Backup:', file);
 
-  // load backup into a fresh local db
   const localPath = '/tmp/verify_backup.db';
   try { fs.unlinkSync(localPath); } catch {}
   const bk = createClient({ url: `file:${localPath}` });
   await bk.executeMultiple(backupSql);
 
-  // prod
   const url = process.env.TURSO_STATS_DATABASE_URL || process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_STATS_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
   const prod = createClient({ url: url!, authToken: authToken! });
@@ -41,7 +38,6 @@ async function main() {
   const minP = await one(prod, 'SELECT SUM(minutos_jugados) v FROM alineaciones');
   console.log(`Suma total de minutos jugados:         backup=${minB}  prod=${minP}  ${minB===minP?'IGUAL ✅':'DISTINTO ❌'}`);
 
-  // any pair present in backup but missing in prod?
   const bkPairs = (await bk.execute('SELECT DISTINCT id_partido,id_jugadora FROM alineaciones')).rows.map((r:any)=>`${r.id_partido}-${r.id_jugadora}`);
   const prPairs = new Set((await prod.execute('SELECT DISTINCT id_partido,id_jugadora FROM alineaciones')).rows.map((r:any)=>`${r.id_partido}-${r.id_jugadora}`));
   const missing = bkPairs.filter(p => !prPairs.has(p));

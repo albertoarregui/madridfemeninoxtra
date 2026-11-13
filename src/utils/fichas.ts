@@ -100,8 +100,6 @@ export async function fetchCronicaPartido(
     ) : items, claves));
 }
 
-// Extrae un resumen editorial propio de la entidad; evita metadescripciones
-// masivas basadas en resultados de partidos.
 export function resumenEditorial(html: string | null | undefined, maxLength = 260): string | null {
     if (!html) return null;
     const paragraphs = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]

@@ -10,7 +10,6 @@ async function main() {
 
   const before = async (t: string) => Number((await c.execute(`SELECT COUNT(*) n FROM ${t}`)).rows[0].n);
 
-  // --- Dedup alineaciones: keep the richest row per (id_partido, id_jugadora) ---
   const aBefore = await before('alineaciones');
   await c.execute(`
     DELETE FROM alineaciones
@@ -27,19 +26,17 @@ async function main() {
   const aAfter = await before('alineaciones');
   console.log(`alineaciones: ${aBefore} -> ${aAfter} (borradas ${aBefore - aAfter})`);
 
-  // --- Drop redundant indexes ---
   const dropIdx = [
-    'idx_trayectoria_jug',      // identico a idx_trayectoria_jug_id (id_jugadora)
-    'idx_goles_evento_partido', // identico a idx_goles_partido (id_partido)
-    'idx_goles_goleadora',      // prefijo de idx_goles_jugadora (goleadora, asistente)
-    'idx_dorsales_hist',        // prefijo de idx_dorsales_historial (id_jugadora, id_temporada, dorsal)
+    'idx_trayectoria_jug',
+    'idx_goles_evento_partido',
+    'idx_goles_goleadora',
+    'idx_dorsales_hist',
   ];
   for (const idx of dropIdx) {
     await c.execute(`DROP INDEX IF EXISTS ${idx}`);
     console.log(`drop index ${idx} OK`);
   }
 
-  // --- Verify no remaining dup in alineaciones ---
   const dup = await c.execute(`SELECT COUNT(*) c FROM (SELECT id_partido,id_jugadora,COUNT(*) n FROM alineaciones GROUP BY 1,2 HAVING n>1)`);
   console.log('alineaciones duplicados restantes:', dup.rows[0].c);
 }

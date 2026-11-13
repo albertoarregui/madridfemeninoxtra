@@ -1,8 +1,3 @@
-/**
- * Pestañas de la ficha de jugadora (Info, Estadísticas, Rendimiento, Partidos,
- * Trayectoria). Todo se calcula en el navegador a partir del JSON que la página
- * incluye en #player-insights-data, sin más peticiones.
- */
 
 type Match = Record<string, any> & {
     slug: string; fecha: string; season: string; comp: string; compLabel: string; compLogo: string;
@@ -22,7 +17,6 @@ const SEASON_MONTHS = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6];
 const ALL = "";
 const OFFICIAL = "__oficiales";
 
-// ── Utilidades ───────────────────────────────────────────────────────────────
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text?: string | number) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -51,7 +45,6 @@ const numericDate = (fecha: string) => {
 const monthOf = (fecha: string) => Number(fecha.slice(5, 7));
 const resultLabel = { V: "Victoria", E: "Empate", D: "Derrota" } as const;
 
-/** Desplegable idéntico a los del resto de la web (clases globales custom-select-*). */
 const ARROW_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
 function dropdown(label: string, options: Array<[string, string]>, value: string, onChange: (value: string) => void) {
     const wrap = el("div", "pt-select");
@@ -60,8 +53,8 @@ function dropdown(label: string, options: Array<[string, string]>, value: string
     button.type = "button";
     button.setAttribute("aria-haspopup", "listbox");
     button.setAttribute("aria-expanded", "false");
-    button.setAttribute("aria-label", label);
     const text = el("span", "selected-text", options.find(([v]) => v === value)?.[1] ?? options[0]?.[1] ?? "");
+    button.title = label;
     const arrow = el("div", "custom-select-arrow");
     arrow.innerHTML = ARROW_SVG;
     button.append(text, arrow);
@@ -99,7 +92,6 @@ function dropdown(label: string, options: Array<[string, string]>, value: string
     return wrap;
 }
 
-/** Grupo de pastillas (competiciones). */
 function pills(label: string, options: Array<{ value: string; label: string; logo?: string }>, value: string, onChange: (value: string) => void) {
     const wrap = el("div", "pt-filter pt-filter-grow");
     wrap.append(el("span", "pt-filter-label", label));
@@ -142,7 +134,6 @@ function competitionPills(data: Data, matches: Match[], value: string, onChange:
     ], value, onChange);
 }
 
-// ── Info ─────────────────────────────────────────────────────────────────────
 function radarSvg(axes: Array<{ label: string; display: string; ratio: number }>) {
     const size = 320, center = size / 2, radius = 105;
     const point = (i: number, r: number) => {
@@ -227,7 +218,6 @@ function setupInfo(root: HTMLElement, data: Data) {
     render();
 }
 
-// ── Rendimiento ──────────────────────────────────────────────────────────────
 type Stat = { label: string; field?: string; value?: (m: Match[]) => string; count?: boolean };
 const ratio = (a: string, b: string) => (m: Match[]) => pct(sum(m, a), sum(m, b));
 
@@ -324,7 +314,6 @@ function setupPerformance(root: HTMLElement, data: Data) {
         const base = byCompetition(inSeason, state.comp).filter((m) => !state.venue || (state.venue === "home") === m.home);
         const matches = base.filter((m) => !state.month || monthOf(m.fecha) === state.month);
 
-        // Barra principal: temporada, competición y Totales / Por 90
         const toggle = el("label", "pt-toggle");
         const input = el("input");
         input.type = "checkbox";
@@ -337,14 +326,12 @@ function setupPerformance(root: HTMLElement, data: Data) {
             competitionPills(data, inSeason, state.comp, (v) => { state.comp = v; render(); }),
             toggle,
         );
-        // Periodo y sede
         const monthsPresent = SEASON_MONTHS.filter((month) => base.some((m) => monthOf(m.fecha) === month));
         extra.replaceChildren(
             dropdown("Periodo", [["0", "Temporada completa"], ...monthsPresent.map((m) => [String(m), MONTHS[m - 1].toUpperCase()] as [string, string])], String(state.month), (v) => { state.month = Number(v); render(); }),
             dropdown("Sede", [[ALL, "Local y visitante"], ["home", "Local"], ["away", "Visitante"]], state.venue, (v) => { state.venue = v; render(); }),
         );
 
-        // Temporada por meses
         monthsBox.replaceChildren(...SEASON_MONTHS.map((month) => {
             const inMonth = base.filter((m) => monthOf(m.fecha) === month);
             const rating = avgRating(inMonth);
@@ -357,7 +344,6 @@ function setupPerformance(root: HTMLElement, data: Data) {
             return cell;
         }));
 
-        // Resumen de la selección
         const rating = avgRating(matches);
         const dates = matches.map((m) => m.fecha).sort();
         if (summaryTitle) summaryTitle.textContent = `${state.month ? MONTHS[state.month - 1].toUpperCase() : "TEMPORADA COMPLETA"} · ${matches.length} ${matches.length === 1 ? "PARTIDO" : "PARTIDOS"}`;
@@ -377,7 +363,6 @@ function setupPerformance(root: HTMLElement, data: Data) {
             return item;
         }));
 
-        // Tarjetas por categoría
         cats.replaceChildren(...categories(data.isGoalkeeper).map((cat) => {
             const card = framed("section", "pt-cat-card");
             card.append(el("h2", "card-title", cat.title.toUpperCase()));
@@ -391,7 +376,6 @@ function setupPerformance(root: HTMLElement, data: Data) {
             return card;
         }));
 
-        // Partidos de esta selección
         if (tableCount) tableCount.textContent = `${matches.length} ${matches.length === 1 ? "partido" : "partidos"} · más recientes primero`;
         const head = data.isGoalkeeper ? ["Partido", "Sede", "Resultado", "Min", "Paradas", "Encajados", "Valoración"] : ["Partido", "Sede", "Resultado", "Min", "Goles", "Asist.", "Tiros", "Valoración"];
         const thead = el("thead");
@@ -431,7 +415,6 @@ function setupPerformance(root: HTMLElement, data: Data) {
     render();
 }
 
-// ── Partidos ─────────────────────────────────────────────────────────────────
 const MATCH_PAGE = 30;
 function setupMatches(root: HTMLElement, data: Data) {
     const bar = root.querySelector<HTMLElement>('[data-filters="matches"]');
@@ -491,7 +474,6 @@ function setupMatches(root: HTMLElement, data: Data) {
     render();
 }
 
-// ── Estadísticas: línea de temporadas ───────────────────────────────────────
 function setupStatsRange(root: HTMLElement) {
     const card = root.querySelector<HTMLElement>("[data-stats-range]");
     if (!card) return;
@@ -516,7 +498,6 @@ function setupStatsRange(root: HTMLElement) {
         table.querySelectorAll<HTMLTableRowElement>("tr[data-season]").forEach((row) => {
             row.classList.toggle("pt-out-of-range", !selected.has(row.dataset.season || ""));
         });
-        // Recalcula la fila de totales con las temporadas visibles.
         if (totalRow) {
             const seasonRows = [...table.querySelectorAll<HTMLTableRowElement>("tr.season-total-row")].filter((row) => selected.has(row.dataset.season || ""));
             [...totalRow.cells].forEach((cell, index) => {
@@ -532,9 +513,6 @@ function setupStatsRange(root: HTMLElement) {
     update();
 }
 
-// ── Selector de jugadoras del encabezado ─────────────────────────────────────
-// Misma lógica que el buscador de la web (el nombre contiene lo escrito; antes
-// los que empiezan por ello), sin tildes y sin peticiones: la lista va en la página.
 const GROUP_ORDER = ["Porteras", "Defensas", "Centrocampistas", "Delanteras", "Otras"];
 const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
@@ -550,8 +528,6 @@ function setupPlayerPicker(data: Data) {
     const modeLabel = root.querySelector<HTMLElement>("[data-picker-mode]");
     if (!trigger || !panel || !search || !list) return;
     const { current, players } = data.picker;
-    // Elegir otra jugadora abre el comparador con ambas, tanto desde el
-    // desplegable como desde el botón "Comparar".
     const comparing = true;
 
     const item = (p: PickerPlayer) => {
@@ -559,7 +535,6 @@ function setupPlayerPicker(data: Data) {
         link.href = comparing
             ? `/comparador?a=${encodeURIComponent(current)}&b=${encodeURIComponent(p.slug)}`
             : `/jugadoras/${p.slug}`;
-        // Carga completa: el comparador lee ambas jugadoras de la URL al iniciarse.
         if (comparing) link.setAttribute("data-astro-reload", "");
         link.setAttribute("role", "option");
         link.setAttribute("aria-selected", String(p.slug === current));
@@ -621,7 +596,6 @@ function setupPlayerPicker(data: Data) {
     document.addEventListener("click", (event) => { if (!root.contains(event.target as Node)) open(false); });
 }
 
-// ── Pestañas ────────────────────────────────────────────────────────────────
 function setupTabs(root: HTMLElement) {
     const tabs = [...root.querySelectorAll<HTMLElement>("[data-tab]")];
     const panels = [...root.querySelectorAll<HTMLElement>("[data-panel]")];

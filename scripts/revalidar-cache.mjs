@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Refresca la web tras cargar datos a mano en Turso (p. ej. el SQL de un partido).
-// Uso:  npm run cache:revalidar                      → tablas de partidos y estadísticas
-//       npm run cache:revalidar -- mercado contratos → solo esas tablas
-// Lee CACHE_REVALIDATION_SECRET de .env.vercel (o del entorno).
 import fs from 'node:fs';
 
 const env = { ...process.env };

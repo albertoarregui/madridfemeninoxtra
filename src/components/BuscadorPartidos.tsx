@@ -312,7 +312,6 @@ export default function BuscadorPartidos({ seasons, competitions, rivals, compet
                     )}
                 </div>
 
-                {/* Competición en píldoras, siempre visible. */}
                 <div className="bus-comp-row">
                     <span className="bus-filter-label">Competición</span>
                     <CompetitionPills competitions={competitions} value={selectedComp} onChange={setSelectedComp} logos={competitionLogos} />

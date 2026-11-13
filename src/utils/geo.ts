@@ -1,6 +1,5 @@
 export const MADRID_COORDS = { lat: 40.4168, lng: -3.7038 };
 
-
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
@@ -26,5 +25,4 @@ export function estimateTravelTime(distanceKm: number): number {
         return (distanceKm / 800) + 2.5;
     }
 }
-
 

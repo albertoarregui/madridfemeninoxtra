@@ -8,7 +8,6 @@ const one = async (s: string) => Number((await c.execute(s)).rows[0].v);
 async function main() {
   const before = await one('SELECT COUNT(*) v FROM partidos');
 
-  // tiempo_partido ya no se usa (no hay retransmisión del minuto en directo)
   await c.execute('ALTER TABLE partidos DROP COLUMN tiempo_partido');
 
   const after = await one('SELECT COUNT(*) v FROM partidos');

@@ -1,25 +1,13 @@
-// ── Escudos por nombre de club (trayectorias) ───────────────────────────────
-// Coincidencia estricta: mismas palabras significativas, sin siglas genéricas
-// ni marcas de filial o cantera (así «Real Madrid B» usa el escudo del Real
-// Madrid, pero «Sporting CP» no toma el del Sporting de Huelva).
 const SHIELD_STOPWORDS = new Set(['fc', 'cf', 'cd', 'ud', 'sd', 'club', 'de', 'del', 'la', 'el', 'futbol', 'femenino', 'femenina',
     'women', 'ladies', 'sad', 'sc', 'afc', 'cfc', 'the', 'rcd', 'ffc', 'bk', 'if', 'ik', 'fk', 'ff', 'sv', 'vfl', 'real']);
 const cleanClubName = (name: string) => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/categorias inferiores( del| de)?/g, ' ')
-    // Filiales, categorías y cargos («Castilla», «Ilicitano», «(entrenador asistente)»…)
-    // usan el escudo del club principal.
     .replace(/\b(cadete|juvenil|infantil|youth|academy|cantera|castilla|ilicitano|reserves?|asistente|entrenador|sub ?\d+|u ?\d+)\b/g, ' ')
     .replace(/[^a-z0-9ø]+/g, ' ').replace(/\b(a|b|c|ii)\b/g, ' ').replace(/\s+/g, ' ').trim();
 const clubTokens = (name: string) => [...new Set(cleanClubName(name).split(' ').filter((t) => t && !SHIELD_STOPWORDS.has(t)))];
 const shieldFileSlug = (name: string) => name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
-/**
- * Devuelve una función que da el escudo de un club por su nombre. Si no está
- * en `clubes`, propone `escudos/<nombre>.webp` en R2 (misma convención que los
- * escudos actuales): la imagen debe ocultarse si ese archivo aún no existe.
- */
-// Mismo club con otro nombre en las trayectorias o el mercado → nombre en `clubes`.
 const CLUB_ALIASES: Record<string, string> = {
     'paris saint-germain': 'PSG', 'paris saint germain': 'PSG',
     'vfl wolfsburg': 'Wolfsburgo', 'wolfsburg': 'Wolfsburgo',
@@ -30,8 +18,6 @@ const CLUB_ALIASES: Record<string, string> = {
     'deportivo alavés': 'Alavés',
     'deportivo la coruña': 'Deportivo Abanca', 'deportivo de la coruña': 'Deportivo Abanca',
     'udg tenerife': 'Costa Adeje Tenerife', 'udg tenerife b': 'Costa Adeje Tenerife',
-    // Un único escudo por club: filiales, categorías y grafías alternativas
-    // usan el archivo del club principal (escudos/<club>.webp).
     'bordeaux': 'Girondins de Bordeaux',
     'categorías inferiores montpellier': 'Montpellier', 'san pascual montpellier': 'San Pascual Montpellier',
     'elche ilicitano': 'Elche CF',
@@ -49,7 +35,6 @@ const CLUB_ALIASES: Record<string, string> = {
     'hammarby youth': 'Hammarby',
     'sky blue fc': 'Gotham FC',
     'tottenham': 'Tottenham Hotspur',
-    // Archivos subidos con nombre propio (escudos/guangzhou.webp, escudos/rsc_internacional_fc.webp).
     'guangzhou fc reserves': 'Guangzhou', 'guangzhou fc': 'Guangzhou',
     'rsc': 'RSC Internacional FC',
     'cd tacón b': 'CD Tacón',

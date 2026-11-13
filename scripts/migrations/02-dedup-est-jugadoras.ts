@@ -11,7 +11,6 @@ async function main() {
   const cnt = async () => Number((await c.execute('SELECT COUNT(*) n FROM estadisticas_jugadoras')).rows[0].n);
   const before = await cnt();
 
-  // Keep, per (id_partido,id_jugadora): row with valoracion NOT NULL first, then highest id (latest scrape).
   await c.execute(`
     DELETE FROM estadisticas_jugadoras
     WHERE id_est_jugadora NOT IN (
@@ -31,7 +30,6 @@ async function main() {
   const dup = await c.execute(`SELECT COUNT(*) c FROM (SELECT id_partido,id_jugadora,COUNT(*) n FROM estadisticas_jugadoras GROUP BY 1,2 HAVING n>1)`);
   console.log('duplicados restantes:', dup.rows[0].c);
 
-  // sanity: rows that still have valoracion
   const v = await c.execute('SELECT COUNT(*) n FROM estadisticas_jugadoras WHERE valoracion IS NOT NULL');
   console.log('filas con valoracion tras dedup:', v.rows[0].n);
 }

@@ -21,7 +21,6 @@ export const GET: APIRoute=async({params,locals})=>{
 };
 export const POST: APIRoute=async({request,params,locals,url})=>{
  const id=validId(params.id);if(!id)return json({error:'Partido no válido'},400);
- // Las vistas previas permiten probar la interfaz sin escribir en la base de producción.
  if(isPreview())return json({demo:true,message:'Vista previa: el voto no se guarda hasta publicar en producción.'});
  if(request.headers.get('origin')!==url.origin)return json({error:'Origen no permitido'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return json({error:'Formato incorrecto'},415);

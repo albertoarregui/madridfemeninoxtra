@@ -7,8 +7,6 @@ interface Props {
 }
 
 const { matches = [], currentSeason } = Astro.props;
-// Partidos visibles al entrar y en cada «cargar más». Todo el HTML ya viene en
-// la página (≈30 KB comprimidos) y las imágenes ocultas no se descargan.
 const PAGE_SIZE = 100;
 
 const COMPETITION_ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos"];
@@ -29,7 +27,6 @@ const competitionRank = (name: string) => {
 	return index === -1 ? COMPETITION_ORDER.length : index;
 };
 
-// Las fechas vienen como YYYY-MM-DD: se formatean sin pasar por la zona horaria.
 const formatDate = (fecha: unknown) => {
 	const [year, month, day] = String(fecha ?? "").slice(0, 10).split("-").map(Number);
 	if (!year || !month || !day) return "—";
@@ -68,8 +65,6 @@ const rows = matches
 		};
 	});
 
-// Primero los partidos por jugar (el más cercano arriba) y después los
-// resultados, del más reciente al más antiguo.
 const upcoming = rows.filter((r) => !r.played).sort((a, b) => a.key.localeCompare(b.key));
 const played = rows.filter((r) => r.played).sort((a, b) => b.key.localeCompare(a.key));
 const ordered = [...upcoming, ...played];
@@ -79,7 +74,6 @@ const seasons = [...new Set(rows.map((r) => r.season))].sort().reverse();
 const competitions = [...new Map(rows.map((r) => [r.competition, r.competitionLogo])).entries()]
 	.sort(([a], [b]) => competitionRank(a) - competitionRank(b) || a.localeCompare(b));
 
-// Una tarjeta por temporada, en el orden en que aparecen sus partidos.
 const groups = seasons
 	.map((season) => ({ season, rows: ordered.filter((r) => r.season === season) }))
 	.sort((a, b) => orderOf.get(a.rows[0])! - orderOf.get(b.rows[0])!);
@@ -305,7 +299,6 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 	.mt { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; width: 100%; max-width: 66rem; min-width: 0; margin: 0 auto 4rem; color: rgb(var(--l-ink, 244, 244, 246)); font-family: "Montserrat", sans-serif; }
 	.mt [hidden] { display: none !important; }
 
-	/* Barra de resumen y filtros */
 	.mt-bar {
 		display: grid; gap: 1.5rem; padding: 1.6rem 1.9rem;
 		border: 1px solid rgba(201, 164, 77, 0.32); border-radius: 22px;
@@ -346,7 +339,6 @@ const firstPage = new Set(ordered.slice(0, PAGE_SIZE));
 	}
 	.mt-pill:focus-visible, .mt-row:focus-visible, .mt-more:focus-visible { outline: 2px solid #e6c77c; outline-offset: 2px; }
 
-	/* Tarjetas de temporada */
 	.mt-groups { display: grid; gap: 1.75rem; }
 	.mt-group {
 		padding: 1.25rem 1.5rem 0.5rem;

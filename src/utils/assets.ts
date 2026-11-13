@@ -31,8 +31,6 @@ function normalizeName(name: string): string {
 
 export function getAssetUrl(type: AssetType, fileName: string | null | undefined): string {
     if (!fileName) return "";
-    // Algunas imágenes ya llegan como URL completa de Contentful, R2 u otro CDN.
-    // No convertirlas en nombres de archivo ni reconstruir enlaces inexistentes.
     if (/^https?:\/\//i.test(fileName)) return fileName;
 
     let cleanFileName = fileName;
@@ -75,8 +73,6 @@ export function getAssetUrl(type: AssetType, fileName: string | null | undefined
     }
 
     if (cleanFileName) {
-        // R2 almacena estas colecciones como .webp, aunque la base de datos
-        // todavía pueda conservar nombres antiguos .png o .jpg.
         const r2Folders = new Set(['arbitras', 'escudos', 'estadios', 'entrenadores', 'competiciones', 'jugadoras']);
         if (!r2Folders.has(folder)) return '';
 
@@ -116,5 +112,4 @@ export function getAssetMetadata(type: AssetType, fileName: string | null | unde
 
     return null;
 }
-
 

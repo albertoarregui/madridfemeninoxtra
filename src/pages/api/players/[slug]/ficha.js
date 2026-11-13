@@ -15,7 +15,6 @@ function slugToProperName(slug) {
     return name;
 }
 
-
 function rowToObject(row, columns) {
     if (!row) return null;
     const obj = {};
@@ -56,15 +55,15 @@ export const GET = async ({ params }) => {
         let jugadora;
 
         const fichaQuery = `
-            SELECT 
-                id_jugadora, 
-                nombre, 
-                fecha_nacimiento, 
-                pais_origen, 
-                altura, 
-                peso, 
+            SELECT
+                id_jugadora,
+                nombre,
+                fecha_nacimiento,
+                pais_origen,
+                altura,
+                peso,
                 posicion
-            FROM jugadoras 
+            FROM jugadoras
             WHERE nombre = ?
         `;
 
@@ -78,7 +77,7 @@ export const GET = async ({ params }) => {
         const id_jugadora = jugadora.id_jugadora;
 
         const debutQuery = `
-            SELECT 
+            SELECT
                 T_DEBUT.dorsal, T_DEBUT.goles_club, T_DEBUT.asistencias_club, T_DEBUT.partidos_club,
                 T_DEBUT.fecha_debut, T_DEBUT.id_partido_debut, T_DEBUT.minuto_debut,
                 T_CLUB.nombre AS club_rival
@@ -87,9 +86,9 @@ export const GET = async ({ params }) => {
                 ON T_DEBUT.id_club = T_CLUB.id_club
             WHERE T_DEBUT.id_jugadora = ?
                 AND T_DEBUT.fecha_debut = (
-                    SELECT MIN(fecha_debut) 
-                    FROM dorsales 
-                    WHERE id_jugadora = ? 
+                    SELECT MIN(fecha_debut)
+                    FROM dorsales
+                    WHERE id_jugadora = ?
                     AND fecha_debut IS NOT NULL
                 )
             LIMIT 1
@@ -104,7 +103,6 @@ export const GET = async ({ params }) => {
         const dorsalActual = debutResult.rows.length > 0
             ? rowToObject(debutResult.rows[0], debutResult.columns)
             : null;
-
 
         const trayectoria = [];
 

@@ -1,9 +1,4 @@
 ---
-/**
- * Estadísticas de equipo (pestaña «Estadísticas»). Estructura por categorías
- * con píldoras y filas local / visitante; el mayor valor se resalta en dorado,
- * como en el comparador de jugadoras.
- */
 interface Props { game: any; isLocalRM: boolean; localShield?: string; visitorShield?: string; }
 const { game, isLocalRM, localShield, visitorShield } = Astro.props;
 
@@ -12,7 +7,6 @@ const num = (v: unknown): number | null => {
   const n = Number(String(v).replace(",", "."));
   return Number.isFinite(n) ? n : null;
 };
-// Valor del Real Madrid y del rival, colocados como local / visitante.
 type Pair = { rm: number | null; rival: number | null };
 const side = (pair: Pair) => (isLocalRM ? [pair.rm, pair.rival] : [pair.rival, pair.rm]) as [number | null, number | null];
 const pair = (rmKey: string, rivalKey: string): Pair => ({ rm: num(game[rmKey]), rival: num(game[rivalKey]) });
@@ -40,7 +34,6 @@ const possession = side({ rm: num(game.posesion_rm), rival: num(game.posesion_ri
 const xg = plain("Goles esperados (xG)", { rm: num(game.xg_a_favor), rival: num(game.xg_en_contra) }, 2);
 const yellows = plain("Tarjetas amarillas", { rm: num(game.amarillas_rm), rival: num(game.amarillas_rival) }, 0, true);
 const reds = plain("Tarjetas rojas", { rm: num(game.rojas_rm), rival: num(game.rojas_rival) }, 0, true);
-// faltas_cometidas / faltas_recibidas son del Real Madrid: las recibidas son las del rival.
 const fouls = plain("Faltas", { rm: num(game.faltas_cometidas), rival: num(game.faltas_recibidas) }, 0, true);
 
 const groups = [

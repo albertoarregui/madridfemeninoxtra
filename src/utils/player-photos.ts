@@ -1,4 +1,3 @@
-// Foto más reciente de cada jugadora, por slug (para comparadores y tablas).
 import { fetchPlayersDirectly, getPlayerImageUrl } from "./players";
 
 export async function fetchPlayerPhotoMap(): Promise<Record<string, string>> {

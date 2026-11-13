@@ -20,7 +20,6 @@ test("las entidades visibles de la ficha enlazan a sus páginas", () => {
 });
 
 test("las islas reciben solo los campos que consumen", () => {
-    // La lista de partidos se renderiza en el servidor: no envía datos a ninguna isla.
     assert.match(matchesPage, /<MatchTimeline matches=\{games\} currentSeason=\{currentSeason\} \/>/);
     assert.doesNotMatch(matchesPage, /client:(load|only|visible|idle)/);
     assert.match(playersPage, /const mapPlayers = playersData\.map/);
@@ -34,13 +33,11 @@ test("el sitemap comparte la lectura de partidos y temporadas", () => {
 
 test("la ficha muestra el historial sin consultas extra y pestañas en cuanto hay datos", () => {
     assert.doesNotMatch(matchPage, /INFORMACIÓN DEL PARTIDO/);
-    // El historial sale de los partidos ya cargados; en partidos jugados, solo los anteriores.
     assert.match(matchPage, /const h2hMatches = allGames/);
     assert.match(matchPage, /String\(g\.fecha \?\? ""\) < String\(game\.fecha \?\? ""\)/);
     assert.doesNotMatch(matchPage, /isWithinOneHour/);
     assert.match(matchPage, /<h3>Enfrentamientos anteriores<\/h3>/);
     assert.match(matchPage, /fetchMatchLineups\(game\.id_partido, matchReadOptions\),/);
-    // Con alineación (o partido jugado) la ficha pasa a pestañas.
     assert.match(matchPage, /const tabbed = lineup\.length > 0 \|\| Boolean\(game\.isPlayed\);/);
     assert.match(matchPage, /<MatchTabs /);
     for (const panel of ["info", "timeline", "alineacion", "estadisticas", "h2h", "valoraciones"]) {

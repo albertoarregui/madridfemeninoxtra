@@ -31,8 +31,6 @@ export const POST: APIRoute = async ({ request }) => {
 
         console.log(`[Webhook] Evento recibido - contentType: ${contentType}, slug: ${slug}`);
 
-        // Fichas, imágenes OG y demás contenido de Contentful se guardan 24 h:
-        // cualquier publicación las invalida.
         await invalidarTags(['contentful']);
 
         if (contentType !== 'noticia' || !slug) {

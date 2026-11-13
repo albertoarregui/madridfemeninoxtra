@@ -48,18 +48,14 @@ test('plantilla filtra por temporada y resume la plantilla con datos cacheados',
     assert.match(plantilla, /searchParams\.get\("temporada"\)/);
     assert.match(plantilla, /seasons\.includes\(requestedSeason\) \? requestedSeason : currentSeason/);
     for (const label of ['Jugadoras', 'Edad media', 'Estatura media', 'Peso medio']) assert.ok(squad.includes(`<dt>${label}</dt>`), label);
-    // Tarjeta de entrenador aparte, enlazada a su ficha.
     assert.match(squad, /class="coach-card" href=\{`\/entrenadores\/\$\{coach\.slug\}`\}/);
     assert.match(squad, /\.coach-card:hover/);
     assert.match(squad, /data-squad-season/);
-    // Bajo cada miniatura: partidos, goles y asistencias oficiales; porteras, solo porterías a cero.
     assert.match(squad, /row\.competicion === "Amistoso"/);
     assert.match(squad, /class="thumb-stats"/);
-    // Porteras: partidos, paradas (de los partidos en los que fue la portera principal) y porterías a cero.
     assert.match(squad, /label: "PAR"/);
     assert.match(squad, /savesByPlayer/);
     assert.match(squad, /class="thumbnail-flag"/);
-    // Descarga en PNG con html2canvas cargado solo al pulsar.
     assert.match(squad, /data-squad-download/);
     assert.match(squad, /await import\("html2canvas"\)/);
     assert.doesNotMatch(squad, /id="player-apps"/);

@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import CustomSelect from "./CustomSelect";
 import ScrollPills from "./ScrollPills";
 
-// «Más X en un solo partido» dentro de /rankings. Los datos llegan de
-// /api/rankings-partido, que el CDN guarda un día por combinación de filtros.
-
 const STATS = [
     { value: "goles", label: "Goles" },
     { value: "asistencias", label: "Asistencias" },
@@ -150,7 +147,6 @@ export default function MatchRecordsRanking({ initialStat = "goles", playerImage
                                                 <span className="rk-photo">{photo && <img src={photo} alt="" width={52} height={52} loading="lazy" />}</span>
                                                 <span className="rk-name">
                                                     <strong>{r.nombre}{flag && <img className="rk-flag" src={flag} alt="" width={20} height={14} loading="lazy" />}</strong>
-                                                    {/* En móvil el partido va debajo del nombre. */}
                                                     <small className="rk-match-inline">{r.match.local ? "vs" : "en"} {r.match.rival} · {r.match.gf}-{r.match.gc}</small>
                                                 </span>
                                             </a>

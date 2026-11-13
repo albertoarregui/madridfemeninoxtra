@@ -14,7 +14,6 @@ test("las herramientas avanzadas incluyen breadcrumbs y no muestran tarjetas de 
     ]) {
         assert.match(read(path), /<BreadcrumbTrail/);
     }
-    // Gráficos, comparador y buscadores ya no muestran las tarjetas de introducción.
     for (const path of [
         "src/pages/estadisticas/avanzadas.astro",
         "src/pages/comparador.astro",
@@ -32,7 +31,6 @@ test("Valoraciones es un acceso principal situado después de Hub", () => {
     const ratings = header.indexOf('href="/valoraciones"');
     const fabrica = header.indexOf('href="/la-fabrica"');
     assert.ok(hubEnd >= 0 && ratings > hubEnd && fabrica > ratings);
-    // Noticias, Plantilla y Mercado van juntas en el desplegable de actualidad.
     const actualidad = header.match(/id="submenu-actualidad"[\s\S]*?<\/ul>/)?.[0] || "";
     for (const path of ["/noticias", "/plantilla", "/mercado"]) assert.match(actualidad, new RegExp(`href="${path}"`));
     assert.doesNotMatch(header, /href=\{href\("\/premios"\)\}/);

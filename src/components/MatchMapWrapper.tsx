@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState, Suspense, lazy } from 'react';
-// MapLibre (1 MB+) se descarga sólo cuando el mapa está cerca del viewport.
 const InteractiveMap = lazy(() => import('./Map'));
 import { getAssetUrl } from '../utils/assets';
 

@@ -1,6 +1,3 @@
-// Datos por partido para los comparadores «Jugadora vs rival» y «Con o sin».
-// Cuatro consultas ligeras que se guardan juntas en caché un día: las páginas
-// filtran en memoria y el CDN guarda cada combinación de filtros.
 import { cached } from "./cache";
 import { cacheTags } from "../lib/cache-tags";
 import { slugify } from "./players";
@@ -10,7 +7,6 @@ import { competitionDisplayName } from "./competiciones";
 export interface PMatch {
     id: string; slug: string; fecha: string; temporada: string; competicion: string;
     rival: string; rivalSlug: string; local: boolean; gf: number; gc: number; resultado: "V" | "E" | "D";
-    /** Minutos de los goles a favor y en contra (para «en el campo / fuera»). */
     gfMin: number[]; gcMin: number[]; duracion: number;
 }
 export interface PApp {
@@ -45,8 +41,6 @@ async function load(): Promise<PlayerMatchData> {
             LEFT JOIN clubes cl ON p.id_club_local = cl.id_club
             LEFT JOIN clubes cv ON p.id_club_visitante = cv.id_club
             WHERE ${played}`),
-        // Goles, asistencias, notas y tarjetas se agregan una vez por tabla
-        // (sin subconsultas por fila, para no multiplicar las lecturas).
         client.execute(`
             WITH g AS (SELECT id_partido, goleadora AS id, COUNT(*) AS n FROM goles_y_asistencias WHERE goleadora IS NOT NULL GROUP BY 1, 2),
                  s AS (SELECT id_partido, asistente AS id, COUNT(*) AS n FROM goles_y_asistencias WHERE asistente IS NOT NULL GROUP BY 1, 2),
@@ -65,10 +59,8 @@ async function load(): Promise<PlayerMatchData> {
             LEFT JOIN t ON t.id_partido = a.id_partido AND t.id = a.id_jugadora
             LEFT JOIN estadisticas_jugadoras ej ON ej.id_partido = a.id_partido AND ej.id_jugadora = a.id_jugadora
             WHERE ${played} AND (a.minutos_jugados > 0 OR a.titular = 1 OR a.convocada = 1)`),
-        // A favor: goles_y_asistencias ya incluye los autogoles de las rivales.
         client.execute(`
             SELECT g.id_partido, g.minuto FROM goles_y_asistencias g JOIN partidos p ON p.id_partido = g.id_partido WHERE ${played}`),
-        // En contra: goles de la rival (sin sus autogoles, que son a favor) y autogoles propios.
         client.execute(`
             SELECT gr.id_partido, gr.minuto FROM goles_rival gr JOIN partidos p ON p.id_partido = gr.id_partido
             WHERE ${played} AND COALESCE(gr.tipo, '') != 'en_propia'
@@ -101,7 +93,6 @@ async function load(): Promise<PlayerMatchData> {
         if (!data.matches[mid]) continue;
         if (!data.players[pid]) data.players[pid] = { nombre: String(r.nombre), slug: slugify(r.nombre), posicion: String(r.posicion || "") };
         const min = Number(r.minutos_jugados) || 0;
-        // Prórroga: la duración del partido es el mayor minuto conocido (90 o 120).
         if (min > 90) data.matches[mid].duracion = Math.max(data.matches[mid].duracion, min);
         data.apps.push({
             m: mid, p: pid, titular: Number(r.titular) === 1, min,
@@ -126,7 +117,6 @@ export function matchPasses(m: PMatch, f: MatchFilter) {
     return m.competicion === f.competicion;
 }
 
-/** Tramo que la jugadora estuvo en el campo, en minutos del partido. */
 export function onPitch(app: PApp, m: PMatch): [number, number] | null {
     if (app.min <= 0) return null;
     const start = app.titular ? 0 : (app.entrada ?? Math.max(0, m.duracion - app.min));

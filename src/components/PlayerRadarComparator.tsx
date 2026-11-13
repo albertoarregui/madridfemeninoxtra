@@ -432,7 +432,6 @@ export default function PlayerRadarComparator({ players, initialSlugA = '', init
                             <span className="cx-label">Temporada</span>
                             <SiteSelect id="cmp-season" options={seasonOptions} value={season} onChange={v => setSeason(v)} />
                         </div>
-                        {/* Mismo interruptor Totales / Por 90' que la ficha de jugadora. */}
                         <label className="pt-toggle" title="Cambiar entre datos totales y por 90 minutos">
                             <span className={mode === 'total' ? 'is-on' : ''}>Totales</span>
                             <input type="checkbox" checked={mode === 'p90'} onChange={e => setMode(e.target.checked ? 'p90' : 'total')} />

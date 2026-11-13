@@ -51,29 +51,29 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
         const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
         const query = `
-            SELECT 
-                g.id_gol, 
-                COALESCE(jg.nombre, g.goleadora) AS goleadora, 
-                COALESCE(ja.nombre, g.asistente) AS asistente, 
+            SELECT
+                g.id_gol,
+                COALESCE(jg.nombre, g.goleadora) AS goleadora,
+                COALESCE(ja.nombre, g.asistente) AS asistente,
                 COALESCE(d_g1.foto_url, d_g2.foto_url) AS foto_goleadora,
                 COALESCE(d_a1.foto_url, d_a2.foto_url) AS foto_asistente,
-                g.id_partido, 
-                g.goles_a_favor, 
-                g.goles_en_contra, 
-                g.minuto, 
-                g.parte_cuerpo, 
+                g.id_partido,
+                g.goles_a_favor,
+                g.goles_en_contra,
+                g.minuto,
+                g.parte_cuerpo,
                 g.tipo,
                 c.competicion AS competicion,
                 t.temporada AS temporada
-            FROM 
+            FROM
                 goles_y_asistencias g
-            JOIN 
+            JOIN
                 partidos p ON g.id_partido = p.id_partido
-            JOIN 
+            JOIN
                 competiciones c ON p.id_competicion = c.id_competicion
-            JOIN 
+            JOIN
                 temporadas t ON p.id_temporada = t.id_temporada
-            
+
             -- Goleadora
             LEFT JOIN jugadoras jg ON g.goleadora = jg.id_jugadora
             LEFT JOIN dorsales d_g1 ON (g.goleadora = d_g1.id_jugadora AND p.id_temporada = d_g1.id_temporada)
@@ -85,7 +85,7 @@ export async function fetchGoalsAssistsDirectly(filters?: GoalAssistFilters): Pr
             LEFT JOIN dorsales d_a2 ON (g.asistente = d_a2.id_jugadora AND d_a2.id_temporada = (SELECT MAX(id_temporada) FROM dorsales WHERE id_jugadora = g.asistente))
 
             ${whereString}
-            ORDER BY 
+            ORDER BY
                 g.id_partido ASC, g.minuto ASC
         `;
 
@@ -157,5 +157,4 @@ export async function fetchGoalsAssists(filters?: GoalAssistFilters): Promise<Go
         return [];
     }
 }
-
 

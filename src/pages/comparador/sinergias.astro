@@ -1,8 +1,4 @@
 ---
-// Sinergias: cómo rinde el Real Madrid Femenino con una jugadora en el campo
-// y sin ella (goles a favor y en contra por 90 minutos), resultados de los
-// partidos que jugó y no jugó, combinaciones con una compañera y mejores
-// compañeras. Datos en caché diaria (src/utils/player-match-data.ts).
 import Layout from "../../layouts/Layout.astro";
 import EntityPicker from "../../components/profile/EntityPicker.astro";
 import LinkSelect from "../../components/profile/LinkSelect.astro";
@@ -27,14 +23,12 @@ const matches = Object.values(data.matches).filter((m) => matchPasses(m, filter)
 const ids = new Set(matches.map((m) => m.id));
 const apps = data.apps.filter((a) => ids.has(a.m) && a.min > 0);
 
-// Minutos por jugadora en el filtro, para ordenar el selector.
 const minutes = new Map<string, number>();
 for (const a of apps) minutes.set(a.p, (minutes.get(a.p) ?? 0) + a.min);
 const players = [...minutes.entries()].map(([id, min]) => ({ id, min, ...data.players[id] })).sort((a, b) => b.min - a.min);
 const focus = players.find((p) => p.slug === q.get("jugadora")) ?? players[0];
 const mate = players.find((p) => p.slug === q.get("con") && p.slug !== focus?.slug);
 
-// Minuto a minuto: quién estaba en el campo.
 const appIndex = new Map(apps.map((a) => [`${a.m}:${a.p}`, a]));
 const presence = (m: PMatch, pid: string | undefined) => {
     const flags = new Array(m.duracion).fill(false);
@@ -75,7 +69,6 @@ if (focus) {
     }
 }
 
-// Compañeras: minutos compartidos y goles con ambas en el campo.
 const mates = focus ? players.filter((p) => p.id !== focus.id).map((p) => {
     const b = bucket();
     for (const m of matches) {

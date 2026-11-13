@@ -203,8 +203,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-
-
                             {popupInfo.type === 'match' && (
                                 <div style={{ fontFamily:"'DM Sans', sans-serif" }}>
                                     {popupInfo.imageUrl ? (
@@ -286,7 +284,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-
                             {popupInfo.type === 'stadium' && (
                                 <div className="flex flex-col">
 
@@ -337,7 +334,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                     </div>
                                 </div>
                             )}
-
 
                             {popupInfo.type === 'rival-city' && (
                                 <div className="p-0 min-w-[260px]">
@@ -402,7 +398,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
                                 </div>
                             )}
 
-
                             {!['player', 'match', 'rival-city'].includes(popupInfo.type || '') && (
                                 <div className="p-4">
                                     <h3 className="font-bold text-lg mb-2">{popupInfo.label}</h3>
@@ -454,5 +449,4 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 };
 
 export default InteractiveMap;
-
 

@@ -1,6 +1,4 @@
 ---
-// Mercado del Real Madrid Femenino por temporada: fichajes, salidas,
-// cesiones, renovaciones y ascensos, con precios cuando se conocen.
 import Layout from "../layouts/Layout.astro";
 import LinkSelect from "../components/profile/LinkSelect.astro";
 import "../styles/comparadores.css";
@@ -9,7 +7,6 @@ import { fetchPlayerPhotoMap } from "../utils/player-photos";
 import { fetchAllClubShields } from "../utils/rivales";
 import { createClubShieldResolver } from "../lib/club-shields";
 
-// La sección nació en la 2020/21: los movimientos anteriores (CD Tacón) no se muestran.
 const FIRST_SEASON = "2020/21";
 const moves = (await fetchMercado()).filter((m) => m.temporada >= FIRST_SEASON);
 const photos = await fetchPlayerPhotoMap();
@@ -30,7 +27,6 @@ const topFee = Math.max(0, ...list.map((m) => m.precio ?? 0));
 const money = (v: number) => (v === 0 ? "0 €" : Math.abs(v) >= 1_000_000
     ? `${(v / 1_000_000).toLocaleString("es-ES", { maximumFractionDigits: 2 })} M€`
     : `${Math.round(v).toLocaleString("es-ES")} €`);
-
 
 const crest = (club: string | null) => (club ? shield(club)?.url || "" : "");
 const dateEs = (iso: string | null) => (iso ? iso.split("-").reverse().join("/") : "");
@@ -169,7 +165,6 @@ const groups = [
     .mk-count { margin-left: 0.4rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
     [data-mk-group][hidden] { display: none; }
     .mk-list { margin: 0; padding: 0; list-style: none; }
-    /* Columna de tipo de ancho fijo: los escudos quedan alineados sea cual sea la etiqueta. */
     .mk-row { display: grid; grid-template-columns: minmax(0, 1.3fr) 8.5rem minmax(0, 1.6fr) minmax(0, 0.8fr); align-items: center; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid rgba(212, 168, 67, 0.08); }
     .mk-row:first-child { border-top: 0; }
     .mk-player { display: flex; align-items: center; gap: 0.75rem; min-width: 0; color: inherit; text-decoration: none; }
@@ -187,7 +182,6 @@ const groups = [
     .mk-route { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
     .mk-route > svg { width: 1rem; height: 1rem; flex-shrink: 0; fill: none; stroke: #d4a843; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mk-club { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; flex: 1 1 0; font-size: 0.85rem; color: rgba(var(--l-ink, 220, 225, 230), 0.85); }
-    /* Hueco fijo para el escudo: los nombres empiezan siempre en el mismo punto. */
     .mk-crest { display: inline-grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; }
     .mk-club img { width: 24px; height: 24px; object-fit: contain; }
     .mk-club span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -197,7 +191,6 @@ const groups = [
     .mk-fee small { font-size: 0.7rem; color: rgba(var(--l-ink, 200, 210, 220), 0.5); }
     @media (max-width: 900px) {
         .mk-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        /* Importe y tipo a la derecha de la jugadora; la ruta (origen → destino), a todo el ancho y alineada. */
         .mk-row { grid-template-columns: minmax(0, 1fr) 7.5rem; grid-template-areas: "player fee" "player type" "route route"; row-gap: 0.4rem; }
         .mk-fee strong { font-size: 0.85rem; white-space: normal; line-height: 1.15; }
         .mk-player { grid-area: player; } .mk-fee { grid-area: fee; } .mk-route { grid-area: route; } .mk-type { grid-area: type; justify-self: end; align-self: start; }

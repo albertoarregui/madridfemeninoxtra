@@ -1,7 +1,5 @@
 import React from "react";
 
-// Filtro de competición en píldoras, el mismo de la ficha de jugadora,
-// /rankings y la portada. «Todas» y «Oficiales» van primero.
 const ORDER = ["Primera Iberdrola", "Liga F", "UWCL", "Copa de la Reina", "Supercopa de España", "Amistosos", "Amistoso"];
 
 interface Props {
@@ -9,7 +7,6 @@ interface Props {
     value: string;
     onChange: (value: string) => void;
     logos?: Record<string, string>;
-    /** Valor de «Todas» (los buscadores usan "todos"). */
     allValue?: string;
     officialValue?: string | null;
 }

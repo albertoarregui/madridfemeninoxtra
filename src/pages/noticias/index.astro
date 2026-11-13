@@ -10,8 +10,6 @@ let noticias: any[] = [];
 let error = null;
 
 try {
-    // La portada del archivo no necesita el cuerpo Rich Text de cada artículo.
-    // Proyectar sólo las columnas visibles ahorra CPU, memoria y HTML serializado.
     noticias = await cached(`contentful:news:archive-v1:es`, 24 * 60 * 60 * 1000, async () => {
         const entries = await contentfulClient.getEntries({
         content_type: "noticia",
@@ -35,7 +33,6 @@ try {
             category: fields.category,
             createdAt: item.sys.createdAt,
             updatedAt: item.sys.updatedAt,
-            // Una URL, no el objeto Media de Contentful con todos sus metadatos.
             featuredImage: imageUrl ? { fields: { file: { url: imageUrl } } } : null,
         };
     });
@@ -90,15 +87,17 @@ const formatDate = (d: string) =>
                                             class="mtile-img"
                                             src={imgUrl(n, i === 0 ? 1000 : 700)}
                                             alt={n.title}
-                                            loading="lazy"
+                                            loading={i === 0 ? "eager" : "lazy"}
+                                            fetchpriority={i === 0 ? "high" : undefined}
+                                            decoding="async"
                                         />
                                         <span class="mtile-overlay">
                                             <span class="mtile-cat">
                                                 {n.category || "ACTUALIDAD"}
                                             </span>
-                                            <h3 class="mtile-title">
+                                            <h2 class="mtile-title">
                                                 {n.title}
-                                            </h3>
+                                            </h2>
                                             <time class="mtile-date">
                                                 {formatDate(n.createdAt)}
                                             </time>

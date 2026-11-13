@@ -6,7 +6,7 @@ export const prerender = false;
 const SITE_URL = 'https://www.madridfemeninoxtra.com';
 const PUBLICATION_NAME = 'Madrid Femenino Xtra';
 const LANGUAGE = 'es';
-const MAX_AGE_MS = 2 * 24 * 60 * 60 * 1000; // Google News solo admite artículos de las últimas 48h
+const MAX_AGE_MS = 2 * 24 * 60 * 60 * 1000;
 
 function xmlEscape(s: string): string {
     return s

@@ -33,8 +33,6 @@ try {
     const entrySelect = [
         "sys.id", "sys.createdAt", "sys.updatedAt",
         "fields.title", "fields.subtitle", "fields.slug", "fields.body",
-        // Solo campos que existen en el tipo `noticia`: Contentful rechaza
-        // la consulta entera (422) si se selecciona uno desconocido.
         "fields.featuredImage", "fields.author",
         "fields.player", "fields.category", "fields.focusType",
         "fields.referenceId",
@@ -179,15 +177,14 @@ if (n.body) {
             };
             bodyHtml = documentToHtmlString(n.body, options);
 
-
             bodyHtml = bodyHtml.replace(/&lt;(\/?(?:iframe|blockquote|script|a|p|div|section|span|br)[\s\S]*?)&gt;/gi, (m: string, content: string) => {
                 const unescaped = content.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&").replace(/&mdash;/g, "—");
                 return `<${unescaped}>`;
             });
-            
+
 
             bodyHtml = bodyHtml.replace(/<blockquote(.*?)class="twitter-tweet"(.*?)>/gi, '<blockquote$1class="twitter-tweet" data-align="center" data-theme="light"$2>');
-            
+
 
             bodyHtml = bodyHtml.replace(/<p>\s*<iframe/gi, '<iframe');
             bodyHtml = bodyHtml.replace(/<\/iframe>\s*<\/p>/gi, '</iframe>');
@@ -360,8 +357,6 @@ for (const ref of refsDe("club")) {
           rivals.find((r) => String(r.slug) === String(contentReferenceId))
         : rivals[0];
 
-    // La referencia explícita del widget manda: otros campos editoriales de la
-    // noticia pueden mencionar al Real Madrid aunque el club destacado sea rival.
     const isRMRequested = String(contentReferenceId) === "1";
 
     if (!clubData || (isRMRequested && String(clubData.id_club) !== "1")) {
@@ -369,9 +364,9 @@ for (const ref of refsDe("club")) {
         const client = await getPlayersDbClient();
         if (client) {
             const clubRes = await client.execute({
-                sql: `SELECT c.*, e.nombre as estadio, e.capacidad, e.lat as estadio_lat, e.lng as estadio_lng 
-                      FROM clubes c 
-                      LEFT JOIN estadios e ON c.estadio = e.id_estadio 
+                sql: `SELECT c.*, e.nombre as estadio, e.capacidad, e.lat as estadio_lat, e.lng as estadio_lng
+                      FROM clubes c
+                      LEFT JOIN estadios e ON c.estadio = e.id_estadio
                       WHERE ${isRMRequested ? "c.id_club = 1" : "c.id_club = ?"}`,
                 args: isRMRequested ? [] : [contentReferenceId as any],
             });
@@ -582,8 +577,6 @@ const newsSchema = {
         .join(", "),
 };
 
-
-
 ---
 
 <Layout
@@ -616,7 +609,6 @@ const newsSchema = {
           if (last && Date.now() - last < 24 * 60 * 60 * 1000) return;
         } catch { return; }
         if (document.visibilityState !== 'visible') return;
-        // Sólo contar una lectura con tiempo real de permanencia.
         setTimeout(async () => {
           if (document.visibilityState !== 'visible' || location.pathname !== pagePath) return;
           try {
@@ -1479,7 +1471,6 @@ const newsSchema = {
             document.head.appendChild(s);
         }
 
-
         if (window.instgrm && window.instgrm.Embeds) {
             window.instgrm.Embeds.process();
         } else if (document.querySelector('.instagram-media') && !document.getElementById("instgrm-wjs")) {
@@ -1490,7 +1481,6 @@ const newsSchema = {
             document.head.appendChild(s);
         }
 
-
         if (document.querySelector('.tiktok-embed') && !document.getElementById("tiktok-wjs")) {
             const s = document.createElement("script");
             s.id = "tiktok-wjs";
@@ -1499,7 +1489,6 @@ const newsSchema = {
             document.head.appendChild(s);
         }
     }
-
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", loadEmbeds);

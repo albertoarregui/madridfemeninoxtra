@@ -31,11 +31,9 @@ async function main() {
     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
   )).rows.map((r: any) => r.name as string);
 
-  // table + index DDL
   for (const r of schema.rows as any[]) {
     if (r.type === 'table') out.push(`${r.sql};`);
   }
-  // data
   let totalRows = 0;
   for (const t of tables) {
     const res = await c.execute(`SELECT * FROM "${t}"`);
@@ -47,7 +45,6 @@ async function main() {
       totalRows++;
     }
   }
-  // indexes last
   for (const r of schema.rows as any[]) {
     if (r.type === 'index') out.push(`${r.sql};`);
   }

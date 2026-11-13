@@ -803,7 +803,6 @@ function AdvancedStatsInner({ competitionLogos }: { competitionLogos: Record<str
         <div className="adv-root">
             <div className="adv-filters">
                 <CustomSelect label="TEMPORADA"   options={seasons}        value={season}      onChange={setSeason} />
-                {/* Mismas píldoras de competición que la ficha de jugadora. */}
                 <div className="adv-filter-group adv-filter-comps">
                     <span className="adv-filter-label">COMPETICIÓN</span>
                     <div className="pt-pills" role="group" aria-label="Competición">
