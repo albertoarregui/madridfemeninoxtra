@@ -41,9 +41,6 @@ interface Goal {
 }
 
 interface ClubStatsDashboardProps {
-    matchRows: CompactDashboardRow[];
-    goalRows: CompactDashboardRow[];
-    playerImages: Record<string, string>;
     seasons: string[];
     competitions: string[];
     competitionLogos?: Record<string, string>;
@@ -56,7 +53,28 @@ const divider = "w-full h-px bg-[rgba(var(--l-hi,255,255,255),0.07)]";
 
 const OFFICIAL_COMPETITIONS = ['Liga F', 'Primera Iberdrola', 'UWCL', 'Copa de la Reina', 'Supercopa de España'];
 
-const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = ({ matchRows, goalRows, playerImages, seasons, competitions, competitionLogos = {} }) => {
+type DashboardData = { matchRows: CompactDashboardRow[]; goalRows: CompactDashboardRow[]; playerImages: Record<string, string> };
+
+const ClubStatsDashboard: React.FC<ClubStatsDashboardProps> = (props) => {
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [failed, setFailed] = useState(false);
+    useEffect(() => {
+        fetch('/api/dashboard-home')
+            .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+            .then(setData)
+            .catch(() => setFailed(true));
+    }, []);
+    if (!data) {
+        return (
+            <div className="w-full max-w-7xl mx-auto min-h-[640px] grid place-items-center text-[#a7afbf] text-sm">
+                {failed ? 'No se pudieron cargar las estadísticas.' : 'Cargando estadísticas…'}
+            </div>
+        );
+    }
+    return <ClubStatsDashboardView {...props} {...data} />;
+};
+
+const ClubStatsDashboardView: React.FC<ClubStatsDashboardProps & DashboardData> = ({ matchRows, goalRows, playerImages, seasons, competitions, competitionLogos = {} }) => {
     const matches = useMemo(() => expandDashboardMatches(matchRows) as Match[], [matchRows]);
     const goals = useMemo(() => expandDashboardGoals(goalRows, playerImages) as Goal[], [goalRows, playerImages]);
     const hasScore = (v: any) => v !== null && v !== undefined && v !== '';
