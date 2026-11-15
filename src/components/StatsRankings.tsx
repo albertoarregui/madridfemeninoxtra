@@ -663,9 +663,9 @@ export default function StatsRankings({
                     .spot-1 .animate-bounce { width: 18px; height: 18px; }
                     .spot-1 .mb-2 { margin-bottom: 0.2rem !important; }
                     .podium-stat-value { width: 100%; margin-top: 0.45rem !important; margin-bottom: 0 !important; }
-                    .podium-stat-value h3 { min-height: 2.35em; margin: 0 0 0.2rem !important; padding: 0 0.15rem !important; overflow: hidden; font-size: 0.62rem !important; line-height: 1.18 !important; white-space: normal !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-                    .podium-stat-value p { font-size: 1.18rem !important; line-height: 1 !important; }
-                    .spot-1 .podium-stat-value p { font-size: 1.45rem !important; }
+                    .podium-stat-value .podium-name { min-height: 2.35em; margin: 0 0 0.2rem !important; padding: 0 0.15rem !important; overflow: hidden; font-size: 0.62rem !important; line-height: 1.18 !important; white-space: normal !important; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+                    .podium-stat-value p:not(.podium-name) { font-size: 1.18rem !important; line-height: 1 !important; }
+                    .spot-1 .podium-stat-value p:not(.podium-name) { font-size: 1.45rem !important; }
                 }
                 .podium-stat-value { margin-bottom: 2rem; }
             ` }} />
@@ -680,7 +680,7 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
-                                        <p className="font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                        <p className="podium-name font-bold text-lg leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
                                             <a href={`/jugadoras/${podium[1].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-ink,192,192,192))] transition-colors">{podium[1].nombre}</a>
                                         </p>
                                         <p className="text-3xl font-black" style={{color: 'rgb(var(--l-ink, 192, 192, 192))'}}>{formatValue(podium[1])}</p>
@@ -703,7 +703,7 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-6 podium-stat-value">
-                                        <h3 className="font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                        <h3 className="podium-name font-black text-2xl leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
                                             <a href={`/jugadoras/${podium[0].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-gold,255,215,0))] transition-colors">{podium[0].nombre}</a>
                                         </h3>
                                         <p className="text-5xl font-black" style={{color: 'rgb(var(--l-gold, 212, 168, 67))'}}>{formatValue(podium[0])}</p>
@@ -725,7 +725,7 @@ export default function StatsRankings({
                                         </a>
                                     </div>
                                     <div className="text-center mt-4 podium-stat-value">
-                                        <h3 className="font-bold text-base leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
+                                        <h3 className="podium-name font-bold text-base leading-tight truncate px-2 mb-1" style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}}>
                                             <a href={`/jugadoras/${podium[2].slug}`} style={{color: 'rgb(var(--l-ink, 240, 240, 240))'}} className="hover:text-[rgb(var(--l-red,205,127,50))] transition-colors">{podium[2].nombre}</a>
                                         </h3>
                                         <p className="text-2xl font-black" style={{color: 'rgb(var(--l-red, 205, 127, 50))'}}>{formatValue(podium[2])}</p>
@@ -750,6 +750,7 @@ export default function StatsRankings({
                 {sortedPlayers.length === 0 ? (
                     <p className="rk-empty">No hay datos para estos filtros.</p>
                 ) : (
+                    <div className="rk-table-scroll">
                     <table className="rk-table">
                         <thead>
                             <tr>
@@ -780,6 +781,7 @@ export default function StatsRankings({
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
                 {visible < sortedPlayers.length && (
                     <button type="button" className="btn-more rk-more-btn" onClick={() => setVisible((v) => v + 25)}>
