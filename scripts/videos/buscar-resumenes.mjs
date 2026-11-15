@@ -21,7 +21,8 @@ const HIST = args.includes('--historico');
 const WEB = args.includes('--historico-web');   // histórico sin clave: búsqueda en la página de cada canal (scraping, uso puntual)
 const DIAS = Number(args[args.indexOf('--dias') + 1]) || 14;
 
-const env = { ...process.env };
+// trim(): los secretos pegados en GitHub pueden arrastrar un salto de línea final
+const env = Object.fromEntries(Object.entries(process.env).map(([k, v]) => [k, v?.trim()]));
 for (const f of ['.env.vercel', '.env.local', '.env']) {
     if (!fs.existsSync(f)) continue;
     for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
