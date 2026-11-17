@@ -1,6 +1,7 @@
 ---
 import { Image } from "astro:assets";
 import { contentfulClient } from "../lib/contentful";
+import { contentfulImageUrl } from "../lib/contentful-image";
 
 let hitos: {
     slug: string;
@@ -26,9 +27,7 @@ try {
             description: item.fields.subtitle || "",
             jugadora: item.fields.player || "Jugadora",
             category: item.fields.category || "HITO",
-            img: item.fields.featuredImage?.fields?.file?.url
-                ? `https:${item.fields.featuredImage.fields.file.url}`
-                : "/og.png",
+            img: contentfulImageUrl(item.fields.featuredImage?.fields?.file?.url, { width: 520, height: 340 }),
         }));
     }
 } catch (e) {
@@ -58,6 +57,7 @@ try {
                                     format="webp"
                                     loading="lazy"
                                     decoding="async"
+                                    onerror="this.onerror=null;this.src='/og.png'"
                                 />
                             </div>
                             <div class="hito-info">

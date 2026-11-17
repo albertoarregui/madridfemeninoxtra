@@ -16,6 +16,7 @@ import { cached } from "../utils/cache";
 import { fetchGamesDirectly } from "../utils/partidos";
 import ClubStatsDashboard from "../components/ClubStatsDashboard";
 import { getAssetUrl } from "../utils/assets";
+import { contentfulImageUrl } from "../lib/contentful-image";
 
 const gamesData = await fetchGamesDirectly();
 
@@ -116,12 +117,7 @@ const competitionLogos = Object.fromEntries(
 								><span class="mfx-spin" aria-hidden="true"></span>
 									<div class="spotlight-image">
 										<Image
-											src={
-												noticia.featuredImage?.fields
-													?.file?.url
-													? (String(noticia.featuredImage.fields.file.url).startsWith("//") ? `https:${noticia.featuredImage.fields.file.url}` : `${noticia.featuredImage.fields.file.url}`)
-													: "/og.png"
-											}
+											src={contentfulImageUrl(noticia.featuredImage?.fields?.file?.url, { width: 400, height: 360 })}
 											alt={noticia.title}
 											width={400}
 											height={360}
@@ -129,6 +125,7 @@ const competitionLogos = Object.fromEntries(
 											format="webp"
 											loading="lazy"
 											decoding="async"
+											onerror="this.onerror=null;this.src='/og.png'"
 										/>
 									</div>
 									<div class="spotlight-content">
