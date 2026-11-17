@@ -24,6 +24,13 @@ export default defineConfig({
     '/rankings/[slug]': { status: 301, destination: '/rankings' },
   },
   output: 'server',
+  security: {
+    allowedDomains: [
+      { protocol: 'https', hostname: 'www.madridfemeninoxtra.com' },
+      { protocol: 'https', hostname: 'madridfemeninoxtra.com' },
+      { protocol: 'https', hostname: '**.vercel.app' },
+    ],
+  },
   prefetch: {
     prefetchAll: false,
     defaultStrategy: 'hover',
