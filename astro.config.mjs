@@ -30,6 +30,20 @@ export default defineConfig({
   },
   adapter: vercel({
     imageService: false,
+    // Las páginas públicas se generan una vez y se sirven desde el almacén ISR.
+    // Las etiquetas de caché las regeneran al cambiar Turso o Contentful.
+    // API, votaciones y fichas de partido siguen siendo funciones normales.
+    isr: {
+      expiration: false,
+      exclude: [
+        /^\/api(?:\/|$)/,
+        /^\/valoraciones(?:\/|$)/,
+        /^\/premios(?:\/|$)/,
+        /^\/partidos\/[^/]+\/?$/,
+        /^\/(?:comparador|mercado|plantilla|rankings|search)(?:\/|$)/,
+        /^\/(?:sitemap\.xml|news-sitemap\.xml|rss\.xml)\/?$/,
+      ],
+    },
   }),
   image: {
     service: {
