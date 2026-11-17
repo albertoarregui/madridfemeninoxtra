@@ -58,8 +58,6 @@ async function handleRequest(
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             const tags = tagsForPath(routePath);
-            // Si la página ya decide su caché o sus etiquetas (fichas de partido y sus
-            // fragmentos), se respeta: las fichas antiguas no llevan etiquetas de tablas.
             if (!response.headers.has("Vercel-CDN-Cache-Control")) {
                 response.headers.set(
                     "Vercel-CDN-Cache-Control",

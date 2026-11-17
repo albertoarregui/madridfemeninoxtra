@@ -215,11 +215,6 @@ function withReadCache(client: Client, database: string, forceRefresh = false): 
 
 export type ReadStatement = { sql: string; args?: Array<string | number | null> };
 
-/**
- * Varias lecturas en una sola petición HTTP a Turso. No pasa por la caché por
- * consulta: quien la llama guarda el resultado completo con una sola clave.
- * Devuelve filas como objetos planos (solo nombres de columna), listos para JSON.
- */
 export async function readBatch(client: Client, statements: ReadStatement[]): Promise<Record<string, unknown>[][]> {
     if (statements.length === 0) return [];
     const results = await client.batch(statements.map((s) => ({ sql: s.sql, args: s.args ?? [] })), 'read');

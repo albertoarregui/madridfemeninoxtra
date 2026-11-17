@@ -34,7 +34,6 @@ export interface AnalisisPartido {
 
 const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
-// Las cuatro lecturas del análisis de un partido, en el orden de buildMatchAnalysis.
 const MATCH_ANALYSIS_SQL = [
     `SELECT es_rm, id_jugadora, jugadora_nombre, minuto, minuto_anadido, resultado, situacion, parte_cuerpo, xg, x, y
      FROM tiros WHERE id_partido = ? ORDER BY segundo_partido`,
@@ -75,17 +74,12 @@ export async function fetchMatchAnalysis(matchId: string | number): Promise<Anal
     }
 }
 
-/**
- * Análisis de un partido en una sola petición y una sola entrada de caché.
- * Lo comparten las pestañas Estadísticas (por partes) y Análisis.
- */
 export async function fetchMatchAnalysisCached(matchId: string | number, tags: string[], ttlMs: number): Promise<AnalisisPartido | null> {
     const { cached } = await import('./cache');
     const result = await cached(`match-analysis:v1:${matchId}`, ttlMs, async () => {
         const { getPlayersDbClient, readBatch } = await import('../db/client');
         const client = await getPlayersDbClient();
         if (!client) throw new Error('Turso no disponible');
-        // Se envuelve para poder guardar también "sin análisis" (null no se guarda en Runtime Cache).
         return { data: buildMatchAnalysis(await readBatch(client, MATCH_ANALYSIS_SQL.map((sql) => ({ sql, args: [matchId] })))) };
     }, { tags }).catch((error) => {
         console.error('Error fetching match analysis:', error);

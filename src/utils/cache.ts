@@ -9,7 +9,6 @@ type Entrada<T> = {
 
 type CacheOptions = {
     tags?: string[];
-    /** Etiquetas que solo se conocen con el dato ya leído (p. ej. el id de un partido buscado por slug). */
     tagsFor?: (data: any) => string[];
     remote?: boolean;
     memoryTtlMs?: number;

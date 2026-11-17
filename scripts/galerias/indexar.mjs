@@ -317,8 +317,6 @@ async function main() {
 
     console.log(`\n✅ ${globalEntries.length} galerías · ${perPlayer.size} jugadoras indexadas`);
 
-    // Las fichas de partido están en caché persistente: se regeneran solo las de
-    // los partidos cuya galería se acaba de indexar (para que aparezca su pestaña).
     const secret = env.CACHE_REVALIDATION_SECRET || process.env.CACHE_REVALIDATION_SECRET;
     const partidos = [...new Set(galleries
         .map((route) => route.split("/").pop().match(/^(\d+)-/)?.[1])

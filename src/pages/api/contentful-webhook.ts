@@ -46,8 +46,6 @@ export const POST: APIRoute = async ({ request }) => {
 
         const noticiaUrl = `${SITE_URL}/noticias/${slug}`;
 
-        // Las crónicas y previas enlazadas a un partido (focusType "match") se
-        // muestran en su ficha, que está en caché persistente: se vacía solo esa.
         const field = (name: string): string => {
             const value = body?.fields?.[name];
             if (typeof value === 'string' || typeof value === 'number') return String(value).trim();

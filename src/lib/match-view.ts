@@ -1,4 +1,3 @@
-// Ayudas de presentación compartidas por la ficha de partido y sus fragmentos.
 import { getAssetUrl } from '../utils/assets';
 import { slugify } from '../utils/partidos';
 

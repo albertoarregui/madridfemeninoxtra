@@ -1,5 +1,3 @@
-// Datos de la ficha de un partido: solo ese partido, en dos peticiones agrupadas
-// a Turso y guardados con una sola clave de caché.
 import { cached } from './cache';
 import { cacheTags } from '../lib/cache-tags';
 import { isOpenMatchDate, matchCacheTags, matchDateFromSlug, ownMatchTags } from '../lib/match-freshness';
@@ -31,13 +29,9 @@ export type MatchDetail = {
     subs: any[];
     events: any[];
     kit: { url: string; nombre: string | null; tipo: string | null } | null;
-    /** Balance del Real Madrid en el estadio hasta este partido (incluido si ya se jugó). */
     stadiumStats: StadiumRecord;
-    /** Partidos anteriores contra el mismo rival, del más reciente al más antiguo. */
     h2h: any[];
-    /** Fila de `entrenadores` del partido, sin transformar. */
     coach: Record<string, unknown> | null;
-    /** Cuántas filas de análisis tiene el partido: decide si existen las pestañas. */
     analysis: MatchAnalysisSummary;
 };
 
@@ -118,7 +112,6 @@ async function loadMatchDetail(slug: string, date: string): Promise<MatchDetail 
     const client = await getPlayersDbClient();
     if (!client) throw new Error('Turso no disponible');
 
-    // 1.ª petición: el partido del día del slug.
     const [gameRows] = await readBatch(client, [{
         sql: gamesSql('p.fecha = ?', 'p.id_club_local, p.id_club_visitante, p.id_entrenador'),
         args: [date],
@@ -126,7 +119,6 @@ async function loadMatchDetail(slug: string, date: string): Promise<MatchDetail 
     const game = gameRows.map(mapGameRow).find((row) => row.slug === slug);
     if (!game) return null;
 
-    // 2.ª petición: todo lo demás que necesita la ficha, agrupado.
     const id = game.id_partido;
     const localRM = isRealMadridLocal(game);
     const rivalId = localRM ? game.id_club_visitante : game.id_club_local;
@@ -183,32 +175,21 @@ async function loadMatchDetail(slug: string, date: string): Promise<MatchDetail 
     };
 }
 
-/**
- * Ficha de un partido a partir de su slug. Se guarda con una sola clave:
- * las fichas cerradas solo se vacían con `match-ID`/`match-slug` o `database`;
- * las abiertas, con cualquier carga de datos de partido.
- * Devuelve null si el partido no existe y lanza si Turso falla, para que un
- * fallo pasajero no quede guardado como "no existe".
- */
 export async function fetchMatchDetail(slug: string): Promise<MatchDetail | null> {
     const date = matchDateFromSlug(slug);
     if (!date) return null;
     const open = isOpenMatchDate(date);
     const result = await cached(`match-detail:${CACHE_VERSION}:${slug}`, open ? OPEN_TTL_MS : CLOSED_TTL_MS, async () => {
-        // Se envuelve para poder guardar también "no existe" (null no se guarda en Runtime Cache).
         return { detail: await loadMatchDetail(slug, date) };
     }, {
         tags: open ? matchCacheTags({ slug, fecha: date }) : ownMatchTags({ slug }),
-        // Un slug que no existe se vacía cuando cambian los partidos.
         tagsFor: (data) => data?.detail ? matchCacheTags(data.detail.game) : [cacheTags.matches, cacheTags.calendar],
     });
     return result.detail;
 }
 
-/** Etiquetas de la respuesta "este partido no existe". */
 export const MISSING_MATCH_TAGS = [cacheTags.database, cacheTags.matches, cacheTags.calendar];
 
-/** Etiquetas y vida en caché de lo que depende de un partido (página, fragmentos y análisis). */
 export function matchCachePolicy(game: { id_partido?: unknown; slug?: unknown; fecha?: unknown }) {
     const open = isOpenMatchDate(game.fecha as string | null | undefined);
     return { open, tags: matchCacheTags(game), ttlMs: open ? OPEN_TTL_MS : CLOSED_TTL_MS };

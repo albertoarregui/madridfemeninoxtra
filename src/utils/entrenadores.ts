@@ -49,7 +49,6 @@ export const cleanApiValue = (value: any): any => {
     return value;
 };
 
-/** Fila de `entrenadores` con los campos que usan las fichas. */
 export function mapCoachRow(coach: any): any {
     const nombre = cleanApiValue(coach.nombre) || "";
     const slug = slugify(nombre);
@@ -72,7 +71,6 @@ export function mapCoachRow(coach: any): any {
     };
 }
 
-/** Entrenadores que aparecen en el directorio (los mismos criterios que fetchCoachesDirectly). */
 export function isListedCoach(coach: any): boolean {
     const hasValidName = coach.name &&
         coach.name.trim() !== "" &&

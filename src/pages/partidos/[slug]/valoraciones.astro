@@ -1,7 +1,4 @@
 ---
-// Pestaña "Valoraciones" de la ficha de partido. Va aparte porque los votos de la
-// afición cambian mientras la votación está abierta: este fragmento no entra en
-// ISR y la CDN lo guarda un minuto; cerrada la votación, lo guarda como la ficha.
 import MatchRatings from "../../../components/match/MatchRatings.astro";
 import { fetchMatchDetail, matchCachePolicy, MISSING_MATCH_TAGS } from "../../../utils/match-detail";
 import { ratingSummary, startTimeUTC } from "../../../lib/ratings";
@@ -21,7 +18,6 @@ if (!detail) {
 
 const { game, lineup, subs } = detail;
 const policy = matchCachePolicy(game);
-// Mismo cálculo de apertura que ratingsOpen(): desde el pitido inicial + 2 h, durante 72 h.
 const votesFinished = Date.now() >= startTimeUTC({ fecha: String(game.fecha ?? ""), hora: String(game.hora ?? "") } as any) + VOTES_OPEN_MS;
 const fan = await ratingSummary(Number(game.id_partido)).catch(() => []);
 

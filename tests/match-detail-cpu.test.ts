@@ -15,7 +15,6 @@ test("la ficha solo consulta el partido pedido", () => {
     }
     assert.match(detail, /gamesSql\('p\.fecha = \?'/);
     assert.match(detail, /WHERE p\.id_partido != \?\s+AND p\.fecha < \?/, "el H2H solo lee partidos anteriores contra el rival");
-    // El widget del próximo partido ya no obliga a cada página a leer todos los partidos.
     assert.doesNotMatch(read("src/layouts/Layout.astro"), /<NextMatchCountdown/);
     assert.match(read("src/pages/proximo-partido.astro"), /export const partial = true/);
 });
@@ -38,7 +37,6 @@ test("análisis, estadísticas, galería y valoraciones se cargan al abrir su pe
     assert.match(read("src/components/match/MatchTabs.astro"), /if \(!panel\.hidden\) void loadPanel\(panel\)/);
     assert.match(read("src/components/match/MatchTabs.astro"), /searchParams\.get\("seccion"\)/);
     assert.doesNotMatch(page, /Astro\.url\.searchParams/, "ISR guarda una sola versión para cualquier ?seccion=");
-    // Los fragmentos no traen CSS: la ficha importa sus componentes para incluirlos.
     for (const component of ["MatchTeamStats", "MatchAnalysis", "GaleriaGrid", "MatchRatings"]) {
         assert.match(page, new RegExp(`import "[./]+components/(?:match/|analisis/)?${component}\\.astro";`), component);
     }
@@ -60,12 +58,10 @@ test("todas las fichas entran en la caché persistente (ISR)", () => {
 });
 
 test("los partidos recientes se invalidan al introducir datos", () => {
-    // Cargas por script o desde la web: etiquetas de tabla + match-ID.
     assert.match(read("scripts/sofascore/importar-partido.mjs"), /`match-\$\{P\}`/);
     assert.match(read("scripts/revalidar-cache.mjs"), /--partido/);
     assert.match(read("scripts/galerias/indexar.mjs"), /`match-\$\{id\}`/);
     assert.match(read("src/pages/api/contentful-webhook.ts"), /cacheTags\.match\(matchRef\)/);
-    // Cargas manuales en Turso: solo las fichas abiertas preguntan por cache_cambios.
     assert.ok(existsSync("src/pages/api/cache/cambios.ts"));
     assert.match(read("src/pages/api/cache/cambios.ts"), /SELECT tabla, version FROM cache_cambios/);
     assert.match(page, /fetch\('\/api\/cache\/cambios'/);

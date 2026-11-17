@@ -1,7 +1,4 @@
 ---
-// Pestañas pesadas de la ficha de partido (Estadísticas, Análisis y Galería).
-// Es un fragmento HTML que la ficha pide al abrir la pestaña; se guarda en el
-// almacén ISR con las mismas etiquetas que la ficha.
 import MatchTeamStats from "../../../components/match/MatchTeamStats.astro";
 import MatchAnalysis from "../../../components/analisis/MatchAnalysis.astro";
 import GaleriaGrid from "../../../components/GaleriaGrid.astro";
@@ -14,7 +11,6 @@ export const partial = true;
 
 const SECTIONS = new Set(["estadisticas", "analisis", "galeria"]);
 const MATCH_GALERIA_PREVIEW = 21;
-// Estilo en línea: el fragmento no trae su propia hoja de estilos.
 const EMPTY_STYLE = "margin:0;padding:2.5rem 1rem;text-align:center;font:500 0.9rem/1.4 'DM Sans',sans-serif;color:rgba(var(--l-ink, 200, 210, 220), 0.6);";
 const { slug = "", seccion = "" } = Astro.params;
 
@@ -37,7 +33,6 @@ const localShield = matchShieldSrc(game.club_local, game.local_foto_url);
 const visitorShield = matchShieldSrc(game.club_visitante, game.visitante_foto_url);
 const rivalName = isLocalRM ? game.club_visitante : game.club_local;
 
-// Estadísticas por partes y análisis comparten una sola lectura en caché.
 const needsAnalysis = seccion === "analisis" || (seccion === "estadisticas" && detail.analysis.periodos > 0);
 const analysis = needsAnalysis ? await fetchMatchAnalysisCached(game.id_partido, policy.tags, policy.ttlMs) : null;
 const hasAnalysis = Boolean(analysis && (analysis.tiros.length || analysis.posiciones.length || analysis.dominio.length));
@@ -68,4 +63,3 @@ const galleryPhotos = (gallery?.photos ?? []).slice(0, MATCH_GALERIA_PREVIEW).ma
         />
     )
     : <p style={EMPTY_STYLE}>Este partido no tiene galería.</p>)}
-

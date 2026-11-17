@@ -100,10 +100,6 @@ export async function fetchCronicaPartido(
     ) : items, claves));
 }
 
-/**
- * Crónica (o previa) de una ficha de partido, guardada por partido. Así la ficha
- * no vuelve a leer la lista completa de noticias de Contentful en cada render.
- */
 export async function fetchCronicaPartidoCached(
     match: { id_partido?: unknown; slug?: unknown; isPlayed?: unknown },
     tags: string[] = [],

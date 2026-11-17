@@ -43,7 +43,6 @@ export function formatGameDate(dateString: string | null | undefined): string {
     }
 }
 
-/** SELECT de partidos con sus uniones. `extraColumns` añade columnas antes de `ep.*`. */
 export function gamesSql(where = '', extraColumns = ''): string {
     return `
             SELECT
@@ -445,7 +444,6 @@ export const MATCH_LINEUP_SQL = `
                 j.nombre ASC
 `;
 
-/** Titulares a partir de las filas de MATCH_LINEUP_SQL. */
 export function mapLineupRows(rows: readonly any[]): any[] {
     const rowsById = new Map<number, any>();
     for (const row of rows) {
@@ -579,7 +577,6 @@ export const MATCH_SUBSTITUTIONS_SQL = `
             ORDER BY IFNULL(a.minuto_entrada, a.minuto_salida) ASC
 `;
 
-/** Cambios (entra/sale) a partir de las filas de MATCH_SUBSTITUTIONS_SQL. */
 export function mapSubstitutionRows(rows: readonly any[]): any[] {
     const rowsById = new Map<number, any>();
     for (const row of rows) {
@@ -890,7 +887,6 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
     }
 }
 
-/** Consultas del timeline, todas filtradas por id_partido. */
 export const MATCH_EVENT_SQL = {
     goals: `
             SELECT g.*, j.nombre as nombre_jugadora, a.nombre as nombre_asistente
@@ -934,7 +930,6 @@ export const MATCH_EVENT_SQL = {
 
 export type MatchEventRows = { [K in keyof typeof MATCH_EVENT_SQL]: readonly any[] };
 
-/** Timeline ordenado a partir de las filas de MATCH_EVENT_SQL y de los cambios ya calculados. */
 export function buildMatchEvents(rows: MatchEventRows, subs: readonly any[]): any[] {
     const events: any[] = [];
 

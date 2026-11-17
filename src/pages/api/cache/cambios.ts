@@ -3,11 +3,6 @@ import { getCache } from "@vercel/functions";
 import { invalidarTags } from "../../../utils/cache";
 import { isCachedTable, tagsForTables, type CachedTable } from "../../../lib/db-cache-tags";
 
-// Comprueba si alguien ha cargado datos directamente en Turso (los triggers suben
-// la versión de cada tabla en cache_cambios) y, si es así, invalida lo que
-// depende de esas tablas. Solo lo llaman las fichas de partidos abiertos (futuros
-// o de los tres últimos días) y la CDN agrupa las llamadas: como mucho una
-// ejecución cada 30 segundos, y ninguna cuando nadie mira un partido reciente.
 export const prerender = false;
 
 const STATE_KEY = "cache:cambios:v1";

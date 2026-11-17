@@ -1,8 +1,3 @@
-// URL de una imagen de Contentful lista para <img>. Acepta "//images.ctfassets.net/…"
-// o una URL absoluta y, si es de images.ctfassets.net, pide a Contentful una versión
-// reducida en WebP: el servicio de imágenes de la web no redimensiona, así que sin
-// esto el navegador descarga el original (a veces de varios MB o en un formato que
-// Safari no muestra).
 export function contentfulImageUrl(
     raw: unknown,
     size: { width: number; height: number; quality?: number },

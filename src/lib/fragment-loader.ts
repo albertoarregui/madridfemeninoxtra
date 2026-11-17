@@ -1,8 +1,3 @@
-// Inserta en el navegador un fragmento HTML servido por la web (pestañas de la
-// ficha de partido, widget del próximo partido). Los <script> que trae se vuelven
-// a crear para que se ejecuten y después se avisa con "mfx:fragment" para que los
-// componentes cuyo módulo ya estaba cargado se inicialicen.
-
 export function insertFragment(target: HTMLElement, html: string): void {
     const template = document.createElement('template');
     template.innerHTML = html;

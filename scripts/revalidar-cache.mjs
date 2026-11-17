@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-// Uso:
-//   npm run cache:revalidar                      → tablas de partido (fichas abiertas, rankings…)
-//   npm run cache:revalidar -- partidos jugadoras → solo esas tablas
-//   npm run cache:revalidar -- --partido 312      → además la ficha del partido 312, aunque sea antiguo
 import fs from 'node:fs';
 
 const env = { ...process.env };
@@ -19,7 +15,6 @@ if (!secret) { console.error('Falta CACHE_REVALIDATION_SECRET'); process.exit(1)
 const PARTIDO = ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'estadisticas_jugadoras',
     'estadisticas_partidos', 'tarjetas', 'tarjetas_rival', 'cambios', 'penaltis_fallados', 'tanda_penaltis', 'mvp'];
 
-// Las fichas de partidos antiguos solo se regeneran con su etiqueta match-ID.
 const args = process.argv.slice(2);
 const partidos = [];
 const tablasPedidas = [];

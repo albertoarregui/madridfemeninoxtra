@@ -18,8 +18,6 @@ import MatchTimelineH from "../../components/match/MatchTimelineH.astro";
 import { getCoachImageUrl, isListedCoach, mapCoachRow } from "../../utils/entrenadores";
 import { getFlagSrc } from "../../utils/flags";
 import { matchPlayerHref, matchShieldSrc } from "../../lib/match-view";
-// Las pestañas pesadas llegan como fragmento (src/pages/partidos/[slug]/*.astro), que
-// no trae CSS: se importan aquí solo para que sus estilos vayan en la hoja de la ficha.
 import "../../components/match/MatchTeamStats.astro";
 import "../../components/analisis/MatchAnalysis.astro";
 import "../../components/GaleriaGrid.astro";
@@ -28,11 +26,9 @@ import "../../components/match/MatchRatings.astro";
 const { slug } = Astro.params;
 const matchSlug = slug ?? "";
 
-// Solo se lee el partido pedido (y lo que cuelga de él), en dos peticiones agrupadas.
 const detail = await fetchMatchDetail(matchSlug);
 
 if (!detail) {
-    // También se guarda en caché: se vacía en cuanto cambian los partidos.
     return new Response(null, {
         status: 302,
         headers: { Location: "/404", "Vercel-Cache-Tag": MISSING_MATCH_TAGS.join(",") },
@@ -92,7 +88,6 @@ const playerRatingClass = (player: any): string => {
 const matchStatus = getMatchStatus(game.fecha, game.hora);
 const isLiveOrPlayed = game.isPlayed || matchStatus.status === 'in-progress';
 
-// El estado se recalcula en el navegador: la ficha se sirve desde caché.
 const kickoffISO = (() => { try { return parseMatchDate(String(game.fecha ?? ""), String(game.hora ?? "")).toISOString(); } catch { return ""; } })();
 const openUntil = matchOpenUntil(game.fecha);
 const resumenVideoId = (() => {
@@ -102,7 +97,6 @@ const resumenVideoId = (() => {
 })();
 const hasAnalysis = Boolean(detail.analysis.tiros || detail.analysis.posiciones || detail.analysis.dominio);
 
-// Solo se mira si hay galería; las fotos se cargan al abrir su pestaña.
 const matchGallery = (await fetchGalleriesIndex()).find((g) => g.idPartido === Number(game.id_partido));
 const totalGaleria = matchGallery?.count ?? 0;
 
@@ -149,7 +143,6 @@ const isLocalRM =
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
-// Partidos anteriores contra el rival: vienen ya filtrados y ordenados en la misma petición.
 const h2hMatches = detail.h2h;
 // El balance incluye el propio partido si ya se ha jugado; la lista muestra solo los anteriores.
 const h2hBalanceMatches = game.isPlayed ? [game, ...h2hMatches] : h2hMatches;
@@ -309,10 +302,7 @@ const matchSchema = matchStartISO ? {
 const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
 const hasGallery = totalGaleria > 0;
 const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(hasAnalysis ? ["analisis"] : []), ...(hasGallery ? ["galeria"] : []), ...(h2hStats ? ["h2h"] : [])];
-// La página se guarda una sola vez para todas las variantes de ?seccion=: la pestaña
-// pedida la abre el navegador.
 const activeTab: string = "info";
-// Fragmentos que se piden al abrir su pestaña.
 const sectionSrc = (section: string) => `/partidos/${game.slug}/${section}`;
 
 const coachRow: any = tabbed && detail.coach
@@ -2908,8 +2898,6 @@ const matchCoach = game.entrenador_nombre ? {
         setInterval(tick, 1000);
     }
 
-    // La ficha llega desde caché: el estado (no comenzado, en vivo, finalizado) se
-    // calcula aquí con la hora real, igual que getMatchStatus en el servidor.
     const badge = document.getElementById('live-status-badge') as HTMLElement | null;
     const kickoff = badge?.dataset.kickoff ? Date.parse(badge.dataset.kickoff) : NaN;
     if (badge && Number.isFinite(kickoff)) {
@@ -2930,9 +2918,6 @@ const matchCoach = game.entrenador_nombre ? {
         }
     }
 
-    // Fichas abiertas (futuras o de los últimos tres días): avisa al servidor para que
-    // compruebe si se han cargado datos en Turso. La CDN agrupa las llamadas y las
-    // fichas antiguas no lo hacen nunca.
     const page = document.querySelector<HTMLElement>('.match-details-page[data-open-until]');
     if (page && Date.now() < Number(page.dataset.openUntil)) {
         let recent = false;

@@ -32,10 +32,7 @@ export default defineConfig({
     imageService: false,
     // Las páginas públicas se generan una vez y se sirven desde el almacén ISR.
     // Las etiquetas de caché las regeneran al cambiar Turso o Contentful.
-    // Las fichas de partido (y sus pestañas) también: las antiguas solo con su
-    // etiqueta match-ID y las recientes con cualquier carga de datos de partido.
-    // API, votaciones, la pestaña de valoraciones y el widget del próximo partido
-    // (dependen de la hora o de los votos) siguen siendo funciones normales.
+    // API, votaciones, valoraciones de partido y próximo partido siguen siendo funciones normales.
     isr: {
       expiration: false,
       exclude: [
