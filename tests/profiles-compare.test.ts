@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const exists = (path: string) => existsSync(new URL(`../${path}`, import.meta.url));
 
 test("las fichas de entrenador, árbitra, rival y estadio tienen pestañas y selector para comparar", () => {
     const pages = {
@@ -60,10 +61,9 @@ test("rankings: estadísticas en fila deslizable y total/x90", () => {
     assert.match(rankings, /PER90_MIN_MINUTES = 450/);
 });
 
-test("la comprobación de cambios solo se ejecuta cada 30 s en la CDN y no escribe sin cambios", () => {
-    const check = read("src/pages/api/cache/check.ts");
-    assert.match(check, /Vercel-CDN-Cache-Control": `max-age=\$\{CDN_SECONDS\}`/);
-    assert.match(check, /getPlayersDbClient\(\{ forceRefresh: true \}\)/);
-    assert.match(check, /if \(!previous \|\| changed\.length > 0\)/);
-    assert.match(read("src/layouts/Layout.astro"), /\/api\/cache\/check/);
+test("los cambios invalidan la caché al escribir sin sondeo global desde cada página", () => {
+    assert.equal(exists("src/pages/api/cache/check.ts"), false);
+    assert.doesNotMatch(read("src/layouts/Layout.astro"), /\/api\/cache\/check|mfx-cache-check/);
+    assert.match(read("src/db/client.ts"), /await invalidarTags\(tagsForWriteSql\(sql\)\)/);
+    assert.match(read("src/pages/api/cache/revalidate.ts"), /await invalidarTags\(tags\)/);
 });
