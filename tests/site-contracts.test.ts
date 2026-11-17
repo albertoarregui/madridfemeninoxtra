@@ -155,13 +155,19 @@ test('original footer style stays with exact requested legal links and no ad con
 });
 
 test('Vercel CPU controls reuse HTML at the CDN and never serialize full article bodies', () => {
+  const astroConfig = read('astro.config.mjs');
   const middleware = read('src/middleware.ts');
   const cache = read('src/utils/cache.ts');
   const header = read('src/components/Header.astro');
   const news = read('src/pages/noticias/index.astro');
   const proxy = read('src/pages/api/img-proxy.ts');
-  assert.match(middleware, /const CACHE_HOME_S = 15 \* 60;/);
-  assert.match(middleware, /const SWR_HOME_S = 60 \* 60;/);
+  assert.match(astroConfig, /isr:\s*\{/);
+  assert.match(astroConfig, /expiration:\s*false/);
+  assert.match(astroConfig, /\^\\\/api/);
+  assert.match(astroConfig, /\^\\\/partidos/);
+  assert.match(astroConfig, /comparador\|mercado\|plantilla\|rankings\|search/);
+  assert.match(middleware, /const CACHE_HOME_S = 24 \* 60 \* 60;/);
+  assert.match(middleware, /const SWR_HOME_S = 7 \* 24 \* 60 \* 60;/);
   assert.match(middleware, /fastRefresh \? SWR_HOME_S/);
   assert.match(middleware, /Vercel-CDN-Cache-Control/);
   assert.match(middleware, /Vercel-Cache-Tag/);
