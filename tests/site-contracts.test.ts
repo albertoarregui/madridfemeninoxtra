@@ -159,7 +159,7 @@ test('Vercel CPU controls reuse HTML at the CDN and never serialize full article
   const middleware = read('src/middleware.ts');
   const cache = read('src/utils/cache.ts');
   const header = read('src/components/Header.astro');
-  const news = read('src/pages/noticias/index.astro');
+  const news = read('src/utils/noticias.ts');
   const proxy = read('src/pages/api/img-proxy.ts');
   assert.match(astroConfig, /isr:\s*\{/);
   assert.match(astroConfig, /expiration:\s*false/);

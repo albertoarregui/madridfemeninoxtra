@@ -1,6 +1,6 @@
 export function contentfulImageUrl(
     raw: unknown,
-    size: { width: number; height: number; quality?: number },
+    size: { width: number; height?: number; quality?: number },
     fallback = "/og.png",
 ): string {
     const value = String(raw ?? "").trim();
@@ -10,9 +10,9 @@ export function contentfulImageUrl(
         if (url.hostname === "images.ctfassets.net") {
             url.searchParams.set("fm", "webp");
             url.searchParams.set("w", String(size.width));
-            url.searchParams.set("h", String(size.height));
-            url.searchParams.set("q", String(size.quality ?? 72));
-            url.searchParams.set("fit", "fill");
+            if (size.height) url.searchParams.set("h", String(size.height));
+            url.searchParams.set("q", String(size.quality ?? 80));
+            if (size.height) url.searchParams.set("fit", "fill");
         }
         return url.toString();
     } catch {

@@ -1,6 +1,6 @@
 ---
 import { Image } from "astro:assets";
-import { contentfulClient } from "../lib/contentful";
+import { fetchNewsArchive } from "../utils/noticias";
 import { contentfulImageUrl } from "../lib/contentful-image";
 
 let hitos: {
@@ -14,22 +14,13 @@ let hitos: {
 }[] = [];
 
 try {
-    const entries = await contentfulClient.getEntries({
-        content_type: "noticia",
-        order: ["-sys.createdAt"] as any,
-        limit: 20,
-    });
-
-    if (entries?.items) {
-        hitos = entries.items.map((item: any) => ({
-            slug: item.fields.slug || "sin-slug",
-            title: item.fields.title?.toUpperCase() || "NOTICIA",
-            description: item.fields.subtitle || "",
-            jugadora: item.fields.player || "Jugadora",
-            category: item.fields.category || "HITO",
-            img: contentfulImageUrl(item.fields.featuredImage?.fields?.file?.url, { width: 520, height: 340 }),
-        }));
-    }
+    hitos = (await fetchNewsArchive()).slice(0, 20).map((item: any) => ({
+        slug: item.slug || "sin-slug",
+        title: item.title?.toUpperCase() || "NOTICIA",
+        description: item.subtitle || "",
+        category: item.category || "HITO",
+        img: contentfulImageUrl(item.featuredImage?.fields?.file?.url, { width: 520, height: 340 }),
+    }));
 } catch (e) {
     console.error("Error cargando hitos en el carrusel:", e);
 }

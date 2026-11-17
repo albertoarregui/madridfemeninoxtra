@@ -1,4 +1,5 @@
 import { contentfulClient } from "../lib/contentful";
+import { cached } from "./cache";
 
 export interface NoticiaCard {
     id: string;
@@ -105,4 +106,34 @@ export function groupNewsByReference(
         }
     }
     return map;
+}
+
+export async function fetchNewsArchive(): Promise<any[]> {
+    return cached(`contentful:news:archive-v1:es`, 24 * 60 * 60 * 1000, async () => {
+        const entries = await contentfulClient.getEntries({
+            content_type: "noticia",
+            order: ["-sys.createdAt"],
+            limit: 100,
+            include: 1,
+            select: [
+                "sys.id", "sys.createdAt", "sys.updatedAt",
+                "fields.title", "fields.subtitle", "fields.slug",
+                "fields.category", "fields.featuredImage",
+            ] as any,
+        });
+        return entries.items.map((item: any) => {
+            const fields = item.fields || {};
+            const imageUrl = fields.featuredImage?.fields?.file?.url;
+            return {
+                id: item.sys.id,
+                title: fields.title,
+                subtitle: fields.subtitle || "",
+                slug: fields.slug,
+                category: fields.category,
+                createdAt: item.sys.createdAt,
+                updatedAt: item.sys.updatedAt,
+                featuredImage: imageUrl ? { fields: { file: { url: imageUrl } } } : null,
+            };
+        });
+    }, { tags: ["news"] });
 }
