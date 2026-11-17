@@ -14,12 +14,14 @@ const CACHE_LARGA = [
     /^\/la-fabrica(?:\/|$)/,
 ];
 
-const CACHE_CORTA_S = 24 * 60 * 60;
-const SWR_S = 7 * 24 * 60 * 60;
-const CACHE_LARGA_S = 7 * 24 * 60 * 60;
-const SWR_LARGA_S = 30 * 24 * 60 * 60;
-const CACHE_HOME_S = 15 * 60;
-const SWR_HOME_S = 60 * 60;
+// Turso y Contentful invalidan por etiqueta cuando cambia un dato. Estos TTL
+// son solo una red de seguridad y evitan regeneraciones periódicas sin cambios.
+const CACHE_CORTA_S = 7 * 24 * 60 * 60;
+const SWR_S = 30 * 24 * 60 * 60;
+const CACHE_LARGA_S = 30 * 24 * 60 * 60;
+const SWR_LARGA_S = 90 * 24 * 60 * 60;
+const CACHE_HOME_S = 24 * 60 * 60;
+const SWR_HOME_S = 7 * 24 * 60 * 60;
 const FRESH_MATCH_CACHE_S = 60;
 
 async function handleRequest(
