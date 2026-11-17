@@ -4,7 +4,9 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import FooterUpper from "../components/FooterUpper.astro";
 import ScrollToTop from "../components/ScrollToTop.astro";
-import NextMatchCountdown from "../components/NextMatchCountdown.astro";
+// El widget del próximo partido se pide aparte (/proximo-partido); se importa aquí
+// solo para que sus estilos vayan en la hoja de todas las páginas.
+import "../components/NextMatchCountdown.astro";
 import GoogleNewsBanner from "../components/GoogleNewsBanner.astro";
 import LinkPreview from "../components/LinkPreview.astro";
 import { getAssetUrl } from "../utils/assets";
@@ -198,7 +200,20 @@ const siteSchema = {
 		</div>
 		<FooterUpper />
 		<Footer />
-		{showMatchCountdown && <NextMatchCountdown />}
+		{showMatchCountdown && <div data-next-match-slot data-src="/proximo-partido"></div>}
+		<script>
+			import { loadFragment } from "../lib/fragment-loader";
+			// Se pide al cargar cada página: así ninguna página lee todos los partidos
+			// para pintarlo y el widget no se queda viejo en las páginas en caché.
+			const loadNextMatch = () => {
+				const slot = document.querySelector<HTMLElement>("[data-next-match-slot]");
+				if (!slot || slot.dataset.loaded) return;
+				slot.dataset.loaded = "true";
+				loadFragment(slot, slot.dataset.src!).catch(() => { delete slot.dataset.loaded; });
+			};
+			loadNextMatch();
+			document.addEventListener("astro:page-load", loadNextMatch);
+		</script>
 		<ScrollToTop />
 		<LinkPreview />
 		<script is:inline>

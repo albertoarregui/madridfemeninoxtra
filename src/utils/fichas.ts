@@ -100,6 +100,22 @@ export async function fetchCronicaPartido(
     ) : items, claves));
 }
 
+/**
+ * Crónica (o previa) de una ficha de partido, guardada por partido. Así la ficha
+ * no vuelve a leer la lista completa de noticias de Contentful en cada render.
+ */
+export async function fetchCronicaPartidoCached(
+    match: { id_partido?: unknown; slug?: unknown; isPlayed?: unknown },
+    tags: string[] = [],
+): Promise<FichaTexto | null> {
+    const claves = [match.id_partido as string | number | null, match.slug as string | null];
+    const categoria = match.isPlayed ? 'CRÓNICA' : 'PREVIA';
+    const result = await cached(`match-cronica:v1:${String(match.id_partido)}:${categoria}`, 7 * 24 * 60 * 60 * 1000, async () => ({
+        data: (await fetchCronicaPartido(claves, categoria)) ?? (await fetchCronicaPartido(claves)),
+    }), { tags: ['contentful', ...tags] });
+    return result.data;
+}
+
 export function resumenEditorial(html: string | null | undefined, maxLength = 260): string | null {
     if (!html) return null;
     const paragraphs = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]

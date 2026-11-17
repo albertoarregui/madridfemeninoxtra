@@ -316,6 +316,26 @@ async function main() {
     }
 
     console.log(`\n✅ ${globalEntries.length} galerías · ${perPlayer.size} jugadoras indexadas`);
+
+    // Las fichas de partido están en caché persistente: se regeneran solo las de
+    // los partidos cuya galería se acaba de indexar (para que aparezca su pestaña).
+    const secret = env.CACHE_REVALIDATION_SECRET || process.env.CACHE_REVALIDATION_SECRET;
+    const partidos = [...new Set(galleries
+        .map((route) => route.split("/").pop().match(/^(\d+)-/)?.[1])
+        .filter(Boolean))];
+    if (!dryRun && secret && partidos.length) {
+        const site = env.SITE_URL || process.env.SITE_URL || "https://www.madridfemeninoxtra.com";
+        try {
+            const res = await fetch(`${site}/api/cache/revalidate`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-cache-revalidation-secret": secret },
+                body: JSON.stringify({ tags: partidos.map((id) => `match-${id}`) }),
+            });
+            console.log(`Caché de las fichas (${partidos.length} partidos): ${res.status}`);
+        } catch (e) {
+            console.log(`⚠️  No se pudo avisar a la web: ${e.message}`);
+        }
+    }
     if (unresolvedAll.size) {
         console.log(`\n⚠️  Nombres NO reconocidos (añádelos a scripts/galerias/overrides.json):`);
         for (const [n, c] of [...unresolvedAll].sort((a, b) => b[1] - a[1])) {

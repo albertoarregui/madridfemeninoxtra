@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// Uso:
+//   npm run cache:revalidar                      → tablas de partido (fichas abiertas, rankings…)
+//   npm run cache:revalidar -- partidos jugadoras → solo esas tablas
+//   npm run cache:revalidar -- --partido 312      → además la ficha del partido 312, aunque sea antiguo
 import fs from 'node:fs';
 
 const env = { ...process.env };
@@ -14,13 +18,26 @@ if (!secret) { console.error('Falta CACHE_REVALIDATION_SECRET'); process.exit(1)
 
 const PARTIDO = ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'estadisticas_jugadoras',
     'estadisticas_partidos', 'tarjetas', 'tarjetas_rival', 'cambios', 'penaltis_fallados', 'tanda_penaltis', 'mvp'];
-const tables = process.argv.slice(2).length ? process.argv.slice(2) : PARTIDO;
+
+// Las fichas de partidos antiguos solo se regeneran con su etiqueta match-ID.
+const args = process.argv.slice(2);
+const partidos = [];
+const tablasPedidas = [];
+for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--partido') { partidos.push(args[++i]); continue; }
+    if (args[i].startsWith('--partido=')) { partidos.push(args[i].slice('--partido='.length)); continue; }
+    tablasPedidas.push(args[i]);
+}
+if (partidos.some((id) => !/^\d+$/.test(String(id)))) { console.error('--partido necesita el id numérico del partido'); process.exit(1); }
+
+const tables = tablasPedidas.length ? tablasPedidas : PARTIDO;
+const tags = partidos.map((id) => `match-${id}`);
 const site = env.SITE_URL || 'https://www.madridfemeninoxtra.com';
 
 const res = await fetch(`${site}/api/cache/revalidate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': secret },
-    body: JSON.stringify({ tables }),
+    body: JSON.stringify({ tables, tags }),
 });
 const body = await res.text();
 console.log(res.status, body);

@@ -43,27 +43,9 @@ export function formatGameDate(dateString: string | null | undefined): string {
     }
 }
 
-async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: string; id?: string | number } = {}): Promise<any[]> {
-    try {
-        const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
-
-        if (!client) {
-            return [];
-        }
-
-        const filters: string[] = [];
-        const args: Array<string | number> = [];
-        if (options.date) {
-            filters.push('p.fecha = ?');
-            args.push(options.date);
-        }
-        if (options.id != null && String(options.id).trim() !== '') {
-            filters.push('p.id_partido = ?');
-            args.push(options.id);
-        }
-
-        const query = `
+/** SELECT de partidos con sus uniones. `extraColumns` añade columnas antes de `ep.*`. */
+export function gamesSql(where = '', extraColumns = ''): string {
+    return `
             SELECT
                 p.id_partido AS partido_id, p.fecha, p.hora, p.jornada, p.tv, p.id_temporada, p.id_arbitra, p.id_estadio, p.mvp, p.asistencia, p.penaltis, p.once_inicial_url, p.mvp_foto_url, p.formacion, p.video_resumen_url,
                 t.temporada AS temporada_nombre,
@@ -99,7 +81,7 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
                     UNION ALL
                     SELECT pf.id_penalti_fallado FROM penaltis_fallados pf WHERE pf.id_partido = p.id_partido AND (pf.id_jugadora IS NULL OR pf.id_jugadora = 0 OR pf.id_jugadora = '')
                 )) as penaltis_rival,
-                ep.*,
+${extraColumns ? `                ${extraColumns},\n` : ''}                ep.*,
                 CASE
                    WHEN p.goles_rm IS NULL OR p.goles_rival IS NULL THEN 'P'
                    WHEN CAST(p.goles_rm AS INTEGER) > CAST(p.goles_rival AS INTEGER) THEN 'V'
@@ -119,51 +101,74 @@ async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: s
               LEFT JOIN jugadoras jm ON p.mvp = jm.id_jugadora
               LEFT JOIN entrenadores en ON p.id_entrenador = en.id_entrenador
               LEFT JOIN estadisticas_partidos ep ON p.id_partido = ep.id_partido
-              ${filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : ''}
+              ${where ? `WHERE ${where}` : ''}
               ORDER BY p.fecha ASC, p.hora ASC, p.id_partido ASC
         `;
+}
+
+export function mapGameRow(game: any): any {
+    let dateSlug = 'sin-fecha';
+    try {
+        if (game.fecha) {
+            const d = new Date(game.fecha);
+            if (!isNaN(d.getTime())) {
+                dateSlug = d.toISOString().split('T')[0];
+            }
+        }
+    } catch (e) {
+        console.error("Error parsing date for slug:", game.fecha, e);
+    }
+
+    const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
+    const today = new Date().toISOString().slice(0, 10);
+    const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival) && (!game.fecha || String(game.fecha).slice(0, 10) <= today);
+
+    return {
+        ...game,
+        id_partido: resolveMatchId(game),
+        isPlayed,
+        mvp: cleanApiValue(game.mvp),
+        local_foto_url: cleanApiValue(game.local_foto_url),
+        visitante_foto_url: cleanApiValue(game.visitante_foto_url),
+        mvp_foto_url: cleanApiValue(game.mvp_foto_url),
+        once_inicial_url: cleanApiValue(game.once_inicial_url),
+        video_resumen_url: cleanApiValue(game.video_resumen_url),
+        local_shield_url: getRivalShieldUrl({ nombre: game.club_local, foto_url: game.local_foto_url }),
+        visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
+        slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
+        fecha_formateada: formatGameDate(game.fecha),
+        estadio_lat: game.estadio_lat != null ? Number(game.estadio_lat) : null,
+        estadio_lng: game.estadio_lng != null ? Number(game.estadio_lng) : null,
+        competicion_foto_url: cleanApiValue(game.competicion_foto_url) || null,
+    };
+}
+
+async function fetchGamesDirectlyUncached(options: MatchReadOptions & { date?: string; id?: string | number } = {}): Promise<any[]> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
+
+        if (!client) {
+            return [];
+        }
+
+        const filters: string[] = [];
+        const args: Array<string | number> = [];
+        if (options.date) {
+            filters.push('p.fecha = ?');
+            args.push(options.date);
+        }
+        if (options.id != null && String(options.id).trim() !== '') {
+            filters.push('p.id_partido = ?');
+            args.push(options.id);
+        }
 
         const result = await client.execute({
-            sql: query,
+            sql: gamesSql(filters.join(' AND ')),
             args,
         });
 
-        return result.rows.map((game: any) => {
-            let dateSlug = 'sin-fecha';
-            try {
-                if (game.fecha) {
-                    const d = new Date(game.fecha);
-                    if (!isNaN(d.getTime())) {
-                        dateSlug = d.toISOString().split('T')[0];
-                    }
-                }
-            } catch (e) {
-                console.error("Error parsing date for slug:", game.fecha, e);
-            }
-
-            const hasScore = (value: any) => value !== null && value !== undefined && String(value).trim() !== '';
-            const today = new Date().toISOString().slice(0, 10);
-            const isPlayed = hasScore(game.goles_rm) && hasScore(game.goles_rival) && (!game.fecha || String(game.fecha).slice(0, 10) <= today);
-
-            return {
-                ...game,
-                id_partido: resolveMatchId(game),
-                isPlayed,
-                mvp: cleanApiValue(game.mvp),
-                local_foto_url: cleanApiValue(game.local_foto_url),
-                visitante_foto_url: cleanApiValue(game.visitante_foto_url),
-                mvp_foto_url: cleanApiValue(game.mvp_foto_url),
-                once_inicial_url: cleanApiValue(game.once_inicial_url),
-                video_resumen_url: cleanApiValue(game.video_resumen_url),
-                local_shield_url: getRivalShieldUrl({ nombre: game.club_local, foto_url: game.local_foto_url }),
-                visitante_shield_url: getRivalShieldUrl({ nombre: game.club_visitante, foto_url: game.visitante_foto_url }),
-                slug: `${slugify(game.club_local)}-vs-${slugify(game.club_visitante)}-${dateSlug}`,
-                fecha_formateada: formatGameDate(game.fecha),
-                estadio_lat: game.estadio_lat != null ? Number(game.estadio_lat) : null,
-                estadio_lng: game.estadio_lng != null ? Number(game.estadio_lng) : null,
-                competicion_foto_url: cleanApiValue(game.competicion_foto_url) || null,
-            };
-        });
+        return result.rows.map(mapGameRow);
     } catch (error) {
         console.error("[fetchGamesDirectly] ERROR:", error);
         return [];
@@ -395,16 +400,7 @@ export function calculateRivalStats(matches: any[], rivalName: string = '') {
     return stats;
 }
 
-export async function fetchMatchLineups(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
-    try {
-        const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
-
-        if (!client) {
-            return [];
-        }
-
-        const query = `
+export const MATCH_LINEUP_SQL = `
             SELECT
                 a.id_alineacion,
                 a.id_jugadora,
@@ -447,28 +443,177 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
                 END ASC,
                 CAST(d.dorsal AS INTEGER) ASC,
                 j.nombre ASC
-        `;
+`;
+
+/** Titulares a partir de las filas de MATCH_LINEUP_SQL. */
+export function mapLineupRows(rows: readonly any[]): any[] {
+    const rowsById = new Map<number, any>();
+    for (const row of rows) {
+        const existing = rowsById.get(row.id_alineacion);
+        if (!existing) {
+            rowsById.set(row.id_alineacion, row);
+        } else {
+            const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
+            if (countData(row) > countData(existing)) {
+                rowsById.set(row.id_alineacion, row);
+            }
+        }
+    }
+
+    return Array.from(rowsById.values()).map((row: any) => {
+
+        let fileName: string | null = null;
+        if (row.nombre) {
+            const slug = slugify(row.nombre).replace(/-/g, '_');
+            const parts = slug.split('_').filter((p: string) => p.length > 0);
+            const nameForFile = parts.slice(0, 4).join('_');
+            fileName = `${nameForFile}.png`;
+        }
+
+        const displayName = row.nombre || `Jugadora ID: ${row.id_jugadora}`;
+        const displayPos = row.posicion || '-';
+
+        return {
+            id: row.id_alineacion,
+            playerId: Number(row.id_jugadora),
+            name: displayName,
+            pos: displayPos,
+            flagUrl: getFlagSrc(row.iso),
+            number: row.dorsal || '-',
+            imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
+                ? row.foto_url
+                : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
+            slug: row.nombre ? slugify(row.nombre) : '#',
+            minutes: row.minutos_jugados,
+            substituted: row.minuto_salida !== null,
+            goals: row.goles,
+            assists: row.asistencias,
+            yellowCards: row.tarjetas_amarillas,
+            redCards: row.tarjetas_rojas,
+            doubleYellows: row.tarjetas_doble_amarillas,
+            stats: {
+                valoracion: row.valoracion,
+                pases_clave: row.pases_clave,
+                tiros_totales: row.tiros_totales,
+                tiros_puerta: row.tiros_puerta,
+                toques: row.toques,
+                toques_area_rival: row.toques_area_rival,
+                pases_completados: row.pases_completados,
+                pases_totales: row.pases_totales,
+                pases_ultimo_tercio_completados: row.pases_ultimo_tercio_completados,
+                pases_ultimo_tercio_totales: row.pases_ultimo_tercio_totales,
+                pases_largo_completados: row.pases_largo_completados,
+                pases_largo_totales: row.pases_largo_totales,
+                centros_completados: row.centros_completados,
+                centros_totales: row.centros_totales,
+                fueras_juego: row.fueras_juego,
+                regates_completados: row.regates_completados,
+                regates_totales: row.regates_totales,
+                perdidas: row.perdidas,
+                entradas: row.entradas,
+                intercepciones: row.intercepciones,
+                bloqueos: row.bloqueos,
+                despejes: row.despejes,
+                regateada: row.regateada,
+                duelos_suelo_ganados: row.duelos_suelo_ganados,
+                duelos_suelo_totales: row.duelos_suelo_totales,
+                duelos_aereos_ganados: row.duelos_aereos_ganados,
+                duelos_aereos_totales: row.duelos_aereos_totales,
+                faltas_recibidas: row.faltas_recibidas,
+                faltas_cometidas: row.faltas_cometidas
+            }
+        };
+    });
+}
+
+export async function fetchMatchLineups(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
+    try {
+        const { getPlayersDbClient } = await import('../db/client');
+        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
+
+        if (!client) {
+            return [];
+        }
 
         const result = await client.execute({
-            sql: query,
+            sql: MATCH_LINEUP_SQL,
             args: [matchId]
         });
 
-        const rowsById = new Map<number, any>();
-        for (const row of result.rows) {
-            const existing = rowsById.get(row.id_alineacion);
-            if (!existing) {
+        return mapLineupRows(result.rows);
+    } catch (error) {
+        console.error("Error fetching lineups:", error);
+        return [];
+    }
+}
+
+export const MATCH_SUBSTITUTIONS_SQL = `
+            SELECT
+                a.id_alineacion,
+                a.id_jugadora,
+                a.minuto_entrada,
+                a.minuto_salida,
+                j.nombre,
+                j.posicion,
+                j.iso,
+                d.foto_url,
+                d.dorsal,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
+                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
+                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas,
+                e.valoracion, e.pases_clave, e.tiros_totales, e.tiros_puerta, e.toques, e.toques_area_rival,
+                e.pases_completados, e.pases_totales, e.pases_ultimo_tercio_completados, e.pases_ultimo_tercio_totales,
+                e.pases_largo_completados, e.pases_largo_totales, e.centros_completados, e.centros_totales,
+                e.fueras_juego, e.regates_completados, e.regates_totales, e.perdidas, e.entradas,
+                e.intercepciones, e.bloqueos, e.despejes, e.regateada,
+                e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
+                e.faltas_recibidas, e.faltas_cometidas
+            FROM alineaciones a
+            LEFT JOIN estadisticas_jugadoras e ON e.id_partido = a.id_partido AND e.id_jugadora = a.id_jugadora
+            LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
+            LEFT JOIN partidos p ON a.id_partido = p.id_partido
+            LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
+            WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
+            ORDER BY IFNULL(a.minuto_entrada, a.minuto_salida) ASC
+`;
+
+/** Cambios (entra/sale) a partir de las filas de MATCH_SUBSTITUTIONS_SQL. */
+export function mapSubstitutionRows(rows: readonly any[]): any[] {
+    const rowsById = new Map<number, any>();
+    for (const row of rows) {
+        const existing = rowsById.get(row.id_alineacion);
+        if (!existing) {
+            rowsById.set(row.id_alineacion, row);
+        } else {
+            const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
+            if (countData(row) > countData(existing)) {
                 rowsById.set(row.id_alineacion, row);
-            } else {
-                const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
-                if (countData(row) > countData(existing)) {
-                    rowsById.set(row.id_alineacion, row);
-                }
             }
         }
+    }
+    const uniqueRows = Array.from(rowsById.values());
 
-        return Array.from(rowsById.values()).map((row: any) => {
+    const substitutions: any[] = [];
+    const playersIn = uniqueRows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
 
+    const usedPlayersOut = new Set();
+
+    playersIn.forEach((pIn: any) => {
+        const minute = pIn.minuto_entrada;
+
+        const pOut = uniqueRows.find((r: any) =>
+            r.minuto_salida === minute &&
+            r.id_alineacion !== pIn.id_alineacion &&
+            !usedPlayersOut.has(r.id_alineacion)
+        );
+
+        if (pOut) {
+            usedPlayersOut.add(pOut.id_alineacion);
+        }
+
+        const processPlayer = (row: any) => {
             let fileName: string | null = null;
             if (row.nombre) {
                 const slug = slugify(row.nombre).replace(/-/g, '_');
@@ -476,23 +621,16 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
                 const nameForFile = parts.slice(0, 4).join('_');
                 fileName = `${nameForFile}.png`;
             }
-
-            const displayName = row.nombre || `Jugadora ID: ${row.id_jugadora}`;
-            const displayPos = row.posicion || '-';
-
             return {
-                id: row.id_alineacion,
+                name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
+                pos: row.posicion || '-',
                 playerId: Number(row.id_jugadora),
-                name: displayName,
-                pos: displayPos,
+                number: row.dorsal || '',
                 flagUrl: getFlagSrc(row.iso),
-                number: row.dorsal || '-',
                 imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
                     ? row.foto_url
                     : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
                 slug: row.nombre ? slugify(row.nombre) : '#',
-                minutes: row.minutos_jugados,
-                substituted: row.minuto_salida !== null,
                 goals: row.goles,
                 assists: row.asistencias,
                 yellowCards: row.tarjetas_amarillas,
@@ -530,11 +668,16 @@ export async function fetchMatchLineups(matchId: string | number, options: Match
                     faltas_cometidas: row.faltas_cometidas
                 }
             };
+        };
+
+        substitutions.push({
+            minute: minute,
+            playerIn: processPlayer(pIn),
+            playerOut: pOut ? processPlayer(pOut) : { name: '?', pos: '', flagUrl: '', imageUrl: '', slug: '#' }
         });
-    } catch (error) {
-        console.error("Error fetching lineups:", error);
-        return [];
-    }
+    });
+
+    return substitutions.sort((a, b) => a.minute - b.minute);
 }
 
 export async function fetchMatchSubstitutions(matchId: string | number, options: MatchReadOptions = {}): Promise<any[]> {
@@ -544,141 +687,12 @@ export async function fetchMatchSubstitutions(matchId: string | number, options:
 
         if (!client) return [];
 
-        const query = `
-            SELECT
-                a.id_alineacion,
-                a.id_jugadora,
-                a.minuto_entrada,
-                a.minuto_salida,
-                j.nombre,
-                j.posicion,
-                j.iso,
-                d.foto_url,
-                d.dorsal,
-                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.goleadora = a.id_jugadora OR g.goleadora = j.nombre)) as goles,
-                (SELECT COUNT(*) FROM goles_y_asistencias g WHERE g.id_partido = a.id_partido AND (g.asistente = a.id_jugadora OR g.asistente = j.nombre)) as asistencias,
-                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND UPPER(t.tipo_tarjeta) = 'AMARILLA') as tarjetas_amarillas,
-                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%ROJA%' OR UPPER(t.tipo_tarjeta) = 'RED')) as tarjetas_rojas,
-                (SELECT COUNT(*) FROM tarjetas t WHERE t.id_partido = a.id_partido AND t.id_jugadora = a.id_jugadora AND (UPPER(t.tipo_tarjeta) LIKE '%DOBLE%' OR UPPER(t.tipo_tarjeta) LIKE '%DOUBLE%')) as tarjetas_doble_amarillas,
-                e.valoracion, e.pases_clave, e.tiros_totales, e.tiros_puerta, e.toques, e.toques_area_rival,
-                e.pases_completados, e.pases_totales, e.pases_ultimo_tercio_completados, e.pases_ultimo_tercio_totales,
-                e.pases_largo_completados, e.pases_largo_totales, e.centros_completados, e.centros_totales,
-                e.fueras_juego, e.regates_completados, e.regates_totales, e.perdidas, e.entradas,
-                e.intercepciones, e.bloqueos, e.despejes, e.regateada,
-                e.duelos_suelo_ganados, e.duelos_suelo_totales, e.duelos_aereos_ganados, e.duelos_aereos_totales,
-                e.faltas_recibidas, e.faltas_cometidas
-            FROM alineaciones a
-            LEFT JOIN estadisticas_jugadoras e ON e.id_partido = a.id_partido AND e.id_jugadora = a.id_jugadora
-            LEFT JOIN jugadoras j ON a.id_jugadora = j.id_jugadora
-            LEFT JOIN partidos p ON a.id_partido = p.id_partido
-            LEFT JOIN dorsales d ON a.id_jugadora = d.id_jugadora AND p.id_temporada = d.id_temporada
-            WHERE a.id_partido = ? AND (a.minuto_entrada IS NOT NULL OR a.minuto_salida IS NOT NULL)
-            ORDER BY IFNULL(a.minuto_entrada, a.minuto_salida) ASC
-        `;
-
         const result = await client.execute({
-            sql: query,
+            sql: MATCH_SUBSTITUTIONS_SQL,
             args: [matchId]
         });
 
-        const rowsById = new Map<number, any>();
-        for (const row of result.rows) {
-            const existing = rowsById.get(row.id_alineacion);
-            if (!existing) {
-                rowsById.set(row.id_alineacion, row);
-            } else {
-                const countData = (o: any) => Object.values(o).filter(v => v !== null && v !== undefined && v !== 0 && v !== '').length;
-                if (countData(row) > countData(existing)) {
-                    rowsById.set(row.id_alineacion, row);
-                }
-            }
-        }
-        const uniqueRows = Array.from(rowsById.values());
-
-        const substitutions: any[] = [];
-        const playersIn = uniqueRows.filter((r: any) => r.minuto_entrada !== null && r.minuto_entrada !== 0);
-
-        const usedPlayersOut = new Set();
-
-        playersIn.forEach((pIn: any) => {
-            const minute = pIn.minuto_entrada;
-
-            const pOut = uniqueRows.find((r: any) =>
-                r.minuto_salida === minute &&
-                r.id_alineacion !== pIn.id_alineacion &&
-                !usedPlayersOut.has(r.id_alineacion)
-            );
-
-            if (pOut) {
-                usedPlayersOut.add(pOut.id_alineacion);
-            }
-
-            const processPlayer = (row: any) => {
-                let fileName: string | null = null;
-                if (row.nombre) {
-                    const slug = slugify(row.nombre).replace(/-/g, '_');
-                    const parts = slug.split('_').filter((p: string) => p.length > 0);
-                    const nameForFile = parts.slice(0, 4).join('_');
-                    fileName = `${nameForFile}.png`;
-                }
-                return {
-                    name: row.nombre || `Jugadora ID: ${row.id_jugadora}`,
-                    pos: row.posicion || '-',
-                    playerId: Number(row.id_jugadora),
-                    number: row.dorsal || '',
-                    flagUrl: getFlagSrc(row.iso),
-                    imageUrl: (row.foto_url && (row.foto_url.startsWith('http://') || row.foto_url.startsWith('https://')))
-                        ? row.foto_url
-                        : getAssetUrl('jugadoras', fileName || 'placeholder.png'),
-                    slug: row.nombre ? slugify(row.nombre) : '#',
-                    goals: row.goles,
-                    assists: row.asistencias,
-                    yellowCards: row.tarjetas_amarillas,
-                    redCards: row.tarjetas_rojas,
-                    doubleYellows: row.tarjetas_doble_amarillas,
-                    stats: {
-                        valoracion: row.valoracion,
-                        pases_clave: row.pases_clave,
-                        tiros_totales: row.tiros_totales,
-                        tiros_puerta: row.tiros_puerta,
-                        toques: row.toques,
-                        toques_area_rival: row.toques_area_rival,
-                        pases_completados: row.pases_completados,
-                        pases_totales: row.pases_totales,
-                        pases_ultimo_tercio_completados: row.pases_ultimo_tercio_completados,
-                        pases_ultimo_tercio_totales: row.pases_ultimo_tercio_totales,
-                        pases_largo_completados: row.pases_largo_completados,
-                        pases_largo_totales: row.pases_largo_totales,
-                        centros_completados: row.centros_completados,
-                        centros_totales: row.centros_totales,
-                        fueras_juego: row.fueras_juego,
-                        regates_completados: row.regates_completados,
-                        regates_totales: row.regates_totales,
-                        perdidas: row.perdidas,
-                        entradas: row.entradas,
-                        intercepciones: row.intercepciones,
-                        bloqueos: row.bloqueos,
-                        despejes: row.despejes,
-                        regateada: row.regateada,
-                        duelos_suelo_ganados: row.duelos_suelo_ganados,
-                        duelos_suelo_totales: row.duelos_suelo_totales,
-                        duelos_aereos_ganados: row.duelos_aereos_ganados,
-                        duelos_aereos_totales: row.duelos_aereos_totales,
-                        faltas_recibidas: row.faltas_recibidas,
-                        faltas_cometidas: row.faltas_cometidas
-                    }
-                };
-            };
-
-            substitutions.push({
-                minute: minute,
-                playerIn: processPlayer(pIn),
-                playerOut: pOut ? processPlayer(pOut) : { name: '?', pos: '', flagUrl: '', imageUrl: '', slug: '#' }
-            });
-        });
-
-        return substitutions.sort((a, b) => a.minute - b.minute);
-
+        return mapSubstitutionRows(result.rows);
     } catch (error) {
         console.error("Error fetching substitutions:", error);
         return [];
@@ -708,32 +722,36 @@ export async function fetchMatchGoals(matchId: string | number): Promise<any[]> 
     }
 }
 
+export const MATCH_KIT_SQL = `
+            SELECT e.imagen_url, e.nombre, e.tipo
+            FROM partidos p
+            JOIN equipaciones e ON p.id_equipacion = e.id_equipacion
+            WHERE p.id_partido = ?
+`;
+
+export function mapKitRows(rows: readonly any[]): { url: string; nombre: string | null; tipo: string | null } | null {
+    if (rows.length > 0 && rows[0].imagen_url) {
+        return {
+            url: rows[0].imagen_url as string,
+            nombre: (rows[0].nombre as string) ?? null,
+            tipo: (rows[0].tipo as string) ?? null,
+        };
+    }
+    return null;
+}
+
 export async function fetchMatchKit(matchId: string | number, options: MatchReadOptions = {}): Promise<{ url: string; nombre: string | null; tipo: string | null } | null> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
         const client = await getPlayersDbClient({ forceRefresh: options.fresh });
         if (!client) return null;
 
-        const query = `
-            SELECT e.imagen_url, e.nombre, e.tipo
-            FROM partidos p
-            JOIN equipaciones e ON p.id_equipacion = e.id_equipacion
-            WHERE p.id_partido = ?
-        `;
-
         const result = await client.execute({
-            sql: query,
+            sql: MATCH_KIT_SQL,
             args: [matchId]
         });
 
-        if (result.rows.length > 0 && result.rows[0].imagen_url) {
-            return {
-                url: result.rows[0].imagen_url as string,
-                nombre: (result.rows[0].nombre as string) ?? null,
-                tipo: (result.rows[0].tipo as string) ?? null,
-            };
-        }
-        return null;
+        return mapKitRows(result.rows);
     } catch (error) {
         console.error("Error fetching match kit:", error);
         return null;
@@ -872,6 +890,242 @@ export async function fetchRefereeStats(refereeId: string | number | null, optio
     }
 }
 
+/** Consultas del timeline, todas filtradas por id_partido. */
+export const MATCH_EVENT_SQL = {
+    goals: `
+            SELECT g.*, j.nombre as nombre_jugadora, a.nombre as nombre_asistente
+            FROM goles_y_asistencias g
+            LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
+            LEFT JOIN jugadoras a ON g.asistente = a.id_jugadora
+            WHERE g.id_partido = ?
+`,
+    cards: `
+            SELECT t.*, j.nombre as nombre_jugadora
+            FROM tarjetas t
+            LEFT JOIN jugadoras j ON t.id_jugadora = j.id_jugadora
+            WHERE t.id_partido = ?
+`,
+    shootout: `
+            SELECT pt.*, j.nombre as nombre_jugadora
+            FROM tanda_penaltis pt
+            LEFT JOIN jugadoras j ON pt.id_jugadora = j.id_jugadora
+            WHERE pt.id_partido = ?
+            ORDER BY pt.orden ASC
+`,
+    ownGoals: `
+            SELECT og.*, j.nombre as nombre_jugadora
+            FROM goles_propia og
+            LEFT JOIN jugadoras j ON og.id_jugadora = j.id_jugadora
+            WHERE og.id_partido = ?
+`,
+    rivalGoals: `
+            SELECT * FROM goles_rival WHERE id_partido = ?
+`,
+    rivalCards: `
+            SELECT * FROM tarjetas_rival WHERE id_partido = ?
+`,
+    missedPenalties: `
+            SELECT pf.*, j.nombre as nombre_jugadora
+            FROM penaltis_fallados pf
+            LEFT JOIN jugadoras j ON pf.id_jugadora = j.id_jugadora
+            WHERE pf.id_partido = ?
+`,
+} as const;
+
+export type MatchEventRows = { [K in keyof typeof MATCH_EVENT_SQL]: readonly any[] };
+
+/** Timeline ordenado a partir de las filas de MATCH_EVENT_SQL y de los cambios ya calculados. */
+export function buildMatchEvents(rows: MatchEventRows, subs: readonly any[]): any[] {
+    const events: any[] = [];
+
+    const formatDisplayMinute = (min: any): string => {
+        return min ? String(min) : '?';
+    };
+
+    const parseMinuteInternal = (min: any): number => {
+        if (!min) return 0;
+        const s = String(min);
+        if (s.includes('+')) {
+            const parts = s.split('+');
+            return Number(parts[0] || 0) + Number(parts[1] || 0);
+        }
+        const val = Number(min);
+        return isNaN(val) ? 0 : val;
+    };
+
+    for (const goal of rows.goals) {
+        const tipoValue = String(goal.tipo || '');
+        const tipoLower = tipoValue.toLowerCase().trim();
+
+        const isOwnGoalInGolesTable =
+            tipoLower.includes('propia') ||
+            tipoLower.includes('own') ||
+            tipoLower.includes('p.p');
+
+        if (isOwnGoalInGolesTable) {
+            continue;
+        }
+
+        if (!goal.goleadora && !goal.nombre_jugadora) continue;
+
+        let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
+        let goalText = `Gol de ${playerName}`;
+
+        let assistantName = goal.nombre_asistente || goal.asistente;
+        if (assistantName) {
+            goalText += ` (Asis. ${assistantName})`;
+        }
+
+        events.push({
+            minute: parseMinuteInternal(goal.minuto),
+            displayMinute: formatDisplayMinute(goal.minuto),
+            type: 'goal',
+            text: goalText,
+            scorer: playerName,
+            assistant: assistantName,
+            isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
+            isOwnGoal: false,
+            team: 'local',
+            videoUrl: goal.video_url || null
+        });
+    }
+
+    for (const card of rows.cards) {
+        const rawType = String(card.tipo_tarjeta || '').toUpperCase();
+        let cardType = 'Yellow';
+        let cardText = 'Tarjeta amarilla';
+
+        if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
+            cardType = 'DoubleYellow';
+            cardText = 'Doble amarilla';
+        } else if (rawType.includes('ROJA') || rawType === 'RED') {
+            cardType = 'Red';
+            cardText = 'Tarjeta roja';
+        }
+
+        events.push({
+            minute: parseMinuteInternal(card.minuto),
+            displayMinute: formatDisplayMinute(card.minuto),
+            type: 'card',
+            cardType: cardType,
+            text: `${cardText} a ${card.nombre_jugadora || 'Jugadora'}`,
+            player: card.nombre_jugadora,
+            team: 'local'
+        });
+    }
+
+    for (const og of rows.ownGoals) {
+        const playerName = "Propia puerta";
+        events.push({
+            minute: parseMinuteInternal(og.minuto),
+            displayMinute: formatDisplayMinute(og.minuto),
+            type: 'goal',
+            text: playerName,
+            scorer: playerName,
+            isOwnGoal: true,
+            team: 'local'
+        });
+    }
+
+    for (const sub of subs) {
+        events.push({
+            minute: parseMinuteInternal(sub.minute),
+            displayMinute: formatDisplayMinute(sub.minute),
+            type: 'sub',
+            text: `Entra ${sub.playerIn?.name || '?'} por ${sub.playerOut?.name || '?'}`,
+            playerIn: sub.playerIn?.name,
+            playerOut: sub.playerOut?.name,
+            team: 'local'
+        });
+    }
+
+    for (const pt of rows.shootout) {
+        const res = String(pt.resultado || '').toLowerCase().trim();
+        const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
+        const playerName = pt.nombre_jugadora || pt.nombre_rival;
+
+        events.push({
+            minute: 200 + Number(pt.orden || 0),
+            displayMinute: 'P',
+            type: 'shootout',
+            outcome: isGoal ? 'scored' : 'missed',
+            text: `Tanda: ${isGoal ? 'Gol' : 'Fallo'} de ${playerName || 'Desconocido'}`,
+            player: playerName,
+            team: pt.id_jugadora ? 'local' : 'rival',
+            order: pt.orden
+        });
+    }
+
+    for (const goal of rows.rivalGoals) {
+        const tipoValue = String(goal.tipo || '');
+        const tipoLower = tipoValue.toLowerCase().trim();
+        const isOwnGoal = tipoLower.includes('propia') ||
+            tipoLower.includes('own') ||
+            tipoLower.includes('p.p');
+
+        if (isOwnGoal) continue;
+
+        let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
+        let scorer = goal.goleadora;
+
+        if (goal.asistente) {
+            goalText += ` (Asis. ${goal.asistente})`;
+        }
+
+        events.push({
+            minute: parseMinuteInternal(goal.minuto),
+            displayMinute: formatDisplayMinute(goal.minuto),
+            type: 'goal',
+            text: goalText,
+            scorer: scorer,
+            assistant: goal.asistente,
+            isPenalty: tipoLower.includes('penalti') || tipoLower === 'p',
+            isOwnGoal: false,
+            team: 'rival'
+        });
+    }
+
+    for (const card of rows.rivalCards) {
+        const rawType = String(card.tipo_tarjeta || '').toUpperCase();
+        let cardType = 'Yellow';
+        let cardText = 'Tarjeta amarilla';
+
+        if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
+            cardType = 'DoubleYellow';
+            cardText = 'Doble amarilla';
+        } else if (rawType.includes('ROJA') || rawType === 'RED') {
+            cardType = 'Red';
+            cardText = 'Tarjeta roja';
+        }
+
+        events.push({
+            minute: parseMinuteInternal(card.minuto),
+            displayMinute: formatDisplayMinute(card.minuto),
+            type: 'card',
+            cardType: cardType,
+            text: `${cardText} a ${card.nombre || 'Jugadora'}`,
+            player: card.nombre,
+            team: 'rival'
+        });
+    }
+
+    for (const pf of rows.missedPenalties) {
+        const playerName = pf.nombre_jugadora || pf.nombre_rival || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
+        events.push({
+            minute: parseMinuteInternal(pf.minuto),
+            displayMinute: formatDisplayMinute(pf.minuto),
+            type: 'penalty',
+            outcome: 'missed',
+            text: `Penalti fallado por ${playerName}`,
+            player: playerName,
+            team: pf.id_jugadora ? 'local' : 'rival',
+            videoUrl: pf.video_url || null
+        });
+    }
+
+    return events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
+}
+
 export async function fetchMatchEvents(
     matchId: string | number,
     matchScore?: number,
@@ -887,251 +1141,13 @@ export async function fetchMatchEvents(
         const client = await getPlayersDbClient({ forceRefresh: options.fresh });
         if (!client) return [];
 
-        const goalsQuery = `
-            SELECT g.*, j.nombre as nombre_jugadora, a.nombre as nombre_asistente
-            FROM goles_y_asistencias g
-            LEFT JOIN jugadoras j ON g.goleadora = j.id_jugadora
-            LEFT JOIN jugadoras a ON g.asistente = a.id_jugadora
-            WHERE g.id_partido = ?
-        `;
-
-        const cardsQuery = `
-            SELECT t.*, j.nombre as nombre_jugadora
-            FROM tarjetas t
-            LEFT JOIN jugadoras j ON t.id_jugadora = j.id_jugadora
-            WHERE t.id_partido = ?
-        `;
-
-        const penaltyShootoutQuery = `
-            SELECT pt.*, j.nombre as nombre_jugadora
-            FROM tanda_penaltis pt
-            LEFT JOIN jugadoras j ON pt.id_jugadora = j.id_jugadora
-            WHERE pt.id_partido = ?
-            ORDER BY pt.orden ASC
-        `;
-
-        const ownGoalsQuery = `
-            SELECT og.*, j.nombre as nombre_jugadora
-            FROM goles_propia og
-            LEFT JOIN jugadoras j ON og.id_jugadora = j.id_jugadora
-            WHERE og.id_partido = ?
-        `;
-
-        const rivalGoalsQuery = `
-            SELECT * FROM goles_rival WHERE id_partido = ?
-        `;
-
-        const rivalCardsQuery = `
-            SELECT * FROM tarjetas_rival WHERE id_partido = ?
-        `;
-
-        const missedPenaltiesQuery = `
-            SELECT pf.*, j.nombre as nombre_jugadora
-            FROM penaltis_fallados pf
-            LEFT JOIN jugadoras j ON pf.id_jugadora = j.id_jugadora
-            WHERE pf.id_partido = ?
-        `;
-
-        const [subs, goalsResult, cardsResult, shootoutResult, ownGoalsResult, rivalGoalsResult, rivalCardsResult, missedPenaltiesResult] = await Promise.all([
+        const keys = Object.keys(MATCH_EVENT_SQL) as (keyof typeof MATCH_EVENT_SQL)[];
+        const [subs, ...results] = await Promise.all([
             subsPromise,
-            client.execute({ sql: goalsQuery, args: [matchId] }),
-            client.execute({ sql: cardsQuery, args: [matchId] }),
-            client.execute({ sql: penaltyShootoutQuery, args: [matchId] }),
-            client.execute({ sql: ownGoalsQuery, args: [matchId] }),
-            client.execute({ sql: rivalGoalsQuery, args: [matchId] }),
-            client.execute({ sql: rivalCardsQuery, args: [matchId] }),
-            client.execute({ sql: missedPenaltiesQuery, args: [matchId] })
+            ...keys.map((key) => client.execute({ sql: MATCH_EVENT_SQL[key], args: [matchId] })),
         ]);
-
-        const events: any[] = [];
-
-        const formatDisplayMinute = (min: any): string => {
-            return min ? String(min) : '?';
-        };
-
-        const parseMinuteInternal = (min: any): number => {
-            if (!min) return 0;
-            const s = String(min);
-            if (s.includes('+')) {
-                const parts = s.split('+');
-                return Number(parts[0] || 0) + Number(parts[1] || 0);
-            }
-            const val = Number(min);
-            return isNaN(val) ? 0 : val;
-        };
-
-        for (const goal of goalsResult.rows) {
-            const tipoValue = String(goal.tipo || '');
-            const tipoLower = tipoValue.toLowerCase().trim();
-
-            const isOwnGoalInGolesTable =
-                tipoLower.includes('propia') ||
-                tipoLower.includes('own') ||
-                tipoLower.includes('p.p');
-
-            if (isOwnGoalInGolesTable) {
-                continue;
-            }
-
-            if (!goal.goleadora && !goal.nombre_jugadora) continue;
-
-            let playerName = goal.nombre_jugadora || goal.goleadora || "Desconocida";
-            let goalText = `Gol de ${playerName}`;
-
-            let assistantName = goal.nombre_asistente || goal.asistente;
-            if (assistantName) {
-                goalText += ` (Asis. ${assistantName})`;
-            }
-
-            events.push({
-                minute: parseMinuteInternal(goal.minuto),
-                displayMinute: formatDisplayMinute(goal.minuto),
-                type: 'goal',
-                text: goalText,
-                scorer: playerName,
-                assistant: assistantName,
-                isPenalty: tipoLower === 'penalti' || tipoLower === 'p',
-                isOwnGoal: false,
-                team: 'local',
-                videoUrl: goal.video_url || null
-            });
-        }
-
-        for (const card of cardsResult.rows) {
-            const rawType = String(card.tipo_tarjeta || '').toUpperCase();
-            let cardType = 'Yellow';
-            let cardText = 'Tarjeta amarilla';
-
-            if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
-                cardType = 'DoubleYellow';
-                cardText = 'Doble amarilla';
-            } else if (rawType.includes('ROJA') || rawType === 'RED') {
-                cardType = 'Red';
-                cardText = 'Tarjeta roja';
-            }
-
-            events.push({
-                minute: parseMinuteInternal(card.minuto),
-                displayMinute: formatDisplayMinute(card.minuto),
-                type: 'card',
-                cardType: cardType,
-                text: `${cardText} a ${card.nombre_jugadora || 'Jugadora'}`,
-                player: card.nombre_jugadora,
-                team: 'local'
-            });
-        }
-
-        for (const og of ownGoalsResult.rows) {
-            const playerName = "Propia puerta";
-            events.push({
-                minute: parseMinuteInternal(og.minuto),
-                displayMinute: formatDisplayMinute(og.minuto),
-                type: 'goal',
-                text: playerName,
-                scorer: playerName,
-                isOwnGoal: true,
-                team: 'local'
-            });
-        }
-
-        for (const sub of subs) {
-            events.push({
-                minute: parseMinuteInternal(sub.minute),
-                displayMinute: formatDisplayMinute(sub.minute),
-                type: 'sub',
-                text: `Entra ${sub.playerIn?.name || '?'} por ${sub.playerOut?.name || '?'}`,
-                playerIn: sub.playerIn?.name,
-                playerOut: sub.playerOut?.name,
-                team: 'local'
-            });
-        }
-
-        for (const pt of shootoutResult.rows) {
-            const res = String(pt.resultado || '').toLowerCase().trim();
-            const isGoal = ['gol', 'g', 'marcado', 's', 'goal', 'anotado', '1'].includes(res);
-            const playerName = pt.nombre_jugadora || pt.nombre_rival;
-
-            events.push({
-                minute: 200 + Number(pt.orden || 0),
-                displayMinute: 'P',
-                type: 'shootout',
-                outcome: isGoal ? 'scored' : 'missed',
-                text: `Tanda: ${isGoal ? 'Gol' : 'Fallo'} de ${playerName || 'Desconocido'}`,
-                player: playerName,
-                team: pt.id_jugadora ? 'local' : 'rival',
-                order: pt.orden
-            });
-        }
-
-        for (const goal of rivalGoalsResult.rows) {
-            const tipoValue = String(goal.tipo || '');
-            const tipoLower = tipoValue.toLowerCase().trim();
-            const isOwnGoal = tipoLower.includes('propia') ||
-                tipoLower.includes('own') ||
-                tipoLower.includes('p.p');
-
-            if (isOwnGoal) continue;
-
-            let goalText = `Gol de ${goal.goleadora || 'Rival'}`;
-            let scorer = goal.goleadora;
-
-            if (goal.asistente) {
-                goalText += ` (Asis. ${goal.asistente})`;
-            }
-
-            events.push({
-                minute: parseMinuteInternal(goal.minuto),
-                displayMinute: formatDisplayMinute(goal.minuto),
-                type: 'goal',
-                text: goalText,
-                scorer: scorer,
-                assistant: goal.asistente,
-                isPenalty: tipoLower.includes('penalti') || tipoLower === 'p',
-                isOwnGoal: false,
-                team: 'rival'
-            });
-        }
-
-        for (const card of rivalCardsResult.rows) {
-            const rawType = String(card.tipo_tarjeta || '').toUpperCase();
-            let cardType = 'Yellow';
-            let cardText = 'Tarjeta amarilla';
-
-            if (rawType.includes('DOBLE') || rawType.includes('DOUBLE')) {
-                cardType = 'DoubleYellow';
-                cardText = 'Doble amarilla';
-            } else if (rawType.includes('ROJA') || rawType === 'RED') {
-                cardType = 'Red';
-                cardText = 'Tarjeta roja';
-            }
-
-            events.push({
-                minute: parseMinuteInternal(card.minuto),
-                displayMinute: formatDisplayMinute(card.minuto),
-                type: 'card',
-                cardType: cardType,
-                text: `${cardText} a ${card.nombre || 'Jugadora'}`,
-                player: card.nombre,
-                team: 'rival'
-            });
-        }
-
-        for (const pf of missedPenaltiesResult.rows) {
-            const playerName = pf.nombre_jugadora || pf.nombre_rival || pf.rival_jugadora || pf.jugadora_rival || 'Rival';
-            events.push({
-                minute: parseMinuteInternal(pf.minuto),
-                displayMinute: formatDisplayMinute(pf.minuto),
-                type: 'penalty',
-                outcome: 'missed',
-                text: `Penalti fallado por ${playerName}`,
-                player: playerName,
-                team: pf.id_jugadora ? 'local' : 'rival',
-                videoUrl: pf.video_url || null
-            });
-        }
-
-        return events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
-
+        const rows = Object.fromEntries(keys.map((key, index) => [key, results[index].rows])) as unknown as MatchEventRows;
+        return buildMatchEvents(rows, subs);
     } catch (e) {
         console.error("Error fetching match events:", e);
         return [];

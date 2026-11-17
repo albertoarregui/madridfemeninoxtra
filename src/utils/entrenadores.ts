@@ -49,6 +49,44 @@ export const cleanApiValue = (value: any): any => {
     return value;
 };
 
+/** Fila de `entrenadores` con los campos que usan las fichas. */
+export function mapCoachRow(coach: any): any {
+    const nombre = cleanApiValue(coach.nombre) || "";
+    const slug = slugify(nombre);
+
+    return {
+        id_entrenador: coach.id_entrenador,
+        nombre,
+        name: nombre,
+        ciudad: cleanApiValue(coach.ciudad) || "",
+        city: cleanApiValue(coach.ciudad) || "",
+        pais: cleanApiValue(coach.pais) || "",
+        country: cleanApiValue(coach.pais) || "",
+        iso: cleanApiValue(coach.iso) || "",
+        flagUrl: getFlagSrc(cleanApiValue(coach.iso) || cleanApiValue(coach.pais) || undefined),
+        fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || "",
+        foto_url: cleanApiValue(coach.foto_url) || "",
+        slug,
+        id: slug,
+        imageUrl: getCoachImageUrl(coach),
+    };
+}
+
+/** Entrenadores que aparecen en el directorio (los mismos criterios que fetchCoachesDirectly). */
+export function isListedCoach(coach: any): boolean {
+    const hasValidName = coach.name &&
+        coach.name.trim() !== "" &&
+        coach.name.toLowerCase() !== "null" &&
+        coach.name.toLowerCase() !== "undefined";
+
+    const excludedNames = ["José Manuel Lara", "Antonio Rodríguez", "Antonio Rodriguez"];
+    const isExcluded = excludedNames.some(name =>
+        coach.name.toLowerCase().trim() === name.toLowerCase().trim()
+    );
+
+    return hasValidName && !isExcluded;
+}
+
 export async function fetchCoachesDirectly(): Promise<any[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -73,40 +111,8 @@ export async function fetchCoachesDirectly(): Promise<any[]> {
         const result = await client.execute(query);
 
         return result.rows
-            .map((coach: any) => {
-                const nombre = cleanApiValue(coach.nombre) || "";
-                const slug = slugify(nombre);
-
-                return {
-                    id_entrenador: coach.id_entrenador,
-                    nombre,
-                    name: nombre,
-                    ciudad: cleanApiValue(coach.ciudad) || "",
-                    city: cleanApiValue(coach.ciudad) || "",
-                    pais: cleanApiValue(coach.pais) || "",
-                    country: cleanApiValue(coach.pais) || "",
-                    iso: cleanApiValue(coach.iso) || "",
-                    flagUrl: getFlagSrc(cleanApiValue(coach.iso) || cleanApiValue(coach.pais) || undefined),
-                    fecha_nacimiento: cleanApiValue(coach.fecha_nacimiento) || "",
-                    foto_url: cleanApiValue(coach.foto_url) || "",
-                    slug,
-                    id: slug,
-                    imageUrl: getCoachImageUrl(coach),
-                };
-            })
-            .filter((coach) => {
-                const hasValidName = coach.name &&
-                    coach.name.trim() !== "" &&
-                    coach.name.toLowerCase() !== "null" &&
-                    coach.name.toLowerCase() !== "undefined";
-
-                const excludedNames = ["José Manuel Lara", "Antonio Rodríguez", "Antonio Rodriguez"];
-                const isExcluded = excludedNames.some(name =>
-                    coach.name.toLowerCase().trim() === name.toLowerCase().trim()
-                );
-
-                return hasValidName && !isExcluded;
-            });
+            .map(mapCoachRow)
+            .filter(isListedCoach);
     } catch (error) {
         console.error("Error al obtener entrenadores directamente de la DB:", error);
         return [];

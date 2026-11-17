@@ -342,7 +342,7 @@ if (secret && !SIN_CACHE) {
     const site = env.SITE_URL || 'https://www.madridfemeninoxtra.com';
     const res = await fetch(`${site}/api/cache/revalidate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': secret },
-        body: JSON.stringify({ tables: ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'tarjetas', 'tarjetas_rival', 'penaltis_fallados', 'tanda_penaltis', 'estadisticas_partidos', 'estadisticas_jugadoras', 'jugadoras', 'estadisticas_periodos', 'tiros', 'posiciones_medias', 'dominio_partido', 'mapas_calor'], tags: ['rankings', 'matches', 'players', 'statistics'] }),
+        body: JSON.stringify({ tables: ['partidos', 'alineaciones', 'goles_y_asistencias', 'goles_rival', 'goles_propia', 'tarjetas', 'tarjetas_rival', 'penaltis_fallados', 'tanda_penaltis', 'estadisticas_partidos', 'estadisticas_jugadoras', 'jugadoras', 'estadisticas_periodos', 'tiros', 'posiciones_medias', 'dominio_partido', 'mapas_calor'], tags: ['rankings', 'matches', 'players', 'statistics', `match-${P}`] }),
     });
     console.log(`Caché de la web: ${res.status}`);
 }

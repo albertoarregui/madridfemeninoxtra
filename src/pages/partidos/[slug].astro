@@ -1,89 +1,47 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import {
-    fetchGamesDirectly,
-    fetchMatchLineups,
-    fetchMatchSubstitutions,
-    fetchStadiumStats,
-    fetchRefereeStats,
-    fetchMatchEvents,
-    fetchMatchKit,
-    slugify,
-} from "../../utils/partidos";
-import { fetchCalendarFromDb } from "../../utils/calendar";
+import { slugify } from "../../utils/partidos";
+import { fetchMatchDetail, matchCachePolicy, MISSING_MATCH_TAGS, normalizeClub } from "../../utils/match-detail";
 import { getPlayerImage } from "../../utils/player-images";
 import { getAssetUrl } from "../../utils/assets";
-import { getMatchStatus } from "../../utils/date-helper";
+import { getMatchStatus, parseMatchDate } from "../../utils/date-helper";
 import { competitionDisplayName } from "../../utils/competiciones";
 import { breadcrumbSchema } from "../../utils/seo";
-import { fetchCronicaPartido } from "../../utils/fichas";
+import { fetchCronicaPartidoCached } from "../../utils/fichas";
 import PlayerStatsModal from "../../components/PlayerStatsModal.astro";
-import GaleriaGrid from "../../components/GaleriaGrid.astro";
-import { fetchGalleryForMatch, photoUrl, fetchPlayerNames, photoAlt } from "../../utils/galerias";
-import { isFreshMatchSlug } from "../../lib/match-freshness";
+import { fetchGalleriesIndex } from "../../utils/galerias";
+import { matchOpenUntil } from "../../lib/match-freshness";
 import { hasMatchMetrics, isIndexableMatchDetail } from "../../lib/content-quality";
 import MatchTabs from "../../components/match/MatchTabs.astro";
 import MatchPitch from "../../components/match/MatchPitch.astro";
 import MatchTimelineH from "../../components/match/MatchTimelineH.astro";
-import MatchTeamStats from "../../components/match/MatchTeamStats.astro";
-import MatchRatings from "../../components/match/MatchRatings.astro";
-import MatchAnalysis from "../../components/analisis/MatchAnalysis.astro";
-import { fetchMatchAnalysis } from "../../utils/analisis";
-import { fetchCoachesDirectly, getCoachImageUrl } from "../../utils/entrenadores";
+import { getCoachImageUrl, isListedCoach, mapCoachRow } from "../../utils/entrenadores";
 import { getFlagSrc } from "../../utils/flags";
-import { ratingSummary } from "../../lib/ratings";
-import { cached } from "../../utils/cache";
+import { matchPlayerHref, matchShieldSrc } from "../../lib/match-view";
+// Las pestañas pesadas llegan como fragmento (src/pages/partidos/[slug]/*.astro), que
+// no trae CSS: se importan aquí solo para que sus estilos vayan en la hoja de la ficha.
+import "../../components/match/MatchTeamStats.astro";
+import "../../components/analisis/MatchAnalysis.astro";
+import "../../components/GaleriaGrid.astro";
+import "../../components/match/MatchRatings.astro";
 
 const { slug } = Astro.params;
 const matchSlug = slug ?? "";
-const freshMatchData = isFreshMatchSlug(matchSlug);
-const matchReadOptions = { fresh: freshMatchData };
 
-const [allGames, calendarMatches] = await Promise.all([
-    fetchGamesDirectly(matchReadOptions),
-    fetchCalendarFromDb(),
-]);
-let game = allGames.find((g) => g.slug === slug);
+// Solo se lee el partido pedido (y lo que cuelga de él), en dos peticiones agrupadas.
+const detail = await fetchMatchDetail(matchSlug);
 
-if (!game) {
-    const calendarMatch = calendarMatches.find((m) => {
-        const dateSlug = m.date.split(" ")[0];
-        const mSlug = `${slugify(m.club_local)}-vs-${slugify(m.club_visitante)}-${dateSlug}`;
-        return mSlug === slug;
+if (!detail) {
+    // También se guarda en caché: se vacía en cuanto cambian los partidos.
+    return new Response(null, {
+        status: 302,
+        headers: { Location: "/404", "Vercel-Cache-Tag": MISSING_MATCH_TAGS.join(",") },
     });
-
-    if (calendarMatch) {
-        game = {
-            id_partido: calendarMatch.id,
-            club_local: calendarMatch.club_local,
-            club_visitante: calendarMatch.club_visitante,
-            local_foto_url: calendarMatch.local_foto_url,
-            visitante_foto_url: calendarMatch.visitante_foto_url,
-            estadio: calendarMatch.estadio,
-            competicion_nombre: calendarMatch.competicion,
-            competicion_foto_url: calendarMatch.competicion_foto_url,
-            fecha: calendarMatch.fecha,
-            hora: calendarMatch.hora,
-            jornada: calendarMatch.jornada,
-            slug: slug,
-            isPlayed: calendarMatch.goles_rm !== null && calendarMatch.goles_rival !== null,
-            goles_rm: calendarMatch.goles_rm,
-            goles_rival: calendarMatch.goles_rival,
-            asistencia: null,
-            mvp: null,
-            estadio_foto_url: calendarMatch.estadio_foto_url,
-            ciudad: calendarMatch.ciudad,
-            pais: calendarMatch.pais,
-            capacidad: calendarMatch.capacidad,
-            id_arbitra: calendarMatch.id_arbitra,
-            arbitra_nombre: calendarMatch.arbitra_nombre,
-        };
-    }
 }
 
-if (!game) {
-    return Astro.redirect("/404");
-}
+const { game, lineup, subs, stadiumStats, kit: matchKit, events: timelineEvents } = detail;
+const cachePolicy = matchCachePolicy(game);
+Astro.response.headers.set("Vercel-Cache-Tag", cachePolicy.tags.join(","));
 
 const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
@@ -134,33 +92,19 @@ const playerRatingClass = (player: any): string => {
 const matchStatus = getMatchStatus(game.fecha, game.hora);
 const isLiveOrPlayed = game.isPlayed || matchStatus.status === 'in-progress';
 
-const [lineup, subs, stadiumStats, matchKit] = await Promise.all([
-    fetchMatchLineups(game.id_partido, matchReadOptions),
-    fetchMatchSubstitutions(game.id_partido, matchReadOptions),
-    fetchStadiumStats(game.estadio, matchReadOptions),
-    fetchMatchKit(game.id_partido, matchReadOptions),
-]);
-const timelineEvents = await fetchMatchEvents(game.id_partido, game.goles_rm, matchReadOptions, subs);
-const matchAnalysis = game.id_partido ? await fetchMatchAnalysis(game.id_partido, matchReadOptions) : null;
+// El estado se recalcula en el navegador: la ficha se sirve desde caché.
+const kickoffISO = (() => { try { return parseMatchDate(String(game.fecha ?? ""), String(game.hora ?? "")).toISOString(); } catch { return ""; } })();
+const openUntil = matchOpenUntil(game.fecha);
 const resumenVideoId = (() => {
     const url = String(game.video_resumen_url ?? "");
     const m = url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
     return m ? m[1] : null;
 })();
-const hasAnalysis = Boolean(matchAnalysis && (matchAnalysis.tiros.length || matchAnalysis.posiciones.length || matchAnalysis.dominio.length));
+const hasAnalysis = Boolean(detail.analysis.tiros || detail.analysis.posiciones || detail.analysis.dominio);
 
-const MATCH_GALERIA_PREVIEW = 21;
-const matchGallery = await fetchGalleryForMatch(game.id_partido);
-const galeriaRoute = matchGallery?.route ?? "";
+// Solo se mira si hay galería; las fotos se cargan al abrir su pestaña.
+const matchGallery = (await fetchGalleriesIndex()).find((g) => g.idPartido === Number(game.id_partido));
 const totalGaleria = matchGallery?.count ?? 0;
-const galeriaNames = matchGallery ? await fetchPlayerNames() : {};
-const galeriaFotos = (matchGallery?.photos ?? [])
-    .slice(0, MATCH_GALERIA_PREVIEW)
-    .map((p) => ({
-        src: photoUrl(galeriaRoute, p.f),
-        alt: photoAlt(p.p, galeriaNames, `${game.club_local} vs ${game.club_visitante}`),
-        caption: `${game.club_local} vs ${game.club_visitante}`,
-    }));
 
 let mvpPlayer;
 
@@ -191,19 +135,7 @@ const stadiumImageSrc = hasExternalStadium
     ? stadiumUrl
     : getAssetUrl("estadios", game.estadio);
 
-const getShieldSrc = (
-    teamName: string | null | undefined,
-    remoteUrl?: string | null | undefined,
-) => {
-    if (
-        remoteUrl &&
-        typeof remoteUrl === "string" &&
-        (remoteUrl.startsWith("http://") || remoteUrl.startsWith("https://"))
-    ) {
-        return remoteUrl;
-    }
-    return getAssetUrl("escudos", teamName || "placeholder");
-};
+const getShieldSrc = matchShieldSrc;
 
 const localShield = getShieldSrc(game.club_local, game.local_foto_url);
 const visitorShield = getShieldSrc(
@@ -217,14 +149,8 @@ const isLocalRM =
 const arbitraSlug = game.arbitra_nombre ? slugify(game.arbitra_nombre) : "";
 const estadioSlug = game.estadio ? slugify(game.estadio) : "";
 
-const normalizeClub = (name: unknown) =>
-    String(name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-const h2hRival = normalizeClub(isLocalRM ? game.club_visitante : game.club_local);
-const h2hMatches = allGames
-    .filter((g) => g.isPlayed && g.slug !== game.slug
-        && String(g.fecha ?? "") < String(game.fecha ?? "")
-        && [g.club_local, g.club_visitante].map(normalizeClub).includes(h2hRival))
-    .sort((a, b) => String(b.fecha ?? "").localeCompare(String(a.fecha ?? "")));
+// Partidos anteriores contra el rival: vienen ya filtrados y ordenados en la misma petición.
+const h2hMatches = detail.h2h;
 // El balance incluye el propio partido si ya se ha jugado; la lista muestra solo los anteriores.
 const h2hBalanceMatches = game.isPlayed ? [game, ...h2hMatches] : h2hMatches;
 const h2hStats = h2hMatches.length === 0 ? null : h2hBalanceMatches.reduce((acc, g) => {
@@ -250,11 +176,7 @@ const rmGoals = game.goles_rm ?? 0;
 const rivalGoals = game.goles_rival ?? 0;
 const rivalName = isLocalRM ? game.club_visitante : game.club_local;
 const rivalHref = `/rivales/${slugify(rivalName)}`;
-const playerHref = (player: { name?: string; slug?: string } | string | null | undefined) => {
-    const name = typeof player === "string" ? player : player?.name;
-    const playerSlug = typeof player === "string" ? slugify(player) : (player?.slug || slugify(name || ""));
-    return playerSlug && playerSlug !== "#" ? `/jugadoras/${playerSlug}` : null;
-};
+const playerHref = matchPlayerHref;
 
 const fechaLarga = game.fecha
     ? (() => { try { return new Date(game.fecha).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }); } catch { return ""; } })()
@@ -328,9 +250,7 @@ if (isLiveOrPlayed) {
     if (game.mvp && game.mvp_nombre) cronica += ` ${game.mvp_nombre} se llevó el premio a la MVP del partido.`;
 }
 
-const matchKeys = [game.id_partido, slug];
-const fichaCronica = await fetchCronicaPartido(matchKeys, game.isPlayed ? 'CRÓNICA' : 'PREVIA')
-    ?? await fetchCronicaPartido(matchKeys);
+const fichaCronica = await fetchCronicaPartidoCached(game, cachePolicy.tags);
 const sinFotos = (html: string) => html
     .replace(/<figure\b[\s\S]*?<\/figure>/gi, "")
     .replace(/<picture\b[\s\S]*?<\/picture>/gi, "")
@@ -387,14 +307,17 @@ const matchSchema = matchStartISO ? {
 } : null;
 
 const tabbed = lineup.length > 0 || Boolean(game.isPlayed);
-const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(hasAnalysis ? ["analisis"] : []), ...(h2hStats ? ["h2h"] : [])];
-const requestedTab = Astro.url.searchParams.get("seccion") ?? "info";
-const activeTab = [...availableTabs, "valoraciones"].includes(requestedTab) ? requestedTab : "info";
+const hasGallery = totalGaleria > 0;
+const availableTabs = ["info", "timeline", "alineacion", "estadisticas", ...(hasAnalysis ? ["analisis"] : []), ...(hasGallery ? ["galeria"] : []), ...(h2hStats ? ["h2h"] : [])];
+// La página se guarda una sola vez para todas las variantes de ?seccion=: la pestaña
+// pedida la abre el navegador.
+const activeTab: string = "info";
+// Fragmentos que se piden al abrir su pestaña.
+const sectionSrc = (section: string) => `/partidos/${game.slug}/${section}`;
 
-const coachRows = tabbed && game.entrenador_nombre
-    ? await cached("coaches:directory-v1", 24 * 60 * 60 * 1000, () => fetchCoachesDirectly()).catch(() => [])
-    : [];
-const coachRow: any = coachRows.find((c: any) => c.nombre === game.entrenador_nombre);
+const coachRow: any = tabbed && detail.coach
+    ? [mapCoachRow(detail.coach)].filter(isListedCoach).find((c: any) => c.nombre === game.entrenador_nombre)
+    : undefined;
 const matchCoach = game.entrenador_nombre ? {
     name: game.entrenador_nombre,
     image: coachRow ? getCoachImageUrl(coachRow) : undefined,
@@ -403,17 +326,12 @@ const matchCoach = game.entrenador_nombre ? {
     href: `/entrenadores/${slugify(game.entrenador_nombre)}`,
 } : null;
 
-const fanRatings = tabbed
-    ? await cached(`ratings:summary:${game.id_partido}`, 10 * 60 * 1000, () => ratingSummary(Number(game.id_partido)), { remote: false }).catch(() => [])
-    : [];
-const ratingSlug = `${game.club_local}-vs-${game.club_visitante}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game.fecha ?? "").slice(0, 10)}`;
 ---
 
 <Layout title={seoTitle} description={seoDescription} ogTitle={isLiveOrPlayed ? `${game.club_local} ${localScore}-${visitorScore} ${game.club_visitante} | ${compLabel || 'Partido'} | Madrid Femenino Xtra` : `${game.club_local} vs ${game.club_visitante} | ${compLabel || 'Partido'} | Madrid Femenino Xtra`} ogDescription={isLiveOrPlayed ? `Resultado y ficha completa del ${game.club_local} contra ${game.club_visitante} (${fechaCorta}): goles, asistencias, alineaciones, estadísticas avanzadas y protagonistas del encuentro.` : `Previa del ${game.club_local} contra ${game.club_visitante} del ${fechaCorta} en ${compLabel || 'competición oficial'}: horario, estadio, información del partido y alineaciones cuando estén disponibles.`} noindex={!indexableMatch}>
     {matchSchema && <script type="application/ld+json" set:html={JSON.stringify(matchSchema)} />}
     <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema([{ name: "Inicio", path: "/" }, { name: "Partidos", path: "/partidos" }, { name: `${game.club_local} vs ${game.club_visitante}`, path: `/partidos/${slug}` }]))} />
-    <main class="match-details-page">
+    <main class="match-details-page" data-open-until={openUntil ?? undefined}>
         <a href="/partidos" class="back-link">
             <svg
                 width="16"
@@ -465,6 +383,7 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                                 data-status={matchStatus.status}
                                 data-fecha={game.fecha}
                                 data-hora={game.hora || "00:00"}
+                                data-kickoff={kickoffISO}
                             >
                                 {matchStatus.label.toUpperCase()}
                             </span>
@@ -678,20 +597,6 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
             </section>
             )}
         </div>
-        {galeriaFotos.length > 0 && (
-            <section class="match-card-new mfx-framed" style="margin-bottom:1.25rem;"><span class="mfx-frame" aria-hidden="true"></span>
-                <h2 class="section-header">GALERÍA DEL PARTIDO</h2>
-                <div style="padding:clamp(1rem,3.5vw,1.5rem);">
-                    <GaleriaGrid
-                        fotos={galeriaFotos}
-                        subtitulo={`${totalGaleria} fotos de este partido`}
-                        verTodasLabel="VER GALERÍA COMPLETA"
-                        minCol="170px"
-                    />
-                </div>
-            </section>
-        )}
-
         {(tieneCronica || cronica) && <section class="match-card-new match-cronica mfx-framed" style="margin-bottom:1.25rem;"><span class="mfx-frame" aria-hidden="true"></span>
             <h2 class="section-header">{cronicaHeading}</h2>
             {tieneCronica ? (
@@ -1069,16 +974,26 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
                 )}
                     </div>
                 </div>
-                <div class="mx-panel" data-mx-panel="estadisticas" hidden={activeTab !== "estadisticas"}>
-                    <MatchTeamStats game={game} isLocalRM={isLocalRM} localShield={localShield} visitorShield={visitorShield} periodos={matchAnalysis?.periodos} />
+                <div class="mx-panel" data-mx-panel="estadisticas" data-mx-src={sectionSrc("estadisticas")} hidden={activeTab !== "estadisticas"}>
+                    <p class="mx-lazy" data-mx-status aria-live="polite">Cargando estadísticas…</p>
                 </div>
-                {hasAnalysis && matchAnalysis && (
-                    <div class="mx-panel" data-mx-panel="analisis" hidden={activeTab !== "analisis"}>
-                        <MatchAnalysis data={matchAnalysis} rivalName={rivalName} playerHref={(nombre) => playerHref(nombre)} />
+                {hasAnalysis && (
+                    <div class="mx-panel" data-mx-panel="analisis" data-mx-src={sectionSrc("analisis")} hidden={activeTab !== "analisis"}>
+                        <p class="mx-lazy" data-mx-status aria-live="polite">Cargando análisis…</p>
                     </div>
                 )}
-                <div class="mx-panel" data-mx-panel="valoraciones" hidden={activeTab !== "valoraciones"}>
-                    <MatchRatings starters={lineup} subs={subs} fan={fanRatings} ratingsUrl={ratingsUrl} playerHref={playerHref} />
+                {hasGallery && (
+                    <div class="mx-panel" data-mx-panel="galeria" data-mx-src={sectionSrc("galeria")} hidden={activeTab !== "galeria"}>
+                        <section class="match-card-new mfx-framed" style="margin-bottom:1.25rem;"><span class="mfx-frame" aria-hidden="true"></span>
+                            <h2 class="section-header">GALERÍA DEL PARTIDO</h2>
+                            <div style="padding:clamp(1rem,3.5vw,1.5rem);" data-mx-slot>
+                                <p class="mx-lazy" data-mx-status aria-live="polite">Cargando {totalGaleria} fotos…</p>
+                            </div>
+                        </section>
+                    </div>
+                )}
+                <div class="mx-panel" data-mx-panel="valoraciones" data-mx-src={sectionSrc("valoraciones")} hidden={activeTab !== "valoraciones"}>
+                    <p class="mx-lazy" data-mx-status aria-live="polite">Cargando valoraciones…</p>
                 </div>
             </>
         )}
@@ -1193,6 +1108,14 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
 </script>
 
 <style>
+    .mx-lazy {
+        margin: 0;
+        padding: 2.5rem 1rem;
+        text-align: center;
+        font: 500 0.9rem/1.4 'DM Sans', sans-serif;
+        color: rgba(var(--l-ink, 200, 210, 220), 0.6);
+    }
+
     .match-page-title {
         position: absolute;
         width: 1px;
@@ -2985,19 +2908,42 @@ const ratingsUrl = `/valoraciones/${game.id_partido}-${ratingSlug}-${String(game
         setInterval(tick, 1000);
     }
 
+    // La ficha llega desde caché: el estado (no comenzado, en vivo, finalizado) se
+    // calcula aquí con la hora real, igual que getMatchStatus en el servidor.
     const badge = document.getElementById('live-status-badge') as HTMLElement | null;
-    if (badge && badge.dataset.status === 'in-progress') {
-        const fecha = badge.dataset.fecha!;
-        const hora  = badge.dataset.hora!;
-        const kickoff = new Date(`${fecha}T${hora.length === 5 ? hora + ':00' : hora}`);
-
-        function updateMinute() {
-            const elapsed = Math.floor((Date.now() - kickoff.getTime()) / 60000);
-            if (elapsed >= 0 && elapsed <= 120) {
-                badge!.textContent = `EN VIVO: ${elapsed}'`;
-            }
+    const kickoff = badge?.dataset.kickoff ? Date.parse(badge.dataset.kickoff) : NaN;
+    if (badge && Number.isFinite(kickoff)) {
+        const updateStatus = () => {
+            const now = Date.now();
+            const status = now < kickoff ? 'not-started' : now <= kickoff + 2 * 60 * 60 * 1000 ? 'in-progress' : 'finished';
+            badge.textContent = status === 'not-started'
+                ? 'PARTIDO NO COMENZADO'
+                : status === 'in-progress'
+                    ? `EN VIVO: ${Math.floor((now - kickoff) / 60000)}'`
+                    : 'PARTIDO FINALIZADO';
+            badge.dataset.status = status;
+            badge.className = `match-status-badge match-status-${status}`;
+            return status;
+        };
+        if (updateStatus() !== 'finished') {
+            const timer = setInterval(() => { if (updateStatus() === 'finished') clearInterval(timer); }, 10000);
         }
-        updateMinute();
-        setInterval(updateMinute, 10000);
+    }
+
+    // Fichas abiertas (futuras o de los últimos tres días): avisa al servidor para que
+    // compruebe si se han cargado datos en Turso. La CDN agrupa las llamadas y las
+    // fichas antiguas no lo hacen nunca.
+    const page = document.querySelector<HTMLElement>('.match-details-page[data-open-until]');
+    if (page && Date.now() < Number(page.dataset.openUntil)) {
+        let recent = false;
+        try {
+            const key = 'mfx-match-changes';
+            recent = Date.now() - (Number(sessionStorage.getItem(key)) || 0) < 60_000;
+            if (!recent) sessionStorage.setItem(key, String(Date.now()));
+        } catch {}
+        if (!recent) {
+            const check = () => fetch('/api/cache/cambios', { keepalive: true }).catch(() => {});
+            if ('requestIdleCallback' in window) requestIdleCallback(check, { timeout: 5000 }); else setTimeout(check, 3000);
+        }
     }
 </script>

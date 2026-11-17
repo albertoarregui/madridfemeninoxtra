@@ -2,7 +2,6 @@ import { clerkMiddleware } from "@clerk/astro/server";
 import { defineMiddleware } from "astro:middleware";
 import type { MiddlewareHandler } from "astro";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
-import { isFreshMatchPath } from "./lib/match-freshness";
 import { secondsUntilNextSeason } from "./utils/season";
 
 const SIN_CACHE = [/^\/api\//, /^\/premios/, /^\/valoraciones(?:\/|$)/];
@@ -22,7 +21,6 @@ const CACHE_LARGA_S = 30 * 24 * 60 * 60;
 const SWR_LARGA_S = 90 * 24 * 60 * 60;
 const CACHE_HOME_S = 24 * 60 * 60;
 const SWR_HOME_S = 7 * 24 * 60 * 60;
-const FRESH_MATCH_CACHE_S = 60;
 
 async function handleRequest(
     context: Parameters<MiddlewareHandler>[0],
@@ -43,24 +41,15 @@ async function handleRequest(
 
     try {
         const { request } = context;
-        const freshMatch = isFreshMatchPath(routePath);
 
         const cacheable =
             request.method === "GET" &&
             response.status === 200 &&
             (response.headers.get("content-type") || "").includes("text/html") &&
             !SIN_CACHE.some((re) => re.test(routePath)) &&
-            !freshMatch &&
             !userId;
 
-        if (freshMatch && request.method === "GET" && response.status === 200 && !userId) {
-            response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
-            response.headers.set("Vercel-CDN-Cache-Control", `max-age=${FRESH_MATCH_CACHE_S}`);
-            response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tagsForPath(routePath)].join(","));
-        } else if (freshMatch && request.method === "GET") {
-            response.headers.set("Cache-Control", "private, no-store, max-age=0");
-            response.headers.set("Vercel-CDN-Cache-Control", "no-store");
-        } else if (cacheable) {
+        if (cacheable) {
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
             const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
             const seasonPage = routePath === '/plantilla' || routePath === '/partidos';
@@ -69,11 +58,17 @@ async function handleRequest(
                 : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
             const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             const tags = tagsForPath(routePath);
-            response.headers.set(
-                "Vercel-CDN-Cache-Control",
-                `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
-            );
-            response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tags].join(","));
+            // Si la página ya decide su caché o sus etiquetas (fichas de partido y sus
+            // fragmentos), se respeta: las fichas antiguas no llevan etiquetas de tablas.
+            if (!response.headers.has("Vercel-CDN-Cache-Control")) {
+                response.headers.set(
+                    "Vercel-CDN-Cache-Control",
+                    `max-age=${sMaxage}, stale-while-revalidate=${swr}`,
+                );
+            }
+            if (!response.headers.has("Vercel-Cache-Tag")) {
+                response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tags].join(","));
+            }
             response.headers.set("Vary", "Accept-Encoding");
         }
     } catch {

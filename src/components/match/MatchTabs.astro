@@ -8,6 +8,7 @@ const ICONS: Record<string, string> = {
   estadisticas: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   h2h: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
   analisis: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M12 5v14"/><circle cx="17" cy="12" r="1.6"/><circle cx="7.5" cy="9" r="1"/>',
+  galeria: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
 };
 const SUB = [
   { key: "info", label: "Info" },
@@ -15,6 +16,7 @@ const SUB = [
   { key: "alineacion", label: "Alineación" },
   { key: "estadisticas", label: "Estadísticas" },
   { key: "analisis", label: "Análisis" },
+  { key: "galeria", label: "Galería" },
   { key: "h2h", label: "H2H" },
 ].filter((tab) => available.includes(tab.key));
 const isRatings = active === "valoraciones";
@@ -37,6 +39,25 @@ const isRatings = active === "valoraciones";
 </nav>
 
 <script>
+  import { loadFragment } from "../../lib/fragment-loader";
+
+  // Las pestañas pesadas llegan vacías y con data-mx-src: su contenido se pide la
+  // primera vez que se abren.
+  async function loadPanel(panel: HTMLElement) {
+    const src = panel.dataset.mxSrc;
+    if (!src || panel.dataset.mxState === "loading" || panel.dataset.mxState === "ready") return;
+    panel.dataset.mxState = "loading";
+    const slot = panel.querySelector<HTMLElement>("[data-mx-slot]") ?? panel;
+    try {
+      await loadFragment(slot, src);
+      panel.dataset.mxState = "ready";
+    } catch {
+      panel.dataset.mxState = "";
+      const status = slot.querySelector<HTMLElement>("[data-mx-status]");
+      if (status) status.textContent = "No se ha podido cargar esta sección. Vuelve a abrir la pestaña para reintentarlo.";
+    }
+  }
+
   function setupMatchTabs() {
     const nav = document.querySelector<HTMLElement>("[data-match-tabs]");
     if (!nav || nav.dataset.ready === "true") return;
@@ -53,7 +74,10 @@ const isRatings = active === "valoraciones";
       topTabs.forEach((t) => { const on = (t.dataset.mxTop === "valoraciones") === ratings; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
       subTabs.forEach((t) => { const on = !ratings && t.dataset.mxSub === key; t.classList.toggle("is-active", on); t.setAttribute("aria-selected", String(on)); });
       if (subBar) subBar.hidden = ratings;
-      panels().forEach((panel) => { panel.hidden = panel.dataset.mxPanel !== key; });
+      panels().forEach((panel) => {
+        panel.hidden = panel.dataset.mxPanel !== key;
+        if (!panel.hidden) void loadPanel(panel);
+      });
       if (push) {
         const url = new URL(location.href);
         if (key === "info") url.searchParams.delete("seccion"); else url.searchParams.set("seccion", key);
@@ -69,6 +93,11 @@ const isRatings = active === "valoraciones";
         next.focus(); next.click();
       }));
     }
+
+    // La ficha se sirve igual para cualquier ?seccion=: la pestaña pedida se abre aquí.
+    const requested = new URL(location.href).searchParams.get("seccion");
+    const known = [...subTabs.map((t) => t.dataset.mxSub), "valoraciones"];
+    if (requested && requested !== "info" && known.includes(requested)) show(requested, false);
   }
   setupMatchTabs();
   document.addEventListener("astro:page-load", setupMatchTabs);

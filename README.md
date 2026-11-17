@@ -61,11 +61,15 @@ Las noticias y las biografías se escriben en Contentful; los datos deportivos e
 
 ### ⚡ Caché y actualización de datos
 
-- **Páginas:** la CDN guarda el HTML hasta 24 horas y lo regenera cuando se invalidan sus etiquetas.
+- **Páginas:** se generan una vez y se sirven desde el almacén ISR de Vercel; se regeneran cuando se invalidan sus etiquetas.
 - **Consultas:** cada lectura de Turso se guarda en Runtime Cache, etiquetada con las tablas que lee.
-- **Cambios en Turso:** cada tabla de datos tiene triggers que suben su versión en `cache_cambios`. Las páginas llaman en segundo plano a `/api/cache/check`, que la CDN agrupa en una ejecución cada 30 segundos como máximo. Si una tabla ha cambiado, se invalidan sus consultas y las páginas que dependen de ella. Lo que se carga en Turso, venga de donde venga, se ve en menos de un minuto.
-- **Contentful:** el webhook de publicación invalida noticias, portada y fichas.
-- **Partidos recientes:** sus fichas leen Turso sin caché de datos y la CDN las agrupa por minuto.
+- **Fichas de partido:** leen solo su partido en dos peticiones agrupadas a Turso y lo guardan con una sola clave. Estadísticas, Análisis, Galería y Valoraciones son fragmentos que se piden al abrir su pestaña (`/partidos/[slug]/[seccion]`).
+  - *Abiertas* (futuras o de los tres últimos días): llevan las etiquetas de las tablas de partido, así que cualquier carga de datos las regenera.
+  - *Cerradas*: solo `match-ID`; cargar otro partido no las toca. Para corregir una antigua: `npm run cache:revalidar -- --partido ID`.
+  - Valoraciones va fuera de ISR: la CDN la guarda un minuto mientras se puede votar.
+- **Cambios en Turso:** cada tabla de datos tiene triggers que suben su versión en `cache_cambios`. Solo las fichas abiertas llaman en segundo plano a `/api/cache/cambios`, que la CDN agrupa en una ejecución cada 30 segundos como máximo; si una tabla ha cambiado, se invalida lo que depende de ella. Los scripts de importación, vídeos y galerías avisan además con la etiqueta del partido.
+- **Contentful:** el webhook de publicación invalida noticias, portada, fichas y la ficha del partido de cada crónica o previa.
+- **Próximo partido:** el widget flotante es un fragmento compartido (`/proximo-partido`) que la CDN guarda cinco minutos; ninguna página lee todos los partidos para pintarlo.
 
 Así Turso solo se consulta cuando algo cambia, y Runtime Cache solo escribe en esos casos.
 
@@ -85,7 +89,7 @@ npm run dev
 | `npm run build` | Compilación para producción |
 | `npm test` | Pruebas automáticas |
 | `npm run check` | Comprobación de tipos de Astro |
-| `npm run cache:revalidar` | Invalida a mano la caché de las tablas indicadas |
+| `npm run cache:revalidar` | Invalida a mano la caché de las tablas indicadas (`-- --partido ID` para una ficha antigua) |
 | `npm run smoke:production` | Comprueba las páginas principales en producción |
 | `npm run galeria` | Sube fotografías de galería a R2 |
 | `npm run og` | Genera las imágenes para redes en Contentful |

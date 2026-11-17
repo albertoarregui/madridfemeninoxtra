@@ -1,0 +1,36 @@
+---
+// Pestaña "Valoraciones" de la ficha de partido. Va aparte porque los votos de la
+// afición cambian mientras la votación está abierta: este fragmento no entra en
+// ISR y la CDN lo guarda un minuto; cerrada la votación, lo guarda como la ficha.
+import MatchRatings from "../../../components/match/MatchRatings.astro";
+import { fetchMatchDetail, matchCachePolicy, MISSING_MATCH_TAGS } from "../../../utils/match-detail";
+import { ratingSummary, startTimeUTC } from "../../../lib/ratings";
+import { matchPlayerHref, matchRatingsUrl } from "../../../lib/match-view";
+
+export const partial = true;
+
+const VOTES_OPEN_MS = (2 + 72) * 60 * 60 * 1000;
+const { slug = "" } = Astro.params;
+const detail = await fetchMatchDetail(slug);
+if (!detail) {
+    return new Response(null, {
+        status: 404,
+        headers: { "Vercel-Cache-Tag": MISSING_MATCH_TAGS.join(","), "X-Robots-Tag": "noindex" },
+    });
+}
+
+const { game, lineup, subs } = detail;
+const policy = matchCachePolicy(game);
+// Mismo cálculo de apertura que ratingsOpen(): desde el pitido inicial + 2 h, durante 72 h.
+const votesFinished = Date.now() >= startTimeUTC({ fecha: String(game.fecha ?? ""), hora: String(game.hora ?? "") } as any) + VOTES_OPEN_MS;
+const fan = await ratingSummary(Number(game.id_partido)).catch(() => []);
+
+Astro.response.headers.set("X-Robots-Tag", "noindex");
+Astro.response.headers.set("Vercel-Cache-Tag", policy.tags.join(","));
+Astro.response.headers.set(
+    "Vercel-CDN-Cache-Control",
+    votesFinished ? "max-age=2592000, stale-while-revalidate=2592000" : "max-age=60",
+);
+---
+
+<MatchRatings starters={lineup} subs={subs} fan={fan} ratingsUrl={matchRatingsUrl(game)} playerHref={matchPlayerHref} />

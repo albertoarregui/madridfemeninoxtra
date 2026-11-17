@@ -9,6 +9,8 @@ type Entrada<T> = {
 
 type CacheOptions = {
     tags?: string[];
+    /** Etiquetas que solo se conocen con el dato ya leído (p. ej. el id de un partido buscado por slug). */
+    tagsFor?: (data: any) => string[];
     remote?: boolean;
     memoryTtlMs?: number;
     forceRefresh?: boolean;
@@ -59,7 +61,8 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
                 if (remoto !== null && sigueVigente()) {
                     const data = remoto as T;
                     if (almacen.get(clave)?.enCurso === enCurso) {
-                        almacen.set(clave, { at: Date.now(), data, tags });
+                        const remoteTags = options.tagsFor ? [...new Set([...tags, ...options.tagsFor(data)])] : tags;
+                        almacen.set(clave, { at: Date.now(), data, tags: remoteTags });
                     }
                     return data;
                 }
@@ -79,15 +82,18 @@ export async function cached<T>(clave: string, ttlMs: number, fn: () => Promise<
             throw error;
         }
         const vigente = sigueVigente();
+        const finalTags = options.tagsFor
+            ? [...new Set([...tags, ...options.tagsFor(data).filter(Boolean)])]
+            : tags;
 
         if (vigente && almacen.get(clave)?.enCurso === enCurso) {
-            almacen.set(clave, { at: Date.now(), data, tags });
+            almacen.set(clave, { at: Date.now(), data, tags: finalTags });
         }
 
         if (runtimeCache && vigente) {
             try {
                 await runtimeCache.set(clave, data, {
-                    ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags, name: clave,
+                    ttl: Math.max(1, Math.ceil(ttlMs / 1000)), tags: finalTags, name: clave,
                 });
                 if (!sigueVigente()) await runtimeCache.delete(clave);
             } catch (error) {

@@ -34,39 +34,64 @@ export interface AnalisisPartido {
 
 const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
-export async function fetchMatchAnalysis(matchId: string | number, options: { fresh?: boolean } = {}): Promise<AnalisisPartido | null> {
+// Las cuatro lecturas del análisis de un partido, en el orden de buildMatchAnalysis.
+const MATCH_ANALYSIS_SQL = [
+    `SELECT es_rm, id_jugadora, jugadora_nombre, minuto, minuto_anadido, resultado, situacion, parte_cuerpo, xg, x, y
+     FROM tiros WHERE id_partido = ? ORDER BY segundo_partido`,
+    `SELECT pm.id_jugadora, COALESCE(j.nombre, pm.jugadora_nombre) AS nombre, pm.x, pm.y, pm.acciones
+     FROM posiciones_medias pm LEFT JOIN jugadoras j ON j.id_jugadora = pm.id_jugadora
+     WHERE pm.id_partido = ? AND pm.es_rm = 1`,
+    'SELECT minuto, valor FROM dominio_partido WHERE id_partido = ? ORDER BY minuto',
+    'SELECT periodo, clave, rm, rival, rm_total, rival_total FROM estadisticas_periodos WHERE id_partido = ?',
+] as const;
+
+function buildMatchAnalysis([tiros, posiciones, dominio, periodos]: readonly (readonly any[])[]): AnalisisPartido | null {
+    const porPeriodo: Record<string, ValorPeriodo[]> = {};
+    for (const r of periodos) (porPeriodo[String(r.periodo)] ||= []).push({ clave: String(r.clave), rm: n(r.rm), rival: n(r.rival), rm_total: n(r.rm_total), rival_total: n(r.rival_total) });
+    const data: AnalisisPartido = {
+        periodos: porPeriodo,
+        tiros: tiros.map((r: any) => ({
+            es_rm: Number(r.es_rm) === 1, id_jugadora: n(r.id_jugadora), jugadora: String(r.jugadora_nombre ?? ''),
+            minuto: n(r.minuto), minuto_anadido: n(r.minuto_anadido), resultado: String(r.resultado ?? ''),
+            situacion: r.situacion ?? null, parte_cuerpo: r.parte_cuerpo ?? null, xg: n(r.xg), x: Number(r.x), y: Number(r.y),
+        })),
+        posiciones: posiciones.map((r: any) => ({
+            id_jugadora: n(r.id_jugadora), jugadora: String(r.nombre ?? ''), x: Number(r.x), y: Number(r.y), acciones: Number(r.acciones ?? 0),
+        })),
+        dominio: dominio.map((r: any) => ({ minuto: Number(r.minuto), valor: Number(r.valor) })),
+    };
+    return data.tiros.length || data.posiciones.length || data.dominio.length || data.periodos['1ST']?.length ? data : null;
+}
+
+export async function fetchMatchAnalysis(matchId: string | number): Promise<AnalisisPartido | null> {
     try {
-        const { getPlayersDbClient } = await import('../db/client');
-        const client = await getPlayersDbClient({ forceRefresh: options.fresh });
+        const { getPlayersDbClient, readBatch } = await import('../db/client');
+        const client = await getPlayersDbClient();
         if (!client) return null;
-        const [tiros, posiciones, dominio, periodos] = await Promise.all([
-            client.execute({ sql: `SELECT es_rm, id_jugadora, jugadora_nombre, minuto, minuto_anadido, resultado, situacion, parte_cuerpo, xg, x, y
-                                   FROM tiros WHERE id_partido = ? ORDER BY segundo_partido`, args: [matchId] }),
-            client.execute({ sql: `SELECT pm.id_jugadora, COALESCE(j.nombre, pm.jugadora_nombre) AS nombre, pm.x, pm.y, pm.acciones
-                                   FROM posiciones_medias pm LEFT JOIN jugadoras j ON j.id_jugadora = pm.id_jugadora
-                                   WHERE pm.id_partido = ? AND pm.es_rm = 1`, args: [matchId] }),
-            client.execute({ sql: 'SELECT minuto, valor FROM dominio_partido WHERE id_partido = ? ORDER BY minuto', args: [matchId] }),
-            client.execute({ sql: 'SELECT periodo, clave, rm, rival, rm_total, rival_total FROM estadisticas_periodos WHERE id_partido = ?', args: [matchId] }),
-        ]);
-        const porPeriodo: Record<string, ValorPeriodo[]> = {};
-        for (const r of periodos.rows as any[]) (porPeriodo[String(r.periodo)] ||= []).push({ clave: String(r.clave), rm: n(r.rm), rival: n(r.rival), rm_total: n(r.rm_total), rival_total: n(r.rival_total) });
-        const data: AnalisisPartido = {
-            periodos: porPeriodo,
-            tiros: tiros.rows.map((r: any) => ({
-                es_rm: Number(r.es_rm) === 1, id_jugadora: n(r.id_jugadora), jugadora: String(r.jugadora_nombre ?? ''),
-                minuto: n(r.minuto), minuto_anadido: n(r.minuto_anadido), resultado: String(r.resultado ?? ''),
-                situacion: r.situacion ?? null, parte_cuerpo: r.parte_cuerpo ?? null, xg: n(r.xg), x: Number(r.x), y: Number(r.y),
-            })),
-            posiciones: posiciones.rows.map((r: any) => ({
-                id_jugadora: n(r.id_jugadora), jugadora: String(r.nombre ?? ''), x: Number(r.x), y: Number(r.y), acciones: Number(r.acciones ?? 0),
-            })),
-            dominio: dominio.rows.map((r: any) => ({ minuto: Number(r.minuto), valor: Number(r.valor) })),
-        };
-        return data.tiros.length || data.posiciones.length || data.dominio.length || data.periodos['1ST']?.length ? data : null;
+        return buildMatchAnalysis(await readBatch(client, MATCH_ANALYSIS_SQL.map((sql) => ({ sql, args: [matchId] }))));
     } catch (error) {
         console.error('Error fetching match analysis:', error);
         return null;
     }
+}
+
+/**
+ * Análisis de un partido en una sola petición y una sola entrada de caché.
+ * Lo comparten las pestañas Estadísticas (por partes) y Análisis.
+ */
+export async function fetchMatchAnalysisCached(matchId: string | number, tags: string[], ttlMs: number): Promise<AnalisisPartido | null> {
+    const { cached } = await import('./cache');
+    const result = await cached(`match-analysis:v1:${matchId}`, ttlMs, async () => {
+        const { getPlayersDbClient, readBatch } = await import('../db/client');
+        const client = await getPlayersDbClient();
+        if (!client) throw new Error('Turso no disponible');
+        // Se envuelve para poder guardar también "sin análisis" (null no se guarda en Runtime Cache).
+        return { data: buildMatchAnalysis(await readBatch(client, MATCH_ANALYSIS_SQL.map((sql) => ({ sql, args: [matchId] })))) };
+    }, { tags }).catch((error) => {
+        console.error('Error fetching match analysis:', error);
+        return { data: null };
+    });
+    return result.data;
 }
 
 export async function fetchPlayerShots(playerId: string | number, temporada?: string): Promise<(Tiro & { partido: string })[]> {

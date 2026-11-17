@@ -14,7 +14,8 @@ test("las fichas de partido tienen un H1 descriptivo sin alterar el diseño", ()
 
 test("las entidades visibles de la ficha enlazan a sus páginas", () => {
     assert.match(matchPage, /const rivalHref = `\/rivales\/\$\{slugify\(rivalName\)\}`/);
-    assert.match(matchPage, /return playerSlug.*`\/jugadoras\/\$\{playerSlug\}`/);
+    assert.match(matchPage, /const playerHref = matchPlayerHref;/);
+    assert.match(readFileSync("src/lib/match-view.ts", "utf8"), /return playerSlug.*`\/jugadoras\/\$\{playerSlug\}`/);
     assert.match(matchPage, /href=\{`\/arbitras\/\$\{arbitraSlug\}`\}/);
     assert.match(matchPage, /href=\{`\/estadios\/\$\{estadioSlug\}`\}/);
 });
@@ -32,12 +33,12 @@ test("el sitemap comparte la lectura de partidos y temporadas", () => {
 });
 
 test("la ficha muestra el historial sin consultas extra y pestañas en cuanto hay datos", () => {
+    const detail = readFileSync("src/utils/match-detail.ts", "utf8");
     assert.doesNotMatch(matchPage, /INFORMACIÓN DEL PARTIDO/);
-    assert.match(matchPage, /const h2hMatches = allGames/);
-    assert.match(matchPage, /String\(g\.fecha \?\? ""\) < String\(game\.fecha \?\? ""\)/);
+    assert.match(matchPage, /const h2hMatches = detail\.h2h;/);
+    assert.match(detail, /String\(g\.fecha \?\? ''\) < String\(game\.fecha \?\? ''\)/);
     assert.doesNotMatch(matchPage, /isWithinOneHour/);
     assert.match(matchPage, /<h3>Enfrentamientos anteriores<\/h3>/);
-    assert.match(matchPage, /fetchMatchLineups\(game\.id_partido, matchReadOptions\),/);
     assert.match(matchPage, /const tabbed = lineup\.length > 0 \|\| Boolean\(game\.isPlayed\);/);
     assert.match(matchPage, /<MatchTabs /);
     for (const panel of ["info", "timeline", "alineacion", "estadisticas", "h2h", "valoraciones"]) {

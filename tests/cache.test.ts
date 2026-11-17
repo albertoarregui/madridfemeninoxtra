@@ -18,6 +18,21 @@ test('reutiliza una lectura y vuelve al origen justo después de invalidarla', a
     assert.equal(originReads, 2);
 });
 
+test('las etiquetas que dependen del dato leído también invalidan la entrada', async () => {
+    const key = `test-tagsfor-${Date.now()}-${Math.random()}`;
+    const dynamicTag = `match-test-${Date.now()}`;
+    let originReads = 0;
+    const read = () => cached(key, 60_000, async () => ({ id: dynamicTag, n: ++originReads }), {
+        tags: ['database'],
+        tagsFor: (data) => [data.id],
+    });
+
+    assert.equal((await read()).n, 1);
+    assert.equal((await read()).n, 1);
+    await invalidarTags([dynamicTag]);
+    assert.equal((await read()).n, 2);
+});
+
 test('agrupa fallos simultáneos para no duplicar consultas al origen', async () => {
     const key = `test-concurrent-${Date.now()}-${Math.random()}`;
     let originReads = 0;

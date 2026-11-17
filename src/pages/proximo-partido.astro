@@ -1,0 +1,18 @@
+---
+// Widget flotante del próximo partido (o del que se está jugando). Antes se
+// generaba dentro de cada página y obligaba a leer todos los partidos y el
+// calendario en cada render; ahora es un fragmento compartido que las páginas
+// piden al cargar. Depende de la hora, así que no entra en ISR: la CDN lo guarda
+// cinco minutos y se vacía antes si cambian los partidos.
+import NextMatchCountdown from "../components/NextMatchCountdown.astro";
+import { cacheTags } from "../lib/cache-tags";
+
+export const partial = true;
+
+Astro.response.headers.set("Cache-Control", "public, max-age=60");
+Astro.response.headers.set("Vercel-CDN-Cache-Control", "max-age=300, stale-while-revalidate=600");
+Astro.response.headers.set("Vercel-Cache-Tag", [cacheTags.database, cacheTags.matches, cacheTags.calendar].join(","));
+Astro.response.headers.set("X-Robots-Tag", "noindex");
+---
+
+<NextMatchCountdown />
