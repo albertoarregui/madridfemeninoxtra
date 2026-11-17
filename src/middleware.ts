@@ -4,7 +4,9 @@ import type { MiddlewareHandler } from "astro";
 import { cacheTags, tagsForPath } from "./lib/cache-tags";
 import { secondsUntilNextSeason } from "./utils/season";
 
-const SIN_CACHE = [/^\/api\//, /^\/premios/, /^\/valoraciones(?:\/|$)/];
+const SIN_CACHE = [/^\/api\//];
+const VOTOS_PARTIDO = /^\/valoraciones\/[^/]+\/?$/;
+const VOTOS_LISTAS = /^\/(?:valoraciones|premios)\/?$/;
 const REQUIERE_CLERK = /^\/api\/(?:season-awards|valoraciones(?:\/|$))/;
 
 const CACHE_LARGA = [
@@ -21,6 +23,8 @@ const CACHE_LARGA_S = 30 * 24 * 60 * 60;
 const SWR_LARGA_S = 90 * 24 * 60 * 60;
 const CACHE_HOME_S = 24 * 60 * 60;
 const SWR_HOME_S = 7 * 24 * 60 * 60;
+const CACHE_VOTOS_PARTIDO_S = 60;
+const CACHE_VOTOS_LISTAS_S = 5 * 60;
 
 async function handleRequest(
     context: Parameters<MiddlewareHandler>[0],
@@ -53,10 +57,12 @@ async function handleRequest(
             const larga = CACHE_LARGA.some((re) => re.test(routePath));
             const fastRefresh = routePath === '/' || routePath === '/donde-ver-real-madrid-femenino';
             const seasonPage = routePath === '/plantilla' || routePath === '/partidos';
-            const sMaxage = seasonPage
+            const votos = VOTOS_PARTIDO.test(routePath) ? CACHE_VOTOS_PARTIDO_S
+                : VOTOS_LISTAS.test(routePath) ? CACHE_VOTOS_LISTAS_S : 0;
+            const sMaxage = votos || (seasonPage
                 ? Math.min(CACHE_CORTA_S, secondsUntilNextSeason(requestStartedAt))
-                : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S);
-            const swr = seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
+                : fastRefresh ? CACHE_HOME_S : (larga ? CACHE_LARGA_S : CACHE_CORTA_S));
+            const swr = votos || seasonPage ? 0 : fastRefresh ? SWR_HOME_S : (larga ? SWR_LARGA_S : SWR_S);
             const tags = tagsForPath(routePath);
             if (!response.headers.has("Vercel-CDN-Cache-Control")) {
                 response.headers.set(
