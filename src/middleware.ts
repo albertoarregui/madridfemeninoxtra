@@ -14,8 +14,8 @@ const CACHE_LARGA = [
     /^\/la-fabrica(?:\/|$)/,
 ];
 
-// Turso y Contentful invalidan por etiqueta cuando cambia un dato. Estos TTL
-// son solo una red de seguridad y evitan regeneraciones periódicas sin cambios.
+// Turso y Contentful invalidan por etiqueta cuando cambia un dato; estos TTL
+// son una red de seguridad para evitar regeneraciones periódicas sin cambios.
 const CACHE_CORTA_S = 7 * 24 * 60 * 60;
 const SWR_S = 30 * 24 * 60 * 60;
 const CACHE_LARGA_S = 30 * 24 * 60 * 60;
