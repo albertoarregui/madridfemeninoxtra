@@ -32,3 +32,10 @@ test('el carrusel usa la misma lista de noticias que /noticias', () => {
     assert.match(readFileSync('src/pages/noticias/index.astro', 'utf8'), /await fetchNewsArchive\(\)/);
     assert.match(readFileSync('src/pages/noticias/[slug].astro', 'utf8'), /src=\{contentfulImageUrl\(featuredImageUrl, \{ width: Math\.min\(featuredImageWidth, 1600\) \}\)\}/);
 });
+
+test('las fotos de Contentful se pintan con <img> para que Vercel no les añada ?dpl=', () => {
+    for (const file of ['src/components/HistoryCarousel.astro', 'src/pages/index.astro', 'src/pages/noticias/[slug].astro']) {
+        assert.doesNotMatch(readFileSync(file, 'utf8'), /<Image\b/, file);
+    }
+    assert.doesNotMatch(readFileSync('src/components/PlayerOfTheMonthWidget.astro', 'utf8'), /<Image\s+src=\{externalImageUrl\}/);
+});
