@@ -1,24 +1,8 @@
 ---
-import { fetchCalendarFromDb } from "../utils/calendar";
-import { fetchGamesDirectly } from "../utils/partidos";
 import { slugify } from "../utils/partidos";
 import { getMatchStatus, parseMatchDate } from "../utils/date-helper";
 
-const allGames = await fetchGamesDirectly();
-const calendarMatches = await fetchCalendarFromDb();
-const now = new Date();
-const matchDuration = 120 * 60 * 1000;
-
-const liveMatch = allGames.find((game) => {
-    if (!game.fecha || !game.hora) return false;
-    const matchDate = parseMatchDate(game.fecha, game.hora);
-    return now >= matchDate && now <= new Date(matchDate.getTime() + matchDuration);
-});
-
-const nextMatch = liveMatch ||
-    calendarMatches.find((match) => {
-        return parseMatchDate(match.fecha, match.hora) >= now;
-    }) || null;
+const { nextMatch, now = new Date() } = Astro.props;
 
 if (!nextMatch) return null;
 

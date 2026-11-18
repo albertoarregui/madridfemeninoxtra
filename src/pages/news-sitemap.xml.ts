@@ -20,6 +20,7 @@ function xmlEscape(s: string): string {
 export const GET: APIRoute = async () => {
     const items: { loc: string; date: string; title: string }[] = [];
     const cutoff = Date.now() - MAX_AGE_MS;
+    let failed = false;
 
     try {
         const entries = await contentfulClient.getEntries({
@@ -45,6 +46,7 @@ export const GET: APIRoute = async () => {
         }
     } catch (error) {
         console.error('Error generando news-sitemap:', error);
+        failed = true;
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -64,9 +66,13 @@ ${items.map(i => `  <url>
 
     return new Response(xml, {
         status: 200,
-        headers: {
-            'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=300',
-        },
+        headers: failed
+            ? { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'no-store' }
+            : {
+                'Content-Type': 'application/xml; charset=utf-8',
+                'Cache-Control': 'public, max-age=300',
+                'Vercel-CDN-Cache-Control': 'max-age=3600',
+                'Vercel-Cache-Tag': 'database,news,contentful',
+            },
     });
 };

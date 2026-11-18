@@ -1,7 +1,7 @@
 import { clerkMiddleware } from "@clerk/astro/server";
 import { defineMiddleware } from "astro:middleware";
 import type { MiddlewareHandler } from "astro";
-import { cacheTags, tagsForPath } from "./lib/cache-tags";
+import { cacheTags, dataTags, tagsForPath } from "./lib/cache-tags";
 import { secondsUntilNextSeason } from "./utils/season";
 
 const SIN_CACHE = [/^\/api\//];
@@ -74,6 +74,26 @@ async function handleRequest(
                 response.headers.set("Vercel-Cache-Tag", [cacheTags.database, ...tags].join(","));
             }
             response.headers.set("Vary", "Accept-Encoding");
+        }
+
+        const apiPublica =
+            request.method === "GET" &&
+            response.status === 200 &&
+            routePath.startsWith("/api/") &&
+            !userId &&
+            !response.headers.has("Vercel-CDN-Cache-Control") &&
+            Number(response.headers.get("cache-control")?.match(/s-maxage=(\d+)/)?.[1] ?? 0) > 0;
+
+        if (apiPublica) {
+            const propias = (response.headers.get("Vercel-Cache-Tag") || "").split(",").filter(Boolean);
+            response.headers.set(
+                "Vercel-CDN-Cache-Control",
+                `max-age=${CACHE_CORTA_S}, stale-while-revalidate=${SWR_S}`,
+            );
+            response.headers.set(
+                "Vercel-Cache-Tag",
+                [...new Set([cacheTags.database, ...propias, ...tagsForPath(routePath), ...dataTags])].join(","),
+            );
         }
     } catch {
     }

@@ -36,6 +36,48 @@ function isRealMadrid(name: string): boolean {
     return REAL_MADRID_ID_NAMES.includes(name.toLowerCase().trim());
 }
 
+export function mapCalendarRow(row: any): CalendarMatch {
+    const clubLocal = String(row.club_local || 'Real Madrid Femenino');
+    const clubVisitante = String(row.club_visitante || 'Rival');
+
+    const rmIsLocal = isRealMadrid(clubLocal);
+    const homeaway: 'home' | 'away' | 'neutral' = rmIsLocal ? 'home' : 'away';
+
+    const fecha = String(row.fecha || '');
+    const hora = String(row.hora || '');
+
+    return {
+        id: Number(row.id || 0),
+        club_local: clubLocal,
+        local_foto_url: String(row.local_foto_url || ''),
+        club_visitante: clubVisitante,
+        visitante_foto_url: String(row.visitante_foto_url || ''),
+        estadio: row.estadio || null,
+        competicion: row.competicion_nombre || 'Competición',
+        fecha: fecha,
+        hora: hora,
+        jornada: String(row.jornada || ''),
+        tv: String(row.tv || ''),
+
+        team1: clubLocal,
+        team2: clubVisitante,
+        date: fecha,
+        time: hora,
+        competition: row.competicion_nombre || 'Competición',
+        stadium: row.estadio || '',
+        homeaway,
+        estadio_foto_url: String(row.estadio_foto_url || ''),
+        competicion_foto_url: String(row.competicion_foto_url || ''),
+        ciudad: row.ciudad || null,
+        pais: row.pais || null,
+        capacidad: row.capacidad ? Number(row.capacidad) : null,
+        id_arbitra: row.id_arbitra ? Number(row.id_arbitra) : null,
+        arbitra_nombre: row.arbitra_nombre || null,
+        goles_rm: row.goles_rm == null || row.goles_rm === '' ? null : Number(row.goles_rm),
+        goles_rival: row.goles_rival == null || row.goles_rival === '' ? null : Number(row.goles_rival),
+    };
+}
+
 async function fetchCalendarFromDbUncached(): Promise<CalendarMatch[]> {
     try {
         const { getPlayersDbClient } = await import('../db/client');
@@ -76,47 +118,7 @@ async function fetchCalendarFromDbUncached(): Promise<CalendarMatch[]> {
             return [];
         }
 
-        return result.rows.map((row: any) => {
-            const clubLocal = String(row.club_local || 'Real Madrid Femenino');
-            const clubVisitante = String(row.club_visitante || 'Rival');
-
-            const rmIsLocal = isRealMadrid(clubLocal);
-            const homeaway: 'home' | 'away' | 'neutral' = rmIsLocal ? 'home' : 'away';
-
-            const fecha = String(row.fecha || '');
-            const hora = String(row.hora || '');
-
-            return {
-                id: Number(row.id || 0),
-                club_local: clubLocal,
-                local_foto_url: String(row.local_foto_url || ''),
-                club_visitante: clubVisitante,
-                visitante_foto_url: String(row.visitante_foto_url || ''),
-                estadio: row.estadio || null,
-                competicion: row.competicion_nombre || 'Competición',
-                fecha: fecha,
-                hora: hora,
-                jornada: String(row.jornada || ''),
-                tv: String(row.tv || ''),
-
-                team1: clubLocal,
-                team2: clubVisitante,
-                date: fecha,
-                time: hora,
-                competition: row.competicion_nombre || 'Competición',
-                stadium: row.estadio || '',
-                homeaway,
-                estadio_foto_url: String(row.estadio_foto_url || ''),
-                competicion_foto_url: String(row.competicion_foto_url || ''),
-                ciudad: row.ciudad || null,
-                pais: row.pais || null,
-                capacidad: row.capacidad ? Number(row.capacidad) : null,
-                id_arbitra: row.id_arbitra ? Number(row.id_arbitra) : null,
-                arbitra_nombre: row.arbitra_nombre || null,
-                goles_rm: row.goles_rm == null || row.goles_rm === '' ? null : Number(row.goles_rm),
-                goles_rival: row.goles_rival == null || row.goles_rival === '' ? null : Number(row.goles_rival),
-            };
-        });
+        return result.rows.map(mapCalendarRow);
     } catch (error) {
         console.error('[fetchCalendarFromDb] Error fetching from partidos:', error);
         return [];

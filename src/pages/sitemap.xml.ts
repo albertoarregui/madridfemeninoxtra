@@ -226,13 +226,18 @@ async function buildSitemap(): Promise<string> {
     }
 }
 
+const SITEMAP_TAGS = ['database', 'news', 'contentful', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'];
+const SITEMAP_TTL_S = 7 * 24 * 60 * 60;
+const SITEMAP_SWR_S = 30 * 24 * 60 * 60;
+
 export const GET: APIRoute = async () => {
     try {
-        const xml = await cached('seo:sitemap-2026-v6', 6 * 60 * 60 * 1000, buildSitemap, { tags: ['database', 'news', 'matches', 'players', 'coaches', 'stadiums', 'referees', 'rivals', 'statistics'] });
+        const xml = await cached('seo:sitemap-2026-v6', SITEMAP_TTL_S * 1000, buildSitemap, { tags: SITEMAP_TAGS });
         return new Response(xml, { headers: {
             'Content-Type': 'application/xml; charset=utf-8',
             'Cache-Control': 'public, max-age=300',
-            'Vercel-CDN-Cache-Control': 'max-age=3600, stale-while-revalidate=3600',
+            'Vercel-CDN-Cache-Control': `max-age=${SITEMAP_TTL_S}, stale-while-revalidate=${SITEMAP_SWR_S}`,
+            'Vercel-Cache-Tag': SITEMAP_TAGS.join(','),
         } });
     } catch (error) {
         console.error('Sitemap unavailable:', error);

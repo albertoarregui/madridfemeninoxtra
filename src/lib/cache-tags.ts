@@ -11,6 +11,12 @@ export const cacheTags = {
     awards: 'awards', fabrica: 'fabrica',
 } as const;
 
+export const dataTags = [
+    cacheTags.matches, cacheTags.calendar, cacheTags.goals, cacheTags.lineups,
+    cacheTags.statistics, cacheTags.rankings, cacheTags.players, cacheTags.stadiums,
+    cacheTags.referees, cacheTags.coaches, cacheTags.rivals, cacheTags.awards, cacheTags.fabrica,
+];
+
 export function tagsForPath(pathname: string): string[] {
     const tags: string[] = [];
     if (/^\/api\/(partidos|games\/)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.calendar, cacheTags.goals, cacheTags.lineups, cacheTags.statistics);
@@ -22,7 +28,7 @@ export function tagsForPath(pathname: string): string[] {
     if (/^\/api\/coaches/.test(pathname)) tags.push(cacheTags.coaches, cacheTags.matches);
     if (/^\/api\/(rivals|clubes)/.test(pathname)) tags.push(cacheTags.rivals, cacheTags.matches, cacheTags.statistics);
     if (/^\/api\/(buscador|opciones_filtro)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.statistics);
-    if (/^\/api\/search/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.rivals, cacheTags.coaches, cacheTags.stadiums);
+    if (/^\/api\/search/.test(pathname)) tags.push(cacheTags.matches, cacheTags.players, cacheTags.rivals, cacheTags.coaches, cacheTags.stadiums, cacheTags.referees);
     if (pathname === '/') tags.push(cacheTags.homepage, cacheTags.matches);
     if (/^\/noticias(?:\/|$)/.test(pathname)) {
         tags.push(cacheTags.news);
@@ -38,6 +44,9 @@ export function tagsForPath(pathname: string): string[] {
     if (/^\/temporadas(?:\/|$)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.statistics, cacheTags.rankings, cacheTags.players);
     if (/^\/la-fabrica(?:\/|$)/.test(pathname)) tags.push(cacheTags.fabrica);
     if (/^\/(estadisticas|rankings|records|comparador)/.test(pathname)) tags.push(cacheTags.statistics, cacheTags.rankings);
+    if (/^\/search(?:\/|$)/.test(pathname)) tags.push(...dataTags);
+    if (/^\/valoraciones(?:\/|$)/.test(pathname)) tags.push(cacheTags.matches, cacheTags.lineups, cacheTags.players, cacheTags.coaches);
+    if (/^\/premios(?:\/|$)/.test(pathname)) tags.push(cacheTags.players, cacheTags.awards);
     if (/^\/estadios/.test(pathname)) tags.push(cacheTags.stadiums, cacheTags.matches, cacheTags.statistics, cacheTags.goals);
     if (/^\/arbitras/.test(pathname)) tags.push(cacheTags.referees, cacheTags.matches, cacheTags.statistics);
     if (/^\/entrenadores/.test(pathname)) tags.push(cacheTags.coaches, cacheTags.matches, cacheTags.statistics);

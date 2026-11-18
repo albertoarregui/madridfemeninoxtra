@@ -1,13 +1,17 @@
 ---
 import NextMatchCountdown from "../components/NextMatchCountdown.astro";
 import { cacheTags } from "../lib/cache-tags";
+import { fetchUpcomingMatches, nextMatchCacheSeconds, pickNextMatch } from "../utils/next-match";
 
 export const partial = true;
 
+const now = new Date();
+const { nextMatch, live, failed } = pickNextMatch(await fetchUpcomingMatches(now), now);
+
 Astro.response.headers.set("Cache-Control", "public, max-age=60");
-Astro.response.headers.set("Vercel-CDN-Cache-Control", "max-age=300, stale-while-revalidate=600");
+Astro.response.headers.set("Vercel-CDN-Cache-Control", `max-age=${nextMatchCacheSeconds(nextMatch, live, now, failed)}, stale-while-revalidate=600`);
 Astro.response.headers.set("Vercel-Cache-Tag", [cacheTags.database, cacheTags.matches, cacheTags.calendar].join(","));
 Astro.response.headers.set("X-Robots-Tag", "noindex");
 ---
 
-<NextMatchCountdown />
+<NextMatchCountdown nextMatch={nextMatch} now={now} />
