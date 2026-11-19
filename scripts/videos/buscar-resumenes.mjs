@@ -124,6 +124,6 @@ if (DRY || !stmts.length) process.exit(0);
 await db.batch(stmts, 'write');
 if (env.CACHE_REVALIDATION_SECRET) {
     const site = env.SITE_URL || 'https://www.madridfemeninoxtra.com';
-    const r = await fetch(`${site}/api/cache/revalidate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': env.CACHE_REVALIDATION_SECRET }, body: JSON.stringify({ tables: ['partidos'], tags: stmts.map((st) => `match-${st.args[2]}`) }) });
+    const r = await fetch(`${site}/api/cache/revalidate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': env.CACHE_REVALIDATION_SECRET }, body: JSON.stringify({ tags: stmts.map((st) => `match-${st.args[2]}`) }) });
     console.log(`Caché de la web: ${r.status}`);
 }

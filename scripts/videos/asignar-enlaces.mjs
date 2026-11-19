@@ -66,7 +66,7 @@ console.log(`\n${stmts.length} de ${lineas.length} enlaces asignados.`);
 if (!GUARDAR) { console.log('Simulación: añade --guardar para escribirlos.'); process.exit(0); }
 if (stmts.length) await db.batch(stmts, 'write');
 console.log('Guardados.');
-if (env.CACHE_REVALIDATION_SECRET) {
-    const r = await fetch(`${env.SITE_URL || 'https://www.madridfemeninoxtra.com'}/api/cache/revalidate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': env.CACHE_REVALIDATION_SECRET }, body: JSON.stringify({ tables: ['partidos'], tags: stmts.map((st) => `match-${st.args[2]}`) }) });
+if (stmts.length && env.CACHE_REVALIDATION_SECRET) {
+    const r = await fetch(`${env.SITE_URL || 'https://www.madridfemeninoxtra.com'}/api/cache/revalidate`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-cache-revalidation-secret': env.CACHE_REVALIDATION_SECRET }, body: JSON.stringify({ tags: stmts.map((st) => `match-${st.args[2]}`) }) });
     console.log(`Caché de la web: ${r.status}`);
 }
