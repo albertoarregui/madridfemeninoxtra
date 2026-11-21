@@ -4,11 +4,13 @@ import { getAssetUrl } from "../utils/assets";
 interface Props {
     label?: string;
     title?: string;
+    timeline?: boolean;
 }
 
 const {
     label = "Hito histórico",
     title = "De La Fábrica a la absoluta",
+    timeline = true,
 } = Astro.props;
 
 const photo = getAssetUrl("premios", "mundial_sub20_2026_silvia_cristobal_mvp_final.webp");
@@ -20,6 +22,49 @@ const path = [
     { year: "2026", team: "Sub-20", result: "Campeona del mundo · MVP de la final" },
     { year: "2026", team: "Absoluta", result: "Primera convocatoria", current: true },
 ];
+
+const seasons = [
+    {
+        season: "2021/22",
+        team: "Cadete",
+        title: "Llega a La Fábrica",
+        text: "Con 13 años, procedente del Madrid CFF. Campeona de Liga en su primer curso.",
+    },
+    {
+        season: "2022/23",
+        team: "Cadete",
+        title: "Bicampeona de Liga",
+        text: "Repite título liguero con el Cadete de Roberto Tomás.",
+    },
+    {
+        season: "2023/24",
+        team: "Juvenil",
+        title: "Liga con pleno de victorias",
+        text: "Campeona de Preferente ganando todos los partidos y campeona de Europa sub-17 con España.",
+    },
+    {
+        season: "2024/25",
+        team: "Real Madrid B",
+        title: "Debut en Liga F",
+        text: "Juega con el filial en Primera Federación y debuta con el primer equipo en Eibar, con 16 años.",
+    },
+    {
+        season: "2025/26",
+        team: "Filial · primer equipo",
+        title: "Primer gol y Champions",
+        text: "Marca su primer gol en Liga F ante el Alhama, debuta en la Champions y gana el Europeo sub-19.",
+    },
+    {
+        season: "2026/27",
+        team: "Primer equipo",
+        title: "Rumbo a la absoluta",
+        text: "Ficha con el primer equipo hasta 2030, gana el Mundial sub-20 y recibe su primera llamada de la absoluta.",
+        current: true,
+    },
+].map((item) => ({
+    ...item,
+    photo: getAssetUrl("jugadoras", `silvia_cristobal_${item.season.replace("/", "_")}.webp`),
+}));
 ---
 
 <section class="fabrica-section" aria-labelledby="absoluta-hito-title">
@@ -95,4 +140,36 @@ const path = [
             </div>
         </div>
     </article>
+
+    {timeline && (
+        <div class="silvia-timeline fabrica-card mfx-framed"><span class="mfx-frame" aria-hidden="true"></span>
+            <div class="fabrica-card-head">
+                <span>Su progreso en La Fábrica</span>
+                <span>2021 — 2026</span>
+            </div>
+            <ol class="silvia-tl" aria-label="Temporadas de Silvia Cristóbal en el Real Madrid">
+                {seasons.map((item) => (
+                    <li class:list={["silvia-tl-item", { "is-current": item.current }]}>
+                        <div class="silvia-tl-photo">
+                            <img
+                                src={item.photo}
+                                alt={`Silvia Cristóbal en la temporada ${item.season} (${item.team})`}
+                                width="640"
+                                height="800"
+                                loading="lazy"
+                                decoding="async"
+                            />
+                        </div>
+                        <span class="silvia-tl-marker" aria-hidden="true"></span>
+                        <div class="silvia-tl-copy">
+                            <span class="silvia-tl-season">{item.season}</span>
+                            <span class="silvia-tl-team">{item.team}</span>
+                            <h4>{item.title}</h4>
+                            <p set:html={item.text.replace(/(sub-\d+)/g, '<span class="silvia-tl-nowrap">$1</span>')} />
+                        </div>
+                    </li>
+                ))}
+            </ol>
+        </div>
+    )}
 </section>
